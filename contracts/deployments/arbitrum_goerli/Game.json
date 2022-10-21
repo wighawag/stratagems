@@ -1,0 +1,848 @@
+{
+  "address": "0xfB4D29BE83E36AB46003948e9f785292ba825941",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "contract Tokens",
+              "name": "tokens",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "startTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "commitPeriod",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "resolutionPeriod",
+              "type": "uint256"
+            },
+            {
+              "internalType": "int8",
+              "name": "maxLife",
+              "type": "int8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "decimals",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct Game.Config",
+          "name": "config",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint32",
+          "name": "period",
+          "type": "uint32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes24",
+          "name": "commitmentHash",
+          "type": "bytes24"
+        }
+      ],
+      "name": "CommitmentMade",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint32",
+          "name": "period",
+          "type": "uint32"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes24",
+          "name": "commitmentHash",
+          "type": "bytes24"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint64",
+              "name": "position",
+              "type": "uint64"
+            },
+            {
+              "internalType": "enum Game.Color",
+              "name": "color",
+              "type": "uint8"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct Game.Move[]",
+          "name": "moves",
+          "type": "tuple[]"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes24",
+          "name": "furtherMoves",
+          "type": "bytes24"
+        }
+      ],
+      "name": "CommitmentResolved",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint32",
+          "name": "period",
+          "type": "uint32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amountBurnt",
+          "type": "uint256"
+        }
+      ],
+      "name": "CommitmentVoid",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "ReserveDeposited",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "ReserveWithdrawn",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "COMMIT_PERIOD",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "DECIMALS",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "MAX_LIFE",
+      "outputs": [
+        {
+          "internalType": "int8",
+          "name": "",
+          "type": "int8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "RESOLUTION_PERIOD",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "START_TIME",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "TOKENS",
+      "outputs": [
+        {
+          "internalType": "contract Tokens",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "secret",
+          "type": "bytes32"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint64",
+              "name": "position",
+              "type": "uint64"
+            },
+            {
+              "internalType": "enum Game.Color",
+              "name": "color",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct Game.Move[]",
+          "name": "moves",
+          "type": "tuple[]"
+        },
+        {
+          "internalType": "bytes24",
+          "name": "furtherMoves",
+          "type": "bytes24"
+        }
+      ],
+      "name": "acknowledgeMissedResolution",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "acknowledgeMissedResolutionByBurningAllReserve",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokensAmountToAdd",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "deadline",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint8",
+              "name": "v",
+              "type": "uint8"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "r",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "s",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct Game.Permit",
+          "name": "permit",
+          "type": "tuple"
+        }
+      ],
+      "name": "addToReserve",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "cells",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "internalType": "uint32",
+          "name": "lastPeriodUpdate",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint32",
+          "name": "periodWhenTokenIsAdded",
+          "type": "uint32"
+        },
+        {
+          "internalType": "enum Game.Color",
+          "name": "color",
+          "type": "uint8"
+        },
+        {
+          "internalType": "int8",
+          "name": "life",
+          "type": "int8"
+        },
+        {
+          "internalType": "int8",
+          "name": "delta",
+          "type": "int8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "enemymask",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "position",
+          "type": "uint64"
+        }
+      ],
+      "name": "collect",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "commitments",
+      "outputs": [
+        {
+          "internalType": "bytes24",
+          "name": "hash",
+          "type": "bytes24"
+        },
+        {
+          "internalType": "uint32",
+          "name": "period",
+          "type": "uint32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes24",
+          "name": "commitmentHash",
+          "type": "bytes24"
+        }
+      ],
+      "name": "makeCommitment",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes24",
+          "name": "commitmentHash",
+          "type": "bytes24"
+        },
+        {
+          "internalType": "uint256",
+          "name": "tokensAmountToAdd",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "deadline",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint8",
+              "name": "v",
+              "type": "uint8"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "r",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "s",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct Game.Permit",
+          "name": "permit",
+          "type": "tuple"
+        }
+      ],
+      "name": "makeCommitmentWithExtraReserve",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "position",
+          "type": "uint64"
+        }
+      ],
+      "name": "poke",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64[]",
+          "name": "positions",
+          "type": "uint64[]"
+        }
+      ],
+      "name": "pokeAndCollect",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "secret",
+          "type": "bytes32"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint64",
+              "name": "position",
+              "type": "uint64"
+            },
+            {
+              "internalType": "enum Game.Color",
+              "name": "color",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct Game.Move[]",
+          "name": "moves",
+          "type": "tuple[]"
+        },
+        {
+          "internalType": "bytes24",
+          "name": "furtherMoves",
+          "type": "bytes24"
+        }
+      ],
+      "name": "resolve",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "tokensInPlay",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "tokensInReserve",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdrawFromReserve",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x64bc082126eaf60bdbc36e6c8656ede2d4e2d86f20bdc9c4bebee84b5393522a",
+  "receipt": {
+    "to": null,
+    "from": "0x61c461EcC993aaDEB7e4b47E96d1B8cC37314B20",
+    "contractAddress": "0xfB4D29BE83E36AB46003948e9f785292ba825941",
+    "transactionIndex": 1,
+    "gasUsed": "2539664",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x605a64ae3074d4e033652e15adef0bc012c884ce20ee6094f3273079917907fb",
+    "transactionHash": "0x64bc082126eaf60bdbc36e6c8656ede2d4e2d86f20bdc9c4bebee84b5393522a",
+    "logs": [],
+    "blockNumber": 698401,
+    "cumulativeGasUsed": "2539664",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    {
+      "tokens": "0xefB2062c5C831c9d1f5217Ac9EA741d5aD700457",
+      "startTime": 1665952700,
+      "commitPeriod": 300,
+      "resolutionPeriod": 300,
+      "maxLife": 5,
+      "decimals": 18
+    }
+  ],
+  "numDeployments": 1,
+  "linkedData": {
+    "tokens": "0xefB2062c5C831c9d1f5217Ac9EA741d5aD700457",
+    "startTime": 1665952700,
+    "commitPeriod": 300,
+    "resolutionPeriod": 300,
+    "maxLife": 5,
+    "decimals": 18
+  },
+  "solcInputHash": "41b160d30631e7693ccb67c89122cff5",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.13+commit.abaa5c0e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"components\":[{\"internalType\":\"contract Tokens\",\"name\":\"tokens\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"startTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"commitPeriod\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"resolutionPeriod\",\"type\":\"uint256\"},{\"internalType\":\"int8\",\"name\":\"maxLife\",\"type\":\"int8\"},{\"internalType\":\"uint8\",\"name\":\"decimals\",\"type\":\"uint8\"}],\"internalType\":\"struct Game.Config\",\"name\":\"config\",\"type\":\"tuple\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"player\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint32\",\"name\":\"period\",\"type\":\"uint32\"},{\"indexed\":false,\"internalType\":\"bytes24\",\"name\":\"commitmentHash\",\"type\":\"bytes24\"}],\"name\":\"CommitmentMade\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"player\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint32\",\"name\":\"period\",\"type\":\"uint32\"},{\"indexed\":true,\"internalType\":\"bytes24\",\"name\":\"commitmentHash\",\"type\":\"bytes24\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"position\",\"type\":\"uint64\"},{\"internalType\":\"enum Game.Color\",\"name\":\"color\",\"type\":\"uint8\"}],\"indexed\":false,\"internalType\":\"struct Game.Move[]\",\"name\":\"moves\",\"type\":\"tuple[]\"},{\"indexed\":false,\"internalType\":\"bytes24\",\"name\":\"furtherMoves\",\"type\":\"bytes24\"}],\"name\":\"CommitmentResolved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"player\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint32\",\"name\":\"period\",\"type\":\"uint32\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amountBurnt\",\"type\":\"uint256\"}],\"name\":\"CommitmentVoid\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"player\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ReserveDeposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"player\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ReserveWithdrawn\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"COMMIT_PERIOD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"DECIMALS\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_LIFE\",\"outputs\":[{\"internalType\":\"int8\",\"name\":\"\",\"type\":\"int8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"RESOLUTION_PERIOD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"START_TIME\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"TOKENS\",\"outputs\":[{\"internalType\":\"contract Tokens\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"player\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"secret\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"position\",\"type\":\"uint64\"},{\"internalType\":\"enum Game.Color\",\"name\":\"color\",\"type\":\"uint8\"}],\"internalType\":\"struct Game.Move[]\",\"name\":\"moves\",\"type\":\"tuple[]\"},{\"internalType\":\"bytes24\",\"name\":\"furtherMoves\",\"type\":\"bytes24\"}],\"name\":\"acknowledgeMissedResolution\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"acknowledgeMissedResolutionByBurningAllReserve\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokensAmountToAdd\",\"type\":\"uint256\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"deadline\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"v\",\"type\":\"uint8\"},{\"internalType\":\"bytes32\",\"name\":\"r\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"s\",\"type\":\"bytes32\"}],\"internalType\":\"struct Game.Permit\",\"name\":\"permit\",\"type\":\"tuple\"}],\"name\":\"addToReserve\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"cells\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"uint32\",\"name\":\"lastPeriodUpdate\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"periodWhenTokenIsAdded\",\"type\":\"uint32\"},{\"internalType\":\"enum Game.Color\",\"name\":\"color\",\"type\":\"uint8\"},{\"internalType\":\"int8\",\"name\":\"life\",\"type\":\"int8\"},{\"internalType\":\"int8\",\"name\":\"delta\",\"type\":\"int8\"},{\"internalType\":\"uint8\",\"name\":\"enemymask\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"position\",\"type\":\"uint64\"}],\"name\":\"collect\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"commitments\",\"outputs\":[{\"internalType\":\"bytes24\",\"name\":\"hash\",\"type\":\"bytes24\"},{\"internalType\":\"uint32\",\"name\":\"period\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes24\",\"name\":\"commitmentHash\",\"type\":\"bytes24\"}],\"name\":\"makeCommitment\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes24\",\"name\":\"commitmentHash\",\"type\":\"bytes24\"},{\"internalType\":\"uint256\",\"name\":\"tokensAmountToAdd\",\"type\":\"uint256\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"deadline\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"v\",\"type\":\"uint8\"},{\"internalType\":\"bytes32\",\"name\":\"r\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"s\",\"type\":\"bytes32\"}],\"internalType\":\"struct Game.Permit\",\"name\":\"permit\",\"type\":\"tuple\"}],\"name\":\"makeCommitmentWithExtraReserve\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"position\",\"type\":\"uint64\"}],\"name\":\"poke\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64[]\",\"name\":\"positions\",\"type\":\"uint64[]\"}],\"name\":\"pokeAndCollect\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"player\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"secret\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"position\",\"type\":\"uint64\"},{\"internalType\":\"enum Game.Color\",\"name\":\"color\",\"type\":\"uint8\"}],\"internalType\":\"struct Game.Move[]\",\"name\":\"moves\",\"type\":\"tuple[]\"},{\"internalType\":\"bytes24\",\"name\":\"furtherMoves\",\"type\":\"bytes24\"}],\"name\":\"resolve\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"tokensInPlay\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"tokensInReserve\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"withdrawFromReserve\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"acknowledgeMissedResolutionByBurningAllReserve()\":{\"notice\":\"should only be called as last resort this will burn all tokens in reserve (// TODO block adding more to reserve until RESOLUTION is complete) If player has access to the secret, better call acknowledgeMissedResolution\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"src/Game.sol\":\"Game\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":2000},\"remappings\":[]},\"sources\":{\"solidity-kit/src/ERC20/ERC2612/implementations/ImplementingExternalDomainSeparator.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nabstract contract ImplementingExternalDomainSeparator {\\n\\tfunction DOMAIN_SEPARATOR() public view virtual returns (bytes32);\\n}\\n\",\"keccak256\":\"0x4c2570050db246c578e3bb1438270e48574bfd997b10d22f95fd47d6c9d27878\",\"license\":\"MIT\"},\"solidity-kit/src/ERC20/ERC2612/implementations/UsingPermit.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"../../implementations/ImplementingERC20Internal.sol\\\";\\nimport \\\"../interfaces/IERC2612Standalone.sol\\\";\\nimport \\\"../../../ERC712/implementations/UsingERC712WithDynamicChainId.sol\\\";\\nimport \\\"./ImplementingExternalDomainSeparator.sol\\\";\\n\\nabstract contract UsingPermit is\\n\\tImplementingERC20Internal,\\n\\tImplementingExternalDomainSeparator,\\n\\tIERC2612Standalone,\\n\\tUsingERC712\\n{\\n\\tbytes32 internal constant PERMIT_TYPEHASH =\\n\\t\\tkeccak256(\\\"Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)\\\");\\n\\n\\tmapping(address => uint256) internal _nonces;\\n\\n\\tfunction nonces(address owner) external view returns (uint256) {\\n\\t\\treturn _nonces[owner];\\n\\t}\\n\\n\\tfunction DOMAIN_SEPARATOR()\\n\\t\\tpublic\\n\\t\\tview\\n\\t\\tvirtual\\n\\t\\toverride(IERC2612Standalone, ImplementingExternalDomainSeparator)\\n\\t\\treturns (bytes32);\\n\\n\\tfunction permit(\\n\\t\\taddress owner,\\n\\t\\taddress spender,\\n\\t\\tuint256 value,\\n\\t\\tuint256 deadline,\\n\\t\\tuint8 v,\\n\\t\\tbytes32 r,\\n\\t\\tbytes32 s\\n\\t) external override {\\n\\t\\trequire(owner != address(0), \\\"INVALID_ZERO_ADDRESS\\\");\\n\\n\\t\\tuint256 currentNonce = _nonces[owner];\\n\\t\\tbytes32 digest = keccak256(\\n\\t\\t\\tabi.encodePacked(\\n\\t\\t\\t\\t\\\"\\\\x19\\\\x01\\\",\\n\\t\\t\\t\\tDOMAIN_SEPARATOR(),\\n\\t\\t\\t\\tkeccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, currentNonce, deadline))\\n\\t\\t\\t)\\n\\t\\t);\\n\\t\\trequire(owner == ecrecover(digest, v, r, s), \\\"INVALID_SIGNATURE\\\");\\n\\t\\trequire(deadline == 0 || block.timestamp <= deadline, \\\"TOO_LATE\\\");\\n\\n\\t\\t_nonces[owner] = currentNonce + 1;\\n\\t\\t_approveFor(owner, spender, value);\\n\\t}\\n}\\n\",\"keccak256\":\"0x0bb8b5595d59f00639b71f5b673ae162d4fe8affe5f4d19772b847d0620270b9\",\"license\":\"MIT\"},\"solidity-kit/src/ERC20/ERC2612/implementations/UsingPermitWithDynamicChainId.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"./UsingPermit.sol\\\";\\nimport \\\"../../../ERC712/implementations/UsingERC712WithDynamicChainId.sol\\\";\\n\\nabstract contract UsingPermitWithDynamicChainId is UsingPermit, UsingERC712WithDynamicChainId {\\n\\tfunction DOMAIN_SEPARATOR() public view virtual override returns (bytes32) {\\n\\t\\treturn _currentDomainSeparator();\\n\\t}\\n}\\n\",\"keccak256\":\"0x6d66e3a9f0ad294e33e49eef53e81b71379ab4a506eab13b1e4aa19f2f4c1d31\",\"license\":\"MIT\"},\"solidity-kit/src/ERC20/ERC2612/interfaces/IERC2612Standalone.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity ^0.8.0;\\n\\nimport \\\"../../../ERC712/interfaces/IERC5267.sol\\\";\\n\\ninterface IERC2612Standalone is IERC5267 {\\n\\tfunction permit(\\n\\t\\taddress owner,\\n\\t\\taddress spender,\\n\\t\\tuint256 value,\\n\\t\\tuint256 deadline,\\n\\t\\tuint8 v,\\n\\t\\tbytes32 r,\\n\\t\\tbytes32 s\\n\\t) external;\\n\\n\\tfunction nonces(address owner) external view returns (uint256);\\n\\n\\tfunction DOMAIN_SEPARATOR() external view returns (bytes32);\\n}\\n\",\"keccak256\":\"0x989316731c68a76b9ffd9df16f2e8b07c0d017ec281bf58131a5a604c93e3fb2\",\"license\":\"MIT\"},\"solidity-kit/src/ERC20/implementations/ERC20Base.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"../interfaces/IERC20.sol\\\";\\nimport \\\"./ImplementingERC20Internal.sol\\\";\\nimport \\\"../../utils/Constants.sol\\\";\\n\\ninterface ITransferReceiver {\\n\\tfunction onTokenTransfer(\\n\\t\\taddress,\\n\\t\\tuint256,\\n\\t\\tbytes calldata\\n\\t) external returns (bool);\\n}\\n\\ninterface ITransferOnBehalfReceiver {\\n\\tfunction onTokenTransferedOnBehalf(\\n\\t\\taddress payer,\\n\\t\\taddress forAddress,\\n\\t\\tuint256 amount,\\n\\t\\tbytes calldata data\\n\\t) external returns (bool);\\n}\\n\\ninterface IApprovalReceiver {\\n\\tfunction onTokenApproval(\\n\\t\\taddress,\\n\\t\\tuint256,\\n\\t\\tbytes calldata\\n\\t) external returns (bool);\\n}\\n\\nabstract contract ERC20Base is IERC20, ImplementingERC20Internal {\\n\\tuint256 internal _totalSupply;\\n\\tmapping(address => uint256) internal _balances;\\n\\tmapping(address => mapping(address => uint256)) internal _allowances;\\n\\n\\tfunction burn(uint256 amount) external virtual {\\n\\t\\taddress sender = msg.sender;\\n\\t\\t_burnFrom(sender, amount);\\n\\t}\\n\\n\\tfunction _internal_totalSupply() internal view override returns (uint256) {\\n\\t\\treturn _totalSupply;\\n\\t}\\n\\n\\tfunction totalSupply() external view override returns (uint256) {\\n\\t\\treturn _internal_totalSupply();\\n\\t}\\n\\n\\tfunction balanceOf(address owner) external view override returns (uint256) {\\n\\t\\treturn _balances[owner];\\n\\t}\\n\\n\\tfunction allowance(address owner, address spender) external view override returns (uint256) {\\n\\t\\tif (owner == address(this)) {\\n\\t\\t\\t// see transferFrom: address(this) allows anyone\\n\\t\\t\\treturn type(uint256).max;\\n\\t\\t}\\n\\t\\treturn _allowances[owner][spender];\\n\\t}\\n\\n\\tfunction decimals() external pure virtual returns (uint8) {\\n\\t\\treturn uint8(18);\\n\\t}\\n\\n\\tfunction transfer(address to, uint256 amount) external override returns (bool) {\\n\\t\\t_transfer(msg.sender, to, amount);\\n\\t\\treturn true;\\n\\t}\\n\\n\\tfunction transferAlongWithETH(address payable to, uint256 amount) external payable returns (bool) {\\n\\t\\t_transfer(msg.sender, to, amount);\\n\\t\\tto.transfer(msg.value);\\n\\t\\treturn true;\\n\\t}\\n\\n\\tfunction distributeAlongWithETH(address payable[] memory tos, uint256 totalAmount) external payable returns (bool) {\\n\\t\\tuint256 val = msg.value / tos.length;\\n\\t\\trequire(msg.value == val * tos.length, \\\"INVALID_MSG_VALUE\\\");\\n\\t\\tuint256 amount = totalAmount / tos.length;\\n\\t\\trequire(totalAmount == amount * tos.length, \\\"INVALID_TOTAL_AMOUNT\\\");\\n\\t\\tfor (uint256 i = 0; i < tos.length; i++) {\\n\\t\\t\\t_transfer(msg.sender, tos[i], amount);\\n\\t\\t\\ttos[i].transfer(val);\\n\\t\\t}\\n\\t\\treturn true;\\n\\t}\\n\\n\\tfunction transferAndCall(\\n\\t\\taddress to,\\n\\t\\tuint256 amount,\\n\\t\\tbytes calldata data\\n\\t) external returns (bool) {\\n\\t\\t_transfer(msg.sender, to, amount);\\n\\t\\treturn ITransferReceiver(to).onTokenTransfer(msg.sender, amount, data);\\n\\t}\\n\\n\\tfunction transferFromAndCall(\\n\\t\\taddress from,\\n\\t\\taddress to,\\n\\t\\tuint256 amount,\\n\\t\\tbytes calldata data\\n\\t) external returns (bool) {\\n\\t\\t_transferFrom(from, to, amount);\\n\\t\\treturn ITransferReceiver(to).onTokenTransfer(from, amount, data);\\n\\t}\\n\\n\\tfunction transferOnBehalfAndCall(\\n\\t\\taddress forAddress,\\n\\t\\taddress to,\\n\\t\\tuint256 amount,\\n\\t\\tbytes calldata data\\n\\t) external returns (bool) {\\n\\t\\t_transfer(msg.sender, to, amount);\\n\\t\\treturn ITransferOnBehalfReceiver(to).onTokenTransferedOnBehalf(msg.sender, forAddress, amount, data);\\n\\t}\\n\\n\\tfunction transferFrom(\\n\\t\\taddress from,\\n\\t\\taddress to,\\n\\t\\tuint256 amount\\n\\t) external override returns (bool) {\\n\\t\\t_transferFrom(from, to, amount);\\n\\t\\treturn true;\\n\\t}\\n\\n\\tfunction approve(address spender, uint256 amount) external override returns (bool) {\\n\\t\\t_approveFor(msg.sender, spender, amount);\\n\\t\\treturn true;\\n\\t}\\n\\n\\tfunction approveAndCall(\\n\\t\\taddress spender,\\n\\t\\tuint256 amount,\\n\\t\\tbytes calldata data\\n\\t) external returns (bool) {\\n\\t\\t_approveFor(msg.sender, spender, amount);\\n\\t\\treturn IApprovalReceiver(spender).onTokenApproval(msg.sender, amount, data);\\n\\t}\\n\\n\\tfunction _approveFor(\\n\\t\\taddress owner,\\n\\t\\taddress spender,\\n\\t\\tuint256 amount\\n\\t) internal override {\\n\\t\\trequire(owner != address(0) && spender != address(0), \\\"INVALID_ZERO_ADDRESS\\\");\\n\\t\\t_allowances[owner][spender] = amount;\\n\\t\\temit Approval(owner, spender, amount);\\n\\t}\\n\\n\\tfunction _transferFrom(\\n\\t\\taddress from,\\n\\t\\taddress to,\\n\\t\\tuint256 amount\\n\\t) internal {\\n\\t\\t// anybody can transfer from this\\n\\t\\t// this allow mintAndApprovedCall without gas overhead\\n\\t\\tif (msg.sender != from && from != address(this)) {\\n\\t\\t\\tuint256 currentAllowance = _allowances[from][msg.sender];\\n\\t\\t\\tif (currentAllowance != type(uint256).max) {\\n\\t\\t\\t\\t// save gas when allowance is maximal by not reducing it (see https://github.com/ethereum/EIPs/issues/717)\\n\\t\\t\\t\\trequire(currentAllowance >= amount, \\\"NOT_AUTHOIZED_ALLOWANCE\\\");\\n\\t\\t\\t\\t_allowances[from][msg.sender] = currentAllowance - amount;\\n\\t\\t\\t}\\n\\t\\t}\\n\\t\\t_transfer(from, to, amount);\\n\\t}\\n\\n\\tfunction _transfer(\\n\\t\\taddress from,\\n\\t\\taddress to,\\n\\t\\tuint256 amount\\n\\t) internal {\\n\\t\\trequire(to != address(0), \\\"INVALID_ZERO_ADDRESS\\\");\\n\\t\\trequire(to != address(this), \\\"INVALID_THIS_ADDRESS\\\");\\n\\t\\tuint256 currentBalance = _balances[from];\\n\\t\\trequire(currentBalance >= amount, \\\"NOT_ENOUGH_TOKENS\\\");\\n\\t\\t_balances[from] = currentBalance - amount;\\n\\t\\t_balances[to] += amount;\\n\\t\\temit Transfer(from, to, amount);\\n\\t}\\n\\n\\tfunction _transferAllIfAny(address from, address to) internal {\\n\\t\\tuint256 balanceLeft = _balances[from];\\n\\t\\tif (balanceLeft > 0) {\\n\\t\\t\\t_balances[from] = 0;\\n\\t\\t\\t_balances[to] += balanceLeft;\\n\\t\\t\\temit Transfer(from, to, balanceLeft);\\n\\t\\t}\\n\\t}\\n\\n\\tfunction _mint(address to, uint256 amount) internal override {\\n\\t\\t_totalSupply += amount;\\n\\t\\t_balances[to] += amount;\\n\\t\\temit Transfer(address(0), to, amount);\\n\\t}\\n\\n\\tfunction _burnFrom(address from, uint256 amount) internal override {\\n\\t\\tuint256 currentBalance = _balances[from];\\n\\t\\trequire(currentBalance >= amount, \\\"NOT_ENOUGH_TOKENS\\\");\\n\\t\\t_balances[from] = currentBalance - amount;\\n\\t\\t_totalSupply -= amount;\\n\\t\\temit Transfer(from, address(0), amount);\\n\\t}\\n}\\n\",\"keccak256\":\"0x24dc85a5c294a826641aaa8677c34c6429f06598f8968ee8bc16d9601cb8e031\",\"license\":\"MIT\"},\"solidity-kit/src/ERC20/implementations/ImplementingERC20Internal.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nabstract contract ImplementingERC20Internal {\\n\\tfunction _approveFor(\\n\\t\\taddress owner,\\n\\t\\taddress target,\\n\\t\\tuint256 amount\\n\\t) internal virtual;\\n\\n\\tfunction _mint(address to, uint256 amount) internal virtual;\\n\\n\\tfunction _burnFrom(address from, uint256 amount) internal virtual;\\n\\n\\tfunction _internal_totalSupply() internal view virtual returns (uint256);\\n}\\n\",\"keccak256\":\"0xa748d2b3c0573af21672cb5c19ea769ccec11fc03a2f7606213308d28a94f7ef\",\"license\":\"MIT\"},\"solidity-kit/src/ERC20/interfaces/IERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\ninterface IERC20 {\\n\\tevent Transfer(address indexed from, address indexed to, uint256 value);\\n\\n\\tevent Approval(address indexed owner, address indexed spender, uint256 value);\\n\\n\\tfunction totalSupply() external view returns (uint256);\\n\\n\\tfunction balanceOf(address account) external view returns (uint256);\\n\\n\\tfunction transfer(address to, uint256 amount) external returns (bool);\\n\\n\\tfunction allowance(address owner, address spender) external view returns (uint256);\\n\\n\\tfunction approve(address spender, uint256 amount) external returns (bool);\\n\\n\\tfunction transferFrom(\\n\\t\\taddress from,\\n\\t\\taddress to,\\n\\t\\tuint256 amount\\n\\t) external returns (bool);\\n}\\n\",\"keccak256\":\"0x45932fe82dafbdc4e23c575d4d64db077e90c83d5d0873bb79c93fc5d80f3692\",\"license\":\"MIT\"},\"solidity-kit/src/ERC712/implementations/Named.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nabstract contract Named {\\n\\tfunction name() public view virtual returns (string memory);\\n}\\n\",\"keccak256\":\"0x3a838eb41c5929f1bff0ecfbc0a9bb9b7b6e3ab2a6efddf91ac4485a575b7194\",\"license\":\"MIT\"},\"solidity-kit/src/ERC712/implementations/UsingERC712.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"../interfaces/IERC5267.sol\\\";\\n\\nabstract contract UsingERC712 is IERC5267 {}\\n\",\"keccak256\":\"0x5b2d5c3dd2ebe8dedf66a6d1a8b01918a42dfe3bc00778dca06fdf7686b7699e\",\"license\":\"MIT\"},\"solidity-kit/src/ERC712/implementations/UsingERC712WithDynamicChainId.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"./UsingERC712.sol\\\";\\nimport \\\"./Named.sol\\\";\\n\\nabstract contract UsingERC712WithDynamicChainId is UsingERC712, Named {\\n\\tuint256 private immutable _deploymentChainId;\\n\\tbytes32 private immutable _deploymentDomainSeparator;\\n\\n\\tconstructor() {\\n\\t\\tuint256 chainId;\\n\\t\\tassembly {\\n\\t\\t\\tchainId := chainid()\\n\\t\\t}\\n\\n\\t\\t_deploymentChainId = chainId;\\n\\t\\t_deploymentDomainSeparator = _calculateDomainSeparator(chainId);\\n\\t}\\n\\n\\tfunction _currentDomainSeparator() internal view returns (bytes32) {\\n\\t\\tuint256 chainId;\\n\\t\\tassembly {\\n\\t\\t\\tchainId := chainid()\\n\\t\\t}\\n\\n\\t\\t// in case a fork happen, to support the chain that had to change its chainId, we compute the domain operator\\n\\t\\treturn chainId == _deploymentChainId ? _deploymentDomainSeparator : _calculateDomainSeparator(chainId);\\n\\t}\\n\\n\\t/// @dev Calculate the Domain Separator used to compute ERC712 hash\\n\\tfunction _calculateDomainSeparator(uint256 chainId) private view returns (bytes32) {\\n\\t\\treturn\\n\\t\\t\\tkeccak256(\\n\\t\\t\\t\\tabi.encode(\\n\\t\\t\\t\\t\\tkeccak256(\\\"EIP712Domain(string name,uint256 chainId,address verifyingContract)\\\"),\\n\\t\\t\\t\\t\\tkeccak256(bytes(name())),\\n\\t\\t\\t\\t\\tchainId,\\n\\t\\t\\t\\t\\taddress(this)\\n\\t\\t\\t\\t)\\n\\t\\t\\t);\\n\\t}\\n\\n\\tfunction eip712Domain()\\n\\t\\texternal\\n\\t\\tview\\n\\t\\tvirtual\\n\\t\\toverride\\n\\t\\treturns (\\n\\t\\t\\tbytes1,\\n\\t\\t\\tstring memory,\\n\\t\\t\\tstring memory,\\n\\t\\t\\tuint256,\\n\\t\\t\\taddress,\\n\\t\\t\\tbytes32,\\n\\t\\t\\tuint256[] memory\\n\\t\\t)\\n\\t{\\n\\t\\tuint256 chainId;\\n\\t\\tassembly {\\n\\t\\t\\tchainId := chainid()\\n\\t\\t}\\n\\t\\t// 0x0D == 01101 (name, , chainId, verifyingContract)\\n\\t\\treturn (0x0D, name(), \\\"\\\", chainId, address(this), bytes32(0), new uint256[](0));\\n\\t}\\n}\\n\",\"keccak256\":\"0x68de931a527aef7e4e13acf7b8fe5523721e8eb992c2e3d17c3d5d3aabd09801\",\"license\":\"MIT\"},\"solidity-kit/src/ERC712/interfaces/IERC5267.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity ^0.8.0;\\n\\ninterface IERC5267 {\\n\\tfunction eip712Domain()\\n\\t\\texternal\\n\\t\\tview\\n\\t\\treturns (\\n\\t\\t\\tbytes1 fields,\\n\\t\\t\\tstring memory name,\\n\\t\\t\\tstring memory version,\\n\\t\\t\\tuint256 chainId,\\n\\t\\t\\taddress verifyingContract,\\n\\t\\t\\tbytes32 salt,\\n\\t\\t\\tuint256[] memory extensions\\n\\t\\t);\\n}\\n\",\"keccak256\":\"0x572a964d86cedc3f3995137e976d6eae147bbd3a68a4cba6b3ba36803769dc34\",\"license\":\"MIT\"},\"solidity-kit/src/utils/Constants.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity ^0.8.0;\\n\\nlibrary Constants {\\n\\tuint256 internal constant DECIMALS_18 = 1000000000000000000;\\n}\\n\",\"keccak256\":\"0xe9da4ad04d270eb44b2bada7307894079ad6d3458b4d237b7992022f900d94b6\",\"license\":\"MIT\"},\"src/Game.sol\":{\"content\":\"// SPDX-License-Identifier: AGPL-1.0\\npragma solidity ^0.8.13;\\n\\nimport \\\"./Tokens.sol\\\";\\n\\ncontract Game {\\n\\tevent CommitmentMade(address indexed player, uint32 indexed period, bytes24 commitmentHash);\\n\\tevent CommitmentVoid(address indexed player, uint32 indexed period, uint256 amountBurnt);\\n\\tevent CommitmentResolved(\\n\\t\\taddress indexed player,\\n\\t\\tuint32 indexed period,\\n\\t\\tbytes24 indexed commitmentHash,\\n\\t\\tMove[] moves,\\n\\t\\tbytes24 furtherMoves\\n\\t);\\n\\tevent ReserveWithdrawn(address indexed player, uint256 amount);\\n\\tevent ReserveDeposited(address indexed player, uint256 amount);\\n\\n\\tTokens public immutable TOKENS;\\n\\tuint256 public immutable START_TIME;\\n\\tuint256 public immutable COMMIT_PERIOD;\\n\\tuint256 public immutable RESOLUTION_PERIOD;\\n\\tint8 public immutable MAX_LIFE;\\n\\tuint8 public immutable DECIMALS;\\n\\n\\tstruct Config {\\n\\t\\tTokens tokens;\\n\\t\\tuint256 startTime;\\n\\t\\tuint256 commitPeriod;\\n\\t\\tuint256 resolutionPeriod;\\n\\t\\tint8 maxLife;\\n\\t\\tuint8 decimals;\\n\\t}\\n\\n\\tconstructor(Config memory config) {\\n\\t\\tTOKENS = config.tokens;\\n\\t\\tSTART_TIME = config.startTime;\\n\\t\\tCOMMIT_PERIOD = config.commitPeriod;\\n\\t\\tRESOLUTION_PERIOD = config.resolutionPeriod;\\n\\t\\tMAX_LIFE = config.maxLife;\\n\\t\\tDECIMALS = config.decimals;\\n\\t}\\n\\n\\tenum Color {\\n\\t\\tNone,\\n\\t\\tBlue,\\n\\t\\tRed,\\n\\t\\tGreen,\\n\\t\\tYellow\\n\\t}\\n\\n\\tstruct Cell {\\n\\t\\taddress owner;\\n\\t\\tuint32 lastPeriodUpdate; // period\\n\\t\\tuint32 periodWhenTokenIsAdded; // period\\n\\t\\tColor color;\\n\\t\\tint8 life;\\n\\t\\tint8 delta;\\n\\t\\tuint8 enemymask;\\n\\t}\\n\\n\\tstruct Commitment {\\n\\t\\tbytes24 hash;\\n\\t\\tuint32 period;\\n\\t}\\n\\n\\tstruct Move {\\n\\t\\tuint64 position;\\n\\t\\tColor color; // Color.None to indicate exit\\n\\t}\\n\\n\\tstruct Permit {\\n\\t\\tuint256 value;\\n\\t\\tuint256 deadline;\\n\\t\\tuint8 v;\\n\\t\\tbytes32 r;\\n\\t\\tbytes32 s;\\n\\t}\\n\\n\\tmapping(uint256 => Cell) public cells;\\n\\tmapping(address => uint256) public tokensInReserve;\\n\\tmapping(address => Commitment) public commitments;\\n\\tuint256 public tokensInPlay;\\n\\n\\tfunction addToReserve(uint256 tokensAmountToAdd, Permit calldata permit) external {\\n\\t\\tif (tokensAmountToAdd > 0) {\\n\\t\\t\\tif (permit.value > 0) {\\n\\t\\t\\t\\tTOKENS.permit(msg.sender, address(this), permit.value, permit.deadline, permit.v, permit.r, permit.s);\\n\\t\\t\\t}\\n\\t\\t\\ttokensInReserve[msg.sender] += tokensAmountToAdd;\\n\\n\\t\\t\\tTOKENS.transferFrom(msg.sender, address(this), tokensAmountToAdd);\\n\\t\\t\\temit ReserveDeposited(msg.sender, tokensAmountToAdd); // TODO emit the new amount?\\n\\t\\t}\\n\\t}\\n\\n\\tfunction makeCommitment(bytes24 commitmentHash) external {\\n\\t\\t_makeCommitment(msg.sender, commitmentHash, tokensInReserve[msg.sender]);\\n\\t}\\n\\n\\tfunction makeCommitmentWithExtraReserve(\\n\\t\\tbytes24 commitmentHash,\\n\\t\\tuint256 tokensAmountToAdd,\\n\\t\\tPermit calldata permit\\n\\t) external {\\n\\t\\tuint256 inReserve = tokensInReserve[msg.sender];\\n\\t\\tinReserve += tokensAmountToAdd;\\n\\t\\ttokensInReserve[msg.sender] = inReserve;\\n\\n\\t\\t_makeCommitment(msg.sender, commitmentHash, inReserve);\\n\\n\\t\\tif (permit.value > 0) {\\n\\t\\t\\tTOKENS.permit(msg.sender, address(this), permit.value, permit.deadline, permit.v, permit.r, permit.s);\\n\\t\\t}\\n\\n\\t\\tif (tokensAmountToAdd > 0) {\\n\\t\\t\\tTOKENS.transferFrom(msg.sender, address(this), tokensAmountToAdd);\\n\\t\\t\\temit ReserveDeposited(msg.sender, tokensAmountToAdd); // TODO add total amount in reserve too\\n\\t\\t}\\n\\t}\\n\\n\\tfunction withdrawFromReserve(uint256 amount) external {\\n\\t\\tCommitment storage commitment = commitments[msg.sender];\\n\\n\\t\\trequire(commitment.period == 0, \\\"COMMITMENT_NOT_RESOLVED\\\");\\n\\t\\tuint256 inReserve = tokensInReserve[msg.sender];\\n\\t\\tif (amount == type(uint256).max) {\\n\\t\\t\\tamount = inReserve;\\n\\t\\t\\tinReserve = 0;\\n\\t\\t} else {\\n\\t\\t\\trequire(amount <= inReserve, \\\"NOT_ENOUGH\\\");\\n\\t\\t\\tinReserve -= amount;\\n\\t\\t}\\n\\t\\ttokensInReserve[msg.sender] = inReserve;\\n\\t\\tTOKENS.transfer(msg.sender, amount);\\n\\t\\temit ReserveWithdrawn(msg.sender, amount); // TODO emit new amount?\\n\\t}\\n\\n\\tfunction resolve(\\n\\t\\taddress player,\\n\\t\\tbytes32 secret,\\n\\t\\tMove[] calldata moves,\\n\\t\\tbytes24 furtherMoves\\n\\t) external {\\n\\t\\tCommitment storage commitment = commitments[player];\\n\\t\\t(uint32 period, bool commiting) = _period();\\n\\n\\t\\trequire(!commiting, \\\"IN_COMMITING_PHASE\\\");\\n\\t\\trequire(commitment.period != 0, \\\"NOTHING_TO_RESOLVE\\\");\\n\\t\\trequire(commitment.period == period, \\\"INVALID_PERIOD\\\");\\n\\n\\t\\tuint256 numMoves = moves.length;\\n\\n\\t\\t_checkHash(commitment.hash, secret, moves, furtherMoves);\\n\\n\\t\\tuint256 tokensPlaced = 0;\\n\\t\\tuint256 tokensBurnt = 0;\\n\\t\\tfor (uint256 i = 0; i < numMoves; i++) {\\n\\t\\t\\t(uint256 placed, ) = _computeMove(player, period, moves[i]);\\n\\t\\t\\ttokensPlaced += placed;\\n\\t\\t\\t// tokensBurnt += burnt;\\n\\t\\t}\\n\\n\\t\\tuint256 amountInReserve = tokensInReserve[player];\\n\\n\\t\\trequire(amountInReserve >= tokensPlaced + tokensBurnt);\\n\\t\\tamountInReserve -= tokensPlaced + tokensBurnt;\\n\\t\\ttokensInReserve[player] = amountInReserve;\\n\\n\\t\\ttokensInPlay += tokensPlaced;\\n\\t\\t// if (tokensBurnt != 0) {\\n\\t\\t// \\tTOKENS.burn(tokensBurnt);\\n\\t\\t// }\\n\\n\\t\\tbytes24 hashResolved = commitment.hash;\\n\\t\\tif (furtherMoves != bytes24(0)) {\\n\\t\\t\\tcommitment.hash = furtherMoves;\\n\\t\\t} else {\\n\\t\\t\\tcommitment.period = 0; // used\\n\\t\\t}\\n\\n\\t\\temit CommitmentResolved(player, period, hashResolved, moves, furtherMoves);\\n\\t}\\n\\n\\tfunction acknowledgeMissedResolution(\\n\\t\\taddress player,\\n\\t\\tbytes32 secret,\\n\\t\\tMove[] calldata moves,\\n\\t\\tbytes24 furtherMoves\\n\\t) external {\\n\\t\\tCommitment storage commitment = commitments[player];\\n\\t\\t(uint32 period, ) = _period();\\n\\t\\trequire(commitment.period > 0 && commitment.period != period, \\\"NO_NEED\\\");\\n\\n\\t\\t_checkHash(commitment.hash, secret, moves, furtherMoves);\\n\\n\\t\\tcommitment.period = 0;\\n\\n\\t\\tuint256 amount = moves.length;\\n\\t\\ttokensInReserve[msg.sender] -= amount;\\n\\t\\tTOKENS.burn(amount);\\n\\n\\t\\temit CommitmentVoid(player, period, amount);\\n\\t}\\n\\n\\t/// @notice should only be called as last resort\\n\\t/// this will burn all tokens in reserve (// TODO block adding more to reserve until RESOLUTION is complete)\\n\\t/// If player has access to the secret, better call acknowledgeMissedResolution\\n\\tfunction acknowledgeMissedResolutionByBurningAllReserve() external {\\n\\t\\tCommitment storage commitment = commitments[msg.sender];\\n\\t\\t(uint32 period, ) = _period();\\n\\n\\t\\trequire(commitment.period > 0 && commitment.period != period, \\\"NO_NEED\\\");\\n\\t\\tcommitment.period = 0;\\n\\t\\tuint256 amount = tokensInReserve[msg.sender];\\n\\t\\ttokensInReserve[msg.sender] = 0;\\n\\t\\tTOKENS.burn(amount);\\n\\n\\t\\temit CommitmentVoid(msg.sender, period, amount);\\n\\t}\\n\\n\\tfunction poke(uint64 position) external {\\n\\t\\t(uint32 period, ) = _period();\\n\\t\\tCell storage cell = cells[position];\\n\\t\\tuint32 lastUpdate = cell.lastPeriodUpdate;\\n\\t\\tColor color = cell.color;\\n\\t\\tint8 life = cell.life;\\n\\t\\tif (lastUpdate >= 1 && color != Color.None && life > 0) {\\n\\t\\t\\tint8 delta = cell.delta;\\n\\t\\t\\tint8 effectiveDelta = delta != 0 ? delta : -1;\\n\\n\\t\\t\\tuint256 periodDelta = period - lastUpdate;\\n\\t\\t\\t// assert  periodDelta >= 0\\n\\n\\t\\t\\tif (periodDelta != 0) {\\n\\t\\t\\t\\t// update life if any changes\\n\\t\\t\\t\\tif (periodDelta > uint32(int32(MAX_LIFE))) {\\n\\t\\t\\t\\t\\tperiodDelta = uint32(int32(MAX_LIFE));\\n\\t\\t\\t\\t}\\n\\t\\t\\t\\tlife += (int8(uint8(periodDelta)) * effectiveDelta);\\n\\t\\t\\t\\tif (life < 0) {\\n\\t\\t\\t\\t\\tlife = 0;\\n\\t\\t\\t\\t}\\n\\t\\t\\t\\tif (life > MAX_LIFE) {\\n\\t\\t\\t\\t\\tlife = MAX_LIFE;\\n\\t\\t\\t\\t}\\n\\t\\t\\t}\\n\\n\\t\\t\\tcell.lastPeriodUpdate = period;\\n\\t\\t\\tcell.life = life;\\n\\t\\t\\tif (life == 0) {\\n\\t\\t\\t\\t_distributeDeath(position, cell.enemymask);\\n\\t\\t\\t}\\n\\t\\t}\\n\\t}\\n\\n\\tfunction collect(uint64 position) external {}\\n\\n\\tfunction pokeAndCollect(uint64[] calldata positions) external {}\\n\\n\\tfunction _makeCommitment(\\n\\t\\taddress player,\\n\\t\\tbytes24 commitmentHash,\\n\\t\\tuint256 inReserve\\n\\t) internal {\\n\\t\\tCommitment storage commitment = commitments[player];\\n\\n\\t\\t(uint32 period, bool commiting) = _period();\\n\\n\\t\\trequire(commiting, \\\"IN_RESOLUTION_PHASE\\\");\\n\\t\\trequire(commitment.period == 0 || commitment.period == period, \\\"PREVIOUS_COMMITMENT_TO_RESOLVE\\\");\\n\\n\\t\\tcommitment.hash = commitmentHash;\\n\\t\\tcommitment.period = period;\\n\\n\\t\\trequire(inReserve >= DECIMALS, \\\"NEED_AT_LEAST_ONE_TOKEN_IN_RESERVE\\\");\\n\\n\\t\\temit CommitmentMade(player, period, commitmentHash);\\n\\t}\\n\\n\\tfunction _period() internal view virtual returns (uint32 period, bool commiting) {\\n\\t\\tuint256 periodDuration = COMMIT_PERIOD + RESOLUTION_PERIOD;\\n\\t\\trequire(block.timestamp >= START_TIME, \\\"GAME_NOT_STARTED\\\");\\n\\t\\tuint256 timePassed = block.timestamp - START_TIME;\\n\\t\\tperiod = uint32(timePassed / periodDuration + 1); // period start at 1\\n\\t\\tcommiting = timePassed - ((period - 1) * periodDuration) < COMMIT_PERIOD;\\n\\t}\\n\\n\\tfunction _getNeihbourEnemyPlayers(uint64 position, uint8 enemyMask)\\n\\t\\tinternal\\n\\t\\tview\\n\\t\\treturns (address[4] memory enemies, uint8 numEnemies)\\n\\t{\\n\\t\\tunchecked {\\n\\t\\t\\tint256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));\\n\\t\\t\\tint256 y = int256(int32(int256(uint256(position) >> 32)));\\n\\n\\t\\t\\tif (enemyMask & 1 == 1) {\\n\\t\\t\\t\\tenemies[numEnemies] = cells[((uint256(y - 1) << 32) + uint256(x))].owner;\\n\\t\\t\\t\\tnumEnemies++;\\n\\t\\t\\t}\\n\\t\\t\\tif (enemyMask & (1 << 1) == (1 << 1)) {\\n\\t\\t\\t\\tenemies[numEnemies] = cells[((uint256(y) << 32) + uint256(x - 1))].owner;\\n\\t\\t\\t\\tnumEnemies++;\\n\\t\\t\\t}\\n\\t\\t\\tif (enemyMask & (1 << 2) == (1 << 2)) {\\n\\t\\t\\t\\tenemies[numEnemies] = cells[((uint256(y + 1) << 32) + uint256(x))].owner;\\n\\t\\t\\t\\tnumEnemies++;\\n\\t\\t\\t}\\n\\t\\t\\tif (enemyMask & (1 << 3) == (1 << 3)) {\\n\\t\\t\\t\\tenemies[numEnemies] = cells[((uint256(y) << 32) + uint256(x + 1))].owner;\\n\\t\\t\\t\\tnumEnemies++;\\n\\t\\t\\t}\\n\\t\\t}\\n\\t}\\n\\n\\tfunction _checkHash(\\n\\t\\tbytes24 commitmentHash,\\n\\t\\tbytes32 secret,\\n\\t\\tMove[] memory moves,\\n\\t\\tbytes24 furtherMoves\\n\\t) internal pure {\\n\\t\\tif (furtherMoves != bytes24(0)) {\\n\\t\\t\\tbytes24 computedHash = bytes24(keccak256(abi.encode(secret, moves, furtherMoves)));\\n\\t\\t\\trequire(commitmentHash == computedHash, \\\"HASH_NOT_MATCHING\\\");\\n\\t\\t} else {\\n\\t\\t\\tbytes24 computedHash = bytes24(keccak256(abi.encode(secret, moves)));\\n\\t\\t\\trequire(commitmentHash == computedHash, \\\"HASH_NOT_MATCHING\\\");\\n\\t\\t}\\n\\t}\\n\\n\\tfunction _getUpdatedCell(uint64 position, uint32 period) internal view returns (Cell memory updatedCell) {\\n\\t\\t// load from state\\n\\t\\tupdatedCell = cells[position];\\n\\t\\tuint32 lastUpdate = updatedCell.lastPeriodUpdate;\\n\\t\\tif (lastUpdate >= 1) {\\n\\t\\t\\tint8 delta = updatedCell.delta;\\n\\t\\t\\tint8 life = updatedCell.life;\\n\\t\\t\\tint8 effectiveDelta = delta != 0 ? delta : -1;\\n\\n\\t\\t\\tuint256 periodDelta = period - lastUpdate;\\n\\t\\t\\t// assert  periodDelta >= 0\\n\\n\\t\\t\\tif (periodDelta != 0) {\\n\\t\\t\\t\\t// update life if any changes\\n\\t\\t\\t\\tif (periodDelta > uint32(int32(MAX_LIFE))) {\\n\\t\\t\\t\\t\\tperiodDelta = uint32(int32(MAX_LIFE));\\n\\t\\t\\t\\t}\\n\\t\\t\\t\\tlife += (int8(uint8(periodDelta)) * effectiveDelta);\\n\\t\\t\\t\\tif (life < 0) {\\n\\t\\t\\t\\t\\tlife = 0;\\n\\t\\t\\t\\t}\\n\\t\\t\\t\\tif (life > MAX_LIFE) {\\n\\t\\t\\t\\t\\tlife = MAX_LIFE;\\n\\t\\t\\t\\t}\\n\\t\\t\\t\\tupdatedCell.life = life;\\n\\t\\t\\t\\tupdatedCell.lastPeriodUpdate = period;\\n\\t\\t\\t}\\n\\t\\t}\\n\\t}\\n\\n\\tfunction _updateCell(\\n\\t\\tuint64 position,\\n\\t\\tuint32 period,\\n\\t\\tuint8 neighbourIndex,\\n\\t\\tColor oldColor,\\n\\t\\tColor newColor\\n\\t) internal returns (int8 enemyOrFriend) {\\n\\t\\tCell storage cell = cells[position];\\n\\n\\t\\t// no need to call if oldColor == newColor, so we assume they are different\\n\\t\\tassert(oldColor != newColor);\\n\\t\\tuint32 lastUpdate = cell.lastPeriodUpdate;\\n\\t\\tColor color = cell.color;\\n\\n\\t\\tif (lastUpdate >= 1 && color != Color.None) {\\n\\t\\t\\tint8 delta = cell.delta;\\n\\t\\t\\tint8 life = cell.life;\\n\\t\\t\\tint8 effectiveDelta = delta != 0 ? delta : -1;\\n\\t\\t\\tuint8 enemymask = cell.enemymask;\\n\\n\\t\\t\\tuint256 periodDelta = period - lastUpdate;\\n\\t\\t\\t// assert  periodDelta >= 0\\n\\n\\t\\t\\tif (periodDelta != 0) {\\n\\t\\t\\t\\t// update life if any changes\\n\\t\\t\\t\\tif (periodDelta > uint32(int32(MAX_LIFE))) {\\n\\t\\t\\t\\t\\tperiodDelta = uint32(int32(MAX_LIFE));\\n\\t\\t\\t\\t}\\n\\t\\t\\t\\tlife += (int8(uint8(periodDelta)) * effectiveDelta);\\n\\t\\t\\t\\tif (life < 0) {\\n\\t\\t\\t\\t\\tlife = 0;\\n\\t\\t\\t\\t}\\n\\t\\t\\t\\tif (life > MAX_LIFE) {\\n\\t\\t\\t\\t\\tlife = MAX_LIFE;\\n\\t\\t\\t\\t}\\n\\t\\t\\t}\\n\\n\\t\\t\\tif (newColor == Color.None) {\\n\\t\\t\\t\\t// COLLISION, previous update added a color that should not be there\\n\\t\\t\\t\\tif (color == oldColor) {\\n\\t\\t\\t\\t\\tdelta -= 1;\\n\\t\\t\\t\\t} else {\\n\\t\\t\\t\\t\\tdelta += 1;\\n\\t\\t\\t\\t\\t// remove enemy as it was added by COLLISION\\n\\t\\t\\t\\t\\tenemymask = enemymask & uint8((1 << neighbourIndex) ^ 0xFF);\\n\\t\\t\\t\\t}\\n\\t\\t\\t} else if (color == oldColor) {\\n\\t\\t\\t\\t// then newColor is different (see assert above)\\n\\t\\t\\t\\tenemymask = enemymask | uint8(1 << neighbourIndex);\\n\\t\\t\\t\\tdelta -= 2;\\n\\t\\t\\t} else if (color == newColor) {\\n\\t\\t\\t\\t// then old color was different\\n\\t\\t\\t\\tdelta += (oldColor == Color.None ? int8(1) : int8(2));\\n\\t\\t\\t\\tenemymask = enemymask & uint8((1 << neighbourIndex) ^ 0xFF);\\n\\t\\t\\t} else if (oldColor == Color.None) {\\n\\t\\t\\t\\t// if there were no oldCOlor and the newColor is not your (already checked in previous if clause)\\n\\t\\t\\t\\tdelta -= 1;\\n\\t\\t\\t\\tenemymask = enemymask | uint8(1 << neighbourIndex);\\n\\t\\t\\t}\\n\\t\\t\\tcell.delta = delta;\\n\\t\\t\\tcell.lastPeriodUpdate = period;\\n\\t\\t\\tcell.life = life;\\n\\n\\t\\t\\tif (life == 0) {\\n\\t\\t\\t\\t_distributeDeath(position, cell.enemymask);\\n\\t\\t\\t}\\n\\n\\t\\t\\tenemyOrFriend = color == newColor ? int8(1) : int8(-1);\\n\\t\\t}\\n\\t}\\n\\n\\tfunction _distributeDeath(uint64 position, uint8 enemymask) internal {\\n\\t\\t(address[4] memory enemies, uint8 numEnemies) = _getNeihbourEnemyPlayers(position, enemymask);\\n\\t\\tuint256 total = DECIMALS;\\n\\t\\tuint256 amount = total / numEnemies;\\n\\t\\tfor (uint8 i = 0; i < numEnemies; i++) {\\n\\t\\t\\tif (i == numEnemies - 1) {\\n\\t\\t\\t\\tamount = total;\\n\\t\\t\\t}\\n\\t\\t\\tTOKENS.transfer(enemies[i], amount);\\n\\t\\t\\ttotal -= amount;\\n\\t\\t}\\n\\t}\\n\\n\\tfunction _updateNeighbours(\\n\\t\\tuint64 position,\\n\\t\\tuint32 period,\\n\\t\\tColor oldColor,\\n\\t\\tColor newColor\\n\\t) internal returns (int8 newDelta) {\\n\\t\\tunchecked {\\n\\t\\t\\tint256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));\\n\\t\\t\\tint256 y = int256(int32(int256(uint256(position) >> 32)));\\n\\t\\t\\tuint64 upPosition = uint64((uint256(y - 1) << 32) + uint256(x));\\n\\t\\t\\tuint64 leftPosition = uint64((uint256(y) << 32) + uint256(x - 1));\\n\\t\\t\\tuint64 downPosition = uint64((uint256(y + 1) << 32) + uint256(x));\\n\\t\\t\\tuint64 rightPosition = uint64((uint256(y) << 32) + uint256(x + 1));\\n\\n\\t\\t\\tnewDelta =\\n\\t\\t\\t\\t_updateCell(upPosition, period, 0, oldColor, newColor) +\\n\\t\\t\\t\\t_updateCell(leftPosition, period, 1, oldColor, newColor) +\\n\\t\\t\\t\\t_updateCell(downPosition, period, 2, oldColor, newColor) +\\n\\t\\t\\t\\t_updateCell(rightPosition, period, 3, oldColor, newColor);\\t\\n\\t\\t}\\n\\t}\\n\\n\\tfunction _computeMove(\\n\\t\\taddress player,\\n\\t\\tuint32 period,\\n\\t\\tMove memory move\\n\\t) internal returns (uint256 tokensPlaced, uint256 invalidMove) {\\n\\t\\tCell memory currentState = _getUpdatedCell(move.position, period);\\n\\n\\t\\tif (currentState.periodWhenTokenIsAdded == period) {\\n\\t\\t\\t// COLLISION\\n\\t\\t\\t// you get your token back\\n\\t\\t\\t// the other player too\\n\\t\\t\\tif (currentState.life != 0) {\\n\\t\\t\\t\\t_updateNeighbours(move.position, period, currentState.color, Color.None);\\n\\n\\t\\t\\t\\t// TODOI give token back to previous owner (currentState.owner)\\n\\t\\t\\t\\tcurrentState.life = 0;\\n\\t\\t\\t\\tcurrentState.color = Color.None;\\n\\t\\t\\t\\tcurrentState.owner = address(0);\\n\\t\\t\\t\\tcurrentState.lastPeriodUpdate = 0;\\n\\t\\t\\t\\tcurrentState.delta = 0;\\n\\t\\t\\t\\tcurrentState.enemymask = 0;\\n\\t\\t\\t\\tcells[move.position] = currentState;\\n\\t\\t\\t}\\n\\t\\t} else if (currentState.life == 0) {\\n\\t\\t\\tcurrentState.life = 1;\\n\\t\\t\\tcurrentState.owner = player;\\n\\t\\t\\tcurrentState.periodWhenTokenIsAdded = period;\\n\\t\\t\\tcurrentState.lastPeriodUpdate = period;\\n\\n\\t\\t\\tif (currentState.color != move.color) {\\n\\t\\t\\t\\t// only update neighbour if color changed\\n\\t\\t\\t\\t_updateNeighbours(move.position, period, currentState.color, move.color);\\n\\t\\t\\t\\tcurrentState.color = move.color;\\n\\t\\t\\t\\t// TODO fetch neighbours to compute delta\\n\\t\\t\\t\\tcurrentState.delta = 0;\\n\\t\\t\\t\\tcurrentState.enemymask = 0;\\n\\t\\t\\t} else {\\n\\t\\t\\t\\t// TODO fetch neighbours to compute delta\\n\\t\\t\\t\\tcurrentState.delta = 0;\\n\\t\\t\\t\\tcurrentState.enemymask = 0;\\n\\t\\t\\t}\\n\\n\\t\\t\\ttokensPlaced = 1;\\n\\t\\t\\tcells[move.position] = currentState;\\n\\t\\t} else {\\n\\t\\t\\t// invalid move\\n\\t\\t\\tinvalidMove = 1;\\n\\t\\t}\\n\\t}\\n}\\n\",\"keccak256\":\"0xdc229bd4f51d579fc9f337ec72ad8b9f306ba810dec999ff7f96360025ed2173\",\"license\":\"AGPL-1.0\"},\"src/Tokens.sol\":{\"content\":\"// SPDX-License-Identifier: AGPL-1.0\\npragma solidity 0.8.13;\\n\\nimport \\\"solidity-kit/src/ERC20/implementations/ERC20Base.sol\\\";\\nimport \\\"solidity-kit/src/ERC20/ERC2612/implementations/UsingPermitWithDynamicChainId.sol\\\";\\n\\ncontract Tokens is ERC20Base, UsingPermitWithDynamicChainId {\\n\\tconstructor(address to, uint256 amount) UsingPermitWithDynamicChainId() {\\n\\t\\t_mint(to, amount);\\n\\t}\\n\\n\\tstring public constant symbol = \\\"TOKENS\\\";\\n\\n\\tfunction name() public pure override returns (string memory) {\\n\\t\\treturn \\\"Tokens\\\";\\n\\t}\\n}\\n\",\"keccak256\":\"0x7c223adfc172c9ed2ca52e4053c3e37e3cae253a68832543c3c69cda178859e7\",\"license\":\"AGPL-1.0\"}},\"version\":1}",
+  "bytecode": "0x6101406040523480156200001257600080fd5b5060405162002f8638038062002f868339810160408190526200003591620000bb565b80516001600160a01b03166080908152602082015160a0908152604083015160c052606083015160e0529082015160000b61010052015160ff16610120526200015a565b80516001600160a01b03811681146200009157600080fd5b919050565b8051600081900b81146200009157600080fd5b805160ff811681146200009157600080fd5b600060c08284031215620000ce57600080fd5b60405160c081016001600160401b0381118282101715620000ff57634e487b7160e01b600052604160045260246000fd5b6040526200010d8362000079565b81526020830151602082015260408301516040820152606083015160608201526200013b6080840162000096565b60808201526200014e60a08401620000a9565b60a08201529392505050565b60805160a05160c05160e0516101005161012051612d1f620002676000396000818161025c015281816114f80152611ca80152600081816102dd0152818161089b015281816108d20152818161091f0152818161094d0152818161207f015281816120b60152818161210301528181612131015281816122eb015281816123220152818161236f015261239d0152600081816102a801526113960152600081816103e9015281816113b701526114940152600081816103c2015281816113df0152611454015260008181610215015281816105a60152818161073c01528181610b6201528181610fb1015281816110d40152818161119d015281816112de01526115590152612d1f6000f3fe608060405234801561001057600080fd5b506004361061016c5760003560e01c8063a7c0c99c116100cd578063cfbc5fc211610081578063ddaa26ad11610066578063ddaa26ad146103bd578063e8881fe5146103e4578063e8fcf7231461040b57600080fd5b8063cfbc5fc21461038a578063d6710112146103aa57600080fd5b8063afa9a86e116100b2578063afa9a86e1461035b578063b301577314610364578063c0e753871461037757600080fd5b8063a7c0c99c14610338578063aa455bb61461034957600080fd5b80634dd3ab23116101245780636fa9d0d0116101095780636fa9d0d0146102d857806381ca54b914610312578063974f3d231461032557600080fd5b80634dd3ab231461029057806350f90594146102a357600080fd5b80631d831d5c116101555780631d831d5c1461021057806324a272401461024f5780632e0f26251461025757600080fd5b80630a8bcdb9146101715780631941fd1414610186575b600080fd5b61018461017f3660046125df565b610465565b005b6101f46101943660046125df565b6000602081905290815260408120546001600160a01b0381169163ffffffff600160a01b8304811692600160c01b81049091169160ff600160e01b8304811692600160e81b8104830b92600160f01b8204900b91600160f81b9091041687565b6040516102079796959493929190612630565b60405180910390f35b6102377f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b039091168152602001610207565b61018461064e565b61027e7f000000000000000000000000000000000000000000000000000000000000000081565b60405160ff9091168152602001610207565b61018461029e3660046126a5565b6107da565b6102ca7f000000000000000000000000000000000000000000000000000000000000000081565b604051908152602001610207565b6102ff7f000000000000000000000000000000000000000000000000000000000000000081565b60405160009190910b8152602001610207565b6101846103203660046126f7565b6109fe565b6101846103333660046126f7565b610c1a565b6101846103463660046126a5565b50565b610184610357366004612798565b5050565b6102ca60035481565b61018461037236600461280d565b610f4a565b610184610385366004612840565b610f66565b6102ca61039836600461287d565b60016020526000908152604090205481565b6101846103b8366004612898565b611186565b6102ca7f000000000000000000000000000000000000000000000000000000000000000081565b6102ca7f000000000000000000000000000000000000000000000000000000000000000081565b61043f61041936600461287d565b60026020526000908152604090819020549081901b90600160c01b900463ffffffff1682565b6040805167ffffffffffffffff19909316835263ffffffff909116602083015201610207565b3360009081526002602052604090208054600160c01b900463ffffffff16156104d55760405162461bcd60e51b815260206004820152601760248201527f434f4d4d49544d454e545f4e4f545f5245534f4c56454400000000000000000060448201526064015b60405180910390fd5b336000908152600160208190526040909120549083016104f85791506000610555565b808311156105485760405162461bcd60e51b815260206004820152600a60248201527f4e4f545f454e4f5547480000000000000000000000000000000000000000000060448201526064016104cc565b61055283826128db565b90505b3360008181526001602052604090819020839055517fa9059cbb0000000000000000000000000000000000000000000000000000000081526004810191909152602481018490526001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000169063a9059cbb906044016020604051808303816000875af11580156105ef573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061061391906128f2565b5060405183815233907fcf3e2ed8c545de2d902ea60194df2faa514dad26e69937899d836f775b6973a89060200160405180910390a2505050565b3360009081526002602052604081209061066661138d565b508254909150600160c01b900463ffffffff16158015906106985750815463ffffffff828116600160c01b9092041614155b6106e45760405162461bcd60e51b815260206004820152600760248201527f4e4f5f4e4545440000000000000000000000000000000000000000000000000060448201526064016104cc565b815463ffffffff60c01b19168255336000908152600160205260408082208054929055517f42966c68000000000000000000000000000000000000000000000000000000008152600481018290526001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016906342966c6890602401600060405180830381600087803b15801561078057600080fd5b505af1158015610794573d6000803e3d6000fd5b505060405183815263ffffffff851692503391507fe67d8ece0e41ab412ad25a374958835f701f84b395fe3d39b4d67b5af19a97099060200160405180910390a3505050565b60006107e461138d565b5067ffffffffffffffff8316600090815260208190526040812080549293509163ffffffff600160a01b8204169160ff600160e01b83041691600160e81b9004900b6001831080159061084957506000826004811115610846576108466125f8565b14155b8015610858575060008160000b135b156109f6578354600160f01b9004600090810b9081810361087b5760001961087d565b815b9050600061088b8689612914565b63ffffffff169050801561096f577f000000000000000000000000000000000000000000000000000000000000000060000b63ffffffff168111156108f6575063ffffffff7f000000000000000000000000000000000000000000000000000000000000000060000b165b6109008282612939565b61090a90856129ba565b935060008460000b121561091d57600093505b7f000000000000000000000000000000000000000000000000000000000000000060000b8460000b131561096f577f000000000000000000000000000000000000000000000000000000000000000093505b86547fffff00ffffffffff00000000ffffffffffffffffffffffffffffffffffffffff16600160a01b63ffffffff8a16027fffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1617600160e81b60ff861602178755600084810b90036109f25786546109f2908a90600160f81b900460ff166114e2565b5050505b505050505050565b6001600160a01b038516600090815260026020526040812090610a1f61138d565b508254909150600160c01b900463ffffffff1615801590610a515750815463ffffffff828116600160c01b9092041614155b610a9d5760405162461bcd60e51b815260206004820152600760248201527f4e4f5f4e4545440000000000000000000000000000000000000000000000000060448201526064016104cc565b8154604080516020808802820181018352878252610aff9390921b9189919089908990819060009085015b82821015610af457610ae560408302860136819003810190612a0c565b81526020019060010190610ac8565b505050505086611651565b815463ffffffff60c01b1916825533600090815260016020526040812080548692839291610b2e9084906128db565b90915550506040517f42966c68000000000000000000000000000000000000000000000000000000008152600481018290527f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316906342966c6890602401600060405180830381600087803b158015610bae57600080fd5b505af1158015610bc2573d6000803e3d6000fd5b505050508163ffffffff16886001600160a01b03167fe67d8ece0e41ab412ad25a374958835f701f84b395fe3d39b4d67b5af19a970983604051610c0891815260200190565b60405180910390a35050505050505050565b6001600160a01b03851660009081526002602052604081209080610c3c61138d565b915091508015610c8e5760405162461bcd60e51b815260206004820152601260248201527f494e5f434f4d4d4954494e475f5048415345000000000000000000000000000060448201526064016104cc565b8254600160c01b900463ffffffff16600003610cec5760405162461bcd60e51b815260206004820152601260248201527f4e4f5448494e475f544f5f5245534f4c5645000000000000000000000000000060448201526064016104cc565b825463ffffffff838116600160c01b9092041614610d4c5760405162461bcd60e51b815260206004820152600e60248201527f494e56414c49445f504552494f4400000000000000000000000000000000000060448201526064016104cc565b82546040805160208089028201810183528882528893610dad931b918b918b908690819060009085015b82821015610da257610d9360408302860136819003810190612a0c565b81526020019060010190610d76565b505050505088611651565b60008060005b83811015610e12576000610def8d888d8d86818110610dd457610dd4612a75565b905060400201803603810190610dea9190612a0c565b611795565b509050610dfc8185612a8b565b9350508080610e0a90612aa3565b915050610db3565b506001600160a01b038b16600090815260016020526040902054610e368284612a8b565b811015610e4257600080fd5b610e4c8284612a8b565b610e5690826128db565b6001600160a01b038d166000908152600160205260408120829055600380549293508592909190610e88908490612a8b565b9091555050865460401b67ffffffffffffffff19891615610ed45787547fffffffffffffffff0000000000000000000000000000000000000000000000001660408a901c178855610ee3565b875463ffffffff60c01b191688555b8067ffffffffffffffff19168763ffffffff168e6001600160a01b03167fc7a2840725c4757a4265964884483917904f406878fbfb8aaf36f75cd710bb718e8e8e604051610f3393929190612abd565b60405180910390a450505050505050505050505050565b3360008181526001602052604090205461034691908390611b7e565b33600090815260016020526040902054610f808382612a8b565b336000818152600160205260409020829055909150610fa0908583611b7e565b813515611093576001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001663d505accf333085356020870135610fef6060890160408a01612b3a565b6040517fffffffff0000000000000000000000000000000000000000000000000000000060e088901b1681526001600160a01b0395861660048201529490931660248501526044840191909152606483015260ff166084820152606085013560a4820152608085013560c482015260e401600060405180830381600087803b15801561107a57600080fd5b505af115801561108e573d6000803e3d6000fd5b505050505b8215611180576040517f23b872dd000000000000000000000000000000000000000000000000000000008152336004820152306024820152604481018490527f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316906323b872dd906064016020604051808303816000875af1158015611125573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061114991906128f2565b5060405183815233907fcea2aa568570e239e616fd2e9bcf2301307aa1c1c1f355305a87e5cdd46bbc799060200160405180910390a25b50505050565b81156103575780351561127f576001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001663d505accf3330843560208601356111db6060880160408901612b3a565b6040517fffffffff0000000000000000000000000000000000000000000000000000000060e088901b1681526001600160a01b0395861660048201529490931660248501526044840191909152606483015260ff166084820152606084013560a4820152608084013560c482015260e401600060405180830381600087803b15801561126657600080fd5b505af115801561127a573d6000803e3d6000fd5b505050505b336000908152600160205260408120805484929061129e908490612a8b565b90915550506040517f23b872dd000000000000000000000000000000000000000000000000000000008152336004820152306024820152604481018390527f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316906323b872dd906064016020604051808303816000875af115801561132f573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061135391906128f2565b5060405182815233907fcea2aa568570e239e616fd2e9bcf2301307aa1c1c1f355305a87e5cdd46bbc799060200160405180910390a25050565b600080806113db7f00000000000000000000000000000000000000000000000000000000000000007f0000000000000000000000000000000000000000000000000000000000000000612a8b565b90507f000000000000000000000000000000000000000000000000000000000000000042101561144d5760405162461bcd60e51b815260206004820152601060248201527f47414d455f4e4f545f535441525445440000000000000000000000000000000060448201526064016104cc565b60006114797f0000000000000000000000000000000000000000000000000000000000000000426128db565b90506114858282612b5d565b611490906001612a8b565b93507f0000000000000000000000000000000000000000000000000000000000000000826114bf600187612914565b63ffffffff166114cf9190612b7f565b6114d990836128db565b10925050509091565b6000806114ef8484611d96565b909250905060ff7f000000000000000000000000000000000000000000000000000000000000000081169060009061152990841683612b5d565b905060005b8360ff168160ff16101561164857611547600185612b9e565b60ff168160ff1603611557578291505b7f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663a9059cbb868360ff166004811061159b5761159b612a75565b60200201516040517fffffffff0000000000000000000000000000000000000000000000000000000060e084901b1681526001600160a01b039091166004820152602481018590526044016020604051808303816000875af1158015611605573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061162991906128f2565b5061163482846128db565b92508061164081612bc1565b91505061152e565b50505050505050565b67ffffffffffffffff198116156116fc57600083838360405160200161167993929190612c3a565b6040516020818303038152906040528051906020012090508067ffffffffffffffff19168567ffffffffffffffff1916146116f65760405162461bcd60e51b815260206004820152601160248201527f484153485f4e4f545f4d41544348494e4700000000000000000000000000000060448201526064016104cc565b50611180565b60008383604051602001611711929190612c6e565b6040516020818303038152906040528051906020012090508067ffffffffffffffff19168567ffffffffffffffff19161461178e5760405162461bcd60e51b815260206004820152601160248201527f484153485f4e4f545f4d41544348494e4700000000000000000000000000000060448201526064016104cc565b5050505050565b60008060006117a8846000015186611f2f565b90508463ffffffff16816040015163ffffffff16036119a457608081015160000b1561199f576117e384600001518683606001516000612176565b5060006080820181905260608201818152818352602080840183815260a0850184905260c08501849052875167ffffffffffffffff16845290839052604092839020845181549251948601516001600160a01b039091167fffffffffffffffff00000000000000000000000000000000000000000000000090931692909217600160a01b63ffffffff958616021763ffffffff60c01b198116600160c01b9590931694909402918217815591518493909183917fffffff0000000000ffffffffffffffffffffffffffffffffffffffffffffffff167fffffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffff90911617600160e01b8360048111156118f4576118f46125f8565b02179055506080820151815460a084015160c0909401517fff0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff909116600160e81b60ff938416027fff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1617600160f01b94831694909402939093177effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff16600160f81b91909316029190911790555b611b75565b806080015160000b600003611b7057600160808201526001600160a01b038616815263ffffffff85166040820181905260208083019190915284015160048111156119f1576119f16125f8565b81606001516004811115611a0757611a076125f8565b14611a6957611a2484600001518683606001518760200151612176565b50836020015181606001906004811115611a4057611a406125f8565b90816004811115611a5357611a536125f8565b905250600060a0820181905260c0820152611a78565b600060a0820181905260c08201525b835167ffffffffffffffff166000908152602081815260409182902083518154928501519385015163ffffffff908116600160c01b0263ffffffff60c01b1991909516600160a01b027fffffffffffffffff0000000000000000000000000000000000000000000000009094166001600160a01b0390921691909117929092179182168317815560608401516001965084939192909183917fffffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffff9091167fffffff0000000000ffffffffffffffffffffffffffffffffffffffffffffffff90911617600160e01b8360048111156118f4576118f46125f8565b600191505b50935093915050565b6001600160a01b03831660009081526002602052604081209080611ba061138d565b9150915080611bf15760405162461bcd60e51b815260206004820152601360248201527f494e5f5245534f4c5554494f4e5f50484153450000000000000000000000000060448201526064016104cc565b8254600160c01b900463ffffffff161580611c1c5750825463ffffffff838116600160c01b90920416145b611c685760405162461bcd60e51b815260206004820152601e60248201527f50524556494f55535f434f4d4d49544d454e545f544f5f5245534f4c5645000060448201526064016104cc565b825463ffffffff8316600160c01b027fffffffff00000000000000000000000000000000000000000000000000000000909116604087901c1717835560ff7f000000000000000000000000000000000000000000000000000000000000000016841015611d3d5760405162461bcd60e51b815260206004820152602260248201527f4e4545445f41545f4c454153545f4f4e455f544f4b454e5f494e5f524553455260448201527f564500000000000000000000000000000000000000000000000000000000000060648201526084016104cc565b60405167ffffffffffffffff198616815263ffffffff8316906001600160a01b038816907f0d367f9204ba6b84c8339115372cfb085b91970d66784e8370f5de6ca8fcf3599060200160405180910390a3505050505050565b611d9e6125c1565b600063ffffffff808516600390810b91602087901c16900b60018086169003611e13576000198101602090811b830160009081529081905260409020546001600160a01b03168460ff851660048110611df957611df9612a75565b6001600160a01b0390921660209290920201526001909201915b60028086169003611e6f57602081811b83016000190160009081529081905260409020546001600160a01b03168460ff851660048110611e5557611e55612a75565b6001600160a01b0390921660209290920201526001909201915b60048086169003611ecb5760018101602090811b830160009081529081905260409020546001600160a01b03168460ff851660048110611eb157611eb1612a75565b6001600160a01b0390921660209290920201526001909201915b60088086169003611f2657602081811b830160010160009081529081905260409020546001600160a01b03168460ff851660048110611f0c57611f0c612a75565b6001600160a01b0390921660209290920201526001909201915b50509250929050565b6040805160e081018252600080825260208201819052918101829052606081018290526080810182905260a0810182905260c081019190915267ffffffffffffffff831660009081526020818152604091829020825160e08101845281546001600160a01b038116825263ffffffff600160a01b8204811694830194909452600160c01b81049093169381019390935290606083019060ff600160e01b909104166004811115611fe157611fe16125f8565b6004811115611ff257611ff26125f8565b81529054600160e81b8104600090810b602080850191909152600160f01b830490910b6040840152600160f81b90910460ff16606090920191909152810151909150600163ffffffff82161061216f5760a08201516080830151600082810b810361205f57600019612061565b825b9050600061206f8588612914565b63ffffffff169050801561216a577f000000000000000000000000000000000000000000000000000000000000000060000b63ffffffff168111156120da575063ffffffff7f000000000000000000000000000000000000000000000000000000000000000060000b165b6120e48282612939565b6120ee90846129ba565b925060008360000b121561210157600092505b7f000000000000000000000000000000000000000000000000000000000000000060000b8360000b1315612153577f000000000000000000000000000000000000000000000000000000000000000092505b600083900b608087015263ffffffff871660208701525b505050505b5092915050565b600063ffffffff808616600390810b91602088811c909116820b91600019808401831b85019267ffffffff000000008b1660070b860191820192600180870190921b870192909101906121ce9082908c908c8c61220a565b6121dc838c60028d8d61220a565b6121ea858d60018e8e61220a565b6121f8878e60008f8f61220a565b0101019b9a5050505050505050505050565b67ffffffffffffffff85166000908152602081905260408120826004811115612235576122356125f8565b846004811115612247576122476125f8565b0361225457612254612c8f565b8054600160a01b810463ffffffff1690600160e01b900460ff16600182108015906122915750600081600481111561228e5761228e6125f8565b14155b156125b5578254600160f01b8104600090810b91600160e81b9004810b908281036122be576000196122c0565b825b8654909150600160f81b900460ff1660006122db878e612914565b63ffffffff16905080156123bf577f000000000000000000000000000000000000000000000000000000000000000060000b63ffffffff16811115612346575063ffffffff7f000000000000000000000000000000000000000000000000000000000000000060000b165b6123508382612939565b61235a90856129ba565b935060008460000b121561236d57600093505b7f000000000000000000000000000000000000000000000000000000000000000060000b8460000b13156123bf577f000000000000000000000000000000000000000000000000000000000000000093505b60008a60048111156123d3576123d36125f8565b03612434578a60048111156123ea576123ea6125f8565b8660048111156123fc576123fc6125f8565b036124135761240c600186612ca5565b94506124f4565b61241e6001866129ba565b94508b60ff166001901b60ff18821691506124f4565b8a6004811115612446576124466125f8565b866004811115612458576124586125f8565b0361247457600160ff8d161b919091179061240c600286612ca5565b896004811115612486576124866125f8565b866004811115612498576124986125f8565b036124c15760008b60048111156124b1576124b16125f8565b146124135761241e6002866129ba565b60008b60048111156124d5576124d56125f8565b036124f4576124e5600186612ca5565b94508b60ff166001901b821791505b8488600001601e6101000a81548160ff021916908360000b60ff1602179055508c8860000160146101000a81548163ffffffff021916908363ffffffff1602179055508388600001601d6101000a81548160ff021916908360000b60ff1602179055508360000b600003612579578754612579908f90600160f81b900460ff166114e2565b89600481111561258b5761258b6125f8565b86600481111561259d5761259d6125f8565b146125aa576000196125ad565b60015b985050505050505b50505095945050505050565b60405180608001604052806004906020820280368337509192915050565b6000602082840312156125f157600080fd5b5035919050565b634e487b7160e01b600052602160045260246000fd5b6005811061262c57634e487b7160e01b600052602160045260246000fd5b9052565b6001600160a01b038816815263ffffffff87811660208301528616604082015260e08101612661606083018761260e565b8460000b60808301528360000b60a083015260ff831660c083015298975050505050505050565b803567ffffffffffffffff811681146126a057600080fd5b919050565b6000602082840312156126b757600080fd5b6126c082612688565b9392505050565b80356001600160a01b03811681146126a057600080fd5b803567ffffffffffffffff19811681146126a057600080fd5b60008060008060006080868803121561270f57600080fd5b612718866126c7565b945060208601359350604086013567ffffffffffffffff8082111561273c57600080fd5b818801915088601f83011261275057600080fd5b81358181111561275f57600080fd5b8960208260061b850101111561277457600080fd5b60208301955080945050505061278c606087016126de565b90509295509295909350565b600080602083850312156127ab57600080fd5b823567ffffffffffffffff808211156127c357600080fd5b818501915085601f8301126127d757600080fd5b8135818111156127e657600080fd5b8660208260051b85010111156127fb57600080fd5b60209290920196919550909350505050565b60006020828403121561281f57600080fd5b6126c0826126de565b600060a0828403121561283a57600080fd5b50919050565b600080600060e0848603121561285557600080fd5b61285e846126de565b9250602084013591506128748560408601612828565b90509250925092565b60006020828403121561288f57600080fd5b6126c0826126c7565b60008060c083850312156128ab57600080fd5b823591506128bc8460208501612828565b90509250929050565b634e487b7160e01b600052601160045260246000fd5b6000828210156128ed576128ed6128c5565b500390565b60006020828403121561290457600080fd5b815180151581146126c057600080fd5b600063ffffffff83811690831681811015612931576129316128c5565b039392505050565b60008082810b84820b82811383831382607f048411828216161561295f5761295f6128c5565b607f198584128582058512818416161561297b5761297b6128c5565b9585129583871685830587121615612995576129956128c5565b84607f05861281881616156129ac576129ac6128c5565b505050910295945050505050565b60008160000b8360000b6000821282607f038213811516156129de576129de6128c5565b82607f190382128116156129f4576129f46128c5565b50019392505050565b8035600581106126a057600080fd5b600060408284031215612a1e57600080fd5b6040516040810181811067ffffffffffffffff82111715612a4f57634e487b7160e01b600052604160045260246000fd5b604052612a5b83612688565b8152612a69602084016129fd565b60208201529392505050565b634e487b7160e01b600052603260045260246000fd5b60008219821115612a9e57612a9e6128c5565b500190565b60006000198203612ab657612ab66128c5565b5060010190565b60408082528181018490526000908560608401835b87811015612b1a5767ffffffffffffffff612aec84612688565b1682526020612afc8185016129fd565b612b088285018261260e565b50509183019190830190600101612ad2565b5080935050505067ffffffffffffffff1983166020830152949350505050565b600060208284031215612b4c57600080fd5b813560ff811681146126c057600080fd5b600082612b7a57634e487b7160e01b600052601260045260246000fd5b500490565b6000816000190483118215151615612b9957612b996128c5565b500290565b600060ff821660ff841680821015612bb857612bb86128c5565b90039392505050565b600060ff821660ff8103612bd757612bd76128c5565b60010192915050565b600081518084526020808501945080840160005b83811015612c2f578151805167ffffffffffffffff168852830151612c1b8489018261260e565b506040969096019590820190600101612bf4565b509495945050505050565b838152606060208201526000612c536060830185612be0565b905067ffffffffffffffff1983166040830152949350505050565b828152604060208201526000612c876040830184612be0565b949350505050565b634e487b7160e01b600052600160045260246000fd5b60008160000b8360000b6000811281607f1901831281151615612cca57612cca6128c5565b81607f018313811615612cdf57612cdf6128c5565b509003939250505056fea26469706673582212203e1a9007398b48665818db0a8d3e5ae108f26cd1ce34bb94d172be2611952a6364736f6c634300080d0033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061016c5760003560e01c8063a7c0c99c116100cd578063cfbc5fc211610081578063ddaa26ad11610066578063ddaa26ad146103bd578063e8881fe5146103e4578063e8fcf7231461040b57600080fd5b8063cfbc5fc21461038a578063d6710112146103aa57600080fd5b8063afa9a86e116100b2578063afa9a86e1461035b578063b301577314610364578063c0e753871461037757600080fd5b8063a7c0c99c14610338578063aa455bb61461034957600080fd5b80634dd3ab23116101245780636fa9d0d0116101095780636fa9d0d0146102d857806381ca54b914610312578063974f3d231461032557600080fd5b80634dd3ab231461029057806350f90594146102a357600080fd5b80631d831d5c116101555780631d831d5c1461021057806324a272401461024f5780632e0f26251461025757600080fd5b80630a8bcdb9146101715780631941fd1414610186575b600080fd5b61018461017f3660046125df565b610465565b005b6101f46101943660046125df565b6000602081905290815260408120546001600160a01b0381169163ffffffff600160a01b8304811692600160c01b81049091169160ff600160e01b8304811692600160e81b8104830b92600160f01b8204900b91600160f81b9091041687565b6040516102079796959493929190612630565b60405180910390f35b6102377f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b039091168152602001610207565b61018461064e565b61027e7f000000000000000000000000000000000000000000000000000000000000000081565b60405160ff9091168152602001610207565b61018461029e3660046126a5565b6107da565b6102ca7f000000000000000000000000000000000000000000000000000000000000000081565b604051908152602001610207565b6102ff7f000000000000000000000000000000000000000000000000000000000000000081565b60405160009190910b8152602001610207565b6101846103203660046126f7565b6109fe565b6101846103333660046126f7565b610c1a565b6101846103463660046126a5565b50565b610184610357366004612798565b5050565b6102ca60035481565b61018461037236600461280d565b610f4a565b610184610385366004612840565b610f66565b6102ca61039836600461287d565b60016020526000908152604090205481565b6101846103b8366004612898565b611186565b6102ca7f000000000000000000000000000000000000000000000000000000000000000081565b6102ca7f000000000000000000000000000000000000000000000000000000000000000081565b61043f61041936600461287d565b60026020526000908152604090819020549081901b90600160c01b900463ffffffff1682565b6040805167ffffffffffffffff19909316835263ffffffff909116602083015201610207565b3360009081526002602052604090208054600160c01b900463ffffffff16156104d55760405162461bcd60e51b815260206004820152601760248201527f434f4d4d49544d454e545f4e4f545f5245534f4c56454400000000000000000060448201526064015b60405180910390fd5b336000908152600160208190526040909120549083016104f85791506000610555565b808311156105485760405162461bcd60e51b815260206004820152600a60248201527f4e4f545f454e4f5547480000000000000000000000000000000000000000000060448201526064016104cc565b61055283826128db565b90505b3360008181526001602052604090819020839055517fa9059cbb0000000000000000000000000000000000000000000000000000000081526004810191909152602481018490526001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000169063a9059cbb906044016020604051808303816000875af11580156105ef573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061061391906128f2565b5060405183815233907fcf3e2ed8c545de2d902ea60194df2faa514dad26e69937899d836f775b6973a89060200160405180910390a2505050565b3360009081526002602052604081209061066661138d565b508254909150600160c01b900463ffffffff16158015906106985750815463ffffffff828116600160c01b9092041614155b6106e45760405162461bcd60e51b815260206004820152600760248201527f4e4f5f4e4545440000000000000000000000000000000000000000000000000060448201526064016104cc565b815463ffffffff60c01b19168255336000908152600160205260408082208054929055517f42966c68000000000000000000000000000000000000000000000000000000008152600481018290526001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016906342966c6890602401600060405180830381600087803b15801561078057600080fd5b505af1158015610794573d6000803e3d6000fd5b505060405183815263ffffffff851692503391507fe67d8ece0e41ab412ad25a374958835f701f84b395fe3d39b4d67b5af19a97099060200160405180910390a3505050565b60006107e461138d565b5067ffffffffffffffff8316600090815260208190526040812080549293509163ffffffff600160a01b8204169160ff600160e01b83041691600160e81b9004900b6001831080159061084957506000826004811115610846576108466125f8565b14155b8015610858575060008160000b135b156109f6578354600160f01b9004600090810b9081810361087b5760001961087d565b815b9050600061088b8689612914565b63ffffffff169050801561096f577f000000000000000000000000000000000000000000000000000000000000000060000b63ffffffff168111156108f6575063ffffffff7f000000000000000000000000000000000000000000000000000000000000000060000b165b6109008282612939565b61090a90856129ba565b935060008460000b121561091d57600093505b7f000000000000000000000000000000000000000000000000000000000000000060000b8460000b131561096f577f000000000000000000000000000000000000000000000000000000000000000093505b86547fffff00ffffffffff00000000ffffffffffffffffffffffffffffffffffffffff16600160a01b63ffffffff8a16027fffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1617600160e81b60ff861602178755600084810b90036109f25786546109f2908a90600160f81b900460ff166114e2565b5050505b505050505050565b6001600160a01b038516600090815260026020526040812090610a1f61138d565b508254909150600160c01b900463ffffffff1615801590610a515750815463ffffffff828116600160c01b9092041614155b610a9d5760405162461bcd60e51b815260206004820152600760248201527f4e4f5f4e4545440000000000000000000000000000000000000000000000000060448201526064016104cc565b8154604080516020808802820181018352878252610aff9390921b9189919089908990819060009085015b82821015610af457610ae560408302860136819003810190612a0c565b81526020019060010190610ac8565b505050505086611651565b815463ffffffff60c01b1916825533600090815260016020526040812080548692839291610b2e9084906128db565b90915550506040517f42966c68000000000000000000000000000000000000000000000000000000008152600481018290527f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316906342966c6890602401600060405180830381600087803b158015610bae57600080fd5b505af1158015610bc2573d6000803e3d6000fd5b505050508163ffffffff16886001600160a01b03167fe67d8ece0e41ab412ad25a374958835f701f84b395fe3d39b4d67b5af19a970983604051610c0891815260200190565b60405180910390a35050505050505050565b6001600160a01b03851660009081526002602052604081209080610c3c61138d565b915091508015610c8e5760405162461bcd60e51b815260206004820152601260248201527f494e5f434f4d4d4954494e475f5048415345000000000000000000000000000060448201526064016104cc565b8254600160c01b900463ffffffff16600003610cec5760405162461bcd60e51b815260206004820152601260248201527f4e4f5448494e475f544f5f5245534f4c5645000000000000000000000000000060448201526064016104cc565b825463ffffffff838116600160c01b9092041614610d4c5760405162461bcd60e51b815260206004820152600e60248201527f494e56414c49445f504552494f4400000000000000000000000000000000000060448201526064016104cc565b82546040805160208089028201810183528882528893610dad931b918b918b908690819060009085015b82821015610da257610d9360408302860136819003810190612a0c565b81526020019060010190610d76565b505050505088611651565b60008060005b83811015610e12576000610def8d888d8d86818110610dd457610dd4612a75565b905060400201803603810190610dea9190612a0c565b611795565b509050610dfc8185612a8b565b9350508080610e0a90612aa3565b915050610db3565b506001600160a01b038b16600090815260016020526040902054610e368284612a8b565b811015610e4257600080fd5b610e4c8284612a8b565b610e5690826128db565b6001600160a01b038d166000908152600160205260408120829055600380549293508592909190610e88908490612a8b565b9091555050865460401b67ffffffffffffffff19891615610ed45787547fffffffffffffffff0000000000000000000000000000000000000000000000001660408a901c178855610ee3565b875463ffffffff60c01b191688555b8067ffffffffffffffff19168763ffffffff168e6001600160a01b03167fc7a2840725c4757a4265964884483917904f406878fbfb8aaf36f75cd710bb718e8e8e604051610f3393929190612abd565b60405180910390a450505050505050505050505050565b3360008181526001602052604090205461034691908390611b7e565b33600090815260016020526040902054610f808382612a8b565b336000818152600160205260409020829055909150610fa0908583611b7e565b813515611093576001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001663d505accf333085356020870135610fef6060890160408a01612b3a565b6040517fffffffff0000000000000000000000000000000000000000000000000000000060e088901b1681526001600160a01b0395861660048201529490931660248501526044840191909152606483015260ff166084820152606085013560a4820152608085013560c482015260e401600060405180830381600087803b15801561107a57600080fd5b505af115801561108e573d6000803e3d6000fd5b505050505b8215611180576040517f23b872dd000000000000000000000000000000000000000000000000000000008152336004820152306024820152604481018490527f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316906323b872dd906064016020604051808303816000875af1158015611125573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061114991906128f2565b5060405183815233907fcea2aa568570e239e616fd2e9bcf2301307aa1c1c1f355305a87e5cdd46bbc799060200160405180910390a25b50505050565b81156103575780351561127f576001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001663d505accf3330843560208601356111db6060880160408901612b3a565b6040517fffffffff0000000000000000000000000000000000000000000000000000000060e088901b1681526001600160a01b0395861660048201529490931660248501526044840191909152606483015260ff166084820152606084013560a4820152608084013560c482015260e401600060405180830381600087803b15801561126657600080fd5b505af115801561127a573d6000803e3d6000fd5b505050505b336000908152600160205260408120805484929061129e908490612a8b565b90915550506040517f23b872dd000000000000000000000000000000000000000000000000000000008152336004820152306024820152604481018390527f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316906323b872dd906064016020604051808303816000875af115801561132f573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061135391906128f2565b5060405182815233907fcea2aa568570e239e616fd2e9bcf2301307aa1c1c1f355305a87e5cdd46bbc799060200160405180910390a25050565b600080806113db7f00000000000000000000000000000000000000000000000000000000000000007f0000000000000000000000000000000000000000000000000000000000000000612a8b565b90507f000000000000000000000000000000000000000000000000000000000000000042101561144d5760405162461bcd60e51b815260206004820152601060248201527f47414d455f4e4f545f535441525445440000000000000000000000000000000060448201526064016104cc565b60006114797f0000000000000000000000000000000000000000000000000000000000000000426128db565b90506114858282612b5d565b611490906001612a8b565b93507f0000000000000000000000000000000000000000000000000000000000000000826114bf600187612914565b63ffffffff166114cf9190612b7f565b6114d990836128db565b10925050509091565b6000806114ef8484611d96565b909250905060ff7f000000000000000000000000000000000000000000000000000000000000000081169060009061152990841683612b5d565b905060005b8360ff168160ff16101561164857611547600185612b9e565b60ff168160ff1603611557578291505b7f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663a9059cbb868360ff166004811061159b5761159b612a75565b60200201516040517fffffffff0000000000000000000000000000000000000000000000000000000060e084901b1681526001600160a01b039091166004820152602481018590526044016020604051808303816000875af1158015611605573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061162991906128f2565b5061163482846128db565b92508061164081612bc1565b91505061152e565b50505050505050565b67ffffffffffffffff198116156116fc57600083838360405160200161167993929190612c3a565b6040516020818303038152906040528051906020012090508067ffffffffffffffff19168567ffffffffffffffff1916146116f65760405162461bcd60e51b815260206004820152601160248201527f484153485f4e4f545f4d41544348494e4700000000000000000000000000000060448201526064016104cc565b50611180565b60008383604051602001611711929190612c6e565b6040516020818303038152906040528051906020012090508067ffffffffffffffff19168567ffffffffffffffff19161461178e5760405162461bcd60e51b815260206004820152601160248201527f484153485f4e4f545f4d41544348494e4700000000000000000000000000000060448201526064016104cc565b5050505050565b60008060006117a8846000015186611f2f565b90508463ffffffff16816040015163ffffffff16036119a457608081015160000b1561199f576117e384600001518683606001516000612176565b5060006080820181905260608201818152818352602080840183815260a0850184905260c08501849052875167ffffffffffffffff16845290839052604092839020845181549251948601516001600160a01b039091167fffffffffffffffff00000000000000000000000000000000000000000000000090931692909217600160a01b63ffffffff958616021763ffffffff60c01b198116600160c01b9590931694909402918217815591518493909183917fffffff0000000000ffffffffffffffffffffffffffffffffffffffffffffffff167fffffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffff90911617600160e01b8360048111156118f4576118f46125f8565b02179055506080820151815460a084015160c0909401517fff0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff909116600160e81b60ff938416027fff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1617600160f01b94831694909402939093177effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff16600160f81b91909316029190911790555b611b75565b806080015160000b600003611b7057600160808201526001600160a01b038616815263ffffffff85166040820181905260208083019190915284015160048111156119f1576119f16125f8565b81606001516004811115611a0757611a076125f8565b14611a6957611a2484600001518683606001518760200151612176565b50836020015181606001906004811115611a4057611a406125f8565b90816004811115611a5357611a536125f8565b905250600060a0820181905260c0820152611a78565b600060a0820181905260c08201525b835167ffffffffffffffff166000908152602081815260409182902083518154928501519385015163ffffffff908116600160c01b0263ffffffff60c01b1991909516600160a01b027fffffffffffffffff0000000000000000000000000000000000000000000000009094166001600160a01b0390921691909117929092179182168317815560608401516001965084939192909183917fffffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffff9091167fffffff0000000000ffffffffffffffffffffffffffffffffffffffffffffffff90911617600160e01b8360048111156118f4576118f46125f8565b600191505b50935093915050565b6001600160a01b03831660009081526002602052604081209080611ba061138d565b9150915080611bf15760405162461bcd60e51b815260206004820152601360248201527f494e5f5245534f4c5554494f4e5f50484153450000000000000000000000000060448201526064016104cc565b8254600160c01b900463ffffffff161580611c1c5750825463ffffffff838116600160c01b90920416145b611c685760405162461bcd60e51b815260206004820152601e60248201527f50524556494f55535f434f4d4d49544d454e545f544f5f5245534f4c5645000060448201526064016104cc565b825463ffffffff8316600160c01b027fffffffff00000000000000000000000000000000000000000000000000000000909116604087901c1717835560ff7f000000000000000000000000000000000000000000000000000000000000000016841015611d3d5760405162461bcd60e51b815260206004820152602260248201527f4e4545445f41545f4c454153545f4f4e455f544f4b454e5f494e5f524553455260448201527f564500000000000000000000000000000000000000000000000000000000000060648201526084016104cc565b60405167ffffffffffffffff198616815263ffffffff8316906001600160a01b038816907f0d367f9204ba6b84c8339115372cfb085b91970d66784e8370f5de6ca8fcf3599060200160405180910390a3505050505050565b611d9e6125c1565b600063ffffffff808516600390810b91602087901c16900b60018086169003611e13576000198101602090811b830160009081529081905260409020546001600160a01b03168460ff851660048110611df957611df9612a75565b6001600160a01b0390921660209290920201526001909201915b60028086169003611e6f57602081811b83016000190160009081529081905260409020546001600160a01b03168460ff851660048110611e5557611e55612a75565b6001600160a01b0390921660209290920201526001909201915b60048086169003611ecb5760018101602090811b830160009081529081905260409020546001600160a01b03168460ff851660048110611eb157611eb1612a75565b6001600160a01b0390921660209290920201526001909201915b60088086169003611f2657602081811b830160010160009081529081905260409020546001600160a01b03168460ff851660048110611f0c57611f0c612a75565b6001600160a01b0390921660209290920201526001909201915b50509250929050565b6040805160e081018252600080825260208201819052918101829052606081018290526080810182905260a0810182905260c081019190915267ffffffffffffffff831660009081526020818152604091829020825160e08101845281546001600160a01b038116825263ffffffff600160a01b8204811694830194909452600160c01b81049093169381019390935290606083019060ff600160e01b909104166004811115611fe157611fe16125f8565b6004811115611ff257611ff26125f8565b81529054600160e81b8104600090810b602080850191909152600160f01b830490910b6040840152600160f81b90910460ff16606090920191909152810151909150600163ffffffff82161061216f5760a08201516080830151600082810b810361205f57600019612061565b825b9050600061206f8588612914565b63ffffffff169050801561216a577f000000000000000000000000000000000000000000000000000000000000000060000b63ffffffff168111156120da575063ffffffff7f000000000000000000000000000000000000000000000000000000000000000060000b165b6120e48282612939565b6120ee90846129ba565b925060008360000b121561210157600092505b7f000000000000000000000000000000000000000000000000000000000000000060000b8360000b1315612153577f000000000000000000000000000000000000000000000000000000000000000092505b600083900b608087015263ffffffff871660208701525b505050505b5092915050565b600063ffffffff808616600390810b91602088811c909116820b91600019808401831b85019267ffffffff000000008b1660070b860191820192600180870190921b870192909101906121ce9082908c908c8c61220a565b6121dc838c60028d8d61220a565b6121ea858d60018e8e61220a565b6121f8878e60008f8f61220a565b0101019b9a5050505050505050505050565b67ffffffffffffffff85166000908152602081905260408120826004811115612235576122356125f8565b846004811115612247576122476125f8565b0361225457612254612c8f565b8054600160a01b810463ffffffff1690600160e01b900460ff16600182108015906122915750600081600481111561228e5761228e6125f8565b14155b156125b5578254600160f01b8104600090810b91600160e81b9004810b908281036122be576000196122c0565b825b8654909150600160f81b900460ff1660006122db878e612914565b63ffffffff16905080156123bf577f000000000000000000000000000000000000000000000000000000000000000060000b63ffffffff16811115612346575063ffffffff7f000000000000000000000000000000000000000000000000000000000000000060000b165b6123508382612939565b61235a90856129ba565b935060008460000b121561236d57600093505b7f000000000000000000000000000000000000000000000000000000000000000060000b8460000b13156123bf577f000000000000000000000000000000000000000000000000000000000000000093505b60008a60048111156123d3576123d36125f8565b03612434578a60048111156123ea576123ea6125f8565b8660048111156123fc576123fc6125f8565b036124135761240c600186612ca5565b94506124f4565b61241e6001866129ba565b94508b60ff166001901b60ff18821691506124f4565b8a6004811115612446576124466125f8565b866004811115612458576124586125f8565b0361247457600160ff8d161b919091179061240c600286612ca5565b896004811115612486576124866125f8565b866004811115612498576124986125f8565b036124c15760008b60048111156124b1576124b16125f8565b146124135761241e6002866129ba565b60008b60048111156124d5576124d56125f8565b036124f4576124e5600186612ca5565b94508b60ff166001901b821791505b8488600001601e6101000a81548160ff021916908360000b60ff1602179055508c8860000160146101000a81548163ffffffff021916908363ffffffff1602179055508388600001601d6101000a81548160ff021916908360000b60ff1602179055508360000b600003612579578754612579908f90600160f81b900460ff166114e2565b89600481111561258b5761258b6125f8565b86600481111561259d5761259d6125f8565b146125aa576000196125ad565b60015b985050505050505b50505095945050505050565b60405180608001604052806004906020820280368337509192915050565b6000602082840312156125f157600080fd5b5035919050565b634e487b7160e01b600052602160045260246000fd5b6005811061262c57634e487b7160e01b600052602160045260246000fd5b9052565b6001600160a01b038816815263ffffffff87811660208301528616604082015260e08101612661606083018761260e565b8460000b60808301528360000b60a083015260ff831660c083015298975050505050505050565b803567ffffffffffffffff811681146126a057600080fd5b919050565b6000602082840312156126b757600080fd5b6126c082612688565b9392505050565b80356001600160a01b03811681146126a057600080fd5b803567ffffffffffffffff19811681146126a057600080fd5b60008060008060006080868803121561270f57600080fd5b612718866126c7565b945060208601359350604086013567ffffffffffffffff8082111561273c57600080fd5b818801915088601f83011261275057600080fd5b81358181111561275f57600080fd5b8960208260061b850101111561277457600080fd5b60208301955080945050505061278c606087016126de565b90509295509295909350565b600080602083850312156127ab57600080fd5b823567ffffffffffffffff808211156127c357600080fd5b818501915085601f8301126127d757600080fd5b8135818111156127e657600080fd5b8660208260051b85010111156127fb57600080fd5b60209290920196919550909350505050565b60006020828403121561281f57600080fd5b6126c0826126de565b600060a0828403121561283a57600080fd5b50919050565b600080600060e0848603121561285557600080fd5b61285e846126de565b9250602084013591506128748560408601612828565b90509250925092565b60006020828403121561288f57600080fd5b6126c0826126c7565b60008060c083850312156128ab57600080fd5b823591506128bc8460208501612828565b90509250929050565b634e487b7160e01b600052601160045260246000fd5b6000828210156128ed576128ed6128c5565b500390565b60006020828403121561290457600080fd5b815180151581146126c057600080fd5b600063ffffffff83811690831681811015612931576129316128c5565b039392505050565b60008082810b84820b82811383831382607f048411828216161561295f5761295f6128c5565b607f198584128582058512818416161561297b5761297b6128c5565b9585129583871685830587121615612995576129956128c5565b84607f05861281881616156129ac576129ac6128c5565b505050910295945050505050565b60008160000b8360000b6000821282607f038213811516156129de576129de6128c5565b82607f190382128116156129f4576129f46128c5565b50019392505050565b8035600581106126a057600080fd5b600060408284031215612a1e57600080fd5b6040516040810181811067ffffffffffffffff82111715612a4f57634e487b7160e01b600052604160045260246000fd5b604052612a5b83612688565b8152612a69602084016129fd565b60208201529392505050565b634e487b7160e01b600052603260045260246000fd5b60008219821115612a9e57612a9e6128c5565b500190565b60006000198203612ab657612ab66128c5565b5060010190565b60408082528181018490526000908560608401835b87811015612b1a5767ffffffffffffffff612aec84612688565b1682526020612afc8185016129fd565b612b088285018261260e565b50509183019190830190600101612ad2565b5080935050505067ffffffffffffffff1983166020830152949350505050565b600060208284031215612b4c57600080fd5b813560ff811681146126c057600080fd5b600082612b7a57634e487b7160e01b600052601260045260246000fd5b500490565b6000816000190483118215151615612b9957612b996128c5565b500290565b600060ff821660ff841680821015612bb857612bb86128c5565b90039392505050565b600060ff821660ff8103612bd757612bd76128c5565b60010192915050565b600081518084526020808501945080840160005b83811015612c2f578151805167ffffffffffffffff168852830151612c1b8489018261260e565b506040969096019590820190600101612bf4565b509495945050505050565b838152606060208201526000612c536060830185612be0565b905067ffffffffffffffff1983166040830152949350505050565b828152604060208201526000612c876040830184612be0565b949350505050565b634e487b7160e01b600052600160045260246000fd5b60008160000b8360000b6000811281607f1901831281151615612cca57612cca6128c5565b81607f018313811615612cdf57612cdf6128c5565b509003939250505056fea26469706673582212203e1a9007398b48665818db0a8d3e5ae108f26cd1ce34bb94d172be2611952a6364736f6c634300080d0033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "acknowledgeMissedResolutionByBurningAllReserve()": {
+        "notice": "should only be called as last resort this will burn all tokens in reserve (// TODO block adding more to reserve until RESOLUTION is complete) If player has access to the secret, better call acknowledgeMissedResolution"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 1335,
+        "contract": "src/Game.sol:Game",
+        "label": "cells",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_mapping(t_uint256,t_struct(Cell)1308_storage)"
+      },
+      {
+        "astId": 1339,
+        "contract": "src/Game.sol:Game",
+        "label": "tokensInReserve",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_mapping(t_address,t_uint256)"
+      },
+      {
+        "astId": 1344,
+        "contract": "src/Game.sol:Game",
+        "label": "commitments",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_mapping(t_address,t_struct(Commitment)1313_storage)"
+      },
+      {
+        "astId": 1346,
+        "contract": "src/Game.sol:Game",
+        "label": "tokensInPlay",
+        "offset": 0,
+        "slot": "3",
+        "type": "t_uint256"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_bytes24": {
+        "encoding": "inplace",
+        "label": "bytes24",
+        "numberOfBytes": "24"
+      },
+      "t_enum(Color)1292": {
+        "encoding": "inplace",
+        "label": "enum Game.Color",
+        "numberOfBytes": "1"
+      },
+      "t_int8": {
+        "encoding": "inplace",
+        "label": "int8",
+        "numberOfBytes": "1"
+      },
+      "t_mapping(t_address,t_struct(Commitment)1313_storage)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => struct Game.Commitment)",
+        "numberOfBytes": "32",
+        "value": "t_struct(Commitment)1313_storage"
+      },
+      "t_mapping(t_address,t_uint256)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": "t_uint256"
+      },
+      "t_mapping(t_uint256,t_struct(Cell)1308_storage)": {
+        "encoding": "mapping",
+        "key": "t_uint256",
+        "label": "mapping(uint256 => struct Game.Cell)",
+        "numberOfBytes": "32",
+        "value": "t_struct(Cell)1308_storage"
+      },
+      "t_struct(Cell)1308_storage": {
+        "encoding": "inplace",
+        "label": "struct Game.Cell",
+        "members": [
+          {
+            "astId": 1294,
+            "contract": "src/Game.sol:Game",
+            "label": "owner",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_address"
+          },
+          {
+            "astId": 1296,
+            "contract": "src/Game.sol:Game",
+            "label": "lastPeriodUpdate",
+            "offset": 20,
+            "slot": "0",
+            "type": "t_uint32"
+          },
+          {
+            "astId": 1298,
+            "contract": "src/Game.sol:Game",
+            "label": "periodWhenTokenIsAdded",
+            "offset": 24,
+            "slot": "0",
+            "type": "t_uint32"
+          },
+          {
+            "astId": 1301,
+            "contract": "src/Game.sol:Game",
+            "label": "color",
+            "offset": 28,
+            "slot": "0",
+            "type": "t_enum(Color)1292"
+          },
+          {
+            "astId": 1303,
+            "contract": "src/Game.sol:Game",
+            "label": "life",
+            "offset": 29,
+            "slot": "0",
+            "type": "t_int8"
+          },
+          {
+            "astId": 1305,
+            "contract": "src/Game.sol:Game",
+            "label": "delta",
+            "offset": 30,
+            "slot": "0",
+            "type": "t_int8"
+          },
+          {
+            "astId": 1307,
+            "contract": "src/Game.sol:Game",
+            "label": "enemymask",
+            "offset": 31,
+            "slot": "0",
+            "type": "t_uint8"
+          }
+        ],
+        "numberOfBytes": "32"
+      },
+      "t_struct(Commitment)1313_storage": {
+        "encoding": "inplace",
+        "label": "struct Game.Commitment",
+        "members": [
+          {
+            "astId": 1310,
+            "contract": "src/Game.sol:Game",
+            "label": "hash",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_bytes24"
+          },
+          {
+            "astId": 1312,
+            "contract": "src/Game.sol:Game",
+            "label": "period",
+            "offset": 24,
+            "slot": "0",
+            "type": "t_uint32"
+          }
+        ],
+        "numberOfBytes": "32"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      },
+      "t_uint32": {
+        "encoding": "inplace",
+        "label": "uint32",
+        "numberOfBytes": "4"
+      },
+      "t_uint8": {
+        "encoding": "inplace",
+        "label": "uint8",
+        "numberOfBytes": "1"
+      }
+    }
+  }
+}

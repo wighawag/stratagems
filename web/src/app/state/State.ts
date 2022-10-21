@@ -1,4 +1,4 @@
-import {processor as processorFactory} from 'tiny-roger-indexer';
+import {processor as processorFactory} from 'stratagems-indexer';
 import {BrowserIndexer} from '$lib/browser-indexer';
 
 import {initialContractsInfos} from '$app/blockchain/contracts';
@@ -12,9 +12,9 @@ export const browserIndexer = new BrowserIndexer(
 	processor,
 	[
 		{
-			eventsABI: initialContractsInfos.contracts.Dummy.abi,
-			address: initialContractsInfos.contracts.Dummy.address,
-			// startBlock: initialContractsInfos.contracts.Dummy. TODO
+			eventsABI: initialContractsInfos.contracts.Game.abi,
+			address: initialContractsInfos.contracts.Game.address,
+			// startBlock: initialContractsInfos.contracts.Game. TODO
 		},
 	],
 	eip1193Provider

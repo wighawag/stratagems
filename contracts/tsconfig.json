@@ -1,19 +1,13 @@
 {
-  "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
-    "strict": true,
-    "esModuleInterop": true,
-    "moduleResolution": "node",
-    "forceConsistentCasingInFileNames": true,
-    "downlevelIteration": true,
-    "outDir": "dist"
-  },
-  "include": [
-    "hardhat.config.ts",
-    "./scripts",
-    "./deploy",
-    "./test",
-    "typechain/**/*"
-  ]
+	"compilerOptions": {
+		"target": "es2020",
+		"module": "commonjs",
+		"strict": true,
+		"esModuleInterop": true,
+		"moduleResolution": "node",
+		"forceConsistentCasingInFileNames": true,
+		"downlevelIteration": true,
+		"outDir": "dist"
+	},
+	"include": ["hardhat.config.ts", "./scripts", "./deploy", "./test", "typechain/**/*"]
 }

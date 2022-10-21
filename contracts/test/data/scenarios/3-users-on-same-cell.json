@@ -1,0 +1,75 @@
+{
+  "setup": {},
+  "input": {},
+  "runs": [
+    {
+      "input": {
+        "\"$p0color\"": "1",
+        "\"$p1color\"": "2",
+        "\"$p2color\"": "3"
+      },
+      "output": [
+        {
+          "type": "call",
+          "function": "cells",
+          "params": [
+            1
+          ],
+          "expected": [
+            "0x0000000000000000000000000000000000000000",
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "input": {
+        "\"$p0color\"": "2",
+        "\"$p1color\"": "1",
+        "\"$p2color\"": "1"
+      }
+    },
+    {
+      "input": {
+        "\"$p0color\"": "1",
+        "\"$p1color\"": "1",
+        "\"$p2color\"": "1"
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "players": {
+        "0": {
+          "moves": [
+            {
+              "position": 1,
+              "color": "$p0color"
+            }
+          ]
+        },
+        "1": {
+          "moves": [
+            {
+              "position": 1,
+              "color": "$p1color"
+            }
+          ]
+        },
+        "2": {
+          "moves": [
+            {
+              "position": 1,
+              "color": "$p2color"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

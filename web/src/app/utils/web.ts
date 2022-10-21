@@ -188,3 +188,9 @@ export function isPrivateWindow(): Promise<boolean | null> {
 		}
 	});
 }
+
+export function getIPFSHash() {
+	return location.pathname.startsWith('/ipfs/') || location.pathname.startsWith('/ipns/')
+		? location.pathname.slice(6).split('/')[0]
+		: undefined;
+}

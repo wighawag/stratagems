@@ -1,13 +1,13 @@
 {
-	"name": "tiny-roger-contracts",
+	"name": "stratagems-contracts",
 	"version": "0.1.0",
-	"description": "contracts for tiny-roger",
+	"description": "contracts for stratagems",
 	"private": true,
 	"author": "wighawag",
 	"license": "AGPL",
 	"keywords": [
 		"ethereum",
-		"temaplate"
+		"game"
 	],
 	"files": [
 		"deployments",

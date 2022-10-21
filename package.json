@@ -1,7 +1,7 @@
 {
-  "name": "tiny-roger",
+  "name": "stratagems",
   "version": "0.1.0",
-  "description": "tiny-roger",
+  "description": "Stratagems",
   "pnpm": {
     "patchedDependencies": {
       "chai-ethers@0.0.1": "patches/chai-ethers@0.0.1.patch"

@@ -24,8 +24,8 @@ const config: HardhatUserConfig = {
 	},
 	namedAccounts: {
 		deployer: 0,
-		tokensBeneficiary: 1,
-		rewardPoolOwner: 2,
+		tokensBeneficiary: {default: 1, arbitrum_goerli: 0},
+		rewardPoolOwner: {default: 2, arbitrum_goerli: 0},
 	},
 	networks: addForkConfiguration({
 		hardhat: {
@@ -38,6 +38,10 @@ const config: HardhatUserConfig = {
 		staging: {
 			url: node_url('rinkeby'),
 			accounts: accounts('rinkeby'),
+		},
+		arbitrum_goerli: {
+			url: node_url('arbitrum_goerli'),
+			accounts: accounts('arbitrum_goerli'),
 		},
 		production: {
 			url: node_url('mainnet'),

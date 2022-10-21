@@ -1,6 +1,11 @@
 <script lang="ts">
 	import {browserIndexer, state} from '$app/state/State';
 	import JSONTree from 'svelte-json-tree';
+	import {onMount} from 'svelte';
+
+	onMount(() => {
+		document.body.style.backgroundColor = 'white';
+	});
 
 	function addLengthToFields(v: any): any {
 		const keys = Object.keys(v);
@@ -17,13 +22,15 @@
 	$: stateDisplayed = addLengthToFields($state);
 </script>
 
-<progress value={($browserIndexer?.syncPercentage || 0) / 100} style="width:100%;" />
+<div id="wrap">
+	<progress value={($browserIndexer?.syncPercentage || 0) / 100} style="width:100%;" />
 
-<p>block processed: {$browserIndexer?.numBlocksProcessedSoFar.toLocaleString()}</p>
-<p>num events: {$browserIndexer?.nextStreamID.toLocaleString()}</p>
+	<p>block processed: {$browserIndexer?.numBlocksProcessedSoFar.toLocaleString()}</p>
+	<p>num events: {$browserIndexer?.nextStreamID.toLocaleString()}</p>
 
-{#if $state}
-	<JSONTree value={stateDisplayed} />
-{:else if $browserIndexer}
-	<JSONTree value={$browserIndexer} />
-{/if}
+	{#if $state}
+		<JSONTree value={stateDisplayed} />
+	{:else if $browserIndexer}
+		<JSONTree value={$browserIndexer} />
+	{/if}
+</div>

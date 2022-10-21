@@ -33,3 +33,11 @@ export function hours(num: number): number {
 export function minutes(num: number): number {
 	return Math.floor(minutesAsFloat(num));
 }
+
+export function nextSunday() {
+	const firstSunday = 259200;
+	const currentTimestamp = timestamp();
+	const numWeeks = Math.ceil(currentTimestamp / weeks(1));
+	const theNextSunday = numWeeks * weeks(1) + firstSunday;
+	return theNextSunday;
+}
