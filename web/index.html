@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" style="width: 100%; height: 100%; margin: 0" data-theme="dark">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="stylesheet" href="/pico.min.css" />
+		<title>Tiny Roger</title>
+		<script>
+			const numSegment = 0;
+			window._BASE = (() => {
+				const normalised = (
+					location.pathname.endsWith('/')
+						? location.pathname.substr(0, location.pathname.length - 1)
+						: location.pathname
+				).substr(1);
+				const split = normalised.split('/');
+				const sliced = numSegment ? split.slice(0, -numSegment) : split;
+				const str = sliced.length > 0 && sliced[0] !== '' ? '/' + sliced.join('/') : '';
+				return str;
+			})();
+		</script>
+	</head>
+	<body style="width: 100%; height: 100%; margin: 0">
+		<div id="app" style="width: 100%; height: 100%; margin: 0"></div>
+		<script type="module" src="src/main.ts"></script>
+	</body>
+</html>

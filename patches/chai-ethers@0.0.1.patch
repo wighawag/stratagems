@@ -1,0 +1,20 @@
+diff --git a/dist/cjs/matchers/emit.js b/dist/cjs/matchers/emit.js
+index bc7829417094cee694502b562f23c573fec864af..d419da5aa33089abbc3d1ae237997ad059f109f0 100644
+--- a/dist/cjs/matchers/emit.js
++++ b/dist/cjs/matchers/emit.js
+@@ -42,7 +42,14 @@ function supportEmit(Assertion) {
+         for (let index = 0; index < expectedArgs.length; index++) {
+             if (expectedArgs[index].length !== undefined && typeof expectedArgs[index] !== 'string') {
+                 for (let j = 0; j < expectedArgs[index].length; j++) {
+-                    new Assertion(actualArgs[index][j]).equal(expectedArgs[index][j]);
++                    if (expectedArgs[index][j].length !== undefined && typeof expectedArgs[index][j] !== 'string') {
++                        for (let k = 0; k < expectedArgs[index][j].length; k++) {
++                          // TODO recursive instead
++                            new Assertion(actualArgs[index][j][k]).equal(expectedArgs[index][j][k]);
++                        }
++                      } else {
++                        new Assertion(actualArgs[index][j]).equal(expectedArgs[index][j]);
++                      }
+                 }
+             }
+             else {
