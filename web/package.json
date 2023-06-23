@@ -1,7 +1,7 @@
 {
-  "name": "jolly-roger-web",
+  "name": "stratagems-web",
   "version": "0.0.1",
-  "description": "Frontend for jolly-roger.",
+  "description": "Frontend for stratagems.",
   "type": "module",
   "private": true,
   "devDependencies": {
@@ -32,8 +32,8 @@
     "@types/lodash-es": "^4.17.7",
     "ethereum-indexer-browser": "^0.6.5",
     "ethereum-tx-observer": "^0.0.2",
-    "jolly-roger-common": "workspace:*",
-    "jolly-roger-indexer": "workspace:*",
+    "stratagems-common": "workspace:*",
+    "stratagems-indexer": "workspace:*",
     "lodash-es": "^4.17.21",
     "named-logs": "^0.2.2",
     "radiate": "^0.0.1",

@@ -6,7 +6,7 @@ export type Data = {
 	greetings: {account: `0x${string}`; message: string}[];
 };
 
-const JollyRogerIndexerProcessor: JSProcessor<MergedAbis<typeof contractsInfo.contracts>, Data> = {
+const StratagemsIndexerProcessor: JSProcessor<MergedAbis<typeof contractsInfo.contracts>, Data> = {
 	// version is automatically populated via version.cjs to let the browser knows to reindex on changes
 	version: '__VERSION_HASH__',
 	construct(): Data {
@@ -33,4 +33,4 @@ const JollyRogerIndexerProcessor: JSProcessor<MergedAbis<typeof contractsInfo.co
 	},
 };
 
-export const createProcessor = fromJSProcessor(() => JollyRogerIndexerProcessor);
+export const createProcessor = fromJSProcessor(() => StratagemsIndexerProcessor);

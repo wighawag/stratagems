@@ -10,7 +10,7 @@ import {
 } from '$env/static/public';
 
 import _contractsInfos from '$data/contracts';
-import {prefix_str} from 'jolly-roger-common';
+import {prefix_str} from 'stratagems-common';
 export type NetworkConfig = typeof _contractsInfos;
 
 export const initialContractsInfos = _contractsInfos;

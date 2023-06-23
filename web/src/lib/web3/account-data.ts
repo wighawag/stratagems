@@ -59,7 +59,7 @@ export function initAccountData() {
 				action.status = pendingTransaction.status;
 				action.final = pendingTransaction.final;
 
-				// TODO specific to jolly-roger which does not need user acknowledgement for deleting the actions
+				// TODO specific to stratagems which does not need user acknowledgement for deleting the actions
 				if (action.final) {
 					delete data.actions[pendingTransaction.hash];
 				}

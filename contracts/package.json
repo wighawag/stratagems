@@ -1,5 +1,5 @@
 {
-  "name": "jolly-roger-contracts",
+  "name": "stratagems-contracts",
   "version": "0.0.0",
   "private": true,
   "devDependencies": {
@@ -13,7 +13,7 @@
     "eip-1193": "^0.4.7",
     "hardhat": "^2.15.0",
     "hardhat-rocketh": "^0.6.0",
-    "jolly-roger-common": "workspace:*",
+    "stratagems-common": "workspace:*",
     "ldenv": "^0.3.7",
     "rocketh": "^0.6.0",
     "rocketh-deploy-proxy": "^0.6.0",

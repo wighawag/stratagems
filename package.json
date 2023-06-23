@@ -1,5 +1,5 @@
 {
-  "name": "jolly-roger",
+  "name": "stratagems",
   "version": "0.0.1",
   "description": "Template to develop fully decentralised app and games",
   "private": true,
@@ -12,8 +12,8 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "---------------------- INSTALL ----------------------": "",
-    "boot": "npx change-name@0.3.1 --ask jolly-roger && pnpm i",
-    "set-name": "npx change-name@0.3.1 --ask jolly-roger",
+    "boot": "npx change-name@0.3.1 --ask stratagems && pnpm i",
+    "set-name": "npx change-name@0.3.1 --ask stratagems",
     "template-test": "pnpm --filter ./contracts local_node & pnpm run --filter ./contracts deploy localhost ~~ pnpm export -n localhost --ts ../indexer/src/contracts.ts,../web/src/data/contracts.ts ~~ && pnpm run --filter ./common build && pnpm --filter ./indexer build",
     "sync-deps": "syncpack fix-mismatches && pnpm -r format:fix",
     "---------------------- FORMAT ----------------------": "",

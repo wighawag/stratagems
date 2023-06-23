@@ -1,1 +1,1 @@
-# Jolly Roger Frontend
+# Stratagems Frontend

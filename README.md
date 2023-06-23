@@ -1,4 +1,4 @@
-# Jolly-Roger
+# Stratagems
 
 A template to develop decentralised applications
 

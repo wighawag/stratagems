@@ -1,7 +1,7 @@
 import {expect} from './utils/viem-chai';
 
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
-import {prefix_str} from 'jolly-roger-common';
+import {prefix_str} from 'stratagems-common';
 import {Deployment, loadAndExecuteDeployments} from 'rocketh';
 
 import {walletClient, contract, publicClient, getAccounts} from './viem';

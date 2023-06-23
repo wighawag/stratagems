@@ -73,7 +73,7 @@
 						<img class="h-16 w-16 rounded-box border-2 border-base-200" {src} {alt} />
 					</div>
 					<div class="ml-3 w-0 flex-1">
-						<p class="text-base font-medium">Do you want to install Jolly Roger on your home screen?</p>
+						<p class="text-base font-medium">Do you want to install Stratagems on your home screen?</p>
 						<!-- <p class="mt-1 text-sm text-gray-500">
             Install it for later
           </p> -->

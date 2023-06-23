@@ -29,11 +29,11 @@
 			background="bg-reverse-primary"
 			copiedBackground="bg-success"
 			copiedColor="text-success-content"
-			text={`npx degit wighawag/jolly-roger your-app-folder`}
+			text={`npx degit wighawag/stratagems your-app-folder`}
 		/>
 		<p class="mt-6 text-base-300">
 			Find out more on
-			<a class="underline" href="https://github.com/wighawag/jolly-roger#readme" target="_blank" rel="noreferrer"
+			<a class="underline" href="https://github.com/wighawag/stratagems#readme" target="_blank" rel="noreferrer"
 				>github</a
 			>
 		</p>

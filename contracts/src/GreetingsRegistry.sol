@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import 'solidity-proxy/src/Proxied.sol';
 
 /// @notice a registry that let user send greetings to the world
-///  It is used as a demo for jolly-roger,
+///  It is used as a demo for stratagems,
 ///  a fully featured SDK to build entirely decentralised apps and games
 ///  It is inteded to be deployed via upgradeable proxy locally
 ///  to showcase the HCR (Hot Contract Replacement) capabilities of `hardhat-deploy`

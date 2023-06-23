@@ -1,14 +1,14 @@
 {
-  "name": "jolly-roger-indexer",
+  "name": "stratagems-indexer",
   "version": "0.1.0",
-  "description": "jolly-roger indexer function to generate the state of all the registry messages",
+  "description": "stratagems indexer function to generate the state of all the registry messages",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "dependencies": {
     "ethereum-indexer-js-processor": "^0.6.4",
-    "jolly-roger-common": "workspace:*",
+    "stratagems-common": "workspace:*",
     "named-logs": "^0.2.2"
   },
   "devDependencies": {

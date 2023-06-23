@@ -5,7 +5,7 @@ import {initTransactionProcessor} from 'ethereum-tx-observer';
 import {initViemContracts} from 'web3-connection-viem';
 import {logs} from 'named-logs';
 
-const logger = logs('jolly-roger');
+const logger = logs('stratagems');
 
 export const accountData = initAccountData();
 

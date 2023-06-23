@@ -68,10 +68,10 @@
 <!-- Disable native prompt from browsers -->
 <NoInstallPrompt />
 <!-- You can also add your own Install Prompt: -->
-<!-- <Install src={url('/icon.svg')} alt="Jolly Roger" /> -->
+<!-- <Install src={url('/icon.svg')} alt="Stratagems" /> -->
 
 <!-- Here is Notification for new version -->
-<NewVersionNotification src={url('/icon.svg')} alt="Jolly Roger" />
+<NewVersionNotification src={url('/icon.svg')} alt="Stratagems" />
 
 <!-- use -my-20 to ensure the navbar is considered when using min-h-screen to offset the footer (when content is too small)-->
 <div class="-my-20 flex flex-col min-h-screen justify-between">

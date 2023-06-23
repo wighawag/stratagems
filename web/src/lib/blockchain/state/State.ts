@@ -1,4 +1,4 @@
-import {createProcessor} from 'jolly-roger-indexer';
+import {createProcessor} from 'stratagems-indexer';
 import {createIndexerState} from 'ethereum-indexer-browser';
 import {initialContractsInfos} from '$lib/config';
 import {connection, network} from '$lib/web3';

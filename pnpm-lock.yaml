@@ -69,7 +69,7 @@ importers:
       hardhat-rocketh:
         specifier: ^0.6.0
         version: 0.6.0(rocketh@0.6.0)
-      jolly-roger-common:
+      stratagems-common:
         specifier: workspace:*
         version: link:../common
       ldenv:
@@ -117,7 +117,7 @@ importers:
       ethereum-indexer-js-processor:
         specifier: ^0.6.4
         version: 0.6.4(typescript@5.1.3)
-      jolly-roger-common:
+      stratagems-common:
         specifier: workspace:*
         version: link:../common
       named-logs:
@@ -154,10 +154,10 @@ importers:
       ethereum-tx-observer:
         specifier: ^0.0.2
         version: 0.0.2
-      jolly-roger-common:
+      stratagems-common:
         specifier: workspace:*
         version: link:../common
-      jolly-roger-indexer:
+      stratagems-indexer:
         specifier: workspace:*
         version: link:../indexer
       lodash-es:

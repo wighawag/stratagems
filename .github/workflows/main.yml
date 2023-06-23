@@ -13,7 +13,7 @@ jobs:
           git config user.email github-actions@github.com
 
       # need anvil
-      # - run: echo "TESTING degit" && npx degit wighawag/jolly-roger#dev __test__ && cd __test__ && npx pnpm i && npx pnpm template-test && cd .. && rm -Rf __test__
+      # - run: echo "TESTING degit" && npx degit wighawag/stratagems#dev __test__ && cd __test__ && npx pnpm i && npx pnpm template-test && cd .. && rm -Rf __test__
 
       - run: |
           echo "fetching ${{ github.ref_name }}..."

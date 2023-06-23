@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Showcase from '$lib/components/jolly-roger/Showcase.svelte';
-	import Feature from '$lib/components/jolly-roger/Feature.svelte';
+	import Showcase from '$lib/components/stratagems/Showcase.svelte';
+	import Feature from '$lib/components/stratagems/Feature.svelte';
 	import CopyBlock from '$lib/components/utilities/CopyBlock.svelte';
 
 	import {name} from 'web-config';
@@ -49,7 +49,7 @@
 					class="btn btn-secondary btn-wide"
 					target="_blank"
 					rel="noreferrer"
-					href="https://github.com/wighawag/jolly-roger"
+					href="https://github.com/wighawag/stratagems"
 					aria-label="Check it out on github!"
 				>
 					Github
@@ -65,11 +65,11 @@
 				background="bg-reverse-primary"
 				copiedBackground="bg-success"
 				copiedColor="text-success-content"
-				text={`npx degit wighawag/jolly-roger your-app-folder`}
+				text={`npx degit wighawag/stratagems your-app-folder`}
 			/>
 			<p class="mt-6 text-base-300">
 				Find out more on
-				<a class="underline" href="https://github.com/wighawag/jolly-roger#readme" target="_blank" rel="noreferrer"
+				<a class="underline" href="https://github.com/wighawag/stratagems#readme" target="_blank" rel="noreferrer"
 					>github</a
 				>
 			</p>
