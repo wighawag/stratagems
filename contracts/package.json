@@ -21,7 +21,7 @@
     "rocketh-verifier": "^0.6.0",
     "set-defaults": "^0.0.1",
     "solidity-coverage": "^0.8.2",
-    "solidity-kit": "^0.3.0",
+    "solidity-kit": "^0.3.1",
     "solidity-proxy": "^0.0.0",
     "stratagems-common": "workspace:*",
     "ts-node": "^10.9.1",

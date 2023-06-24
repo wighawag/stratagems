@@ -98,8 +98,8 @@ importers:
         specifier: ^0.8.2
         version: 0.8.2(hardhat@2.15.0)
       solidity-kit:
-        specifier: ^0.3.0
-        version: link:../../../wighawag/solidity-kit
+        specifier: ^0.3.1
+        version: 0.3.1
       solidity-proxy:
         specifier: ^0.0.0
         version: 0.0.0
@@ -7375,6 +7375,10 @@ packages:
       web3-utils: 1.10.0
     transitivePeerDependencies:
       - supports-color
+    dev: true
+
+  /solidity-kit@0.3.1:
+    resolution: {integrity: sha512-9kvpTUh3LA8+OIBdJjhbXdAkhg/pw/kGmZp7lgKoZdNhqqL72Y337JJJZIJ/ahvcw5lzNlkmQR18gt+WLexLRw==}
     dev: true
 
   /solidity-proxy@0.0.0:
