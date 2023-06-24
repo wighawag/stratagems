@@ -6,6 +6,9 @@ export const context = {
 		deployer: {
 			default: 0,
 		},
+		tokensBeneficiary: {
+			default: 1,
+		},
 	},
 	artifacts,
 } as const;
