@@ -7,7 +7,7 @@ import {minutes} from '../utils/time';
 export default execute(
 	context,
 	async ({deployViaProxy, deployments, accounts, artifacts, network}) => {
-		const {deployer, tokensBeneficiary} = accounts;
+		const {deployer} = accounts;
 
 		const TestTokens = contract(deployments.TestTokens as Deployment<typeof context.artifacts.TestTokens.abi>);
 		const timestamp = BigInt(Math.floor(Date.now() / 1000));

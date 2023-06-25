@@ -3,9 +3,30 @@ pragma solidity ^0.8.0;
 
 import 'solidity-kit/solc_0.8/ERC20/ERC2612/interfaces/IERC20WithIERC2612.sol';
 
+/// @title Stratagems, the infinite board game
+/// @author Ronan Sandford (@wighawag)
+/// @notice Stratagems is an infinite board game, a persistent and permission-less game
+/// where players use a specific set of colors to compete for the control of the board.
+/// Alliances and betrayal are part of the arsenal as colors mix and shift on the board.
 contract Stratagems {
+	/// @notice A player has commited to make a move and resolve it on the resolution phase
+	/// @param player account taking the staking risk (can be a different account than the one controlling the gems)
+	/// @param period period index on which this commit belongs to
+	/// @param commitmentHash the hash of moves
 	event CommitmentMade(address indexed player, uint32 indexed period, bytes24 commitmentHash);
+
+	/// @notice A player has canceled a previous commitment by burning some tokens
+	/// @param player the account that made the commitment
+	/// @param period period index on which this commit belongs to
+	/// @param amountBurnt amount of token to burn
 	event CommitmentVoid(address indexed player, uint32 indexed period, uint256 amountBurnt);
+
+	/// @notice Player has resolved its previous commitment
+	/// @param player account who commited
+	/// @param period period index on which this commit belongs to
+	/// @param commitmentHash the hash of the moves
+	/// @param moves the moves
+	/// @param furtherMoves hash of further moves, unless bytes32(0) which indicate end.
 	event CommitmentResolved(
 		address indexed player,
 		uint32 indexed period,
@@ -13,14 +34,28 @@ contract Stratagems {
 		Move[] moves,
 		bytes24 furtherMoves
 	);
+
+	/// @notice Player have withdrawn token from the reserve
+	/// @param player account withdrawing the tokens
+	/// @param amount the number of tokens withdrawnn
 	event ReserveWithdrawn(address indexed player, uint256 amount);
+
+	/// @notice Player has deposited token in the reserve, allowing it to use that much in game
+	/// @param player account receiving the token in the reserve
+	/// @param amount the number of tokens deposited
 	event ReserveDeposited(address indexed player, uint256 amount);
 
+	/// @notice The token used for the game. Each gems on the board contains that token
 	IERC20WithIERC2612 public immutable TOKENS;
+	/// @notice the timestamp (in seconds) at which the game start, it start in the commit phase
 	uint256 public immutable START_TIME;
+	/// @notice the duration of the commit period in seconds
 	uint256 public immutable COMMIT_PERIOD;
+	/// @notice the duration of the resolution period in seconds
 	uint256 public immutable RESOLUTION_PERIOD;
+	/// @notice the max number of level a cell can reach in the game
 	int8 public immutable MAX_LIFE;
+	/// @notice the decimals used by // TODO This should be a divisor
 	uint8 public immutable DECIMALS;
 
 	struct Config {
@@ -32,6 +67,8 @@ contract Stratagems {
 		uint8 decimals;
 	}
 
+	/// @notice Create an instance of a Stratagems game
+	/// @param config configuration options for the game
 	constructor(Config memory config) {
 		TOKENS = config.tokens;
 		START_TIME = config.startTime;
@@ -41,6 +78,7 @@ contract Stratagems {
 		DECIMALS = config.decimals;
 	}
 
+	/// @notice The set of possible color (None indicate the Cell is empty)
 	enum Color {
 		None,
 		Blue,
@@ -77,11 +115,21 @@ contract Stratagems {
 		bytes32 s;
 	}
 
+	/// @notice There is (2**128) * (2**128) cells
 	mapping(uint256 => Cell) public cells;
+	/// @notice the number of token in reserve per account
+	///  This is used to slash player who do not resolve their commit
+	///  The amount can be greater than the number of token required for the next move
+	///  This allow player to potentially hide their intention.
 	mapping(address => uint256) public tokensInReserve;
+	/// @notice The commitment to be resolved. zeroed if no commitment need to be made.
 	mapping(address => Commitment) public commitments;
+	/// @notice the number of tokens currently in play // TODO do we need this ?
 	uint256 public tokensInPlay;
 
+	/// @notice called by players to add tokens to their reserve
+	/// @param tokensAmountToAdd amount of tokens to add
+	/// @param permit permit EIP2612, value = zero if not needed
 	function addToReserve(uint256 tokensAmountToAdd, Permit calldata permit) external {
 		if (tokensAmountToAdd > 0) {
 			if (permit.value > 0) {
@@ -94,10 +142,17 @@ contract Stratagems {
 		}
 	}
 
+	/// @notice called by players to commit their moves
+	///  this can be called multiple time, the last call overriding the previous.
+	/// @param commitmentHash the hash of the moves // TODO describe
 	function makeCommitment(bytes24 commitmentHash) external {
 		_makeCommitment(msg.sender, commitmentHash, tokensInReserve[msg.sender]);
 	}
 
+	/// @notice called to make a commitment along with tokens to add to the reserve
+	/// @param commitmentHash the has of the moves
+	/// @param tokensAmountToAdd amount of tokens to add to the reserve. the resulting total must be enough to cover the moves
+	/// @param permit permit EIP2612, value = zero if not needed
 	function makeCommitmentWithExtraReserve(
 		bytes24 commitmentHash,
 		uint256 tokensAmountToAdd,
@@ -119,6 +174,9 @@ contract Stratagems {
 		}
 	}
 
+	/// @notice called by players to withdraw tokens from the reserve
+	///  can only be called if no commitments are pending // TODO allow in commit phase if previous's period commitment is resolved
+	/// @param amount number of tokens to withdraw
 	function withdrawFromReserve(uint256 amount) external {
 		Commitment storage commitment = commitments[msg.sender];
 
@@ -136,6 +194,14 @@ contract Stratagems {
 		emit ReserveWithdrawn(msg.sender, amount); // TODO emit new amount?
 	}
 
+	/// @notice called by player to resolve their commitment
+	///  this is where the core logic of the game takes place
+	///  This is where the game board evolves
+	///  The game is designed so that resolution order do not matter
+	/// @param player the account who committed the move
+	/// @param secret the secret used to make the commit
+	/// @param moves the actual moves
+	/// @param furtherMoves if moves cannot be contained in one tx, further moves are represented by a hash to resolve too // TODO consider partial resolution punishment ?
 	function resolve(address player, bytes32 secret, Move[] calldata moves, bytes24 furtherMoves) external {
 		Commitment storage commitment = commitments[player];
 		(uint32 period, bool commiting) = _period();
@@ -177,6 +243,12 @@ contract Stratagems {
 		emit CommitmentResolved(player, period, hashResolved, moves, furtherMoves);
 	}
 
+	/// @notice called by player if they missed the resolution period and want to minimze the token loss
+	///  By providing the moves, they will be slashed only the amount of token required to make the moves
+	/// @param player the account who committed the move
+	/// @param secret the secret used to make the commit
+	/// @param moves the actual moves
+	/// @param furtherMoves if moves cannot be contained in one tx, further moves are represented by a hash to resolve too // TODO consider partial resolution punishment ?
 	function acknowledgeMissedResolution(
 		address player,
 		bytes32 secret,
@@ -216,6 +288,8 @@ contract Stratagems {
 		emit CommitmentVoid(msg.sender, period, amount);
 	}
 
+	/// @notice poke a position, resolving its virtual state
+	/// @param position the cell position
 	function poke(uint64 position) external {
 		(uint32 period, ) = _period();
 		Cell storage cell = cells[position];
