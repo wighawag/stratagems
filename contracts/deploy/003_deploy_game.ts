@@ -6,7 +6,7 @@ import {minutes} from '../utils/time';
 
 export default execute(
 	context,
-	async ({deployViaProxy, deployments, accounts, artifacts}) => {
+	async ({deployViaProxy, deployments, accounts, artifacts, network}) => {
 		const {deployer, tokensBeneficiary} = accounts;
 
 		const TestTokens = contract(deployments.TestTokens as Deployment<typeof context.artifacts.TestTokens.abi>);
@@ -26,11 +26,17 @@ export default execute(
 			decimals,
 		};
 
+		// we use a debug artifact unless mainnet
+		// the debug artifact must have the same initialisation arguments as the default artifact
+		const artifact = (
+			network.tags['mainnet'] ? artifacts.Stratagems_debug : artifacts.Stratagems
+		) as typeof artifacts.Stratagems;
+
 		await deployViaProxy(
 			'Stratagems',
 			{
 				account: deployer,
-				artifact: artifacts.Stratagems,
+				artifact,
 				args: [config], // 1billion of token (decimal 18)
 			},
 			{
@@ -38,5 +44,8 @@ export default execute(
 			}
 		);
 	},
-	{tags: ['Stratagems', 'Stratagems_deploy'], dependencies: ['TestTokens_deploy', 'Gems_deploy']}
+	{
+		tags: ['Stratagems', 'Stratagems_deploy'],
+		dependencies: ['TestTokens_deploy', 'Gems_deploy'],
+	}
 );
