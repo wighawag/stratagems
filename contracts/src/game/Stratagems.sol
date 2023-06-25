@@ -325,9 +325,17 @@ contract Stratagems {
 		}
 	}
 
+	/// collect the tokens won
+	/// @param position cell position to collect from
 	function collect(uint64 position) external {}
 
+	/// poke and collect the tokens won
+	/// @param positions cell positions to collect from
 	function pokeAndCollect(uint64[] calldata positions) external {}
+
+	// --------------------------------------------------------------------------------------------
+	// INTERNAL
+	// --------------------------------------------------------------------------------------------
 
 	function _makeCommitment(address player, bytes24 commitmentHash, uint256 inReserve) internal {
 		Commitment storage commitment = commitments[player];
