@@ -2,61 +2,23 @@
 pragma solidity ^0.8.0;
 
 import 'solidity-kit/solc_0.8/ERC20/ERC2612/interfaces/IERC20WithIERC2612.sol';
+import './IStratagems.sol';
 
-contract StratagemsCore {
-	/// @notice A player has commited to make a move and resolve it on the resolution phase
-	/// @param player account taking the staking risk (can be a different account than the one controlling the gems)
-	/// @param epoch epoch number on which this commit belongs to
-	/// @param commitmentHash the hash of moves
-	event CommitmentMade(address indexed player, uint32 indexed epoch, bytes24 commitmentHash);
-
-	/// @notice A player has canceled a previous commitment by burning some tokens
-	/// @param player the account that made the commitment
-	/// @param epoch epoch number on which this commit belongs to
-	/// @param amountBurnt amount of token to burn
-	/// @param furtherMoves hash of further moves, unless bytes32(0) which indicate end.
-	event CommitmentVoid(address indexed player, uint32 indexed epoch, uint256 amountBurnt, bytes24 furtherMoves);
-
-	/// @notice Player has resolved its previous commitment
-	/// @param player account who commited
-	/// @param epoch epoch number on which this commit belongs to
-	/// @param commitmentHash the hash of the moves
-	/// @param moves the moves
-	/// @param furtherMoves hash of further moves, unless bytes32(0) which indicate end.
-	event CommitmentResolved(
-		address indexed player,
-		uint32 indexed epoch,
-		bytes24 indexed commitmentHash,
-		Move[] moves,
-		bytes24 furtherMoves
-	);
-
-	/// @notice Player have withdrawn token from the reserve
-	/// @param player account withdrawing the tokens
-	/// @param amountWithdrawn the number of tokens withdrawnn
-	/// @param newAmount the number of tokens in reserver as a result
-	event ReserveWithdrawn(address indexed player, uint256 amountWithdrawn, uint256 newAmount);
-
-	/// @notice Player has deposited token in the reserve, allowing it to use that much in game
-	/// @param player account receiving the token in the reserve
-	/// @param amountDeposited the number of tokens deposited
-	/// @param newAmount the number of tokens in reserver as a result
-	event ReserveDeposited(address indexed player, uint256 amountDeposited, uint256 newAmount);
-
+contract StratagemsCore is IStratagemsCore {
 	/// @notice The token used for the game. Each gems on the board contains that token
-	IERC20WithIERC2612 public immutable TOKENS;
+	IERC20WithIERC2612 internal immutable TOKENS;
 	/// @notice the timestamp (in seconds) at which the game start, it start in the commit phase
-	uint256 public immutable START_TIME;
+	uint256 internal immutable START_TIME;
 	/// @notice the duration of the commit phase in seconds
-	uint256 public immutable COMMIT_PHASE_DURATION;
+	uint256 internal immutable COMMIT_PHASE_DURATION;
 	/// @notice the duration of the resolution phase in seconds
-	uint256 public immutable RESOLUTION_PHASE_DURATION;
+	uint256 internal immutable RESOLUTION_PHASE_DURATION;
 	/// @notice the max number of level a cell can reach in the game
-	uint8 public immutable MAX_LIFE;
+	uint8 internal immutable MAX_LIFE;
 	/// @notice the number of tokens underlying each gems on the board.
-	uint256 public immutable NUM_TOKENS_PER_GEMS;
+	uint256 internal immutable NUM_TOKENS_PER_GEMS;
 	/// @notice the address to send the token to when burning
-	address payable immutable BURN_ADDRESS;
+	address payable internal immutable BURN_ADDRESS;
 
 	/// @notice the number of moves a hash represent, after that players make use of furtherMoves
 	uint8 internal constant NUM_MOVES_PER_HASH = 32;
@@ -81,48 +43,6 @@ contract StratagemsCore {
 		RESOLUTION_PHASE_DURATION = config.resolutionPhaseDuration;
 		MAX_LIFE = config.maxLife;
 		NUM_TOKENS_PER_GEMS = config.numTokensPerGems;
-	}
-
-	/// @notice The set of possible color (None indicate the Cell is empty)
-	enum Color {
-		None,
-		Blue,
-		Red,
-		Green,
-		Yellow
-	}
-
-	struct Cell {
-		address owner;
-		uint32 lastEpochUpdate;
-		uint32 epochWhenTokenIsAdded;
-		Color color;
-		uint8 life;
-		int8 delta;
-		uint8 enemymask;
-	}
-
-	struct Commitment {
-		bytes24 hash;
-		uint32 epoch;
-	}
-
-	struct Move {
-		uint64 position;
-		Color color; // Color.None to indicate exit
-	}
-
-	struct Permit {
-		uint256 value;
-		uint256 deadline;
-		uint8 v;
-		bytes32 r;
-		bytes32 s;
-	}
-
-	struct TokenTransfer {
-		address payable to;
-		uint256 amount;
 	}
 
 	/// @notice There is (2**128) * (2**128) cells
@@ -370,7 +290,7 @@ contract StratagemsCore {
 
 		// TODO add option to leave reserve alone
 		// we still check reserve to ensure player cannot just cancel by having a small reserve
-		// but using external fund might make a riendly experience to keep playing
+		// but using external fund might make a friendly experience to keep playing without adding to reserve
 		require(amountInReserve >= tokensPlaced + tokensBurnt);
 		amountInReserve -= tokensPlaced + tokensBurnt;
 		tokensInReserve[player] = amountInReserve;
