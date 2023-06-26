@@ -16,12 +16,13 @@ export default execute(
 
 		const config = {
 			tokens: TestTokens.address,
+			burnAddress: '0x0000000000000000000000000000000000000000' as `0x${string}`,
 			// startTime: nextSunday(),
 			startTime: timestamp, // nextSunday(),
 			// commitPeriod: days(2.5), // TODO support more complex period to support a special weekend commit period
-			commitPeriod: BigInt(minutes(5)), // days(2.5), // TODO support more complex period to support a special weekend commit period
+			commitPhaseDuration: BigInt(minutes(5)), // days(2.5), // TODO support more complex period to support a special weekend commit period
 			// resolutionPeriod: days(1),
-			resolutionPeriod: BigInt(minutes(5)), // days(1),
+			resolutionPhaseDuration: BigInt(minutes(5)), // days(1),
 			maxLife: 5,
 			decimals,
 		};
