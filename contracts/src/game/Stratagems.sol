@@ -60,11 +60,15 @@ contract Stratagems {
 	uint8 public immutable MAX_LIFE;
 	/// @notice the decimals used by // TODO This should be a divisor
 	uint8 public immutable DECIMALS;
+	/// @notice the address to send the token to when burning
+	address payable immutable BURN_ADDRESS;
+
 	/// @notice the number of moves a hash represent, after that you can use furtherMoves
 	uint8 internal constant NUM_MOVES_PER_HASH = 32;
 
 	struct Config {
 		IERC20WithIERC2612 tokens;
+		address payable burnAddress;
 		uint256 startTime;
 		uint256 commitPhaseDuration;
 		uint256 resolutionPhaseDuration;
@@ -76,6 +80,7 @@ contract Stratagems {
 	/// @param config configuration options for the game
 	constructor(Config memory config) {
 		TOKENS = config.tokens;
+		BURN_ADDRESS = config.burnAddress;
 		START_TIME = config.startTime;
 		COMMIT_PHASE_DURATION = config.commitPhaseDuration;
 		RESOLUTION_PHASE_DURATION = config.resolutionPhaseDuration;
@@ -272,8 +277,7 @@ contract Stratagems {
 
 		uint256 amount = moves.length;
 		tokensInReserve[msg.sender] -= amount;
-		// BURN // TODO check if all ERC20 accept this, otherwise, sent to dead
-		TOKENS.transfer(address(0), amount);
+		TOKENS.transfer(BURN_ADDRESS, amount);
 		emit CommitmentVoid(player, epoch, amount, furtherMoves);
 	}
 
@@ -288,8 +292,7 @@ contract Stratagems {
 		commitment.epoch = 0;
 		uint256 amount = tokensInReserve[msg.sender];
 		tokensInReserve[msg.sender] = 0;
-		// BURN // TODO check if all ERC20 accept this, otherwise, sent to dead
-		TOKENS.transfer(address(0), amount);
+		TOKENS.transfer(BURN_ADDRESS, amount);
 
 		// here we cannot know whether there were further move or even any moves
 		// we just burn all tokens in reserve
@@ -339,7 +342,7 @@ contract Stratagems {
 			cell.lastEpochUpdate = epochUsed;
 			if (newLife == 0) {
 				cell.delta = 0;
-				distribution = _getDeathDistribution(position, cell.enemymask, epochUsed);
+				distribution = _getDeathDistribution(cell.owner, position, cell.enemymask, epochUsed);
 				died = true;
 			}
 		}
@@ -365,9 +368,9 @@ contract Stratagems {
 		uint256 tokensPlaced = 0;
 		uint256 tokensBurnt = 0;
 		for (uint256 i = 0; i < moves.length; i++) {
-			(uint256 placed, ) = _computeMove(player, epoch, moves[i]);
+			(uint256 placed, uint256 burnt) = _computeMove(player, epoch, moves[i]);
 			tokensPlaced += placed;
-			// tokensBurnt += burnt;
+			tokensBurnt += burnt;
 		}
 
 		uint256 amountInReserve = tokensInReserve[player];
@@ -380,9 +383,9 @@ contract Stratagems {
 		tokensInReserve[player] = amountInReserve;
 
 		tokensInPlay += tokensPlaced;
-		// if (tokensBurnt != 0) {
-		// 	TOKENS.burn(tokensBurnt);
-		// }
+		if (tokensBurnt != 0) {
+			TOKENS.transfer(BURN_ADDRESS, tokensBurnt);
+		}
 	}
 
 	function _epoch() internal view virtual returns (uint32 epoch, bool commiting) {
@@ -556,7 +559,7 @@ contract Stratagems {
 				cell.life = newLife;
 				cell.lastEpochUpdate = epochUsed;
 				cell.delta = 0;
-				Transfer[4] memory transfers4 = _getDeathDistribution(position, enemymask, epochUsed);
+				Transfer[4] memory transfers4 = _getDeathDistribution(cell.owner, position, enemymask, epochUsed);
 				Transfer[] memory transfers = new Transfer[](4);
 				_collectTransfers(transfers, 0, transfers4);
 				_multiTransfer(transfers);
@@ -643,11 +646,11 @@ contract Stratagems {
 	}
 
 	function _getDeathDistribution(
+		address cellOwner,
 		uint64 position,
 		uint8 enemymask,
 		uint32 epoch
 	) internal view returns (Transfer[4] memory transfers) {
-		// TODO group transfers
 		(address[4] memory enemies, uint8 numEnemiesAlive) = _getNeihbourEnemiesAliveWithPlayers(
 			position,
 			enemymask,
@@ -656,9 +659,7 @@ contract Stratagems {
 		uint256 total = DECIMALS;
 
 		if (numEnemiesAlive == 0) {
-			// TODO give it back to owner instead
-			// TOKENS.transfer(address(0), DECIMALS);
-			transfers[0] = Transfer({to: payable(0xdeaDDeADDEaDdeaDdEAddEADDEAdDeadDEADDEaD), amount: total});
+			transfers[0] = Transfer({to: payable(cellOwner), amount: total});
 			return transfers;
 		}
 
@@ -667,7 +668,6 @@ contract Stratagems {
 			if (i == numEnemiesAlive - 1) {
 				amountPerEnenies = total;
 			}
-			// TOKENS.transfer(enemies[i], amountPerEnenies);
 			transfers[i] = Transfer({to: payable(enemies[i]), amount: amountPerEnenies});
 			total -= amountPerEnenies;
 		}
@@ -715,7 +715,9 @@ contract Stratagems {
 			if (currentState.life != 0) {
 				_updateNeighbours(move.position, epoch, currentState.color, Color.None);
 
-				// TODOI give token back to previous owner (currentState.owner)
+				// giving back
+				tokensInReserve[currentState.owner] += 1; // TODO AMOUNT PER GEMS
+
 				currentState.life = 0;
 				currentState.color = Color.None;
 				currentState.owner = address(0);
@@ -723,6 +725,9 @@ contract Stratagems {
 				currentState.delta = 0;
 				currentState.enemymask = 0;
 				cells[move.position] = currentState;
+			} else {
+				// we skip
+				// tokensPlaced = 0 so this is not counted
 			}
 		} else if (currentState.life == 0) {
 			currentState.life = 1;
