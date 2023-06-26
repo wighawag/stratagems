@@ -24,7 +24,7 @@ contract Router {
 			} {
 				if eq(shr(224, mload(add(sigList, i))), sig) {
 					let k := shr(248, mload(add(sigList, add(i, 4))))
-					implementation := shr(96, mload(add(implementationList, add(32, mul(k, 160)))))
+					implementation := shr(96, mload(add(implementationList, add(32, mul(k, 20)))))
 				}
 			}
 
