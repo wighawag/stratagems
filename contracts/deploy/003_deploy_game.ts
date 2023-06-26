@@ -12,10 +12,11 @@ export default execute(
 		const TestTokens = contract(deployments.TestTokens as Deployment<typeof context.artifacts.TestTokens.abi>);
 		const timestamp = BigInt(Math.floor(Date.now() / 1000));
 
-		const decimals = await TestTokens.read.decimals();
+		const decimals = BigInt(await TestTokens.read.decimals());
 
 		const config = {
 			tokens: TestTokens.address,
+			numTokensPerGems: BigInt(2) ** decimals,
 			burnAddress: '0x0000000000000000000000000000000000000000' as `0x${string}`,
 			// startTime: nextSunday(),
 			startTime: timestamp, // nextSunday(),
@@ -24,7 +25,6 @@ export default execute(
 			// resolutionPeriod: days(1),
 			resolutionPhaseDuration: BigInt(minutes(5)), // days(1),
 			maxLife: 5,
-			decimals,
 		};
 
 		// we use a debug artifact unless mainnet

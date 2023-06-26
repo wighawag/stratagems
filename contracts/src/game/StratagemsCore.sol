@@ -53,12 +53,12 @@ contract StratagemsCore {
 	uint256 public immutable RESOLUTION_PHASE_DURATION;
 	/// @notice the max number of level a cell can reach in the game
 	uint8 public immutable MAX_LIFE;
-	/// @notice the decimals used by // TODO This should be a divisor
-	uint8 public immutable DECIMALS;
+	/// @notice the number of tokens underlying each gems on the board.
+	uint256 public immutable NUM_TOKENS_PER_GEMS;
 	/// @notice the address to send the token to when burning
 	address payable immutable BURN_ADDRESS;
 
-	/// @notice the number of moves a hash represent, after that you can use furtherMoves
+	/// @notice the number of moves a hash represent, after that players make use of furtherMoves
 	uint8 internal constant NUM_MOVES_PER_HASH = 32;
 
 	struct Config {
@@ -68,7 +68,7 @@ contract StratagemsCore {
 		uint256 commitPhaseDuration;
 		uint256 resolutionPhaseDuration;
 		uint8 maxLife;
-		uint8 decimals;
+		uint256 numTokensPerGems;
 	}
 
 	/// @notice Create an instance of a Stratagems game
@@ -80,7 +80,7 @@ contract StratagemsCore {
 		COMMIT_PHASE_DURATION = config.commitPhaseDuration;
 		RESOLUTION_PHASE_DURATION = config.resolutionPhaseDuration;
 		MAX_LIFE = config.maxLife;
-		DECIMALS = config.decimals;
+		NUM_TOKENS_PER_GEMS = config.numTokensPerGems;
 	}
 
 	/// @notice The set of possible color (None indicate the Cell is empty)
@@ -352,7 +352,7 @@ contract StratagemsCore {
 		commitment.hash = commitmentHash;
 		commitment.epoch = epoch;
 
-		require(inReserve >= DECIMALS, 'NEED_AT_LEAST_ONE_TOKEN_IN_RESERVE');
+		require(inReserve >= NUM_TOKENS_PER_GEMS, 'NEED_AT_LEAST_ONE_TOKEN_IN_RESERVE');
 
 		emit CommitmentMade(player, epoch, commitmentHash);
 	}
@@ -648,7 +648,7 @@ contract StratagemsCore {
 			enemymask,
 			epoch
 		);
-		uint256 total = DECIMALS;
+		uint256 total = NUM_TOKENS_PER_GEMS;
 
 		if (numEnemiesAlive == 0) {
 			transfers[0] = TokenTransfer({to: payable(cellOwner), amount: total});
@@ -696,7 +696,7 @@ contract StratagemsCore {
 		address player,
 		uint32 epoch,
 		Move memory move
-	) internal returns (uint256 tokensPlaced, uint256 invalidMove) {
+	) internal returns (uint256 tokensPlaced, uint256 tokensBurnt) {
 		Cell memory currentState = _getUpdatedCell(move.position, epoch);
 		// TODO Make it real, store the result and potential death distribution
 
@@ -708,7 +708,7 @@ contract StratagemsCore {
 				_updateNeighbours(move.position, epoch, currentState.color, Color.None);
 
 				// giving back
-				tokensInReserve[currentState.owner] += 1; // TODO AMOUNT PER GEMS
+				tokensInReserve[currentState.owner] += NUM_TOKENS_PER_GEMS;
 
 				currentState.life = 0;
 				currentState.color = Color.None;
@@ -740,11 +740,11 @@ contract StratagemsCore {
 				currentState.enemymask = 0;
 			}
 
-			tokensPlaced = 1;
+			tokensPlaced = NUM_TOKENS_PER_GEMS;
 			cells[move.position] = currentState;
 		} else {
 			// invalid move
-			invalidMove = 1;
+			tokensBurnt = NUM_TOKENS_PER_GEMS;
 		}
 	}
 }
