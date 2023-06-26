@@ -139,8 +139,6 @@ contract Stratagems {
 	mapping(address => uint256) public tokensInReserve;
 	/// @notice The commitment to be resolved. zeroed if no commitment need to be made.
 	mapping(address => Commitment) public commitments;
-	/// @notice the number of tokens currently in play // TODO do we need this ?
-	uint256 public tokensInPlay;
 
 	/// @notice called by players to add tokens to their reserve
 	/// @param tokensAmountToAdd amount of tokens to add
@@ -155,13 +153,13 @@ contract Stratagems {
 				TOKENS.permit(msg.sender, address(this), permit.value, permit.deadline, permit.v, permit.r, permit.s);
 			}
 			TOKENS.transferFrom(msg.sender, address(this), tokensAmountToAdd);
-			emit ReserveDeposited(msg.sender, tokensAmountToAdd, newAmount); // TODO emit the new amount?
+			emit ReserveDeposited(msg.sender, tokensAmountToAdd, newAmount);
 		}
 	}
 
 	/// @notice called by players to commit their moves
 	///  this can be called multiple time, the last call overriding the previous.
-	/// @param commitmentHash the hash of the moves // TODO describe
+	/// @param commitmentHash the hash of the moves
 	function makeCommitment(bytes24 commitmentHash) external {
 		_makeCommitment(msg.sender, commitmentHash, tokensInReserve[msg.sender]);
 	}
@@ -282,7 +280,7 @@ contract Stratagems {
 	}
 
 	/// @notice should only be called as last resort
-	/// this will burn all tokens in reserve (// TODO block adding more to reserve until RESOLUTION is complete)
+	/// this will burn all tokens in reserve
 	/// If player has access to the secret, better call acknowledgeMissedResolution
 	function acknowledgeMissedResolutionByBurningAllReserve() external {
 		Commitment storage commitment = commitments[msg.sender];
@@ -382,7 +380,6 @@ contract Stratagems {
 		amountInReserve -= tokensPlaced + tokensBurnt;
 		tokensInReserve[player] = amountInReserve;
 
-		tokensInPlay += tokensPlaced;
 		if (tokensBurnt != 0) {
 			TOKENS.transfer(BURN_ADDRESS, tokensBurnt);
 		}
