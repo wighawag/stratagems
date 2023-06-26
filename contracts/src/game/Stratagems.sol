@@ -19,7 +19,8 @@ contract Stratagems {
 	/// @param player the account that made the commitment
 	/// @param period period index on which this commit belongs to
 	/// @param amountBurnt amount of token to burn
-	event CommitmentVoid(address indexed player, uint32 indexed period, uint256 amountBurnt);
+	/// @param furtherMoves hash of further moves, unless bytes32(0) which indicate end.
+	event CommitmentVoid(address indexed player, uint32 indexed period, uint256 amountBurnt, bytes24 furtherMoves);
 
 	/// @notice Player has resolved its previous commitment
 	/// @param player account who commited
@@ -54,16 +55,18 @@ contract Stratagems {
 	/// @notice the duration of the resolution period in seconds
 	uint256 public immutable RESOLUTION_PERIOD;
 	/// @notice the max number of level a cell can reach in the game
-	int8 public immutable MAX_LIFE;
+	uint8 public immutable MAX_LIFE;
 	/// @notice the decimals used by // TODO This should be a divisor
 	uint8 public immutable DECIMALS;
+	/// @notice the number of moves a hash represent, after that you can use furtherMoves
+	uint8 internal constant NUM_MOVES_PER_HASH = 32;
 
 	struct Config {
 		IERC20WithIERC2612 tokens;
 		uint256 startTime;
 		uint256 commitPeriod;
 		uint256 resolutionPeriod;
-		int8 maxLife;
+		uint8 maxLife;
 		uint8 decimals;
 	}
 
@@ -92,7 +95,7 @@ contract Stratagems {
 		uint32 lastPeriodUpdate; // period
 		uint32 periodWhenTokenIsAdded; // period
 		Color color;
-		int8 life;
+		uint8 life;
 		int8 delta;
 		uint8 enemymask;
 	}
@@ -175,12 +178,17 @@ contract Stratagems {
 	}
 
 	/// @notice called by players to withdraw tokens from the reserve
-	///  can only be called if no commitments are pending // TODO allow in commit phase if previous's period commitment is resolved
+	///  can only be called if no commitments are pending
+	///  Note that while you can withdraw after commiting, note that if you do not have enough tokens
+	///  you'll have your commitment failing.
 	/// @param amount number of tokens to withdraw
 	function withdrawFromReserve(uint256 amount) external {
 		Commitment storage commitment = commitments[msg.sender];
 
-		require(commitment.period == 0, 'COMMITMENT_NOT_RESOLVED');
+		(uint32 period, bool commiting) = _period();
+
+		require(commitment.period == 0 || (commiting && commitment.period == period), 'PREVIOUS_COMMITMENT_TO_RESOLVE');
+
 		uint256 inReserve = tokensInReserve[msg.sender];
 		if (amount == type(uint256).max) {
 			amount = inReserve;
@@ -201,7 +209,8 @@ contract Stratagems {
 	/// @param player the account who committed the move
 	/// @param secret the secret used to make the commit
 	/// @param moves the actual moves
-	/// @param furtherMoves if moves cannot be contained in one tx, further moves are represented by a hash to resolve too // TODO consider partial resolution punishment ?
+	/// @param furtherMoves if moves cannot be contained in one tx, further moves are represented by a hash to resolve too
+	///  Note that you have to that number of mvoes
 	function resolve(address player, bytes32 secret, Move[] calldata moves, bytes24 furtherMoves) external {
 		Commitment storage commitment = commitments[player];
 		(uint32 period, bool commiting) = _period();
@@ -235,6 +244,7 @@ contract Stratagems {
 
 		bytes24 hashResolved = commitment.hash;
 		if (furtherMoves != bytes24(0)) {
+			require(numMoves == NUM_MOVES_PER_HASH, 'INVALID_FURTHER_MOVES');
 			commitment.hash = furtherMoves;
 		} else {
 			commitment.period = 0; // used
@@ -248,7 +258,7 @@ contract Stratagems {
 	/// @param player the account who committed the move
 	/// @param secret the secret used to make the commit
 	/// @param moves the actual moves
-	/// @param furtherMoves if moves cannot be contained in one tx, further moves are represented by a hash to resolve too // TODO consider partial resolution punishment ?
+	/// @param furtherMoves if moves cannot be contained in one tx, further moves are represented by a hash to resolve too
 	function acknowledgeMissedResolution(
 		address player,
 		bytes32 secret,
@@ -259,16 +269,22 @@ contract Stratagems {
 		(uint32 period, ) = _period();
 		require(commitment.period > 0 && commitment.period != period, 'NO_NEED');
 
+		uint256 numMoves = moves.length;
+
 		_checkHash(commitment.hash, secret, moves, furtherMoves);
 
-		commitment.period = 0;
+		if (furtherMoves != bytes24(0)) {
+			require(numMoves == NUM_MOVES_PER_HASH, 'INVALID_FURTHER_MOVES');
+			commitment.hash = furtherMoves;
+		} else {
+			commitment.period = 0; // used
+		}
 
 		uint256 amount = moves.length;
 		tokensInReserve[msg.sender] -= amount;
 		// BURN // TODO check if all ERC20 accept this, otherwise, sent to dead
 		TOKENS.transfer(address(0), amount);
-
-		emit CommitmentVoid(player, period, amount);
+		emit CommitmentVoid(player, period, amount, furtherMoves);
 	}
 
 	/// @notice should only be called as last resort
@@ -285,42 +301,27 @@ contract Stratagems {
 		// BURN // TODO check if all ERC20 accept this, otherwise, sent to dead
 		TOKENS.transfer(address(0), amount);
 
-		emit CommitmentVoid(msg.sender, period, amount);
+		// here we cannot know whether there were further move or even any moves
+		// we just burn all tokens in reserve
+		emit CommitmentVoid(msg.sender, period, amount, bytes24(0));
 	}
 
-	/// @notice poke a position, resolving its virtual state
+	/// @notice poke a position, resolving its virtual state and if dead, reward neighboor enemies colors
 	/// @param position the cell position
 	function poke(uint64 position) external {
 		(uint32 period, ) = _period();
 		Cell storage cell = cells[position];
 		uint32 lastUpdate = cell.lastPeriodUpdate;
 		Color color = cell.color;
-		int8 life = cell.life;
+		uint8 life = cell.life;
+		int8 delta = cell.delta;
 		if (lastUpdate >= 1 && color != Color.None && life > 0) {
-			int8 delta = cell.delta;
-			int8 effectiveDelta = delta != 0 ? delta : -1;
-
-			uint256 periodDelta = period - lastUpdate;
-			// assert  periodDelta >= 0
-
-			if (periodDelta != 0) {
-				// update life if any changes
-				if (periodDelta > uint32(int32(MAX_LIFE))) {
-					periodDelta = uint32(int32(MAX_LIFE));
-				}
-				life += (int8(uint8(periodDelta)) * effectiveDelta);
-				if (life < 0) {
-					life = 0;
-				}
-				if (life > MAX_LIFE) {
-					life = MAX_LIFE;
-				}
-			}
-
-			cell.lastPeriodUpdate = period;
-			cell.life = life;
-			if (life == 0) {
-				_distributeDeath(position, cell.enemymask);
+			(uint8 newLife, uint32 periodUsed) = _computeNewLife(lastUpdate, delta, life, period);
+			cell.life = newLife;
+			cell.lastPeriodUpdate = periodUsed;
+			if (newLife == 0) {
+				cell.delta = 0;
+				_distributeDeath(position, cell.enemymask, periodUsed);
 			}
 		}
 	}
@@ -361,7 +362,7 @@ contract Stratagems {
 		commiting = timePassed - ((period - 1) * periodDuration) < COMMIT_PERIOD;
 	}
 
-	function _getNeihbourEnemyPlayers(
+	function _getNeihbourEnemiesWithPlayers(
 		uint64 position,
 		uint8 enemyMask
 	) internal view returns (address[4] memory enemies, uint8 numEnemies) {
@@ -388,6 +389,46 @@ contract Stratagems {
 		}
 	}
 
+	function _getNeihbourEnemiesAliveWithPlayers(
+		uint64 position,
+		uint8 enemyMask,
+		uint32 period
+	) internal view returns (address[4] memory enemies, uint8 numEnemiesAlive) {
+		unchecked {
+			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
+			int256 y = int256(int32(int256(uint256(position) >> 32)));
+
+			if (enemyMask & 1 == 1) {
+				Cell memory cell = cells[((uint256(y - 1) << 32) + uint256(x))];
+				if (cell.life > 0 || cell.lastPeriodUpdate == period) {
+					enemies[numEnemiesAlive] = cell.owner;
+					numEnemiesAlive++;
+				}
+			}
+			if (enemyMask & (1 << 1) == (1 << 1)) {
+				Cell memory cell = cells[((uint256(y) << 32) + uint256(x - 1))];
+				if (cell.life > 0 || cell.lastPeriodUpdate == period) {
+					enemies[numEnemiesAlive] = cell.owner;
+					numEnemiesAlive++;
+				}
+			}
+			if (enemyMask & (1 << 2) == (1 << 2)) {
+				Cell memory cell = cells[((uint256(y + 1) << 32) + uint256(x))];
+				if (cell.life > 0 || cell.lastPeriodUpdate == period) {
+					enemies[numEnemiesAlive] = cell.owner;
+					numEnemiesAlive++;
+				}
+			}
+			if (enemyMask & (1 << 3) == (1 << 3)) {
+				Cell memory cell = cells[((uint256(y) << 32) + uint256(x + 1))];
+				if (cell.life > 0 || cell.lastPeriodUpdate == period) {
+					enemies[numEnemiesAlive] = cell.owner;
+					numEnemiesAlive++;
+				}
+			}
+		}
+	}
+
 	function _checkHash(
 		bytes24 commitmentHash,
 		bytes32 secret,
@@ -403,33 +444,59 @@ contract Stratagems {
 		}
 	}
 
+	function _computeNewLife(
+		uint32 lastUpdate,
+		int8 delta,
+		uint8 life,
+		uint32 period
+	) internal view returns (uint8 newLife, uint32 periodUsed) {
+		if (lastUpdate >= 1 && life > 0) {
+			uint256 periodDelta = period - lastUpdate;
+			if (periodDelta > 0) {
+				int8 effectiveDelta = delta != 0 ? delta : -1;
+				if (effectiveDelta > 0) {
+					if (life < MAX_LIFE) {
+						uint8 maxPeriod = ((MAX_LIFE - life) + uint8(effectiveDelta) - 1) / uint8(effectiveDelta);
+						if (periodDelta > maxPeriod) {
+							periodDelta = maxPeriod;
+						}
+
+						life += uint8(periodDelta) * uint8(effectiveDelta);
+						if (life > MAX_LIFE) {
+							life = MAX_LIFE;
+						}
+						newLife = life;
+						periodUsed = lastUpdate + uint32(periodDelta);
+					}
+				} else if (effectiveDelta < 0) {
+					uint8 numPeriodBeforeDying = (life + uint8(-effectiveDelta) - 1) / uint8(-effectiveDelta);
+					if (periodDelta > numPeriodBeforeDying) {
+						periodDelta = numPeriodBeforeDying;
+					}
+					uint8 lifeLoss = uint8(periodDelta) * uint8(-effectiveDelta);
+					if (life < 0) {
+						life = 0;
+					}
+					periodUsed = lastUpdate + uint32(periodDelta);
+					newLife = life;
+				}
+			}
+		}
+	}
+
 	function _getUpdatedCell(uint64 position, uint32 period) internal view returns (Cell memory updatedCell) {
 		// load from state
 		updatedCell = cells[position];
 		uint32 lastUpdate = updatedCell.lastPeriodUpdate;
-		if (lastUpdate >= 1) {
-			int8 delta = updatedCell.delta;
-			int8 life = updatedCell.life;
-			int8 effectiveDelta = delta != 0 ? delta : -1;
-
-			uint256 periodDelta = period - lastUpdate;
-			// assert  periodDelta >= 0
-
-			if (periodDelta != 0) {
-				// update life if any changes
-				if (periodDelta > uint32(int32(MAX_LIFE))) {
-					periodDelta = uint32(int32(MAX_LIFE));
-				}
-				life += (int8(uint8(periodDelta)) * effectiveDelta);
-				if (life < 0) {
-					life = 0;
-				}
-				if (life > MAX_LIFE) {
-					life = MAX_LIFE;
-				}
-				updatedCell.life = life;
-				updatedCell.lastPeriodUpdate = period;
+		int8 delta = updatedCell.delta;
+		uint8 life = updatedCell.life;
+		if (lastUpdate >= 1 && life > 0) {
+			(uint8 newLife, uint32 periodUsed) = _computeNewLife(lastUpdate, delta, life, period);
+			if (newLife == 0) {
+				updatedCell.delta = 0;
 			}
+			updatedCell.life = newLife;
+			updatedCell.lastPeriodUpdate = periodUsed;
 		}
 	}
 
@@ -446,74 +513,69 @@ contract Stratagems {
 		assert(oldColor != newColor);
 		uint32 lastUpdate = cell.lastPeriodUpdate;
 		Color color = cell.color;
+		enemyOrFriend = color == newColor ? int8(1) : int8(-1);
 
-		if (lastUpdate >= 1 && color != Color.None) {
+		if (lastUpdate >= 1 && color != Color.None && cell.life > 0) {
 			int8 delta = cell.delta;
-			int8 life = cell.life;
-			int8 effectiveDelta = delta != 0 ? delta : -1;
+			uint8 life = cell.life;
 			uint8 enemymask = cell.enemymask;
+			(uint8 newLife, uint32 periodUsed) = _computeNewLife(lastUpdate, delta, life, period);
 
-			uint256 periodDelta = period - lastUpdate;
-			// assert  periodDelta >= 0
-
-			if (periodDelta != 0) {
-				// update life if any changes
-				if (periodDelta > uint32(int32(MAX_LIFE))) {
-					periodDelta = uint32(int32(MAX_LIFE));
-				}
-				life += (int8(uint8(periodDelta)) * effectiveDelta);
-				if (life < 0) {
-					life = 0;
-				}
-				if (life > MAX_LIFE) {
-					life = MAX_LIFE;
-				}
-			}
-
-			if (newColor == Color.None) {
-				// COLLISION, previous update added a color that should not be there
-				if (color == oldColor) {
-					delta -= 1;
-				} else {
-					delta += 1;
-					// remove enemy as it was added by COLLISION
+			if (newLife == 0) {
+				cell.life = newLife;
+				cell.lastPeriodUpdate = periodUsed;
+				cell.delta = 0;
+				_distributeDeath(position, cell.enemymask, periodUsed);
+			} else {
+				if (newColor == Color.None) {
+					// COLLISION, previous update added a color that should not be there
+					if (color == oldColor) {
+						delta -= 1;
+					} else {
+						delta += 1;
+						// remove enemy as it was added by COLLISION
+						enemymask = enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
+					}
+				} else if (color == oldColor) {
+					// then newColor is different (see assert above)
+					enemymask = enemymask | uint8(1 << neighbourIndex);
+					delta -= 2;
+				} else if (color == newColor) {
+					// then old color was different
+					delta += (oldColor == Color.None ? int8(1) : int8(2));
 					enemymask = enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
+				} else if (oldColor == Color.None) {
+					// if there were no oldCOlor and the newColor is not your (already checked in previous if clause)
+					delta -= 1;
+					enemymask = enemymask | uint8(1 << neighbourIndex);
 				}
-			} else if (color == oldColor) {
-				// then newColor is different (see assert above)
-				enemymask = enemymask | uint8(1 << neighbourIndex);
-				delta -= 2;
-			} else if (color == newColor) {
-				// then old color was different
-				delta += (oldColor == Color.None ? int8(1) : int8(2));
-				enemymask = enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
-			} else if (oldColor == Color.None) {
-				// if there were no oldCOlor and the newColor is not your (already checked in previous if clause)
-				delta -= 1;
-				enemymask = enemymask | uint8(1 << neighbourIndex);
+				cell.delta = delta;
+				cell.lastPeriodUpdate = period;
+				cell.life = newLife;
 			}
-			cell.delta = delta;
-			cell.lastPeriodUpdate = period;
-			cell.life = life;
-
-			if (life == 0) {
-				_distributeDeath(position, cell.enemymask);
-			}
-
-			enemyOrFriend = color == newColor ? int8(1) : int8(-1);
 		}
 	}
 
-	function _distributeDeath(uint64 position, uint8 enemymask) internal {
-		(address[4] memory enemies, uint8 numEnemies) = _getNeihbourEnemyPlayers(position, enemymask);
+	function _distributeDeath(uint64 position, uint8 enemymask, uint32 period) internal {
+		// TODO group transfers
+		(address[4] memory enemies, uint8 numEnemiesAlive) = _getNeihbourEnemiesAliveWithPlayers(
+			position,
+			enemymask,
+			period
+		);
+		if (numEnemiesAlive == 0) {
+			// TODO: do we burn tokens ?
+			TOKENS.transfer(address(0), DECIMALS);
+			return;
+		}
 		uint256 total = DECIMALS;
-		uint256 amount = total / numEnemies;
-		for (uint8 i = 0; i < numEnemies; i++) {
-			if (i == numEnemies - 1) {
-				amount = total;
+		uint256 amountPerEnenies = total / numEnemiesAlive;
+		for (uint8 i = 0; i < numEnemiesAlive; i++) {
+			if (i == numEnemiesAlive - 1) {
+				amountPerEnenies = total;
 			}
-			TOKENS.transfer(enemies[i], amount);
-			total -= amount;
+			TOKENS.transfer(enemies[i], amountPerEnenies);
+			total -= amountPerEnenies;
 		}
 	}
 
@@ -539,6 +601,11 @@ contract Stratagems {
 		}
 	}
 
+	// Note on COLLISION
+	// we could order color in a certain way so one color takes precedence over another
+	// And if the same color was used, we could consider the cell having N owner and N times the number of tokens
+	// such cells would be a good target for others
+	// On the other end,  on winning agains other cells, owner of such cell would have to divide the winnings
 	function _computeMove(
 		address player,
 		uint32 period,
