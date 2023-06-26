@@ -12,7 +12,7 @@
     "chai-as-promised": "^7.1.1",
     "eip-1193": "^0.4.7",
     "hardhat": "^2.15.0",
-    "hardhat-rocketh": "^0.6.0",
+    "hardhat-rocketh": "^0.6.1",
     "ldenv": "^0.3.7",
     "rocketh": "^0.6.0",
     "rocketh-deploy-proxy": "^0.6.0",

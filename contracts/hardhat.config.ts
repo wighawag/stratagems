@@ -23,4 +23,7 @@ export default {
 	paths: {
 		sources: 'src',
 	},
+	generateArtifacts: {
+		ts: 'generated/artifacts',
+	},
 };
