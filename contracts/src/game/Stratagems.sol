@@ -118,6 +118,11 @@ contract Stratagems {
 		bytes32 s;
 	}
 
+	struct Transfer {
+		address payable to;
+		uint256 amount;
+	}
+
 	/// @notice There is (2**128) * (2**128) cells
 	mapping(uint256 => Cell) public cells;
 	/// @notice the number of token in reserve per account
@@ -309,6 +314,34 @@ contract Stratagems {
 	/// @notice poke a position, resolving its virtual state and if dead, reward neighboor enemies colors
 	/// @param position the cell position
 	function poke(uint64 position) external {
+		(bool died, Transfer[4] memory distribution) = _poke(position);
+		if (died) {
+			Transfer[] memory transfers = new Transfer[](4);
+			_collectTransfers(transfers, 0, distribution);
+			_multiTransfer(transfers);
+		}
+	}
+
+	/// poke and collect the tokens won
+	/// @param positions cell positions to collect from
+	function pokeMultiple(uint64[] calldata positions) external {
+		uint256 numCells = positions.length;
+		Transfer[] memory transfers = new Transfer[](numCells * 4);
+		uint256 offset = 0;
+		for (uint256 i = 0; i < numCells; i++) {
+			(bool died, Transfer[4] memory distribution) = _poke(positions[i]);
+			if (died) {
+				offset = _collectTransfers(transfers, offset, distribution);
+			}
+		}
+		_multiTransfer(transfers);
+	}
+
+	// --------------------------------------------------------------------------------------------
+	// INTERNAL
+	// --------------------------------------------------------------------------------------------
+
+	function _poke(uint64 position) internal returns (bool died, Transfer[4] memory distribution) {
 		(uint32 period, ) = _period();
 		Cell storage cell = cells[position];
 		uint32 lastUpdate = cell.lastPeriodUpdate;
@@ -321,22 +354,11 @@ contract Stratagems {
 			cell.lastPeriodUpdate = periodUsed;
 			if (newLife == 0) {
 				cell.delta = 0;
-				_distributeDeath(position, cell.enemymask, periodUsed);
+				distribution = _getDeathDistribution(position, cell.enemymask, periodUsed);
+				died = true;
 			}
 		}
 	}
-
-	/// collect the tokens won
-	/// @param position cell position to collect from
-	function collect(uint64 position) external {}
-
-	/// poke and collect the tokens won
-	/// @param positions cell positions to collect from
-	function pokeAndCollect(uint64[] calldata positions) external {}
-
-	// --------------------------------------------------------------------------------------------
-	// INTERNAL
-	// --------------------------------------------------------------------------------------------
 
 	function _makeCommitment(address player, bytes24 commitmentHash, uint256 inReserve) internal {
 		Commitment storage commitment = commitments[player];
@@ -517,15 +539,17 @@ contract Stratagems {
 
 		if (lastUpdate >= 1 && color != Color.None && cell.life > 0) {
 			int8 delta = cell.delta;
-			uint8 life = cell.life;
 			uint8 enemymask = cell.enemymask;
-			(uint8 newLife, uint32 periodUsed) = _computeNewLife(lastUpdate, delta, life, period);
+			(uint8 newLife, uint32 periodUsed) = _computeNewLife(lastUpdate, delta, cell.life, period);
 
 			if (newLife == 0) {
 				cell.life = newLife;
 				cell.lastPeriodUpdate = periodUsed;
 				cell.delta = 0;
-				_distributeDeath(position, cell.enemymask, periodUsed);
+				Transfer[4] memory transfers4 = _getDeathDistribution(position, enemymask, periodUsed);
+				Transfer[] memory transfers = new Transfer[](4);
+				_collectTransfers(transfers, 0, transfers4);
+				_multiTransfer(transfers);
 			} else {
 				if (newColor == Color.None) {
 					// COLLISION, previous update added a color that should not be there
@@ -556,25 +580,123 @@ contract Stratagems {
 		}
 	}
 
-	function _distributeDeath(uint64 position, uint8 enemymask, uint32 period) internal {
+	// function _coalesceTransfer(address[4] memory addresses, uint256[4] memory amounts) internal {
+	// 	address[4] memory newAddresses;
+	// 	uint256[4] memory newAmounts;
+	// 	newAddresses[0] = addresses[0];
+	// 	newAmounts[0] = amounts[0];
+	// 	for (uint256 i = 1; i < 4; i++) {
+	// 		if (newAddresses[0] == address(0)) {
+	// 			newAddresses[0] = addresses[i];
+	// 			newAmounts[0] = amounts[i];
+	// 		} else if (addresses[i] == newAddresses[0]) {
+	// 			newAmounts[0] += amounts[i];
+	// 		} else if (newAddresses[1] == address(0)) {
+	// 			newAddresses[1] = addresses[i];
+	// 			newAmounts[1] = amounts[i];
+	// 		} else if (addresses[i] == newAddresses[1]) {
+	// 			newAmounts[1] += amounts[i];
+	// 		} else if (newAddresses[2] == address(0)) {
+	// 			newAddresses[2] = addresses[i];
+	// 			newAmounts[2] = amounts[i];
+	// 		} else if (addresses[i] == newAddresses[2]) {
+	// 			newAmounts[2] += amounts[i];
+	// 		} else if (newAddresses[3] == address(0)) {
+	// 			newAddresses[3] = addresses[i];
+	// 			newAmounts[3] = amounts[i];
+	// 		} else {
+	// 			// if (addresses[i] == newAddresses[3]) {
+	// 			newAmounts[3] += amounts[i];
+	// 		}
+	// 	}
+
+	// 	for (uint256 i = 0; i < 4; i++) {
+	// 		if (newAddresses[i] == address(0)) {
+	// 			break;
+	// 		}
+	// 		TOKENS.transfer(newAddresses[i], newAmounts[i]);
+	// 	}
+	// }
+
+	function _collectTransfers(
+		Transfer[] memory collected,
+		uint256 offset,
+		Transfer[4] memory transfers
+	) internal pure returns (uint256 newOffset) {
+		collected[offset].to = transfers[0].to;
+		collected[offset].amount = transfers[0].amount;
+		newOffset = offset;
+		for (uint256 i = 1; i < 4; i++) {
+			if (transfers[i].to == address(0)) {
+				continue;
+			}
+			if (collected[offset].to == address(0)) {
+				collected[offset].to = transfers[i].to;
+				collected[offset].amount = transfers[i].amount;
+				newOffset = offset + 1;
+			} else if (transfers[i].to == collected[offset].to) {
+				collected[offset].amount += transfers[i].amount;
+			} else if (collected[offset + 1].to == address(0)) {
+				collected[offset + 1].to = transfers[i].to;
+				collected[offset + 1].amount = transfers[i].amount;
+				newOffset = offset + 2;
+			} else if (transfers[i].to == collected[offset + 1].to) {
+				collected[offset + 1].amount += transfers[i].amount;
+			} else if (collected[offset + 2].to == address(0)) {
+				collected[offset + 2].to = transfers[i].to;
+				collected[offset + 2].amount = transfers[i].amount;
+				newOffset = offset + 3;
+			} else if (transfers[i].to == collected[offset + 2].to) {
+				collected[offset + 2].amount += transfers[i].amount;
+			} else if (collected[offset + 3].to == address(0)) {
+				collected[offset + 3].to = transfers[i].to;
+				collected[offset + 3].amount = transfers[i].amount;
+				newOffset = offset + 4;
+			} else {
+				// if (transfers[i].to == collected[offset+3].to) {
+				collected[offset + 3].amount += transfers[i].amount;
+			}
+		}
+	}
+
+	function _multiTransfer(Transfer[] memory transfers) internal {
+		for (uint256 i = 0; i < transfers.length; i++) {
+			if (transfers[i].to != address(0)) {
+				TOKENS.transfer(transfers[i].to, transfers[i].amount);
+			} else {
+				// we break on zero address
+				break;
+			}
+		}
+	}
+
+	function _getDeathDistribution(
+		uint64 position,
+		uint8 enemymask,
+		uint32 period
+	) internal view returns (Transfer[4] memory transfers) {
 		// TODO group transfers
 		(address[4] memory enemies, uint8 numEnemiesAlive) = _getNeihbourEnemiesAliveWithPlayers(
 			position,
 			enemymask,
 			period
 		);
-		if (numEnemiesAlive == 0) {
-			// TODO: do we burn tokens ?
-			TOKENS.transfer(address(0), DECIMALS);
-			return;
-		}
 		uint256 total = DECIMALS;
+
+		if (numEnemiesAlive == 0) {
+			// TODO give it back to owner instead
+			// TOKENS.transfer(address(0), DECIMALS);
+			transfers[0] = Transfer({to: payable(0xdeaDDeADDEaDdeaDdEAddEADDEAdDeadDEADDEaD), amount: total});
+			return transfers;
+		}
+
 		uint256 amountPerEnenies = total / numEnemiesAlive;
 		for (uint8 i = 0; i < numEnemiesAlive; i++) {
 			if (i == numEnemiesAlive - 1) {
 				amountPerEnenies = total;
 			}
-			TOKENS.transfer(enemies[i], amountPerEnenies);
+			// TOKENS.transfer(enemies[i], amountPerEnenies);
+			transfers[i] = Transfer({to: payable(enemies[i]), amount: amountPerEnenies});
 			total -= amountPerEnenies;
 		}
 	}
