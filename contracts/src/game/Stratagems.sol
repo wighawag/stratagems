@@ -38,13 +38,15 @@ contract Stratagems {
 
 	/// @notice Player have withdrawn token from the reserve
 	/// @param player account withdrawing the tokens
-	/// @param amount the number of tokens withdrawnn
-	event ReserveWithdrawn(address indexed player, uint256 amount);
+	/// @param amountWithdrawn the number of tokens withdrawnn
+	/// @param newAmount the number of tokens in reserver as a result
+	event ReserveWithdrawn(address indexed player, uint256 amountWithdrawn, uint256 newAmount);
 
 	/// @notice Player has deposited token in the reserve, allowing it to use that much in game
 	/// @param player account receiving the token in the reserve
-	/// @param amount the number of tokens deposited
-	event ReserveDeposited(address indexed player, uint256 amount);
+	/// @param amountDeposited the number of tokens deposited
+	/// @param newAmount the number of tokens in reserver as a result
+	event ReserveDeposited(address indexed player, uint256 amountDeposited, uint256 newAmount);
 
 	/// @notice The token used for the game. Each gems on the board contains that token
 	IERC20WithIERC2612 public immutable TOKENS;
@@ -137,16 +139,18 @@ contract Stratagems {
 
 	/// @notice called by players to add tokens to their reserve
 	/// @param tokensAmountToAdd amount of tokens to add
-	/// @param permit permit EIP2612, value = zero if not needed
+	/// @param permit permit EIP2612, .value = zero if not needed
 	function addToReserve(uint256 tokensAmountToAdd, Permit calldata permit) external {
 		if (tokensAmountToAdd > 0) {
+			uint256 newAmount = tokensInReserve[msg.sender];
+			newAmount += tokensAmountToAdd;
+			tokensInReserve[msg.sender] = newAmount;
+
 			if (permit.value > 0) {
 				TOKENS.permit(msg.sender, address(this), permit.value, permit.deadline, permit.v, permit.r, permit.s);
 			}
-			tokensInReserve[msg.sender] += tokensAmountToAdd;
-
 			TOKENS.transferFrom(msg.sender, address(this), tokensAmountToAdd);
-			emit ReserveDeposited(msg.sender, tokensAmountToAdd); // TODO emit the new amount?
+			emit ReserveDeposited(msg.sender, tokensAmountToAdd, newAmount); // TODO emit the new amount?
 		}
 	}
 
@@ -178,7 +182,7 @@ contract Stratagems {
 
 		if (tokensAmountToAdd > 0) {
 			TOKENS.transferFrom(msg.sender, address(this), tokensAmountToAdd);
-			emit ReserveDeposited(msg.sender, tokensAmountToAdd); // TODO add total amount in reserve too
+			emit ReserveDeposited(msg.sender, tokensAmountToAdd, inReserve);
 		}
 	}
 
@@ -204,7 +208,7 @@ contract Stratagems {
 		}
 		tokensInReserve[msg.sender] = inReserve;
 		TOKENS.transfer(msg.sender, amount);
-		emit ReserveWithdrawn(msg.sender, amount); // TODO emit new amount?
+		emit ReserveWithdrawn(msg.sender, amount, inReserve);
 	}
 
 	/// @notice called by player to resolve their commitment
@@ -224,32 +228,13 @@ contract Stratagems {
 		require(commitment.epoch != 0, 'NOTHING_TO_RESOLVE');
 		require(commitment.epoch == epoch, 'INVALID_EPOCH');
 
-		uint256 numMoves = moves.length;
-
 		_checkHash(commitment.hash, secret, moves, furtherMoves);
 
-		uint256 tokensPlaced = 0;
-		uint256 tokensBurnt = 0;
-		for (uint256 i = 0; i < numMoves; i++) {
-			(uint256 placed, ) = _computeMove(player, epoch, moves[i]);
-			tokensPlaced += placed;
-			// tokensBurnt += burnt;
-		}
-
-		uint256 amountInReserve = tokensInReserve[player];
-
-		require(amountInReserve >= tokensPlaced + tokensBurnt);
-		amountInReserve -= tokensPlaced + tokensBurnt;
-		tokensInReserve[player] = amountInReserve;
-
-		tokensInPlay += tokensPlaced;
-		// if (tokensBurnt != 0) {
-		// 	TOKENS.burn(tokensBurnt);
-		// }
+		_resolveMoves(player, epoch, moves);
 
 		bytes24 hashResolved = commitment.hash;
 		if (furtherMoves != bytes24(0)) {
-			require(numMoves == NUM_MOVES_PER_HASH, 'INVALID_FURTHER_MOVES');
+			require(moves.length == NUM_MOVES_PER_HASH, 'INVALID_FURTHER_MOVES');
 			commitment.hash = furtherMoves;
 		} else {
 			commitment.epoch = 0; // used
@@ -376,6 +361,30 @@ contract Stratagems {
 		emit CommitmentMade(player, epoch, commitmentHash);
 	}
 
+	function _resolveMoves(address player, uint32 epoch, Move[] memory moves) internal {
+		uint256 tokensPlaced = 0;
+		uint256 tokensBurnt = 0;
+		for (uint256 i = 0; i < moves.length; i++) {
+			(uint256 placed, ) = _computeMove(player, epoch, moves[i]);
+			tokensPlaced += placed;
+			// tokensBurnt += burnt;
+		}
+
+		uint256 amountInReserve = tokensInReserve[player];
+
+		// TODO add option to leave reserve alone
+		// we still check reserve to ensure player cannot just cancel by having a small reserve
+		// but using external fund might make a riendly experience to keep playing
+		require(amountInReserve >= tokensPlaced + tokensBurnt);
+		amountInReserve -= tokensPlaced + tokensBurnt;
+		tokensInReserve[player] = amountInReserve;
+
+		tokensInPlay += tokensPlaced;
+		// if (tokensBurnt != 0) {
+		// 	TOKENS.burn(tokensBurnt);
+		// }
+	}
+
 	function _epoch() internal view virtual returns (uint32 epoch, bool commiting) {
 		uint256 epochDuration = COMMIT_PHASE_DURATION + RESOLUTION_PHASE_DURATION;
 		require(block.timestamp >= START_TIME, 'GAME_NOT_STARTED');
@@ -496,11 +505,12 @@ contract Stratagems {
 						epochDelta = numEpochBeforeDying;
 					}
 					uint8 lifeLoss = uint8(epochDelta) * uint8(-effectiveDelta);
-					if (life < 0) {
-						life = 0;
+					if (lifeLoss > life) {
+						newLife = 0;
+					} else {
+						newLife = life - lifeLoss;
 					}
 					epochUsed = lastUpdate + uint32(epochDelta);
-					newLife = life;
 				}
 			}
 		}
@@ -696,6 +706,7 @@ contract Stratagems {
 		Move memory move
 	) internal returns (uint256 tokensPlaced, uint256 invalidMove) {
 		Cell memory currentState = _getUpdatedCell(move.position, epoch);
+		// TODO Make it real, store the result and potential death distribution
 
 		if (currentState.epochWhenTokenIsAdded == epoch) {
 			// COLLISION
