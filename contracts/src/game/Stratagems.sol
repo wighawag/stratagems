@@ -125,7 +125,7 @@ contract Stratagems {
 		bytes32 s;
 	}
 
-	struct Transfer {
+	struct TokenTransfer {
 		address payable to;
 		uint256 amount;
 	}
@@ -300,9 +300,9 @@ contract Stratagems {
 	/// @notice poke a position, resolving its virtual state and if dead, reward neighboor enemies colors
 	/// @param position the cell position
 	function poke(uint64 position) external {
-		(bool died, Transfer[4] memory distribution) = _poke(position);
+		(bool died, TokenTransfer[4] memory distribution) = _poke(position);
 		if (died) {
-			Transfer[] memory transfers = new Transfer[](4);
+			TokenTransfer[] memory transfers = new TokenTransfer[](4);
 			_collectTransfers(transfers, 0, distribution);
 			_multiTransfer(transfers);
 		}
@@ -312,10 +312,10 @@ contract Stratagems {
 	/// @param positions cell positions to collect from
 	function pokeMultiple(uint64[] calldata positions) external {
 		uint256 numCells = positions.length;
-		Transfer[] memory transfers = new Transfer[](numCells * 4);
+		TokenTransfer[] memory transfers = new TokenTransfer[](numCells * 4);
 		uint256 offset = 0;
 		for (uint256 i = 0; i < numCells; i++) {
-			(bool died, Transfer[4] memory distribution) = _poke(positions[i]);
+			(bool died, TokenTransfer[4] memory distribution) = _poke(positions[i]);
 			if (died) {
 				offset = _collectTransfers(transfers, offset, distribution);
 			}
@@ -327,7 +327,7 @@ contract Stratagems {
 	// INTERNAL
 	// --------------------------------------------------------------------------------------------
 
-	function _poke(uint64 position) internal returns (bool died, Transfer[4] memory distribution) {
+	function _poke(uint64 position) internal returns (bool died, TokenTransfer[4] memory distribution) {
 		(uint32 epoch, ) = _epoch();
 		Cell storage cell = cells[position];
 		uint32 lastUpdate = cell.lastEpochUpdate;
@@ -556,8 +556,8 @@ contract Stratagems {
 				cell.life = newLife;
 				cell.lastEpochUpdate = epochUsed;
 				cell.delta = 0;
-				Transfer[4] memory transfers4 = _getDeathDistribution(cell.owner, position, enemymask, epochUsed);
-				Transfer[] memory transfers = new Transfer[](4);
+				TokenTransfer[4] memory transfers4 = _getDeathDistribution(cell.owner, position, enemymask, epochUsed);
+				TokenTransfer[] memory transfers = new TokenTransfer[](4);
 				_collectTransfers(transfers, 0, transfers4);
 				_multiTransfer(transfers);
 			} else {
@@ -591,9 +591,9 @@ contract Stratagems {
 	}
 
 	function _collectTransfers(
-		Transfer[] memory collected,
+		TokenTransfer[] memory collected,
 		uint256 offset,
-		Transfer[4] memory transfers
+		TokenTransfer[4] memory transfers
 	) internal pure returns (uint256 newOffset) {
 		collected[offset].to = transfers[0].to;
 		collected[offset].amount = transfers[0].amount;
@@ -631,7 +631,7 @@ contract Stratagems {
 		}
 	}
 
-	function _multiTransfer(Transfer[] memory transfers) internal {
+	function _multiTransfer(TokenTransfer[] memory transfers) internal {
 		for (uint256 i = 0; i < transfers.length; i++) {
 			if (transfers[i].to != address(0)) {
 				TOKENS.transfer(transfers[i].to, transfers[i].amount);
@@ -647,7 +647,7 @@ contract Stratagems {
 		uint64 position,
 		uint8 enemymask,
 		uint32 epoch
-	) internal view returns (Transfer[4] memory transfers) {
+	) internal view returns (TokenTransfer[4] memory transfers) {
 		(address[4] memory enemies, uint8 numEnemiesAlive) = _getNeihbourEnemiesAliveWithPlayers(
 			position,
 			enemymask,
@@ -656,7 +656,7 @@ contract Stratagems {
 		uint256 total = DECIMALS;
 
 		if (numEnemiesAlive == 0) {
-			transfers[0] = Transfer({to: payable(cellOwner), amount: total});
+			transfers[0] = TokenTransfer({to: payable(cellOwner), amount: total});
 			return transfers;
 		}
 
@@ -665,7 +665,7 @@ contract Stratagems {
 			if (i == numEnemiesAlive - 1) {
 				amountPerEnenies = total;
 			}
-			transfers[i] = Transfer({to: payable(enemies[i]), amount: amountPerEnenies});
+			transfers[i] = TokenTransfer({to: payable(enemies[i]), amount: amountPerEnenies});
 			total -= amountPerEnenies;
 		}
 	}
