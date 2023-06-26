@@ -55,6 +55,16 @@ contract StratagemsCore is IStratagemsCore {
 	/// @notice The commitment to be resolved. zeroed if no commitment need to be made.
 	mapping(address => Commitment) public commitments;
 
+	function getConfig() external view returns (Config memory config) {
+		config.tokens = TOKENS;
+		config.burnAddress = BURN_ADDRESS;
+		config.startTime = START_TIME;
+		config.commitPhaseDuration = COMMIT_PHASE_DURATION;
+		config.resolutionPhaseDuration = RESOLUTION_PHASE_DURATION;
+		config.maxLife = MAX_LIFE;
+		config.numTokensPerGems = NUM_TOKENS_PER_GEMS;
+	}
+
 	/// @notice called by players to add tokens to their reserve
 	/// @param tokensAmountToAdd amount of tokens to add
 	/// @param permit permit EIP2612, .value = zero if not needed

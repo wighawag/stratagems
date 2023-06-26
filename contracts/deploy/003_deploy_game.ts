@@ -1,12 +1,13 @@
 import {Deployment, execute} from 'rocketh';
 import 'rocketh-deploy-proxy';
+import 'rocketh-deploy-router';
 import {context} from './_context';
 import {contract} from '../utils/viem';
 import {minutes} from '../utils/time';
 
 export default execute(
 	context,
-	async ({deployViaProxy, deployments, accounts, artifacts, network}) => {
+	async ({deployViaProxy, deployments, accounts, artifacts, network, deployViaRouter}) => {
 		const {deployer} = accounts;
 
 		const TestTokens = contract(deployments.TestTokens as Deployment<typeof context.artifacts.TestTokens.abi>);
@@ -42,6 +43,15 @@ export default execute(
 			},
 			{
 				owner: accounts.deployer,
+				deployImplementation: (name, args) => {
+					return deployViaRouter(
+						name,
+						{
+							...(args as any),
+						},
+						[{name: 'Core', artifact: artifacts.StratagemsCore, args: [config]}]
+					) as any;
+				},
 			}
 		);
 	},
