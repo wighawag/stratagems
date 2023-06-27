@@ -4,6 +4,7 @@ import 'rocketh-deploy-router';
 import {context} from './_context';
 import {contract} from '../utils/viem';
 import {minutes} from '../utils/time';
+import {zeroAddress} from 'viem';
 
 export default execute(
 	context,
@@ -18,7 +19,7 @@ export default execute(
 		const config = {
 			tokens: TestTokens.address,
 			numTokensPerGems: BigInt(2) ** decimals,
-			burnAddress: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+			burnAddress: zeroAddress,
 			// startTime: nextSunday(),
 			startTime: timestamp, // nextSunday(),
 			// commitPeriod: days(2.5), // TODO support more complex period to support a special weekend commit period
@@ -27,6 +28,14 @@ export default execute(
 			resolutionPhaseDuration: BigInt(minutes(5)), // days(1),
 			maxLife: 5,
 		};
+
+		const routes = [
+			{name: 'Core', artifact: artifacts.StratagemsCore, args: [config]},
+			{name: 'ERC721', artifact: artifacts.StratagemsERC721 as any, args: [config]},
+		];
+		if (!network.tags['mainnet']) {
+			routes.push({name: 'Debug', artifact: artifacts.StratagemsDebug as any, args: [config]});
+		}
 
 		await deployViaProxy(
 			'Stratagems',
@@ -38,11 +47,7 @@ export default execute(
 						{
 							...(args as any),
 						},
-						[
-							{name: 'Core', artifact: artifacts.StratagemsCore, args: [config]},
-							{name: 'ERC721', artifact: artifacts.StratagemsERC721 as any, args: [config]},
-							{name: 'Debug', artifact: artifacts.StratagemsDebug as any, args: [config]},
-						]
+						routes
 					) as Promise<Deployment<typeof artifacts.IStratagems.abi>>;
 				},
 				args: [config],

@@ -1,17 +1,18 @@
 import {execute} from 'rocketh';
 import 'rocketh-deploy-proxy';
 import {context} from './_context';
+import {parseEther} from 'viem';
 
 export default execute(
 	context,
 	async ({deployViaProxy, accounts, artifacts}) => {
-		const {deployer} = accounts;
+		const {deployer, tokensBeneficiary} = accounts;
 		await deployViaProxy(
 			'TestTokens',
 			{
 				account: deployer,
 				artifact: artifacts.TestTokens,
-				args: [deployer, 1000000000000000000000000000n], // 1billion of token (decimal 18)
+				args: [tokensBeneficiary, parseEther('1000000000')], // 18 decimal like ether
 			},
 			{
 				owner: accounts.deployer,
