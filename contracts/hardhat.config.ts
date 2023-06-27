@@ -26,5 +26,6 @@ export default {
 	},
 	docgen: {
 		templates: 'docs_templates',
+		pages: 'files',
 	},
 };
