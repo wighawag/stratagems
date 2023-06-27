@@ -35,7 +35,11 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		NUM_TOKENS_PER_GEMS = config.numTokensPerGems;
 	}
 
-	function _poke(uint64 position) internal returns (bool died, TokenTransfer[4] memory distribution) {
+	function _poke(
+		TokenTransfer[] memory transfers,
+		uint256 numAddressesToDistributeTo,
+		uint64 position
+	) internal returns (uint256 newNumAddressesToDistributeTo) {
 		(uint32 epoch, ) = _epoch();
 		Cell storage cell = _cells[position];
 		uint32 lastUpdate = cell.lastEpochUpdate;
@@ -43,13 +47,22 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		uint8 life = cell.life;
 		int8 delta = cell.delta;
 		if (lastUpdate >= 1 && color != Color.None && life > 0) {
+			// the cell is alive here
 			(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, delta, life, epoch);
 			cell.life = newLife;
 			cell.lastEpochUpdate = epochUsed;
 			if (newLife == 0) {
+				// but not anymore here
 				cell.delta = 0;
-				distribution = _getDeathDistribution(cell.owner, position, cell.enemymask, epochUsed);
-				died = true;
+				// we thus distribute the tokens to enemy neighbours
+				newNumAddressesToDistributeTo = _distributeDeath(
+					transfers,
+					numAddressesToDistributeTo,
+					cell.owner,
+					position,
+					cell.enemymask,
+					epochUsed
+				);
 			}
 		}
 	}
@@ -76,20 +89,20 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		Move[] memory moves,
 		bool fromReserve
 	) internal returns (uint256 newReserveAmount) {
+		// max number of transfer is 4 * moves.length (for each move's cell's neighbours potentially being a different account)
 		TokenTransfer[] memory transfers = new TokenTransfer[](moves.length * 4);
 		uint256 numAddressesToDistributeTo = 0;
 		uint256 tokensPlaced = 0;
 		uint256 tokensBurnt = 0;
 		for (uint256 i = 0; i < moves.length; i++) {
-			(uint256 placed, uint256 burnt, bool cellDied, TokenTransfer[4] memory distribution) = _computeMove(
+			(uint256 placed, uint256 burnt, uint256 newNumAddressesToDistributeTo) = _computeMove(
+				transfers,
+				numAddressesToDistributeTo,
 				player,
 				epoch,
 				moves[i]
 			);
-
-			if (cellDied) {
-				numAddressesToDistributeTo = _collectTransfers(transfers, numAddressesToDistributeTo, distribution);
-			}
+			numAddressesToDistributeTo = newNumAddressesToDistributeTo;
 			tokensPlaced += placed;
 			tokensBurnt += burnt;
 		}
@@ -265,6 +278,63 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		}
 	}
 
+	function _updateCellAsDead(
+		uint64 position,
+		Cell storage cell,
+		uint8 newLife,
+		uint32 epochUsed,
+		address owner,
+		uint8 enemymask
+	) internal {
+		cell.life = newLife;
+		cell.lastEpochUpdate = epochUsed;
+		cell.delta = 0;
+		// max number of transfer is 4 (for each neighbours potentially being a different account)
+		TokenTransfer[] memory transfers = new TokenTransfer[](4);
+		uint256 numAddressesToTransferTo = _distributeDeath(transfers, 0, owner, position, enemymask, epochUsed);
+
+		_multiTransfer(transfers, numAddressesToTransferTo);
+	}
+
+	// function _updateCellFromNeighbor(
+	// 	Cell storage cell,
+	// 	uint8 newLife,
+	// 	uint32 epoch,
+	// 	uint8 enemymask,
+	// 	Color color,
+	// 	int8 delta,
+	// 	uint8 neighbourIndex,
+	// 	Color oldColor,
+	// 	Color newColor
+	// ) internal {
+	// 	if (newColor == Color.None) {
+	// 		// COLLISION, previous update added a color that should not be there
+	// 		if (color == oldColor) {
+	// 			delta -= 1;
+	// 		} else {
+	// 			delta += 1;
+	// 			// remove enemy as it was added by COLLISION
+	// 			enemymask = enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
+	// 		}
+	// 	} else if (color == oldColor) {
+	// 		// then newColor is different (see assert above)
+	// 		enemymask = enemymask | uint8(1 << neighbourIndex);
+	// 		delta -= 2;
+	// 	} else if (color == newColor) {
+	// 		// then old color was different
+	// 		delta += (oldColor == Color.None ? int8(1) : int8(2));
+	// 		enemymask = enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
+	// 	} else if (oldColor == Color.None) {
+	// 		// if there were no oldCOlor and the newColor is not your (already checked in previous if clause)
+	// 		delta -= 1;
+	// 		enemymask = enemymask | uint8(1 << neighbourIndex);
+	// 	}
+	// 	cell.delta = delta;
+	// 	cell.lastEpochUpdate = epoch;
+	// 	cell.life = newLife;
+	// 	cell.enemymask = enemymask;
+	// }
+
 	function _updateCell(
 		uint64 position,
 		uint32 epoch,
@@ -286,12 +356,7 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 			(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, delta, cell.life, epoch);
 
 			if (newLife == 0) {
-				cell.life = newLife;
-				cell.lastEpochUpdate = epochUsed;
-				cell.delta = 0;
-				TokenTransfer[4] memory transfers4 = _getDeathDistribution(cell.owner, position, enemymask, epochUsed);
-				TokenTransfer[] memory transfers = new TokenTransfer[](4);
-				_multiTransfer(transfers, _collectTransfers(transfers, 0, transfers4));
+				_updateCellAsDead(position, cell, newLife, epochUsed, cell.owner, enemymask);
 			} else {
 				if (newColor == Color.None) {
 					// COLLISION, previous update added a color that should not be there
@@ -322,31 +387,25 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		}
 	}
 
-	function _collectTransfers(
+	function _collectTransfer(
 		TokenTransfer[] memory collected,
 		uint256 numAddressesToDistributeTo,
-		TokenTransfer[4] memory transfers
+		TokenTransfer memory newTransfer
 	) internal pure returns (uint256) {
-		for (uint256 i = 0; i < 4; i++) {
-			if (transfers[i].amount == 0) {
-				// we skip all if there is nothing to transfer
-				break;
+		// we look for the newTransfer address in case it is already present
+		for (uint256 k = 0; k < numAddressesToDistributeTo; k++) {
+			if (collected[k].to == newTransfer.to) {
+				// if we found we add the amount
+				collected[k].amount += newTransfer.amount;
+				// and return
+				return numAddressesToDistributeTo;
 			}
-			// else we look for existing address
-			for (uint256 k = 0; k < numAddressesToDistributeTo; k++) {
-				if (collected[k].to == transfers[i].to) {
-					// if we found we add the amount
-					collected[k].amount += transfers[i].amount;
-					// and skip to next
-					continue;
-				}
-			}
-			// if we did not find that address we add it to the end
-			collected[numAddressesToDistributeTo].to = transfers[i].to;
-			collected[numAddressesToDistributeTo].amount = transfers[i].amount;
-			// and increase the size to lookup
-			numAddressesToDistributeTo++;
 		}
+		// if we did not find that address we add it to the end
+		collected[numAddressesToDistributeTo].to = newTransfer.to;
+		collected[numAddressesToDistributeTo].amount = newTransfer.amount;
+		// and increase the size to lookup
+		numAddressesToDistributeTo++;
 		return numAddressesToDistributeTo;
 	}
 
@@ -356,12 +415,14 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		}
 	}
 
-	function _getDeathDistribution(
+	function _distributeDeath(
+		TokenTransfer[] memory transfers,
+		uint256 numAddressesToDistributeTo,
 		address cellOwner,
 		uint64 position,
 		uint8 enemymask,
 		uint32 epoch
-	) internal view returns (TokenTransfer[4] memory transfers) {
+	) internal view returns (uint256) {
 		(address[4] memory enemies, uint8 numEnemiesAlive) = _getNeihbourEnemiesAliveWithPlayers(
 			position,
 			enemymask,
@@ -370,8 +431,12 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		uint256 total = NUM_TOKENS_PER_GEMS;
 
 		if (numEnemiesAlive == 0) {
-			transfers[0] = TokenTransfer({to: payable(cellOwner), amount: total});
-			return transfers;
+			return
+				_collectTransfer(
+					transfers,
+					numAddressesToDistributeTo,
+					TokenTransfer({to: payable(cellOwner), amount: total})
+				);
 		}
 
 		uint256 amountPerEnenies = total / numEnemiesAlive;
@@ -379,9 +444,14 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 			if (i == numEnemiesAlive - 1) {
 				amountPerEnenies = total;
 			}
-			transfers[i] = TokenTransfer({to: payable(enemies[i]), amount: amountPerEnenies});
 			total -= amountPerEnenies;
+			numAddressesToDistributeTo = _collectTransfer(
+				transfers,
+				numAddressesToDistributeTo,
+				TokenTransfer({to: payable(enemies[i]), amount: amountPerEnenies})
+			);
 		}
+		return numAddressesToDistributeTo;
 	}
 
 	function _updateNeighbours(
@@ -412,10 +482,12 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 	// such cells would be a good target for others
 	// On the other end,  on winning agains other cells, owner of such cell would have to divide the winnings
 	function _computeMove(
+		TokenTransfer[] memory transfers,
+		uint256 numAddressesToDistributeTo,
 		address player,
 		uint32 epoch,
 		Move memory move
-	) internal returns (uint256 tokensPlaced, uint256 tokensBurnt, bool died, TokenTransfer[4] memory distribution) {
+	) internal returns (uint256 tokensPlaced, uint256 tokensBurnt, uint256 newNumAddressesToDistributeTo) {
 		Cell memory currentState = _getUpdatedCell(move.position, epoch);
 		// TODO Make it real, store the result and potential death distribution
 		// cell.life = newLife;
@@ -423,13 +495,14 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
 			// we are here because life reach zero (lastEpochUpdate != 0 indicates that the cell was alive and not reset like below)
 			// Note: we need to pay attention when we add the leave mechanism
-			distribution = _getDeathDistribution(
+			newNumAddressesToDistributeTo = _distributeDeath(
+				transfers,
+				numAddressesToDistributeTo,
 				currentState.owner,
 				move.position,
 				currentState.enemymask,
 				currentState.lastEpochUpdate
 			);
-			died = true;
 		}
 
 		if (currentState.epochWhenTokenIsAdded == epoch) {

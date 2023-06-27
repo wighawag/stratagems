@@ -172,23 +172,20 @@ contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
 
 	/// @inheritdoc IStratagemsCore
 	function poke(uint64 position) external {
-		(bool died, TokenTransfer[4] memory distribution) = _poke(position);
-		if (died) {
-			TokenTransfer[] memory transfers = new TokenTransfer[](4); // max size is 4 here
-			_multiTransfer(transfers, _collectTransfers(transfers, 0, distribution));
-		}
+		// max number of transfer is 4 (for each neighbour's potentially being a different account)
+		TokenTransfer[] memory transfers = new TokenTransfer[](4);
+		uint256 numAddressesToDistributeTo = _poke(transfers, 0, position);
+		_multiTransfer(transfers, numAddressesToDistributeTo);
 	}
 
 	/// @inheritdoc IStratagemsCore
 	function pokeMultiple(uint64[] calldata positions) external {
 		uint256 numCells = positions.length;
+		// max number of transfer is 4 * numCells (for each cell's neighbours potentially being a different account)
 		TokenTransfer[] memory transfers = new TokenTransfer[](numCells * 4);
 		uint256 numAddressesToDistributeTo = 0;
 		for (uint256 i = 0; i < numCells; i++) {
-			(bool died, TokenTransfer[4] memory distribution) = _poke(positions[i]);
-			if (died) {
-				numAddressesToDistributeTo = _collectTransfers(transfers, numAddressesToDistributeTo, distribution);
-			}
+			numAddressesToDistributeTo = _poke(transfers, numAddressesToDistributeTo, positions[i]);
 		}
 		_multiTransfer(transfers, numAddressesToDistributeTo);
 	}

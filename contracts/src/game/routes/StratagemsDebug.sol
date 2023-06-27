@@ -14,12 +14,12 @@ contract StratagemsDebug is UsingStratagemsFunctions, UsingControlledTime {
 		}
 	}
 
-	function forceMoves(address player, Move[] memory moves) external {
+	function forceMoves(address player, Move[] memory moves, bool fromReserve) external {
 		require(msg.sender == _getOwner(), 'NOT_AUTHORIZED');
 		(uint32 epoch, bool commiting) = _epoch();
 		if (commiting) {
 			epoch--;
 		}
-		_resolveMoves(player, epoch, moves);
+		_resolveMoves(player, epoch, moves, fromReserve);
 	}
 }

@@ -15,7 +15,6 @@ interface StratagemsTypes {
 		Yellow
 	}
 
-	/// @notice
 	struct Cell {
 		address owner;
 		uint32 lastEpochUpdate;
