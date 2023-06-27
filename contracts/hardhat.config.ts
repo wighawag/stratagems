@@ -6,8 +6,33 @@ import 'hardhat-rocketh';
 import 'solidity-docgen';
 import {addForkConfiguration, addNetworksFromEnv} from 'hardhat-rocketh';
 
+const defaultVersion = '0.8.20';
+const defaultSettings = {
+	optimizer: {
+		enabled: true,
+		runs: 999999,
+	},
+};
 export default {
-	solidity: '0.8.20',
+	solidity: {
+		compilers: [
+			{
+				version: defaultVersion,
+				settings: {...defaultSettings},
+			},
+		],
+		overrides: {
+			'src/game/routes/StratagemsCore.sol': {
+				version: '0.8.19',
+				settings: {
+					...defaultSettings,
+					metadata: {
+						appendCBOR: false,
+					},
+				},
+			},
+		},
+	},
 	networks:
 		// this setup forking for netwoirk if env var HARDHAT_FORK is set
 		addForkConfiguration(
