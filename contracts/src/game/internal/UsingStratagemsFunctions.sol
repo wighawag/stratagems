@@ -41,7 +41,7 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		uint64 position
 	) internal returns (uint256 newNumAddressesToDistributeTo) {
 		(uint32 epoch, ) = _epoch();
-		Cell storage cell = _cells[position];
+		Cell memory cell = _cells[position];
 		uint32 lastUpdate = cell.lastEpochUpdate;
 		Color color = cell.color;
 		uint8 life = cell.life;
@@ -63,6 +63,10 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 					epochUsed
 				);
 			}
+			_cells[position] = cell;
+			// we keep the owner as it is used to compute winnings from this cell
+			// alternative would be to always compute the 5 cells distribution
+			// but the other 4 cell would have the same problem, they would be half computed anyway
 		}
 	}
 
@@ -123,10 +127,6 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 			if (tokensBurnt != 0) {
 				TOKENS.transferFrom(player, BURN_ADDRESS, tokensBurnt);
 			}
-		}
-
-		if (tokensBurnt != 0) {
-			TOKENS.transfer(BURN_ADDRESS, tokensBurnt);
 		}
 	}
 
@@ -254,61 +254,54 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		}
 	}
 
-	function _updateCellAsDead(
-		uint64 position,
-		Cell storage cell,
-		uint8 newLife,
-		uint32 epochUsed,
-		uint8 enemymask
-	) internal {
+	function _updateCellAsDead(uint64 position, Cell memory cell, uint8 newLife, uint32 epochUsed) internal {
 		cell.life = newLife;
 		cell.lastEpochUpdate = epochUsed;
 		cell.delta = 0;
 		// max number of transfer is 4 (for each neighbours potentially being a different account)
 		TokenTransfer[] memory transfers = new TokenTransfer[](4);
-		uint256 numAddressesToTransferTo = _distributeDeath(transfers, 0, position, enemymask, epochUsed);
+		uint256 numAddressesToTransferTo = _distributeDeath(transfers, 0, position, cell.enemymask, epochUsed);
+
+		_cells[position] = cell;
 
 		_multiTransfer(transfers, numAddressesToTransferTo);
 	}
 
-	// function _updateCellFromNeighbor(
-	// 	Cell storage cell,
-	// 	uint8 newLife,
-	// 	uint32 epoch,
-	// 	uint8 enemymask,
-	// 	Color color,
-	// 	int8 delta,
-	// 	uint8 neighbourIndex,
-	// 	Color oldColor,
-	// 	Color newColor
-	// ) internal {
-	// 	if (newColor == Color.None) {
-	// 		// COLLISION, previous update added a color that should not be there
-	// 		if (color == oldColor) {
-	// 			delta -= 1;
-	// 		} else {
-	// 			delta += 1;
-	// 			// remove enemy as it was added by COLLISION
-	// 			enemymask = enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
-	// 		}
-	// 	} else if (color == oldColor) {
-	// 		// then newColor is different (see assert above)
-	// 		enemymask = enemymask | uint8(1 << neighbourIndex);
-	// 		delta -= 2;
-	// 	} else if (color == newColor) {
-	// 		// then old color was different
-	// 		delta += (oldColor == Color.None ? int8(1) : int8(2));
-	// 		enemymask = enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
-	// 	} else if (oldColor == Color.None) {
-	// 		// if there were no oldCOlor and the newColor is not your (already checked in previous if clause)
-	// 		delta -= 1;
-	// 		enemymask = enemymask | uint8(1 << neighbourIndex);
-	// 	}
-	// 	cell.delta = delta;
-	// 	cell.lastEpochUpdate = epoch;
-	// 	cell.life = newLife;
-	// 	cell.enemymask = enemymask;
-	// }
+	function _updateCellFromNeighbor(
+		uint64 position,
+		Cell memory cell,
+		uint8 newLife,
+		uint32 epoch,
+		uint8 neighbourIndex,
+		Color oldColor,
+		Color newColor
+	) internal {
+		if (newColor == Color.None) {
+			// COLLISION, previous update added a color that should not be there
+			if (cell.color == oldColor) {
+				cell.delta -= 1;
+			} else {
+				cell.delta += 1;
+				// remove enemy as it was added by COLLISION
+				cell.enemymask = cell.enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
+			}
+		} else if (cell.color == oldColor) {
+			// then newColor is different (see assert above)
+			cell.enemymask = cell.enemymask | uint8(1 << neighbourIndex);
+			cell.delta -= 2;
+		} else if (cell.color == newColor) {
+			// then old color was different
+			cell.delta += (oldColor == Color.None ? int8(1) : int8(2));
+			cell.enemymask = cell.enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
+		} else if (oldColor == Color.None) {
+			// if there were no oldCOlor and the newColor is not your (already checked in previous if clause)
+			cell.delta -= 1;
+			cell.enemymask = cell.enemymask | uint8(1 << neighbourIndex);
+		}
+		cell.lastEpochUpdate = epoch;
+		cell.life = newLife;
+		_cells[position] = cell;
+	}
 
 	function _updateCell(
 		uint64 position,
@@ -317,7 +310,7 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		Color oldColor,
 		Color newColor
 	) internal returns (int8 enemyOrFriend) {
-		Cell storage cell = _cells[position];
+		Cell memory cell = _cells[position];
 
 		// no need to call if oldColor == newColor, so we assume they are different
 		assert(oldColor != newColor);
@@ -326,38 +319,12 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		enemyOrFriend = color == newColor ? int8(1) : int8(-1);
 
 		if (lastUpdate >= 1 && color != Color.None && cell.life > 0) {
-			int8 delta = cell.delta;
-			uint8 enemymask = cell.enemymask;
-			(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, delta, cell.life, epoch);
+			(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, cell.delta, cell.life, epoch);
 
 			if (newLife == 0) {
-				_updateCellAsDead(position, cell, newLife, epochUsed, enemymask);
+				_updateCellAsDead(position, cell, newLife, epochUsed);
 			} else {
-				if (newColor == Color.None) {
-					// COLLISION, previous update added a color that should not be there
-					if (color == oldColor) {
-						delta -= 1;
-					} else {
-						delta += 1;
-						// remove enemy as it was added by COLLISION
-						enemymask = enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
-					}
-				} else if (color == oldColor) {
-					// then newColor is different (see assert above)
-					enemymask = enemymask | uint8(1 << neighbourIndex);
-					delta -= 2;
-				} else if (color == newColor) {
-					// then old color was different
-					delta += (oldColor == Color.None ? int8(1) : int8(2));
-					enemymask = enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
-				} else if (oldColor == Color.None) {
-					// if there were no oldCOlor and the newColor is not your (already checked in previous if clause)
-					delta -= 1;
-					enemymask = enemymask | uint8(1 << neighbourIndex);
-				}
-				cell.delta = delta;
-				cell.lastEpochUpdate = epoch;
-				cell.life = newLife;
+				_updateCellFromNeighbor(position, cell, newLife, epoch, neighbourIndex, oldColor, newColor);
 			}
 		}
 	}
