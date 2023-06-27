@@ -80,11 +80,11 @@ importers:
         specifier: ^0.6.2
         version: 0.6.2(typescript@5.1.3)
       rocketh-deploy-proxy:
-        specifier: ^0.6.4
-        version: 0.6.4(rocketh@0.6.2)(typescript@5.1.3)
-      rocketh-deploy-router:
         specifier: ^0.6.5
         version: 0.6.5(rocketh@0.6.2)(typescript@5.1.3)
+      rocketh-deploy-router:
+        specifier: ^0.6.6
+        version: 0.6.6(rocketh@0.6.2)(typescript@5.1.3)
       rocketh-export:
         specifier: ^0.6.2
         version: 0.6.2(rocketh@0.6.2)
@@ -7200,14 +7200,15 @@ packages:
       bn.js: 5.2.1
     dev: true
 
-  /rocketh-deploy-proxy@0.6.4(rocketh@0.6.2)(typescript@5.1.3):
-    resolution: {integrity: sha512-pMAAqS4Ahh8QKk8i4VkUC+/Hjm27cReqMGD5ob5pwj6O4f7h6GZMKIUz2yzbfRTRVfnnDzBR/uwkB7F3zzAKLQ==}
+  /rocketh-deploy-proxy@0.6.5(rocketh@0.6.2)(typescript@5.1.3):
+    resolution: {integrity: sha512-zEbzTgtVHajpLH3AdAG7p8kSFkvIa7k7z688/tvRp2kbT1alLM59xF4W8Um4RHHIZ9QeHt8eu5MWqsBIsRJeTw==}
     peerDependencies:
       rocketh: 0.6.2
     dependencies:
+      named-logs: 0.2.2
       rocketh: 0.6.2(typescript@5.1.3)
       rocketh-deploy: 0.6.2(rocketh@0.6.2)(typescript@5.1.3)
-      solidity-proxy: 0.1.1
+      solidity-proxy: 0.2.2
       viem: 1.1.7(typescript@5.1.3)
     transitivePeerDependencies:
       - bufferutil
@@ -7216,14 +7217,15 @@ packages:
       - zod
     dev: true
 
-  /rocketh-deploy-router@0.6.5(rocketh@0.6.2)(typescript@5.1.3):
-    resolution: {integrity: sha512-1g/ju7v9iOcncTNDo+ufyScWfmQANLEuFgtsK/V6WJ6shBpaoj5bO0iNzVhKaq9kgrdXxvMo+BMyIpQtR9wk2g==}
+  /rocketh-deploy-router@0.6.6(rocketh@0.6.2)(typescript@5.1.3):
+    resolution: {integrity: sha512-rvDqyzZf3XfDp0XDzYQcccsLKvWZAtEKHmcWFHLda01BUgecc0Xl7vqqpu1cJcZASvAirPMzf81X0W1kCEH2IQ==}
     peerDependencies:
       rocketh: 0.6.2
     dependencies:
+      named-logs: 0.2.2
       rocketh: 0.6.2(typescript@5.1.3)
       rocketh-deploy: 0.6.2(rocketh@0.6.2)(typescript@5.1.3)
-      solidity-proxy: 0.1.1
+      solidity-proxy: 0.2.2
       viem: 1.1.7(typescript@5.1.3)
     transitivePeerDependencies:
       - bufferutil
@@ -7638,8 +7640,8 @@ packages:
     resolution: {integrity: sha512-PfD+Dq6jwp4fipz0l5kzlVxSABN1he/2vw+QFW/r7aCQRi4rbSSL8UeEI5jSCf2pdVdRlpJ7DIjsHSBDrGBXJA==}
     dev: true
 
-  /solidity-proxy@0.1.1:
-    resolution: {integrity: sha512-DnUe3wJbgaIgLiMEMv5BwuhFo4qJDHR4wfJMAh4a0DiWzvpdWoafbP1MQ9d6m2vEoQR6u7/tWZGslMIFzPUsDA==}
+  /solidity-proxy@0.2.2:
+    resolution: {integrity: sha512-ay1kpcMCaLvfUPdtBSHi1Fn+hjiKAOdfUu5UgUgBUGhrMUQ+mZnQkrfWmd487zWkc1Lnc2IPR5Q7B9ZW1WsBow==}
     dev: true
 
   /sorcery@0.11.0:

@@ -28,30 +28,27 @@ export default execute(
 			maxLife: 5,
 		};
 
-		// we use a debug artifact unless mainnet
-		// the debug artifact must have the same initialisation arguments as the default artifact
-		const artifact = (
-			network.tags['mainnet'] ? artifacts.Stratagems_debug : artifacts.Stratagems
-		) as typeof artifacts.Stratagems;
-
 		await deployViaProxy(
 			'Stratagems',
 			{
 				account: deployer,
-				artifact,
-				args: [config], // 1billion of token (decimal 18)
-			},
-			{
-				owner: accounts.deployer,
-				deployImplementation: (name, args) => {
+				artifact: (name, args) => {
 					return deployViaRouter(
 						name,
 						{
 							...(args as any),
 						},
-						[{name: 'Core', artifact: artifacts.StratagemsCore, args: [config]}]
-					) as any;
+						[
+							{name: 'Core', artifact: artifacts.StratagemsCore, args: [config]},
+							{name: 'ERC721', artifact: artifacts.StratagemsERC721 as any, args: [config]},
+							{name: 'Debug', artifact: artifacts.StratagemsDebug as any, args: [config]},
+						]
+					) as Promise<Deployment<typeof artifacts.IStratagems.abi>>;
 				},
+				args: [config],
+			},
+			{
+				owner: accounts.deployer,
 			}
 		);
 	},

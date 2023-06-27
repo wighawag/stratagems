@@ -2,89 +2,25 @@
 pragma solidity ^0.8.0;
 
 import 'solidity-kit/solc_0.8/ERC721/interfaces/IERC721.sol';
+import 'solidity-kit/solc_0.8/ERC721/interfaces/IERC721Metadata.sol';
 import 'solidity-kit/solc_0.8/ERC165/interfaces/IERC165.sol';
+import './StratagemsTypes.sol';
+import './StratagemsEvents.sol';
 
-interface IStratagemsCore {
-	/// @notice The set of possible color (None indicate the Cell is empty)
-	enum Color {
-		None,
-		Blue,
-		Red,
-		Green,
-		Yellow
-	}
+interface IStratagemsCore is StratagemsTypes, StratagemsEvents {
+	/// @notice There is (2**128) * (2**128) cells
+	function cells(uint256 id) external view returns (Cell memory cell);
 
-	struct Cell {
-		address owner;
-		uint32 lastEpochUpdate;
-		uint32 epochWhenTokenIsAdded;
-		Color color;
-		uint8 life;
-		int8 delta;
-		uint8 enemymask;
-	}
+	/// @notice the number of token in reserve per account
+	///  This is used to slash player who do not resolve their commit
+	///  The amount can be greater than the number of token required for the next move
+	///  This allow player to potentially hide their intention.
+	function tokensInReserve(address account) external view returns (uint256 amount);
 
-	struct Commitment {
-		bytes24 hash;
-		uint32 epoch;
-	}
+	/// @notice The commitment to be resolved. zeroed if no commitment need to be made.
+	function commitments(address account) external view returns (Commitment memory commitment);
 
-	struct Move {
-		uint64 position;
-		Color color; // Color.None to indicate exit
-	}
-
-	struct Permit {
-		uint256 value;
-		uint256 deadline;
-		uint8 v;
-		bytes32 r;
-		bytes32 s;
-	}
-
-	struct TokenTransfer {
-		address payable to;
-		uint256 amount;
-	}
-
-	/// @notice A player has commited to make a move and resolve it on the resolution phase
-	/// @param player account taking the staking risk (can be a different account than the one controlling the gems)
-	/// @param epoch epoch number on which this commit belongs to
-	/// @param commitmentHash the hash of moves
-	event CommitmentMade(address indexed player, uint32 indexed epoch, bytes24 commitmentHash);
-
-	/// @notice A player has canceled a previous commitment by burning some tokens
-	/// @param player the account that made the commitment
-	/// @param epoch epoch number on which this commit belongs to
-	/// @param amountBurnt amount of token to burn
-	/// @param furtherMoves hash of further moves, unless bytes32(0) which indicate end.
-	event CommitmentVoid(address indexed player, uint32 indexed epoch, uint256 amountBurnt, bytes24 furtherMoves);
-
-	/// @notice Player has resolved its previous commitment
-	/// @param player account who commited
-	/// @param epoch epoch number on which this commit belongs to
-	/// @param commitmentHash the hash of the moves
-	/// @param moves the moves
-	/// @param furtherMoves hash of further moves, unless bytes32(0) which indicate end.
-	event CommitmentResolved(
-		address indexed player,
-		uint32 indexed epoch,
-		bytes24 indexed commitmentHash,
-		Move[] moves,
-		bytes24 furtherMoves
-	);
-
-	/// @notice Player have withdrawn token from the reserve
-	/// @param player account withdrawing the tokens
-	/// @param amountWithdrawn the number of tokens withdrawnn
-	/// @param newAmount the number of tokens in reserver as a result
-	event ReserveWithdrawn(address indexed player, uint256 amountWithdrawn, uint256 newAmount);
-
-	/// @notice Player has deposited token in the reserve, allowing it to use that much in game
-	/// @param player account receiving the token in the reserve
-	/// @param amountDeposited the number of tokens deposited
-	/// @param newAmount the number of tokens in reserver as a result
-	event ReserveDeposited(address indexed player, uint256 amountDeposited, uint256 newAmount);
+	function getConfig() external view returns (Config memory config);
 
 	/// @notice called by players to add tokens to their reserve
 	/// @param tokensAmountToAdd amount of tokens to add
@@ -151,18 +87,4 @@ interface IStratagemsCore {
 	function pokeMultiple(uint64[] calldata positions) external;
 }
 
-interface IStratagemsExta {
-	/// @notice A descriptive name for a collection of NFTs in this contract
-	function name() external view returns (string memory);
-
-	/// @notice An abbreviated name for NFTs in this contract
-	function symbol() external view returns (string memory);
-
-	/// @notice A distinct Uniform Resource Identifier (URI) for a given asset.
-	/// @dev Throws if `_tokenId` is not a valid NFT. URIs are defined in RFC
-	///  3986. The URI may point to a JSON file that conforms to the "ERC721
-	///  Metadata JSON Schema".
-	function tokenURI(uint256 _tokenId) external view returns (string memory);
-}
-
-interface IStratagems is IStratagemsCore, IERC721, IStratagemsExta {}
+interface IStratagems is IStratagemsCore, IERC721, IERC721Metadata {}

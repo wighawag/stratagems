@@ -15,8 +15,8 @@
     "hardhat-rocketh": "^0.6.1",
     "ldenv": "^0.3.7",
     "rocketh": "^0.6.2",
-    "rocketh-deploy-proxy": "^0.6.4",
-    "rocketh-deploy-router": "^0.6.5",
+    "rocketh-deploy-proxy": "^0.6.5",
+    "rocketh-deploy-router": "^0.6.6",
     "rocketh-export": "^0.6.2",
     "rocketh-signer": "^0.6.2",
     "rocketh-verifier": "^0.6.2",
@@ -32,6 +32,7 @@
   },
   "scripts": {
     "prepare": "pnpm compile",
+    "reset": "bash reset.sh",
     "local_node": "rm -Rf deployments/localhost && hardhat node",
     "compile": "hardhat compile",
     "watch_compile": "as-soon -w src pnpm compile",

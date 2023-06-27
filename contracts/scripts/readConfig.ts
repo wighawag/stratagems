@@ -15,7 +15,7 @@ async function main() {
 
 	const args = process.argv.slice(2);
 	const account = (args[0] || process.env.ACCOUNT) as `0x${string}`;
-	const Stratagems = env.deployments.Stratagems as Deployment<typeof context.artifacts.Stratagems.abi>;
+	const Stratagems = env.deployments.Stratagems as Deployment<typeof context.artifacts.IStratagems.abi>;
 	const StratagemsContract = contract(Stratagems);
 	const config = await StratagemsContract.read.getConfig();
 
