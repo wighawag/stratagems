@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 
 import '../interface/IStratagems.sol';
-import '../internal/StratagemsInternal.sol';
+import '../internal/UsingStratagemsFunctions.sol';
 
-contract StratagemsCore is IStratagemsCore, StratagemsInternal {
-	constructor(Config memory config) StratagemsInternal(config) {}
+contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
+	constructor(Config memory config) UsingStratagemsFunctions(config) {}
 
 	/// @notice There is (2**128) * (2**128) cells
 	function cells(uint256 id) external view returns (Cell memory cell) {

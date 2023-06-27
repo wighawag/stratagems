@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import '../internal/StratagemsInternal.sol';
+import '../internal/UsingStratagemsFunctions.sol';
 import 'solidity-kit/solc_0.8/ERC721/interfaces/IERC721.sol';
 import 'solidity-kit/solc_0.8/ERC721/interfaces/IERC721Metadata.sol';
 
-contract StratagemsERC721 is IERC721, IERC721Metadata, StratagemsInternal {
-	constructor(Config memory config) StratagemsInternal(config) {}
+contract StratagemsERC721 is IERC721, IERC721Metadata, UsingStratagemsFunctions {
+	constructor(Config memory config) UsingStratagemsFunctions(config) {}
 
 	// /// @inheritdoc IERC721
 	/// @notice balanceOf is not implemented

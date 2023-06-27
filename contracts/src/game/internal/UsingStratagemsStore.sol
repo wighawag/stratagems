@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import '../interface/StratagemsTypes.sol';
 
-contract StratagemsStorageLayout is StratagemsTypes {
+contract UsingStratagemsStore is StratagemsTypes {
 	/// @notice There is (2**128) * (2**128) cells
 	mapping(uint256 => Cell) internal _cells;
 	/// @notice the number of token in reserve per account
