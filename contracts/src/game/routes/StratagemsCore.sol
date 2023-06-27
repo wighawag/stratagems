@@ -174,9 +174,8 @@ contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
 	function poke(uint64 position) external {
 		(bool died, TokenTransfer[4] memory distribution) = _poke(position);
 		if (died) {
-			TokenTransfer[] memory transfers = new TokenTransfer[](4);
-			_collectTransfers(transfers, 0, distribution);
-			_multiTransfer(transfers);
+			TokenTransfer[] memory transfers = new TokenTransfer[](4); // max size is 4 here
+			_multiTransfer(transfers, _collectTransfers(transfers, 0, distribution));
 		}
 	}
 
@@ -184,13 +183,13 @@ contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
 	function pokeMultiple(uint64[] calldata positions) external {
 		uint256 numCells = positions.length;
 		TokenTransfer[] memory transfers = new TokenTransfer[](numCells * 4);
-		uint256 offset = 0;
+		uint256 numAddressesToDistributeTo = 0;
 		for (uint256 i = 0; i < numCells; i++) {
 			(bool died, TokenTransfer[4] memory distribution) = _poke(positions[i]);
 			if (died) {
-				offset = _collectTransfers(transfers, offset, distribution);
+				numAddressesToDistributeTo = _collectTransfers(transfers, numAddressesToDistributeTo, distribution);
 			}
 		}
-		_multiTransfer(transfers);
+		_multiTransfer(transfers, numAddressesToDistributeTo);
 	}
 }

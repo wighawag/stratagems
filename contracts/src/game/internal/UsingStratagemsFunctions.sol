@@ -76,13 +76,25 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		Move[] memory moves,
 		bool fromReserve
 	) internal returns (uint256 newReserveAmount) {
+		TokenTransfer[] memory transfers = new TokenTransfer[](moves.length * 4);
+		uint256 numAddressesToDistributeTo = 0;
 		uint256 tokensPlaced = 0;
 		uint256 tokensBurnt = 0;
 		for (uint256 i = 0; i < moves.length; i++) {
-			(uint256 placed, uint256 burnt) = _computeMove(player, epoch, moves[i]);
+			(uint256 placed, uint256 burnt, bool cellDied, TokenTransfer[4] memory distribution) = _computeMove(
+				player,
+				epoch,
+				moves[i]
+			);
+
+			if (cellDied) {
+				numAddressesToDistributeTo = _collectTransfers(transfers, numAddressesToDistributeTo, distribution);
+			}
 			tokensPlaced += placed;
 			tokensBurnt += burnt;
 		}
+
+		_multiTransfer(transfers, numAddressesToDistributeTo);
 
 		newReserveAmount = _tokensInReserve[player];
 
@@ -279,8 +291,7 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 				cell.delta = 0;
 				TokenTransfer[4] memory transfers4 = _getDeathDistribution(cell.owner, position, enemymask, epochUsed);
 				TokenTransfer[] memory transfers = new TokenTransfer[](4);
-				_collectTransfers(transfers, 0, transfers4);
-				_multiTransfer(transfers);
+				_multiTransfer(transfers, _collectTransfers(transfers, 0, transfers4));
 			} else {
 				if (newColor == Color.None) {
 					// COLLISION, previous update added a color that should not be there
@@ -313,53 +324,35 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 
 	function _collectTransfers(
 		TokenTransfer[] memory collected,
-		uint256 offset,
+		uint256 numAddressesToDistributeTo,
 		TokenTransfer[4] memory transfers
-	) internal pure returns (uint256 newOffset) {
-		collected[offset].to = transfers[0].to;
-		collected[offset].amount = transfers[0].amount;
-		newOffset = offset;
-		for (uint256 i = 1; i < 4; i++) {
-			if (transfers[i].to == address(0)) {
-				continue;
-			}
-			if (collected[offset].to == address(0)) {
-				collected[offset].to = transfers[i].to;
-				collected[offset].amount = transfers[i].amount;
-				newOffset = offset + 1;
-			} else if (transfers[i].to == collected[offset].to) {
-				collected[offset].amount += transfers[i].amount;
-			} else if (collected[offset + 1].to == address(0)) {
-				collected[offset + 1].to = transfers[i].to;
-				collected[offset + 1].amount = transfers[i].amount;
-				newOffset = offset + 2;
-			} else if (transfers[i].to == collected[offset + 1].to) {
-				collected[offset + 1].amount += transfers[i].amount;
-			} else if (collected[offset + 2].to == address(0)) {
-				collected[offset + 2].to = transfers[i].to;
-				collected[offset + 2].amount = transfers[i].amount;
-				newOffset = offset + 3;
-			} else if (transfers[i].to == collected[offset + 2].to) {
-				collected[offset + 2].amount += transfers[i].amount;
-			} else if (collected[offset + 3].to == address(0)) {
-				collected[offset + 3].to = transfers[i].to;
-				collected[offset + 3].amount = transfers[i].amount;
-				newOffset = offset + 4;
-			} else {
-				// if (transfers[i].to == collected[offset+3].to) {
-				collected[offset + 3].amount += transfers[i].amount;
-			}
-		}
-	}
-
-	function _multiTransfer(TokenTransfer[] memory transfers) internal {
-		for (uint256 i = 0; i < transfers.length; i++) {
-			if (transfers[i].to != address(0)) {
-				TOKENS.transfer(transfers[i].to, transfers[i].amount);
-			} else {
-				// we break on zero address
+	) internal pure returns (uint256) {
+		for (uint256 i = 0; i < 4; i++) {
+			if (transfers[i].amount == 0) {
+				// we skip all if there is nothing to transfer
 				break;
 			}
+			// else we look for existing address
+			for (uint256 k = 0; k < numAddressesToDistributeTo; k++) {
+				if (collected[k].to == transfers[i].to) {
+					// if we found we add the amount
+					collected[k].amount += transfers[i].amount;
+					// and skip to next
+					continue;
+				}
+			}
+			// if we did not find that address we add it to the end
+			collected[numAddressesToDistributeTo].to = transfers[i].to;
+			collected[numAddressesToDistributeTo].amount = transfers[i].amount;
+			// and increase the size to lookup
+			numAddressesToDistributeTo++;
+		}
+		return numAddressesToDistributeTo;
+	}
+
+	function _multiTransfer(TokenTransfer[] memory transfers, uint256 numAddressesToDistributeTo) internal {
+		for (uint256 i = 0; i < numAddressesToDistributeTo; i++) {
+			TOKENS.transfer(transfers[i].to, transfers[i].amount);
 		}
 	}
 
@@ -422,9 +415,22 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		address player,
 		uint32 epoch,
 		Move memory move
-	) internal returns (uint256 tokensPlaced, uint256 tokensBurnt) {
+	) internal returns (uint256 tokensPlaced, uint256 tokensBurnt, bool died, TokenTransfer[4] memory distribution) {
 		Cell memory currentState = _getUpdatedCell(move.position, epoch);
 		// TODO Make it real, store the result and potential death distribution
+		// cell.life = newLife;
+		// 	cell.lastEpochUpdate = epochUsed;
+		if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
+			// we are here because life reach zero (lastEpochUpdate != 0 indicates that the cell was alive and not reset like below)
+			// Note: we need to pay attention when we add the leave mechanism
+			distribution = _getDeathDistribution(
+				currentState.owner,
+				move.position,
+				currentState.enemymask,
+				currentState.lastEpochUpdate
+			);
+			died = true;
+		}
 
 		if (currentState.epochWhenTokenIsAdded == epoch) {
 			// COLLISION
@@ -446,6 +452,10 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 			} else {
 				// we skip
 				// tokensPlaced = 0 so this is not counted
+				// we could, but we can also skip any save here
+				// if (died) {
+				// 	_cells[move.position] = currentState;
+				// }
 			}
 		} else if (currentState.life == 0) {
 			currentState.life = 1;
@@ -471,6 +481,10 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		} else {
 			// invalid move
 			tokensBurnt = NUM_TOKENS_PER_GEMS;
+			// we could, but we can also skip any save here
+			// if (died) {
+			// 	_cells[move.position] = currentState;
+			// }
 		}
 	}
 }
