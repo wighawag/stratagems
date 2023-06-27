@@ -15,7 +15,10 @@ coverage
 coverage.json
 cache
 artifacts
+docs
 #############################################
 deployments
 package.json
 pnpm-lock.yaml
+
+*.hbs

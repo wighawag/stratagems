@@ -22,6 +22,7 @@
     "rocketh-verifier": "^0.6.2",
     "set-defaults": "^0.0.1",
     "solidity-coverage": "^0.8.2",
+    "solidity-docgen": "0.6.0-beta.35",
     "solidity-kit": "^0.3.1",
     "solidity-proxy": "^0.0.0",
     "stratagems-common": "workspace:*",
@@ -32,6 +33,7 @@
   },
   "scripts": {
     "prepare": "pnpm compile",
+    "docgen": "pnpm hardhat docgen",
     "reset": "bash reset.sh",
     "local_node": "rm -Rf deployments/localhost && hardhat node",
     "compile": "hardhat compile",

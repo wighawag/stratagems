@@ -3,6 +3,7 @@ loadEnv();
 import '@nomicfoundation/hardhat-network-helpers';
 import 'solidity-coverage';
 import 'hardhat-rocketh';
+import 'solidity-docgen';
 import {addForkConfiguration, addNetworksFromEnv} from 'hardhat-rocketh';
 
 export default {
@@ -22,5 +23,8 @@ export default {
 		),
 	paths: {
 		sources: 'src',
+	},
+	docgen: {
+		templates: 'docs_templates',
 	},
 };

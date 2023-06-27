@@ -12,3 +12,4 @@ coverage
 coverage.json
 cache
 artifacts
+docs
