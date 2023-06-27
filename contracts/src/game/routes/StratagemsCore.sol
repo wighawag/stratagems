@@ -97,7 +97,13 @@ contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
 	}
 
 	/// @inheritdoc IStratagemsCore
-	function resolve(address player, bytes32 secret, Move[] calldata moves, bytes24 furtherMoves) external {
+	function resolve(
+		address player,
+		bytes32 secret,
+		Move[] calldata moves,
+		bytes24 furtherMoves,
+		bool useReserve
+	) external {
 		Commitment storage commitment = _commitments[player];
 		(uint32 epoch, bool commiting) = _epoch();
 
@@ -107,7 +113,7 @@ contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
 
 		_checkHash(commitment.hash, secret, moves, furtherMoves);
 
-		_resolveMoves(player, epoch, moves);
+		uint256 newReserveAmount = _resolveMoves(player, epoch, moves, useReserve);
 
 		bytes24 hashResolved = commitment.hash;
 		if (furtherMoves != bytes24(0)) {
@@ -117,7 +123,7 @@ contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
 			commitment.epoch = 0; // used
 		}
 
-		emit CommitmentResolved(player, epoch, hashResolved, moves, furtherMoves);
+		emit CommitmentResolved(player, epoch, hashResolved, moves, furtherMoves, newReserveAmount);
 	}
 
 	/// @inheritdoc IStratagemsCore

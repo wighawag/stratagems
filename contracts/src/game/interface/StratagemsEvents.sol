@@ -28,7 +28,8 @@ interface StratagemsEvents is StratagemsTypes {
 		uint32 indexed epoch,
 		bytes24 indexed commitmentHash,
 		Move[] moves,
-		bytes24 furtherMoves
+		bytes24 furtherMoves,
+		uint256 newReserveAmount
 	);
 
 	/// @notice Player have withdrawn token from the reserve

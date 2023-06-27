@@ -62,7 +62,14 @@ interface IStratagemsCore is StratagemsTypes, StratagemsEvents {
 	/// @param moves the actual moves
 	/// @param furtherMoves if moves cannot be contained in one tx, further moves are represented by a hash to resolve too
 	///  Note that you have to that number of mvoes
-	function resolve(address player, bytes32 secret, Move[] calldata moves, bytes24 furtherMoves) external;
+	/// @param useReserve whether the tokens are taken from the reserve or from approvals
+	function resolve(
+		address player,
+		bytes32 secret,
+		Move[] calldata moves,
+		bytes24 furtherMoves,
+		bool useReserve
+	) external;
 
 	/// @notice called by player if they missed the resolution phase and want to minimze the token loss
 	///  By providing the moves, they will be slashed only the amount of token required to make the moves

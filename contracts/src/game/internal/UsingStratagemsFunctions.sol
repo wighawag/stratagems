@@ -70,7 +70,12 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		emit CommitmentMade(player, epoch, commitmentHash);
 	}
 
-	function _resolveMoves(address player, uint32 epoch, Move[] memory moves) internal {
+	function _resolveMoves(
+		address player,
+		uint32 epoch,
+		Move[] memory moves,
+		bool fromReserve
+	) internal returns (uint256 newReserveAmount) {
 		uint256 tokensPlaced = 0;
 		uint256 tokensBurnt = 0;
 		for (uint256 i = 0; i < moves.length; i++) {
@@ -79,14 +84,22 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 			tokensBurnt += burnt;
 		}
 
-		uint256 amountInReserve = _tokensInReserve[player];
+		newReserveAmount = _tokensInReserve[player];
 
-		// TODO add option to leave reserve alone
-		// we still check reserve to ensure player cannot just cancel by having a small reserve
-		// but using external fund might make a friendly experience to keep playing without adding to reserve
-		require(amountInReserve >= tokensPlaced + tokensBurnt);
-		amountInReserve -= tokensPlaced + tokensBurnt;
-		_tokensInReserve[player] = amountInReserve;
+		// Note: even if funds can comes from outside the reserver, we still check it
+		// This ensure player have to have a reserve and cannot escape the slash if not
+		require(newReserveAmount >= tokensPlaced + tokensBurnt);
+		if (fromReserve) {
+			newReserveAmount -= tokensPlaced + tokensBurnt;
+			_tokensInReserve[player] = newReserveAmount;
+		} else {
+			if (tokensPlaced != 0) {
+				TOKENS.transferFrom(player, address(this), tokensPlaced);
+			}
+			if (tokensBurnt != 0) {
+				TOKENS.transferFrom(player, BURN_ADDRESS, tokensBurnt);
+			}
+		}
 
 		if (tokensBurnt != 0) {
 			TOKENS.transfer(BURN_ADDRESS, tokensBurnt);
