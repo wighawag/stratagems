@@ -18,7 +18,7 @@ contract StratagemsERC721 is IERC721, IERC721Metadata, UsingStratagemsFunctions 
 	function ownerOf(uint256 tokenID) external view override returns (address owner) {
 		uint64 id = uint64(tokenID);
 		require(uint256(id) == tokenID, 'NOT_EXISTENT');
-		owner = _cells[tokenID].owner;
+		owner = _owners[tokenID];
 	}
 
 	/// @inheritdoc IERC721

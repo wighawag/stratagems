@@ -58,7 +58,6 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 				newNumAddressesToDistributeTo = _distributeDeath(
 					transfers,
 					numAddressesToDistributeTo,
-					cell.owner,
 					position,
 					cell.enemymask,
 					epochUsed
@@ -139,33 +138,6 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		commiting = timePassed - ((epoch - 1) * epochDuration) < COMMIT_PHASE_DURATION;
 	}
 
-	function _getNeihbourEnemiesWithPlayers(
-		uint64 position,
-		uint8 enemyMask
-	) internal view returns (address[4] memory enemies, uint8 numEnemies) {
-		unchecked {
-			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
-			int256 y = int256(int32(int256(uint256(position) >> 32)));
-
-			if (enemyMask & 1 == 1) {
-				enemies[numEnemies] = _cells[((uint256(y - 1) << 32) + uint256(x))].owner;
-				numEnemies++;
-			}
-			if (enemyMask & (1 << 1) == (1 << 1)) {
-				enemies[numEnemies] = _cells[((uint256(y) << 32) + uint256(x - 1))].owner;
-				numEnemies++;
-			}
-			if (enemyMask & (1 << 2) == (1 << 2)) {
-				enemies[numEnemies] = _cells[((uint256(y + 1) << 32) + uint256(x))].owner;
-				numEnemies++;
-			}
-			if (enemyMask & (1 << 3) == (1 << 3)) {
-				enemies[numEnemies] = _cells[((uint256(y) << 32) + uint256(x + 1))].owner;
-				numEnemies++;
-			}
-		}
-	}
-
 	function _getNeihbourEnemiesAliveWithPlayers(
 		uint64 position,
 		uint8 enemyMask,
@@ -176,30 +148,34 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 			int256 y = int256(int32(int256(uint256(position) >> 32)));
 
 			if (enemyMask & 1 == 1) {
-				Cell memory cell = _cells[((uint256(y - 1) << 32) + uint256(x))];
+				uint256 cellPos = ((uint256(y - 1) << 32) + uint256(x));
+				Cell memory cell = _cells[cellPos];
 				if (cell.life > 0 || cell.lastEpochUpdate == epoch) {
-					enemies[numEnemiesAlive] = cell.owner;
+					enemies[numEnemiesAlive] = _owners[cellPos];
 					numEnemiesAlive++;
 				}
 			}
 			if (enemyMask & (1 << 1) == (1 << 1)) {
-				Cell memory cell = _cells[((uint256(y) << 32) + uint256(x - 1))];
+				uint256 cellPos = ((uint256(y) << 32) + uint256(x - 1));
+				Cell memory cell = _cells[cellPos];
 				if (cell.life > 0 || cell.lastEpochUpdate == epoch) {
-					enemies[numEnemiesAlive] = cell.owner;
+					enemies[numEnemiesAlive] = _owners[cellPos];
 					numEnemiesAlive++;
 				}
 			}
 			if (enemyMask & (1 << 2) == (1 << 2)) {
-				Cell memory cell = _cells[((uint256(y + 1) << 32) + uint256(x))];
+				uint256 cellPos = ((uint256(y + 1) << 32) + uint256(x));
+				Cell memory cell = _cells[cellPos];
 				if (cell.life > 0 || cell.lastEpochUpdate == epoch) {
-					enemies[numEnemiesAlive] = cell.owner;
+					enemies[numEnemiesAlive] = _owners[cellPos];
 					numEnemiesAlive++;
 				}
 			}
 			if (enemyMask & (1 << 3) == (1 << 3)) {
-				Cell memory cell = _cells[((uint256(y) << 32) + uint256(x + 1))];
+				uint256 cellPos = ((uint256(y) << 32) + uint256(x + 1));
+				Cell memory cell = _cells[cellPos];
 				if (cell.life > 0 || cell.lastEpochUpdate == epoch) {
-					enemies[numEnemiesAlive] = cell.owner;
+					enemies[numEnemiesAlive] = _owners[cellPos];
 					numEnemiesAlive++;
 				}
 			}
@@ -283,7 +259,6 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		Cell storage cell,
 		uint8 newLife,
 		uint32 epochUsed,
-		address owner,
 		uint8 enemymask
 	) internal {
 		cell.life = newLife;
@@ -291,7 +266,7 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		cell.delta = 0;
 		// max number of transfer is 4 (for each neighbours potentially being a different account)
 		TokenTransfer[] memory transfers = new TokenTransfer[](4);
-		uint256 numAddressesToTransferTo = _distributeDeath(transfers, 0, owner, position, enemymask, epochUsed);
+		uint256 numAddressesToTransferTo = _distributeDeath(transfers, 0, position, enemymask, epochUsed);
 
 		_multiTransfer(transfers, numAddressesToTransferTo);
 	}
@@ -356,7 +331,7 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 			(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, delta, cell.life, epoch);
 
 			if (newLife == 0) {
-				_updateCellAsDead(position, cell, newLife, epochUsed, cell.owner, enemymask);
+				_updateCellAsDead(position, cell, newLife, epochUsed, enemymask);
 			} else {
 				if (newColor == Color.None) {
 					// COLLISION, previous update added a color that should not be there
@@ -418,7 +393,6 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 	function _distributeDeath(
 		TokenTransfer[] memory transfers,
 		uint256 numAddressesToDistributeTo,
-		address cellOwner,
 		uint64 position,
 		uint8 enemymask,
 		uint32 epoch
@@ -435,7 +409,7 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 				_collectTransfer(
 					transfers,
 					numAddressesToDistributeTo,
-					TokenTransfer({to: payable(cellOwner), amount: total})
+					TokenTransfer({to: payable(_owners[position]), amount: total})
 				);
 		}
 
@@ -489,16 +463,12 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		Move memory move
 	) internal returns (uint256 tokensPlaced, uint256 tokensBurnt, uint256 newNumAddressesToDistributeTo) {
 		Cell memory currentState = _getUpdatedCell(move.position, epoch);
-		// TODO Make it real, store the result and potential death distribution
-		// cell.life = newLife;
-		// 	cell.lastEpochUpdate = epochUsed;
 		if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
 			// we are here because life reach zero (lastEpochUpdate != 0 indicates that the cell was alive and not reset like below)
 			// Note: we need to pay attention when we add the leave mechanism
 			newNumAddressesToDistributeTo = _distributeDeath(
 				transfers,
 				numAddressesToDistributeTo,
-				currentState.owner,
 				move.position,
 				currentState.enemymask,
 				currentState.lastEpochUpdate
@@ -513,26 +483,26 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 				_updateNeighbours(move.position, epoch, currentState.color, Color.None);
 
 				// giving back
-				_tokensInReserve[currentState.owner] += NUM_TOKENS_PER_GEMS;
+				_tokensInReserve[_owners[move.position]] += NUM_TOKENS_PER_GEMS;
 
 				currentState.life = 0;
 				currentState.color = Color.None;
-				currentState.owner = address(0);
 				currentState.lastEpochUpdate = 0;
 				currentState.delta = 0;
 				currentState.enemymask = 0;
 				_cells[move.position] = currentState;
+				_owners[move.position] = address(0);
 			} else {
 				// we skip
 				// tokensPlaced = 0 so this is not counted
-				// we could, but we can also skip any save here
-				// if (died) {
-				// 	_cells[move.position] = currentState;
-				// }
+				if (currentState.life == 0) {
+					_cells[move.position] = currentState;
+					_owners[move.position] = address(0);
+					// TODO Transfer
+				}
 			}
 		} else if (currentState.life == 0) {
 			currentState.life = 1;
-			currentState.owner = player;
 			currentState.epochWhenTokenIsAdded = epoch;
 			currentState.lastEpochUpdate = epoch;
 
@@ -551,13 +521,16 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 
 			tokensPlaced = NUM_TOKENS_PER_GEMS;
 			_cells[move.position] = currentState;
+			_owners[move.position] = player;
+			// TODO Transfer
 		} else {
 			// invalid move
 			tokensBurnt = NUM_TOKENS_PER_GEMS;
-			// we could, but we can also skip any save here
-			// if (died) {
-			// 	_cells[move.position] = currentState;
-			// }
+			if (currentState.life == 0) {
+				_cells[move.position] = currentState;
+				_owners[move.position] = address(0);
+				// TODO Transfer
+			}
 		}
 	}
 }
