@@ -21,17 +21,6 @@ export default {
 				settings: {...defaultSettings},
 			},
 		],
-		overrides: {
-			'src/game/routes/StratagemsCore.sol': {
-				version: '0.8.19',
-				settings: {
-					...defaultSettings,
-					metadata: {
-						appendCBOR: false,
-					},
-				},
-			},
-		},
 	},
 	networks:
 		// this setup forking for netwoirk if env var HARDHAT_FORK is set

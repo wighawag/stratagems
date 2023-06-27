@@ -12,7 +12,7 @@ export default execute(
 		const {deployer} = accounts;
 
 		const TestTokens = contract(deployments.TestTokens as Deployment<typeof context.artifacts.TestTokens.abi>);
-		const timestamp = BigInt(Math.floor(Date.now() / 1000));
+		const timestamp = 0; // BigInt(Math.floor(Date.now() / 1000));
 
 		const decimals = BigInt(await TestTokens.read.decimals());
 
