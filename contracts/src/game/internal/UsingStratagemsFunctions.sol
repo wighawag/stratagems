@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 import './UsingStratagemsStore.sol';
-import '../interface/StratagemsEvents.sol';
+import '../interface/UsingStratagemsEvents.sol';
 
-abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEvents {
+abstract contract UsingStratagemsFunctions is UsingStratagemsStore, UsingStratagemsEvents {
 	/// @notice The token used for the game. Each gems on the board contains that token
 	IERC20WithIERC2612 internal immutable TOKENS;
 	/// @notice the timestamp (in seconds) at which the game start, it start in the commit phase

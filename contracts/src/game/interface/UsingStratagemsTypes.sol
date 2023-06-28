@@ -5,7 +5,7 @@ import 'solidity-kit/solc_0.8/ERC721/interfaces/IERC721.sol';
 import 'solidity-kit/solc_0.8/ERC165/interfaces/IERC165.sol';
 import 'solidity-kit/solc_0.8/ERC20/ERC2612/interfaces/IERC20WithIERC2612.sol';
 
-interface StratagemsTypes {
+interface UsingStratagemsTypes {
 	// --------------------------------------------------------------------------------------------
 	// EXTERNAL TYPES
 	// --------------------------------------------------------------------------------------------

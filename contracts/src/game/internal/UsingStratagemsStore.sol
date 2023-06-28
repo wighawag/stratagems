@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import '../interface/StratagemsTypes.sol';
+import '../interface/UsingStratagemsTypes.sol';
 
-contract UsingStratagemsStore is StratagemsTypes {
+contract UsingStratagemsStore is UsingStratagemsTypes {
 	mapping(uint256 => Cell) internal _cells;
 	mapping(uint256 => address) internal _owners;
 

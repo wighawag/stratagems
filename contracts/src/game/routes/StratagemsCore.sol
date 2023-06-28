@@ -176,6 +176,7 @@ contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
 		TokenTransfer[] memory transfers = new TokenTransfer[](4);
 		uint256 numAddressesToDistributeTo = _poke(transfers, 0, position);
 		_multiTransfer(transfers, numAddressesToDistributeTo);
+		// TODO events?
 	}
 
 	/// @inheritdoc IStratagemsCore
@@ -188,5 +189,6 @@ contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
 			numAddressesToDistributeTo = _poke(transfers, numAddressesToDistributeTo, positions[i]);
 		}
 		_multiTransfer(transfers, numAddressesToDistributeTo);
+		// TODO events?
 	}
 }

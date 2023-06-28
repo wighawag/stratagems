@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import './StratagemsTypes.sol';
+import './UsingStratagemsTypes.sol';
 
-interface StratagemsEvents is StratagemsTypes {
+interface UsingStratagemsEvents is UsingStratagemsTypes {
 	/// @notice A player has commited to make a move and resolve it on the resolution phase
 	/// @param player account taking the staking risk (can be a different account than the one controlling the gems)
 	/// @param epoch epoch number on which this commit belongs to

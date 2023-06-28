@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 import 'solidity-kit/solc_0.8/ERC721/interfaces/IERC721.sol';
 import 'solidity-kit/solc_0.8/ERC721/interfaces/IERC721Metadata.sol';
 import 'solidity-kit/solc_0.8/ERC165/interfaces/IERC165.sol';
-import './StratagemsTypes.sol';
-import './StratagemsEvents.sol';
+import './UsingStratagemsTypes.sol';
+import './UsingStratagemsEvents.sol';
 
-interface IStratagemsCore is StratagemsTypes, StratagemsEvents {
+interface IStratagemsCore is UsingStratagemsTypes, UsingStratagemsEvents {
 	/// @notice There is ```(2**128) * (2**128)``` cells
 	/// @param id the cell id (TODO)
 	function cells(uint256 id) external view returns (Cell memory cell);
