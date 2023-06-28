@@ -142,7 +142,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				if (cell.color != Color.None) {
 					int8 enemyOrFriend = isEnemyOrFriend(color, cell.color);
 					if (enemyOrFriend < 0) {
-						enemymask = enemymask | 1;
+						enemymask = enemymask | 2;
 					}
 					delta += enemyOrFriend;
 					_updateCellFromNeighbor(leftPosition, cell, cell.life, epoch, 1, Color.None, color);
@@ -155,7 +155,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				if (cell.color != Color.None) {
 					int8 enemyOrFriend = isEnemyOrFriend(color, cell.color);
 					if (enemyOrFriend < 0) {
-						enemymask = enemymask | 1;
+						enemymask = enemymask | 4;
 					}
 					delta += enemyOrFriend;
 					_updateCellFromNeighbor(downPosition, cell, cell.life, epoch, 2, Color.None, color);
@@ -167,7 +167,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				if (cell.color != Color.None) {
 					int8 enemyOrFriend = isEnemyOrFriend(color, cell.color);
 					if (enemyOrFriend < 0) {
-						enemymask = enemymask | 1;
+						enemymask = enemymask | 8;
 					}
 					delta += enemyOrFriend;
 					_updateCellFromNeighbor(rightPosition, cell, cell.life, epoch, 3, Color.None, color);

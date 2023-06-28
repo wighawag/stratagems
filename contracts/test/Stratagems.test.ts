@@ -72,7 +72,9 @@ describe('Stratagems', function () {
 		await TestTokens.write.transfer([deployer, parseEther('1000')], {account: tokensBeneficiary});
 		await TestTokens.write.approve([Stratagems.address, parseEther('1000')], {account: deployer});
 
-		await Stratagems.write.forceSimpleCells([grid.cells.map(toContractCell(otherAccounts))], {account: deployer});
+		const cells = grid.cells;
+		console.log(cells);
+		await Stratagems.write.forceSimpleCells([cells.map(toContractCell(otherAccounts))], {account: deployer});
 
 		let owner: `0x${string}`;
 		let cell: any;
