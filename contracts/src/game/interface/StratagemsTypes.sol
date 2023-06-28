@@ -67,4 +67,10 @@ interface StratagemsTypes {
 		address payable to;
 		uint256 amount;
 	}
+
+	struct MoveTokens {
+		uint256 tokensPlaced;
+		uint256 tokensBurnt;
+		uint256 tokensReturned;
+	}
 }

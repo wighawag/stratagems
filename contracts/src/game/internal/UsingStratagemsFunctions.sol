@@ -95,10 +95,9 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		// max number of transfer is 4 * moves.length (for each move's cell's neighbours potentially being a different account)
 		TokenTransfer[] memory transfers = new TokenTransfer[](moves.length * 4);
 		uint256 numAddressesToDistributeTo = 0;
-		uint256 tokensPlaced = 0;
-		uint256 tokensBurnt = 0;
+		MoveTokens memory tokens;
 		for (uint256 i = 0; i < moves.length; i++) {
-			(uint256 placed, uint256 burnt, uint256 newNumAddressesToDistributeTo) = _computeMove(
+			(uint256 placed, uint256 burnt, uint256 returned, uint256 newNumAddressesToDistributeTo) = _computeMove(
 				transfers,
 				numAddressesToDistributeTo,
 				player,
@@ -106,8 +105,9 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 				moves[i]
 			);
 			numAddressesToDistributeTo = newNumAddressesToDistributeTo;
-			tokensPlaced += placed;
-			tokensBurnt += burnt;
+			tokens.tokensPlaced += placed;
+			tokens.tokensBurnt += burnt;
+			tokens.tokensReturned += returned;
 		}
 
 		_multiTransfer(transfers, numAddressesToDistributeTo);
@@ -116,17 +116,21 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 
 		// Note: even if funds can comes from outside the reserver, we still check it
 		// This ensure player have to have a reserve and cannot escape the slash if not
-		require(newReserveAmount >= tokensPlaced + tokensBurnt);
+		require(newReserveAmount >= tokens.tokensPlaced + tokens.tokensBurnt);
 		if (fromReserve) {
-			newReserveAmount -= tokensPlaced + tokensBurnt;
+			newReserveAmount -= tokens.tokensPlaced + tokens.tokensBurnt;
 			_tokensInReserve[player] = newReserveAmount;
 		} else {
-			if (tokensPlaced != 0) {
-				TOKENS.transferFrom(player, address(this), tokensPlaced);
+			if (tokens.tokensPlaced != 0) {
+				TOKENS.transferFrom(player, address(this), tokens.tokensPlaced);
 			}
-			if (tokensBurnt != 0) {
-				TOKENS.transferFrom(player, BURN_ADDRESS, tokensBurnt);
+			if (tokens.tokensBurnt != 0) {
+				TOKENS.transferFrom(player, BURN_ADDRESS, tokens.tokensBurnt);
 			}
+		}
+		// option to return in reserve ?
+		if (tokens.tokensReturned != 0) {
+			TOKENS.transfer(player, tokens.tokensReturned);
 		}
 	}
 
@@ -428,8 +432,40 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 		address player,
 		uint32 epoch,
 		Move memory move
-	) internal returns (uint256 tokensPlaced, uint256 tokensBurnt, uint256 newNumAddressesToDistributeTo) {
+	)
+		internal
+		returns (
+			uint256 tokensPlaced,
+			uint256 tokensBurnt,
+			uint256 tokensReturned,
+			uint256 newNumAddressesToDistributeTo
+		)
+	{
 		Cell memory currentState = _getUpdatedCell(move.position, epoch);
+
+		if (move.color == Color.None) {
+			// this is a leave move
+			if (currentState.life == MAX_LIFE && _owners[move.position] == player) {
+				// only valid id life == MAX_LIFE and player is owner
+				// we reset all, except the lastEpochUpdate
+				// this allow us to make sure nobody else can make a move on that cell
+				currentState.life = 0;
+				currentState.color = Color.None;
+				currentState.lastEpochUpdate = epoch;
+				currentState.delta = 0;
+				currentState.enemymask = 0;
+				currentState.epochWhenTokenIsAdded = 0;
+				_cells[move.position] = currentState;
+
+				// we can't reset the owner yet as neighbors dieing in epoch should reward the owner
+
+				// we still need to update the neighbors to update their enemymask and delta
+				// TODO update neighbors
+			}
+			// we return
+			return (0, 0, NUM_TOKENS_PER_GEMS, numAddressesToDistributeTo);
+		}
+
 		if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
 			// we are here because life reach zero (lastEpochUpdate != 0 indicates that the cell was alive and not reset like below)
 			// Note: we need to pay attention when we add the leave mechanism
@@ -468,7 +504,7 @@ abstract contract UsingStratagemsFunctions is UsingStratagemsStore, StratagemsEv
 					// TODO Transfer
 				}
 			}
-		} else if (currentState.life == 0) {
+		} else if (currentState.life == 0 && (currentState.lastEpochUpdate == 0 || currentState.color != Color.None)) {
 			currentState.life = 1;
 			currentState.epochWhenTokenIsAdded = epoch;
 			currentState.lastEpochUpdate = epoch;
