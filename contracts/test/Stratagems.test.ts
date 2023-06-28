@@ -74,7 +74,16 @@ describe('Stratagems', function () {
 
 		await Stratagems.write.forceSimpleCells([grid.cells.map(toContractCell(otherAccounts))], {account: deployer});
 
-		const cell = await Stratagems.read.cells([xyToBigIntID(1, 2)]);
-		console.log(cell);
+		let owner: `0x${string}`;
+		let cell: any;
+		cell = await Stratagems.read.cells([xyToBigIntID(1, 2)]);
+		owner = await Stratagems.read.ownerOf([xyToBigIntID(1, 2)]);
+		console.log(cell, owner);
+		cell = await Stratagems.read.cells([xyToBigIntID(2, 2)]);
+		owner = await Stratagems.read.ownerOf([xyToBigIntID(2, 2)]);
+		console.log(cell, owner);
+		cell = await Stratagems.read.cells([xyToBigIntID(3, 3)]);
+		owner = await Stratagems.read.ownerOf([xyToBigIntID(3, 3)]);
+		console.log(cell, owner);
 	});
 });
