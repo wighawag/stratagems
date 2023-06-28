@@ -66,19 +66,36 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime {
 		(uint32 epoch, bool commiting) = _epoch();
 		require(commiting, 'NOT_ALLOWED_IN_RESOLUTION_PHASE');
 		epoch--;
+
+		TokenTransfer[] memory transfers = new TokenTransfer[](4);
+		uint256 numAddressesToDistributeTo = 0;
+
 		for (uint256 i = 0; i < cells.length; i++) {
+			require(_cells[i].lastEpochUpdate == 0, 'NO_OVERWRITE');
 			SimpleCell memory simpleCell = cells[i];
+
+			(int8 newDelta, uint8 newEnemymask, uint256 newNumAddressesToDistributeTo) = _updateNeighbours(
+				transfers,
+				numAddressesToDistributeTo,
+				simpleCell.position,
+				epoch,
+				Color.None,
+				simpleCell.color
+			);
+			numAddressesToDistributeTo = newNumAddressesToDistributeTo;
+
 			_cells[simpleCell.position] = Cell({
 				lastEpochUpdate: epoch,
-				// this is using epoch -1 if in commiting phase
 				epochWhenTokenIsAdded: epoch,
 				color: simpleCell.color,
 				life: simpleCell.life,
-				delta: 0, // TODO
-				enemymask: 0 // TODO
+				delta: newDelta,
+				enemymask: newEnemymask
 			});
 			_owners[simpleCell.position] = simpleCell.owner;
 		}
+
+		_multiTransfer(transfers, numAddressesToDistributeTo);
 		emit ForceSimpleCells(cells);
 	}
 }
