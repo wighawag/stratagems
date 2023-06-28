@@ -29,8 +29,11 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		Move[] memory moves,
 		bool fromReserve
 	) internal returns (uint256 newReserveAmount) {
-		// max number of transfer is 4 * moves.length (for each move's cell's neighbours potentially being a different account)
-		TokenTransfer[] memory transfers = new TokenTransfer[](moves.length * 4);
+		// max number of transfer is (4+8) * moves.length
+		// (for each move's cell's neighbours potentially being a different account)
+		// + each neighbor death distributions
+		// limiting the number of move per commitment resolution to 16 should cover this unlikely scenario
+		TokenTransfer[] memory transfers = new TokenTransfer[](moves.length * 12);
 		uint256 numAddressesToDistributeTo = 0;
 		MoveTokens memory tokens;
 		for (uint256 i = 0; i < moves.length; i++) {
@@ -133,8 +136,16 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			// you get your token back
 			// the other player too
 			if (currentState.life != 0) {
-				// we reset the Color to None and updat the neighbor with that
-				_updateNeighbours(move.position, epoch, currentState.color, Color.None);
+				// we reset the Color to None and update the neighbor with that
+				(, , uint256 latestNumAddressesToDistributeTo) = _updateNeighbours(
+					transfers,
+					newNumAddressesToDistributeTo,
+					move.position,
+					epoch,
+					currentState.color,
+					Color.None
+				);
+				newNumAddressesToDistributeTo = latestNumAddressesToDistributeTo;
 
 				// giving back
 				_tokensInReserve[_owners[move.position]] += NUM_TOKENS_PER_GEMS;
@@ -158,12 +169,16 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		} else if (currentState.life == 0 && (currentState.lastEpochUpdate == 0 || currentState.color != Color.None)) {
 			if (currentState.life == 0 || currentState.color != move.color) {
 				// only update neighbour if color changed or if life is zero, since in that case the delta is lost (TODO revisit this)
-				(int8 newDelta, uint8 newEnemymask) = _updateNeighbours(
+				(int8 newDelta, uint8 newEnemymask, uint256 latestNumAddressesToDistributeTo) = _updateNeighbours(
+					transfers,
+					newNumAddressesToDistributeTo,
 					move.position,
 					epoch,
 					currentState.color,
 					move.color
 				);
+				newNumAddressesToDistributeTo = latestNumAddressesToDistributeTo;
+
 				currentState.life = 1;
 				currentState.epochWhenTokenIsAdded = epoch;
 				currentState.lastEpochUpdate = epoch;
@@ -227,50 +242,98 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 	}
 
 	function _updateNeighbours(
+		TokenTransfer[] memory transfers,
+		uint256 numAddressesToDistributeTo,
 		uint64 position,
 		uint32 epoch,
 		Color oldColor,
 		Color newColor
-	) internal returns (int8 newDelta, uint8 newEnemymask) {
+	) internal returns (int8 newDelta, uint8 newEnemymask, uint256 newNumAddressesToDistributeTo) {
 		unchecked {
 			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
 			int256 y = int256(int32(int256(uint256(position) >> 32)));
-			uint64 upPosition = uint64((uint256(y - 1) << 32) + uint256(x));
-			uint64 leftPosition = uint64((uint256(y) << 32) + uint256(x - 1));
-			uint64 downPosition = uint64((uint256(y + 1) << 32) + uint256(x));
-			uint64 rightPosition = uint64((uint256(y) << 32) + uint256(x + 1));
 
-			int8 enemyOrFriend = _updateCell(upPosition, epoch, 0, oldColor, newColor);
-			if (enemyOrFriend < 0) {
-				newEnemymask = newEnemymask | 1;
+			int8 enemyOrFriend;
+			{
+				uint64 upPosition = uint64((uint256(y - 1) << 32) + uint256(x));
+				(enemyOrFriend, numAddressesToDistributeTo) = _updateCell(
+					transfers,
+					numAddressesToDistributeTo,
+					upPosition,
+					epoch,
+					0,
+					oldColor,
+					newColor
+				);
+				if (enemyOrFriend < 0) {
+					newEnemymask = newEnemymask | 1;
+				}
+				newDelta += enemyOrFriend;
 			}
-			newDelta += enemyOrFriend;
-			enemyOrFriend = _updateCell(leftPosition, epoch, 1, oldColor, newColor);
-			if (enemyOrFriend < 0) {
-				newEnemymask = newEnemymask | 2;
+			{
+				uint64 leftPosition = uint64((uint256(y) << 32) + uint256(x - 1));
+
+				(enemyOrFriend, numAddressesToDistributeTo) = _updateCell(
+					transfers,
+					numAddressesToDistributeTo,
+					leftPosition,
+					epoch,
+					1,
+					oldColor,
+					newColor
+				);
+				if (enemyOrFriend < 0) {
+					newEnemymask = newEnemymask | 2;
+				}
+				newDelta += enemyOrFriend;
 			}
-			newDelta += enemyOrFriend;
-			enemyOrFriend = _updateCell(downPosition, epoch, 2, oldColor, newColor);
-			if (enemyOrFriend < 0) {
-				newEnemymask = newEnemymask | 4;
+
+			{
+				uint64 downPosition = uint64((uint256(y + 1) << 32) + uint256(x));
+				(enemyOrFriend, numAddressesToDistributeTo) = _updateCell(
+					transfers,
+					numAddressesToDistributeTo,
+					downPosition,
+					epoch,
+					2,
+					oldColor,
+					newColor
+				);
+				if (enemyOrFriend < 0) {
+					newEnemymask = newEnemymask | 4;
+				}
+				newDelta += enemyOrFriend;
 			}
-			newDelta += enemyOrFriend;
-			enemyOrFriend = _updateCell(rightPosition, epoch, 3, oldColor, newColor);
-			if (enemyOrFriend < 0) {
-				newEnemymask = newEnemymask | 8;
+			{
+				uint64 rightPosition = uint64((uint256(y) << 32) + uint256(x + 1));
+				(enemyOrFriend, numAddressesToDistributeTo) = _updateCell(
+					transfers,
+					numAddressesToDistributeTo,
+					rightPosition,
+					epoch,
+					3,
+					oldColor,
+					newColor
+				);
+				if (enemyOrFriend < 0) {
+					newEnemymask = newEnemymask | 8;
+				}
+				newDelta += enemyOrFriend;
 			}
-			newDelta += enemyOrFriend;
 		}
+		newNumAddressesToDistributeTo = numAddressesToDistributeTo;
 	}
 
 	/// @dev This update the cell in storage
 	function _updateCell(
+		TokenTransfer[] memory transfers,
+		uint256 numAddressesToDistributeTo,
 		uint64 position,
 		uint32 epoch,
 		uint8 neighbourIndex,
 		Color oldColor,
 		Color newColor
-	) internal returns (int8 enemyOrFriend) {
+	) internal returns (int8 enemyOrFriend, uint256 newNumAddressesToDistributeTo) {
 		Cell memory cell = _cells[position];
 
 		// no need to call if oldColor == newColor, so we assume they are different
@@ -285,26 +348,45 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, cell.delta, cell.life, epoch);
 
 			if (newLife == 0) {
-				_updateCellAsDead(position, cell, newLife, epochUsed);
+				numAddressesToDistributeTo = _updateCellAsDead(
+					transfers,
+					numAddressesToDistributeTo,
+					position,
+					cell,
+					newLife,
+					epochUsed
+				);
 			} else {
 				_updateCellFromNeighbor(position, cell, newLife, epoch, neighbourIndex, oldColor, newColor);
 			}
 		} else {
 			// no store needed as nothing changed
 		}
+		newNumAddressesToDistributeTo = numAddressesToDistributeTo;
 	}
 
-	function _updateCellAsDead(uint64 position, Cell memory cell, uint8 newLife, uint32 epochUsed) internal {
+	function _updateCellAsDead(
+		TokenTransfer[] memory transfers,
+		uint256 numAddressesToDistributeTo,
+		uint64 position,
+		Cell memory cell,
+		uint8 newLife,
+		uint32 epochUsed
+	) internal returns (uint256 newNumAddressesToDistributeTo) {
 		cell.life = newLife;
 		cell.lastEpochUpdate = epochUsed;
 		cell.delta = 0;
-		// max number of transfer is 4 (for each neighbours potentially being a different account)
-		TokenTransfer[] memory transfers = new TokenTransfer[](4);
-		uint256 numAddressesToTransferTo = _distributeDeath(transfers, 0, position, cell.enemymask, epochUsed);
+
+		numAddressesToDistributeTo = _distributeDeath(
+			transfers,
+			numAddressesToDistributeTo,
+			position,
+			cell.enemymask,
+			epochUsed
+		);
 
 		_cells[position] = cell;
-
-		_multiTransfer(transfers, numAddressesToTransferTo);
+		return numAddressesToDistributeTo;
 	}
 
 	function _updateCellFromNeighbor(
