@@ -1,3 +1,5 @@
+import {zeroAddress} from 'viem';
+
 enum Color {
 	None,
 	Blue,
@@ -7,10 +9,17 @@ enum Color {
 	Purple,
 }
 
-type Grid = {
+export type Grid = {
 	cells: Cell[];
 	width: number;
 	height: number;
+};
+
+export type ContractCell = {
+	position: bigint;
+	owner: `0x${string}`;
+	color: 0 | 1 | 2 | 3 | 4 | 5;
+	life: number;
 };
 
 function cellID(cell: {x: number; y: number}): string;
@@ -231,66 +240,75 @@ export function renderGrid(grid: Grid): string {
 	return str;
 }
 
-console.log(
-	renderGrid({
-		cells: [
-			{
-				x: 1,
-				y: 2,
-				color: Color.Red,
-				delta: 0,
-				enemymask: 0,
-				epochWhenTokenIsAdded: 1,
-				lastEpochUpdate: 1,
-				life: 1,
-				owner: 1,
-			},
-		],
-		width: 5,
-		height: 5,
-	})
-);
-const grid = `
-    -------------------------
-    |    |    |    |    |    |
-    |    |    |    |    |    |
-    -------------------------
-    |    |    |    |    |    |
-    |    |    |    |    |    |
-    -------------------------
-    |    | R1 | B2 |    |    |
-    |    | 01 | 02 |    |    |
-    -------------------------
-    |    |    |    | P1 |    |
-    |    |    |    |    |    |
-    -------------------------
-    |    |    |    |    |    |
-    |    |    |    |    |    |
-    -------------------------
-`;
+export function toContractCell(accounts: `0x${string}`[]): (cell: Cell) => ContractCell {
+	return (cell: Cell) => ({
+		color: cell.color,
+		life: cell.life,
+		owner: cell.owner ? accounts[cell.owner] : zeroAddress,
+		position: BigInt(0), // TODO
+	});
+}
 
-console.log(renderGrid(parseGrid(grid)));
+// console.log(
+// 	renderGrid({
+// 		cells: [
+// 			{
+// 				x: 1,
+// 				y: 2,
+// 				color: Color.Red,
+// 				delta: 0,
+// 				enemymask: 0,
+// 				epochWhenTokenIsAdded: 1,
+// 				lastEpochUpdate: 1,
+// 				life: 1,
+// 				owner: 1,
+// 			},
+// 		],
+// 		width: 5,
+// 		height: 5,
+// 	})
+// );
+// const grid = `
+//     -------------------------
+//     |    |    |    |    |    |
+//     |    |    |    |    |    |
+//     -------------------------
+//     |    |    |    |    |    |
+//     |    |    |    |    |    |
+//     -------------------------
+//     |    | R1 | B2 |    |    |
+//     |    | 01 | 02 |    |    |
+//     -------------------------
+//     |    |    |    | P1 |    |
+//     |    |    |    |    |    |
+//     -------------------------
+//     |    |    |    |    |    |
+//     |    |    |    |    |    |
+//     -------------------------
+// `;
 
-console.log(
-	renderGrid(
-		parseGrid(
-			renderGrid({
-				cells: [
-					{
-						x: 1,
-						y: 2,
-						color: Color.Red,
-						delta: 0,
-						enemymask: 0,
-						epochWhenTokenIsAdded: 1,
-						lastEpochUpdate: 1,
-						life: 1,
-						owner: 2,
-					},
-				],
-				width: 5,
-				height: 5,
-			})
-		)
-	)
-);
+// console.log(renderGrid(parseGrid(grid)));
+
+// console.log(
+// 	renderGrid(
+// 		parseGrid(
+// 			renderGrid({
+// 				cells: [
+// 					{
+// 						x: 1,
+// 						y: 2,
+// 						color: Color.Red,
+// 						delta: 0,
+// 						enemymask: 0,
+// 						epochWhenTokenIsAdded: 1,
+// 						lastEpochUpdate: 1,
+// 						life: 1,
+// 						owner: 2,
+// 					},
+// 				],
+// 				width: 5,
+// 				height: 5,
+// 			})
+// 		)
+// 	)
+// );

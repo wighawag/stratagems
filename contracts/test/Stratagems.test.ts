@@ -1,4 +1,5 @@
 import {expect} from './utils/viem-chai';
+import {parseGrid, renderGrid, toContractCell} from 'stratagems-common';
 
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {Deployment, loadAndExecuteDeployments} from 'rocketh';
@@ -19,6 +20,7 @@ async function deployStratagems(config?: {
 	const {deployments} = await loadAndExecuteDeployments(
 		{
 			provider: network.provider as any,
+			logLevel: 6,
 		},
 		config
 	);
@@ -42,6 +44,29 @@ async function deployStratagemsWithDefaultConfig() {
 
 describe('Stratagems', function () {
 	it('poke on dead cell should give tokens to neighboring enemies', async function () {
-		const {Stratagems} = await loadFixture(deployStratagemsWithDefaultConfig);
+		const {Stratagems, deployer, otherAccounts} = await loadFixture(deployStratagemsWithDefaultConfig);
+		const grid = parseGrid(`
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		|    | R1 | B2 |    |    |
+		|    | 01 | 02 |    |    |
+		-------------------------
+		|    |    |    | P1 |    |
+		|    |    |    |    |    |
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		`);
+
+		const config = await Stratagems.read.getConfig();
+		console.log(config);
+
+		await Stratagems.write.forceSimpleCells([grid.cells.map(toContractCell(otherAccounts))], {account: deployer});
 	});
 });

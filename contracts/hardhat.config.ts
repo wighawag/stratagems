@@ -1,5 +1,6 @@
 import {loadEnv} from 'ldenv';
 loadEnv();
+
 import '@nomicfoundation/hardhat-network-helpers';
 import 'solidity-coverage';
 import 'hardhat-rocketh';
@@ -11,6 +12,11 @@ const defaultSettings = {
 	optimizer: {
 		enabled: true,
 		runs: 999999,
+	},
+	outputSelection: {
+		'*': {
+			'*': ['evm.methodIdentifiers'],
+		},
 	},
 };
 export default {
@@ -41,5 +47,8 @@ export default {
 	docgen: {
 		templates: 'docs_templates',
 		pages: 'files',
+	},
+	mocha: {
+		require: 'named-logs-console',
 	},
 };
