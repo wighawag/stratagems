@@ -82,6 +82,9 @@ importers:
       rocketh:
         specifier: ^0.6.2
         version: 0.6.3(typescript@5.1.5)
+      rocketh-deploy:
+        specifier: ^0.6.5
+        version: 0.6.5(rocketh@0.6.3)(typescript@5.1.5)
       rocketh-deploy-proxy:
         specifier: ^0.6.8
         version: 0.6.8(rocketh@0.6.3)(typescript@5.1.5)

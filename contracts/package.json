@@ -15,6 +15,7 @@
     "hardhat-rocketh": "^0.6.9",
     "ldenv": "^0.3.7",
     "rocketh": "^0.6.2",
+    "rocketh-deploy": "^0.6.5",
     "rocketh-deploy-proxy": "^0.6.8",
     "rocketh-deploy-router": "^0.6.10",
     "rocketh-export": "^0.6.3",

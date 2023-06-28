@@ -47,35 +47,132 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 		require(commiting, 'NOT_ALLOWED_IN_RESOLUTION_PHASE');
 		epoch--;
 
-		TokenTransfer[] memory transfers = new TokenTransfer[](4);
-		uint256 numAddressesToDistributeTo = 0;
-
 		for (uint256 i = 0; i < cells.length; i++) {
-			require(_cells[i].lastEpochUpdate == 0, 'NO_OVERWRITE');
 			SimpleCell memory simpleCell = cells[i];
+			require(_cells[simpleCell.position].lastEpochUpdate == 0, 'NO_OVERWRITE');
+			require(simpleCell.life > 0, 'ZERO_LIFE');
+			TOKENS.transferFrom(msg.sender, address(this), NUM_TOKENS_PER_GEMS);
 
-			(int8 newDelta, uint8 newEnemymask, uint256 newNumAddressesToDistributeTo) = _updateNeighbours(
-				transfers,
-				numAddressesToDistributeTo,
-				simpleCell.position,
-				epoch,
-				Color.None,
-				simpleCell.color
-			);
-			numAddressesToDistributeTo = newNumAddressesToDistributeTo;
+			(int8 delta, uint8 enemymask) = _updateNeighbosrDelta(simpleCell.position, simpleCell.color, epoch);
 
 			_cells[simpleCell.position] = Cell({
 				lastEpochUpdate: epoch,
 				epochWhenTokenIsAdded: epoch,
 				color: simpleCell.color,
 				life: simpleCell.life,
-				delta: newDelta,
-				enemymask: newEnemymask
+				delta: delta,
+				enemymask: enemymask
 			});
 			_owners[simpleCell.position] = simpleCell.owner;
 		}
 
-		_multiTransfer(transfers, numAddressesToDistributeTo);
 		emit ForceSimpleCells(cells);
+	}
+
+	function isEnemyOrFriend(Color a, Color b) internal pure returns (int8) {
+		if (a != Color.None && b != Color.None) {
+			return a == b ? int8(1) : int8(-1);
+		}
+		return 0;
+	}
+
+	function _computeDelta(uint64 position, Color color) internal view returns (int8 delta, uint8 enemymask) {
+		unchecked {
+			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
+			int256 y = int256(int32(int256(uint256(position) >> 32)));
+			{
+				uint64 upPosition = uint64((uint256(y - 1) << 32) + uint256(x));
+				int8 enemyOrFriend = isEnemyOrFriend(color, _cells[upPosition].color);
+				if (enemyOrFriend < 0) {
+					enemymask = enemymask | 1;
+				}
+				delta += enemyOrFriend;
+			}
+			{
+				uint64 leftPosition = uint64((uint256(y) << 32) + uint256(x - 1));
+				int8 enemyOrFriend = isEnemyOrFriend(color, _cells[leftPosition].color);
+				if (enemyOrFriend < 0) {
+					enemymask = enemymask | 1;
+				}
+				delta += enemyOrFriend;
+			}
+
+			{
+				uint64 downPosition = uint64((uint256(y + 1) << 32) + uint256(x));
+				int8 enemyOrFriend = isEnemyOrFriend(color, _cells[downPosition].color);
+				if (enemyOrFriend < 0) {
+					enemymask = enemymask | 1;
+				}
+				delta += enemyOrFriend;
+			}
+			{
+				uint64 rightPosition = uint64((uint256(y) << 32) + uint256(x + 1));
+				int8 enemyOrFriend = isEnemyOrFriend(color, _cells[rightPosition].color);
+				if (enemyOrFriend < 0) {
+					enemymask = enemymask | 1;
+				}
+				delta += enemyOrFriend;
+			}
+		}
+	}
+
+	function _updateNeighbosrDelta(
+		uint64 position,
+		Color color,
+		uint32 epoch
+	) internal returns (int8 delta, uint8 enemymask) {
+		unchecked {
+			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
+			int256 y = int256(int32(int256(uint256(position) >> 32)));
+			{
+				uint64 upPosition = uint64((uint256(y - 1) << 32) + uint256(x));
+				Cell memory cell = _cells[upPosition];
+				if (cell.color != Color.None) {
+					int8 enemyOrFriend = isEnemyOrFriend(color, cell.color);
+					if (enemyOrFriend < 0) {
+						enemymask = enemymask | 1;
+					}
+					delta += enemyOrFriend;
+					_updateCellFromNeighbor(upPosition, cell, cell.life, epoch, 0, Color.None, color);
+				}
+			}
+			{
+				uint64 leftPosition = uint64((uint256(y) << 32) + uint256(x - 1));
+				Cell memory cell = _cells[leftPosition];
+				if (cell.color != Color.None) {
+					int8 enemyOrFriend = isEnemyOrFriend(color, cell.color);
+					if (enemyOrFriend < 0) {
+						enemymask = enemymask | 1;
+					}
+					delta += enemyOrFriend;
+					_updateCellFromNeighbor(leftPosition, cell, cell.life, epoch, 1, Color.None, color);
+				}
+			}
+
+			{
+				uint64 downPosition = uint64((uint256(y + 1) << 32) + uint256(x));
+				Cell memory cell = _cells[downPosition];
+				if (cell.color != Color.None) {
+					int8 enemyOrFriend = isEnemyOrFriend(color, cell.color);
+					if (enemyOrFriend < 0) {
+						enemymask = enemymask | 1;
+					}
+					delta += enemyOrFriend;
+					_updateCellFromNeighbor(downPosition, cell, cell.life, epoch, 2, Color.None, color);
+				}
+			}
+			{
+				uint64 rightPosition = uint64((uint256(y) << 32) + uint256(x + 1));
+				Cell memory cell = _cells[rightPosition];
+				if (cell.color != Color.None) {
+					int8 enemyOrFriend = isEnemyOrFriend(color, cell.color);
+					if (enemyOrFriend < 0) {
+						enemymask = enemymask | 1;
+					}
+					delta += enemyOrFriend;
+					_updateCellFromNeighbor(rightPosition, cell, cell.life, epoch, 3, Color.None, color);
+				}
+			}
+		}
 	}
 }

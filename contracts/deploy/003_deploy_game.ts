@@ -6,9 +6,22 @@ import {contract} from '../utils/viem';
 import {minutes} from '../utils/time';
 import {zeroAddress} from 'viem';
 
+export type GameConfig = {
+	tokens: `0x${string}`;
+	numTokensPerGems: bigint;
+	burnAddress: `0x${string}`;
+	startTime: number;
+	commitPhaseDuration: bigint;
+	resolutionPhaseDuration: bigint;
+	maxLife: number;
+};
+
 export default execute(
 	context,
-	async ({deployViaProxy, deployments, accounts, artifacts, network, deployViaRouter}, args?: string) => {
+	async (
+		{deployViaProxy, deployments, accounts, artifacts, network, deployViaRouter},
+		configOverride?: Partial<GameConfig>
+	) => {
 		const {deployer} = accounts;
 
 		const TestTokens = contract(deployments.TestTokens as Deployment<typeof context.artifacts.TestTokens.abi>);
@@ -27,6 +40,7 @@ export default execute(
 			// resolutionPeriod: days(1),
 			resolutionPhaseDuration: BigInt(minutes(5)), // days(1),
 			maxLife: 5,
+			...configOverride,
 		};
 
 		const routes = [
