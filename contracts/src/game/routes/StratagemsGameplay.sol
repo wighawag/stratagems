@@ -83,7 +83,8 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 		require(commiting, 'IN_RESOLUTION_PHASE');
 		require(commitment.epoch == epoch, 'PREVIOUS_COMMITMENT_TO_RESOLVE');
 
-		commitment.hash = bytes24(0);
+		// Note that we do not reset the hash
+		// This ensure the slot do not get reset and keep the gas cost consistent across execution
 		commitment.epoch = 0;
 
 		emit CommitmentCancelled(msg.sender, epoch);
