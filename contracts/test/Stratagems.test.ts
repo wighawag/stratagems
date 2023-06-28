@@ -25,6 +25,9 @@ async function deployStratagems(config?: Partial<GameConfig>) {
 	const TestTokens = contract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
 	const Stratagems = contract(deployments['Stratagems'] as Deployment<typeof artifacts.IStratagemsWithDebug.abi>);
 
+	await TestTokens.write.transfer([deployer, parseEther('1000')], {account: tokensBeneficiary});
+	await TestTokens.write.approve([Stratagems.address, parseEther('1000')], {account: deployer});
+
 	return {
 		deployer,
 		tokensBeneficiary,
@@ -44,9 +47,7 @@ async function deployStratagemsWithTestConfig() {
 
 describe('Stratagems', function () {
 	it('poke on dead cell should give tokens to neighboring enemies', async function () {
-		const {TestTokens, Stratagems, deployer, otherAccounts, tokensBeneficiary} = await loadFixture(
-			deployStratagemsWithTestConfig
-		);
+		const {Stratagems, deployer, otherAccounts} = await loadFixture(deployStratagemsWithTestConfig);
 		const grid = parseGrid(`
 		-------------------------
 		|    |    |    |    |    |
@@ -65,10 +66,6 @@ describe('Stratagems', function () {
 		|    |    |    |    |    |
 		-------------------------
 		`);
-
-		await TestTokens.write.transfer([deployer, parseEther('1000')], {account: tokensBeneficiary});
-		await TestTokens.write.approve([Stratagems.address, parseEther('1000')], {account: deployer});
-
 		await Stratagems.write.forceSimpleCells([grid.cells.map(toContractCell(otherAccounts))], {account: deployer});
 
 		// TODO
@@ -86,9 +83,7 @@ describe('Stratagems', function () {
 	});
 
 	it('forceSimpleCells', async function () {
-		const {TestTokens, Stratagems, deployer, otherAccounts, tokensBeneficiary} = await loadFixture(
-			deployStratagemsWithTestConfig
-		);
+		const {Stratagems, deployer, otherAccounts} = await loadFixture(deployStratagemsWithTestConfig);
 		const grid = parseGrid(`
 		-------------------------
 		|    |    |    |    |    |
@@ -107,10 +102,6 @@ describe('Stratagems', function () {
 		|    |    |    |    |    |
 		-------------------------
 		`);
-
-		await TestTokens.write.transfer([deployer, parseEther('1000')], {account: tokensBeneficiary});
-		await TestTokens.write.approve([Stratagems.address, parseEther('1000')], {account: deployer});
-
 		await Stratagems.write.forceSimpleCells([grid.cells.map(toContractCell(otherAccounts))], {account: deployer});
 
 		expect((await Stratagems.read.cells([xyToBigIntID(2, 2)])).delta).to.equal(1);
