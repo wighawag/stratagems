@@ -133,6 +133,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			// you get your token back
 			// the other player too
 			if (currentState.life != 0) {
+				// we reset the Color to None and updat the neighbor with that
 				_updateNeighbours(move.position, epoch, currentState.color, Color.None);
 
 				// giving back
@@ -155,17 +156,20 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				}
 			}
 		} else if (currentState.life == 0 && (currentState.lastEpochUpdate == 0 || currentState.color != Color.None)) {
-			currentState.life = 1;
-			currentState.epochWhenTokenIsAdded = epoch;
-			currentState.lastEpochUpdate = epoch;
-
-			if (currentState.color != move.color) {
-				// only update neighbour if color changed
-				_updateNeighbours(move.position, epoch, currentState.color, move.color);
+			if (currentState.life == 0 || currentState.color != move.color) {
+				// only update neighbour if color changed or if life is zero, since in that case the delta is lost (TODO revisit this)
+				(int8 newDelta, uint8 newEnemymask) = _updateNeighbours(
+					move.position,
+					epoch,
+					currentState.color,
+					move.color
+				);
+				currentState.life = 1;
+				currentState.epochWhenTokenIsAdded = epoch;
+				currentState.lastEpochUpdate = epoch;
 				currentState.color = move.color;
-				// TODO fetch neighbours to compute delta
-				currentState.delta = 0;
-				currentState.enemymask = 0;
+				currentState.delta = newDelta;
+				currentState.enemymask = newEnemymask;
 			} else {
 				// TODO fetch neighbours to compute delta
 				currentState.delta = 0;
@@ -227,7 +231,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		uint32 epoch,
 		Color oldColor,
 		Color newColor
-	) internal returns (int8 newDelta) {
+	) internal returns (int8 newDelta, uint8 newEnemymask) {
 		unchecked {
 			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
 			int256 y = int256(int32(int256(uint256(position) >> 32)));
@@ -236,15 +240,30 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			uint64 downPosition = uint64((uint256(y + 1) << 32) + uint256(x));
 			uint64 rightPosition = uint64((uint256(y) << 32) + uint256(x + 1));
 
-			// TODO also need to return enemymask ?
-			newDelta =
-				_updateCell(upPosition, epoch, 0, oldColor, newColor) +
-				_updateCell(leftPosition, epoch, 1, oldColor, newColor) +
-				_updateCell(downPosition, epoch, 2, oldColor, newColor) +
-				_updateCell(rightPosition, epoch, 3, oldColor, newColor);
+			int8 enemyOrFriend = _updateCell(upPosition, epoch, 0, oldColor, newColor);
+			if (enemyOrFriend < 0) {
+				newEnemymask = newEnemymask | 1;
+			}
+			newDelta += enemyOrFriend;
+			enemyOrFriend = _updateCell(leftPosition, epoch, 1, oldColor, newColor);
+			if (enemyOrFriend < 0) {
+				newEnemymask = newEnemymask | 2;
+			}
+			newDelta += enemyOrFriend;
+			enemyOrFriend = _updateCell(downPosition, epoch, 2, oldColor, newColor);
+			if (enemyOrFriend < 0) {
+				newEnemymask = newEnemymask | 4;
+			}
+			newDelta += enemyOrFriend;
+			enemyOrFriend = _updateCell(rightPosition, epoch, 3, oldColor, newColor);
+			if (enemyOrFriend < 0) {
+				newEnemymask = newEnemymask | 8;
+			}
+			newDelta += enemyOrFriend;
 		}
 	}
 
+	/// @dev This update the cell in storage
 	function _updateCell(
 		uint64 position,
 		uint32 epoch,
@@ -320,6 +339,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		_cells[position] = cell;
 	}
 
+	/// @dev this distribute the token in the cell who just died to the neighboring enemies that are still alive
+	///  If none of the cell have living enemies, then the tokens are given back to the player
 	function _distributeDeath(
 		TokenTransfer[] memory transfers,
 		uint256 numAddressesToDistributeTo,
@@ -375,7 +396,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		// if we did not find that address we add it to the end
 		collected[numAddressesToDistributeTo].to = newTransfer.to;
 		collected[numAddressesToDistributeTo].amount = newTransfer.amount;
-		// and increase the size to lookup
+		// and increase the size to lookup for next time
 		numAddressesToDistributeTo++;
 		return numAddressesToDistributeTo;
 	}
