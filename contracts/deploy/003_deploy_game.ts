@@ -8,7 +8,7 @@ import {zeroAddress} from 'viem';
 
 export default execute(
 	context,
-	async ({deployViaProxy, deployments, accounts, artifacts, network, deployViaRouter}) => {
+	async ({deployViaProxy, deployments, accounts, artifacts, network, deployViaRouter}, args?: string) => {
 		const {deployer} = accounts;
 
 		const TestTokens = contract(deployments.TestTokens as Deployment<typeof context.artifacts.TestTokens.abi>);

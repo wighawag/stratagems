@@ -1,16 +1,14 @@
 import {expect} from './utils/viem-chai';
 
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
-import {prefix_str} from 'stratagems-common';
 import {Deployment, loadAndExecuteDeployments} from 'rocketh';
 
 import {walletClient, contract, publicClient, getAccounts} from '../utils/viem';
 
 import artifacts from '../generated/artifacts';
 import {network} from 'hardhat';
-import {minutes} from '../utils/time';
 
-async function deployStratagems(config: {
+async function deployStratagems(config?: {
 	startTime: bigint;
 	commitPeriod: bigint;
 	resolutionPeriod: bigint;
@@ -18,32 +16,20 @@ async function deployStratagems(config: {
 }) {
 	const [deployer, tokensBeneficiary, ...otherAccounts] = await getAccounts();
 
-	const tokensHash = await walletClient.deployContract({
-		...artifacts.TestTokens,
-		account: deployer,
-		args: [tokensBeneficiary, 1000000000000000000000000000n],
-	});
-	const tokensReceipt = await publicClient.waitForTransactionReceipt({hash: tokensHash});
-	if (!tokensReceipt.contractAddress) {
-		throw new Error(`failed to deploy Tokens`);
-	}
-	const TestTokens = contract({address: tokensReceipt.contractAddress, abi: artifacts.TestTokens.abi});
-	const decimals = await TestTokens.read.decimals();
+	const {deployments} = await loadAndExecuteDeployments(
+		{
+			provider: network.provider as any,
+		},
+		config
+	);
 
-	const hash = await walletClient.deployContract({
-		...artifacts.Stratagems,
-		account: deployer,
-		args: [{tokens: tokensReceipt.contractAddress, decimals, ...config}],
-	});
-
-	const receipt = await publicClient.waitForTransactionReceipt({hash});
-
-	if (!receipt.contractAddress) {
-		throw new Error(`failed to deploy contract ${name}`);
-	}
+	const TestTokens = contract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
+	const Stratagems = contract(deployments['Stratagems'] as Deployment<typeof artifacts.IStratagems.abi>);
 
 	return {
-		Stratagems: contract({address: receipt.contractAddress, abi: artifacts.Stratagems.abi}),
+		deployer,
+		tokensBeneficiary,
+		Stratagems,
 		TestTokens,
 		config,
 		otherAccounts,
@@ -51,18 +37,7 @@ async function deployStratagems(config: {
 }
 
 async function deployStratagemsWithDefaultConfig() {
-	const timestamp = BigInt(Math.floor(Date.now() / 1000));
-
-	const config = {
-		// startTime: nextSunday(),
-		startTime: timestamp, // nextSunday(),
-		// commitPeriod: days(2.5), // TODO support more complex period to support a special weekend commit period
-		commitPeriod: BigInt(minutes(5)), // days(2.5), // TODO support more complex period to support a special weekend commit period
-		// resolutionPeriod: days(1),
-		resolutionPeriod: BigInt(minutes(5)), // days(1),
-		maxLife: 5,
-	};
-	return deployStratagems(config);
+	return deployStratagems();
 }
 
 describe('TestTokens', function () {
