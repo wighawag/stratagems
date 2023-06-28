@@ -54,31 +54,34 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 
 			if (enemyMask & 1 == 1) {
 				uint256 cellPos = ((uint256(y - 1) << 32) + uint256(x));
-				Cell memory cell = _cells[cellPos];
+				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
+				// we consider cells to be alive either because
+				// their life > 0 after being updated
+				// or that their last death update is the same epoch
 				if (cell.life > 0 || cell.lastEpochUpdate == epoch) {
 					enemies[numEnemiesAlive] = _owners[cellPos];
 					numEnemiesAlive++;
 				}
 			}
-			if (enemyMask & (1 << 1) == (1 << 1)) {
+			if (enemyMask & 2 == 2) {
 				uint256 cellPos = ((uint256(y) << 32) + uint256(x - 1));
-				Cell memory cell = _cells[cellPos];
+				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
 				if (cell.life > 0 || cell.lastEpochUpdate == epoch) {
 					enemies[numEnemiesAlive] = _owners[cellPos];
 					numEnemiesAlive++;
 				}
 			}
-			if (enemyMask & (1 << 2) == (1 << 2)) {
+			if (enemyMask & 4 == 4) {
 				uint256 cellPos = ((uint256(y + 1) << 32) + uint256(x));
-				Cell memory cell = _cells[cellPos];
+				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
 				if (cell.life > 0 || cell.lastEpochUpdate == epoch) {
 					enemies[numEnemiesAlive] = _owners[cellPos];
 					numEnemiesAlive++;
 				}
 			}
-			if (enemyMask & (1 << 3) == (1 << 3)) {
+			if (enemyMask & 8 == 8) {
 				uint256 cellPos = ((uint256(y) << 32) + uint256(x + 1));
-				Cell memory cell = _cells[cellPos];
+				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
 				if (cell.life > 0 || cell.lastEpochUpdate == epoch) {
 					enemies[numEnemiesAlive] = _owners[cellPos];
 					numEnemiesAlive++;
