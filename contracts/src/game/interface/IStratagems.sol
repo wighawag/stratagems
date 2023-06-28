@@ -36,6 +36,11 @@ interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
 	/// @param commitmentHash the hash of the moves
 	function makeCommitment(bytes24 commitmentHash) external;
 
+	/// @notice called by players to cancel their current commitment
+	///  Can only be called during the commit phase in which the commitment was made
+	///  It cannot be called afterward
+	function cancelCommitment() external;
+
 	/// @notice called to make a commitment along with tokens to add to the reserve
 	/// @param commitmentHash the has of the moves
 	/// @param tokensAmountToAdd amount of tokens to add to the reserve. the resulting total must be enough to cover the moves

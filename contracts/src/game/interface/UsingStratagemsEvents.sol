@@ -10,6 +10,11 @@ interface UsingStratagemsEvents is UsingStratagemsTypes {
 	/// @param commitmentHash the hash of moves
 	event CommitmentMade(address indexed player, uint32 indexed epoch, bytes24 commitmentHash);
 
+	/// @notice A player has cancelled its current commitment (before it reached the resolution phase)
+	/// @param player account taking the staking risk (can be a different account than the one controlling the gems)
+	/// @param epoch epoch number on which this commit belongs to
+	event CommitmentCancelled(address indexed player, uint32 indexed epoch);
+
 	/// @notice A player has canceled a previous commitment by burning some tokens
 	/// @param player the account that made the commitment
 	/// @param epoch epoch number on which this commit belongs to

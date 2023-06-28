@@ -77,6 +77,19 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 	}
 
 	/// @inheritdoc IStratagemsGameplay
+	function cancelCommitment() external {
+		Commitment storage commitment = _commitments[msg.sender];
+		(uint32 epoch, bool commiting) = _epoch();
+		require(commiting, 'IN_RESOLUTION_PHASE');
+		require(commitment.epoch == epoch, 'PREVIOUS_COMMITMENT_TO_RESOLVE');
+
+		commitment.hash = bytes24(0);
+		commitment.epoch = 0;
+
+		emit CommitmentCancelled(msg.sender, epoch);
+	}
+
+	/// @inheritdoc IStratagemsGameplay
 	function withdrawFromReserve(uint256 amount) external {
 		Commitment storage commitment = _commitments[msg.sender];
 
