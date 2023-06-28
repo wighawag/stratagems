@@ -39,8 +39,8 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 		uint256 epochDuration = COMMIT_PHASE_DURATION + RESOLUTION_PHASE_DURATION;
 		require(block.timestamp >= START_TIME, 'GAME_NOT_STARTED');
 		uint256 timePassed = block.timestamp - START_TIME;
-		epoch = uint32(timePassed / epochDuration + 1); // epoch start at 1
-		commiting = timePassed - ((epoch - 1) * epochDuration) < COMMIT_PHASE_DURATION;
+		epoch = uint32(timePassed / epochDuration + 2); // epoch start at 2, this make the hypothetical previous resolution phase's epoch to be 1
+		commiting = timePassed - ((epoch - 2) * epochDuration) < COMMIT_PHASE_DURATION;
 	}
 
 	function _getNeihbourEnemiesAliveWithPlayers(

@@ -261,6 +261,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			uint64 downPosition = uint64((uint256(y + 1) << 32) + uint256(x));
 			uint64 rightPosition = uint64((uint256(y) << 32) + uint256(x + 1));
 
+			// TODO also need to return enemymask ?
 			newDelta =
 				_updateCell(upPosition, epoch, 0, oldColor, newColor) +
 				_updateCell(leftPosition, epoch, 1, oldColor, newColor) +
