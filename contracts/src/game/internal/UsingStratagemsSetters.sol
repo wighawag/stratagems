@@ -277,7 +277,9 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		assert(oldColor != newColor);
 		uint32 lastUpdate = cell.lastEpochUpdate;
 		Color color = cell.color;
-		enemyOrFriend = color == newColor ? int8(1) : int8(-1);
+		if (color != Color.None) {
+			enemyOrFriend = color == newColor ? int8(1) : int8(-1);
+		}
 
 		if (lastUpdate >= 1 && color != Color.None && cell.life > 0) {
 			(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, cell.delta, cell.life, epoch);
@@ -287,6 +289,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			} else {
 				_updateCellFromNeighbor(position, cell, newLife, epoch, neighbourIndex, oldColor, newColor);
 			}
+		} else {
+			// no store needed as nothing changed
 		}
 	}
 
