@@ -117,13 +117,13 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 	}
 
 	function _updateNeighbosrDelta(
-		uint64 position,
+		uint64 center,
 		Color color,
 		uint32 epoch
 	) internal returns (int8 delta, uint8 enemymask) {
 		unchecked {
-			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
-			int256 y = int256(int32(int256(uint256(position) >> 32)));
+			int256 x = int256(int32(int256(uint256(center) & 0xFFFFFFFF)));
+			int256 y = int256(int32(int256(uint256(center) >> 32)));
 			{
 				uint64 upPosition = uint64((uint256(y - 1) << 32) + uint256(x));
 				Cell memory cell = _cells[upPosition];
@@ -133,7 +133,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 						enemymask = enemymask | 1;
 					}
 					delta += enemyOrFriend;
-					_updateCellFromNeighbor(upPosition, cell, cell.life, epoch, 0, Color.None, color);
+					_updateCellFromNeighbor(upPosition, cell, cell.life, epoch, 2, Color.None, color);
 				}
 			}
 			{
@@ -145,7 +145,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 						enemymask = enemymask | 2;
 					}
 					delta += enemyOrFriend;
-					_updateCellFromNeighbor(leftPosition, cell, cell.life, epoch, 1, Color.None, color);
+					_updateCellFromNeighbor(leftPosition, cell, cell.life, epoch, 3, Color.None, color);
 				}
 			}
 
@@ -158,7 +158,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 						enemymask = enemymask | 4;
 					}
 					delta += enemyOrFriend;
-					_updateCellFromNeighbor(downPosition, cell, cell.life, epoch, 2, Color.None, color);
+					_updateCellFromNeighbor(downPosition, cell, cell.life, epoch, 0, Color.None, color);
 				}
 			}
 			{
@@ -170,7 +170,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 						enemymask = enemymask | 8;
 					}
 					delta += enemyOrFriend;
-					_updateCellFromNeighbor(rightPosition, cell, cell.life, epoch, 3, Color.None, color);
+					_updateCellFromNeighbor(rightPosition, cell, cell.life, epoch, 1, Color.None, color);
 				}
 			}
 		}

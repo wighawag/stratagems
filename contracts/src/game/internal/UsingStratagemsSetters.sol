@@ -261,7 +261,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 					numAddressesToDistributeTo,
 					upPosition,
 					epoch,
-					0,
+					2,
 					oldColor,
 					newColor
 				);
@@ -278,7 +278,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 					numAddressesToDistributeTo,
 					leftPosition,
 					epoch,
-					1,
+					3,
 					oldColor,
 					newColor
 				);
@@ -295,7 +295,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 					numAddressesToDistributeTo,
 					downPosition,
 					epoch,
-					2,
+					0,
 					oldColor,
 					newColor
 				);
@@ -311,7 +311,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 					numAddressesToDistributeTo,
 					rightPosition,
 					epoch,
-					3,
+					1,
 					oldColor,
 					newColor
 				);

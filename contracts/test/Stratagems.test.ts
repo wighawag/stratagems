@@ -17,7 +17,7 @@ async function deployStratagems(config?: Partial<GameConfig>) {
 	const {deployments} = await loadAndExecuteDeployments(
 		{
 			provider: network.provider as any,
-			logLevel: 6,
+			// logLevel: 6,
 		},
 		config
 	);
@@ -66,26 +66,53 @@ describe('Stratagems', function () {
 		-------------------------
 		`);
 
-		const config = await Stratagems.read.getConfig();
-		console.log(config);
+		await TestTokens.write.transfer([deployer, parseEther('1000')], {account: tokensBeneficiary});
+		await TestTokens.write.approve([Stratagems.address, parseEther('1000')], {account: deployer});
+
+		await Stratagems.write.forceSimpleCells([grid.cells.map(toContractCell(otherAccounts))], {account: deployer});
+
+		// TODO
+		// let owner: `0x${string}`;
+		// let cell: any;
+		// cell = await Stratagems.read.cells([xyToBigIntID(1, 2)]);
+		// owner = await Stratagems.read.ownerOf([xyToBigIntID(1, 2)]);
+		// console.log(cell, owner);
+		// cell = await Stratagems.read.cells([xyToBigIntID(2, 2)]);
+		// owner = await Stratagems.read.ownerOf([xyToBigIntID(2, 2)]);
+		// console.log(cell, owner);
+		// cell = await Stratagems.read.cells([xyToBigIntID(3, 3)]);
+		// owner = await Stratagems.read.ownerOf([xyToBigIntID(3, 3)]);
+		// console.log(cell, owner);
+	});
+
+	it('forceSimpleCells', async function () {
+		const {TestTokens, Stratagems, deployer, otherAccounts, tokensBeneficiary} = await loadFixture(
+			deployStratagemsWithTestConfig
+		);
+		const grid = parseGrid(`
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		|    |    | B4 |    |    |
+		|    |    | 03 |    |    |
+		-------------------------
+		|    | R1 | B2 | B1 |    |
+		|    | 01 | 02 | 04 |    |
+		-------------------------
+		|    |    |    | P1 |    |
+		|    |    |    |    |    |
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		`);
 
 		await TestTokens.write.transfer([deployer, parseEther('1000')], {account: tokensBeneficiary});
 		await TestTokens.write.approve([Stratagems.address, parseEther('1000')], {account: deployer});
 
-		const cells = grid.cells;
-		console.log(cells);
-		await Stratagems.write.forceSimpleCells([cells.map(toContractCell(otherAccounts))], {account: deployer});
+		await Stratagems.write.forceSimpleCells([grid.cells.map(toContractCell(otherAccounts))], {account: deployer});
 
-		let owner: `0x${string}`;
-		let cell: any;
-		cell = await Stratagems.read.cells([xyToBigIntID(1, 2)]);
-		owner = await Stratagems.read.ownerOf([xyToBigIntID(1, 2)]);
-		console.log(cell, owner);
-		cell = await Stratagems.read.cells([xyToBigIntID(2, 2)]);
-		owner = await Stratagems.read.ownerOf([xyToBigIntID(2, 2)]);
-		console.log(cell, owner);
-		cell = await Stratagems.read.cells([xyToBigIntID(3, 3)]);
-		owner = await Stratagems.read.ownerOf([xyToBigIntID(3, 3)]);
-		console.log(cell, owner);
+		expect((await Stratagems.read.cells([xyToBigIntID(2, 2)])).delta).to.equal(1);
 	});
 });
