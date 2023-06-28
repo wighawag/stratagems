@@ -3,12 +3,10 @@ pragma solidity ^0.8.0;
 
 import 'solidity-kit/solc_0.8/debug/UsingControlledTime.sol';
 import '../internal/UsingStratagemsSetters.sol';
+import './IStratagemsWithDebug.sol';
 
-contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime {
+contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStratagemsDebug {
 	constructor(Config memory config) UsingStratagemsSetters(config) {}
-
-	event ForceCells(DebugCell[] cells);
-	event ForceSimpleCells(SimpleCell[] cells);
 
 	function _getOwner() internal view override returns (address ownerAddress) {
 		// solhint-disable-next-line security/no-inline-assembly
@@ -26,17 +24,6 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime {
 		_resolveMoves(player, epoch, moves, fromReserve);
 	}
 
-	struct DebugCell {
-		uint64 position;
-		address owner;
-		uint32 lastEpochUpdate;
-		uint32 epochWhenTokenIsAdded;
-		Color color;
-		uint8 life;
-		int8 delta;
-		uint8 enemymask;
-	}
-
 	function forceCells(DebugCell[] memory cells) external {
 		require(msg.sender == _getOwner(), 'NOT_AUTHORIZED');
 		for (uint256 i = 0; i < cells.length; i++) {
@@ -52,13 +39,6 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime {
 			_owners[debugCell.position] = debugCell.owner;
 		}
 		emit ForceCells(cells);
-	}
-
-	struct SimpleCell {
-		uint64 position;
-		address owner;
-		Color color;
-		uint8 life;
 	}
 
 	function forceSimpleCells(SimpleCell[] memory cells) external {

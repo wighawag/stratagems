@@ -24,7 +24,7 @@ async function deployStratagems(config?: {
 	);
 
 	const TestTokens = contract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
-	const Stratagems = contract(deployments['Stratagems'] as Deployment<typeof artifacts.IStratagems.abi>);
+	const Stratagems = contract(deployments['Stratagems'] as Deployment<typeof artifacts.IStratagemsWithDebug.abi>);
 
 	return {
 		deployer,
