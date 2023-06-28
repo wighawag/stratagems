@@ -7,7 +7,7 @@ import 'solidity-kit/solc_0.8/ERC165/interfaces/IERC165.sol';
 import './UsingStratagemsTypes.sol';
 import './UsingStratagemsEvents.sol';
 
-interface IStratagemsCore is UsingStratagemsTypes, UsingStratagemsEvents {
+interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
 	/// @notice There is ```(2**128) * (2**128)``` cells
 	/// @param id the cell id (TODO)
 	function cells(uint256 id) external view returns (Cell memory cell);
@@ -98,4 +98,4 @@ interface IStratagemsCore is UsingStratagemsTypes, UsingStratagemsEvents {
 	function pokeMultiple(uint64[] calldata positions) external;
 }
 
-interface IStratagems is IStratagemsCore, IERC721, IERC721Metadata {}
+interface IStratagems is IStratagemsGameplay, IERC721, IERC721Metadata {}

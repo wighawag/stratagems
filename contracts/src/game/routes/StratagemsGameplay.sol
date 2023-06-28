@@ -2,27 +2,28 @@
 pragma solidity ^0.8.0;
 
 import '../interface/IStratagems.sol';
-import '../internal/UsingStratagemsFunctions.sol';
+import '../internal/UsingStratagemsSetters.sol';
+import '../internal/UsingStratagemsUtils.sol';
 
-contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
-	constructor(Config memory config) UsingStratagemsFunctions(config) {}
+contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, UsingStratagemsUtils {
+	constructor(Config memory config) UsingStratagemsSetters(config) {}
 
-	/// @inheritdoc IStratagemsCore
+	/// @inheritdoc IStratagemsGameplay
 	function cells(uint256 id) external view returns (Cell memory cell) {
 		return _cells[id];
 	}
 
-	/// @inheritdoc IStratagemsCore
+	/// @inheritdoc IStratagemsGameplay
 	function tokensInReserve(address account) external view returns (uint256 amount) {
 		return _tokensInReserve[account];
 	}
 
-	/// @inheritdoc IStratagemsCore
+	/// @inheritdoc IStratagemsGameplay
 	function commitments(address account) external view returns (Commitment memory commitment) {
 		return _commitments[account];
 	}
 
-	/// @inheritdoc IStratagemsCore
+	/// @inheritdoc IStratagemsGameplay
 	function getConfig() external view returns (Config memory config) {
 		config.tokens = TOKENS;
 		config.burnAddress = BURN_ADDRESS;
@@ -33,7 +34,7 @@ contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
 		config.numTokensPerGems = NUM_TOKENS_PER_GEMS;
 	}
 
-	/// @inheritdoc IStratagemsCore
+	/// @inheritdoc IStratagemsGameplay
 	function addToReserve(uint256 tokensAmountToAdd, Permit calldata permit) external {
 		if (tokensAmountToAdd > 0) {
 			uint256 newAmount = _tokensInReserve[msg.sender];
@@ -48,12 +49,12 @@ contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
 		}
 	}
 
-	/// @inheritdoc IStratagemsCore
+	/// @inheritdoc IStratagemsGameplay
 	function makeCommitment(bytes24 commitmentHash) external {
 		_makeCommitment(msg.sender, commitmentHash, _tokensInReserve[msg.sender]);
 	}
 
-	/// @inheritdoc IStratagemsCore
+	/// @inheritdoc IStratagemsGameplay
 	function makeCommitmentWithExtraReserve(
 		bytes24 commitmentHash,
 		uint256 tokensAmountToAdd,
@@ -75,7 +76,7 @@ contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
 		}
 	}
 
-	/// @inheritdoc IStratagemsCore
+	/// @inheritdoc IStratagemsGameplay
 	function withdrawFromReserve(uint256 amount) external {
 		Commitment storage commitment = _commitments[msg.sender];
 
@@ -96,7 +97,7 @@ contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
 		emit ReserveWithdrawn(msg.sender, amount, inReserve);
 	}
 
-	/// @inheritdoc IStratagemsCore
+	/// @inheritdoc IStratagemsGameplay
 	function resolve(
 		address player,
 		bytes32 secret,
@@ -126,7 +127,7 @@ contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
 		emit CommitmentResolved(player, epoch, hashResolved, moves, furtherMoves, newReserveAmount);
 	}
 
-	/// @inheritdoc IStratagemsCore
+	/// @inheritdoc IStratagemsGameplay
 	function acknowledgeMissedResolution(
 		address player,
 		bytes32 secret,
@@ -154,7 +155,7 @@ contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
 		emit CommitmentVoid(player, epoch, amount, furtherMoves);
 	}
 
-	/// @inheritdoc IStratagemsCore
+	/// @inheritdoc IStratagemsGameplay
 	function acknowledgeMissedResolutionByBurningAllReserve() external {
 		Commitment storage commitment = _commitments[msg.sender];
 		(uint32 epoch, ) = _epoch();
@@ -170,7 +171,7 @@ contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
 		emit CommitmentVoid(msg.sender, epoch, amount, bytes24(0));
 	}
 
-	/// @inheritdoc IStratagemsCore
+	/// @inheritdoc IStratagemsGameplay
 	function poke(uint64 position) external {
 		// max number of transfer is 4 (for each neighbour's potentially being a different account)
 		TokenTransfer[] memory transfers = new TokenTransfer[](4);
@@ -179,7 +180,7 @@ contract StratagemsCore is IStratagemsCore, UsingStratagemsFunctions {
 		// TODO events?
 	}
 
-	/// @inheritdoc IStratagemsCore
+	/// @inheritdoc IStratagemsGameplay
 	function pokeMultiple(uint64[] calldata positions) external {
 		uint256 numCells = positions.length;
 		// max number of transfer is 4 * numCells (for each cell's neighbours potentially being a different account)

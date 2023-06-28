@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 
 import 'solidity-kit/solc_0.8/debug/UsingControlledTime.sol';
-import '../internal/UsingStratagemsFunctions.sol';
+import '../internal/UsingStratagemsSetters.sol';
 
-contract StratagemsDebug is UsingStratagemsFunctions, UsingControlledTime {
-	constructor(Config memory config) UsingStratagemsFunctions(config) {}
+contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime {
+	constructor(Config memory config) UsingStratagemsSetters(config) {}
 
 	function _getOwner() internal view override returns (address ownerAddress) {
 		// solhint-disable-next-line security/no-inline-assembly

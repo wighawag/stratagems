@@ -30,7 +30,7 @@ export default execute(
 		};
 
 		const routes = [
-			{name: 'Core', artifact: artifacts.StratagemsCore, args: [config]},
+			{name: 'Core', artifact: artifacts.StratagemsGameplay, args: [config]},
 			{name: 'ERC721', artifact: artifacts.StratagemsERC721 as any, args: [config]},
 		];
 		if (!network.tags['mainnet']) {
