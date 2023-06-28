@@ -16,7 +16,8 @@ interface UsingStratagemsTypes {
 		Blue,
 		Red,
 		Green,
-		Yellow
+		Yellow,
+		Purple
 	}
 
 	struct Move {

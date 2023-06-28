@@ -40,8 +40,20 @@ async function deployStratagemsWithDefaultConfig() {
 	return deployStratagems();
 }
 
-describe('Stratagems', function () {
-	it('poke on dead cell should give tokens to neighboring enemies', async function () {
-		const {Stratagems} = await loadFixture(deployStratagemsWithDefaultConfig);
+describe('TestTokens', function () {
+	describe('Deployment', function () {
+		it('Should be already deployed', async function () {
+			const {deployments} = await loadAndExecuteDeployments({
+				provider: network.provider as any,
+			});
+			const TestTokens = contract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
+			const decimals = await TestTokens.read.decimals();
+			expect(decimals).to.equal(18);
+		});
+
+		it('TestTokens should have the correct number of decimals', async function () {
+			const {TestTokens} = await loadFixture(deployStratagemsWithDefaultConfig);
+			expect(await TestTokens.read.decimals()).to.equal(18);
+		});
 	});
 });
