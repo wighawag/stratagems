@@ -19,6 +19,15 @@ import {GameConfig} from '../deploy/003_deploy_game';
 import {parseEther} from 'viem';
 import {getGrid, withGrid} from './utils/stratagems';
 
+async function expectGridChange(gridWithAction: string, resultGrid: string) {
+	const setup = await loadFixture(deployStratagemsWithTestConfig);
+	await expect(
+		await withGrid(setup, gridWithAction)
+			.then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}, fromContractFullCellToCell))
+			.then(renderGrid)
+	).to.equal(renderGrid(parseGrid(resultGrid)));
+}
+
 async function deployStratagems(config?: Partial<GameConfig>) {
 	const [deployer, tokensBeneficiary, ...otherAccounts] = await getAccounts();
 
@@ -135,11 +144,8 @@ describe('Stratagems', function () {
 	});
 
 	it('placing a gem should have the desired effect', async function () {
-		const setup = await loadFixture(deployStratagemsWithTestConfig);
-		await expect(
-			await withGrid(
-				setup,
-				`
+		await expectGridChange(
+			`
 		-------------------------
 		|    |    |    |    |    |
 		|    |    |    |    |    |
@@ -156,13 +162,8 @@ describe('Stratagems', function () {
 		|    |    |    |    |    |
 		|    |    |    |    |    |
 		-------------------------
-		`
-			)
-				.then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}, fromContractFullCellToCell))
-				.then(renderGrid)
-		).to.equal(
-			renderGrid(
-				parseGrid(`
+		`,
+			`
 		-------------------------
 		|    |    |    |    |    |
 		|    |    |    |    |    |
@@ -179,8 +180,48 @@ describe('Stratagems', function () {
 		|    |    |    |    |    |
 		|    |    |    |    |    |
 		-------------------------
-		`)
-			)
+		`
+		);
+	});
+
+	it('placing 2 gems should have the desired effect', async function () {
+		await expectGridChange(
+			`
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		|    |    |+B +|    |    |
+		|    |    |+03+|    |    |
+		-------------------------
+		|    | R1 |+B +|    |    |
+		|    | 01 |+02+|    |    |
+		-------------------------
+		|    |    |    | P1 |    |
+		|    |    |    | 01 |    |
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		`,
+			`
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		|    |    | B2 |    |    |
+		|    |    | 03 |    |    |
+		-------------------------
+		|    | R0 | B0 |    |    |
+		|    | 01 | 02 |    |    |
+		-------------------------
+		|    |    |    | P0 |    |
+		|    |    |    | 01 |    |
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		`
 		);
 	});
 
