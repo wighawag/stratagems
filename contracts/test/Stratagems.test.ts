@@ -1,5 +1,12 @@
 import {expect} from './utils/viem-chai';
-import {fromContractFullCellToSimpleCell, parseGrid, toContractSimpleCell, xyToBigIntID} from 'stratagems-common';
+import {
+	fromContractFullCellToCell,
+	fromContractFullCellToSimpleCell,
+	parseGrid,
+	renderGrid,
+	toContractSimpleCell,
+	xyToBigIntID,
+} from 'stratagems-common';
 
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {Deployment, loadAndExecuteDeployments} from 'rocketh';
@@ -100,9 +107,12 @@ describe('Stratagems', function () {
 		|    |    |    |    |    |
 		-------------------------
 		`
-			).then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}, fromContractFullCellToSimpleCell))
-		).to.deep.equal(
-			parseGrid(`
+			)
+				.then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}, fromContractFullCellToCell))
+				.then(renderGrid)
+		).to.equal(
+			renderGrid(
+				parseGrid(`
 		-------------------------
 		|    |    |    |    |    |
 		|    |    |    |    |    |
@@ -120,6 +130,7 @@ describe('Stratagems', function () {
 		|    |    |    |    |    |
 		-------------------------
 		`)
+			)
 		);
 	});
 

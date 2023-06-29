@@ -72,34 +72,34 @@ importers:
         version: 0.4.7
       hardhat:
         specifier: ^2.16.1
-        version: 2.16.1(ts-node@10.9.1)(typescript@5.1.5)
+        version: 2.16.1(ts-node@10.9.1)(typescript@5.1.6)
       hardhat-rocketh:
-        specifier: ^0.6.9
-        version: 0.6.9(rocketh@0.6.3)
+        specifier: ^0.6.10
+        version: 0.6.10(rocketh@0.6.4)
       ldenv:
         specifier: ^0.3.7
         version: 0.3.7
       rocketh:
-        specifier: ^0.6.2
-        version: 0.6.3(typescript@5.1.5)
+        specifier: ^0.6.4
+        version: 0.6.4(typescript@5.1.6)
       rocketh-deploy:
-        specifier: ^0.6.5
-        version: 0.6.5(rocketh@0.6.3)(typescript@5.1.5)
+        specifier: ^0.6.6
+        version: 0.6.6(rocketh@0.6.4)(typescript@5.1.6)
       rocketh-deploy-proxy:
-        specifier: ^0.6.8
-        version: 0.6.8(rocketh@0.6.3)(typescript@5.1.5)
+        specifier: ^0.6.9
+        version: 0.6.9(rocketh@0.6.4)(typescript@5.1.6)
       rocketh-deploy-router:
-        specifier: ^0.6.10
-        version: 0.6.10(rocketh@0.6.3)(typescript@5.1.5)
+        specifier: ^0.6.11
+        version: 0.6.11(rocketh@0.6.4)(typescript@5.1.6)
       rocketh-export:
-        specifier: ^0.6.3
-        version: 0.6.3(rocketh@0.6.3)
+        specifier: ^0.6.4
+        version: 0.6.4(rocketh@0.6.4)
       rocketh-signer:
-        specifier: ^0.6.3
-        version: 0.6.3(rocketh@0.6.3)
+        specifier: ^0.6.4
+        version: 0.6.4(rocketh@0.6.4)
       rocketh-verifier:
-        specifier: ^0.6.3
-        version: 0.6.3(typescript@5.1.5)
+        specifier: ^0.6.4
+        version: 0.6.4(typescript@5.1.6)
       set-defaults:
         specifier: ^0.0.1
         version: 0.0.1
@@ -120,16 +120,16 @@ importers:
         version: link:../common
       ts-node:
         specifier: ^10.9.1
-        version: 10.9.1(@types/node@20.3.2)(typescript@5.1.5)
+        version: 10.9.1(@types/node@20.3.2)(typescript@5.1.6)
       typescript:
-        specifier: ^5.1.5
-        version: 5.1.5
+        specifier: ^5.1.6
+        version: 5.1.6
       viem:
-        specifier: ^1.2.1
-        version: 1.2.1(typescript@5.1.5)
+        specifier: ^1.2.5
+        version: 1.2.5(typescript@5.1.6)
       viem-chai-matchers:
         specifier: ^0.0.3
-        version: 0.0.3(@types/chai-as-promised@7.1.5)(chai-as-promised@7.1.1)(chai@4.3.7)(viem@1.2.1)
+        version: 0.0.3(@types/chai-as-promised@7.1.5)(chai-as-promised@7.1.1)(chai@4.3.7)(viem@1.2.5)
 
   indexer:
     dependencies:
@@ -1561,7 +1561,7 @@ packages:
       hardhat: ^2.9.5
     dependencies:
       ethereumjs-util: 7.1.5
-      hardhat: 2.16.1(ts-node@10.9.1)(typescript@5.1.5)
+      hardhat: 2.16.1(ts-node@10.9.1)(typescript@5.1.6)
     dev: true
 
   /@nomicfoundation/solidity-analyzer-darwin-arm64@0.1.1:
@@ -1700,7 +1700,7 @@ packages:
     resolution: {integrity: sha512-bcKpo1oj54hGholplGLpqPHRbIsnbixFtc06nwuNM5/dwSXOq/AAYoIBRsBmnZJSdfeNW5rnff7NTAz3ZCqR9Q==}
     dependencies:
       '@noble/curves': 1.0.0
-      '@noble/hashes': 1.3.1
+      '@noble/hashes': 1.3.0
       '@scure/base': 1.1.1
 
   /@scure/bip39@1.1.1:
@@ -1713,7 +1713,7 @@ packages:
   /@scure/bip39@1.2.0:
     resolution: {integrity: sha512-SX/uKq52cuxm4YFXWFaVByaSHJh2w3BnokVSeUJVCv6K7WulT9u2BuNRBhuFl8vAuYnzx9bEu9WgpcNYTrYieg==}
     dependencies:
-      '@noble/hashes': 1.3.1
+      '@noble/hashes': 1.3.0
       '@scure/base': 1.1.1
 
   /@sentry/core@5.30.0:
@@ -2053,7 +2053,7 @@ packages:
       typescript: 5.1.3
     dev: false
 
-  /@wagmi/chains@1.2.0(typescript@5.1.5):
+  /@wagmi/chains@1.2.0(typescript@5.1.6):
     resolution: {integrity: sha512-dmDRipsE54JfyudOBkuhEexqQWcrZqxn/qiujG8SBzMh/az/AH5xlJSA+j1CPWTx9+QofSMF3B7A4gb6XRmSaQ==}
     peerDependencies:
       typescript: '>=5.0.4'
@@ -2061,7 +2061,7 @@ packages:
       typescript:
         optional: true
     dependencies:
-      typescript: 5.1.5
+      typescript: 5.1.6
     dev: true
 
   /JSONStream@1.3.5:
@@ -2099,6 +2099,18 @@ packages:
       typescript: 5.1.3
     dev: true
 
+  /abitype@0.8.11(typescript@5.1.6):
+    resolution: {integrity: sha512-bM4v2dKvX08sZ9IU38IN5BKmN+ZkOSd2oI4a9f0ejHYZQYV6cDr7j+d95ga0z2XHG36Y4jzoG5Z7qDqxp7fi/A==}
+    peerDependencies:
+      typescript: '>=5.0.4'
+      zod: ^3 >=3.19.1
+    peerDependenciesMeta:
+      zod:
+        optional: true
+    dependencies:
+      typescript: 5.1.6
+    dev: true
+
   /abitype@0.8.7(typescript@5.1.3):
     resolution: {integrity: sha512-wQ7hV8Yg/yKmGyFpqrNZufCxbszDe5es4AZGYPBitocfSqXtjrTG9JMWFcc4N30ukl2ve48aBTwt7NJxVQdU3w==}
     peerDependencies:
@@ -2110,18 +2122,6 @@ packages:
     dependencies:
       typescript: 5.1.3
     dev: false
-
-  /abitype@0.8.7(typescript@5.1.5):
-    resolution: {integrity: sha512-wQ7hV8Yg/yKmGyFpqrNZufCxbszDe5es4AZGYPBitocfSqXtjrTG9JMWFcc4N30ukl2ve48aBTwt7NJxVQdU3w==}
-    peerDependencies:
-      typescript: '>=5.0.4'
-      zod: ^3 >=3.19.1
-    peerDependenciesMeta:
-      zod:
-        optional: true
-    dependencies:
-      typescript: 5.1.5
-    dev: true
 
   /abort-controller@3.0.0:
     resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==}
@@ -2773,8 +2773,8 @@ packages:
       supports-color: 7.2.0
     dev: true
 
-  /chalk@5.2.0:
-    resolution: {integrity: sha512-ree3Gqw/nazQAPuJJEy+avdl7QfZMcUvmHIKgEZkGL+xOBzRvup5Hxo6LHuMceSxOabuJLJm5Yp/92R9eMmMvA==}
+  /chalk@5.3.0:
+    resolution: {integrity: sha512-dLitG79d+GV1Nb/VYcCDFivJeK1hiukt9QjRNVOsUtTy1rR1YJsmpGGTZ3qJos+uw7WmWF4wUwBd9jxjocFC2w==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
     dev: true
 
@@ -4522,15 +4522,15 @@ packages:
       har-schema: 2.0.0
     dev: true
 
-  /hardhat-rocketh@0.6.9(rocketh@0.6.3):
-    resolution: {integrity: sha512-UWbCUTF2+kVXcdXiG4c0NHJ7p6uVK8fsmRYA7QZSeSkXDXkkKrZXiaujWhECenspQ48I/aG1eNH5tkNbbZ2bMw==}
+  /hardhat-rocketh@0.6.10(rocketh@0.6.4):
+    resolution: {integrity: sha512-FNaO1eijAuyrb0Djhpr1OlM6el2tDLR3ue0dof7QIfyHBJsyeu8enFdHIEmE1Y1DHmuop0ijq9N/EIjoDGDCUA==}
     peerDependencies:
-      rocketh: 0.6.3
+      rocketh: 0.6.4
     dependencies:
-      rocketh: 0.6.3(typescript@5.1.5)
+      rocketh: 0.6.4(typescript@5.1.6)
     dev: true
 
-  /hardhat@2.16.1(ts-node@10.9.1)(typescript@5.1.5):
+  /hardhat@2.16.1(ts-node@10.9.1)(typescript@5.1.6):
     resolution: {integrity: sha512-QpBjGXFhhSYoYBGEHyoau/A63crZOP+i3GbNxzLGkL6IklzT+piN14+wGnINNCg5BLSKisQI/RAySPzaWRcx/g==}
     engines: {node: '>=14.0.0'}
     hasBin: true
@@ -4588,9 +4588,9 @@ packages:
       solc: 0.7.3(debug@4.3.4)
       source-map-support: 0.5.21
       stacktrace-parser: 0.1.10
-      ts-node: 10.9.1(@types/node@20.3.2)(typescript@5.1.5)
+      ts-node: 10.9.1(@types/node@20.3.2)(typescript@5.1.6)
       tsort: 0.0.1
-      typescript: 5.1.5
+      typescript: 5.1.6
       undici: 5.22.1
       uuid: 8.3.2
       ws: 7.5.9
@@ -7264,16 +7264,16 @@ packages:
       bn.js: 5.2.1
     dev: true
 
-  /rocketh-deploy-proxy@0.6.8(rocketh@0.6.3)(typescript@5.1.5):
-    resolution: {integrity: sha512-xPcqUsPNY+z9qpZuDHmQOfsKoU++OOxmhMqV4Tf8MGitw0EvPf3/kLaNfAVygLNjq8pHAYvnkY480cQ/5xfD9A==}
+  /rocketh-deploy-proxy@0.6.9(rocketh@0.6.4)(typescript@5.1.6):
+    resolution: {integrity: sha512-Wq48tQFZSbSRJrIUdNvjStqgNzah1TlihBlIwDmSOCakL7yBVEyshjwun6fdVgpRPfzTC49wk7ePWXFr5XjRDw==}
     peerDependencies:
-      rocketh: 0.6.3
+      rocketh: 0.6.4
     dependencies:
       named-logs: 0.2.2
-      rocketh: 0.6.3(typescript@5.1.5)
-      rocketh-deploy: 0.6.5(rocketh@0.6.3)(typescript@5.1.5)
+      rocketh: 0.6.4(typescript@5.1.6)
+      rocketh-deploy: 0.6.6(rocketh@0.6.4)(typescript@5.1.6)
       solidity-proxy: 0.2.2
-      viem: 1.2.1(typescript@5.1.5)
+      viem: 1.2.5(typescript@5.1.6)
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -7281,17 +7281,17 @@ packages:
       - zod
     dev: true
 
-  /rocketh-deploy-router@0.6.10(rocketh@0.6.3)(typescript@5.1.5):
-    resolution: {integrity: sha512-Y1Wf+KXydKBVA7fRuNexDZt3OZQiBNplgTJYFs4czeH4gu8AjV4rh8rHrcjJXlFBrn3pjdmRx1LhuK/zOChF7Q==}
+  /rocketh-deploy-router@0.6.11(rocketh@0.6.4)(typescript@5.1.6):
+    resolution: {integrity: sha512-66cdjZIDd39X8ABP3S6q3CDmwfNpJWb2nUDkUajJnMexFtQ4vtdiEa08Y/sA/NiGOYxnTgHMRzHJSIdR1G7jDQ==}
     peerDependencies:
-      rocketh: 0.6.3
+      rocketh: 0.6.4
     dependencies:
       ethers: 6.6.2
       named-logs: 0.2.2
-      rocketh: 0.6.3(typescript@5.1.5)
-      rocketh-deploy: 0.6.5(rocketh@0.6.3)(typescript@5.1.5)
+      rocketh: 0.6.4(typescript@5.1.6)
+      rocketh-deploy: 0.6.6(rocketh@0.6.4)(typescript@5.1.6)
       solidity-proxy: 0.2.2
-      viem: 1.2.1(typescript@5.1.5)
+      viem: 1.2.5(typescript@5.1.6)
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -7299,14 +7299,14 @@ packages:
       - zod
     dev: true
 
-  /rocketh-deploy@0.6.5(rocketh@0.6.3)(typescript@5.1.5):
-    resolution: {integrity: sha512-AixNGPzpt1UA7t4nSwVCBZcwokWwOLIGEb9Kv0+WuTghVFM21m3WxaFPtPT9hYyLJUCJKWemHiB7iYhMJq+zzw==}
+  /rocketh-deploy@0.6.6(rocketh@0.6.4)(typescript@5.1.6):
+    resolution: {integrity: sha512-iIhRU0ixl6VgE56nkOX5Paniy6cf0uceU4CTTcx59BNufzbsaorg87MFwlNH4j/bvRzK6kcwTy5RQR0kkWhSBw==}
     peerDependencies:
-      rocketh: 0.6.3
+      rocketh: 0.6.4
     dependencies:
       named-logs: 0.2.2
-      rocketh: 0.6.3(typescript@5.1.5)
-      viem: 1.2.1(typescript@5.1.5)
+      rocketh: 0.6.4(typescript@5.1.6)
+      viem: 1.2.5(typescript@5.1.6)
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -7314,37 +7314,37 @@ packages:
       - zod
     dev: true
 
-  /rocketh-export@0.6.3(rocketh@0.6.3):
-    resolution: {integrity: sha512-0fgYiH/6mcw6JR3Rk1Q2R7egTYL7190Ay/ciCJcYZsjz2/fy19rTweBCrVxAE2oCTyIT7bUNPIURPMUWYGlkPg==}
+  /rocketh-export@0.6.4(rocketh@0.6.4):
+    resolution: {integrity: sha512-bEtjctcOwIR0b2KtMFVtHr+HYmfshI9ilEXXmQbvqIxyrPueH0tV8P2ykA955NdP0pgRded5cbAlza+S91RK6Q==}
     hasBin: true
     peerDependencies:
-      rocketh: 0.6.3
+      rocketh: 0.6.4
     dependencies:
-      chalk: 5.2.0
+      chalk: 5.3.0
       commander: 10.0.1
       fs-extra: 11.1.1
-      rocketh: 0.6.3(typescript@5.1.5)
+      rocketh: 0.6.4(typescript@5.1.6)
     dev: true
 
-  /rocketh-signer@0.6.3(rocketh@0.6.3):
-    resolution: {integrity: sha512-+i9NgRJMndWow/mYD253KGe9z1f1AIINgruPC3ee7FSKk6BflmArQCgXY1rccNwXmI6oRQpMn6CGiaAMOpFDMA==}
+  /rocketh-signer@0.6.4(rocketh@0.6.4):
+    resolution: {integrity: sha512-RjKJv3oQ5tj+kqnZVGMgsuUwjfLnxQOju+FhkIUgFTeeWhRtgK6bnKgVBJUzg40CHvGlJbP/VE9jZ/aeVKHnmw==}
     peerDependencies:
-      rocketh: 0.6.3
+      rocketh: 0.6.4
     dependencies:
-      rocketh: 0.6.3(typescript@5.1.5)
+      rocketh: 0.6.4(typescript@5.1.6)
     dev: true
 
-  /rocketh-verifier@0.6.3(typescript@5.1.5):
-    resolution: {integrity: sha512-dUV+7233s/yipVZDz1TDamV4teODZaJ1FxTtVEDoi8mIxd1nvAQyqOj87is/fkL9GL6WyDo/lWVMfqHAabkbUA==}
+  /rocketh-verifier@0.6.4(typescript@5.1.6):
+    resolution: {integrity: sha512-bPsSHKt4ghnzzZhLBXUJpzkscmAX7M5Kr5MuVoUhihRmtQJC8Z+CRfUgEyGh0sbmfcRBWihzjTa2IEjOTBfbDw==}
     hasBin: true
     dependencies:
-      chalk: 5.2.0
+      chalk: 5.3.0
       commander: 10.0.1
       fs-extra: 11.1.1
       isomorphic-unfetch: 4.0.2
       ldenv: 0.3.7
       qs: 6.11.2
-      rocketh: 0.6.3(typescript@5.1.5)
+      rocketh: 0.6.4(typescript@5.1.6)
     transitivePeerDependencies:
       - bufferutil
       - encoding
@@ -7354,8 +7354,8 @@ packages:
       - zod
     dev: true
 
-  /rocketh@0.6.3(typescript@5.1.5):
-    resolution: {integrity: sha512-esVHgEJmguOJP8gp/CWUsR46kTJvyufRFMcJ1sdznq2hIGJQcEXRbCl1TgdonpsuwV3cYEr8yvglLVN+MWm6Ng==}
+  /rocketh@0.6.4(typescript@5.1.6):
+    resolution: {integrity: sha512-5LMzU/GaSmPqcuWqngeH2f0kIHIio9u5snkhhO/ar68G1SQr/kI3JUDf1QwmPFqOrLvTTQzPjX1eQ+lb1WoHPA==}
     hasBin: true
     dependencies:
       commander: 10.0.1
@@ -7366,7 +7366,7 @@ packages:
       ldenv: 0.3.7
       named-logs: 0.2.2
       named-logs-console: 0.3.0
-      viem: 1.2.1(typescript@5.1.5)
+      viem: 1.2.5(typescript@5.1.6)
     transitivePeerDependencies:
       - bufferutil
       - encoding
@@ -7403,7 +7403,7 @@ packages:
   /rxjs@7.8.1:
     resolution: {integrity: sha512-AA3TVj+0A2iuIoQkWEK/tqFjBq2j+6PO6Y0zJcvzLAFhEFIO3HL0vls9hWLncZbAAbK0mar7oZ4V079I/qPMxg==}
     dependencies:
-      tslib: 2.5.3
+      tslib: 2.6.0
     dev: true
 
   /sade@1.8.1:
@@ -7695,7 +7695,7 @@ packages:
       ghost-testrpc: 0.0.2
       global-modules: 2.0.0
       globby: 10.0.2
-      hardhat: 2.16.1(ts-node@10.9.1)(typescript@5.1.5)
+      hardhat: 2.16.1(ts-node@10.9.1)(typescript@5.1.6)
       jsonschema: 1.4.1
       lodash: 4.17.21
       mocha: 7.1.2
@@ -7716,7 +7716,7 @@ packages:
       hardhat: ^2.8.0
     dependencies:
       handlebars: 4.7.7
-      hardhat: 2.16.1(ts-node@10.9.1)(typescript@5.1.5)
+      hardhat: 2.16.1(ts-node@10.9.1)(typescript@5.1.6)
       solidity-ast: 0.4.49
     dev: true
 
@@ -8333,7 +8333,7 @@ packages:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
     dev: true
 
-  /ts-node@10.9.1(@types/node@20.3.2)(typescript@5.1.5):
+  /ts-node@10.9.1(@types/node@20.3.2)(typescript@5.1.6):
     resolution: {integrity: sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==}
     hasBin: true
     peerDependencies:
@@ -8359,7 +8359,7 @@ packages:
       create-require: 1.1.1
       diff: 4.0.2
       make-error: 1.3.6
-      typescript: 5.1.5
+      typescript: 5.1.6
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
     dev: true
@@ -8378,6 +8378,10 @@ packages:
 
   /tslib@2.5.3:
     resolution: {integrity: sha512-mSxlJJwl3BMEQCUNnxXBU9jP4JBktcEGhURcPR6VQVlnP0FdDEsIaz0C35dXNGLyRfrATNofF0F5p2KPxQgB+w==}
+    dev: true
+
+  /tslib@2.6.0:
+    resolution: {integrity: sha512-7At1WUettjcSRHXCyYtTselblcHl9PJFFVKiCAy/bY97+BPZXSQ2wbq0P9s8tK2G7dFQfNnlJnPAiArVBVBsfA==}
     dev: true
 
   /tsort@0.0.1:
@@ -8486,8 +8490,8 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  /typescript@5.1.5:
-    resolution: {integrity: sha512-FOH+WN/DQjUvN6WgW+c4Ml3yi0PH+a/8q+kNIfRehv1wLhWONedw85iu+vQ39Wp49IzTJEsZ2lyLXpBF7mkF1g==}
+  /typescript@5.1.6:
+    resolution: {integrity: sha512-zaWCozRZ6DLEWAWFrVDz1H6FVXzUSfTy5FUMWsQlU8Ym5JP9eO4xkTIROFCQvhQf61z6O/G6ugw3SgAnvvm+HA==}
     engines: {node: '>=14.17'}
     hasBin: true
     dev: true
@@ -8631,7 +8635,7 @@ packages:
       extsprintf: 1.3.0
     dev: true
 
-  /viem-chai-matchers@0.0.3(@types/chai-as-promised@7.1.5)(chai-as-promised@7.1.1)(chai@4.3.7)(viem@1.2.1):
+  /viem-chai-matchers@0.0.3(@types/chai-as-promised@7.1.5)(chai-as-promised@7.1.1)(chai@4.3.7)(viem@1.2.5):
     resolution: {integrity: sha512-Rw7nbPOwdR/f8rZhmjIJM+MnIcTNs4+zvsP1Voj2LHEd5VgHu3PSxX8zcvRUSTpJtGOnLo7wcQZfnBwAyLfG9g==}
     peerDependencies:
       '@types/chai-as-promised': ^7.1.5
@@ -8642,7 +8646,7 @@ packages:
       '@types/chai-as-promised': 7.1.5
       chai: 4.3.7
       chai-as-promised: 7.1.1(chai@4.3.7)
-      viem: 1.2.1(typescript@5.1.5)
+      viem: 1.2.5(typescript@5.1.6)
     dev: true
 
   /viem@0.1.26(typescript@5.1.3):
@@ -8703,8 +8707,8 @@ packages:
       - zod
     dev: false
 
-  /viem@1.2.1(typescript@5.1.5):
-    resolution: {integrity: sha512-45eyE1QsPzUTJqslOD8SVAF3Nn3QMLZIKTu/YzaPPe8UuDMwrmvAWlfDole2kBzFAM8B6sXsQeZBQKYwtb7dVQ==}
+  /viem@1.2.5(typescript@5.1.6):
+    resolution: {integrity: sha512-AeQ1hiyPKXnWb/KTsxRLt7KZUmLgd6NTCe/GyQf+8TZO7ndXmSZf88swE+60v1bLT+FDUWXufKGJ2oNT129wXw==}
     peerDependencies:
       typescript: '>=5.0.4'
     dependencies:
@@ -8713,10 +8717,10 @@ packages:
       '@noble/hashes': 1.3.0
       '@scure/bip32': 1.3.0
       '@scure/bip39': 1.2.0
-      '@wagmi/chains': 1.2.0(typescript@5.1.5)
-      abitype: 0.8.7(typescript@5.1.5)
+      '@wagmi/chains': 1.2.0(typescript@5.1.6)
+      abitype: 0.8.11(typescript@5.1.6)
       isomorphic-ws: 5.0.0(ws@8.12.0)
-      typescript: 5.1.5
+      typescript: 5.1.6
       ws: 8.12.0
     transitivePeerDependencies:
       - bufferutil

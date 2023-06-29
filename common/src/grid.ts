@@ -57,14 +57,23 @@ export type Cell = SimpleCell & {
 };
 
 type TmpCell<CellType extends SimpleCell> = CellType & {
+	addition?: boolean;
 	empty: boolean;
 	playerAsString: string;
+};
+
+export type Action = {
+	x: number;
+	y: number;
+	owner: number;
+	color: Color;
 };
 
 export type Grid<CellType extends SimpleCell> = {
 	cells: CellType[];
 	width: number;
 	height: number;
+	actions?: Action[];
 };
 
 export type ContractSimpleCell = {
@@ -200,55 +209,62 @@ export function parseGrid<CellType extends SimpleCell = SimpleCell>(
 					};
 					tmpCellMap.set(cellID(x, y), cell);
 				}
-				if (line % 3 == 1) {
-					switch (char) {
-						case ' ':
-							break;
-						case 'B':
-							cell.color = Color.Blue;
-							cell.empty = false;
-							break;
-						case 'R':
-							cell.color = Color.Red;
-							cell.empty = false;
-							break;
-						case 'G':
-							cell.color = Color.Green;
-							cell.empty = false;
-							break;
-						case 'Y':
-							cell.color = Color.Yellow;
-							cell.empty = false;
-							break;
-						case 'P':
-							cell.color = Color.Purple;
-							cell.empty = false;
-							break;
-						case '0':
-							cell.life = 0;
-							break;
-						case '1':
-							cell.life = 1;
-							break;
-						case '2':
-							cell.life = 2;
-							break;
-						case '3':
-							cell.life = 3;
-							break;
-						case '4':
-							cell.life = 4;
-							break;
-						case '5':
-							cell.life = 5;
-							break;
-						case '6':
-							cell.life = 6;
-							break;
+				if (charI % 5 == 1) {
+					if (char === '+') {
+						cell.addition = true;
+						cell.empty = false;
 					}
 				} else {
-					if (char != ' ') {
-						cell.playerAsString += char;
+					if (line % 3 == 1) {
+						switch (char) {
+							case ' ':
+								break;
+							case 'B':
+								cell.color = Color.Blue;
+								cell.empty = false;
+								break;
+							case 'R':
+								cell.color = Color.Red;
+								cell.empty = false;
+								break;
+							case 'G':
+								cell.color = Color.Green;
+								cell.empty = false;
+								break;
+							case 'Y':
+								cell.color = Color.Yellow;
+								cell.empty = false;
+								break;
+							case 'P':
+								cell.color = Color.Purple;
+								cell.empty = false;
+								break;
+							case '0':
+								cell.life = 0;
+								break;
+							case '1':
+								cell.life = 1;
+								break;
+							case '2':
+								cell.life = 2;
+								break;
+							case '3':
+								cell.life = 3;
+								break;
+							case '4':
+								cell.life = 4;
+								break;
+							case '5':
+								cell.life = 5;
+								break;
+							case '6':
+								cell.life = 6;
+								break;
+						}
+					} else {
+						if (char != ' ') {
+							cell.playerAsString += char;
+						}
 					}
 				}
 			}
@@ -256,16 +272,32 @@ export function parseGrid<CellType extends SimpleCell = SimpleCell>(
 		charI++;
 	}
 
+	const actions: Action[] = [];
 	const cells: CellType[] = [];
 	for (const cell of tmpCellMap.values()) {
 		if (!cell.empty) {
-			const {empty, playerAsString, ...onlyCell} = cell;
+			const {empty, playerAsString, addition, ...onlyCell} = cell;
 			if (playerAsString !== '') {
 				const ownerNumber = parseInt(playerAsString);
 				onlyCell.owner = ownerNumber;
 			}
-			cells.push(onlyCell as unknown as CellType);
+			if (addition) {
+				if (!onlyCell.owner) {
+					throw new Error(`addition (+) need an owner`);
+				}
+				actions.push({
+					color: onlyCell.color,
+					owner: onlyCell.owner,
+					x: onlyCell.x,
+					y: onlyCell.y,
+				});
+			} else {
+				cells.push(onlyCell as unknown as CellType);
+			}
 		}
+	}
+	if (actions.length > 0) {
+		return {cells, width: maxX + 1, height: maxY + 1, actions};
 	}
 	return {cells, width: maxX + 1, height: maxY + 1};
 }
