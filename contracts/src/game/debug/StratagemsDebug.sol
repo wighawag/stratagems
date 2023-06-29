@@ -30,7 +30,6 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 		if (commiting) {
 			epoch--;
 		}
-		console.log('epoch %s', epoch);
 
 		uint256 numTokens = NUM_TOKENS_PER_GEMS * moves.length;
 		TOKENS.transferFrom(msg.sender, address(this), numTokens);

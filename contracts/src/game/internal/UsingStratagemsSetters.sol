@@ -51,8 +51,6 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			tokens.tokensReturned += returned;
 		}
 
-		console.log('num moves %s', moves.length);
-
 		_multiTransfer(transfers, numAddressesToDistributeTo);
 
 		newReserveAmount = _tokensInReserve[player];
@@ -98,6 +96,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		)
 	{
 		Cell memory currentState = _getUpdatedCell(move.position, epoch);
+
+		logger.logCell('_computeMove', move.position, currentState);
 
 		if (move.color == Color.None) {
 			// this is a leave move
@@ -188,6 +188,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				currentState.color = move.color;
 				currentState.delta = newDelta;
 				currentState.enemymask = newEnemymask;
+
+				logger.logCell('after: _updateNeighbor', move.position, currentState);
 			} else {
 				// TODO fetch neighbours to compute delta
 				currentState.delta = 0;
@@ -418,10 +420,13 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			// then old color was different
 			cell.delta += (oldColor == Color.None ? int8(1) : int8(2));
 			cell.enemymask = cell.enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
+
+			logger.logCell('after neibhor change to a friendly color', position, cell);
 		} else if (oldColor == Color.None) {
 			// if there were no oldCOlor and the newColor is not your (already checked in previous if clause)
 			cell.delta -= 1;
 			cell.enemymask = cell.enemymask | uint8(1 << neighbourIndex);
+			logger.logCell('after neibhor change to a enemy color', position, cell);
 		}
 		cell.lastEpochUpdate = epoch;
 		cell.life = newLife;

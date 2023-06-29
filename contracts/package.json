@@ -4,6 +4,7 @@
   "private": true,
   "devDependencies": {
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
+    "@openzeppelin/contracts": "^4.9.2",
     "@types/chai": "^4.3.5",
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.3.2",

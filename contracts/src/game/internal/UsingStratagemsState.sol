@@ -6,6 +6,37 @@ import '../interface/UsingStratagemsEvents.sol';
 
 // TODO use hardhat-preprocessor
 import 'hardhat/console.sol';
+import '@openzeppelin/contracts/utils/Strings.sol';
+
+library logger {
+	address constant CONSOLE_ADDRESS = 0x000000000000000000636F6e736F6c652e6c6f67;
+
+	function _sendLogPayload(bytes memory payload) private view {
+		address consoleAddress = CONSOLE_ADDRESS;
+		/// @solidity memory-safe-assembly
+		assembly {
+			pop(staticcall(gas(), consoleAddress, add(payload, 32), mload(payload), 0, 0))
+		}
+	}
+
+	// _sendLogPayload(abi.encodeWithSignature('log(string,int256,int256)', 'cell %s', x, y));
+
+	function logCell(string memory title, uint64 id, UsingStratagemsTypes.Cell memory cell) internal view {
+		console.log(title);
+		int256 x = int256(int32(int256(uint256(id) & 0xFFFFFFFF)));
+		int256 y = int256(int32(int256(uint256(id) >> 32)));
+		console.log('-------------------------------------------------------------');
+		console.log('cell (%s,%s)', Strings.toString(x), Strings.toString(y));
+		console.log('-------------------------------------------------------------');
+		console.log(' - lastEpochUpdate:  %s', cell.lastEpochUpdate);
+		console.log(' - epochWhenTokenIsAdded:  %s', cell.epochWhenTokenIsAdded);
+		console.log(' - color:  %s', uint8(cell.color));
+		console.log(' - life:  %s', cell.life);
+		console.log(' - delta: %s', Strings.toString(cell.delta));
+		console.log(' - enemymask:  %s', cell.enemymask);
+		console.log('-------------------------------------------------------------');
+	}
+}
 
 abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsEvents {
 	/// @notice The token used for the game. Each gems on the board contains that token
@@ -107,6 +138,7 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 		if (lastUpdate >= 1 && life > 0) {
 			uint256 epochDelta = epoch - lastUpdate;
 			if (epochDelta > 0) {
+				// TODO delta is allowed to be zero if no enemy (take enemymask as input too)
 				int8 effectiveDelta = delta != 0 ? delta : -1;
 				if (effectiveDelta > 0) {
 					if (life < MAX_LIFE) {

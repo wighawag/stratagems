@@ -27,7 +27,6 @@ export async function withGrid(
 		await env.Stratagems.write.increaseTime([config.commitPhaseDuration], {account: env.stratagemsAdmin});
 
 		for (const action of grid.actions) {
-			console.log(action);
 			const player = env.otherAccounts[action.owner];
 			await env.Stratagems.write.forceMoves(
 				[player, [{position: xyToBigIntID(action.x, action.y), color: action.color}]],
