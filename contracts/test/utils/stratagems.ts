@@ -5,14 +5,13 @@ import {
 	ContractFullCell,
 	Grid,
 	SimpleCell,
-	fromContractFullCell,
 	parseGrid,
 	toContractSimpleCell,
 	xyToBigIntID,
 } from 'stratagems-common';
 import {ContractWithViemClient} from '../../utils/viem';
 
-export function setupGrid(
+export function withGrid(
 	env: {
 		Stratagems: ContractWithViemClient<typeof artifacts.IStratagemsWithDebug.abi>;
 		otherAccounts: `0x${string}`[];

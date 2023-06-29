@@ -1,11 +1,5 @@
 import {expect} from './utils/viem-chai';
-import {
-	fromContractFullCell,
-	fromContractFullCellToSimpleCell,
-	parseGrid,
-	toContractSimpleCell,
-	xyToBigIntID,
-} from 'stratagems-common';
+import {fromContractFullCellToSimpleCell, parseGrid, toContractSimpleCell, xyToBigIntID} from 'stratagems-common';
 
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {Deployment, loadAndExecuteDeployments} from 'rocketh';
@@ -16,7 +10,7 @@ import artifacts from '../generated/artifacts';
 import {network} from 'hardhat';
 import {GameConfig} from '../deploy/003_deploy_game';
 import {parseEther} from 'viem';
-import {getGrid, setupGrid} from './utils/stratagems';
+import {getGrid, withGrid} from './utils/stratagems';
 
 async function deployStratagems(config?: Partial<GameConfig>) {
 	const [deployer, tokensBeneficiary, ...otherAccounts] = await getAccounts();
@@ -57,7 +51,7 @@ describe('Stratagems', function () {
 	it('poking on a virtually dead cell sync its state accordingly', async function () {
 		const setup = await loadFixture(deployStratagemsWithTestConfig);
 		const {Stratagems, deployer} = setup;
-		await setupGrid(
+		await withGrid(
 			setup,
 			`
 		-------------------------
@@ -85,9 +79,10 @@ describe('Stratagems', function () {
 
 	it('reading the virtual state correctly report the number of life', async function () {
 		const setup = await loadFixture(deployStratagemsWithTestConfig);
-		await setupGrid(
-			setup,
-			`
+		await expect(
+			await withGrid(
+				setup,
+				`
 		-------------------------
 		|    |    |    |    |    |
 		|    |    |    |    |    |
@@ -105,9 +100,8 @@ describe('Stratagems', function () {
 		|    |    |    |    |    |
 		-------------------------
 		`
-		);
-		const gridFromContract = await getGrid(setup, {x: 0, y: 0, width: 5, height: 5}, fromContractFullCellToSimpleCell);
-		expect(gridFromContract).to.deep.equal(
+			).then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}, fromContractFullCellToSimpleCell))
+		).to.deep.equal(
 			parseGrid(`
 		-------------------------
 		|    |    |    |    |    |
