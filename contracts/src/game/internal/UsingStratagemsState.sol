@@ -4,6 +4,9 @@ pragma solidity ^0.8.0;
 import './UsingStratagemsStore.sol';
 import '../interface/UsingStratagemsEvents.sol';
 
+// TODO use hardhat-preprocessor
+import 'hardhat/console.sol';
+
 abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsEvents {
 	/// @notice The token used for the game. Each gems on the board contains that token
 	IERC20WithIERC2612 internal immutable TOKENS;
@@ -35,10 +38,15 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 		NUM_TOKENS_PER_GEMS = config.numTokensPerGems;
 	}
 
+	function _timestamp() internal view virtual returns (uint256) {
+		return block.timestamp;
+	}
+
 	function _epoch() internal view virtual returns (uint32 epoch, bool commiting) {
 		uint256 epochDuration = COMMIT_PHASE_DURATION + RESOLUTION_PHASE_DURATION;
-		require(block.timestamp >= START_TIME, 'GAME_NOT_STARTED');
-		uint256 timePassed = block.timestamp - START_TIME;
+		uint256 time = _timestamp();
+		require(time >= START_TIME, 'GAME_NOT_STARTED');
+		uint256 timePassed = time - START_TIME;
 		epoch = uint32(timePassed / epochDuration + 2); // epoch start at 2, this make the hypothetical previous resolution phase's epoch to be 1
 		commiting = timePassed - ((epoch - 2) * epochDuration) < COMMIT_PHASE_DURATION;
 	}

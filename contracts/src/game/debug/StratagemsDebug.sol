@@ -8,6 +8,11 @@ import './IStratagemsWithDebug.sol';
 contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStratagemsDebug {
 	constructor(Config memory config) UsingStratagemsSetters(config) {}
 
+	function _timestamp() internal view override returns (uint256) {
+		// this take the time from UsingControledTime
+		return timestamp();
+	}
+
 	function getRawCell(uint256 id) external view returns (Cell memory) {
 		return _cells[id];
 	}
@@ -25,6 +30,8 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 		if (commiting) {
 			epoch--;
 		}
+		console.log('epoch %s', epoch);
+
 		_resolveMoves(player, epoch, moves, msg.sender);
 	}
 
