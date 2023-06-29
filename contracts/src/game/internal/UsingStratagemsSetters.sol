@@ -44,11 +44,14 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				epoch,
 				moves[i]
 			);
+
 			numAddressesToDistributeTo = newNumAddressesToDistributeTo;
 			tokens.tokensPlaced += placed;
 			tokens.tokensBurnt += burnt;
 			tokens.tokensReturned += returned;
 		}
+
+		console.log('num moves %s', moves.length);
 
 		_multiTransfer(transfers, numAddressesToDistributeTo);
 
@@ -56,7 +59,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 
 		// Note: even if funds can comes from outside the reserver, we still check it
 		// This ensure player have to have a reserve and cannot escape the slash if not
-		require(newReserveAmount >= tokens.tokensPlaced + tokens.tokensBurnt);
+		require(newReserveAmount >= tokens.tokensPlaced + tokens.tokensBurnt, 'NOT_ENOUGH_RESERVE');
 		if (tokenGiver == address(0)) {
 			newReserveAmount -= tokens.tokensPlaced + tokens.tokensBurnt;
 			_tokensInReserve[player] = newReserveAmount;

@@ -32,6 +32,9 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 		}
 		console.log('epoch %s', epoch);
 
+		uint256 numTokens = NUM_TOKENS_PER_GEMS * moves.length;
+		TOKENS.transferFrom(msg.sender, address(this), numTokens);
+		_tokensInReserve[player] += numTokens;
 		_resolveMoves(player, epoch, moves, msg.sender);
 	}
 

@@ -30,8 +30,9 @@ export async function withGrid(
 
 		for (const action of grid.actions) {
 			console.log(action);
+			const player = env.otherAccounts[action.owner];
 			await env.Stratagems.write.forceMoves(
-				[env.otherAccounts[action.owner], [{position: xyToBigIntID(action.x, action.y), color: action.color}]],
+				[player, [{position: xyToBigIntID(action.x, action.y), color: action.color}]],
 				{account: env.stratagemsAdmin}
 			);
 		}
