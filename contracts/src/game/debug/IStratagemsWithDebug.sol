@@ -31,6 +31,8 @@ interface IStratagemsDebug is UsingStratagemsTypes {
 	}
 
 	function forceSimpleCells(SimpleCell[] memory cells) external;
+
+	function getRawCell(uint256 id) external view returns (Cell memory cell);
 }
 
 interface IStratagemsWithDebug is IStratagems, IStratagemsDebug {}

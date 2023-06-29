@@ -8,6 +8,10 @@ import './IStratagemsWithDebug.sol';
 contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStratagemsDebug {
 	constructor(Config memory config) UsingStratagemsSetters(config) {}
 
+	function getRawCell(uint256 id) external view returns (Cell memory) {
+		return _cells[id];
+	}
+
 	function _getOwner() internal view override returns (address ownerAddress) {
 		// solhint-disable-next-line security/no-inline-assembly
 		assembly {

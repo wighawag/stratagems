@@ -9,17 +9,28 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 	constructor(Config memory config) UsingStratagemsSetters(config) {}
 
 	/// @inheritdoc IStratagemsGameplay
-	function cells(uint256 id) external view returns (Cell memory cell) {
-		return _cells[id];
+	function getCell(uint256 id) external view returns (Cell memory cell) {
+		(uint32 epoch, ) = _epoch();
+		return _getUpdatedCell(uint64(id), epoch);
 	}
 
 	/// @inheritdoc IStratagemsGameplay
-	function tokensInReserve(address account) external view returns (uint256 amount) {
+	function getCells(uint256[] memory ids) external view returns (Cell[] memory cells) {
+		(uint32 epoch, ) = _epoch();
+		uint256 numCells = ids.length;
+		cells = new Cell[](numCells);
+		for (uint256 i = 0; i < numCells; i++) {
+			cells[i] = _getUpdatedCell(uint64(ids[i]), epoch);
+		}
+	}
+
+	/// @inheritdoc IStratagemsGameplay
+	function getTokensInReserve(address account) external view returns (uint256 amount) {
 		return _tokensInReserve[account];
 	}
 
 	/// @inheritdoc IStratagemsGameplay
-	function commitments(address account) external view returns (Commitment memory commitment) {
+	function getCommitment(address account) external view returns (Commitment memory commitment) {
 		return _commitments[account];
 	}
 

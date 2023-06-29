@@ -25,3 +25,5 @@ export function contract<TAbi extends Abi>(contractInfo: {address: `0x${string}`
 		publicClient,
 	});
 }
+
+export type ContractWithViemClient<TAbi extends Abi> = ReturnType<typeof contract<TAbi>>;

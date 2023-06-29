@@ -10,6 +10,7 @@ import artifacts from '../generated/artifacts';
 import {network} from 'hardhat';
 import {GameConfig} from '../deploy/003_deploy_game';
 import {parseEther} from 'viem';
+import {setupGrid} from './utils/stratagems';
 
 async function deployStratagems(config?: Partial<GameConfig>) {
 	const [deployer, tokensBeneficiary, ...otherAccounts] = await getAccounts();
@@ -30,6 +31,7 @@ async function deployStratagems(config?: Partial<GameConfig>) {
 
 	return {
 		deployer,
+		stratagemsAdmin: deployer, // TODO
 		tokensBeneficiary,
 		Stratagems,
 		TestTokens,
@@ -46,9 +48,12 @@ async function deployStratagemsWithTestConfig() {
 }
 
 describe('Stratagems', function () {
-	it('poke on dead cell should give tokens to neighboring enemies', async function () {
-		const {Stratagems, deployer, otherAccounts} = await loadFixture(deployStratagemsWithTestConfig);
-		const grid = parseGrid(`
+	it('poking on a virtually dead cell sync its state accordingly', async function () {
+		const setup = await loadFixture(deployStratagemsWithTestConfig);
+		const {Stratagems, deployer} = setup;
+		await setupGrid(
+			setup,
+			`
 		-------------------------
 		|    |    |    |    |    |
 		|    |    |    |    |    |
@@ -65,22 +70,41 @@ describe('Stratagems', function () {
 		|    |    |    |    |    |
 		|    |    |    |    |    |
 		-------------------------
-		`);
-		await Stratagems.write.forceSimpleCells([grid.cells.map(toContractCell(otherAccounts))], {account: deployer});
-
-		// TODO
-		// let owner: `0x${string}`;
-		// let cell: any;
-		// cell = await Stratagems.read.cells([xyToBigIntID(1, 2)]);
-		// owner = await Stratagems.read.ownerOf([xyToBigIntID(1, 2)]);
-		// console.log(cell, owner);
-		// cell = await Stratagems.read.cells([xyToBigIntID(2, 2)]);
-		// owner = await Stratagems.read.ownerOf([xyToBigIntID(2, 2)]);
-		// console.log(cell, owner);
-		// cell = await Stratagems.read.cells([xyToBigIntID(3, 3)]);
-		// owner = await Stratagems.read.ownerOf([xyToBigIntID(3, 3)]);
-		// console.log(cell, owner);
+		`
+		);
+		expect((await Stratagems.read.getRawCell([xyToBigIntID(1, 2)])).life).to.equal(1);
+		await Stratagems.write.poke([xyToBigIntID(1, 2)], {account: deployer});
+		expect((await Stratagems.read.getRawCell([xyToBigIntID(1, 2)])).life).to.equal(0);
 	});
+
+	it('reading the virtual state correctly report the number of life', async function () {
+		const setup = await loadFixture(deployStratagemsWithTestConfig);
+		const {Stratagems} = setup;
+		await setupGrid(
+			setup,
+			`
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		|    | R1 | B2 |    |    |
+		|    | 01 | 02 |    |    |
+		-------------------------
+		|    |    |    | P1 |    |
+		|    |    |    |    |    |
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		`
+		);
+		expect((await Stratagems.read.getCell([xyToBigIntID(1, 2)])).life).to.equal(0);
+	});
+
+	it('poke on dead cell should give tokens to neighboring enemies', async function () {});
 
 	it('forceSimpleCells', async function () {
 		const {Stratagems, deployer, otherAccounts} = await loadFixture(deployStratagemsWithTestConfig);
@@ -104,6 +128,6 @@ describe('Stratagems', function () {
 		`);
 		await Stratagems.write.forceSimpleCells([grid.cells.map(toContractCell(otherAccounts))], {account: deployer});
 
-		expect((await Stratagems.read.cells([xyToBigIntID(2, 2)])).delta).to.equal(1);
+		expect((await Stratagems.read.getRawCell([xyToBigIntID(2, 2)])).delta).to.equal(1);
 	});
 });

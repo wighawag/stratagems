@@ -8,20 +8,24 @@ import './UsingStratagemsTypes.sol';
 import './UsingStratagemsEvents.sol';
 
 interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
-	/// @notice There is ```(2**128) * (2**128)``` cells
-	/// @param id the cell id (TODO)
-	function cells(uint256 id) external view returns (Cell memory cell);
+	/// @notice return updated cell (based on current epoch)
+	/// @param id the cell id
+	function getCell(uint256 id) external view returns (Cell memory cell);
+
+	/// @notice return the list of updated cells (based on current epoch) whose ids is given
+	/// @param ids the list of cell ids
+	function getCells(uint256[] memory ids) external view returns (Cell[] memory cells);
 
 	/// @notice the number of token in reserve per account
 	///  This is used to slash player who do not resolve their commit
 	///  The amount can be greater than the number of token required for the next move
 	///  This allow player to potentially hide their intention.
 	/// @param account the address to retrived the amount in reserve of.
-	function tokensInReserve(address account) external view returns (uint256 amount);
+	function getTokensInReserve(address account) external view returns (uint256 amount);
 
 	/// @notice The commitment to be resolved. zeroed if no commitment need to be made.
 	/// @param account the address of which to retrieve the commitment
-	function commitments(address account) external view returns (Commitment memory commitment);
+	function getCommitment(address account) external view returns (Commitment memory commitment);
 
 	/// @notice return the config used to initialise the Game
 	function getConfig() external view returns (Config memory config);
