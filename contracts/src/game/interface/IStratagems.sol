@@ -10,11 +10,11 @@ import './UsingStratagemsEvents.sol';
 interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
 	/// @notice return updated cell (based on current epoch)
 	/// @param id the cell id
-	function getCell(uint256 id) external view returns (Cell memory cell);
+	function getCell(uint256 id) external view returns (FullCell memory cell);
 
 	/// @notice return the list of updated cells (based on current epoch) whose ids is given
 	/// @param ids the list of cell ids
-	function getCells(uint256[] memory ids) external view returns (Cell[] memory cells);
+	function getCells(uint256[] memory ids) external view returns (FullCell[] memory cells);
 
 	/// @notice the number of token in reserve per account
 	///  This is used to slash player who do not resolve their commit

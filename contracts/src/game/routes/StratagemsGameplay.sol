@@ -9,18 +9,37 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 	constructor(Config memory config) UsingStratagemsSetters(config) {}
 
 	/// @inheritdoc IStratagemsGameplay
-	function getCell(uint256 id) external view returns (Cell memory cell) {
+	function getCell(uint256 id) external view returns (FullCell memory) {
 		(uint32 epoch, ) = _epoch();
-		return _getUpdatedCell(uint64(id), epoch);
+		Cell memory updatedCell = _getUpdatedCell(uint64(id), epoch);
+		return
+			FullCell({
+				owner: _owners[id],
+				lastEpochUpdate: updatedCell.lastEpochUpdate,
+				epochWhenTokenIsAdded: updatedCell.epochWhenTokenIsAdded,
+				color: updatedCell.color,
+				life: updatedCell.life,
+				delta: updatedCell.delta,
+				enemymask: updatedCell.enemymask
+			});
 	}
 
 	/// @inheritdoc IStratagemsGameplay
-	function getCells(uint256[] memory ids) external view returns (Cell[] memory cells) {
+	function getCells(uint256[] memory ids) external view returns (FullCell[] memory cells) {
 		(uint32 epoch, ) = _epoch();
 		uint256 numCells = ids.length;
-		cells = new Cell[](numCells);
+		cells = new FullCell[](numCells);
 		for (uint256 i = 0; i < numCells; i++) {
-			cells[i] = _getUpdatedCell(uint64(ids[i]), epoch);
+			Cell memory updatedCell = _getUpdatedCell(uint64(ids[i]), epoch);
+			cells[i] = FullCell({
+				owner: _owners[ids[i]],
+				lastEpochUpdate: updatedCell.lastEpochUpdate,
+				epochWhenTokenIsAdded: updatedCell.epochWhenTokenIsAdded,
+				color: updatedCell.color,
+				life: updatedCell.life,
+				delta: updatedCell.delta,
+				enemymask: updatedCell.enemymask
+			});
 		}
 	}
 

@@ -40,17 +40,48 @@ enum Color {
 	Purple,
 }
 
-export type Grid = {
-	cells: Cell[];
+export type SimpleCell = {
+	x: number;
+	y: number;
+	owner?: number;
+	color: Color; //0 | 1 | 2 | 3 | 4 | 5;
+	life: number;
+	// tokens
+};
+
+export type Cell = SimpleCell & {
+	lastEpochUpdate: number;
+	epochWhenTokenIsAdded: number;
+	delta: number;
+	enemymask: number;
+};
+
+type TmpCell<CellType extends SimpleCell> = CellType & {
+	empty: boolean;
+	playerAsString: string;
+};
+
+export type Grid<CellType extends SimpleCell> = {
+	cells: CellType[];
 	width: number;
 	height: number;
 };
 
-export type ContractCell = {
+export type ContractSimpleCell = {
 	position: bigint;
 	owner: `0x${string}`;
 	color: 0 | 1 | 2 | 3 | 4 | 5;
 	life: number;
+};
+
+export type ContractFullCell = {
+	owner: `0x${string}`;
+	lastEpochUpdate: number;
+	epochWhenTokenIsAdded: number;
+	color: number;
+	life: number;
+	delta: number;
+	enemymask: number;
 };
 
 function cellID(cell: {x: number; y: number}): string;
@@ -79,41 +110,51 @@ function colorCodeOf(color: Color): string {
 	}
 }
 
-function emptyCell(x: number, y: number): TmpCell {
+// function emptyCell<CellType extends SimpleCell>(x: number, y: number): TmpCell<CellType> {
+// 	return {
+// 		empty: true,
+// 		playerAsString: '',
+// 		x,
+// 		y,
+// 		owner: undefined,
+// 		color: Color.None,
+// 		life: 0,
+// 		delta: 0,
+// 		enemymask: 0,
+// 		epochWhenTokenIsAdded: 0,
+// 		lastEpochUpdate: 0,
+// 	} as unknown as TmpCell<CellType>;
+// }
+
+function emptyCell(x: number, y: number): Cell {
 	return {
-		empty: true,
-		playerAsString: '',
 		x,
 		y,
+		owner: undefined,
 		color: Color.None,
+		life: 0,
 		delta: 0,
 		enemymask: 0,
 		epochWhenTokenIsAdded: 0,
 		lastEpochUpdate: 0,
-		life: 0,
-		owner: undefined,
 	};
 }
 
-export type Cell = {
-	x: number;
-	y: number;
-	lastEpochUpdate: number;
-	epochWhenTokenIsAdded: number;
-	color: Color;
-	life: number;
-	delta: number;
-	enemymask: number;
-	owner?: number;
-};
+function emptySimpleCell(x: number, y: number): SimpleCell {
+	return {
+		x,
+		y,
+		owner: undefined,
+		color: Color.None,
+		life: 0,
+	};
+}
 
-type TmpCell = Cell & {
-	empty: boolean;
-	playerAsString: string;
-};
-
-export function parseGrid(str: string): Grid {
-	const tmpCellMap = new Map<string, TmpCell>();
+export function parseGrid<CellType extends SimpleCell = SimpleCell>(
+	str: string,
+	createEmptyCell: (x: number, y: number) => CellType = emptySimpleCell as unknown as (x: number, y: number) => CellType
+): Grid<CellType> {
+	const tmpCellMap = new Map<string, TmpCell<CellType>>();
 
 	let started = false;
 	let indent = 0;
@@ -152,7 +193,11 @@ export function parseGrid(str: string): Grid {
 				}
 				let cell = tmpCellMap.get(cellID(x, y));
 				if (!cell) {
-					cell = emptyCell(x, y);
+					cell = {
+						empty: true,
+						playerAsString: '',
+						...createEmptyCell(x, y),
+					};
 					tmpCellMap.set(cellID(x, y), cell);
 				}
 				if (line % 3 == 1) {
@@ -211,7 +256,7 @@ export function parseGrid(str: string): Grid {
 		charI++;
 	}
 
-	const cells: Cell[] = [];
+	const cells: CellType[] = [];
 	for (const cell of tmpCellMap.values()) {
 		if (!cell.empty) {
 			const {empty, playerAsString, ...onlyCell} = cell;
@@ -219,14 +264,14 @@ export function parseGrid(str: string): Grid {
 				const ownerNumber = parseInt(playerAsString);
 				onlyCell.owner = ownerNumber;
 			}
-			cells.push(onlyCell);
+			cells.push(onlyCell as unknown as CellType);
 		}
 	}
 	return {cells, width: maxX + 1, height: maxY + 1};
 }
 
-export function renderGrid(grid: Grid): string {
-	const cellMap = new Map<string, Cell>();
+export function renderGrid<CellType extends SimpleCell>(grid: Grid<CellType>): string {
+	const cellMap = new Map<string, CellType>();
 	for (const cell of grid.cells) {
 		cellMap.set(cellID(cell), cell);
 	}
@@ -246,7 +291,7 @@ export function renderGrid(grid: Grid): string {
 				if (r == 2) {
 					str += '-----';
 				} else {
-					if (cell) {
+					if (cell?.owner) {
 						if (r == 0) {
 							str += ' ';
 							str += colorCodeOf(cell.color);
@@ -271,13 +316,51 @@ export function renderGrid(grid: Grid): string {
 	return str;
 }
 
-export function toContractCell(accounts: `0x${string}`[]): (cell: Cell) => ContractCell {
-	return (cell: Cell) => ({
+export function toContractSimpleCell<CellType extends SimpleCell>(
+	accounts: `0x${string}`[]
+): (cell: CellType) => ContractSimpleCell {
+	return (cell: CellType) => ({
 		color: cell.color,
 		life: cell.life,
 		owner: cell.owner ? accounts[cell.owner] : zeroAddress,
 		position: xyToBigIntID(cell.x, cell.y),
 	});
+}
+
+export function fromContractFullCellToCell(
+	accounts: `0x${string}`[]
+): (data: {cell: ContractFullCell; id: bigint}) => Cell {
+	return ({cell, id}: {cell: ContractFullCell; id: bigint}) => {
+		const {x, y} = bigIntIDToXY(id);
+
+		return {
+			x,
+			y,
+			lastEpochUpdate: cell.lastEpochUpdate,
+			epochWhenTokenIsAdded: cell.epochWhenTokenIsAdded,
+			color: cell.color,
+			life: cell.life,
+			delta: cell.delta,
+			enemymask: cell.enemymask,
+			owner: cell.owner == zeroAddress ? undefined : accounts.indexOf(cell.owner),
+		};
+	};
+}
+
+export function fromContractFullCellToSimpleCell(
+	accounts: `0x${string}`[]
+): (data: {cell: ContractFullCell; id: bigint}) => SimpleCell {
+	return ({cell, id}: {cell: ContractFullCell; id: bigint}) => {
+		const {x, y} = bigIntIDToXY(id);
+
+		return {
+			x,
+			y,
+			color: cell.color,
+			life: cell.life,
+			owner: cell.owner == zeroAddress ? undefined : accounts.indexOf(cell.owner),
+		};
+	};
 }
 
 // console.log(
@@ -311,7 +394,7 @@ export function toContractCell(accounts: `0x${string}`[]): (cell: Cell) => Contr
 //     |    | 01 | 02 |    |    |
 //     -------------------------
 //     |    |    |    | P1 |    |
-//     |    |    |    |    |    |
+//     |    |    |    | 01 |    |
 //     -------------------------
 //     |    |    |    |    |    |
 //     |    |    |    |    |    |

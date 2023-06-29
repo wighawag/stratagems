@@ -43,6 +43,16 @@ interface UsingStratagemsTypes {
 		uint256 numTokensPerGems;
 	}
 
+	struct FullCell {
+		address owner;
+		uint32 lastEpochUpdate;
+		uint32 epochWhenTokenIsAdded;
+		Color color;
+		uint8 life;
+		int8 delta;
+		uint8 enemymask;
+	}
+
 	// --------------------------------------------------------------------------------------------
 	// STORAGE TYPES
 	// --------------------------------------------------------------------------------------------
