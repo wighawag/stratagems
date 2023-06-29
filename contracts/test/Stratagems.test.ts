@@ -23,7 +23,7 @@ async function expectGridChange(gridWithAction: string, resultGrid: string) {
 	const setup = await loadFixture(deployStratagemsWithTestConfig);
 	await expect(
 		await withGrid(setup, gridWithAction)
-			.then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}, fromContractFullCellToCell))
+			.then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}))
 			.then(renderGrid)
 	).to.equal(renderGrid(parseGrid(resultGrid)));
 }
@@ -117,7 +117,7 @@ describe('Stratagems', function () {
 		-------------------------
 		`
 			)
-				.then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}, fromContractFullCellToCell))
+				.then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}))
 				.then(renderGrid)
 		).to.equal(
 			renderGrid(

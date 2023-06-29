@@ -1,10 +1,8 @@
 import artifacts from '../../generated/artifacts';
 import {
-	Cell,
 	CellPosition,
-	ContractFullCell,
 	Grid,
-	SimpleCell,
+	fromContractFullCellToCell,
 	parseGrid,
 	toContractSimpleCell,
 	xyToBigIntID,
@@ -39,7 +37,7 @@ export async function withGrid(
 	}
 }
 
-export async function getGrid<CellType extends SimpleCell>(
+export async function getGrid(
 	env: {
 		Stratagems: ContractWithViemClient<typeof artifacts.IStratagemsWithDebug.abi>;
 		otherAccounts: `0x${string}`[];
@@ -49,9 +47,8 @@ export async function getGrid<CellType extends SimpleCell>(
 		y: number;
 		width: number;
 		height: number;
-	},
-	fromContractCell: (accounts: `0x${string}`[]) => (data: {cell: ContractFullCell; id: bigint}) => CellType
-): Promise<Grid<CellType>> {
+	}
+): Promise<Grid> {
 	const listOfCoords: CellPosition[] = [];
 	for (let h = 0; h < location.height; h++) {
 		for (let w = 0; w < location.width; w++) {
@@ -64,7 +61,7 @@ export async function getGrid<CellType extends SimpleCell>(
 		id: cellIds[index],
 	}));
 
-	const cells = fullCells.map(fromContractCell(env.otherAccounts)).filter((v) => !!v.owner);
+	const cells = fullCells.map(fromContractFullCellToCell(env.otherAccounts)).filter((v) => !!v.owner);
 
 	return {
 		cells,
