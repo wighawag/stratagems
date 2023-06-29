@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import 'solidity-kit/solc_0.8/debug/UsingControlledTime.sol';
+import 'solidity-kit/solc_0.8/debug/time/implementations/UsingControlledTime.sol';
 import '../internal/UsingStratagemsSetters.sol';
 import './IStratagemsWithDebug.sol';
 
@@ -19,13 +19,13 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 		}
 	}
 
-	function forceMoves(address player, Move[] memory moves, bool fromReserve) external {
+	function forceMoves(address player, Move[] memory moves) external {
 		require(msg.sender == _getOwner(), 'NOT_AUTHORIZED');
 		(uint32 epoch, bool commiting) = _epoch();
 		if (commiting) {
 			epoch--;
 		}
-		_resolveMoves(player, epoch, moves, fromReserve);
+		_resolveMoves(player, epoch, moves, msg.sender);
 	}
 
 	function forceCells(DebugCell[] memory cells) external {

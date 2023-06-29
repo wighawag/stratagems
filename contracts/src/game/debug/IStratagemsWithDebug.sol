@@ -3,12 +3,13 @@ pragma solidity ^0.8.0;
 
 import '../interface/IStratagems.sol';
 import '../interface/UsingStratagemsTypes.sol';
+import 'solidity-kit/solc_0.8/debug/time/interfaces/ITime.sol';
 
-interface IStratagemsDebug is UsingStratagemsTypes {
+interface IStratagemsDebug is UsingStratagemsTypes, ITime, ITimeSetter {
 	event ForceCells(DebugCell[] cells);
 	event ForceSimpleCells(SimpleCell[] cells);
 
-	function forceMoves(address player, Move[] memory moves, bool fromReserve) external;
+	function forceMoves(address player, Move[] memory moves) external;
 
 	struct DebugCell {
 		uint64 position;

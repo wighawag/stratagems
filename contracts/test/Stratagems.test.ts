@@ -134,6 +134,56 @@ describe('Stratagems', function () {
 		);
 	});
 
+	it('placing a gem should have the desired effect', async function () {
+		const setup = await loadFixture(deployStratagemsWithTestConfig);
+		await expect(
+			await withGrid(
+				setup,
+				`
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		|    | R1 |+B2+|    |    |
+		|    | 01 |+02+|    |    |
+		-------------------------
+		|    |    |    | P1 |    |
+		|    |    |    | 01 |    |
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		`
+			)
+				.then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}, fromContractFullCellToCell))
+				.then(renderGrid)
+		).to.equal(
+			renderGrid(
+				parseGrid(`
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		|    | R0 | B2 |    |    |
+		|    | 01 | 02 |    |    |
+		-------------------------
+		|    |    |    | P0 |    |
+		|    |    |    | 01 |    |
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		`)
+			)
+		);
+	});
+
 	it('poke on dead cell should give tokens to neighboring enemies', async function () {});
 
 	it('forceSimpleCells', async function () {

@@ -27,7 +27,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		address player,
 		uint32 epoch,
 		Move[] memory moves,
-		bool fromReserve
+		address tokenGiver
 	) internal returns (uint256 newReserveAmount) {
 		// max number of transfer is (4+8) * moves.length
 		// (for each move's cell's neighbours potentially being a different account)
@@ -57,15 +57,15 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		// Note: even if funds can comes from outside the reserver, we still check it
 		// This ensure player have to have a reserve and cannot escape the slash if not
 		require(newReserveAmount >= tokens.tokensPlaced + tokens.tokensBurnt);
-		if (fromReserve) {
+		if (tokenGiver == address(0)) {
 			newReserveAmount -= tokens.tokensPlaced + tokens.tokensBurnt;
 			_tokensInReserve[player] = newReserveAmount;
 		} else {
 			if (tokens.tokensPlaced != 0) {
-				TOKENS.transferFrom(player, address(this), tokens.tokensPlaced);
+				TOKENS.transferFrom(tokenGiver, address(this), tokens.tokensPlaced);
 			}
 			if (tokens.tokensBurnt != 0) {
-				TOKENS.transferFrom(player, BURN_ADDRESS, tokens.tokensBurnt);
+				TOKENS.transferFrom(tokenGiver, BURN_ADDRESS, tokens.tokensBurnt);
 			}
 		}
 		// option to return in reserve ?

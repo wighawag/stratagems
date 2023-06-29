@@ -11,7 +11,7 @@ import {
 } from 'stratagems-common';
 import {ContractWithViemClient} from '../../utils/viem';
 
-export function withGrid(
+export async function withGrid(
 	env: {
 		Stratagems: ContractWithViemClient<typeof artifacts.IStratagemsWithDebug.abi>;
 		otherAccounts: `0x${string}`[];
@@ -20,9 +20,22 @@ export function withGrid(
 	gridString: string
 ) {
 	const grid = parseGrid(gridString);
-	return env.Stratagems.write.forceSimpleCells([grid.cells.map(toContractSimpleCell(env.otherAccounts))], {
+	const hash = await env.Stratagems.write.forceSimpleCells([grid.cells.map(toContractSimpleCell(env.otherAccounts))], {
 		account: env.stratagemsAdmin,
 	});
+	// TODO wait for receipt so the test work on real networks
+	if (grid.actions) {
+		const config = await env.Stratagems.read.getConfig();
+		await env.Stratagems.write.increaseTime([config.commitPhaseDuration], {account: env.stratagemsAdmin});
+
+		for (const action of grid.actions) {
+			console.log(action);
+			await env.Stratagems.write.forceMoves(
+				[env.otherAccounts[action.owner], [{position: xyToBigIntID(action.x, action.y), color: action.color}]],
+				{account: env.stratagemsAdmin}
+			);
+		}
+	}
 }
 
 export async function getGrid<CellType extends SimpleCell>(

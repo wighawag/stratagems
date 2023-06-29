@@ -110,8 +110,8 @@ importers:
         specifier: 0.6.0-beta.35
         version: 0.6.0-beta.35(hardhat@2.16.1)
       solidity-kit:
-        specifier: ^0.3.1
-        version: 0.3.1
+        specifier: ^0.3.2
+        version: 0.3.2
       solidity-proxy:
         specifier: ^0.2.2
         version: 0.2.2
@@ -7720,8 +7720,8 @@ packages:
       solidity-ast: 0.4.49
     dev: true
 
-  /solidity-kit@0.3.1:
-    resolution: {integrity: sha512-9kvpTUh3LA8+OIBdJjhbXdAkhg/pw/kGmZp7lgKoZdNhqqL72Y337JJJZIJ/ahvcw5lzNlkmQR18gt+WLexLRw==}
+  /solidity-kit@0.3.2:
+    resolution: {integrity: sha512-EEj1RdRD3yCi4gK/lF3VIlWJXrA+vH9nKffLN0E5+rsxvnUS1o7+0n/lZi9K6E0Ggy+I68wOXzmLqX8ZHveY6w==}
     dev: true
 
   /solidity-proxy@0.2.2:

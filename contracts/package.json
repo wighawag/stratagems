@@ -24,7 +24,7 @@
     "set-defaults": "^0.0.1",
     "solidity-coverage": "^0.8.3",
     "solidity-docgen": "0.6.0-beta.35",
-    "solidity-kit": "^0.3.1",
+    "solidity-kit": "^0.3.2",
     "solidity-proxy": "^0.2.2",
     "stratagems-common": "workspace:*",
     "ts-node": "^10.9.1",

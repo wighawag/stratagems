@@ -158,7 +158,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 
 		_checkHash(commitment.hash, secret, moves, furtherMoves);
 
-		uint256 newReserveAmount = _resolveMoves(player, epoch, moves, useReserve);
+		uint256 newReserveAmount = _resolveMoves(player, epoch, moves, useReserve ? player : address(0));
 
 		bytes24 hashResolved = commitment.hash;
 		if (furtherMoves != bytes24(0)) {
