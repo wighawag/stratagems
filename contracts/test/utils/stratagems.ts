@@ -36,10 +36,11 @@ export async function withGrid(env: GridEnv, gridString: string) {
 	}
 }
 
-export async function performGridActions(env: GridEnv, actionGrids: string[]) {
+export async function performGridActions(env: GridEnv, actionGrids: {player: number; grid: string}[]) {
 	const config = await env.Stratagems.read.getConfig();
+
 	for (const actionGrid of actionGrids) {
-		// const player = env.otherAccounts[action.owner];
+		const player = env.otherAccounts[actionGrid.player];
 		// await env.Stratagems.write.forceMoves(
 		// 	[player, [{position: xyToBigIntID(action.x, action.y), color: action.color}]],
 		// 	{account: env.stratagemsAdmin}
@@ -48,11 +49,14 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 	await env.Stratagems.write.increaseTime([config.commitPhaseDuration], {account: env.stratagemsAdmin});
 
 	for (const actionGrid of actionGrids) {
-		// const player = env.otherAccounts[action.owner];
-		// await env.Stratagems.write.forceMoves(
-		// 	[player, [{position: xyToBigIntID(action.x, action.y), color: action.color}]],
-		// 	{account: env.stratagemsAdmin}
-		// );
+		const player = env.otherAccounts[actionGrid.player];
+		const grid = parseGrid(actionGrid.grid, actionGrid.player);
+		if (grid.actions) {
+			await env.Stratagems.write.forceMoves(
+				[player, grid.actions.map((action) => ({position: xyToBigIntID(action.x, action.y), color: action.color}))],
+				{account: env.stratagemsAdmin}
+			);
+		}
 	}
 	await env.Stratagems.write.increaseTime([config.resolutionPhaseDuration], {account: env.stratagemsAdmin});
 }

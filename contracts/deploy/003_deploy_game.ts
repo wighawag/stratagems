@@ -39,7 +39,7 @@ export default execute(
 			commitPhaseDuration: BigInt(minutes(5)), // days(2.5), // TODO support more complex period to support a special weekend commit period
 			// resolutionPeriod: days(1),
 			resolutionPhaseDuration: BigInt(minutes(5)), // days(1),
-			maxLife: 5,
+			maxLife: 6,
 			...configOverride,
 		};
 

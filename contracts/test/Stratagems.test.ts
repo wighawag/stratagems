@@ -20,7 +20,12 @@ async function expectGridChange(setup: GridEnv, gridWithAction: string, resultGr
 	).to.equal(renderGrid(parseGrid(resultGrid)));
 }
 
-async function expectGridChangeAfterActions(setup: GridEnv, grid: string, actionGrids: string[], resultGrid: string) {
+async function expectGridChangeAfterActions(
+	setup: GridEnv,
+	grid: string,
+	actionGrids: {player: number; grid: string}[],
+	resultGrid: string
+) {
 	await expect(
 		await withGrid(setup, grid)
 			.then(() => performGridActions(setup, actionGrids))
@@ -270,6 +275,94 @@ describe('Stratagems', function () {
 		|    |    |    |    |    |
 		-------------------------
 		`
+		);
+	});
+
+	it('multiple non-conflicting actions submission', async function () {
+		const setup = await loadFixture(deployStratagemsWithTestConfig);
+		await expectGridChangeAfterActions(
+			setup,
+			`
+			-------------------------
+			|    |    |    |    |    |
+			|    |    |    |    |    |
+			-------------------------
+			|    |    | B2 |    |    |
+			|    |    | 03 |    |    |
+			-------------------------
+			|    | R1 | B1 |    |    |
+			|    | 02 | 02 |    |    |
+			-------------------------
+			|    |    |    | P1 | P5 |
+			|    |    |    | 01 | 01 |
+			-------------------------
+			|    |    |    |    |    |
+			|    |    |    |    |    |
+			-------------------------
+			`,
+			[
+				{
+					player: 1,
+					grid: `
+					-------------------------
+					|    |    |    |    |    |
+					|    |    |    |    |    |
+					-------------------------
+					|    |    |    |+B  |    |
+					|    |    |    |    |    |
+					-------------------------
+					|    |    |    |    |    |
+					|    |    |    |    |    |
+					-------------------------
+					|    |    |    |    |    |
+					|    |    |    |    |    |
+					-------------------------
+					|    |    |    |    |    |
+					|    |    |    |    |    |
+					-------------------------
+				`,
+				},
+				{
+					player: 2,
+					grid: `
+					-------------------------
+					|    |    |    |    |    |
+					|    |    |    |    |    |
+					-------------------------
+					|    |    |    |    |    |
+					|    |    |    |    |    |
+					-------------------------
+					|+P  |    |    |    |    |
+					|    |    |    |    |    |
+					-------------------------
+					|    |    |    |    |    |
+					|    |    |    |    |    |
+					-------------------------
+					|    |    |    |    |    |
+					|    |    |    |    |    |
+					-------------------------
+					`,
+				},
+			],
+			`
+			-------------------------
+			|    |    |    |    |    |
+			|    |    |    |    |    |
+			-------------------------
+			|    |    | B5 | B2 |    |
+			|    |    | 03 | 01 |    |
+			-------------------------
+			| P0 | R0 | B0 |    |    |
+			| 02 | 02 | 02 |    |    |
+			-------------------------
+			|    |    |    | P3 | P6 |
+			|    |    |    | 01 | 01 |
+			-------------------------
+			|    |    |    |    |    |
+			|    |    |    |    |    |
+			-------------------------
+			
+			`
 		);
 	});
 

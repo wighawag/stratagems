@@ -126,7 +126,7 @@ function emptyCell(x: number, y: number): Cell {
 	};
 }
 
-export function parseGrid(str: string): Grid {
+export function parseGrid(str: string, forcePlayer?: number): Grid {
 	const tmpCellMap = new Map<string, TmpCell>();
 
 	let started = false;
@@ -244,6 +244,9 @@ export function parseGrid(str: string): Grid {
 			if (playerAsString !== '') {
 				const ownerNumber = parseInt(playerAsString);
 				onlyCell.owner = ownerNumber;
+			}
+			if (forcePlayer) {
+				onlyCell.owner = forcePlayer;
 			}
 			if (addition) {
 				if (!onlyCell.owner) {

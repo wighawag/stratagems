@@ -155,6 +155,9 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 						}
 						newLife = life;
 						epochUsed = lastUpdate + uint32(epochDelta);
+					} else {
+						newLife = life;
+						epochUsed = lastUpdate;
 					}
 				} else if (effectiveDelta < 0) {
 					uint8 numEpochBeforeDying = (life + uint8(-effectiveDelta) - 1) / uint8(-effectiveDelta);
@@ -168,10 +171,13 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 						newLife = life - lifeLoss;
 					}
 					epochUsed = lastUpdate + uint32(epochDelta);
+				} else {
+					newLife = life;
+					epochUsed = lastUpdate;
 				}
 			} else {
 				newLife = life;
-				epochUsed = epoch;
+				epochUsed = lastUpdate;
 			}
 		}
 	}
