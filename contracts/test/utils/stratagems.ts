@@ -33,6 +33,7 @@ export async function withGrid(
 				{account: env.stratagemsAdmin}
 			);
 		}
+		await env.Stratagems.write.increaseTime([config.resolutionPhaseDuration], {account: env.stratagemsAdmin});
 	}
 }
 

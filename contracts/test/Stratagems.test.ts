@@ -1,17 +1,10 @@
 import {expect} from './utils/viem-chai';
-import {
-	fromContractFullCellToCell,
-	fromContractFullCellToSimpleCell,
-	parseGrid,
-	renderGrid,
-	toContractSimpleCell,
-	xyToBigIntID,
-} from 'stratagems-common';
+import {parseGrid, renderGrid, toContractSimpleCell, xyToBigIntID} from 'stratagems-common';
 
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {Deployment, loadAndExecuteDeployments} from 'rocketh';
 
-import {contract, getAccounts} from '../utils/viem';
+import {contract, getAccounts, publicClient} from '../utils/viem';
 
 import artifacts from '../generated/artifacts';
 import {network} from 'hardhat';
@@ -23,9 +16,24 @@ async function expectGridChange(gridWithAction: string, resultGrid: string) {
 	const setup = await loadFixture(deployStratagemsWithTestConfig);
 	await expect(
 		await withGrid(setup, gridWithAction)
-			.then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}))
+			.then(async () => {
+				const cell21 = await setup.Stratagems.read.getCell([xyToBigIntID(2, 1)]);
+				console.log(`cell: 2,1`, cell21);
+				const rawCell21 = await setup.Stratagems.read.getRawCell([xyToBigIntID(2, 1)]);
+				console.log(`raw: 2,1`, rawCell21);
+				const cell22 = await setup.Stratagems.read.getCell([xyToBigIntID(2, 2)]);
+				console.log(`cell: 2,2`, cell22);
+				const rawCell22 = await setup.Stratagems.read.getRawCell([xyToBigIntID(2, 2)]);
+				console.log(`raw: 2,2`, rawCell22);
+				const cell12 = await setup.Stratagems.read.getCell([xyToBigIntID(1, 2)]);
+				console.log(`cell: 1,2`, cell12);
+				const rawCell12 = await setup.Stratagems.read.getRawCell([xyToBigIntID(1, 2)]);
+				console.log(`raw: 1,2`, rawCell12);
+				return getGrid(setup, {x: 0, y: 0, width: 5, height: 5});
+			})
 			.then(renderGrid)
 	).to.equal(renderGrid(parseGrid(resultGrid)));
+	return setup;
 }
 
 async function deployStratagems(config?: Partial<GameConfig>) {
@@ -58,7 +66,7 @@ async function deployStratagems(config?: Partial<GameConfig>) {
 
 async function deployStratagemsWithTestConfig() {
 	const config = {
-		startTime: Math.floor(Date.now() / 1000),
+		startTime: Number((await publicClient.getBlock()).timestamp),
 	};
 	return deployStratagems(config);
 }

@@ -97,7 +97,12 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 	{
 		Cell memory currentState = _getUpdatedCell(move.position, epoch);
 
-		logger.logCell('_computeMove', move.position, currentState);
+		logger.logCell(
+			0,
+			string.concat('_computeMove at epoch ', Strings.toString(epoch)),
+			move.position,
+			currentState
+		);
 
 		if (move.color == Color.None) {
 			// this is a leave move
@@ -189,7 +194,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				currentState.delta = newDelta;
 				currentState.enemymask = newEnemymask;
 
-				logger.logCell('after: _updateNeighbor', move.position, currentState);
+				logger.logCell(0, 'after: _updateNeighbor', move.position, currentState);
 			} else {
 				// TODO fetch neighbours to compute delta
 				currentState.delta = 0;
@@ -257,6 +262,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		unchecked {
 			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
 			int256 y = int256(int32(int256(uint256(position) >> 32)));
+
+			console.log('%s => %s', uint8(oldColor), uint8(newColor));
 
 			int8 enemyOrFriend;
 			{
@@ -341,6 +348,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 	) internal returns (int8 enemyOrFriend, uint256 newNumAddressesToDistributeTo) {
 		Cell memory cell = _cells[position];
 
+		logger.logCell(1, '_updateCell', position, cell);
+
 		// no need to call if oldColor == newColor, so we assume they are different
 		assert(oldColor != newColor);
 		uint32 lastUpdate = cell.lastEpochUpdate;
@@ -349,8 +358,18 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			enemyOrFriend = color == newColor ? int8(1) : int8(-1);
 		}
 
-		if (lastUpdate >= 1 && color != Color.None && cell.life > 0) {
+		console.log(
+			'    enemyOrFriend: %s (%s => %s)',
+			Strings.toString(enemyOrFriend),
+			uint8(oldColor),
+			uint8(newColor)
+		);
+
+		if (lastUpdate >= 1 && lastUpdate < epoch && color != Color.None && cell.life > 0) {
 			(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, cell.delta, cell.life, epoch);
+
+			console.log('    newLife: %s ', newLife);
+			console.log('    epochUsed: %s ', epochUsed);
 
 			if (newLife == 0) {
 				numAddressesToDistributeTo = _updateCellAsDead(
@@ -364,8 +383,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			} else {
 				_updateCellFromNeighbor(position, cell, newLife, epoch, neighbourIndex, oldColor, newColor);
 			}
-		} else {
-			// no store needed as nothing changed
+		} else if (lastUpdate >= 1 && color != Color.None && cell.life > 0) {
+			_updateCellFromNeighbor(position, cell, cell.life, epoch, neighbourIndex, oldColor, newColor);
 		}
 		newNumAddressesToDistributeTo = numAddressesToDistributeTo;
 	}
@@ -421,16 +440,18 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			cell.delta += (oldColor == Color.None ? int8(1) : int8(2));
 			cell.enemymask = cell.enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
 
-			logger.logCell('after neibhor change to a friendly color', position, cell);
+			logger.logCell(2, 'after neibhor change to a friendly color', position, cell);
 		} else if (oldColor == Color.None) {
 			// if there were no oldCOlor and the newColor is not your (already checked in previous if clause)
 			cell.delta -= 1;
 			cell.enemymask = cell.enemymask | uint8(1 << neighbourIndex);
-			logger.logCell('after neibhor change to a enemy color', position, cell);
+			logger.logCell(2, 'after neibhor change to a enemy color', position, cell);
 		}
 		cell.lastEpochUpdate = epoch;
 		cell.life = newLife;
 		_cells[position] = cell;
+
+		logger.logCell(2, '_updateCellFromNeighbor', position, cell);
 	}
 
 	/// @dev this distribute the token in the cell who just died to the neighboring enemies that are still alive
