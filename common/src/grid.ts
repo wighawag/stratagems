@@ -38,13 +38,23 @@ enum Color {
 	Green,
 	Yellow,
 	Purple,
+	Evil,
+}
+
+enum ActionColor {
+	None,
+	Blue,
+	Red,
+	Green,
+	Yellow,
+	Purple,
 }
 
 export type Cell = {
 	x: number;
 	y: number;
 	owner?: number;
-	color: Color; //0 | 1 | 2 | 3 | 4 | 5;
+	color: Color; //0 | 1 | 2 | 3 | 4 | 5 | 6;
 	life: number;
 	// tokens
 	lastEpochUpdate?: number;
@@ -63,7 +73,7 @@ export type Action = {
 	x: number;
 	y: number;
 	owner: number;
-	color: Color;
+	color: ActionColor;
 };
 
 export type Grid = {
@@ -76,7 +86,7 @@ export type Grid = {
 export type ContractSimpleCell = {
 	position: bigint;
 	owner: `0x${string}`;
-	color: 0 | 1 | 2 | 3 | 4 | 5;
+	color: 0 | 1 | 2 | 3 | 4 | 5 | 6;
 	life: number;
 };
 
@@ -111,6 +121,8 @@ function colorCodeOf(color: Color): string {
 			return 'Y';
 		case Color.Purple:
 			return 'P';
+		case Color.Evil:
+			return 'E';
 		case Color.None:
 			return ' ';
 	}
@@ -252,8 +264,13 @@ export function parseGrid(str: string, forcePlayer?: number): Grid {
 				if (!onlyCell.owner) {
 					throw new Error(`addition (+) need an owner`);
 				}
+				let color: ActionColor;
+				if (onlyCell.color > 5) {
+					throw new Error(`invalid color value for action: ${onlyCell.color}`);
+				}
+				color = onlyCell.color as unknown as ActionColor;
 				actions.push({
-					color: onlyCell.color,
+					color,
 					owner: onlyCell.owner,
 					x: onlyCell.x,
 					y: onlyCell.y,

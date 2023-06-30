@@ -95,6 +95,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			uint256 newNumAddressesToDistributeTo
 		)
 	{
+		require(move.color != Color.Evil, 'INVALID_EVIL_MOVE');
 		Cell memory currentState = _getUpdatedCell(move.position, epoch);
 
 		logger.logCell(

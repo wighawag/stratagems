@@ -17,12 +17,13 @@ interface UsingStratagemsTypes {
 		Red,
 		Green,
 		Yellow,
-		Purple
+		Purple,
+		Evil
 	}
 
 	struct Move {
 		uint64 position;
-		Color color; // Color.None to indicate exit
+		Color color; // Color.None to indicate exit and Color.Evil is not allowed here
 	}
 
 	struct Permit {
