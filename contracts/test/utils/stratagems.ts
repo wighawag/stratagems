@@ -9,14 +9,13 @@ import {
 } from 'stratagems-common';
 import {ContractWithViemClient} from '../../utils/viem';
 
-export async function withGrid(
-	env: {
-		Stratagems: ContractWithViemClient<typeof artifacts.IStratagemsWithDebug.abi>;
-		otherAccounts: `0x${string}`[];
-		stratagemsAdmin: `0x${string}`;
-	},
-	gridString: string
-) {
+export type GridEnv = {
+	Stratagems: ContractWithViemClient<typeof artifacts.IStratagemsWithDebug.abi>;
+	otherAccounts: `0x${string}`[];
+	stratagemsAdmin: `0x${string}`;
+};
+
+export async function withGrid(env: GridEnv, gridString: string) {
 	const grid = parseGrid(gridString);
 	const hash = await env.Stratagems.write.forceSimpleCells([grid.cells.map(toContractSimpleCell(env.otherAccounts))], {
 		account: env.stratagemsAdmin,
@@ -35,6 +34,27 @@ export async function withGrid(
 		}
 		await env.Stratagems.write.increaseTime([config.resolutionPhaseDuration], {account: env.stratagemsAdmin});
 	}
+}
+
+export async function performGridActions(env: GridEnv, actionGrids: string[]) {
+	const config = await env.Stratagems.read.getConfig();
+	for (const actionGrid of actionGrids) {
+		// const player = env.otherAccounts[action.owner];
+		// await env.Stratagems.write.forceMoves(
+		// 	[player, [{position: xyToBigIntID(action.x, action.y), color: action.color}]],
+		// 	{account: env.stratagemsAdmin}
+		// );
+	}
+	await env.Stratagems.write.increaseTime([config.commitPhaseDuration], {account: env.stratagemsAdmin});
+
+	for (const actionGrid of actionGrids) {
+		// const player = env.otherAccounts[action.owner];
+		// await env.Stratagems.write.forceMoves(
+		// 	[player, [{position: xyToBigIntID(action.x, action.y), color: action.color}]],
+		// 	{account: env.stratagemsAdmin}
+		// );
+	}
+	await env.Stratagems.write.increaseTime([config.resolutionPhaseDuration], {account: env.stratagemsAdmin});
 }
 
 export async function getGrid(

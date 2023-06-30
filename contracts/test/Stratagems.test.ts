@@ -10,30 +10,23 @@ import artifacts from '../generated/artifacts';
 import {network} from 'hardhat';
 import {GameConfig} from '../deploy/003_deploy_game';
 import {parseEther} from 'viem';
-import {getGrid, withGrid} from './utils/stratagems';
+import {GridEnv, getGrid, performGridActions, withGrid} from './utils/stratagems';
 
-async function expectGridChange(gridWithAction: string, resultGrid: string) {
-	const setup = await loadFixture(deployStratagemsWithTestConfig);
+async function expectGridChange(setup: GridEnv, gridWithAction: string, resultGrid: string) {
 	await expect(
 		await withGrid(setup, gridWithAction)
-			.then(async () => {
-				const cell21 = await setup.Stratagems.read.getCell([xyToBigIntID(2, 1)]);
-				console.log(`cell: 2,1`, cell21);
-				const rawCell21 = await setup.Stratagems.read.getRawCell([xyToBigIntID(2, 1)]);
-				console.log(`raw: 2,1`, rawCell21);
-				const cell22 = await setup.Stratagems.read.getCell([xyToBigIntID(2, 2)]);
-				console.log(`cell: 2,2`, cell22);
-				const rawCell22 = await setup.Stratagems.read.getRawCell([xyToBigIntID(2, 2)]);
-				console.log(`raw: 2,2`, rawCell22);
-				const cell12 = await setup.Stratagems.read.getCell([xyToBigIntID(1, 2)]);
-				console.log(`cell: 1,2`, cell12);
-				const rawCell12 = await setup.Stratagems.read.getRawCell([xyToBigIntID(1, 2)]);
-				console.log(`raw: 1,2`, rawCell12);
-				return getGrid(setup, {x: 0, y: 0, width: 5, height: 5});
-			})
+			.then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}))
 			.then(renderGrid)
 	).to.equal(renderGrid(parseGrid(resultGrid)));
-	return setup;
+}
+
+async function expectGridChangeAfterActions(setup: GridEnv, grid: string, actionGrids: string[], resultGrid: string) {
+	await expect(
+		await withGrid(setup, grid)
+			.then(() => performGridActions(setup, actionGrids))
+			.then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}))
+			.then(renderGrid)
+	).to.equal(renderGrid(parseGrid(resultGrid)));
 }
 
 async function deployStratagems(config?: Partial<GameConfig>) {
@@ -152,7 +145,9 @@ describe('Stratagems', function () {
 	});
 
 	it('placing a gem should have the desired effect', async function () {
+		const setup = await loadFixture(deployStratagemsWithTestConfig);
 		await expectGridChange(
+			setup,
 			`
 		-------------------------
 		|    |    |    |    |    |
@@ -193,7 +188,9 @@ describe('Stratagems', function () {
 	});
 
 	it('placing 2 gems should have the desired effect', async function () {
+		const setup = await loadFixture(deployStratagemsWithTestConfig);
 		await expectGridChange(
+			setup,
 			`
 		-------------------------
 		|    |    |    |    |    |
@@ -225,6 +222,49 @@ describe('Stratagems', function () {
 		-------------------------
 		|    |    |    | P0 |    |
 		|    |    |    | 01 |    |
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		`
+		);
+	});
+
+	it('placing 3 gems should have the desired effect', async function () {
+		const setup = await loadFixture(deployStratagemsWithTestConfig);
+		await expectGridChange(
+			setup,
+			`
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		|    |    |+B +|    |    |
+		|    |    |+03+|    |    |
+		-------------------------
+		|    | R2 |+B +|    |    |
+		|    | 02 |+02+|    |    |
+		-------------------------
+		|    |    |    | P1 |+P +|
+		|    |    |    | 01 |+01+|
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		`,
+			`
+		-------------------------
+		|    |    |    |    |    |
+		|    |    |    |    |    |
+		-------------------------
+		|    |    | B2 |    |    |
+		|    |    | 03 |    |    |
+		-------------------------
+		|    | R0 | B0 |    |    |
+		|    | 02 | 02 |    |    |
+		-------------------------
+		|    |    |    | P0 | P2 |
+		|    |    |    | 01 | 01 |
 		-------------------------
 		|    |    |    |    |    |
 		|    |    |    |    |    |
