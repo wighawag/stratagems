@@ -192,7 +192,7 @@ describe('Stratagems', function () {
 		);
 	});
 
-	it.only('placing 2 gems should have the desired effect', async function () {
+	it('placing 2 gems should have the desired effect', async function () {
 		await expectGridChange(
 			`
 		-------------------------

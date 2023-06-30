@@ -365,27 +365,35 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			uint8(newColor)
 		);
 
-		if (lastUpdate >= 1 && lastUpdate < epoch && color != Color.None && cell.life > 0) {
-			(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, cell.delta, cell.life, epoch);
+		if (lastUpdate >= 1 && color != Color.None && cell.life > 0) {
+			// we only consider cell with color that are not dead
+			if (lastUpdate < epoch) {
+				// of there is life to update we compute the new life
+				(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, cell.delta, cell.life, epoch);
 
-			console.log('    newLife: %s ', newLife);
-			console.log('    epochUsed: %s ', epochUsed);
+				console.log('    newLife: %s ', newLife);
+				console.log('    epochUsed: %s ', epochUsed);
 
-			if (newLife == 0) {
-				numAddressesToDistributeTo = _updateCellAsDead(
-					transfers,
-					numAddressesToDistributeTo,
-					position,
-					cell,
-					newLife,
-					epochUsed
-				);
+				if (newLife == 0) {
+					// if dead, no need to update delta and enemymask
+					numAddressesToDistributeTo = _updateCellAsDead(
+						transfers,
+						numAddressesToDistributeTo,
+						position,
+						cell,
+						newLife,
+						epochUsed
+					);
+				} else {
+					// if not dead we update the delta and enemymask
+					_updateCellFromNeighbor(position, cell, newLife, epoch, neighbourIndex, oldColor, newColor);
+				}
 			} else {
-				_updateCellFromNeighbor(position, cell, newLife, epoch, neighbourIndex, oldColor, newColor);
+				// else if we simply update the delta and enemymask
+				_updateCellFromNeighbor(position, cell, cell.life, epoch, neighbourIndex, oldColor, newColor);
 			}
-		} else if (lastUpdate >= 1 && color != Color.None && cell.life > 0) {
-			_updateCellFromNeighbor(position, cell, cell.life, epoch, neighbourIndex, oldColor, newColor);
 		}
+
 		newNumAddressesToDistributeTo = numAddressesToDistributeTo;
 	}
 
