@@ -11,7 +11,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 	/// @inheritdoc IStratagemsGameplay
 	function getCell(uint256 id) external view returns (FullCell memory) {
 		(uint32 epoch, ) = _epoch();
-		console.log('epoch %s', epoch);
+		// console.log('epoch %s', epoch);
 		Cell memory updatedCell = _getUpdatedCell(uint64(id), epoch);
 		return
 			FullCell({

@@ -51,9 +51,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 
 	function forceSimpleCells(SimpleCell[] memory cells) external {
 		require(msg.sender == _getOwner(), 'NOT_AUTHORIZED');
-		(uint32 epoch, bool commiting) = _epoch();
-		require(commiting, 'NOT_ALLOWED_IN_RESOLUTION_PHASE');
-		epoch--;
+		(uint32 epoch, ) = _epoch();
 
 		for (uint256 i = 0; i < cells.length; i++) {
 			SimpleCell memory simpleCell = cells[i];

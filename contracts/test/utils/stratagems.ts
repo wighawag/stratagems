@@ -13,6 +13,15 @@ export type GridEnv = {
 	Stratagems: ContractWithViemClient<typeof artifacts.IStratagemsWithDebug.abi>;
 	otherAccounts: `0x${string}`[];
 	stratagemsAdmin: `0x${string}`;
+	config: {
+		tokens: `0x${string}`;
+		burnAddress: `0x${string}`;
+		startTime: bigint;
+		commitPhaseDuration: bigint;
+		resolutionPhaseDuration: bigint;
+		maxLife: number;
+		numTokensPerGems: bigint;
+	};
 };
 
 export async function withGrid(env: GridEnv, gridString: string) {

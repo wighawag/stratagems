@@ -34,7 +34,7 @@ async function expectGridChangeAfterActions(
 	).to.equal(renderGrid(parseGrid(resultGrid)));
 }
 
-async function deployStratagems(config?: Partial<GameConfig>) {
+async function deployStratagems(override?: Partial<GameConfig>) {
 	const [deployer, tokensBeneficiary, ...otherAccounts] = await getAccounts();
 
 	const {deployments} = await loadAndExecuteDeployments(
@@ -42,11 +42,13 @@ async function deployStratagems(config?: Partial<GameConfig>) {
 			provider: network.provider as any,
 			// logLevel: 6,
 		},
-		config
+		override
 	);
 
 	const TestTokens = contract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
 	const Stratagems = contract(deployments['Stratagems'] as Deployment<typeof artifacts.IStratagemsWithDebug.abi>);
+
+	const config = await Stratagems.read.getConfig();
 
 	await TestTokens.write.transfer([deployer, parseEther('1000')], {account: tokensBeneficiary});
 	await TestTokens.write.approve([Stratagems.address, parseEther('1000')], {account: deployer});
@@ -63,16 +65,16 @@ async function deployStratagems(config?: Partial<GameConfig>) {
 }
 
 async function deployStratagemsWithTestConfig() {
-	const config = {
+	const override = {
 		startTime: Number((await publicClient.getBlock()).timestamp),
 	};
-	return deployStratagems(config);
+	return deployStratagems(override);
 }
 
 describe('Stratagems', function () {
 	it('poking on a virtually dead cell sync its state accordingly', async function () {
 		const setup = await loadFixture(deployStratagemsWithTestConfig);
-		const {Stratagems, deployer} = setup;
+		const {Stratagems, deployer, config, stratagemsAdmin} = setup;
 		await withGrid(
 			setup,
 			`
@@ -95,6 +97,9 @@ describe('Stratagems', function () {
 		`
 		);
 		expect((await Stratagems.read.getRawCell([xyToBigIntID(1, 2)])).life).to.equal(1);
+		await Stratagems.write.increaseTime([config.commitPhaseDuration + config.resolutionPhaseDuration], {
+			account: stratagemsAdmin,
+		});
 		await Stratagems.write.poke([xyToBigIntID(1, 2)], {account: deployer});
 		expect((await Stratagems.read.getRawCell([xyToBigIntID(1, 2)])).life).to.equal(0);
 	});
@@ -123,6 +128,14 @@ describe('Stratagems', function () {
 		-------------------------
 		`
 			)
+				.then(() =>
+					setup.Stratagems.write.increaseTime(
+						[setup.config.commitPhaseDuration + setup.config.resolutionPhaseDuration],
+						{
+							account: setup.stratagemsAdmin,
+						}
+					)
+				)
 				.then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}))
 				.then(renderGrid)
 		).to.equal(
@@ -265,10 +278,10 @@ describe('Stratagems', function () {
 		|    |    | B2 |    |    |
 		|    |    | 03 |    |    |
 		-------------------------
-		|    | R0 | B0 |    |    |
+		|    | R1 | B0 |    |    |
 		|    | 02 | 02 |    |    |
 		-------------------------
-		|    |    |    | P0 | P2 |
+		|    |    |    | P2 | P2 |
 		|    |    |    | 01 | 01 |
 		-------------------------
 		|    |    |    |    |    |
@@ -349,13 +362,13 @@ describe('Stratagems', function () {
 			|    |    |    |    |    |
 			|    |    |    |    |    |
 			-------------------------
-			|    |    | B5 | B2 |    |
+			|    |    | B4 | B2 |    |
 			|    |    | 03 | 01 |    |
 			-------------------------
 			| P0 | R0 | B0 |    |    |
 			| 02 | 02 | 02 |    |    |
 			-------------------------
-			|    |    |    | P3 | P6 |
+			|    |    |    | P2 | P6 |
 			|    |    |    | 01 | 01 |
 			-------------------------
 			|    |    |    |    |    |

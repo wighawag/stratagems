@@ -264,7 +264,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
 			int256 y = int256(int32(int256(uint256(position) >> 32)));
 
-			console.log('%s => %s', uint8(oldColor), uint8(newColor));
+			// console.log('%s => %s', uint8(oldColor), uint8(newColor));
 
 			int8 enemyOrFriend;
 			{
@@ -359,12 +359,12 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			enemyOrFriend = color == newColor ? int8(1) : int8(-1);
 		}
 
-		console.log(
-			'    enemyOrFriend: %s (%s => %s)',
-			Strings.toString(enemyOrFriend),
-			uint8(oldColor),
-			uint8(newColor)
-		);
+		// console.log(
+		// 	'    enemyOrFriend: %s (%s => %s)',
+		// 	Strings.toString(enemyOrFriend),
+		// 	uint8(oldColor),
+		// 	uint8(newColor)
+		// );
 
 		if (lastUpdate >= 1 && color != Color.None && cell.life > 0) {
 			// we only consider cell with color that are not dead
@@ -372,8 +372,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				// of there is life to update we compute the new life
 				(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, cell.delta, cell.life, epoch);
 
-				console.log('    newLife: %s ', newLife);
-				console.log('    epochUsed: %s ', epochUsed);
+				// console.log('    newLife: %s ', newLife);
+				// console.log('    epochUsed: %s ', epochUsed);
 
 				if (newLife == 0) {
 					// if dead, no need to update delta and enemymask
