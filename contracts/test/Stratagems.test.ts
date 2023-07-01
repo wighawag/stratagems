@@ -96,7 +96,7 @@ describe('Stratagems', function () {
 		-------------------------
 		`
 		);
-		expect((await Stratagems.read.getRawCell([xyToBigIntID(1, 2)])).life).to.equal(1);
+		expect((await Stratagems.read.getRawCell([xyToBigIntID(1, 2)])).life).to.equal(2);
 		await Stratagems.write.increaseTime([config.commitPhaseDuration + config.resolutionPhaseDuration], {
 			account: stratagemsAdmin,
 		});
@@ -151,7 +151,7 @@ describe('Stratagems', function () {
 		|    | R0 | B1 |    |    |
 		|    | 01 | 02 |    |    |
 		-------------------------
-		|    |    |    | P0 |    |
+		|    |    |    | P1 |    |
 		|    |    |    | 01 |    |
 		-------------------------
 		|    |    |    |    |    |
@@ -195,7 +195,7 @@ describe('Stratagems', function () {
 		|    | R0 | B0 |    |    |
 		|    | 01 | 02 |    |    |
 		-------------------------
-		|    |    |    | P0 |    |
+		|    |    |    | P1 |    |
 		|    |    |    | 01 |    |
 		-------------------------
 		|    |    |    |    |    |
@@ -238,7 +238,7 @@ describe('Stratagems', function () {
 		|    | R0 | B0 |    |    |
 		|    | 01 | 02 |    |    |
 		-------------------------
-		|    |    |    | P0 |    |
+		|    |    |    | P1 |    |
 		|    |    |    | 01 |    |
 		-------------------------
 		|    |    |    |    |    |
@@ -306,7 +306,7 @@ describe('Stratagems', function () {
 			|    | R1 | B1 |    |    |
 			|    | 02 | 02 |    |    |
 			-------------------------
-			|    |    |    | P1 | P5 |
+			|    |    |    | P2 | P5 |
 			|    |    |    | 01 | 01 |
 			-------------------------
 			|    |    |    |    |    |
@@ -368,7 +368,7 @@ describe('Stratagems', function () {
 			| P0 | R0 | B0 |    |    |
 			| 02 | 02 | 02 |    |    |
 			-------------------------
-			|    |    |    | P2 | P6 |
+			|    |    |    | P3 | P6 |
 			|    |    |    | 01 | 01 |
 			-------------------------
 			|    |    |    |    |    |

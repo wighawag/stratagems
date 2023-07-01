@@ -230,7 +230,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		int8 delta = cell.delta;
 		if (lastUpdate >= 1 && color != Color.None && life > 0) {
 			// the cell is alive here
-			(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, delta, life, epoch);
+			(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, cell.enemymask, delta, life, epoch);
 			cell.life = newLife;
 			cell.lastEpochUpdate = epochUsed;
 			if (newLife == 0) {
@@ -370,7 +370,13 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			// we only consider cell with color that are not dead
 			if (lastUpdate < epoch) {
 				// of there is life to update we compute the new life
-				(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, cell.delta, cell.life, epoch);
+				(uint8 newLife, uint32 epochUsed) = _computeNewLife(
+					lastUpdate,
+					cell.enemymask,
+					cell.delta,
+					cell.life,
+					epoch
+				);
 
 				// console.log('    newLife: %s ', newLife);
 				// console.log('    epochUsed: %s ', epochUsed);

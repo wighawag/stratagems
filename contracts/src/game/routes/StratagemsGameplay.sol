@@ -8,6 +8,10 @@ import '../internal/UsingStratagemsUtils.sol';
 contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, UsingStratagemsUtils {
 	constructor(Config memory config) UsingStratagemsSetters(config) {}
 
+	// --------------------------------------------------------------------------------------------
+	// Getters
+	// --------------------------------------------------------------------------------------------
+
 	/// @inheritdoc IStratagemsGameplay
 	function getCell(uint256 id) external view returns (FullCell memory) {
 		(uint32 epoch, ) = _epoch();
@@ -64,6 +68,10 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 		config.maxLife = MAX_LIFE;
 		config.numTokensPerGems = NUM_TOKENS_PER_GEMS;
 	}
+
+	// --------------------------------------------------------------------------------------------
+	// Setters
+	// --------------------------------------------------------------------------------------------
 
 	/// @inheritdoc IStratagemsGameplay
 	function addToReserve(uint256 tokensAmountToAdd, Permit calldata permit) external {

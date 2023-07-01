@@ -72,6 +72,35 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 			_owners[simpleCell.position] = simpleCell.owner;
 		}
 
+		for (uint256 i = 0; i < cells.length; i++) {
+			uint256 position = cells[i].position;
+			Cell memory cell = _cells[position];
+
+			// we act as if the token were added in previous epochs
+			// this is so it does not affect the resolution phase
+			int256 potentialLife = int256(uint256(cell.life)) - cell.delta;
+			if (potentialLife <= 0) {
+				unchecked {
+					int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
+					int256 y = int256(int32(int256(uint256(position) >> 32)));
+					require(
+						potentialLife > 0,
+						string.concat('INVALID_LIFE_CONFIGURATION: ', Strings.toString(x), ',', Strings.toString(y))
+					);
+				}
+			}
+			cell.life = uint8(uint256(potentialLife));
+
+			_cells[position] = Cell({
+				lastEpochUpdate: epoch - 1,
+				epochWhenTokenIsAdded: epoch - 1,
+				color: cell.color,
+				life: cell.life,
+				delta: cell.delta,
+				enemymask: cell.enemymask
+			});
+		}
+
 		emit ForceSimpleCells(cells);
 	}
 

@@ -129,6 +129,7 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 
 	function _computeNewLife(
 		uint32 lastUpdate,
+		uint8 enemymask,
 		int8 delta,
 		uint8 life,
 		uint32 epoch
@@ -136,8 +137,10 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 		if (lastUpdate >= 1 && life > 0) {
 			uint256 epochDelta = epoch - lastUpdate;
 			if (epochDelta > 0) {
-				// TODO delta is allowed to be zero if no enemy (take enemymask as input too)
 				int8 effectiveDelta = delta != 0 ? delta : -1;
+				if (effectiveDelta < 0 && enemymask == 0) {
+					effectiveDelta = 0;
+				}
 				if (effectiveDelta > 0) {
 					if (life < MAX_LIFE) {
 						uint8 maxEpoch = ((MAX_LIFE - life) + uint8(effectiveDelta) - 1) / uint8(effectiveDelta);
@@ -185,7 +188,7 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 		int8 delta = updatedCell.delta;
 		uint8 life = updatedCell.life;
 		if (lastUpdate >= 1 && life > 0) {
-			(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, delta, life, epoch);
+			(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, updatedCell.enemymask, delta, life, epoch);
 			if (newLife == 0) {
 				updatedCell.delta = 0;
 			}

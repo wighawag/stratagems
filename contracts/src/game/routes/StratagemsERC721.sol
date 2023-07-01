@@ -8,6 +8,10 @@ import 'solidity-kit/solc_0.8/ERC721/interfaces/IERC721Metadata.sol';
 contract StratagemsERC721 is IERC721, IERC721Metadata, UsingStratagemsSetters {
 	constructor(Config memory config) UsingStratagemsSetters(config) {}
 
+	// --------------------------------------------------------------------------------------------
+	// Getters
+	// --------------------------------------------------------------------------------------------
+
 	// /// @inheritdoc IERC721
 	/// @notice balanceOf is not implemented
 	function balanceOf(address) external pure override returns (uint256) {
@@ -20,21 +24,6 @@ contract StratagemsERC721 is IERC721, IERC721Metadata, UsingStratagemsSetters {
 		require(uint256(id) == tokenID, 'NOT_EXISTENT');
 		owner = _owners[tokenID];
 	}
-
-	/// @inheritdoc IERC721
-	function safeTransferFrom(address from, address to, uint256 tokenID, bytes calldata data) external override {}
-
-	/// @inheritdoc IERC721
-	function safeTransferFrom(address from, address to, uint256 tokenID) external override {}
-
-	/// @inheritdoc IERC721
-	function transferFrom(address from, address to, uint256 tokenID) external override {}
-
-	/// @inheritdoc IERC721
-	function approve(address operator, uint256 tokenID) external override {}
-
-	/// @inheritdoc IERC721
-	function setApprovalForAll(address operator, bool approved) external override {}
 
 	/// @inheritdoc IERC721
 	function getApproved(uint256 tokenID) external view override returns (address operator) {}
@@ -57,4 +46,23 @@ contract StratagemsERC721 is IERC721, IERC721Metadata, UsingStratagemsSetters {
 
 	/// @inheritdoc IERC721Metadata
 	function tokenURI(uint256 tokenID) external view returns (string memory) {}
+
+	// --------------------------------------------------------------------------------------------
+	// Setters
+	// --------------------------------------------------------------------------------------------
+
+	/// @inheritdoc IERC721
+	function safeTransferFrom(address from, address to, uint256 tokenID, bytes calldata data) external override {}
+
+	/// @inheritdoc IERC721
+	function safeTransferFrom(address from, address to, uint256 tokenID) external override {}
+
+	/// @inheritdoc IERC721
+	function transferFrom(address from, address to, uint256 tokenID) external override {}
+
+	/// @inheritdoc IERC721
+	function approve(address operator, uint256 tokenID) external override {}
+
+	/// @inheritdoc IERC721
+	function setApprovalForAll(address operator, bool approved) external override {}
 }
