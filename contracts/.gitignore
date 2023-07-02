@@ -8,8 +8,9 @@ generated
 deployments/localhost
 
 # hardhat
-coverage
-coverage.json
+/coverage
+/coverage.json
+/coverage-data.json
 cache
 artifacts
 docs
