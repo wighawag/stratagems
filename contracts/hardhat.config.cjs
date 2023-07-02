@@ -1,11 +1,9 @@
-import {loadEnv} from 'ldenv';
+const {loadEnv} = require('ldenv');
 loadEnv();
-
-import '@nomicfoundation/hardhat-network-helpers';
-import 'solidity-coverage';
-import 'hardhat-rocketh';
-import 'solidity-docgen';
-import {addForkConfiguration, addNetworksFromEnv} from 'hardhat-rocketh';
+require('@nomicfoundation/hardhat-network-helpers');
+const {addForkConfiguration, addNetworksFromEnv} = require('hardhat-rocketh');
+require('vitest-solidity-coverage/hardhat');
+require('solidity-docgen');
 
 const defaultVersion = '0.8.20';
 const defaultSettings = {
@@ -19,7 +17,8 @@ const defaultSettings = {
 		},
 	},
 };
-export default {
+
+module.exports = {
 	solidity: {
 		compilers: [
 			{

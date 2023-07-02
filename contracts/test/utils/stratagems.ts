@@ -7,7 +7,7 @@ import {
 	toContractSimpleCell,
 	xyToBigIntID,
 } from 'stratagems-common';
-import {ContractWithViemClient} from '../../utils/viem';
+import {ContractWithViemClient} from '../../utils/connection';
 
 export type GridEnv = {
 	Stratagems: ContractWithViemClient<typeof artifacts.IStratagemsWithDebug.abi>;

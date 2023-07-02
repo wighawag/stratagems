@@ -1,9 +1,10 @@
-import {expect} from './utils/viem-chai';
+import {expect, describe, it} from 'vitest';
+import './utils/viem-matchers';
 
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {Deployment, loadAndExecuteDeployments} from 'rocketh';
 
-import {contract, getAccounts} from '../utils/viem';
+import {getConnection, fetchContract} from '../utils/connection';
 
 import artifacts from '../generated/artifacts';
 import {network} from 'hardhat';
@@ -14,7 +15,9 @@ async function deployStratagems(config?: {
 	resolutionPeriod: bigint;
 	maxLife: number;
 }) {
-	const [deployer, tokensBeneficiary, ...otherAccounts] = await getAccounts();
+	const {accounts, walletClient, publicClient} = await getConnection();
+	const [deployer, tokensBeneficiary, ...otherAccounts] = accounts;
+
 
 	const {deployments} = await loadAndExecuteDeployments(
 		{
@@ -23,8 +26,8 @@ async function deployStratagems(config?: {
 		config
 	);
 
-	const TestTokens = contract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
-	const Stratagems = contract(deployments['Stratagems'] as Deployment<typeof artifacts.IStratagems.abi>);
+	const TestTokens = await fetchContract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
+	const Stratagems = await fetchContract(deployments['Stratagems'] as Deployment<typeof artifacts.IStratagems.abi>);
 
 	return {
 		deployer,
@@ -46,7 +49,7 @@ describe('TestTokens', function () {
 			const {deployments} = await loadAndExecuteDeployments({
 				provider: network.provider as any,
 			});
-			const TestTokens = contract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
+			const TestTokens = await fetchContract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
 			const decimals = await TestTokens.read.decimals();
 			expect(decimals).to.equal(18);
 		});

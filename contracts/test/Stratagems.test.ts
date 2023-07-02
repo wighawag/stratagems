@@ -1,13 +1,16 @@
-import {expect} from './utils/viem-chai';
+import {expect, describe, it} from 'vitest';
+import './utils/viem-matchers';
+
 import {parseGrid, renderGrid, toContractSimpleCell, xyToBigIntID} from 'stratagems-common';
 
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {Deployment, loadAndExecuteDeployments} from 'rocketh';
 
-import {contract, getAccounts, publicClient} from '../utils/viem';
+import {getConnection, fetchContract} from '../utils/connection';
 
 import artifacts from '../generated/artifacts';
 import {network} from 'hardhat';
+
 import {GameConfig} from '../deploy/003_deploy_game';
 import {parseEther} from 'viem';
 import {GridEnv, getGrid, performGridActions, withGrid} from './utils/stratagems';
@@ -35,7 +38,8 @@ async function expectGridChangeAfterActions(
 }
 
 async function deployStratagems(override?: Partial<GameConfig>) {
-	const [deployer, tokensBeneficiary, ...otherAccounts] = await getAccounts();
+	const {accounts, walletClient, publicClient} = await getConnection();
+	const [deployer, tokensBeneficiary, ...otherAccounts] = accounts;
 
 	const {deployments} = await loadAndExecuteDeployments(
 		{
@@ -45,8 +49,8 @@ async function deployStratagems(override?: Partial<GameConfig>) {
 		override
 	);
 
-	const TestTokens = contract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
-	const Stratagems = contract(deployments['Stratagems'] as Deployment<typeof artifacts.IStratagemsWithDebug.abi>);
+	const TestTokens = await fetchContract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
+	const Stratagems = await fetchContract(deployments['Stratagems'] as Deployment<typeof artifacts.IStratagemsWithDebug.abi>);
 
 	const config = await Stratagems.read.getConfig();
 
@@ -65,10 +69,12 @@ async function deployStratagems(override?: Partial<GameConfig>) {
 }
 
 async function deployStratagemsWithTestConfig() {
+	const {publicClient} = await getConnection();
 	const override = {
 		startTime: Number((await publicClient.getBlock()).timestamp),
 	};
-	return deployStratagems(override);
+	const result = await deployStratagems(override);
+	return result;
 }
 
 describe('Stratagems', function () {

@@ -2,7 +2,7 @@ import {Deployment, execute} from 'rocketh';
 import 'rocketh-deploy-proxy';
 import 'rocketh-deploy-router';
 import {context} from './_context';
-import {contract} from '../utils/viem';
+import {fetchContract} from '../utils/connection';
 import {minutes} from '../utils/time';
 import {zeroAddress} from 'viem';
 
@@ -24,7 +24,7 @@ export default execute(
 	) => {
 		const {deployer} = accounts;
 
-		const TestTokens = contract(deployments.TestTokens as Deployment<typeof context.artifacts.TestTokens.abi>);
+		const TestTokens = await fetchContract(deployments.TestTokens as Deployment<typeof context.artifacts.TestTokens.abi>);
 		const timestamp = 0; // BigInt(Math.floor(Date.now() / 1000));
 
 		const decimals = BigInt(await TestTokens.read.decimals());
