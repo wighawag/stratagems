@@ -1,7 +1,7 @@
 {
 	"name": "Stratagems",
-	"title": "Stratagems - Template for Decentralised Applications.",
-	"description": "Build and Deploy for Eternity. Stratagems is a production-ready template for decentralised applications.",
+	"title": "Stratagems - The Infinite Board Game",
+	"description": "Stratagems is an infinite board game, a persistent and permission-less game where players use a specific set of colors to compete for the control of the board. Alliances and betrayal are part of the arsenal as colors mix and shift on the board.",
 	"canonicalURL": "https://stratagems.eth.limo",
 	"ENSName": "stratagems.eth",
 	"themeColor": "#000000",

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="3.3549166mm"
+   height="3.7465mm"
+   viewBox="0 0 3.3549166 3.7465"
+   version="1.1"
+   id="svg1069"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="stratagems-icon.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1071"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="true"
+     inkscape:document-units="mm"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:zoom="27.495105"
+     inkscape:cx="2.327687"
+     inkscape:cy="9.3653034"
+     inkscape:window-width="1920"
+     inkscape:window-height="1031"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1066" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-87.161251,-102.64287)">
+    <polygon
+       class="cls-1"
+       points="9.48,6.45 12.26,4.85 6.75,1.67 6.75,4.88 "
+       id="polygon6"
+       style="fill:#70fbc3;fill-opacity:1"
+       transform="matrix(0.26458333,0,0,0.26458333,87.161251,102.20102)" />
+    <polygon
+       class="cls-1"
+       points="2.78,7.18 0,5.57 0,11.93 2.78,10.32 "
+       id="polygon8"
+       style="fill:#f1f4d7;fill-opacity:1"
+       transform="matrix(0.26458333,0,0,0.26458333,87.161251,102.20102)" />
+    <polygon
+       class="cls-1"
+       points="6.75,15.83 9.04,14.51 10.81,13.49 11.67,12.99 12.26,12.65 9.48,11.05 6.75,12.62 "
+       id="polygon10"
+       style="fill:#6fdbf7;fill-opacity:1"
+       transform="matrix(0.26458333,0,0,0.26458333,87.161251,102.20102)" />
+    <polygon
+       class="cls-1"
+       points="5.92,12.62 3.19,11.05 0.42,12.65 5.92,15.83 "
+       id="polygon12"
+       style="fill:#ffe974;fill-opacity:1"
+       transform="matrix(0.26458333,0,0,0.26458333,87.161251,102.20102)" />
+    <polygon
+       class="cls-1"
+       points="3.19,6.45 5.47,5.14 5.92,4.88 5.92,1.67 2.48,3.66 1.57,4.18 1.05,4.49 0.42,4.85 "
+       id="polygon14"
+       style="fill:#dc6fea;fill-opacity:1"
+       transform="matrix(0.26458333,0,0,0.26458333,87.161251,102.20102)" />
+    <polygon
+       class="cls-1"
+       points="9.9,7.18 9.9,10.32 12.68,11.93 12.68,5.57 "
+       id="polygon16"
+       style="fill:#f75279;fill-opacity:1"
+       transform="matrix(0.26458333,0,0,0.26458333,87.161251,102.20102)" />
+    <polygon
+       class="cls-1"
+       points="9.06,7.17 6.34,5.6 5.89,5.86 3.61,7.17 3.61,10.32 6.34,11.9 7.78,11.07 9.06,10.32 "
+       id="polygon18"
+       style="fill:#3e3e3f;fill-opacity:1"
+       transform="matrix(0.26458333,0,0,0.26458333,87.161251,102.20102)" />
+  </g>
+</svg>
