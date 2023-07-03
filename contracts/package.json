@@ -28,7 +28,7 @@
     "viem": "^1.2.7",
     "viem-chai-matchers": "^0.0.3",
     "vitest": "^0.32.2",
-    "vitest-solidity-coverage": "^0.1.2"
+    "vitest-solidity-coverage": "^0.1.3"
   },
   "scripts": {
     "prepare": "pnpm compile",
@@ -36,9 +36,9 @@
     "reset": "bash reset.sh",
     "local_node": "rm -Rf deployments/localhost && hardhat node",
     "compile": "hardhat compile",
-    "watch_compile": "as-soon -w src pnpm compile",
+    "compile:watch": "as-soon -w src pnpm compile",
     "deploy": "ldenv hardhat --network @@MODE deploy @@",
-    "watch_deploy": "as-soon -w generated -w deploy pnpm run deploy",
+    "deploy:watch": "as-soon -w generated -w deploy pnpm run deploy",
     "test": "vitest",
     "coverage": "hardhat compile-for-coverage && vitest run --coverage && hardhat compile",
     "export": "rocketh-export",

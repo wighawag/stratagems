@@ -6,5 +6,6 @@ export default defineConfig({
 			provider: 'custom',
 			customProviderModule: 'vitest-solidity-coverage',
 		},
+		testTimeout: 10000
 	},
 });
