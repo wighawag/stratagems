@@ -7,7 +7,7 @@
   "devDependencies": {
     "ask-env": "^0.0.1",
     "ldenv": "^0.3.7",
-    "syncpack": "^10.6.1"
+    "syncpack": "^10.7.2"
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
@@ -15,7 +15,8 @@
     "boot": "npx change-name@0.3.1 --ask stratagems && pnpm i",
     "set-name": "npx change-name@0.3.1 --ask stratagems",
     "template-test": "pnpm --filter ./contracts local_node & pnpm run --filter ./contracts deploy localhost ~~ pnpm export -n localhost --ts ../indexer/src/contracts.ts,../web/src/data/contracts.ts ~~ && pnpm run --filter ./common build && pnpm --filter ./indexer build",
-    "sync-deps": "syncpack fix-mismatches && pnpm -r format:fix",
+    "sync-deps": "syncpack fix-mismatches",
+    "update-deps": "pnpm update -r -i --latest && pnpm sync-deps",
     "---------------------- FORMAT ----------------------": "",
     "format": "prettier --write . && pnpm -r format",
     "format:check": "prettier --check . && pnpm -r format:check",
