@@ -9,21 +9,29 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Examples', link: '/markdown-examples' }
+      // { text: 'Examples', link: '/markdown-examples' }
+      { text: 'Guide', link: '/guide/getting-started' },
+      { text: 'Contracts', link: '/contracts/Gems' }
     ],
 
     sidebar: [
       {
-        text: 'Examples',
+        text: 'Documentation',
         items: [
-          { text: 'Markdown Examples', link: '/markdown-examples' },
-          { text: 'Runtime API Examples', link: '/api-examples' }
+          // { text: 'Markdown Examples', link: '/markdown-examples' },
+          { text: 'Guide', link: '/guide/getting-started' },
+          // { text: 'Runtime API Examples', link: '/api-examples' },
+          // { text: 'Contracts', link: '/contracts/Gems' }
+          { text: 'Contracts', items: [
+            { text: 'Gems', link: '/contracts/Gems' },
+            {text: 'Stratagems_Implementation_route_Core', link: '/contracts/Stratagems_Implementation_route_Core'}
+          ]}
         ]
       }
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/vuejs/vitepress' }
+      { icon: 'github', link: 'https://github.com/onchain-games/stratagems' }
     ]
   }
 })

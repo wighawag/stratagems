@@ -11,11 +11,11 @@ hero:
     alt: Stratagems Logo
   actions:
     - theme: brand
-      text: Markdown Examples
-      link: /markdown-examples
+      text: Guide
+      link: /guide/getting-started
     - theme: alt
-      text: API Examples
-      link: /api-examples
+      text: Contracts
+      link: /contracts/Gems
 
 features:
   - title: Permission-less
