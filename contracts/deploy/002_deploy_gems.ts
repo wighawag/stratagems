@@ -11,7 +11,7 @@ export default execute(
 			'Gems',
 			{
 				account: deployer,
-				artifact: artifacts.TestTokens,
+				artifact: artifacts.Gems,
 				args: [tokensBeneficiary, parseEther('1000000000')], // 18 decimal like ether
 			},
 			{
