@@ -10,10 +10,16 @@
 
 {{{notice}}}
 
+{{#if params.length}}
+**Paramters**
+
+| Name | Description 
+| ---- | ----------- 
 {{#each params}}
 {{#if description}}
-{{{name}}}:{{{description}}}
-
+| {{{name}}} | {{{description}}}
 {{/if}}
 {{/each}}
+
+{{/if}}
 {{/each}}
