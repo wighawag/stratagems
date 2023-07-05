@@ -25,7 +25,7 @@ export async function expectGridChange(setup: GridEnv, gridWithAction: string, r
 export async function expectGridChangeAfterActions(
 	setup: GridEnv,
 	grid: string,
-	actionGrids: {player: number; grid: string}[],
+	actionGrids: string[],
 	resultGrid: string
 ) {
 	await expect(
