@@ -73,11 +73,11 @@ importers:
         specifier: ^0.6.13
         version: 0.6.13(rocketh@0.6.8)(typescript@5.1.6)
       rocketh-deploy-router:
-        specifier: ^0.6.16
-        version: 0.6.16(rocketh@0.6.8)(typescript@5.1.6)
+        specifier: ^0.6.17
+        version: 0.6.17(rocketh@0.6.8)(typescript@5.1.6)
       rocketh-doc:
-        specifier: ^0.6.3
-        version: link:../../../wighawag/rocketh/packages/rocketh-doc
+        specifier: ^0.6.6
+        version: 0.6.6(rocketh@0.6.8)
       rocketh-export:
         specifier: ^0.6.8
         version: 0.6.8(rocketh@0.6.8)
@@ -2113,7 +2113,7 @@ packages:
   /@types/bn.js@5.1.1:
     resolution: {integrity: sha512-qNrYbZqMx0uJAfKnKclPh+dTwK33KfLHYqtyODwd5HnXOjnkhc4qgn3BrK6RWyGZm5+sIFE7Q7Vz6QQtJB7w7g==}
     dependencies:
-      '@types/node': 20.3.2
+      '@types/node': 20.3.3
     dev: true
 
   /@types/chai-as-promised@7.1.5:
@@ -7835,8 +7835,8 @@ packages:
       - zod
     dev: true
 
-  /rocketh-deploy-router@0.6.16(rocketh@0.6.8)(typescript@5.1.6):
-    resolution: {integrity: sha512-1YmmMadEZmf7MKo36t3emVQ1bibtxfGG7isw2ey8+Q5ALv7QQD30W+yUPx8XljOKqZ8gfrKijM4kr2vPsosAvw==}
+  /rocketh-deploy-router@0.6.17(rocketh@0.6.8)(typescript@5.1.6):
+    resolution: {integrity: sha512-17VBGdK+OuCUMnGtHQ7zZZf59vUf37oisyuuAcZM1jNl5dFyLFZ2W0nDAY4PiB01T37r03hH9ncJcH51X/qfUA==}
     peerDependencies:
       rocketh: 0.6.8
     dependencies:
@@ -7866,6 +7866,22 @@ packages:
       - typescript
       - utf-8-validate
       - zod
+    dev: true
+
+  /rocketh-doc@0.6.6(rocketh@0.6.8):
+    resolution: {integrity: sha512-gfJqNqEOh3cM4Ko5/aLrH1u6wKmHI7kSVwEo35Ls+qSwyvtnV+fKqFJy8k2ZVTuruiEYDN96pbiBBrx3WJI2OQ==}
+    hasBin: true
+    peerDependencies:
+      rocketh: 0.6.8
+    dependencies:
+      commander: 10.0.1
+      ethers: 6.6.2
+      fs-extra: 11.1.1
+      handlebars: 4.7.7
+      rocketh: 0.6.8(typescript@5.1.6)
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
     dev: true
 
   /rocketh-export@0.6.8(rocketh@0.6.8):
