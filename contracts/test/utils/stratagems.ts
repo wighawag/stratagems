@@ -3,17 +3,26 @@ import {
 	Action,
 	CellPosition,
 	Grid,
+	Move,
 	fromContractFullCellToCell,
 	parseGrid,
+	prepareCommitment,
+	randomSecret,
 	toContractSimpleCell,
 	xyToBigIntID,
 } from 'stratagems-common';
 import {ContractWithViemClient} from '../../utils/connection';
+import {parseEther} from 'viem';
+
+const zeroBytes32 = `0x0000000000000000000000000000000000000000000000000000000000000000`;
+const zeroBytes24 = `0x000000000000000000000000000000000000000000000000`;
 
 export type GridEnv = {
 	Stratagems: ContractWithViemClient<typeof artifacts.IStratagemsWithDebug.abi>;
+	TestTokens: ContractWithViemClient<typeof artifacts.TestTokens.abi>;
 	otherAccounts: `0x${string}`[];
 	stratagemsAdmin: `0x${string}`;
+	tokensBeneficiary: `0x${string}`;
 	config: {
 		tokens: `0x${string}`;
 		burnAddress: `0x${string}`;
@@ -59,22 +68,32 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 		}
 	}
 
-	for (const playerIndex of Object.keys(groupedActions)) {
-		// const player = env.otherAccounts[playerIndex];
-		// await env.Stratagems.write.forceMoves(
-		// 	[player, [{position: xyToBigIntID(action.x, action.y), color: action.color}]],
-		// 	{account: env.stratagemsAdmin}
-		// );
-	}
-	await env.Stratagems.write.increaseTime([config.commitPhaseDuration], {account: env.stratagemsAdmin});
-
+	const commitments: {
+		player: `0x${string}`;
+		hash: `0x${string}`;
+		secret: `0x${string}`;
+		moves: Move[];
+	}[] = [];
 	for (const playerIndex of Object.keys(groupedActions)) {
 		const player = env.otherAccounts[playerIndex];
 		const actions = groupedActions[playerIndex];
-		await env.Stratagems.write.forceMoves(
-			[player, actions.map((action) => ({position: xyToBigIntID(action.x, action.y), color: action.color}))],
-			{account: env.stratagemsAdmin}
+		const moves = actions.map((action) => ({position: xyToBigIntID(action.x, action.y), color: action.color}));
+		const commitment = prepareCommitment(moves, randomSecret());
+		const amountOfTokens = parseEther(`${moves.length}`);
+		await env.TestTokens.write.transfer([player, amountOfTokens], {account: env.tokensBeneficiary});
+		await env.TestTokens.write.approve([env.Stratagems.address, amountOfTokens], {account: player});
+		await env.Stratagems.write.makeCommitmentWithExtraReserve(
+			[commitment.hash, parseEther(`${moves.length}`), {deadline: 0n, value: 0n, v: 0, r: zeroBytes32, s: zeroBytes32}],
+			{account: player}
 		);
+		commitments.push({...commitment, player});
+	}
+	await env.Stratagems.write.increaseTime([config.commitPhaseDuration], {account: env.stratagemsAdmin});
+
+	for (const commitment of commitments) {
+		await env.Stratagems.write.resolve([commitment.player, commitment.secret, commitment.moves, zeroBytes24, true], {
+			account: env.stratagemsAdmin,
+		});
 	}
 
 	await env.Stratagems.write.increaseTime([config.resolutionPhaseDuration], {account: env.stratagemsAdmin});
