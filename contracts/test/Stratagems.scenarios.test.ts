@@ -9,4 +9,5 @@ import {deployStratagemsWithTestConfig} from './utils/stratagems-test';
 
 describe('Stratagems Scenarios', function () {
 	// it.each(() => {});
+	it('pass', () => {});
 });
