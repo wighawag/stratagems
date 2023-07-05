@@ -3,11 +3,13 @@
   "version": "0.0.0",
   "description": "docs for stratagems",
   "devDependencies": {
+    "ldenv": "^0.3.7",
     "vitepress": "1.0.0-beta.5"
   },
   "scripts": {
-    "docs:dev": "vitepress dev",
-    "docs:build": "vitepress build",
-    "docs:preview": "vitepress preview"
+    "import:contracts:docs": "ldenv -m localhost pnpm --filter stratagems-contracts run docgen @@MODE -o ../docs/contracts @@",
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
   }
 }

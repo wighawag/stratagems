@@ -76,8 +76,8 @@ importers:
         specifier: ^0.6.17
         version: 0.6.17(rocketh@0.6.8)(typescript@5.1.6)
       rocketh-doc:
-        specifier: ^0.6.6
-        version: 0.6.6(rocketh@0.6.8)
+        specifier: ^0.6.7
+        version: 0.6.7(rocketh@0.6.8)
       rocketh-export:
         specifier: ^0.6.8
         version: 0.6.8(rocketh@0.6.8)
@@ -120,6 +120,9 @@ importers:
 
   docs:
     devDependencies:
+      ldenv:
+        specifier: ^0.3.7
+        version: 0.3.7
       vitepress:
         specifier: 1.0.0-beta.5
         version: 1.0.0-beta.5(@algolia/client-search@4.18.0)(search-insights@2.6.0)
@@ -7868,8 +7871,8 @@ packages:
       - zod
     dev: true
 
-  /rocketh-doc@0.6.6(rocketh@0.6.8):
-    resolution: {integrity: sha512-gfJqNqEOh3cM4Ko5/aLrH1u6wKmHI7kSVwEo35Ls+qSwyvtnV+fKqFJy8k2ZVTuruiEYDN96pbiBBrx3WJI2OQ==}
+  /rocketh-doc@0.6.7(rocketh@0.6.8):
+    resolution: {integrity: sha512-IGvFsTJ5HBtNcoifqMJknQZXeDmk3A2h4Zmb2QfDD6zqe2NSYFPoBp0pkIuGmTDDmXPFfjtL1ykEMX/JgmVEXg==}
     hasBin: true
     peerDependencies:
       rocketh: 0.6.8

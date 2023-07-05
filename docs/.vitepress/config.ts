@@ -1,4 +1,14 @@
 import { defineConfig } from 'vitepress'
+import fs from 'fs';
+import path from 'path';
+
+const contracts = fs.readdirSync('./contracts').map(filename => {
+  const name = path.basename(filename, '.md');
+  return {
+    text: name, link: `/contracts/${name}`
+  };
+});
+
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -22,10 +32,7 @@ export default defineConfig({
           { text: 'Guide', link: '/guide/getting-started' },
           // { text: 'Runtime API Examples', link: '/api-examples' },
           // { text: 'Contracts', link: '/contracts/Gems' }
-          { text: 'Contracts', items: [
-            { text: 'Gems', link: '/contracts/Gems' },
-            {text: 'Stratagems_Implementation_route_Core', link: '/contracts/Stratagems_Implementation_route_Core'}
-          ]}
+          { text: 'Contracts', items: contracts}
         ]
       }
     ],
