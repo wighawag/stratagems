@@ -14,7 +14,7 @@
     "rocketh": "^0.6.7",
     "rocketh-deploy": "^0.6.10",
     "rocketh-deploy-proxy": "^0.6.13",
-    "rocketh-deploy-router": "^0.6.15",
+    "rocketh-deploy-router": "^0.6.16",
     "rocketh-doc": "^0.6.3",
     "rocketh-export": "^0.6.8",
     "rocketh-signer": "^0.6.8",

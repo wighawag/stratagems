@@ -73,8 +73,8 @@ importers:
         specifier: ^0.6.13
         version: 0.6.13(rocketh@0.6.8)(typescript@5.1.6)
       rocketh-deploy-router:
-        specifier: ^0.6.15
-        version: 0.6.15(rocketh@0.6.8)(typescript@5.1.6)
+        specifier: ^0.6.16
+        version: 0.6.16(rocketh@0.6.8)(typescript@5.1.6)
       rocketh-doc:
         specifier: ^0.6.3
         version: link:../../../wighawag/rocketh/packages/rocketh-doc
@@ -7835,8 +7835,8 @@ packages:
       - zod
     dev: true
 
-  /rocketh-deploy-router@0.6.15(rocketh@0.6.8)(typescript@5.1.6):
-    resolution: {integrity: sha512-uc7l5WZ9PB6tCiLsL/FSs7fVER+xX8RCy6WBkURsyyggaIBxLmHefBJElOpQ89XY1CAQheutkW/5KAatVxfwrQ==}
+  /rocketh-deploy-router@0.6.16(rocketh@0.6.8)(typescript@5.1.6):
+    resolution: {integrity: sha512-1YmmMadEZmf7MKo36t3emVQ1bibtxfGG7isw2ey8+Q5ALv7QQD30W+yUPx8XljOKqZ8gfrKijM4kr2vPsosAvw==}
     peerDependencies:
       rocketh: 0.6.8
     dependencies:

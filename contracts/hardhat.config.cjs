@@ -3,7 +3,6 @@ loadEnv();
 require('@nomicfoundation/hardhat-network-helpers');
 const {addForkConfiguration, addNetworksFromEnv} = require('hardhat-rocketh');
 require('vitest-solidity-coverage/hardhat');
-require('solidity-docgen');
 
 const defaultVersion = '0.8.20';
 const defaultSettings = {
