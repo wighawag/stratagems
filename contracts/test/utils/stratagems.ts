@@ -48,9 +48,19 @@ export async function withGrid(env: GridEnv, gridString: string) {
 
 export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 	const config = await env.Stratagems.read.getConfig();
-
+	const groupedActions: {[playerIndex: number]: Action[]} = {};
 	for (const actionGrid of actionGrids) {
-		// const player = env.otherAccounts[actionGrid.player];
+		const grid = parseGrid(actionGrid);
+		if (grid.actions) {
+			for (const action of grid.actions) {
+				groupedActions[action.owner] = groupedActions[action.owner] || [];
+				groupedActions[action.owner].push(action);
+			}
+		}
+	}
+
+	for (const playerIndex of Object.keys(groupedActions)) {
+		// const player = env.otherAccounts[playerIndex];
 		// await env.Stratagems.write.forceMoves(
 		// 	[player, [{position: xyToBigIntID(action.x, action.y), color: action.color}]],
 		// 	{account: env.stratagemsAdmin}
@@ -58,23 +68,15 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 	}
 	await env.Stratagems.write.increaseTime([config.commitPhaseDuration], {account: env.stratagemsAdmin});
 
-	for (const actionGrid of actionGrids) {
-		const grid = parseGrid(actionGrid);
-		if (grid.actions) {
-			const groupedActions: {[playerIndex: number]: Action[]} = {};
-			for (const action of grid.actions) {
-				groupedActions[action.owner] = groupedActions[action.owner] || [];
-				groupedActions[action.owner].push(action);
-			}
-			for (const playerIndex of Object.keys(groupedActions)) {
-				const player = env.otherAccounts[playerIndex];
-				await env.Stratagems.write.forceMoves(
-					[player, grid.actions.map((action) => ({position: xyToBigIntID(action.x, action.y), color: action.color}))],
-					{account: env.stratagemsAdmin}
-				);
-			}
-		}
+	for (const playerIndex of Object.keys(groupedActions)) {
+		const player = env.otherAccounts[playerIndex];
+		const actions = groupedActions[playerIndex];
+		await env.Stratagems.write.forceMoves(
+			[player, actions.map((action) => ({position: xyToBigIntID(action.x, action.y), color: action.color}))],
+			{account: env.stratagemsAdmin}
+		);
 	}
+
 	await env.Stratagems.write.increaseTime([config.resolutionPhaseDuration], {account: env.stratagemsAdmin});
 }
 
