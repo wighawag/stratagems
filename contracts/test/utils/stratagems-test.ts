@@ -13,6 +13,7 @@ import {network} from 'hardhat';
 import {GameConfig} from '../../deploy/003_deploy_game';
 import {parseEther} from 'viem';
 import {GridEnv, getGrid, performGridActions, withGrid} from './stratagems';
+import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 
 export async function expectGridChange(setup: GridEnv, gridWithAction: string, resultGrid: string) {
 	await expect(
@@ -40,15 +41,17 @@ async function deployStratagems(override?: Partial<GameConfig>) {
 	const {accounts, walletClient, publicClient} = await getConnection();
 	const [deployer, tokensBeneficiary, ...otherAccounts] = accounts;
 
+	const provider = network.provider as EIP1193ProviderWithoutEvents;
 	const {deployments} = await loadAndExecuteDeployments(
 		{
-			provider: network.provider as any,
+			provider,
 			// logLevel: 6,
 		},
 		override
 	);
 
 	const TestTokens = await fetchContract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
+	const Gems = await fetchContract(deployments['Gems'] as Deployment<typeof artifacts.Gems.abi>);
 	const Stratagems = await fetchContract(
 		deployments['Stratagems'] as Deployment<typeof artifacts.IStratagemsWithDebug.abi>
 	);
@@ -66,6 +69,8 @@ async function deployStratagems(override?: Partial<GameConfig>) {
 		TestTokens,
 		config,
 		otherAccounts,
+		provider: provider as any,
+		Gems,
 	};
 }
 
