@@ -72,7 +72,7 @@ function colorCodeOf(color: Color): string {
 			return 'Y';
 		case Color.Purple:
 			return 'P';
-		case Color.Black:
+		case Color.Evil:
 			return 'E';
 		case Color.None:
 			return ' ';
@@ -164,6 +164,10 @@ export function parseGrid(str: string, forcePlayer?: number): Grid {
 								break;
 							case 'P':
 								cell.color = Color.Purple;
+								cell.empty = false;
+								break;
+							case 'E':
+								cell.color = Color.Evil;
 								cell.empty = false;
 								break;
 							case '0':

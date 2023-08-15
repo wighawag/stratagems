@@ -34,7 +34,7 @@ export async function expectGridChangeAfterActions(
 			.then(() => performGridActions(setup, actionGrids))
 			.then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}))
 			.then(renderGrid)
-	).to.equal(resultGrid);
+	).to.equal(renderGrid(parseGrid(resultGrid)));
 }
 
 export async function setupWallets(env: GridEnv, walletsBefore: {[playerIndex: number]: number}) {
