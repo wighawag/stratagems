@@ -37,6 +37,31 @@ export async function expectGridChangeAfterActions(
 	).to.equal(renderGrid(parseGrid(resultGrid)));
 }
 
+export async function setupWallets(env: GridEnv, walletsBefore: {[playerIndex: number]: number}) {
+	for (const playerIndex of Object.keys(walletsBefore)) {
+		const player = env.otherAccounts[playerIndex];
+		const amount = await env.TestTokens.read.balanceOf([player]);
+		const expectedAmount = parseEther(walletsBefore[playerIndex].toString());
+		const amountToTransfer = expectedAmount - amount;
+		if (amountToTransfer > 0) {
+			await env.TestTokens.write.transfer([player, amountToTransfer], {
+				account: env.tokensBeneficiary,
+			});
+		} else if (amountToTransfer < 0) {
+			throw new Error(`too much token`);
+		}
+	}
+}
+
+export async function expectWallet(env: GridEnv, expectedWalletsAfter: {[playerIndex: number]: number}) {
+	for (const playerIndex of Object.keys(expectedWalletsAfter)) {
+		const player = env.otherAccounts[playerIndex];
+		const amount = await env.TestTokens.read.balanceOf([player]);
+		const expectedAmount = parseEther(expectedWalletsAfter[playerIndex].toString());
+		expect(amount, `player ${playerIndex}`).to.equal(expectedAmount);
+	}
+}
+
 async function deployStratagems(override?: Partial<GameConfig>) {
 	const {accounts, walletClient, publicClient} = await getConnection();
 	const [deployer, tokensBeneficiary, ...otherAccounts] = accounts;

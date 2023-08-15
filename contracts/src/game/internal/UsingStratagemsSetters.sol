@@ -120,9 +120,12 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				_cells[move.position] = currentState;
 
 				// we can't reset the owner yet as neighbors dieing in epoch should reward the owner
+				// TODO ? we could compute them here though and get the reward at the same time
 
-				// we still need to update the neighbors to update their enemymask and delta
+				// we also need to update the neighbors to update their enemymask and delta
 				// TODO update neighbors
+			} else {
+				// TODO ?
 			}
 			// we return
 			return (0, 0, NUM_TOKENS_PER_GEMS, numAddressesToDistributeTo);

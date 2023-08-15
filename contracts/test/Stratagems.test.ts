@@ -6,6 +6,7 @@ import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 
 import {getGrid, withGrid} from './utils/stratagems';
 import {deployStratagemsWithTestConfig, expectGridChange, expectGridChangeAfterActions} from './utils/stratagems-test';
+import {parseEther} from 'viem';
 
 describe('Stratagems', function () {
 	it('poking on a virtually dead cell sync its state accordingly', async function () {
@@ -229,6 +230,12 @@ describe('Stratagems', function () {
 
 	it('multiple non-conflicting actions submission', async function () {
 		const setup = await loadFixture(deployStratagemsWithTestConfig);
+		await setup.TestTokens.write.transfer([setup.otherAccounts[1], parseEther('1')], {
+			account: setup.tokensBeneficiary,
+		});
+		await setup.TestTokens.write.transfer([setup.otherAccounts[2], parseEther('1')], {
+			account: setup.tokensBeneficiary,
+		});
 		await expectGridChangeAfterActions(
 			setup,
 			`

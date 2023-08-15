@@ -5,11 +5,13 @@ import path from 'path';
 import {fileURLToPath} from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-import {parseGrid, renderGrid, toContractSimpleCell, xyToBigIntID} from 'stratagems-common';
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
-
-import {getGrid, withGrid} from './utils/stratagems';
-import {deployStratagemsWithTestConfig, expectGridChangeAfterActions} from './utils/stratagems-test';
+import {
+	deployStratagemsWithTestConfig,
+	expectGridChangeAfterActions,
+	expectWallet,
+	setupWallets,
+} from './utils/stratagems-test';
 
 const scenarioFolder = path.join(__dirname, 'scenarios');
 const scenarios = fs.readdirSync(scenarioFolder).map((filename) => {
@@ -27,9 +29,20 @@ const scenarios = fs.readdirSync(scenarioFolder).map((filename) => {
 	};
 	const actions: string[] = [];
 	let expectedGrid = '';
+	const walletsBefore: {[playerIndex: number]: number} = {};
+	const expectedWalletsAfter: {[playerIndex: number]: number} = {};
 	for (const line of lines) {
 		if (line.startsWith('$')) {
-			// TODO wallet
+			const [playerIndex, amount] = line
+				.slice(1)
+				.split(':')
+				.map((s) => s.trim())
+				.map((s) => parseInt(s, 10));
+			if (!expectedGrid) {
+				walletsBefore[playerIndex] = amount;
+			} else {
+				expectedWalletsAfter[playerIndex] = amount;
+			}
 		} else if (line.startsWith('+')) {
 			state.gridConsumed = true;
 			if (typeof state.currentAction !== 'undefined') {
@@ -53,18 +66,26 @@ const scenarios = fs.readdirSync(scenarioFolder).map((filename) => {
 	}
 	const data = {
 		name: path.basename(filename, '.txt'),
-		wallets: {},
+		walletsBefore,
+		expectedWalletsAfter,
 		startGrid,
 		actions,
 		expectedGrid,
 		expectedWallets: {},
 	};
+
+	console.log({
+		walletsBefore,
+		expectedWalletsAfter,
+	});
 	return data;
 });
 
 describe('Stratagems Scenarios', function () {
 	it.each(scenarios)(`$name`, async (data) => {
 		const setup = await loadFixture(deployStratagemsWithTestConfig);
+		await setupWallets(setup, data.walletsBefore);
 		await expectGridChangeAfterActions(setup, data.startGrid, data.actions, data.expectedGrid);
+		await expectWallet(setup, data.expectedWalletsAfter);
 	});
 });
