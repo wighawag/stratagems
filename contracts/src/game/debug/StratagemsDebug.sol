@@ -56,7 +56,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 		for (uint256 i = 0; i < cells.length; i++) {
 			SimpleCell memory simpleCell = cells[i];
 			require(_cells[simpleCell.position].lastEpochUpdate == 0, 'NO_OVERWRITE');
-			require(simpleCell.life > 0, 'ZERO_LIFE');
+			// require(simpleCell.life > 0, 'ZERO_LIFE');
 			TOKENS.transferFrom(msg.sender, address(this), NUM_TOKENS_PER_GEMS);
 
 			(int8 delta, uint8 enemymask) = _updateNeighbosrDelta(simpleCell.position, simpleCell.color, epoch);
