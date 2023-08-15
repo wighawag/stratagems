@@ -96,7 +96,7 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 				// their life > 0 after being updated
 				// or that their last death update is the same epoch
 				if (cell.life > 0 || cell.lastEpochUpdate == epoch) {
-					enemies[numEnemiesAlive] = _owners[cellPos];
+					enemies[numEnemiesAlive] = _ownerOf(cellPos);
 					numEnemiesAlive++;
 				}
 			}
@@ -104,7 +104,7 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 				uint256 cellPos = ((uint256(y) << 32) + uint256(x - 1));
 				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
 				if (cell.life > 0 || cell.lastEpochUpdate == epoch) {
-					enemies[numEnemiesAlive] = _owners[cellPos];
+					enemies[numEnemiesAlive] = _ownerOf(cellPos);
 					numEnemiesAlive++;
 				}
 			}
@@ -112,7 +112,7 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 				uint256 cellPos = ((uint256(y + 1) << 32) + uint256(x));
 				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
 				if (cell.life > 0 || cell.lastEpochUpdate == epoch) {
-					enemies[numEnemiesAlive] = _owners[cellPos];
+					enemies[numEnemiesAlive] = _ownerOf(cellPos);
 					numEnemiesAlive++;
 				}
 			}
@@ -120,7 +120,7 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 				uint256 cellPos = ((uint256(y) << 32) + uint256(x + 1));
 				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
 				if (cell.life > 0 || cell.lastEpochUpdate == epoch) {
-					enemies[numEnemiesAlive] = _owners[cellPos];
+					enemies[numEnemiesAlive] = _ownerOf(cellPos);
 					numEnemiesAlive++;
 				}
 			}
@@ -195,5 +195,11 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 			updatedCell.life = newLife;
 			updatedCell.lastEpochUpdate = epochUsed;
 		}
+	}
+
+	/// @dev Get the owner of a token.
+	/// @param tokenID The token to query.
+	function _ownerOf(uint256 tokenID) internal view virtual returns (address owner) {
+		owner = address(uint160(_owners[tokenID]));
 	}
 }

@@ -15,8 +15,9 @@ type Fixture = {
 async function setupStratagems(): Promise<Fixture> {
 	const setup = await loadFixture(deployStratagemsWithTestConfig);
 
+	let count = 0;
 	async function mint(to: string) {
-		const tokenID = xyToBigIntID(2, 3);
+		const tokenID = xyToBigIntID(2, 3 + count);
 		const hash = await setup.Stratagems.write.forceSimpleCells(
 			[
 				[

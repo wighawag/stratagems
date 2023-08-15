@@ -107,7 +107,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 
 		if (move.color == Color.None) {
 			// this is a leave move
-			if (currentState.life == MAX_LIFE && _owners[move.position] == player) {
+			if (currentState.life == MAX_LIFE && _ownerOf(move.position) == player) {
 				// only valid id life == MAX_LIFE and player is owner
 				// we reset all, except the lastEpochUpdate
 				// this allow us to make sure nobody else can make a move on that cell
@@ -157,7 +157,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				newNumAddressesToDistributeTo = latestNumAddressesToDistributeTo;
 
 				// giving back
-				_tokensInReserve[_owners[move.position]] += NUM_TOKENS_PER_GEMS;
+				_tokensInReserve[_ownerOf(move.position)] += NUM_TOKENS_PER_GEMS;
 
 				currentState.life = 0;
 				currentState.color = Color.None;
@@ -165,13 +165,13 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				currentState.delta = 0;
 				currentState.enemymask = 0;
 				_cells[move.position] = currentState;
-				_owners[move.position] = address(0);
+				_owners[move.position] = 0;
 			} else {
 				// we skip
 				// tokensPlaced = 0 so this is not counted
 				if (currentState.life == 0) {
 					_cells[move.position] = currentState;
-					_owners[move.position] = address(0);
+					_owners[move.position] = 0;
 					// TODO Transfer
 				}
 			}
@@ -204,14 +204,14 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 
 			tokensPlaced = NUM_TOKENS_PER_GEMS;
 			_cells[move.position] = currentState;
-			_owners[move.position] = player;
+			_owners[move.position] = uint256(uint160(player));
 			// TODO Transfer
 		} else {
 			// invalid move
 			tokensBurnt = NUM_TOKENS_PER_GEMS;
 			if (currentState.life == 0) {
 				_cells[move.position] = currentState;
-				_owners[move.position] = address(0);
+				_owners[move.position] = 0;
 				// TODO Transfer
 			}
 		}
@@ -490,7 +490,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				_collectTransfer(
 					transfers,
 					numAddressesToDistributeTo,
-					TokenTransfer({to: payable(_owners[position]), amount: total})
+					TokenTransfer({to: payable(_ownerOf(position)), amount: total})
 				);
 		}
 

@@ -44,7 +44,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				delta: debugCell.delta,
 				enemymask: debugCell.enemymask
 			});
-			_owners[debugCell.position] = debugCell.owner;
+			_owners[debugCell.position] = uint256(uint160(debugCell.owner));
 		}
 		emit ForceCells(cells);
 	}
@@ -69,7 +69,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				delta: delta,
 				enemymask: enemymask
 			});
-			_owners[simpleCell.position] = simpleCell.owner;
+			_owners[simpleCell.position] = uint256(uint160(simpleCell.owner));
 		}
 
 		for (uint256 i = 0; i < cells.length; i++) {

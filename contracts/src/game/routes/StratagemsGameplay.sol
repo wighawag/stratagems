@@ -19,7 +19,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 		Cell memory updatedCell = _getUpdatedCell(uint64(id), epoch);
 		return
 			FullCell({
-				owner: _owners[id],
+				owner: _ownerOf(id),
 				lastEpochUpdate: updatedCell.lastEpochUpdate,
 				epochWhenTokenIsAdded: updatedCell.epochWhenTokenIsAdded,
 				color: updatedCell.color,
@@ -37,7 +37,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 		for (uint256 i = 0; i < numCells; i++) {
 			Cell memory updatedCell = _getUpdatedCell(uint64(ids[i]), epoch);
 			cells[i] = FullCell({
-				owner: _owners[ids[i]],
+				owner: _ownerOf(ids[i]),
 				lastEpochUpdate: updatedCell.lastEpochUpdate,
 				epochWhenTokenIsAdded: updatedCell.epochWhenTokenIsAdded,
 				color: updatedCell.color,
