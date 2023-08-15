@@ -18,6 +18,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		commitment.hash = commitmentHash;
 		commitment.epoch = epoch;
 
+		// for withdrawal, we still require a minimal reserve so player cannot change its mind without losing at least one token
 		require(inReserve >= NUM_TOKENS_PER_GEMS, 'NEED_AT_LEAST_ONE_TOKEN_IN_RESERVE');
 
 		emit CommitmentMade(player, epoch, commitmentHash);
@@ -109,6 +110,23 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			// this is a leave move
 			if (currentState.life == MAX_LIFE && _ownerOf(move.position) == player) {
 				// only valid id life == MAX_LIFE and player is owner
+
+				(, , uint256 latestNumAddressesToDistributeTo) = _updateNeighbours(
+					transfers,
+					numAddressesToDistributeTo,
+					move.position,
+					epoch,
+					currentState.color,
+					Color.None
+				);
+				newNumAddressesToDistributeTo = latestNumAddressesToDistributeTo;
+
+				newNumAddressesToDistributeTo = _collectTransfer(
+					transfers,
+					newNumAddressesToDistributeTo,
+					TokenTransfer({to: payable(player), amount: NUM_TOKENS_PER_GEMS})
+				);
+
 				// we reset all, except the lastEpochUpdate
 				// this allow us to make sure nobody else can make a move on that cell
 				currentState.life = 0;
@@ -118,17 +136,12 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				currentState.enemymask = 0;
 				currentState.epochWhenTokenIsAdded = 0;
 				_cells[move.position] = currentState;
-
-				// we can't reset the owner yet as neighbors dieing in epoch should reward the owner
-				// TODO ? we could compute them here though and get the reward at the same time
-
-				// we also need to update the neighbors to update their enemymask and delta
-				// TODO update neighbors
+				_owners[move.position] = 0;
 			} else {
 				// TODO ?
 			}
 			// we return
-			return (0, 0, NUM_TOKENS_PER_GEMS, numAddressesToDistributeTo);
+			return (0, 0, NUM_TOKENS_PER_GEMS, newNumAddressesToDistributeTo);
 		}
 
 		if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {

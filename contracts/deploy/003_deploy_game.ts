@@ -33,7 +33,7 @@ export default execute(
 
 		const config = {
 			tokens: TestTokens.address,
-			numTokensPerGems: BigInt(2) ** decimals,
+			numTokensPerGems: BigInt(10) ** decimals,
 			burnAddress: zeroAddress,
 			// startTime: nextSunday(),
 			startTime: timestamp, // nextSunday(),

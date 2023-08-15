@@ -2,6 +2,7 @@ import artifacts from '../../generated/artifacts';
 import {
 	Action,
 	CellPosition,
+	Color,
 	Grid,
 	Move,
 	fromContractFullCellToCell,
@@ -83,11 +84,14 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 		const actions = groupedActions[playerIndex];
 		const moves = actions.map((action) => ({position: xyToBigIntID(action.x, action.y), color: action.color}));
 		const commitment = prepareCommitment(moves, randomSecret());
+
+		// const amountOfTokens = parseEther(`${moves.filter((move) => move.color !== Color.None).length}`);
 		const amountOfTokens = parseEther(`${moves.length}`);
+
 		// await env.TestTokens.write.transfer([player, amountOfTokens], {account: env.tokensBeneficiary});
 		await env.TestTokens.write.approve([env.Stratagems.address, amountOfTokens], {account: player});
 		await env.Stratagems.write.makeCommitmentWithExtraReserve(
-			[commitment.hash, parseEther(`${moves.length}`), {deadline: 0n, value: 0n, v: 0, r: zeroBytes32, s: zeroBytes32}],
+			[commitment.hash, amountOfTokens, {deadline: 0n, value: 0n, v: 0, r: zeroBytes32, s: zeroBytes32}],
 			{account: player}
 		);
 		commitments.push({...commitment, player});
