@@ -14,7 +14,7 @@ async function setupGems(): Promise<Fixture> {
 	const setup = await loadFixture(deployStratagemsWithTestConfig);
 	return {
 		ethereum: setup.provider,
-		contractAddress: setup.Gems.address,
+		contractAddress: setup.TestTokens.address,
 		users: setup.otherAccounts,
 		userWithToken: setup.tokensBeneficiary,
 	};
@@ -22,6 +22,6 @@ async function setupGems(): Promise<Fixture> {
 
 const tests = erc20.generateTests({EIP717: true}, setupGems);
 
-describe.skip('Gems as ERC20', function () {
+describe('TestTokens as ERC20', function () {
 	runtests(tests, {describe, it});
 });

@@ -64,7 +64,7 @@ contract StratagemsERC721 is
 	}
 
 	/// @inheritdoc IERC165
-	function supportsInterface(bytes4 interfaceID) external view returns (bool) {
+	function supportsInterface(bytes4 interfaceID) external pure returns (bool) {
 		/// 0x01ffc9a7 is ERC165.
 		/// 0x80ac58cd is ERC721
 		/// 0x5b5e139f is for ERC721 metadata
@@ -197,6 +197,8 @@ contract StratagemsERC721 is
 		// 		_balances[from]--;
 		// 	}
 		// }
+
+		// TODO register in the Gem Generator
 
 		// We encode the blockNumber in the token nonce. We can then use it for count voting.
 		_owners[tokenID] = (block.number << 184) | uint256(uint160(to));
