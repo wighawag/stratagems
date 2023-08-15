@@ -127,6 +127,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 					TokenTransfer({to: payable(player), amount: NUM_TOKENS_PER_GEMS})
 				);
 
+				emit ColorWithdrawn(move.position, player, currentState.color);
+
 				// we reset all, except the lastEpochUpdate
 				// this allow us to make sure nobody else can make a move on that cell
 				currentState.life = 0;
@@ -180,6 +182,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				} else {
 					// TODO Add further stake, or do we burn?
 				}
+				emit ColorPlaced(move.position, player, Color.Evil);
 			} else {
 				// we skip
 				// tokensPlaced = 0 so this is not counted
@@ -215,6 +218,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				currentState.delta = 0;
 				currentState.enemymask = 0;
 			}
+
+			emit ColorPlaced(move.position, player, move.color);
 
 			tokensPlaced = NUM_TOKENS_PER_GEMS;
 			_cells[move.position] = currentState;

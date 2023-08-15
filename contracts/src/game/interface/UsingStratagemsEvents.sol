@@ -48,4 +48,12 @@ interface UsingStratagemsEvents is UsingStratagemsTypes {
 	/// @param amountDeposited the number of tokens deposited
 	/// @param newAmount the number of tokens in reserver as a result
 	event ReserveDeposited(address indexed player, uint256 amountDeposited, uint256 newAmount);
+
+	// --------------------------------------------------------------------------------------------
+	// Event to make it easier to check what is happening
+	// TODO get rid ?
+	// --------------------------------------------------------------------------------------------
+
+	event ColorWithdrawn(uint64 indexed position, address indexed player, Color color);
+	event ColorPlaced(uint64 indexed position, address indexed player, Color color);
 }
