@@ -61,8 +61,8 @@ importers:
         specifier: ^0.4.7
         version: 0.4.7
       ethereum-contracts-test-suite:
-        specifier: ^0.1.1
-        version: 0.1.1
+        specifier: ^0.2.1
+        version: 0.2.1
       hardhat:
         specifier: ^2.16.1
         version: 2.16.1(typescript@5.1.6)
@@ -4346,8 +4346,14 @@ packages:
       js-sha3: 0.8.0
     dev: true
 
-  /ethereum-contracts-test-suite@0.1.1:
-    resolution: {integrity: sha512-hihS8dbaeAStV/AdM36IOsGIn9GRzh7nI1YaWGHj198tbDfEv6IK7k2zG+TNeEwMw/oNrhMWAkn+XD2zLCyBog==}
+  /ethereum-contracts-test-suite@0.2.1:
+    resolution: {integrity: sha512-iv9n7XbwNfVzJ4PvZ9X5L+y3IIcZw7QeQeddpHm8/7E+WG46KtuNfr0mHGC6y2uAzxzA8iCT0uwPAQm5S51Abg==}
+    dependencies:
+      chai: 4.3.7
+      chai-ethers: 0.0.1
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
     dev: true
 
   /ethereum-cryptography@0.1.3:

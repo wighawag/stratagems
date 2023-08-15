@@ -9,7 +9,7 @@
     "as-soon": "^0.0.4",
     "chai-ethers": "^0.0.1",
     "eip-1193": "^0.4.7",
-    "ethereum-contracts-test-suite": "^0.1.1",
+    "ethereum-contracts-test-suite": "^0.2.1",
     "hardhat": "^2.16.1",
     "hardhat-rocketh": "^0.6.14",
     "ldenv": "^0.3.7",
