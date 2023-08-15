@@ -73,11 +73,6 @@ const scenarios = fs.readdirSync(scenarioFolder).map((filename) => {
 		expectedGrid,
 		expectedWallets: {},
 	};
-
-	console.log({
-		walletsBefore,
-		expectedWalletsAfter,
-	});
 	return data;
 });
 

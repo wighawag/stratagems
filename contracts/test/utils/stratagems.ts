@@ -37,6 +37,9 @@ export type GridEnv = {
 
 export async function withGrid(env: GridEnv, gridString: string) {
 	const grid = parseGrid(gridString);
+	// console.log(gridString);
+	// console.log(grid.cells);
+	// console.log(grid.cells.map(toContractSimpleCell(env.otherAccounts)));
 	const hash = await env.Stratagems.write.forceSimpleCells([grid.cells.map(toContractSimpleCell(env.otherAccounts))], {
 		account: env.stratagemsAdmin,
 	});

@@ -187,6 +187,15 @@ export function parseGrid(str: string, forcePlayer?: number): Grid {
 							case '6':
 								cell.life = 6;
 								break;
+							case '7':
+								cell.life = 7;
+								break;
+							case '8':
+								cell.life = 8;
+								break;
+							case '9':
+								cell.life = 9;
+								break;
 						}
 					} else {
 						if (char != ' ') {
