@@ -158,30 +158,28 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 
 		if (currentState.epochWhenTokenIsAdded == epoch) {
 			// COLLISION
-			// you get your token back
-			// the other player too
+			// Evil Color is added instead
+			// keep the stake
 			if (currentState.life != 0) {
-				// we reset the Color to None and update the neighbor with that
-				(, , uint256 latestNumAddressesToDistributeTo) = _updateNeighbours(
-					transfers,
-					newNumAddressesToDistributeTo,
-					move.position,
-					epoch,
-					currentState.color,
-					Color.None
-				);
-				newNumAddressesToDistributeTo = latestNumAddressesToDistributeTo;
+				if (currentState.color != Color.Evil) {
+					(int8 newDelta, uint8 newEnemymask, uint256 latestNumAddressesToDistributeTo) = _updateNeighbours(
+						transfers,
+						newNumAddressesToDistributeTo,
+						move.position,
+						epoch,
+						currentState.color,
+						Color.Evil
+					);
+					newNumAddressesToDistributeTo = latestNumAddressesToDistributeTo;
 
-				// giving back
-				_tokensInReserve[_ownerOf(move.position)] += NUM_TOKENS_PER_GEMS;
-
-				currentState.life = 0;
-				currentState.color = Color.None;
-				currentState.lastEpochUpdate = 0;
-				currentState.delta = 0;
-				currentState.enemymask = 0;
-				_cells[move.position] = currentState;
-				_owners[move.position] = 0;
+					currentState.color = Color.Evil; // TODO keep track of num token staked here, or do we burn ?
+					currentState.delta = newDelta;
+					currentState.enemymask = newEnemymask;
+					_cells[move.position] = currentState;
+					_owners[move.position] = uint256(uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF));
+				} else {
+					// TODO Add further stake, or do we burn?
+				}
 			} else {
 				// we skip
 				// tokensPlaced = 0 so this is not counted

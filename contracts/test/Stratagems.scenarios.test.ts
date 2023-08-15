@@ -37,7 +37,7 @@ const scenarios = fs.readdirSync(scenarioFolder).map((filename) => {
 				.slice(1)
 				.split(':')
 				.map((s) => s.trim())
-				.map((s) => parseFloat(s, 10));
+				.map((s) => parseFloat(s));
 			if (!expectedGrid) {
 				walletsBefore[playerIndex] = amount;
 			} else {
