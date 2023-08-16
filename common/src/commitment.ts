@@ -1,11 +1,11 @@
 import {encodeAbiParameters, keccak256} from 'viem';
-import type {Move} from './stratagems';
+import type {ContractMove} from './stratagems';
 import * as crypto from 'crypto';
 
 export type Commitment = {
 	hash: `0x${string}`;
 	secret: `0x${string}`;
-	moves: Move[];
+	moves: ContractMove[];
 };
 
 export function randomSecret() {
@@ -16,7 +16,7 @@ export function randomSecret() {
 }
 
 // TODO support furtherMoves
-export function prepareCommitment(moves: Move[], secret: `0x${string}`) {
+export function prepareCommitment(moves: ContractMove[], secret: `0x${string}`) {
 	const commitmentHash = keccak256(
 		encodeAbiParameters(
 			[

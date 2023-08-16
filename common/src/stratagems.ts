@@ -1,11 +1,11 @@
-export type Move = {position: bigint; color: Color};
+export type ContractMove = {position: bigint; color: MoveColor};
 
 export function bigIntIDToXYID(position: bigint): string {
 	const {x, y} = bigIntIDToXY(position);
 	return '' + x + ',' + y;
 }
 
-export type CellPosition = {
+export type CellXYPosition = {
 	x: number;
 	y: number;
 };
@@ -13,7 +13,7 @@ export type CellPosition = {
 // using 64 bits room id
 // const leftMostBit = BigInt('0x8000000000000000');
 // const bn32 = BigInt('0x10000000000000000');
-export function bigIntIDToXY(position: bigint): CellPosition {
+export function bigIntIDToXY(position: bigint): CellXYPosition {
 	const bn = BigInt(position);
 	const x = Number(BigInt.asIntN(32, bn));
 	const y = Number(BigInt.asIntN(32, bn >> 32n));
@@ -22,12 +22,12 @@ export function bigIntIDToXY(position: bigint): CellPosition {
 	return {x, y};
 }
 
-export type CellBigIntPosition = {
+export type CellBigIntXYPosition = {
 	x: bigint;
 	y: bigint;
 };
 
-export function bigIntIDToBigintXY(position: bigint): CellBigIntPosition {
+export function bigIntIDToBigintXY(position: bigint): CellBigIntXYPosition {
 	const bn = BigInt(position);
 	const x = BigInt.asIntN(32, bn);
 	const y = BigInt.asIntN(32, bn >> 32n);
@@ -44,26 +44,25 @@ export function xyToBigIntID(x: number, y: number): bigint {
 }
 
 export enum Color {
-	None,
-	Blue,
-	Red,
-	Green,
-	Yellow,
-	Purple,
-	Evil,
+	None = 0,
+	Blue = 1,
+	Red = 2,
+	Green = 3,
+	Yellow = 4,
+	Purple = 5,
+	Evil = 6,
 }
 
 export enum MoveColor {
-	None,
-	Blue,
-	Red,
-	Green,
-	Yellow,
-	Purple,
+	None = 0,
+	Blue = 1,
+	Red = 2,
+	Green = 3,
+	Yellow = 4,
+	Purple = 5,
 }
 
-export type ContractFullCell = {
-	owner: `0x${string}`;
+export type ContractCell = {
 	lastEpochUpdate: number;
 	epochWhenTokenIsAdded: number;
 	color: number;
@@ -72,9 +71,13 @@ export type ContractFullCell = {
 	enemymask: number;
 };
 
-export class Stratagems {
+export type ContractFullCell = ContractCell & {
+	owner: `0x${string}`;
+};
+
+export class StratagemsContract {
 	constructor(
-		private state: {cells: {[position: string]: ContractFullCell}; owners: {[poistion: string]: `0x${string}`}},
+		private state: {cells: {[position: string]: ContractCell}; owners: {[poistion: string]: `0x${string}`}},
 		public MAX_LIFE: number
 	) {}
 
@@ -142,8 +145,7 @@ export class Stratagems {
 
 	getUpdatedCell(position: bigint, epoch: number) {
 		const cell = this.state.cells[position.toString()];
-		const updatedCell: ContractFullCell = {
-			owner: cell.owner,
+		const updatedCell: ContractCell = {
 			lastEpochUpdate: cell.lastEpochUpdate,
 			color: cell.color,
 			delta: cell.delta,
@@ -174,7 +176,7 @@ export class Stratagems {
 		return this.state.owners[position.toString()];
 	}
 
-	updateCellAsDead(position: bigint, cell: ContractFullCell, newLife: number, epochUsed: number) {
+	updateCellAsDead(position: bigint, cell: ContractCell, newLife: number, epochUsed: number) {
 		cell.life = newLife;
 		cell.lastEpochUpdate = epochUsed;
 		cell.delta = 0;
@@ -193,7 +195,7 @@ export class Stratagems {
 
 	updateCellFromNeighbor(
 		position: bigint,
-		cell: ContractFullCell,
+		cell: ContractCell,
 		newLife: number,
 		epoch: number,
 		neighbourIndex: number,
@@ -312,12 +314,12 @@ export class Stratagems {
 		return data;
 	}
 
-	computeMove(player: `0x${string}`, epoch: number, move: Move) {
+	computeMove(player: `0x${string}`, epoch: number, move: ContractMove) {
 		const MAX_LIFE = this.MAX_LIFE;
 
 		const currentState = this.getUpdatedCell(move.position, epoch);
 
-		if (move.color == Color.None) {
+		if (move.color == MoveColor.None) {
 			// this is a leave move
 			if (currentState.life == MAX_LIFE && this.ownerOf(move.position) == player) {
 				// only valid id life == MAX_LIFE and player is owner
@@ -379,7 +381,12 @@ export class Stratagems {
 		} else if (currentState.life == 0 && (currentState.lastEpochUpdate == 0 || currentState.color != Color.None)) {
 			if (currentState.life == 0 || currentState.color != move.color) {
 				// only update neighbour if color changed or if life is zero, since in that case the delta is lost (TODO revisit this)
-				const {newDelta, newEnemymask} = this.updateNeighbours(move.position, epoch, currentState.color, move.color);
+				const {newDelta, newEnemymask} = this.updateNeighbours(
+					move.position,
+					epoch,
+					currentState.color,
+					move.color as unknown as Color
+				);
 
 				currentState.life = 1;
 				currentState.epochWhenTokenIsAdded = epoch;

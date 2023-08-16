@@ -1,10 +1,10 @@
 import artifacts from '../../generated/artifacts';
 import {
 	Action,
-	CellPosition,
+	CellXYPosition,
 	Color,
 	Grid,
-	Move,
+	ContractMove,
 	fromContractFullCellToCell,
 	parseGrid,
 	prepareCommitment,
@@ -77,7 +77,7 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 		player: `0x${string}`;
 		hash: `0x${string}`;
 		secret: `0x${string}`;
-		moves: Move[];
+		moves: ContractMove[];
 	}[] = [];
 	for (const playerIndex of Object.keys(groupedActions)) {
 		const player = env.otherAccounts[playerIndex];
@@ -119,7 +119,7 @@ export async function getGrid(
 		height: number;
 	}
 ): Promise<Grid> {
-	const listOfCoords: CellPosition[] = [];
+	const listOfCoords: CellXYPosition[] = [];
 	for (let h = 0; h < location.height; h++) {
 		for (let w = 0; w < location.width; w++) {
 			listOfCoords.push({x: location.x + w, y: location.y + h});
