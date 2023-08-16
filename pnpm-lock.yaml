@@ -142,8 +142,8 @@ importers:
   indexer:
     dependencies:
       ethereum-indexer-js-processor:
-        specifier: ^0.6.4
-        version: 0.6.4(typescript@5.1.6)
+        specifier: ^0.6.5
+        version: 0.6.5(typescript@5.1.6)
       named-logs:
         specifier: ^0.2.2
         version: 0.2.2
@@ -4432,8 +4432,8 @@ packages:
       - zod
     dev: true
 
-  /ethereum-indexer-js-processor@0.6.4(typescript@5.1.6):
-    resolution: {integrity: sha512-MNN1/0SCJZz78BigGlH/zhDUGyden4kwv5ekW1eREfmoYQ03eR0Gdh0EoPtNbPQo8fx3wEvQkUoNfFcHyppt/Q==}
+  /ethereum-indexer-js-processor@0.6.5(typescript@5.1.6):
+    resolution: {integrity: sha512-S48ItiJzzDwjVk+xVPi84T2QJ8wUeVvmApgNjsf5kh4/Aa5OyPQXI/VNkDwAhWkLd/gjWoEZgehq/rL+dQ3WVA==}
     dependencies:
       ethereum-indexer: 0.6.4(typescript@5.1.6)
       named-logs: 0.2.2

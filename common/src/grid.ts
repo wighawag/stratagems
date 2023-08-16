@@ -1,5 +1,5 @@
 import {zeroAddress} from 'viem';
-import {Color, MoveColor, bigIntIDToXY, xyToBigIntID} from './stratagems';
+import {Color, ContractFullCell, MoveColor, bigIntIDToXY, xyToBigIntID} from './stratagems';
 
 export type Cell = {
 	x: number;
@@ -39,16 +39,6 @@ export type ContractSimpleCell = {
 	owner: `0x${string}`;
 	color: 0 | 1 | 2 | 3 | 4 | 5 | 6;
 	life: number;
-};
-
-export type ContractFullCell = {
-	owner: `0x${string}`;
-	lastEpochUpdate: number;
-	epochWhenTokenIsAdded: number;
-	color: number;
-	life: number;
-	delta: number;
-	enemymask: number;
 };
 
 function cellID(cell: {x: number; y: number}): string;
@@ -217,6 +207,7 @@ export function parseGrid(str: string, forcePlayer?: number): Grid {
 	for (const cell of tmpCellMap.values()) {
 		if (!cell.empty) {
 			const {empty, playerAsString, addition, ...onlyCell} = cell;
+			// console.log({playerAsString});
 			if (playerAsString !== '') {
 				const ownerNumber = parseInt(playerAsString);
 				onlyCell.owner = ownerNumber;
@@ -271,6 +262,7 @@ export function renderGrid(grid: Grid): string {
 				if (r == 2) {
 					str += '-----';
 				} else {
+					// console.log({owner: cell?.owner});
 					if (cell?.owner) {
 						if (r == 0) {
 							str += ' ';

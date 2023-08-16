@@ -7,9 +7,9 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "ethereum-indexer-js-processor": "^0.6.4",
-    "stratagems-common": "workspace:*",
-    "named-logs": "^0.2.2"
+    "ethereum-indexer-js-processor": "^0.6.5",
+    "named-logs": "^0.2.2",
+    "stratagems-common": "workspace:*"
   },
   "devDependencies": {
     "ethereum-indexer-server": "^0.6.7",
