@@ -1,8 +1,7 @@
 import {encodeAbiParameters, keccak256} from 'viem';
-import {Color} from './stratagems';
+import type {Move} from './stratagems';
 import * as crypto from 'crypto';
 
-export type Move = {position: bigint; color: Color};
 export type Commitment = {
 	hash: `0x${string}`;
 	secret: `0x${string}`;
