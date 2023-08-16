@@ -7,14 +7,14 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "@types/node": "^20.3.3",
+    "@types/node": "^20.5.0",
     "named-logs": "^0.2.2",
-    "viem": "^1.2.9"
+    "viem": "^1.6.0"
   },
   "devDependencies": {
     "ldenv": "^0.3.7",
-    "prettier": "^2.8.8",
-    "tsup": "^7.1.0",
+    "prettier": "^3.0.2",
+    "tsup": "^7.2.0",
     "typescript": "^5.1.6"
   },
   "scripts": {
