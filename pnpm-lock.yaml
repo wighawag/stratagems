@@ -63,6 +63,9 @@ importers:
       ethereum-contracts-test-suite:
         specifier: ^0.2.1
         version: 0.2.1
+      ethereum-indexer-browser:
+        specifier: ^0.6.5
+        version: 0.6.5(typescript@5.1.6)
       hardhat:
         specifier: ^2.16.1
         version: 2.16.1(typescript@5.1.6)
@@ -114,6 +117,9 @@ importers:
       stratagems-common:
         specifier: workspace:*
         version: link:../common
+      stratagems-indexer:
+        specifier: workspace:*
+        version: link:../indexer
       typescript:
         specifier: ^5.1.6
         version: 5.1.6
@@ -4398,7 +4404,6 @@ packages:
       - typescript
       - utf-8-validate
       - zod
-    dev: false
 
   /ethereum-indexer-db-utils@0.6.4(typescript@5.1.6):
     resolution: {integrity: sha512-2sqisrstaD4GMesmlG5IxARP7hx20PkQMS/59jHzY6y751hZtHonND+45+YWgtWxasxZU9OHc7iCRbUq68To5g==}
@@ -5394,7 +5399,6 @@ packages:
 
   /idb-keyval@6.2.1:
     resolution: {integrity: sha512-8Sb3veuYCyrZL+VBt9LJfZjLUPWVvqn8tG28VqYNFCo43KHcKuq+b4EiXGeuaLAQWL2YmyDgMp2aSpH9JHsEQg==}
-    dev: false
 
   /idb-wrapper@1.7.2:
     resolution: {integrity: sha512-zfNREywMuf0NzDo9mVsL0yegjsirJxHpKHvWcyRozIqQy89g0a3U+oBPOCN4cc0oCiOuYgZHimzaW/R46G1Mpg==}
@@ -9080,7 +9084,6 @@ packages:
 
   /sveltore@0.0.2:
     resolution: {integrity: sha512-MqUEo9y7Mh4qy5sNEF05+t7sxhGHYa5dv25+xZSulxFMHFlAYUIPAVXp3Eeu6XtpdV0w6P3izmzgwJf07+3UOw==}
-    dev: false
 
   /svgo@3.0.2:
     resolution: {integrity: sha512-Z706C1U2pb1+JGP48fbazf3KxHrWOsLme6Rv7imFBn5EnuanDW1GPaA/P1/dvObE670JDePC3mnj0k0B7P0jjQ==}
@@ -9547,7 +9550,6 @@ packages:
 
   /use-stores@0.1.0:
     resolution: {integrity: sha512-tOrRU5GZlkU5NWsSplQo1oQpmS4Yh5AXOJBnR7Rku/ocpfa1qUZGy1gr+CGyC7NHcggA6ARs9jvkDTv3B9Ks1Q==}
-    dev: false
 
   /utf8@3.0.0:
     resolution: {integrity: sha512-E8VjFIQ/TyQgp+TZfS6l8yp/xWppSAHzidGiRrqe4bK4XP9pTRyKFgGJpO3SN7zdX4DeomTrwaseCHovfpFcqQ==}

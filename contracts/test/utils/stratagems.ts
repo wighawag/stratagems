@@ -14,6 +14,7 @@ import {
 } from 'stratagems-common';
 import {ContractWithViemClient} from '../../utils/connection';
 import {parseEther} from 'viem';
+import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 
 const zeroBytes32 = `0x0000000000000000000000000000000000000000000000000000000000000000`;
 const zeroBytes24 = `0x000000000000000000000000000000000000000000000000`;
@@ -34,6 +35,7 @@ export type GridEnv = {
 		maxLife: number;
 		numTokensPerGems: bigint;
 	};
+	provider: EIP1193ProviderWithoutEvents;
 };
 
 export async function withGrid(env: GridEnv, gridString: string) {

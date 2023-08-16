@@ -101,7 +101,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 			});
 		}
 
-		emit ForceSimpleCells(cells);
+		emit ForceSimpleCells(epoch, cells);
 	}
 
 	function isEnemyOrFriend(Color a, Color b) internal pure returns (int8) {

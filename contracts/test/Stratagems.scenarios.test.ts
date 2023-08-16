@@ -9,6 +9,7 @@ import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {
 	deployStratagemsWithTestConfig,
 	expectGridChangeAfterActions,
+	expectIndexedGridToMatch,
 	expectWallet,
 	setupWallets,
 } from './utils/stratagems-test';
@@ -82,5 +83,6 @@ describe('Stratagems Scenarios', function () {
 		await setupWallets(setup, data.walletsBefore);
 		await expectGridChangeAfterActions(setup, data.startGrid, data.actions, data.expectedGrid);
 		await expectWallet(setup, data.expectedWalletsAfter);
+		await expectIndexedGridToMatch(setup, data.expectedGrid, 3);
 	});
 });

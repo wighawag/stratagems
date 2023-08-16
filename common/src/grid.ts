@@ -37,7 +37,7 @@ export type Grid = {
 export type ContractSimpleCell = {
 	position: bigint;
 	owner: `0x${string}`;
-	color: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+	color: number; // 0 | 1 | 2 | 3 | 4 | 5 | 6;
 	life: number;
 };
 
@@ -303,6 +303,8 @@ export function fromContractFullCellToCell(
 	return ({cell, id}: {cell: ContractFullCell; id: bigint}) => {
 		const {x, y} = bigIntIDToXY(id);
 
+		const accountIndex = accounts.indexOf(cell.owner);
+
 		return {
 			x,
 			y,
@@ -312,7 +314,14 @@ export function fromContractFullCellToCell(
 			life: cell.life,
 			delta: cell.delta,
 			enemymask: cell.enemymask,
-			owner: cell.owner == zeroAddress ? undefined : accounts.indexOf(cell.owner),
+			owner:
+				cell.owner == zeroAddress
+					? undefined
+					: accountIndex >= 0
+					? accountIndex
+					: cell.owner.toLowerCase() === '0xffffffffffffffffffffffffffffffffffffffff'
+					? -1
+					: undefined,
 		};
 	};
 }

@@ -7,7 +7,7 @@ import 'solidity-kit/solc_0.8/debug/time/interfaces/ITime.sol';
 
 interface IStratagemsDebug is UsingStratagemsTypes, ITime, ITimeSetter {
 	event ForceCells(DebugCell[] cells);
-	event ForceSimpleCells(SimpleCell[] cells);
+	event ForceSimpleCells(uint32 epoch, SimpleCell[] cells);
 
 	function forceMoves(address player, Move[] memory moves) external;
 

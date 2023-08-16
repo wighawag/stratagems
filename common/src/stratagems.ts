@@ -1,3 +1,6 @@
+import {zeroAddress} from 'viem';
+import {ContractSimpleCell} from './grid';
+
 export type ContractMove = {position: bigint; color: MoveColor};
 
 export function bigIntIDToXYID(position: bigint): string {
@@ -143,16 +146,20 @@ export class StratagemsContract {
 		return data;
 	}
 
-	getUpdatedCell(position: bigint, epoch: number) {
-		const cell = this.state.cells[position.toString()];
-		const updatedCell: ContractCell = {
-			lastEpochUpdate: cell.lastEpochUpdate,
-			color: cell.color,
-			delta: cell.delta,
-			enemymask: cell.enemymask,
-			epochWhenTokenIsAdded: cell.epochWhenTokenIsAdded,
-			life: cell.life,
+	getCellInMemory(position: bigint): ContractCell {
+		const cell: ContractCell | null = this.state.cells[position.toString()];
+		return {
+			lastEpochUpdate: cell?.lastEpochUpdate || 0,
+			color: cell?.color || Color.None,
+			delta: cell?.delta || 0,
+			enemymask: cell?.enemymask || 0,
+			epochWhenTokenIsAdded: cell?.epochWhenTokenIsAdded || 0,
+			life: cell?.life || 0,
 		};
+	}
+
+	getUpdatedCell(position: bigint, epoch: number) {
+		const updatedCell = this.getCellInMemory(position);
 
 		if (updatedCell.lastEpochUpdate >= 1 && updatedCell.life > 0) {
 			const {newLife, epochUsed} = this.computeNewLife(
@@ -173,24 +180,19 @@ export class StratagemsContract {
 	}
 
 	ownerOf(position: bigint) {
-		return this.state.owners[position.toString()];
+		return this.state.owners[position.toString()] || zeroAddress;
 	}
 
 	updateCellAsDead(position: bigint, cell: ContractCell, newLife: number, epochUsed: number) {
 		cell.life = newLife;
 		cell.lastEpochUpdate = epochUsed;
 		cell.delta = 0;
-
-		// numAddressesToDistributeTo = _distributeDeath(
-		// 	transfers,
-		// 	numAddressesToDistributeTo,
-		// 	position,
-		// 	cell.enemymask,
-		// 	epochUsed
-		// );
-
 		this.state.cells[position.toString()] = cell;
-		// return numAddressesToDistributeTo;
+		// console.log({
+		// 	DEAD: 'DEAD',
+		// 	position: bigIntIDToXY(position),
+		// 	cell,
+		// });
 	}
 
 	updateCellFromNeighbor(
@@ -227,11 +229,16 @@ export class StratagemsContract {
 		cell.lastEpochUpdate = epoch;
 		cell.life = newLife;
 		this.state.cells[position.toString()] = cell;
+		// console.log({
+		// 	UPDATE_FROM_NEIGBOR: 'UPDATE_FROM_NEIGBOR',
+		// 	position: bigIntIDToXY(position),
+		// 	cell,
+		// });
 	}
 
 	updateCell(position: bigint, epoch: number, neighbourIndex: number, oldColor: Color, newColor: Color): number {
 		let enemyOrFriend = 0;
-		const cell = this.state.cells[position.toString()];
+		const cell = this.getCellInMemory(position);
 
 		const lastUpdate = cell.lastEpochUpdate;
 		const color = cell.color;
@@ -276,9 +283,8 @@ export class StratagemsContract {
 			newEnemymask: 0,
 		};
 
-		let enemyOrFriend = 0;
 		{
-			const upPosition = (y - 1n) << (32n + x);
+			const upPosition = ((y - 1n) << 32n) + x;
 			const enemyOrFriend = this.updateCell(upPosition, epoch, 2, oldColor, newColor);
 			if (enemyOrFriend < 0) {
 				data.newEnemymask = data.newEnemymask | 1;
@@ -335,23 +341,16 @@ export class StratagemsContract {
 				currentState.enemymask = 0;
 				currentState.epochWhenTokenIsAdded = 0;
 				this.state.cells[move.position.toString()] = currentState;
-				this.state.owners[move.position.toString()] = `0x00`;
+				this.state.owners[move.position.toString()] = zeroAddress;
+				// console.log({
+				// 	None: 'None',
+				// 	position: bigIntIDToXY(move.position),
+				// 	currentState,
+				// });
 			} else {
 				// TODO ?
 			}
 		}
-
-		// if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
-		// 	// we are here because life reach zero (lastEpochUpdate != 0 indicates that the cell was alive and not reset like below)
-		// 	// Note: we need to pay attention when we add the leave mechanism
-		// 	// newNumAddressesToDistributeTo = _distributeDeath(
-		// 	// 	transfers,
-		// 	// 	numAddressesToDistributeTo,
-		// 	// 	move.position,
-		// 	// 	currentState.enemymask,
-		// 	// 	currentState.lastEpochUpdate
-		// 	// );
-		// }
 
 		if (currentState.epochWhenTokenIsAdded == epoch) {
 			// COLLISION
@@ -366,6 +365,11 @@ export class StratagemsContract {
 					currentState.enemymask = newEnemymask;
 					this.state.cells[move.position.toString()] = currentState;
 					this.state.owners[move.position.toString()] = '0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF';
+					// console.log({
+					// 	COLLISION: 'COLLISION',
+					// 	position: bigIntIDToXY(move.position),
+					// 	currentState,
+					// });
 				} else {
 					// TODO Add further stake, or do we burn?
 				}
@@ -374,7 +378,12 @@ export class StratagemsContract {
 				// tokensPlaced = 0 so this is not counted
 				if (currentState.life == 0) {
 					this.state.cells[move.position.toString()] = currentState;
-					this.state.owners[move.position.toString()] = '0x00';
+					this.state.owners[move.position.toString()] = zeroAddress;
+					// console.log({
+					// 	SKIP: 'SKIP',
+					// 	position: bigIntIDToXY(move.position),
+					// 	currentState,
+					// });
 					// TODO Transfer
 				}
 			}
@@ -402,14 +411,135 @@ export class StratagemsContract {
 
 			this.state.cells[move.position.toString()] = currentState;
 			this.state.owners[move.position.toString()] = player;
+			// console.log({
+			// 	PLAYER: 'PLAYER',
+			// 	position: bigIntIDToXY(move.position),
+			// 	currentState,
+			// });
 			// TODO Transfer
 		} else {
 			// invalid move
 			if (currentState.life == 0) {
 				this.state.cells[move.position.toString()] = currentState;
-				this.state.owners[move.position.toString()] = '0x00';
+				this.state.owners[move.position.toString()] = zeroAddress;
+
+				// console.log({
+				// 	INVALID: 'INVALID',
+				// 	position: bigIntIDToXY(move.position),
+				// 	currentState,
+				// });
 				// TODO Transfer
 			}
 		}
+	}
+
+	// ----------------------
+
+	forceSimpleCells(epoch: number, cells: readonly ContractSimpleCell[]) {
+		for (const simpleCell of cells) {
+			const {delta, enemymask} = this.updateNeighbosrDelta(simpleCell.position, simpleCell.color, epoch);
+
+			this.state.cells[simpleCell.position.toString()] = {
+				lastEpochUpdate: epoch,
+				epochWhenTokenIsAdded: epoch,
+				color: simpleCell.color,
+				life: simpleCell.life,
+				delta: delta,
+				enemymask: enemymask,
+			};
+			this.state.owners[simpleCell.position.toString()] = simpleCell.owner;
+			// console.log({
+			// 	FORCE_FIRST: 'FORCE_FIRST',
+			// 	position: bigIntIDToXY(simpleCell.position),
+			// 	cell: this.getCellInMemory(simpleCell.position),
+			// });
+		}
+
+		for (const simpleCell of cells) {
+			const cell = this.getCellInMemory(simpleCell.position);
+
+			// we act as if the token were added in previous epochs
+			// this is so it does not affect the resolution phase
+			const potentialLife = cell.life - cell.delta;
+			cell.life = potentialLife;
+
+			this.state.cells[simpleCell.position.toString()] = {
+				lastEpochUpdate: epoch - 1,
+				epochWhenTokenIsAdded: epoch - 1,
+				color: cell.color,
+				life: cell.life,
+				delta: cell.delta,
+				enemymask: cell.enemymask,
+			};
+
+			// console.log({
+			// 	FORCE: 'FORCE',
+			// 	position: bigIntIDToXY(simpleCell.position),
+			// 	cell: this.getCellInMemory(simpleCell.position),
+			// });
+		}
+	}
+
+	updateNeighbosrDelta(center: bigint, color: Color, epoch: number): {delta: number; enemymask: number} {
+		const {x, y} = bigIntIDToBigintXY(center);
+		const data = {delta: 0, enemymask: 0};
+
+		{
+			const upPosition = ((y - 1n) << 32n) + x;
+			const cell = this.getCellInMemory(upPosition);
+			if (cell.color != Color.None) {
+				const enemyOrFriend = this.isEnemyOrFriend(color, cell.color);
+				if (enemyOrFriend < 0) {
+					data.enemymask = data.enemymask | 1;
+				}
+				data.delta += enemyOrFriend;
+				this.updateCellFromNeighbor(upPosition, cell, cell.life, epoch, 2, Color.None, color);
+			}
+		}
+		{
+			const leftPosition = (y << 32n) + (x - 1n);
+			const cell = this.getCellInMemory(leftPosition);
+			if (cell.color != Color.None) {
+				const enemyOrFriend = this.isEnemyOrFriend(color, cell.color);
+				if (enemyOrFriend < 0) {
+					data.enemymask = data.enemymask | 2;
+				}
+				data.delta += enemyOrFriend;
+				this.updateCellFromNeighbor(leftPosition, cell, cell.life, epoch, 3, Color.None, color);
+			}
+		}
+
+		{
+			const downPosition = ((y + 1n) << 32n) + x;
+			const cell = this.getCellInMemory(downPosition);
+			if (cell.color != Color.None) {
+				const enemyOrFriend = this.isEnemyOrFriend(color, cell.color);
+				if (enemyOrFriend < 0) {
+					data.enemymask = data.enemymask | 4;
+				}
+				data.delta += enemyOrFriend;
+				this.updateCellFromNeighbor(downPosition, cell, cell.life, epoch, 0, Color.None, color);
+			}
+		}
+		{
+			const rightPosition = (y << 32n) + (x + 1n);
+			const cell = this.getCellInMemory(rightPosition);
+			if (cell.color != Color.None) {
+				const enemyOrFriend = this.isEnemyOrFriend(color, cell.color);
+				if (enemyOrFriend < 0) {
+					data.enemymask = data.enemymask | 8;
+				}
+				data.delta += enemyOrFriend;
+				this.updateCellFromNeighbor(rightPosition, cell, cell.life, epoch, 1, Color.None, color);
+			}
+		}
+		return data;
+	}
+
+	isEnemyOrFriend(a: Color, b: Color) {
+		if (a != Color.None && b != Color.None) {
+			return a == b ? 1 : -1;
+		}
+		return 0;
 	}
 }

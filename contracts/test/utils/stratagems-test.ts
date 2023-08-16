@@ -1,7 +1,9 @@
 import {expect} from 'vitest';
 import './viem-matchers';
 
-import {parseGrid, renderGrid} from 'stratagems-common';
+import {parseGrid, renderGrid, Grid, Cell, bigIntIDToXY, StratagemsContract} from 'stratagems-common';
+import {Data, createProcessor} from 'stratagems-indexer';
+import {createIndexerState} from 'ethereum-indexer-browser';
 
 import {Deployment, loadAndExecuteDeployments} from 'rocketh';
 
@@ -51,6 +53,79 @@ export async function setupWallets(env: GridEnv, walletsBefore: {[playerIndex: n
 			throw new Error(`too much token`);
 		}
 	}
+}
+
+export async function expectIndexedGridToMatch(env: GridEnv, resultGrid: string, epoch: number) {
+	const processor = createProcessor();
+	const {state, syncing, status, init, indexToLatest} = createIndexerState(processor);
+	// console.log('--------------------------------------------------------');
+	// console.log(state.$state);
+	// console.log('--------------------------------------------------------');
+	await init({
+		provider: env.provider,
+		source: {
+			chainId: '31337',
+			contracts: [{abi: env.Stratagems.abi as any, address: env.Stratagems.address}],
+		},
+	}).then((v) => indexToLatest());
+	// console.log('- INDEXED -------------------------------------------------------');
+	// console.log(state.$state);
+	// console.log('--------------------------------------------------------');
+	const grid = fromStateToGrid(env, state.$state, epoch);
+	// console.log(grid);
+	await expect(renderGrid(grid)).to.equal(renderGrid(parseGrid(resultGrid)));
+}
+
+export function fromStateToGrid(env: GridEnv, state: Data, epoch: number): Grid {
+	const stratagemsContract = new StratagemsContract(state, 7); // TODO MAX_LIFE
+	const gridCells: Cell[] = [];
+	// let minX = 0;
+	// let minY = 0;
+	// let maxX = 0;
+	// let maxY = 0;
+	for (const positionString of Object.keys(state.cells)) {
+		const position = BigInt(positionString);
+		const cell = stratagemsContract.getUpdatedCell(position, epoch);
+
+		const {x, y} = bigIntIDToXY(position);
+		const ownerAddress = state.owners[positionString];
+		const accountIndex = env.otherAccounts.findIndex((v) => v.toLowerCase() === ownerAddress?.toLowerCase());
+		let owner: undefined | number = undefined;
+		if (accountIndex >= 0) {
+			owner = accountIndex;
+		} else if (ownerAddress.toLowerCase() == '0xffffffffffffffffffffffffffffffffffffffff') {
+			owner = -1;
+		}
+		const gridCell = {
+			x,
+			y,
+			owner,
+			color: cell.color,
+			life: cell.life,
+			lastEpochUpdate: cell.lastEpochUpdate,
+			epochWhenTokenIsAdded: cell.epochWhenTokenIsAdded,
+			delta: cell.delta,
+			enemymask: cell.enemymask,
+		};
+		gridCells.push(gridCell);
+
+		const epochDelta = epoch - cell.lastEpochUpdate;
+		if (epochDelta > 0) {
+			gridCell.life += gridCell.delta * epochDelta;
+			if (gridCell.life > 7) {
+				// TODO MAX_LIFE
+				gridCell.life = 7;
+			}
+			if (gridCell.life < 0) {
+				gridCell.life = 0;
+			}
+		}
+	}
+	return {
+		cells: gridCells,
+		width: 5,
+		height: 5,
+	};
 }
 
 export async function expectWallet(env: GridEnv, expectedWalletsAfter: {[playerIndex: number]: number}) {
