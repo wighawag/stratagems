@@ -4,10 +4,11 @@
 	import {account, connection, network, contracts} from '$lib/web3';
 	import {status, state} from '$lib/blockchain/state/State';
 	// import {pendingState} from '$lib/blockchain/state/PendingState';
+	import {viewState} from '$lib/state/ViewState';
 	import WebGlCanvas from '$lib/render/WebGLCanvas.svelte';
 </script>
 
-<WebGlCanvas {state} />
+<WebGlCanvas state={viewState} />
 
 <!-- <div class="navbar bg-base-100">
 	<div class="navbar-start">

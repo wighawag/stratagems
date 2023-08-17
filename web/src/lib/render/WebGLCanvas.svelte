@@ -1,5 +1,5 @@
 <script lang="ts">
-	// import {ActionHandler} from '$lib/action/ActionHandler';
+	import {ActionHandler} from '$lib/action/ActionHandler';
 	import type {State} from '$lib/blockchain/state/State';
 	import {onMount} from 'svelte';
 	import {Camera} from './camera';
@@ -28,10 +28,10 @@
 		camera.start(canvas, renderer);
 		camera.subscribe((v) => renderer.updateView(v));
 
-		// const actionHandler = new ActionHandler();
-		// camera.onClick = (x, y) => {
-		// 	actionHandler.onCell(Math.floor(x), Math.floor(y));
-		// };
+		const actionHandler = new ActionHandler();
+		camera.onClick = (x, y) => {
+			actionHandler.onCell(Math.floor(x), Math.floor(y));
+		};
 
 		state.subscribe(($state) => {
 			renderer.updateState($state);

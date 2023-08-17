@@ -59,7 +59,7 @@ export class WebGLRenderer implements Readable<RenderViewState> {
 		this.gridLayer.use();
 		this.gridLayer.render(this.cameraState);
 
-		// this.cellLayer.use();
-		// this.cellLayer.render(this.cameraState, this.state);
+		this.cellLayer.use();
+		this.cellLayer.render(this.cameraState, this.state);
 	}
 }

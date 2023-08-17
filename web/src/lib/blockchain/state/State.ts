@@ -16,7 +16,7 @@ export const processor = createProcessor();
 export const {state, syncing, status, init, indexToLatest, indexMore, startAutoIndexing, indexMoreAndCatchupIfNeeded} =
 	createIndexerState(processor, {trackNumRequests: true});
 
-export type State = typeof state;
+export type State = Omit<typeof state, '$state'>;
 
 async function indexIfNotIndexing() {
 	await indexMoreAndCatchupIfNeeded();
