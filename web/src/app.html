@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
@@ -47,11 +47,11 @@
 
 		%sveltekit.head%
 		<!-- ensure theme is considered right away, no flash -->
-		<script>
+		<!-- <script>
 			try {
-				document.documentElement.setAttribute('data-theme', localStorage.getItem('theme'));
+				document.documentElement.setAttribute('data-theme', 'retro'); // localStorage.getItem('theme'));
 			} catch (e) {}
-		</script>
+		</script> -->
 	</head>
 	<!-- --w3m-modal-z-index overrids the low z-index of wallet connect modal (89) -->
 	<body data-sveltekit-preload-data="hover" style="--w3m-modal-z-index: 1001">

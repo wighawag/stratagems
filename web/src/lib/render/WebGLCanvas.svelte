@@ -44,5 +44,5 @@
 {#if error}
 	{error}
 {:else}
-	<canvas id="canvas" style="width:100%; height: 100%; display: block;" />
+	<canvas id="canvas" style="width:100%; height: 100%; display: block; position: absolute; top: 0; left: 0;" />
 {/if}
