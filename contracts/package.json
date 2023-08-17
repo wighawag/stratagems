@@ -33,7 +33,7 @@
     "viem": "^1.6.0",
     "viem-chai-matchers": "^0.0.3",
     "vitest": "^0.34.1",
-    "vitest-solidity-coverage": "^0.1.3"
+    "vitest-solidity-coverage": "^0.1.4"
   },
   "scripts": {
     "prepare": "pnpm compile",

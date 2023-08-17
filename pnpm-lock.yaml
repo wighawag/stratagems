@@ -133,8 +133,8 @@ importers:
         specifier: ^0.34.1
         version: 0.34.1
       vitest-solidity-coverage:
-        specifier: ^0.1.3
-        version: 0.1.3(hardhat@2.17.1)(solidity-coverage@0.8.4)(vitest@0.34.1)
+        specifier: ^0.1.4
+        version: 0.1.4(hardhat@2.17.1)(solidity-coverage@0.8.4)(vitest@0.34.1)
 
   docs:
     devDependencies:
@@ -9857,12 +9857,12 @@ packages:
       - universal-cookie
     dev: true
 
-  /vitest-solidity-coverage@0.1.3(hardhat@2.17.1)(solidity-coverage@0.8.4)(vitest@0.34.1):
-    resolution: {integrity: sha512-4nAXuh+en3we2u3Azjg80d8TZTPsoCDfMqGyE/Tg7gdDll1be7zOVmCpxrmFTxbc1uE9z1WUN8knx5sK3da1mw==}
+  /vitest-solidity-coverage@0.1.4(hardhat@2.17.1)(solidity-coverage@0.8.4)(vitest@0.34.1):
+    resolution: {integrity: sha512-WSs+diSYpfDnwJVq/CdnNuxYOqjIbiC9JvYWprk7BHfSw7/6y9d/xxHAi7zR8+SqzFUsiLtxpzUmThbGW58UfA==}
     peerDependencies:
       hardhat: ^2.16.1
       solidity-coverage: ^0.8.3
-      vitest: ^0.32.2
+      vitest: ^0.34.1
     dependencies:
       hardhat: 2.17.1(typescript@5.1.6)
       solidity-coverage: 0.8.4(hardhat@2.17.1)
