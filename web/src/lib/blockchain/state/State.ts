@@ -16,6 +16,8 @@ export const processor = createProcessor();
 export const {state, syncing, status, init, indexToLatest, indexMore, startAutoIndexing, indexMoreAndCatchupIfNeeded} =
 	createIndexerState(processor, {trackNumRequests: true});
 
+export type State = typeof state;
+
 async function indexIfNotIndexing() {
 	await indexMoreAndCatchupIfNeeded();
 }
@@ -35,7 +37,7 @@ function initialize(provider: EIP1193Provider) {
 		source: {
 			chainId: initialContractsInfos.chainId,
 			contracts: Object.keys(initialContractsInfos.contracts).map(
-				(name) => (initialContractsInfos as any).contracts[name]
+				(name) => (initialContractsInfos as any).contracts[name],
 			),
 		},
 	}).then((v) => {
@@ -51,7 +53,7 @@ if (browser) {
 			try {
 				if (!provider && connection.$state.provider) {
 					provider = connection.$state.provider;
-					initialize(provider);
+					initialize(provider!);
 				}
 			} catch (err) {
 				console.error(`caught exception `, err);

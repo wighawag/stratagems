@@ -17,7 +17,8 @@
 	<title>{name}</title>
 	<meta name="title" content={name} />
 	<meta name="description" content={description} />
-	{#if ENSName}<meta name="Dwebsite" content={ENSName} /> {/if}
+	{#if ENSName}<meta name="Dwebsite" content={ENSName} />
+	{/if}
 
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content={host} />
@@ -73,11 +74,13 @@
 <!-- Here is Notification for new version -->
 <NewVersionNotification src={url('/icon.svg')} alt="Stratagems" />
 
-<!-- use -my-20 to ensure the navbar is considered when using min-h-screen to offset the footer (when content is too small)-->
-<div class="-my-20 flex flex-col min-h-screen justify-between">
-	<!--div to revert -my-20-->
-	<div class="mt-20">
-		<slot />
-	</div>
+<slot />
 
-</div>
+<!-- use -my-20 to ensure the navbar is considered when using min-h-screen to offset the footer (when content is too small)-->
+<!-- <div class="-my-20 flex flex-col min-h-screen justify-between"> -->
+<!--div to revert -my-20-->
+<!-- <div class="mt-20"> -->
+<!-- <slot /> -->
+<!-- </div> -->
+
+<!-- </div> -->

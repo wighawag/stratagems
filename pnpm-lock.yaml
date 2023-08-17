@@ -205,6 +205,9 @@ importers:
       theme-change:
         specifier: ^2.5.0
         version: 2.5.0
+      twgl.js:
+        specifier: ^5.5.1
+        version: 5.5.1
       viem:
         specifier: ^1.6.0
         version: 1.6.0(typescript@5.1.6)
@@ -9465,6 +9468,10 @@ packages:
   /tweetnacl@1.0.3:
     resolution: {integrity: sha512-6rt+RN7aOi1nGMyC4Xa5DdYiukl2UWCbcJft7YhxReBGQD7OAM8Pbxw6YMo4r2diNEA8FEmu32YOn9rhaiE5yw==}
     dev: true
+
+  /twgl.js@5.5.1:
+    resolution: {integrity: sha512-YPzBb3Eo1ZMye489xsEN7TX6EtdP8TutWV2/vOJpjgWG2MxsDW+GiL7Vc1Nr7wdkwn//sE0Um15Uaq2QJmfOgQ==}
+    dev: false
 
   /type-check@0.3.2:
     resolution: {integrity: sha512-ZCmOJdvOWDBYJlzAoFkC+Q0+bUyEOS1ltgp1MGU03fqHG+dbi9tBFU2Rd9QKiDZFAYrhPh2JUf7rZRIuHRKtOg==}
