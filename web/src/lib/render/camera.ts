@@ -70,7 +70,7 @@ export class Camera extends BasicObjectStore<CameraState> {
 					renderScale: 0,
 					devicePixelRatio: 1,
 				});
-				this._setXYZoom(0, 0, 1);
+				this._setXYZoom(0, 0, 32);
 				// this._setXYZoom(0, 0, Camera.zoomLevels[this.zoomIndex]);
 			}
 		}
@@ -268,9 +268,10 @@ export class Camera extends BasicObjectStore<CameraState> {
 		if (!this.surface) {
 			throw new Error(`no surface`);
 		}
-		const {clientX, clientY, deltaY} = e;
-		const offsetX = clientX - this.surface.clientLeft;
-		const offsetY = clientY - this.surface.clientTop;
+		const {clientX, clientY, deltaY, offsetX, offsetY} = e;
+		// console.log({clientX, clientY, deltaY, pageX: e.pageX, pageY: e.pageY, offsetX: e.offsetX, offsetY: e.offsetY});
+		// // const offsetX = clientX - this.surface.clientLeft;
+		// // const offsetY = clientY - this.surface.clientTop;
 		const dir = (Math.abs(deltaY) / deltaY) as 0 | -1 | 1;
 
 		// DEBUGGING
@@ -366,8 +367,8 @@ export class Camera extends BasicObjectStore<CameraState> {
 	updateZoom(offsetX: number, offsetY: number, dir: 1 | -1 | 0): void {
 		const {x, y} = this.screenToWorld(offsetX, offsetY);
 
-		const maxSize = 500 * 500 * 50; //700 * 700; was too big
-		const minSize = 16 * 16 * 50;
+		const maxSize = 500 * 500; //700 * 700; was too big
+		const minSize = 16 * 16;
 
 		const size = this.$store.width * this.$store.height;
 		const renderSize = this.$store.renderWidth * this.$store.renderHeight;
