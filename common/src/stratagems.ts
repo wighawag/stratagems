@@ -1,7 +1,7 @@
 import {zeroAddress} from 'viem';
 import {ContractSimpleCell} from './grid';
 
-export type ContractMove = {position: bigint; color: MoveColor};
+export type ContractMove = {position: bigint; color: Color};
 
 export function bigIntIDToXYID(position: bigint): string {
 	const {x, y} = bigIntIDToXY(position);
@@ -56,15 +56,6 @@ export enum Color {
 	Evil = 6,
 }
 
-export enum MoveColor {
-	None = 0,
-	Blue = 1,
-	Red = 2,
-	Green = 3,
-	Yellow = 4,
-	Purple = 5,
-}
-
 export type ContractCell = {
 	lastEpochUpdate: number;
 	epochWhenTokenIsAdded: number;
@@ -81,7 +72,7 @@ export type ContractFullCell = ContractCell & {
 export class StratagemsContract {
 	constructor(
 		private state: {cells: {[position: string]: ContractCell}; owners: {[poistion: string]: `0x${string}`}},
-		public MAX_LIFE: number
+		public MAX_LIFE: number,
 	) {}
 
 	computeNewLife(
@@ -89,7 +80,7 @@ export class StratagemsContract {
 		enemymask: number,
 		delta: number,
 		life: number,
-		epoch: number
+		epoch: number,
 	): {newLife: number; epochUsed: number} {
 		const MAX_LIFE = this.MAX_LIFE;
 
@@ -167,7 +158,7 @@ export class StratagemsContract {
 				updatedCell.enemymask,
 				updatedCell.delta,
 				updatedCell.life,
-				epoch
+				epoch,
 			);
 			if (newLife == 0) {
 				updatedCell.delta = 0;
@@ -202,7 +193,7 @@ export class StratagemsContract {
 		epoch: number,
 		neighbourIndex: number,
 		oldColor: Color,
-		newColor: Color
+		newColor: Color,
 	) {
 		if (newColor == Color.None) {
 			// COLLISION, previous update added a color that should not be there
@@ -275,7 +266,7 @@ export class StratagemsContract {
 		position: bigint,
 		epoch: number,
 		oldColor: Color,
-		newColor: Color
+		newColor: Color,
 	): {newDelta: number; newEnemymask: number} {
 		const {x, y} = bigIntIDToBigintXY(position);
 		const data = {
@@ -325,7 +316,7 @@ export class StratagemsContract {
 
 		const currentState = this.getUpdatedCell(move.position, epoch);
 
-		if (move.color == MoveColor.None) {
+		if (move.color == Color.None) {
 			// this is a leave move
 			if (currentState.life == MAX_LIFE && this.ownerOf(move.position) == player) {
 				// only valid id life == MAX_LIFE and player is owner
@@ -390,12 +381,7 @@ export class StratagemsContract {
 		} else if (currentState.life == 0 && (currentState.lastEpochUpdate == 0 || currentState.color != Color.None)) {
 			if (currentState.life == 0 || currentState.color != move.color) {
 				// only update neighbour if color changed or if life is zero, since in that case the delta is lost (TODO revisit this)
-				const {newDelta, newEnemymask} = this.updateNeighbours(
-					move.position,
-					epoch,
-					currentState.color,
-					move.color as unknown as Color
-				);
+				const {newDelta, newEnemymask} = this.updateNeighbours(move.position, epoch, currentState.color, move.color);
 
 				currentState.life = 1;
 				currentState.epochWhenTokenIsAdded = epoch;

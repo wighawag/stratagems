@@ -1,5 +1,5 @@
 import {zeroAddress} from 'viem';
-import {Color, ContractFullCell, MoveColor, bigIntIDToXY, xyToBigIntID} from './stratagems';
+import {Color, ContractFullCell, bigIntIDToXY, xyToBigIntID} from './stratagems';
 
 export type Cell = {
 	x: number;
@@ -24,7 +24,7 @@ export type Action = {
 	x: number;
 	y: number;
 	owner: number;
-	color: MoveColor;
+	color: Color;
 };
 
 export type Grid = {
@@ -219,11 +219,11 @@ export function parseGrid(str: string, forcePlayer?: number): Grid {
 				if (!onlyCell.owner) {
 					throw new Error(`addition (+) need an owner`);
 				}
-				let color: MoveColor;
+				let color: Color;
 				if (onlyCell.color > 5) {
 					throw new Error(`invalid color value for action: ${onlyCell.color}`);
 				}
-				color = onlyCell.color as unknown as MoveColor;
+				color = onlyCell.color as unknown as Color;
 				actions.push({
 					color,
 					owner: onlyCell.owner,
@@ -298,7 +298,7 @@ export function toContractSimpleCell(accounts: `0x${string}`[]): (cell: Cell) =>
 }
 
 export function fromContractFullCellToCell(
-	accounts: `0x${string}`[]
+	accounts: `0x${string}`[],
 ): (data: {cell: ContractFullCell; id: bigint}) => Cell {
 	return ({cell, id}: {cell: ContractFullCell; id: bigint}) => {
 		const {x, y} = bigIntIDToXY(id);

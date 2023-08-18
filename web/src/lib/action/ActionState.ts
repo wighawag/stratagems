@@ -1,4 +1,4 @@
-import type {Color} from 'stratagems-common';
+import {xyToBigIntID, type Color, type ContractMove} from 'stratagems-common';
 import {writable, type Subscriber, type Unsubscriber, type Writable} from 'svelte/store';
 
 export type LocalMove = {
@@ -9,6 +9,13 @@ export type LocalMove = {
 };
 
 export type LocalMoves = LocalMove[];
+
+export function localMoveToContractMove(localMove: LocalMove): ContractMove {
+	return {
+		color: localMove.color,
+		position: xyToBigIntID(localMove.x, localMove.y),
+	};
+}
 
 export class ActionState {
 	store: Writable<LocalMoves>;
@@ -46,6 +53,7 @@ export class ActionState {
 	}
 
 	clear() {
+		console.log('clearing....');
 		this.$store = [];
 		this.store.set(this.$store);
 	}

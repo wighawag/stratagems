@@ -6,9 +6,15 @@
 	// import {pendingState} from '$lib/blockchain/state/PendingState';
 	import {viewState} from '$lib/state/ViewState';
 	import WebGlCanvas from '$lib/render/WebGLCanvas.svelte';
+	import ActionPanel from '$lib/ui/panels/ActionPanel.svelte';
+	import CommitConfirmationModal from '$lib/ui/modals/CommitConfirmationModal.svelte';
 </script>
 
 <WebGlCanvas state={viewState} />
+
+<ActionPanel />
+
+<CommitConfirmationModal />
 
 <!-- <div class="navbar bg-base-100">
 	<div class="navbar-start">
