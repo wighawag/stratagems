@@ -8,9 +8,12 @@
 	import WebGlCanvas from '$lib/render/WebGLCanvas.svelte';
 	import ActionPanel from '$lib/ui/panels/ActionPanel.svelte';
 	import CommitConfirmationModal from '$lib/ui/modals/CommitConfirmationModal.svelte';
+	import Epoch from '$lib/components/info/Epoch.svelte';
 </script>
 
 <WebGlCanvas state={viewState} />
+
+<Epoch></Epoch>
 
 <ActionPanel />
 

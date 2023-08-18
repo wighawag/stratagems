@@ -4,6 +4,10 @@ require('@nomicfoundation/hardhat-network-helpers');
 const {addForkConfiguration, addNetworksFromEnv} = require('hardhat-rocketh');
 require('vitest-solidity-coverage/hardhat');
 
+// console.log({
+// 	BLOCK_TIME: process.env['BLOCK_TIME'],
+// });
+
 const defaultVersion = '0.8.20';
 const defaultSettings = {
 	optimizer: {
@@ -35,10 +39,11 @@ module.exports = {
 					initialBaseFeePerGas: 0,
 					allowUnlimitedContractSize: true,
 					mining: {
+						auto: process.env['BLOCK_TIME'] ? true : false,
 						interval: process.env['BLOCK_TIME'] ? parseInt(process.env['BLOCK_TIME']) : undefined,
 					},
 				},
-			})
+			}),
 		),
 	paths: {
 		sources: 'src',

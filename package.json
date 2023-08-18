@@ -24,6 +24,7 @@
     "_contracts:deploy:watch": "pnpm --filter ./contracts deploy:watch $MODE ~~ pnpm run export -n $MODE --ts ../indexer/src/contracts.ts,../web/src/data/contracts.ts ~~",
     "_contracts:deploy": "pnpm run --filter ./contracts deploy $MODE  ~~ pnpm run export -n $MODE  --ts ../indexer/src/contracts.ts,../web/src/data/contracts.ts ~~",
     "---------------------- UTILITIES ----------------------": "",
+    "env": "ldenv env",
     "local_node": "ldenv pnpm --filter ./contracts local_node",
     "contracts:compile": "pnpm --filter ./contracts compile",
     "contracts:compile:watch": "pnpm --filter ./contracts compile:watch",

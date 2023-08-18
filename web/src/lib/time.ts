@@ -3,11 +3,15 @@ import {connection, devProvider} from './web3';
 // import {initialContractsInfos} from './config';
 
 let timestamp = Math.floor(Date.now() / 1000);
-const _time = writable({timestamp, synced: false}, (set) => {
+let synced = false;
+const _time = writable({timestamp, synced}, (set) => {
 	let timeout: NodeJS.Timeout | undefined;
 	async function getTime() {
+		const lastTimestamp = timestamp;
+		const lastSynced = synced;
 		try {
 			if (typeof window !== 'undefined' && devProvider) {
+				console.log({devProvider});
 				// TODO offer option to use a contract's time or blockTime
 				// const rawTimestamp = await devProvider.request({
 				// 	method: 'eth_call',
@@ -15,12 +19,21 @@ const _time = writable({timestamp, synced: false}, (set) => {
 				// });
 				// timestamp = parseInt(rawTimestamp.slice(2), 16);
 
-				const block = await devProvider.request({
-					method: 'eth_getBlockByNumber',
-					params: ['latest', false],
-				});
-				timestamp = (await connection.$state.provider?.syncTime(block)) || Math.floor(Date.now() / 1000);
+				if (connection.$state.provider) {
+					const block = await devProvider.request({
+						method: 'eth_getBlockByNumber',
+						params: ['latest', false],
+					});
+					timestamp = await connection.$state.provider?.syncTime(block);
+					synced = true;
+				} else {
+					synced = false;
+					timestamp = Math.floor(Date.now() / 1000);
+				}
+
+				// console.log({timestamp});
 			} else {
+				// console.log({provider: connection.$state.provider});
 				// TODO offer option to use a contract's time or blockTime
 				// const rawTimestamp = await connection.$state.provider?.request({
 				// 	method: 'eth_call',
@@ -30,11 +43,20 @@ const _time = writable({timestamp, synced: false}, (set) => {
 				// 	timestamp = parseInt(rawTimestamp.slice(2), 16);
 				// }
 
-				timestamp = connection.$state.provider?.currentTime() || Math.floor(Date.now() / 1000);
+				if (connection.$state.provider) {
+					timestamp = connection.$state.provider.currentTime();
+					synced = true;
+				} else {
+					synced = false;
+					timestamp = Math.floor(Date.now() / 1000);
+				}
+				// console.log({timestamp});
 			}
 
 			if (timestamp && !isNaN(timestamp)) {
-				set({timestamp, synced: true});
+				if (lastTimestamp != timestamp || lastSynced != synced) {
+					set({timestamp, synced});
+				}
 			}
 		} finally {
 			if (timeout) {
