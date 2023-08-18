@@ -4,7 +4,7 @@
   "description": "docs for stratagems",
   "devDependencies": {
     "ldenv": "^0.3.7",
-    "vitepress": "1.0.0-beta.5"
+    "vitepress": "1.0.0-rc.4"
   },
   "scripts": {
     "import:contracts:docs": "ldenv -m localhost pnpm --filter stratagems-contracts run docgen @@MODE -o ../docs/contracts @@",

@@ -7,7 +7,7 @@
   "devDependencies": {
     "ask-env": "^0.0.1",
     "ldenv": "^0.3.7",
-    "syncpack": "^10.7.2"
+    "syncpack": "^11.2.1"
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",

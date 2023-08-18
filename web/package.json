@@ -9,7 +9,7 @@
     "@sveltejs/kit": "1.22.6",
     "@tailwindcss/forms": "^0.5.4",
     "@tailwindcss/typography": "^0.5.9",
-    "abitype": "^0.9.6",
+    "abitype": "^0.9.7",
     "autoprefixer": "^10.4.15",
     "daisyui": "^3.5.1",
     "eip-1193": "^0.4.7",
@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@types/lodash-es": "^4.17.8",
-    "ethereum-indexer-browser": "^0.6.5",
+    "ethereum-indexer-browser": "^0.6.6",
     "ethereum-tx-observer": "^0.0.2",
     "lodash-es": "^4.17.21",
     "named-logs": "^0.2.2",
