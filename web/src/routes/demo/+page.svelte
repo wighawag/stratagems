@@ -5,13 +5,13 @@
 	import {status, state} from '$lib/blockchain/state/State';
 	// import {pendingState} from '$lib/blockchain/state/PendingState';
 	import {viewState} from '$lib/state/ViewState';
-	import WebGlCanvas from '$lib/render/WebGLCanvas.svelte';
 	import ActionPanel from '$lib/ui/panels/ActionPanel.svelte';
 	import CommitConfirmationModal from '$lib/ui/modals/CommitConfirmationModal.svelte';
 	import Epoch from '$lib/components/info/Epoch.svelte';
+	import PixiCanvas from '$lib/render/PIXICanvas.svelte';
 </script>
 
-<WebGlCanvas state={viewState} />
+<PixiCanvas state={viewState} />
 
 <Epoch></Epoch>
 
