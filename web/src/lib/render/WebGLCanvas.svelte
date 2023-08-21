@@ -31,11 +31,6 @@
 
 			events: app.renderer.events, // the interaction module is important for wheel to work properly when renderer.view is placed or scaled
 		});
-		const onResize = () => {
-			app.renderer.resize(window.innerWidth, window.innerHeight);
-			viewport.resize(window.innerWidth, window.innerHeight);
-		};
-		window.addEventListener('resize', onResize);
 
 		// add the viewport to the stage
 		app.stage.addChild(viewport);
@@ -48,7 +43,16 @@
 		viewport.on('moved', (ev) => {
 			grid.setUniforms(viewport.corner, viewport);
 		});
+		viewport.on('zoomed', (ev) => {
+			grid.setUniforms(viewport.corner, viewport);
+		});
 		grid.setUniforms(viewport.corner, viewport);
+		const onResize = () => {
+			app.renderer.resize(window.innerWidth, window.innerHeight);
+			viewport.resize(window.innerWidth, window.innerHeight);
+			grid.setUniforms(viewport.corner, viewport);
+		};
+		window.addEventListener('resize', onResize);
 
 		// add a red box
 		const sprite = viewport.addChild(new Sprite(Texture.WHITE));

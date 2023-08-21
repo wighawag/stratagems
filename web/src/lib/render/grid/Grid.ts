@@ -96,7 +96,8 @@ export class Grid extends Mesh<Shader> {
 		},
 	) {
 		const renderScale = (worldHeight / worldScreenHeight) * (screenHeight / worldHeight);
-		const offsetX = x - Math.floor(x / this.cellSize) * this.cellSize;
+		const xx = x; // + worldScreenWidth;
+		const offsetX = xx - Math.floor(xx / this.cellSize) * this.cellSize;
 		// const offsetY = Math.floor((y - worldScreenHeight) / this.cellSize) * this.cellSize - y - worldScreenHeight;
 		const yy = y + worldScreenHeight;
 		const offsetY = Math.floor(yy / this.cellSize) * this.cellSize - yy;
