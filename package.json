@@ -50,5 +50,10 @@
     "start:wezterm": "wezterm --config-file wezterm.lua start $PWD",
     "stop": "zellij kill-session $npm_package_name",
     "start": "zellij --layout zellij.kdl a $npm_package_name || zellij --layout zellij.kdl -s $npm_package_name"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "pixi-viewport@5.0.2": "patches/pixi-viewport@5.0.2.patch"
+    }
   }
 }

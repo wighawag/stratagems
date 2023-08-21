@@ -2,42 +2,82 @@
 	import {ActionHandler} from '$lib/action/ActionHandler';
 	import type {State} from '$lib/blockchain/state/State';
 	import {onMount} from 'svelte';
-	import {Camera} from './camera';
-	import {WebGLRenderer} from './WebGLRenderer';
-	export let state: State;
+	import {Application, Texture, Sprite} from 'pixi.js';
+	import {Viewport} from 'pixi-viewport';
+	import {Grid} from './grid/Grid';
 
-	let renderer: WebGLRenderer = new WebGLRenderer();
-	let camera: Camera;
-	function render(time: number) {
-		renderer.render(time);
-		requestAnimationFrame(render);
-	}
+	export let state: State;
 
 	let error: string | undefined;
 	onMount(() => {
 		const canvas = document.querySelector('#canvas') as HTMLCanvasElement;
-		const gl = canvas.getContext('webgl2');
-		if (!gl) {
-			error = `could not create WebGL2 context`;
-			throw new Error(error);
-		}
 
-		renderer.initialize(canvas, gl);
-
-		camera = new Camera();
-		camera.start(canvas, renderer);
-		camera.subscribe((v) => renderer.updateView(v));
-
-		const actionHandler = new ActionHandler();
-		camera.onClick = (x, y) => {
-			actionHandler.onCell(Math.floor(x), Math.floor(y));
-		};
-
-		state.subscribe(($state) => {
-			renderer.updateState($state);
+		const app = new Application({
+			view: canvas,
+			resolution: 1, // window.devicePixelRatio || 1,
+			// autoDensity: true,
+			backgroundColor: 0x6495ed,
+			resizeTo: window,
 		});
 
-		requestAnimationFrame(render);
+		const grid = new Grid(1, [0x4a / 256, 0x4e / 256, 0x69 / 256, 1]);
+		app.stage.addChild(grid);
+
+		const viewport = new Viewport({
+			// screenWidth: window.innerWidth,
+			// screenHeight: window.innerHeight,
+			worldWidth: 32,
+			worldHeight: 32,
+
+			events: app.renderer.events, // the interaction module is important for wheel to work properly when renderer.view is placed or scaled
+		});
+		const onResize = () => {
+			app.renderer.resize(window.innerWidth, window.innerHeight);
+			viewport.resize(window.innerWidth, window.innerHeight);
+		};
+		window.addEventListener('resize', onResize);
+
+		// add the viewport to the stage
+		app.stage.addChild(viewport);
+
+		// activate plugins
+		viewport.drag().wheel();
+		viewport.fitWorld();
+		viewport.moveCenter(0, 0);
+
+		viewport.on('moved', (ev) => {
+			grid.setUniforms(viewport.corner, viewport);
+		});
+		grid.setUniforms(viewport.corner, viewport);
+
+		// add a red box
+		const sprite = viewport.addChild(new Sprite(Texture.WHITE));
+		sprite.tint = 0xff0000;
+		sprite.width = sprite.height = 1;
+		sprite.position.set(0, 0);
+
+		// const gl = canvas.getContext('webgl2');
+		// if (!gl) {
+		// 	error = `could not create WebGL2 context`;
+		// 	throw new Error(error);
+		// }
+
+		// renderer.initialize(canvas, gl);
+
+		// camera = new Camera();
+		// camera.start(canvas, renderer);
+		// camera.subscribe((v) => renderer.updateView(v));
+
+		// const actionHandler = new ActionHandler();
+		// camera.onClick = (x, y) => {
+		// 	actionHandler.onCell(Math.floor(x), Math.floor(y));
+		// };
+
+		// state.subscribe(($state) => {
+		// 	renderer.updateState($state);
+		// });
+
+		// requestAnimationFrame(render);
 	});
 </script>
 
