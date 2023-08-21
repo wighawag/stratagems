@@ -1,28 +1,12 @@
 # Stratagems
 
-A template to develop decentralised applications
+## the infinite board game
 
-## How to use?
+a persistent and permission-less game where a set of colors compete for the control of the board
+
+## How to run it locally?
 
 We are assuming here that you already setup your env as specified in the [initial setup section](#initial-setup)
-
-### install dependencies
-
-Note here that while you can use `pnpm i`, we recommend you follow the instruction here so you can have everything setup with your own project's name.
-
-```bash
-pnpm boot
-```
-
-This will set the app name to the folder nane or the name you provide (and change the files to reflect that) and then call `pnpm i`
-
-You can also manually set the name yourself :
-
-```bash
-pnpm set-name [<new name>] && pnpm i
-```
-
-### start!
 
 Then Assuming you have [zellij](https://zellij.dev/) installed
 
