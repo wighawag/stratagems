@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://stratagems.eth.limo">
-    <img src="web/static/preview.png" alt="Stratagems Logo" height="150">
+    <img src="web/static/preview.png" alt="Stratagems Logo" height="200">
   </a>
 </p>
 <p align="center">
