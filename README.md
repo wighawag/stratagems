@@ -1,8 +1,49 @@
-# Stratagems
+<p align="center">
+  <a href="https://stratagems.eth.limo">
+    <img src="web/static/preview.png" alt="Stratagems Logo" height="150">
+  </a>
+</p>
+<p align="center">
+  <a href="https://twitter.com/stratagems_eth">
+    <img alt="Twitter" src="https://img.shields.io/badge/Twitter-1DA1F2?logo=twitter&logoColor=white" />
+  </a>
+  <a href="https://github.com/wighawag/stratagems">
+    <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/m/wighawag/stratagems">
+  </a>
+  <!-- <a href="https://github.com/wighawag/stratagems">
+  <img alt="Build" src="https://github.com/wighawag/stratagems/actions/workflows/build.yml/badge.svg">
+  </a> -->
+  <a href="https://github.com/wighawag/stratagems/blob/main/LICENSE">
+    <img alt="License" src="https://img.shields.io/github/license/wighawag/stratagems.svg">
+  </a>
+  <a href="https://github.com/wighawag/stratagems/issues">
+    <img alt="open issues" src="https://isitmaintained.com/badge/open/wighawag/stratagems.svg">
+  </a>
+</p>
 
-## the infinite board game
+---
 
-a persistent and permission-less game where a set of colors compete for the control of the board
+# An infinite game
+
+Stratagems is an infinite game, a permission-less, immutable and interroperable game. Un unstoppable game where all meaningul actions happen on-chain.
+
+If you are interested to know more about infinite games and autonomous worlds, check out our [blog post](https://ronan.eth.limo/blog/infinite-games/)
+
+## What is stratagems exactly ?
+
+Stratagems is an infinite board game, a persistent and permission-less game where players use a specific set of colors to compete for the control of the board. Alliances and betrayal are part of the arsenal as colors mix and shift on the board.
+
+And so “stratagems” is first and foremost a social game. Its main inspiration is [conquest.eth](https://conquest.game) who successfully created a deeply social game out of simple mechanics. Stratagems explore it further by having even simpler rules. It also reduces the gas cost to minimum by spreading the actions over a week period. It works because most of the game plays out in the conversations and strategies happening among the players.
+
+While maximally on-chain, stratagems scale its gameplay by offering a compelling off-chain gameplay with the social complexity associated with it.
+
+## How do you play ?
+
+Players participate in the game by depositing ETH (ratio to be defined) to place a gem on the board. They specify the location and the color of the gem.
+
+By doing so, they risk the associated ETH but also get a chance to potentially capture the same (and more) from other players.
+
+More detailts coming soon! Follow our [twitter](https://twitter.com/stratagems_eth)
 
 ## How to run it locally?
 
