@@ -1,12 +1,16 @@
 import {blockTime} from '$lib/config';
 import type {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {writable, type Readable} from 'svelte/store';
-import type {Address} from 'viem';
+import {zeroAddress, type Address, encodeFunctionData} from 'viem';
 import type {AccountState, ConnectionState} from 'web3-connection';
 
 export type BalanceData = {state: 'Idle' | 'Loaded'; fetching: boolean; balance: bigint; account?: Address};
 
-export function initBalance(connection: Readable<ConnectionState>, account: Readable<AccountState<Address>>) {
+export function initBalance(
+	token: Address,
+	connection: Readable<ConnectionState>,
+	account: Readable<AccountState<Address>>,
+) {
 	const $state: BalanceData = {state: 'Idle', fetching: false, balance: 0n};
 
 	let cancelAccountSubscription: (() => void) | undefined = undefined;
@@ -32,7 +36,27 @@ export function initBalance(connection: Readable<ConnectionState>, account: Read
 			$state.fetching = true;
 			store.set($state);
 			try {
-				const balance = await provider.request({method: 'eth_getBalance', params: [account]});
+				let balance: string;
+				if (token === zeroAddress) {
+					balance = await provider.request({method: 'eth_getBalance', params: [account]});
+				} else {
+					balance = await provider.request({
+						method: 'eth_call',
+						params: [
+							{
+								to: token,
+								data: encodeFunctionData({
+									abi: [
+										{type: 'function', name: 'balanceOf', inputs: [{type: 'address'}], outputs: [{type: 'uint56'}]},
+									],
+									args: [account],
+									functionName: 'balanceOf',
+								}),
+							},
+						],
+					});
+				}
+
 				if ($state.account !== account) {
 					return;
 				}

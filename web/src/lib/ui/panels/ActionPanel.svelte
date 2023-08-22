@@ -1,5 +1,6 @@
 <script lang="ts">
 	import {actionState} from '$lib/action/ActionState';
+	import {balance} from '$lib/web3/index';
 	import {initialContractsInfos} from '$lib/config';
 	import {commitFlow} from '$lib/ui/flows/CommitFlow';
 	import {formatEther, formatUnits} from 'viem';
@@ -30,7 +31,9 @@
 					<h2 class="card-title text-primary">Your Move:</h2>
 					<p class="text-secondary">
 						You'll stake {costString}
-						{initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol}
+						{initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol}. you have {formatEther(
+							$balance.balance,
+						)} ETH.
 					</p>
 					<div class="mt-4 card-actions justify-end">
 						<button class="pointer-events-auto btn btn-neutral" on:click={clear}>Clear</button>

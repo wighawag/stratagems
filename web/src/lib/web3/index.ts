@@ -89,7 +89,7 @@ export const {connection, network, account, pendingActions, execution, execute, 
 
 export const contracts = initViemContracts(execute);
 
-export const balance = initBalance(connection, account);
+export const balance = initBalance(initialContractsInfos.contracts.TestTokens.address, connection, account);
 
 if (typeof window !== 'undefined') {
 	(window as any).balance = balance;
