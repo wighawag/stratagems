@@ -31,6 +31,11 @@
 			events: app.renderer.events, // the interaction module is important for wheel to work properly when renderer.view is placed or scaled
 		});
 
+		const actionHandler = new ActionHandler();
+		viewport.on('clicked', (ev) => {
+			actionHandler.onCell(Math.floor(ev.world.x), Math.floor(ev.world.y));
+		});
+
 		// add the viewport to the stage
 		app.stage.addChild(viewport);
 
@@ -54,10 +59,10 @@
 		window.addEventListener('resize', onResize);
 
 		// add a red box
-		const sprite = viewport.addChild(new Sprite(Texture.WHITE));
-		sprite.tint = 0xff0000;
-		sprite.width = sprite.height = 1;
-		sprite.position.set(0, 0);
+		// const sprite = viewport.addChild(new Sprite(Texture.WHITE));
+		// sprite.tint = 0xff0000;
+		// sprite.width = sprite.height = 1;
+		// sprite.position.set(0, 0);
 	});
 </script>
 
