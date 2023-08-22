@@ -14,6 +14,8 @@
 		commitFlow.requireConfirmation();
 	}
 
+	const symbol = initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol;
+
 	$: cost =
 		BigInt($actionState.length) *
 		BigInt(initialContractsInfos.contracts.Stratagems.linkedData.numTokensPerGems.slice(0, -1));
@@ -21,6 +23,14 @@
 		cost,
 		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
 	);
+
+	$: currentBalance = $balance.balance;
+	$: currentBalnceString = formatUnits(
+		currentBalance,
+		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
+	);
+
+	$: enough = currentBalance >= cost; // TODO + gascost for ETH
 </script>
 
 {#if $actionState.length > 0}
@@ -31,13 +41,14 @@
 					<h2 class="card-title text-primary">Your Move:</h2>
 					<p class="text-secondary">
 						You'll stake {costString}
-						{initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol}. you have {formatEther(
-							$balance.balance,
-						)} ETH.
+						{symbol}. you have {currentBalnceString}
+						{symbol}.
 					</p>
 					<div class="mt-4 card-actions justify-end">
 						<button class="pointer-events-auto btn btn-neutral" on:click={clear}>Clear</button>
-						<button class="pointer-events-auto btn btn-primary" on:click={commit}>Commit</button>
+						<button class={`pointer-events-auto btn btn-primary ${enough ? '' : 'btn-disabled'}`} on:click={commit}
+							>Commit</button
+						>
 					</div>
 				</div>
 			</div>
