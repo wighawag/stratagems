@@ -31,7 +31,7 @@ function merge(state: Data, actionState: LocalMoves): ViewData {
 				lastEpochUpdate: 0, // TODO lastEpochUpdate for viewState
 				life: 1,
 			};
-			console.log({newCell});
+			// console.log({newCell});
 			viewState.cells[cellID] = newCell;
 			viewState.owners[cellID] = action.player as `0x${string}`;
 		} else {

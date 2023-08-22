@@ -6,7 +6,7 @@ import {get} from 'svelte/store';
 
 export class ActionHandler {
 	onCell(x: number, y: number) {
-		console.log(x, y);
+		// console.log(x, y);
 		const player = account.$state.address || '0xFF';
 		if (!player) {
 			console.log('no account');

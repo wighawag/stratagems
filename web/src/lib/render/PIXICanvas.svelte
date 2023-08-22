@@ -5,8 +5,11 @@
 	import {Application, Texture, Sprite} from 'pixi.js';
 	import {Viewport} from 'pixi-viewport';
 	import {Grid} from './grid/Grid';
+	import {PIXIState} from './PIXIState';
 
 	export let state: State;
+
+	// let unsubscribe: (() => void) | undefined;
 
 	onMount(() => {
 		const canvas = document.querySelector('#canvas') as HTMLCanvasElement;
@@ -30,6 +33,9 @@
 
 			events: app.renderer.events, // the interaction module is important for wheel to work properly when renderer.view is placed or scaled
 		});
+
+		const pixiState = new PIXIState(viewport);
+		const unsubscribe = state.subscribe(pixiState.update.bind(pixiState));
 
 		const actionHandler = new ActionHandler();
 		viewport.on('clicked', (ev) => {
@@ -63,6 +69,8 @@
 		// sprite.tint = 0xff0000;
 		// sprite.width = sprite.height = 1;
 		// sprite.position.set(0, 0);
+
+		return unsubscribe;
 	});
 </script>
 

@@ -3,6 +3,7 @@ import * as twgl from 'twgl.js';
 import * as m3 from '$lib/m3';
 import {parseColorV4} from '$lib/webgl/color';
 import type {CameraState} from '../camera';
+import {COLORS_VEC4} from '../colors';
 
 const vertexShaderSource = `#version 300 es
      
@@ -33,14 +34,6 @@ void main() {
 	outColor = u_color;
 }
 `;
-
-const COLORS = [
-	[0, 0, 0, 1],
-	parseColorV4('ef476f'),
-	parseColorV4('ffd166'),
-	parseColorV4('06d6a0'),
-	parseColorV4('118ab2'),
-];
 
 export class Colored2DLayer {
 	programInfo!: twgl.ProgramInfo;
@@ -150,7 +143,7 @@ export class Colored2DLayer {
 
 			twgl.setBuffersAndAttributes(GL, this.programInfo, this.bufferInfo);
 
-			uniforms.u_color = COLORS[cell.color];
+			uniforms.u_color = COLORS_VEC4[cell.color];
 			twgl.setUniforms(this.programInfo, uniforms);
 
 			twgl.drawBufferInfo(GL, this.bufferInfo, GL.TRIANGLES);
