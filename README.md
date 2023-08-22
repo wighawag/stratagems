@@ -25,7 +25,7 @@
 
 # An infinite game
 
-Stratagems is an "infinite game", a permission-less, immutable, and interoperable game. An Unstoppable game where all meaningful actions happen on-chain.
+[Stratagems](https://stratagems.eth.limo) is an "infinite game", a permission-less, immutable, and interoperable game. An Unstoppable game where all meaningful actions happen on-chain.
 
 If you are interested to know more about infinite games and autonomous worlds, check out our [blog post](https://ronan.eth.limo/blog/infinite-games/)
 
@@ -43,7 +43,7 @@ Players participate in the game by depositing ETH (ratio to be defined) to place
 
 By doing so, they risk the associated ETH but also get a chance to potentially capture the same (and more) from other players.
 
-More details coming soon! Follow our [twitter](https://twitter.com/stratagems_eth)
+More details coming soon! Follow our [twitter](https://twitter.com/stratagems_eth) or register your interest on our [website](https://stratagems.eth.limo)!
 
 ## How to run it locally?
 
