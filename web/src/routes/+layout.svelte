@@ -1,6 +1,5 @@
 <script>
 	import '../app.postcss';
-	import ThemeChanger from '$lib/components/daisyui/ThemeChanger.svelte';
 	import NavTabs from '$lib/components/daisyui/NavTabs.svelte';
 
 	import {name, description, themeColor, canonicalURL, appleStatusBarStyle, ENSName} from 'web-config';
@@ -8,6 +7,7 @@
 	import NoInstallPrompt from '$lib/components/web/NoInstallPrompt.svelte';
 	import {url} from '$lib/utils/path';
 	import Install from '$lib/components/web/Install.svelte';
+	import ConnectButton from '$lib/web3/ConnectButton.svelte';
 
 	const host = canonicalURL.endsWith('/') ? canonicalURL : canonicalURL + '/';
 	const previewImage = host + 'preview.png';
@@ -62,7 +62,7 @@
 		/>
 	</div>
 	<div class="flex-none">
-		<ThemeChanger />
+		<ConnectButton />
 	</div>
 </div>
 

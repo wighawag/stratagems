@@ -1,6 +1,5 @@
 <script lang="ts">
 	import NavTabs from '$lib/components/daisyui/NavTabs.svelte';
-	import ConnectButton from '$lib/web3/ConnectButton.svelte';
 	import Web3ConnectionUI from '$lib/web3/Web3ConnectionUI.svelte';
 </script>
 
@@ -16,10 +15,6 @@
 			{pathname: '/debug/utilities/', title: 'Utilities'},
 		]}
 	/>
-
-	<div class="float-right mr-2 mt-2">
-		<ConnectButton />
-	</div>
 </div>
 
 <slot />

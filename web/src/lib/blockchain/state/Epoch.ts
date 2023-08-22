@@ -14,7 +14,7 @@ export function computeEpoch(time: number) {
 	const timeLeftToCommit = ACTION_PERIOD - timePassed;
 	const timeLeftToReveal = isActionPhase ? -1 : TOTAL - timePassed;
 	const timeLeftToEpochEnd = TOTAL - timePassed;
-	return {epoch, timeLeftToEpochEnd, timeLeftToReveal, timeLeftToCommit};
+	return {epoch, timeLeftToEpochEnd, timeLeftToReveal, timeLeftToCommit, isActionPhase};
 }
 
 export function initEpoch(time: Readable<number>) {
@@ -30,6 +30,7 @@ export function initEpoch(time: Readable<number>) {
 			timeLeftToCommit: 0,
 			timeLeftToReveal: 0,
 			timeLeftToEpochEnd: 0,
+			isActionPhase: false,
 		},
 		(set) =>
 			time.subscribe((v) => {
@@ -45,3 +46,8 @@ export function initEpoch(time: Readable<number>) {
 }
 
 export const {epoch, epochInfo} = initEpoch(derived(time, (v) => v.timestamp));
+
+if (typeof window !== 'undefined') {
+	(window as any).epoch = epoch;
+	(window as any).epochInfo = epochInfo;
+}

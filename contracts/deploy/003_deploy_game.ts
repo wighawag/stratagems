@@ -3,7 +3,7 @@ import 'rocketh-deploy-proxy';
 import 'rocketh-deploy-router';
 import {context} from './_context';
 import {fetchContract} from '../utils/connection';
-import {minutes} from '../utils/time';
+import {days, hours, minutes} from '../utils/time';
 import {zeroAddress} from 'viem';
 
 export type GameConfig = {
@@ -20,27 +20,27 @@ export default execute(
 	context,
 	async (
 		{deployViaProxy, deployments, accounts, artifacts, network, deployViaRouter},
-		configOverride?: Partial<GameConfig>
+		configOverride?: Partial<GameConfig>,
 	) => {
 		const {deployer} = accounts;
 
 		const TestTokens = await fetchContract(
-			deployments.TestTokens as Deployment<typeof context.artifacts.TestTokens.abi>
+			deployments.TestTokens as Deployment<typeof context.artifacts.TestTokens.abi>,
 		);
-		const timestamp = 0; // BigInt(Math.floor(Date.now() / 1000));
+		const startTime = 0; // BigInt(Math.floor(Date.now() / 1000)); // startTime: nextSunday(),
 
 		const decimals = BigInt(await TestTokens.read.decimals());
 
+		const numTokensPerGems = BigInt(10) ** decimals;
+
 		const config = {
 			tokens: TestTokens.address,
-			numTokensPerGems: BigInt(10) ** decimals,
+			numTokensPerGems,
 			burnAddress: zeroAddress,
-			// startTime: nextSunday(),
-			startTime: timestamp, // nextSunday(),
-			// commitPeriod: days(2.5), // TODO support more complex period to support a special weekend commit period
-			commitPhaseDuration: BigInt(minutes(5)), // days(2.5), // TODO support more complex period to support a special weekend commit period
-			// resolutionPeriod: days(1),
-			resolutionPhaseDuration: BigInt(minutes(5)), // days(1),
+
+			startTime,
+			commitPhaseDuration: BigInt(days(1)), // BigInt(minutes(5)), // TODO support more complex period to support a special weekend commit period
+			resolutionPhaseDuration: BigInt(hours(1)),
 			maxLife: 7, // 7 is a good number, because with 4 enemy neighbors, it take 2 turns to die, with 3 it takes 3, with 2 it takes 4, with 1 it takes 7
 			...configOverride,
 		};
@@ -63,18 +63,19 @@ export default execute(
 						{
 							...(args as any),
 						},
-						routes
+						routes,
 					) as Promise<Deployment<typeof artifacts.IStratagems.abi>>;
 				},
 				args: [config],
 			},
 			{
 				owner: accounts.deployer,
-			}
+				linkedData: config,
+			},
 		);
 	},
 	{
 		tags: ['Stratagems', 'Stratagems_deploy'],
 		dependencies: ['TestTokens_deploy', 'Gems_deploy'],
-	}
+	},
 );
