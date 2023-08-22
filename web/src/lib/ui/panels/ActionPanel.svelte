@@ -14,6 +14,8 @@
 		commitFlow.requireConfirmation();
 	}
 
+	function topup(e: MouseEvent) {}
+
 	const symbol = initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol;
 
 	$: cost =
@@ -40,15 +42,23 @@
 				<div class="card-body">
 					<h2 class="card-title text-primary">Your Move:</h2>
 					<p class="text-secondary">
-						You'll stake {costString}
-						{symbol}. you have {currentBalnceString}
-						{symbol}.
+						You'll need {costString}
+						{symbol}
+						<span class={`${enough ? '' : 'text-red-300'}`}
+							>{`${enough ? ', ' : 'but '}`}you have {currentBalnceString}
+							{symbol}.</span
+						>
 					</p>
 					<div class="mt-4 card-actions justify-end">
 						<button class="pointer-events-auto btn btn-neutral" on:click={clear}>Clear</button>
-						<button class={`pointer-events-auto btn btn-primary ${enough ? '' : 'btn-disabled'}`} on:click={commit}
+						<!-- <button class={`pointer-events-auto btn btn-primary ${enough ? '' : 'btn-disabled'}`} on:click={commit}
 							>Commit</button
-						>
+						> -->
+						{#if enough}
+							<button class={`pointer-events-auto btn btn-primary`} on:click={commit}>Commit</button>
+						{:else}
+							<button class={`pointer-events-auto btn btn-primary`} on:click={topup}>Topup</button>
+						{/if}
 					</div>
 				</div>
 			</div>
