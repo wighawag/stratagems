@@ -4,6 +4,7 @@ import {initAccountData} from './account-data';
 import {initTransactionProcessor} from 'ethereum-tx-observer';
 import {initViemContracts} from 'web3-connection-viem';
 import {logs} from 'named-logs';
+import {initBalance} from '$lib/blockchain/state/balance';
 
 const logger = logs('stratagems');
 
@@ -88,7 +89,10 @@ export const {connection, network, account, pendingActions, execution, execute, 
 
 export const contracts = initViemContracts(execute);
 
+export const balance = initBalance(connection, account);
+
 if (typeof window !== 'undefined') {
+	(window as any).balance = balance;
 	(window as any).execution = execution;
 	(window as any).connection = connection;
 	(window as any).network = network;

@@ -24,12 +24,21 @@ export default execute(
 	) => {
 		const {deployer} = accounts;
 
+		const startTime = 0; // BigInt(Math.floor(Date.now() / 1000)); // startTime: nextSunday(),
+
 		const TestTokens = await fetchContract(
 			deployments.TestTokens as Deployment<typeof context.artifacts.TestTokens.abi>,
 		);
-		const startTime = 0; // BigInt(Math.floor(Date.now() / 1000)); // startTime: nextSunday(),
+		let decimals = BigInt(await TestTokens.read.decimals());
+		let symbol = await TestTokens.read.symbol();
+		let name = await TestTokens.read.name();
 
-		const decimals = BigInt(await TestTokens.read.decimals());
+		if (configOverride?.tokens == zeroAddress) {
+			// TODO per network
+			decimals = 18n;
+			symbol = 'ETH';
+			name = 'Ethers';
+		}
 
 		const numTokensPerGems = BigInt(10) ** decimals;
 
@@ -70,7 +79,14 @@ export default execute(
 			},
 			{
 				owner: accounts.deployer,
-				linkedData: config,
+				linkedData: {
+					...config,
+					currency: {
+						symbol,
+						name,
+						decimals,
+					},
+				},
 			},
 		);
 	},

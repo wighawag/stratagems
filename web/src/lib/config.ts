@@ -22,7 +22,7 @@ export const {params} = getParamsFromLocation();
 const contractsChainId = initialContractsInfos.chainId as string;
 let defaultRPCURL: string | undefined = params['ethnode'];
 
-let blockTime: number | undefined = undefined;
+let blockTime: number = 15;
 
 let isUsingLocalDevNetwork = false;
 if (contractsChainId === '1337' || contractsChainId === '31337') {
@@ -33,7 +33,7 @@ if (contractsChainId === '1337' || contractsChainId === '31337') {
 			defaultRPCURL = url;
 		}
 	}
-	blockTime = PUBLIC_LOCALHOST_BLOCK_TIME ? parseInt(PUBLIC_LOCALHOST_BLOCK_TIME) : undefined;
+	blockTime = PUBLIC_LOCALHOST_BLOCK_TIME ? parseInt(PUBLIC_LOCALHOST_BLOCK_TIME) : blockTime;
 }
 if (!defaultRPCURL) {
 	const url = PUBLIC_ETH_NODE_URI as string;
