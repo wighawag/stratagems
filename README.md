@@ -35,7 +35,7 @@ Stratagems is an infinite digital board game. it is both persistent and permissi
 
 Stratagems is thus first and foremost a social game. Its main inspiration is [conquest.eth](https://conquest.game) who successfully created a deeply social game out of simple mechanics. Stratagems explores this further by having even simpler rules. It also reduces the gas cost to a minimum by spreading the actions over a week. It works because most of the game plays out in the conversations and strategies happening among the players.
 
-While maximally on-chain, Stratagems scales with player by offering compelling off-chain gameplay with the social complexity associated with it.
+While maximally on-chain, Stratagems scales with players by offering compelling off-chain gameplay thanks to its associated social complexity.
 
 ## How do you play ?
 
@@ -48,6 +48,12 @@ More details coming soon! Follow our [twitter](https://twitter.com/stratagems_et
 ## How to run it locally?
 
 We are assuming here that you already setup your env as specified in the [initial setup section](#initial-setup)
+
+### install dependencies
+
+```bash
+pnpm i
+```
 
 Then Assuming you have [zellij](https://zellij.dev/) installed
 
@@ -85,6 +91,10 @@ pnpm indexer:dev
 pnpm web:dev
 ```
 
+### Play the game
+
+Just navigate to the url mentioned in the console. If you have no other thing running, it should be [http://localhost:5173/]()
+
 ## Deploying to a network
 
 Just execute the following
@@ -117,10 +127,4 @@ You need to have these installed
   npm i -g pnpm
   ```
 
-Then you need to install the local dependencies with the following command:
-
-```bash
-pnpm i
-```
-
-We also recommend to install [zellij](https://zellij.dev/) to have your dev env setup in one go via `pnpm start`
+- We also recommend to install [zellij](https://zellij.dev/) to have your dev env setup in one go via `pnpm start`
