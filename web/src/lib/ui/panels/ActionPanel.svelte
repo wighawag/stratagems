@@ -1,9 +1,9 @@
 <script lang="ts">
 	import {actionState} from '$lib/action/ActionState';
-	import {balance} from '$lib/web3/index';
+	import {balance, devProvider, account} from '$lib/web3';
 	import {initialContractsInfos} from '$lib/config';
 	import {commitFlow} from '$lib/ui/flows/CommitFlow';
-	import {formatEther, formatUnits} from 'viem';
+	import {encodeFunctionData, formatEther, formatUnits} from 'viem';
 	function clear(e: MouseEvent) {
 		e.preventDefault();
 		actionState.clear();
@@ -14,7 +14,22 @@
 		commitFlow.requireConfirmation();
 	}
 
-	function topup(e: MouseEvent) {}
+	async function topup(e: MouseEvent) {
+		await devProvider?.request({
+			method: 'eth_sendTransaction',
+			params: [
+				{
+					from: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+					to: initialContractsInfos.contracts.TestTokens.address,
+					data: encodeFunctionData({
+						abi: [{type: 'function', name: 'transfer', inputs: [{type: 'address'}, {type: 'uint256'}]}],
+						args: [account.$state.address, cost - currentBalance],
+						functionName: 'transfer',
+					}),
+				},
+			],
+		});
+	}
 
 	const symbol = initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol;
 
@@ -57,7 +72,7 @@
 						{#if enough}
 							<button class={`pointer-events-auto btn btn-primary`} on:click={commit}>Commit</button>
 						{:else}
-							<button class={`pointer-events-auto btn btn-primary`} on:click={topup}>Topup</button>
+							<!-- <button class={`pointer-events-auto btn btn-primary`} on:click={topup}>Topup</button> -->
 						{/if}
 					</div>
 				</div>

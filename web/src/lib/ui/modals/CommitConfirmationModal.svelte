@@ -13,7 +13,7 @@
 	}
 </script>
 
-{#if $commitFlow.state === 'requireConfirmation'}
+{#if $commitFlow.state !== 'idle'}
 	<Modal>
 		<ul class="steps mb-4 text-xs">
 			<li class="step">Confirm</li>
