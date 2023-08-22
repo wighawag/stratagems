@@ -25,17 +25,17 @@
 
 # An infinite game
 
-Stratagems is an infinite game, a permission-less, immutable and interroperable game. Un unstoppable game where all meaningul actions happen on-chain.
+Stratagems is an "infinite game", a permission-less, immutable, and interoperable game. An Unstoppable game where all meaningful actions happen on-chain.
 
 If you are interested to know more about infinite games and autonomous worlds, check out our [blog post](https://ronan.eth.limo/blog/infinite-games/)
 
 ## What is stratagems exactly ?
 
-Stratagems is an infinite board game, a persistent and permission-less game where players use a specific set of colors to compete for the control of the board. Alliances and betrayal are part of the arsenal as colors mix and shift on the board.
+Stratagems is an infinite digital board game. it is both persistent and permission-less, anyone can join at any time. Players then use a specific set of colors to compete for control of the board. Alliances and betrayal are part of the arsenal as colors mix and shift on the board.
 
-And so “stratagems” is first and foremost a social game. Its main inspiration is [conquest.eth](https://conquest.game) who successfully created a deeply social game out of simple mechanics. Stratagems explore it further by having even simpler rules. It also reduces the gas cost to minimum by spreading the actions over a week period. It works because most of the game plays out in the conversations and strategies happening among the players.
+Stratagems is thus first and foremost a social game. Its main inspiration is [conquest.eth](https://conquest.game) who successfully created a deeply social game out of simple mechanics. Stratagems explores this further by having even simpler rules. It also reduces the gas cost to a minimum by spreading the actions over a week. It works because most of the game plays out in the conversations and strategies happening among the players.
 
-While maximally on-chain, stratagems scale its gameplay by offering a compelling off-chain gameplay with the social complexity associated with it.
+While maximally on-chain, Stratagems scales with player by offering compelling off-chain gameplay with the social complexity associated with it.
 
 ## How do you play ?
 
@@ -43,7 +43,7 @@ Players participate in the game by depositing ETH (ratio to be defined) to place
 
 By doing so, they risk the associated ETH but also get a chance to potentially capture the same (and more) from other players.
 
-More detailts coming soon! Follow our [twitter](https://twitter.com/stratagems_eth)
+More details coming soon! Follow our [twitter](https://twitter.com/stratagems_eth)
 
 ## How to run it locally?
 
