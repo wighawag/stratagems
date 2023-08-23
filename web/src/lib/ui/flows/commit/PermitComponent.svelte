@@ -2,6 +2,8 @@
 	import type {Writable} from 'svelte/store';
 	import type {CommitState} from '.';
 	import {onMount} from 'svelte';
+	import {formatUnits} from 'viem';
+	import {initialContractsInfos} from '$lib/config';
 
 	export let state: Writable<CommitState>;
 
@@ -16,8 +18,19 @@
 			? BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')
 			: initialValue;
 	}
+
+	const symbol = initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol;
+
+	$: formatedValue = $state.amountToAdd
+		? $state.amountToAdd === BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')
+			? 'all'
+			: formatUnits(
+					$state.amountToAdd,
+					Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
+			  )
+		: '0';
 </script>
 
-<p>allow the spending to {$state.amountToAdd} tokens</p>
+<p>allow the spending of {formatedValue} {symbol}.</p>
 
 <input type="checkbox" on:change={setAmount} value={false} />

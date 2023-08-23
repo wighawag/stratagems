@@ -14,6 +14,7 @@ export type CommitState = {
 		nonce: number;
 	};
 	amountToAdd?: bigint;
+	amountToAllow?: bigint;
 };
 
 export type CommitFlow = Flow<CommitState>;
@@ -29,15 +30,18 @@ export async function startCommit() {
 		// TODO extra token to put in reserver
 		const amountToAdd = tokenNeeded > tokenInReserve ? tokenNeeded - tokenInReserve : 0n;
 
+		const tokenApproved = await contracts.TestTokens.read.allowance([account.address, contracts.Stratagems.address]);
+		const amountToAllow = amountToAdd > tokenApproved ? amountToAdd - tokenApproved : 0n;
+
 		const steps: Step<CommitState>[] = [];
-		if (amountToAdd > 0n) {
+		if (amountToAllow > 0n) {
 			const permitStep = {
 				title: 'permit',
 				action: 'allow',
 				description: `allow the spending of tokens`,
 				component: PermitComponent,
 				execute: async (state: CommitState) => {
-					const amountToAdd = state.amountToAdd || 0n; // sjould not be zero
+					const amountToAllow = state.amountToAllow || 0n; // sjould not be zero
 					const chainId = parseInt(initialContractsInfos.chainId);
 					const nonce = Number(await contracts.TestTokens.read.nonces([account.address]));
 					const permit = {
@@ -73,7 +77,7 @@ export async function startCommit() {
 						message: {
 							owner: account.address,
 							spender: contracts.Stratagems.address,
-							value: amountToAdd.toString(),
+							value: amountToAllow.toString(),
 							nonce,
 							deadline: 0,
 						},
@@ -83,7 +87,7 @@ export async function startCommit() {
 						params: [account.address, permit],
 					});
 
-					state.permit = {signature, amount: amountToAdd, nonce};
+					state.permit = {signature, amount: amountToAllow, nonce};
 					return state;
 				},
 			};
