@@ -12,6 +12,7 @@ const contracts = fs.readdirSync('./contracts').map(filename => {
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
+  base: 'stratagems',
   title: "Stratagems",
   description: "Stratagems is an infinite board game, a persistent and permission-less game where players use a specific set of colors to compete for the control of the board. Alliances and betrayal are part of the arsenal as colors mix and shift on the board.",
   themeConfig: {
