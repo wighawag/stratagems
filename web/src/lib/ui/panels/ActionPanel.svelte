@@ -2,16 +2,17 @@
 	import {actionState} from '$lib/action/ActionState';
 	import {balance, devProvider, account} from '$lib/web3';
 	import {initialContractsInfos} from '$lib/config';
-	import {commitFlow} from '$lib/ui/flows/CommitFlow';
 	import {encodeFunctionData, formatEther, formatUnits} from 'viem';
+	import {startCommit} from '$lib/ui/flows/commit';
 	function clear(e: MouseEvent) {
 		e.preventDefault();
 		actionState.clear();
 	}
 
-	function commit(e: MouseEvent) {
+	async function startCommiting(e: MouseEvent) {
 		e.preventDefault();
-		commitFlow.requireConfirmation();
+		// commit.start();
+		await startCommit();
 	}
 
 	async function topup(e: MouseEvent) {
@@ -70,7 +71,7 @@
 							>Commit</button
 						> -->
 						{#if enough}
-							<button class={`pointer-events-auto btn btn-primary`} on:click={commit}>Commit</button>
+							<button class={`pointer-events-auto btn btn-primary`} on:click={startCommiting}>Commit</button>
 						{:else}
 							<!-- <button class={`pointer-events-auto btn btn-primary`} on:click={topup}>Topup</button> -->
 						{/if}
