@@ -34,13 +34,15 @@
 			{/each}
 		</ul>
 
+		{#if currentStep}
+			{#if currentStep.component}
+				<svelte:component this={currentStep.component} {state} />
+			{:else}
+				<p class="py-4">{currentStep.description}</p>
+			{/if}
+		{/if}
 		<div class="mt-4 modal-action justify-end">
 			{#if currentStep}
-				{#if currentStep.component}
-					<svelte:component this={currentStep.component} {state} />
-				{:else}
-					{currentStep.description}
-				{/if}
 				<button class="btn btn-neutral" on:click={() => cancel()}>Back</button>
 			{:else}
 				<p>Steps completed</p>

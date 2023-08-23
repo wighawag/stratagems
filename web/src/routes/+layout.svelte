@@ -50,7 +50,7 @@
 	<meta name="apple-mobile-web-app-title" content={name} />
 </svelte:head>
 
-<div class="relative top-0 z-50 navbar bg-base-100 min-h-0 p-1 border-b-2 border-primary">
+<div class="relative top-0 z-50 navbar bg-base-100 h-16 p-1 border-b-2 border-primary">
 	<div class="flex-1">
 		<NavTabs
 			pages={[

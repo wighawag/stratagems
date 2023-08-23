@@ -42,13 +42,25 @@
 		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
 	);
 
+	$: currentReserve = $balance.reserve;
+	$: currentReserveString = formatUnits(
+		currentReserve,
+		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
+	);
+
 	$: currentBalance = $balance.balance;
 	$: currentBalnceString = formatUnits(
 		currentBalance,
 		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
 	);
 
-	$: enough = currentBalance >= cost; // TODO + gascost for ETH
+	$: depositNeeded = currentReserve < cost ? cost - currentReserve : 0n;
+	$: depositNeededString = formatUnits(
+		depositNeeded,
+		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
+	);
+
+	$: enough = currentBalance + currentReserve >= cost; // TODO + gascost for ETH
 </script>
 
 {#if $actionState.length > 0}
@@ -58,13 +70,15 @@
 				<div class="card-body">
 					<h2 class="card-title text-primary">Your Move:</h2>
 					<p class="text-secondary">
-						You'll need {costString}
-						{symbol}
+						This moves will cost {costString}
+						{symbol}. You'll need to deposit {depositNeededString} extra
+						{symbol} because you have {currentReserveString} in reserve.
 						<span class={`${enough ? '' : 'text-red-300'}`}
 							>{`${enough ? ', ' : 'but '}`}you have {currentBalnceString}
 							{symbol}.</span
 						>
 					</p>
+					<!-- {`${currentReserve > 0 ? `+ ${currentReserveString} in reserve` : ''}`}. -->
 					<div class="mt-4 card-actions justify-end">
 						<button class="pointer-events-auto btn btn-neutral" on:click={clear}>Clear</button>
 						<!-- <button class={`pointer-events-auto btn btn-primary ${enough ? '' : 'btn-disabled'}`} on:click={commit}

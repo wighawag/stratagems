@@ -1,8 +1,17 @@
 <script lang="ts">
-	import {connection, account, pendingActions, network} from './';
+	import {connection, account, pendingActions, network, contracts} from './';
 	import ImgBlockie from '$lib/components/ethereum/ImgBlockie.svelte';
-	import {contractsInfos} from '$lib/config';
+	import {contractsInfos, initialContractsInfos} from '$lib/config';
 	import {getNetworkConfig} from '$lib/blockchain/networks';
+	import {zeroAddress} from 'viem';
+
+	let tokenAllowanceUsed = (initialContractsInfos.contracts.Stratagems.linkedData.tokens as string) !== zeroAddress;
+
+	function clearAllowance() {
+		contracts.execute(async ({contracts, account}) => {
+			await contracts.TestTokens.write.approve([contracts.Stratagems.address, 0n], {account: account.address});
+		});
+	}
 </script>
 
 {#if $account.state === 'Disconnected' || $account.locked}
@@ -56,11 +65,15 @@
 			</button>
 		</div>
 		<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
-		<ul tabindex="0" class="menu menu-compact dropdown-content mt-3 p-2 shadow bg-base-200 rounded-box w-52">
-			<li>
-				<button class="m-1 btn btn-error text-error-content" on:click={() => connection.disconnect()}>disconnect</button
+		<div class="menu menu-compact dropdown-content mt-3 p-2 shadow bg-base-200 rounded-box w-52">
+			<button tabindex="0" class="btn btn-error text-error-content" on:click={() => connection.disconnect()}
+				>disconnect</button
+			>
+			{#if tokenAllowanceUsed}
+				<button tabindex="0" class="btn btn-error text-error-content" on:click={() => clearAllowance()}
+					>clear allowance</button
 				>
-			</li>
-		</ul>
+			{/if}
+		</div>
 	</div>
 {/if}

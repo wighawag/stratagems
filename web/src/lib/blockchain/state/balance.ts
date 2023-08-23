@@ -4,14 +4,26 @@ import {writable, type Readable} from 'svelte/store';
 import {zeroAddress, type Address, encodeFunctionData} from 'viem';
 import type {AccountState, ConnectionState} from 'web3-connection';
 
-export type BalanceData = {state: 'Idle' | 'Loaded'; fetching: boolean; balance: bigint; account?: Address};
+export type BalanceData = {
+	state: 'Idle' | 'Loaded';
+	fetching: boolean;
+	balance: bigint;
+	reserve: bigint;
+	account?: Address;
+};
 
-export function initBalance(
-	token: Address,
-	connection: Readable<ConnectionState>,
-	account: Readable<AccountState<Address>>,
-) {
-	const $state: BalanceData = {state: 'Idle', fetching: false, balance: 0n};
+export function initBalance({
+	token,
+	connection,
+	account,
+	depositContract,
+}: {
+	token: Address;
+	connection: Readable<ConnectionState>;
+	account: Readable<AccountState<Address>>;
+	depositContract?: Address;
+}) {
+	const $state: BalanceData = {state: 'Idle', fetching: false, balance: 0n, reserve: 0n};
 
 	let cancelAccountSubscription: (() => void) | undefined = undefined;
 	let cancelConnectionSubscription: (() => void) | undefined = undefined;
@@ -36,6 +48,29 @@ export function initBalance(
 			$state.fetching = true;
 			store.set($state);
 			try {
+				let reserve: string = '0x0';
+				if (depositContract) {
+					reserve = await provider.request({
+						method: 'eth_call',
+						params: [
+							{
+								to: depositContract,
+								data: encodeFunctionData({
+									abi: [
+										{
+											type: 'function',
+											name: 'getTokensInReserve',
+											inputs: [{type: 'address'}],
+											outputs: [{type: 'uint56'}],
+										},
+									],
+									args: [account],
+									functionName: 'getTokensInReserve',
+								}),
+							},
+						],
+					});
+				}
 				let balance: string;
 				if (token === zeroAddress) {
 					balance = await provider.request({method: 'eth_getBalance', params: [account]});
@@ -61,6 +96,7 @@ export function initBalance(
 					return;
 				}
 				$state.balance = BigInt(balance);
+				$state.reserve = BigInt(reserve);
 				$state.state = 'Loaded';
 				$state.fetching = false;
 				store.set($state);

@@ -31,7 +31,13 @@ export async function startCommit() {
 		const amountToAdd = tokenNeeded > tokenInReserve ? tokenNeeded - tokenInReserve : 0n;
 
 		const tokenApproved = await contracts.TestTokens.read.allowance([account.address, contracts.Stratagems.address]);
-		const amountToAllow = amountToAdd > tokenApproved ? amountToAdd - tokenApproved : 0n;
+		const amountToAllow = amountToAdd > tokenApproved ? amountToAdd : 0n;
+
+		console.log({
+			tokenApproved,
+			tokenInReserve,
+			tokenNeeded,
+		});
 
 		const steps: Step<CommitState>[] = [];
 		if (amountToAllow > 0n) {
@@ -120,7 +126,7 @@ export async function startCommit() {
 		const flow: CommitFlow = {
 			type: 'commit',
 			currentStepIndex: writable(0),
-			state: writable({amountToAdd}),
+			state: writable({amountToAllow, amountToAdd}),
 			steps,
 		};
 		currentFlow.start(flow);
