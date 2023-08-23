@@ -23,7 +23,7 @@
 
 ---
 
-# An infinite game
+# 🎮👾♟️ An infinite game
 
 [Stratagems](https://stratagems.eth.limo) is an "infinite game", a permission-less, immutable, and interoperable game. An Unstoppable game where all meaningful actions happen on-chain.
 
@@ -130,14 +130,12 @@ If you're passionate about Autonomous Worlds and infinite games, or if you have 
 
 Here's how you can get involved:
 
-1. **Fork the Repository:** Start by forking our repository to your GitHub account.
+- **Submit a Pull Request:** If you see any potential improvement, go for it. We welcome any kind of contributions
 
-2. **Create a Branch:** Create a new branch for your contributions, ensuring that your work doesn't interfere with the main codebase.
+- **Reach out to us if you want to join the project**, We are especially looking for web dev (css experience), game dev (pixi.js experience) and web/UX designer.
 
-3. **Make Your Magic:** Work on your chosen feature or challenge, keeping in mind best coding practices.
+- **Sponsor us** We're looking for at least 5000$ in sponsorship so we can get full time contributors.
 
-4. **Submit a Pull Request:** Once your code is ready, submit a pull request. We'll review your work and provide feedback.
+- **Partner with us** Our game is unique in that you can put funds in it and promote your own project. There is even scope to bring your project's token in the game. Reach out to us if you want to know more
 
-5. **Celebrate Collaboration:** By contributing, you're becoming a part of the AudioVerse community. Your contributions make a real impact!
-
-**Join us on this exciting journey of innovation and creativity. Let's have fun!** 🎶🚀
+**Join us on this exciting journey of innovation and creativity. Let's have fun!** 🎮👾🚀
