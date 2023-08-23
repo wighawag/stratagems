@@ -138,6 +138,6 @@ Here's how you can get involved:
 
 4. **Submit a Pull Request:** Once your code is ready, submit a pull request. We'll review your work and provide feedback.
 
-5. **Celebrate Collaboration:** By contributing, you're becoming a part of the AudioVerse community. Your contributions make a real impact!
+5. **Celebrate Collaboration:** By contributing, you're becoming a part of the Stratagems community. Your contributions make a real impact!
 
 **Join us on this exciting journey of innovation and creativity. Let's have fun!** 🎶🚀
