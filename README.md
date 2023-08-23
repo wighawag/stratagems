@@ -29,7 +29,7 @@
 
 If you are interested to know more about infinite games and autonomous worlds, check out our [blog post](https://ronan.eth.limo/blog/infinite-games/)
 
-## What is stratagems exactly ?
+## ♟️ What is stratagems exactly ?
 
 Stratagems is an infinite digital board game. it is both persistent and permission-less, anyone can join at any time. Players then use a specific set of colors to compete for control of the board. Alliances and betrayal are part of the arsenal as colors mix and shift on the board.
 
@@ -37,7 +37,7 @@ Stratagems is thus first and foremost a social game. Its main inspiration is [co
 
 While maximally on-chain, Stratagems scales with players by offering compelling off-chain gameplay thanks to its associated social complexity.
 
-## How do you play ?
+## 🎮 How do you play ?
 
 Players participate in the game by depositing ETH (ratio to be defined) to place a gem on the board. They specify the location and the color of the gem.
 
@@ -45,7 +45,13 @@ By doing so, they risk the associated ETH but also get a chance to potentially c
 
 More details coming soon! Follow our [twitter](https://twitter.com/stratagems_eth) or register your interest on our [website](https://stratagems.eth.limo)!
 
-## Install
+## 🎎 Who we are?
+
+For now, it is just me, [Ronan Sandford](https://twitter.com/wighawag).
+
+Ronan is a game designer working on Autonomous world, He calls them ["Infinite Games"](https://ronan.eth.limo/infinite-games/). He is also an active developer in the web3 space with contributions towards EIP like EIP-1155 and EIP-1771, but also tools like [hardhat-deploy](https://github.com/wighawag/hardhat-deploy) and [Jolly-Roger](https://jolly-roger.eth.limo). He has been tinkering with on-chain NFTs with [Mandalas](https://mandalas.eth.limo) and [Bleeps](https://bleeps.art)
+
+## 💻 Install
 
 > We are assuming here that you have [nodejs](https://nodejs.org/en) and [pnpm](https://pnpm.io/) installed
 >
@@ -100,7 +106,7 @@ More details coming soon! Follow our [twitter](https://twitter.com/stratagems_et
 > pnpm web:dev
 > ```
 
-## Play
+## 👾 Play
 
 Just navigate to the url mentioned in the console. If you have no other thing running, it should be [http://localhost:5173/]()
 
@@ -124,7 +130,7 @@ Then you can deploy your contract
 pnpm contracts:deploy <network>
 ```
 
-## How You Can Contribute 🙌🎉
+## 🙌🎉 How You Can Contribute
 
 If you're passionate about Autonomous Worlds and infinite games, or if you have your own ideas to bring to the table, we welcome your contributions!
 
