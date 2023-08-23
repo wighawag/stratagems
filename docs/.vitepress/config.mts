@@ -1,8 +1,10 @@
 import { defineConfig } from 'vitepress'
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const contracts = fs.readdirSync('./contracts').map(filename => {
+const contracts = fs.readdirSync(path.join(__dirname, '../contracts')).map(filename => {
   const name = path.basename(filename, '.md');
   return {
     text: name, link: `/contracts/${name}`
