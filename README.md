@@ -45,53 +45,59 @@ By doing so, they risk the associated ETH but also get a chance to potentially c
 
 More details coming soon! Follow our [twitter](https://twitter.com/stratagems_eth) or register your interest on our [website](https://stratagems.eth.limo)!
 
-## How to run it locally?
+## Install
 
 We are assuming here that you already setup your env as specified in the [initial setup section](#initial-setup)
 
-### install dependencies
+1. Clone the repository
 
-```bash
-pnpm i
-```
+   ```
+   git clone https://github.com/Fatma-Chaouech/audioverse.git
+   ```
 
-Then Assuming you have [zellij](https://zellij.dev/) installed
+2. Install dependencies
 
-```bash
-pnpm start
-```
+   ```bash
+   pnpm i
+   ```
 
-**And you are ready to go!**
+3. Then Assuming you have [zellij](https://zellij.dev/) installed
 
-Note that if you do not have [zellij](https://zellij.dev/) (on windows for example) you can use [wezterm](https://wezfurlong.org/wezterm/index.html)
+   ```bash
+   pnpm start
+   ```
 
-```bash
-pnpm start:wezterm
-```
+   **And you are ready to go!**
 
-Or you can also launch each component in their own process
+> [!NOTE] If you do not have [zellij](https://zellij.dev/) (on windows for example) you can use [wezterm](https://wezfurlong.org/wezterm/index.html)
+>
+> ```bash
+> pnpm start:wezterm
+> ```
+>
+> Or you can also launch each component in their own process
+>
+> ```bash
+> pnpm local_node
+> ```
+>
+> ```bash
+> pnpm contracts:compile:watch
+> ```
+>
+> ```bash
+> pnpm contracts:deploy:watch
+> ```
+>
+> ```bash
+> pnpm indexer:dev
+> ```
+>
+> ```bash
+> pnpm web:dev
+> ```
 
-```bash
-pnpm local_node
-```
-
-```bash
-pnpm contracts:compile:watch
-```
-
-```bash
-pnpm contracts:deploy:watch
-```
-
-```bash
-pnpm indexer:dev
-```
-
-```bash
-pnpm web:dev
-```
-
-### Play the game
+## Play
 
 Just navigate to the url mentioned in the console. If you have no other thing running, it should be [http://localhost:5173/]()
 
