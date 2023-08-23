@@ -7,7 +7,7 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "@types/node": "^20.5.2",
+    "@types/node": "^20.5.3",
     "named-logs": "^0.2.2",
     "viem": "^1.6.7"
   },
