@@ -49,7 +49,7 @@ More details coming soon! Follow our [twitter](https://twitter.com/stratagems_et
 
 For now, it is just me, [Ronan Sandford](https://twitter.com/wighawag).
 
-Ronan is a game designer working on Autonomous Worlds. He like to calls them ["Infinite Games"](https://ronan.eth.limo/infinite-games/). He is also an active developer in the web3 space with contributions towards EIP like [EIP-1155](https://eips.ethereum.org/EIPS/eip-1155) and [EIP-2771](https://eips.ethereum.org/EIPS/eip-2771), but also tools like [hardhat-deploy](https://github.com/wighawag/hardhat-deploy) and [Jolly-Roger](https://jolly-roger.eth.limo). He has been tinkering with on-chain NFTs with [Mandalas](https://mandalas.eth.limo) and [Bleeps](https://bleeps.art). You can find more on his [personal website](https://ronan.eth.limo).
+Ronan is a game designer working on Autonomous Worlds (including [conquest.eth](https://conquest.game) and [Ethernal](https://ethernal.world)). He like to calls them ["Infinite Games"](https://ronan.eth.limo/infinite-games/). He is also an active developer in the web3 space with contributions towards EIP like [EIP-1155](https://eips.ethereum.org/EIPS/eip-1155) and [EIP-2771](https://eips.ethereum.org/EIPS/eip-2771), but also tools like [hardhat-deploy](https://github.com/wighawag/hardhat-deploy) and [Jolly-Roger](https://jolly-roger.eth.limo). He has been tinkering with on-chain NFTs with [Mandalas](https://mandalas.eth.limo) and [Bleeps](https://bleeps.art). You can find more on his [personal website](https://ronan.eth.limo).
 
 ## 💻 Install
 
