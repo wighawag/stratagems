@@ -41,7 +41,7 @@ export default defineConfig({
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/onchain-games/stratagems' }
+      { icon: 'github', link: 'https://github.com/wighawag/stratagems' }
     ]
   }
 })
