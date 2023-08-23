@@ -47,12 +47,15 @@ More details coming soon! Follow our [twitter](https://twitter.com/stratagems_et
 
 ## Install
 
-We are assuming here that you already setup your env as specified in the [initial setup section](#initial-setup)
+> We are assuming here that you have [nodejs](https://nodejs.org/en) and [pnpm](https://pnpm.io/) installed
+>
+> We also recommend to install [zellij](https://zellij.dev/)
 
 1. Clone the repository
 
    ```
-   git clone https://github.com/Fatma-Chaouech/audioverse.git
+   git clone https://github.com/wighawag/stratagems.git
+   cd stratagems
    ```
 
 2. Install dependencies
@@ -121,16 +124,20 @@ Then you can deploy your contract
 pnpm contracts:deploy <network>
 ```
 
-## Initial Setup
+## How You Can Contribute 🙌🎉
 
-You need to have these installed
+If you're passionate about Autonomous Worlds and infinite games, or if you have your own ideas to bring to the table, we welcome your contributions!
 
-- [nodejs](https://nodejs.org/en)
+Here's how you can get involved:
 
-- [pnpm](https://pnpm.io/)
+1. **Fork the Repository:** Start by forking our repository to your GitHub account.
 
-  ```bash
-  npm i -g pnpm
-  ```
+2. **Create a Branch:** Create a new branch for your contributions, ensuring that your work doesn't interfere with the main codebase.
 
-- We also recommend to install [zellij](https://zellij.dev/) to have your dev env setup in one go via `pnpm start`
+3. **Make Your Magic:** Work on your chosen feature or challenge, keeping in mind best coding practices.
+
+4. **Submit a Pull Request:** Once your code is ready, submit a pull request. We'll review your work and provide feedback.
+
+5. **Celebrate Collaboration:** By contributing, you're becoming a part of the AudioVerse community. Your contributions make a real impact!
+
+**Join us on this exciting journey of innovation and creativity. Let's have fun!** 🎶🚀
