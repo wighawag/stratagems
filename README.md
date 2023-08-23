@@ -69,7 +69,7 @@ We are assuming here that you already setup your env as specified in the [initia
 
    **And you are ready to go!**
 
-> [!NOTE] If you do not have [zellij](https://zellij.dev/) (on windows for example) you can use [wezterm](https://wezfurlong.org/wezterm/index.html)
+> **Note** If you do not have [zellij](https://zellij.dev/) (on windows for example) you can use [wezterm](https://wezfurlong.org/wezterm/index.html)
 >
 > ```bash
 > pnpm start:wezterm
