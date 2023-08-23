@@ -27,7 +27,7 @@ export class CommitFlow {
 		return this.store.subscribe(run, invalidate);
 	}
 
-	requireConfirmation(amount: bigint) {
+	requireConfirmation() {
 		this.$store.state = 'requireConfirmation';
 		this.store.set(this.$store);
 	}

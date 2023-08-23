@@ -3,4 +3,3 @@ packages:
   - 'contracts'
   - 'indexer'
   - 'web'
-  - 'docs'
