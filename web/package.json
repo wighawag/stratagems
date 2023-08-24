@@ -41,9 +41,9 @@
     "stratagems-common": "workspace:*",
     "stratagems-indexer": "workspace:*",
     "theme-change": "^2.5.0",
-    "twgl.js": "^5.5.1",
-    "viem": "^1.6.7",
-    "web3-connection": "^0.1.0",
+    "twgl.js": "^5.5.3",
+    "viem": "^1.7.0",
+    "web3-connection": "^0.1.4",
     "web3-connection-viem": "^0.0.1"
   },
   "scripts": {

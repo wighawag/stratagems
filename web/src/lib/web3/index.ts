@@ -31,11 +31,13 @@ const stores = init({
 	},
 	acccountData: {
 		async loadWithNetworkConnected(state, setLoadingMessage, waitForStep) {
+			console.log({loading: '...'});
 			const chainId = state.network.chainId;
 			const address = state.address;
 			await accountData.load(address, chainId, state.network.genesisHash);
 		},
 		async unload() {
+			console.log({unloading: '...'});
 			await accountData.unload();
 		},
 	},

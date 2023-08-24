@@ -1,12 +1,14 @@
 <script lang="ts">
-	import {actionState} from '$lib/action/ActionState';
-	import {balance, devProvider, account} from '$lib/web3';
+	import {balance, devProvider, account, accountData} from '$lib/web3';
 	import {initialContractsInfos} from '$lib/config';
 	import {encodeFunctionData, formatEther, formatUnits} from 'viem';
 	import {startCommit} from '$lib/ui/flows/commit';
+
+	const offchainState = accountData.offchainState;
+
 	function clear(e: MouseEvent) {
 		e.preventDefault();
-		actionState.clear();
+		offchainState.back();
 	}
 
 	async function startCommiting(e: MouseEvent) {
@@ -35,7 +37,7 @@
 	const symbol = initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol;
 
 	$: cost =
-		BigInt($actionState.length) *
+		BigInt($offchainState.moves.length) *
 		BigInt(initialContractsInfos.contracts.Stratagems.linkedData.numTokensPerGems.slice(0, -1));
 	$: costString = formatUnits(
 		cost,
@@ -63,7 +65,7 @@
 	$: enough = currentBalance + currentReserve >= cost; // TODO + gascost for ETH
 </script>
 
-{#if $actionState.length > 0}
+{#if $offchainState.moves.length > 0}
 	<div class="pointer-events-none select-none fixed top-0 h-full grid place-items-end w-full max-w-full">
 		<div class="flex flex-row-reverse sm:m-2 w-full">
 			<div class="card w-full sm:w-96 bg-base-content glass">

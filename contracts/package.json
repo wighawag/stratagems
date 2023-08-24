@@ -30,7 +30,7 @@
     "stratagems-common": "workspace:*",
     "stratagems-indexer": "workspace:*",
     "typescript": "^5.1.6",
-    "viem": "^1.6.7",
+    "viem": "^1.7.0",
     "viem-chai-matchers": "^0.0.3",
     "vitest": "^0.34.2",
     "vitest-solidity-coverage": "^0.1.4"

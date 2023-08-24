@@ -11,7 +11,7 @@ const _time = writable({timestamp, synced}, (set) => {
 		const lastSynced = synced;
 		try {
 			if (typeof window !== 'undefined' && devProvider) {
-				console.log({devProvider});
+				// console.log({devProvider});
 				// TODO offer option to use a contract's time or blockTime
 				// const rawTimestamp = await devProvider.request({
 				// 	method: 'eth_call',

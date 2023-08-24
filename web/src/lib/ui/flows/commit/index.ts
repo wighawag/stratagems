@@ -1,11 +1,11 @@
 import {get, writable} from 'svelte/store';
 import {currentFlow, type Flow, type Step} from '..';
-import {contracts} from '$lib/web3';
-import {actionState, localMoveToContractMove} from '$lib/action/ActionState';
+import {accountData, contracts} from '$lib/web3';
 import {initialContractsInfos} from '$lib/config';
 import PermitComponent from './PermitComponent.svelte';
 import {prepareCommitment} from 'stratagems-common';
 import {hexToSignature} from 'viem';
+import {localMoveToContractMove} from '$lib/web3/account-data';
 
 export type CommitState = {
 	permit?: {
@@ -21,10 +21,10 @@ export type CommitFlow = Flow<CommitState>;
 
 export async function startCommit() {
 	await contracts.execute(async ({contracts, account, connection}) => {
-		const actions = get(actionState);
-		const numActions = actions.length;
+		const localMoves = accountData.$offchainState.moves;
+		const numMoves = localMoves.length;
 		const tokenNeeded =
-			BigInt(initialContractsInfos.contracts.Stratagems.linkedData.numTokensPerGems.slice(0, -1)) * BigInt(numActions);
+			BigInt(initialContractsInfos.contracts.Stratagems.linkedData.numTokensPerGems.slice(0, -1)) * BigInt(numMoves);
 
 		const tokenInReserve = await contracts.Stratagems.read.getTokensInReserve([account.address]);
 		// TODO extra token to put in reserver
@@ -107,7 +107,7 @@ export async function startCommit() {
 			// component: PermitComponent,
 			execute: async (state: CommitState) => {
 				const secret = '0x0000000000000000000000000000000000000000000000000000000000000000';
-				const {hash, moves} = prepareCommitment(actions.map(localMoveToContractMove), secret);
+				const {hash, moves} = prepareCommitment(localMoves.map(localMoveToContractMove), secret);
 
 				if (state.permit) {
 					const {v, r, s} = hexToSignature(state.permit.signature);
