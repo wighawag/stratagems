@@ -48,12 +48,34 @@ export class Grid extends Mesh<Shader> {
 		// we need to declare an output for the fragment shader
 		out vec4 outColor;
 
+		
 		void main() {    
+
+			// vec2 position = (gl_FragCoord.xy + u_offset) / u_size;
+			// vec2 grid = fract(position) - 0.5; // centered (-0.5 to 0.5)
+			// vec2 cell_index = floor(position);
+			// float d = length(grid); 
+			// float m = smoothstep(.4,.3, d);
+
 			if (int(mod(gl_FragCoord.x + u_offset[0], u_size)) == 0 || int(mod(gl_FragCoord.y + u_offset[1], u_size)) == 0) {
 				outColor = mix(u_color, u_bgColor, 4.0 / u_size);
 			} else {
 				outColor = u_bgColor;
 			}
+			
+
+			// vec3 col = vec3(0);
+			// col.rg = grid.rg;
+			// col += m;
+
+			// // float dist = sqrt(pow(grid.r,2.0) + pow(grid.g,2.0));
+			// outColor = vec4(col, 1.0);
+
+			// if (grid.x == 0.0 && grid.y == 0.0) {
+			// 	outColor = mix(u_color, u_bgColor, 4.0 / u_size);
+			// } else {
+			// 	outColor = u_bgColor;
+			// }
 		}
 		`;
 		// Build geometry.
