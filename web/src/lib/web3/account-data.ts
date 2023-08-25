@@ -1,5 +1,5 @@
 import type {EIP1193TransactionWithMetadata} from 'web3-connection';
-import type {PendingTransaction} from 'ethereum-tx-observer';
+import type {PendingTransaction, PendingTransactionState} from 'ethereum-tx-observer';
 import {initEmitter} from 'radiate';
 import {writable} from 'svelte/store';
 import {Color, bnReplacer, bnReviver, type ContractMove, xyToBigIntID} from 'stratagems-common';
@@ -28,26 +28,23 @@ export type Epoch = {number: number};
 export type OffchainState = {
 	epoch?: Epoch;
 	lastEpochAcknowledged: number;
-	moves: LocalMoves;
+	moves?: LocalMoves;
 };
 
 const defaultOffchainState: OffchainState = {
-	moves: [],
+	moves: undefined,
 	lastEpochAcknowledged: 0,
 };
 
 export type CommitMetadata = {
-	type: 'commit'; // TODO remove undefined
-	// cellActions: CellAction[];
-	// roomActions: RoomAction[]; // no
-	// actions: RoomAction[];
+	type: 'commit';
+	epoch: number;
+	localMoves: LocalMoves;
 	secret: `0x${string}`;
-	combatStance: number;
 };
 
 export type RevealMetadata = {
 	type: 'reveal';
-
 	commitTx: `0x${string}`;
 };
 
@@ -64,18 +61,8 @@ export type StratagemsTransaction<T = AnyMetadata> = EIP1193TransactionWithMetad
 
 export type OnChainAction<T = AnyMetadata> = {
 	tx: StratagemsTransaction<T>;
-} & (
-	| {
-			inclusion: 'BeingFetched' | 'Broadcasted' | 'NotFound' | 'Cancelled';
-			final: undefined;
-			status: undefined;
-	  }
-	| {
-			inclusion: 'Included';
-			status: 'Failure' | 'Success';
-			final: number;
-	  }
-);
+	revealTx?: PendingTransaction;
+} & PendingTransactionState;
 export type OnChainActions = {[hash: `0x${string}`]: OnChainAction};
 
 export type AccountData = {
@@ -127,7 +114,18 @@ export function initAccountData() {
 		const pending_transactions: PendingTransaction[] = [];
 		for (const hash in onChainActions) {
 			const onchainAction = (onChainActions as any)[hash];
-			pending_transactions.push(fromOnChainActionToPendingTransaction(hash as `0x${string}`, onchainAction));
+			const tx = fromOnChainActionToPendingTransaction(hash as `0x${string}`, onchainAction);
+			pending_transactions.push(tx);
+			if (onchainAction.revealTx) {
+				const tx = {
+					hash: onchainAction.revealTx.hash,
+					request: onchainAction.revealTx.request,
+					final: onchainAction.revealTx.final,
+					inclusion: onchainAction.revealTx.inclusion,
+					status: onchainAction.revealTx.status,
+				} as PendingTransaction;
+				pending_transactions.push(tx);
+			}
 		}
 		emitter.emit({name: 'newTx', txs: pending_transactions});
 	}
@@ -185,6 +183,29 @@ export function initAccountData() {
 			}
 		}
 
+		if (tx.metadata && (tx.metadata as any).type === 'reveal') {
+			const data: RevealMetadata = tx.metadata as RevealMetadata;
+			const action = $onchainActions[data.commitTx];
+			const pendingTransaction = {
+				hash,
+				request: tx,
+				inclusion: inclusion || 'BeingFetched',
+				final: undefined,
+				status: undefined,
+			} as PendingTransaction;
+			if (action) {
+				action.revealTx = pendingTransaction;
+			}
+			save();
+			onchainActions.set($onchainActions);
+
+			emitter.emit({
+				name: 'newTx',
+				txs: [pendingTransaction],
+			});
+			return;
+		}
+
 		const onchainAction: OnChainAction = {
 			tx: tx as StratagemsTransaction,
 			inclusion: inclusion || 'BeingFetched',
@@ -203,17 +224,21 @@ export function initAccountData() {
 	}
 
 	function _updateTx(pendingTransaction: PendingTransaction) {
-		const action = $onchainActions[pendingTransaction.hash];
-		if (action) {
-			action.inclusion = pendingTransaction.inclusion;
-			action.status = pendingTransaction.status;
-			action.final = pendingTransaction.final;
-
-			// for autonomous-dungeon we need to keep the secret data when commiting
-			// // TODO specific to jolly-roger which does not need user acknowledgement for deleting the actions
-			// if (action.final) {
-			// 	delete $onchainActions[pendingTransaction.hash];
-			// }
+		if (pendingTransaction.request.metadata && pendingTransaction.request.metadata.type === 'reveal') {
+			const action = $onchainActions[pendingTransaction.request.metadata.commitTx];
+			if (action) {
+				action.revealTx = {...pendingTransaction};
+				if (action.revealTx.final) {
+					delete $onchainActions[pendingTransaction.request.metadata.commitTx];
+				}
+			}
+		} else {
+			const action = $onchainActions[pendingTransaction.hash];
+			if (action) {
+				action.inclusion = pendingTransaction.inclusion;
+				action.status = pendingTransaction.status;
+				action.final = pendingTransaction.final;
+			}
 		}
 	}
 
@@ -240,7 +265,7 @@ export function initAccountData() {
 	}
 
 	function resetOffchainState(alsoSave: boolean = true) {
-		$offchainState.moves.splice(0, $offchainState.moves.length);
+		$offchainState.moves = undefined;
 
 		$offchainState.epoch = undefined;
 		if (alsoSave) {
@@ -250,8 +275,11 @@ export function initAccountData() {
 	}
 
 	function addMove(move: LocalMove) {
-		const existingMove = $offchainState.moves.find((v) => v.x === move.x && v.y === move.y);
+		const existingMove = $offchainState.moves?.find((v) => v.x === move.x && v.y === move.y);
 		if (!existingMove) {
+			if (!$offchainState.moves) {
+				$offchainState.moves = [];
+			}
 			$offchainState.moves.push(move);
 		} else {
 			existingMove.color = move.color;
@@ -262,21 +290,24 @@ export function initAccountData() {
 	}
 
 	function removeMove(x: number, y: number) {
-		for (let i = 0; i < $offchainState.moves.length; i++) {
-			const move = $offchainState.moves[i];
-			if (move.x === x && move.y === y) {
-				$offchainState.moves.splice(i, 1);
-				i--;
+		if ($offchainState.moves) {
+			for (let i = 0; i < $offchainState.moves.length; i++) {
+				const move = $offchainState.moves[i];
+				if (move.x === x && move.y === y) {
+					$offchainState.moves.splice(i, 1);
+					i--;
+				}
 			}
+			save();
+			offchainState.set($offchainState);
 		}
-		save();
-		offchainState.set($offchainState);
 	}
 
 	function back() {
-		$offchainState.moves.splice($offchainState.moves.length - 1, 1);
-		save();
-		offchainState.set($offchainState);
+		// TODO undo
+		// $offchainState.moves.splice($offchainState.moves.length - 1, 1);
+		// save();
+		// offchainState.set($offchainState);
 	}
 
 	function acknowledgeEpoch(epochNumber: number) {
@@ -294,7 +325,7 @@ export function initAccountData() {
 		$offchainState,
 		offchainState: {
 			subscribe: offchainState.subscribe,
-			back,
+			// back,
 			addMove,
 			removeMove,
 			reset: resetOffchainState,

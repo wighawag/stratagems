@@ -5,7 +5,8 @@ import {initialContractsInfos} from '$lib/config';
 import PermitComponent from './PermitComponent.svelte';
 import {prepareCommitment} from 'stratagems-common';
 import {hexToSignature} from 'viem';
-import {localMoveToContractMove} from '$lib/web3/account-data';
+import {localMoveToContractMove, type CommitMetadata} from '$lib/web3/account-data';
+import {epoch} from '$lib/blockchain/state/Epoch';
 
 export type CommitState = {
 	permit?: {
@@ -22,6 +23,9 @@ export type CommitFlow = Flow<CommitState>;
 export async function startCommit() {
 	await contracts.execute(async ({contracts, account, connection}) => {
 		const localMoves = accountData.$offchainState.moves;
+		if (!localMoves) {
+			throw new Error(`no local moves`);
+		}
 		const numMoves = localMoves.length;
 		const tokenNeeded =
 			BigInt(initialContractsInfos.contracts.Stratagems.linkedData.numTokensPerGems.slice(0, -1)) * BigInt(numMoves);
@@ -109,6 +113,13 @@ export async function startCommit() {
 				const secret = '0x0000000000000000000000000000000000000000000000000000000000000000';
 				const {hash, moves} = prepareCommitment(localMoves.map(localMoveToContractMove), secret);
 
+				const commitMetadata: CommitMetadata = {
+					type: 'commit',
+					epoch: get(epoch),
+					localMoves,
+					secret,
+				};
+				connection.provider.setNextMetadata(commitMetadata);
 				if (state.permit) {
 					const {v, r, s} = hexToSignature(state.permit.signature);
 					await contracts.Stratagems.write.makeCommitmentWithExtraReserve(

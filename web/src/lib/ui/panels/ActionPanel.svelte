@@ -3,12 +3,14 @@
 	import {initialContractsInfos} from '$lib/config';
 	import {encodeFunctionData, formatEther, formatUnits} from 'viem';
 	import {startCommit} from '$lib/ui/flows/commit';
+	import {epochInfo} from '$lib/blockchain/state/Epoch';
+	import ResolutionPanel from './ResolutionPanel.svelte';
 
 	const offchainState = accountData.offchainState;
 
 	function clear(e: MouseEvent) {
 		e.preventDefault();
-		offchainState.back();
+		offchainState.reset();
 	}
 
 	async function startCommiting(e: MouseEvent) {
@@ -37,8 +39,10 @@
 	const symbol = initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol;
 
 	$: cost =
-		BigInt($offchainState.moves.length) *
-		BigInt(initialContractsInfos.contracts.Stratagems.linkedData.numTokensPerGems.slice(0, -1));
+		$offchainState.moves === undefined
+			? 0n
+			: BigInt($offchainState.moves.length) *
+			  BigInt(initialContractsInfos.contracts.Stratagems.linkedData.numTokensPerGems.slice(0, -1));
 	$: costString = formatUnits(
 		cost,
 		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
@@ -65,35 +69,39 @@
 	$: enough = currentBalance + currentReserve >= cost; // TODO + gascost for ETH
 </script>
 
-{#if $offchainState.moves.length > 0}
-	<div class="pointer-events-none select-none fixed top-0 h-full grid place-items-end w-full max-w-full">
-		<div class="flex flex-row-reverse sm:m-2 w-full">
-			<div class="card w-full sm:w-96 bg-base-content glass">
-				<div class="card-body">
-					<h2 class="card-title text-primary">Your Move:</h2>
-					<p class="text-secondary">
-						This moves will cost {costString}
-						{symbol}. You'll need to deposit {depositNeededString} extra
-						{symbol} because you have {currentReserveString} in reserve.
-						<span class={`${enough ? '' : 'text-red-300'}`}
-							>{`${enough ? ', ' : 'but '}`}you have {currentBalnceString}
-							{symbol}.</span
-						>
-					</p>
-					<!-- {`${currentReserve > 0 ? `+ ${currentReserveString} in reserve` : ''}`}. -->
-					<div class="mt-4 card-actions justify-end">
-						<button class="pointer-events-auto btn btn-neutral" on:click={clear}>Clear</button>
-						<!-- <button class={`pointer-events-auto btn btn-primary ${enough ? '' : 'btn-disabled'}`} on:click={commit}
+{#if $epochInfo.isActionPhase}
+	{#if $offchainState.moves && $offchainState.moves.length > 0}
+		<div class="pointer-events-none select-none fixed top-0 h-full grid place-items-end w-full max-w-full">
+			<div class="flex flex-row-reverse sm:m-2 w-full">
+				<div class="card w-full sm:w-96 bg-base-content glass">
+					<div class="card-body">
+						<h2 class="card-title text-primary">Your Move:</h2>
+						<p class="text-secondary">
+							This moves will cost {costString}
+							{symbol}. You'll need to deposit {depositNeededString} extra
+							{symbol} because you have {currentReserveString} in reserve.
+							<span class={`${enough ? '' : 'text-red-300'}`}
+								>{`${enough ? ', ' : 'but '}`}you have {currentBalnceString}
+								{symbol}.</span
+							>
+						</p>
+						<!-- {`${currentReserve > 0 ? `+ ${currentReserveString} in reserve` : ''}`}. -->
+						<div class="mt-4 card-actions justify-end">
+							<button class="pointer-events-auto btn btn-neutral" on:click={clear}>Clear</button>
+							<!-- <button class={`pointer-events-auto btn btn-primary ${enough ? '' : 'btn-disabled'}`} on:click={commit}
 							>Commit</button
 						> -->
-						{#if enough}
-							<button class={`pointer-events-auto btn btn-primary`} on:click={startCommiting}>Commit</button>
-						{:else}
-							<!-- <button class={`pointer-events-auto btn btn-primary`} on:click={topup}>Topup</button> -->
-						{/if}
+							{#if enough}
+								<button class={`pointer-events-auto btn btn-primary`} on:click={startCommiting}>Commit</button>
+							{:else}
+								<!-- <button class={`pointer-events-auto btn btn-primary`} on:click={topup}>Topup</button> -->
+							{/if}
+						</div>
 					</div>
 				</div>
 			</div>
 		</div>
-	</div>
+	{/if}
+{:else}
+	<ResolutionPanel />
 {/if}

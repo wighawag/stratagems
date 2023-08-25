@@ -12,7 +12,7 @@
     "ethereum-contracts-test-suite": "^0.2.1",
     "ethereum-indexer-browser": "^0.6.6",
     "hardhat": "^2.17.1",
-    "hardhat-rocketh": "^0.6.15",
+    "hardhat-rocketh": "^0.6.17",
     "ldenv": "^0.3.7",
     "rocketh": "^0.6.9",
     "rocketh-deploy": "^0.6.11",

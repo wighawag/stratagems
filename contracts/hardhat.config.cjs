@@ -21,7 +21,7 @@ const defaultSettings = {
 	},
 };
 
-module.exports = {
+const config = {
 	solidity: {
 		compilers: [
 			{
@@ -40,7 +40,7 @@ module.exports = {
 					allowUnlimitedContractSize: true,
 					mining: {
 						auto: process.env['BLOCK_TIME'] ? true : false,
-						interval: process.env['BLOCK_TIME'] ? parseInt(process.env['BLOCK_TIME']) : undefined,
+						interval: process.env['BLOCK_TIME'] ? parseInt(process.env['BLOCK_TIME']) * 1000 : undefined,
 					},
 				},
 			}),
@@ -56,3 +56,5 @@ module.exports = {
 		require: 'named-logs-console',
 	},
 };
+
+module.exports = config;

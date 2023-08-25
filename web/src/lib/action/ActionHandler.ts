@@ -16,7 +16,7 @@ export class ActionHandler {
 		const currentOffchainState = get(accountData.offchainState);
 		const cellID = xyToXYID(x, y);
 		const currentCell = currentState.cells[cellID];
-		const currentMove = currentOffchainState.moves.find((v) => v.x === x && v.y === y);
+		const currentMove = currentOffchainState.moves?.find((v) => v.x === x && v.y === y);
 		if (currentMove) {
 			accountData.offchainState.removeMove(x, y);
 			const color = ((currentMove.color + 1) % 5) as Color;
