@@ -11,9 +11,9 @@ export type ViewCell = ContractCell & {
 	localState?: 'pending' | 'planned';
 };
 
-export type ViewData = Data & {
+export type ViewData = {
 	cells: {
-		[pos: string]: ViewCell;
+		[pos: string]: {next: ViewCell; future: ViewCell};
 	};
 	owners: {[pos: string]: `0x${string}`};
 };
@@ -25,7 +25,7 @@ function merge(state: Data, offchainState: OffchainState, onchainActions: OnChai
 	if (offchainState.moves !== undefined) {
 		for (const move of offchainState.moves) {
 			// TODO we should have access to the account from offchainState
-			stratagems.computeMove(account.$state.address as `0x${string}`, epoch, localMoveToContractMove(move));
+			stratagems.computeMove(account.$state.address as `0x${string}`, epoch + 1, localMoveToContractMove(move));
 		}
 	} else {
 		for (const txHash of Object.keys(onchainActions)) {
@@ -36,7 +36,7 @@ function merge(state: Data, offchainState: OffchainState, onchainActions: OnChai
 					// TODO
 					if (metadata.epoch == epoch) {
 						for (const move of metadata.localMoves) {
-							stratagems.computeMove(account.$state.address as `0x${string}`, epoch, localMoveToContractMove(move));
+							stratagems.computeMove(account.$state.address as `0x${string}`, epoch + 1, localMoveToContractMove(move));
 						}
 					}
 				}
@@ -48,7 +48,8 @@ function merge(state: Data, offchainState: OffchainState, onchainActions: OnChai
 	for (const cellID of Object.keys(copyState.cells)) {
 		const {x, y} = bigIntIDToXY(BigInt(cellID));
 		const cell = copyState.cells[cellID];
-		const updatedCell = stratagems.getUpdatedCell(BigInt(cellID), epoch + 1);
+		const next = stratagems.getUpdatedCell(BigInt(cellID), epoch + 1);
+		const future = stratagems.getUpdatedCell(BigInt(cellID), epoch + 2);
 		// console.log({
 		// 	x,
 		// 	y,
@@ -56,7 +57,7 @@ function merge(state: Data, offchainState: OffchainState, onchainActions: OnChai
 		// 	updatedCell,
 		// 	epoch,
 		// });
-		viewState.cells[xyToXYID(x, y)] = updatedCell;
+		viewState.cells[xyToXYID(x, y)] = {next, future};
 	}
 	for (const ownerAddr of Object.keys(copyState.owners)) {
 		viewState.owners[ownerAddr] = copyState.owners[ownerAddr];
