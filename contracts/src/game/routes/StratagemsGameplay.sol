@@ -105,6 +105,17 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 
 		_makeCommitment(msg.sender, commitmentHash, inReserve);
 
+		// bytes32 PERMIT_TYPEHASH = keccak256(
+		// 	'Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)'
+		// );
+		// bytes32 digest = keccak256(
+		// 	abi.encodePacked(
+		// 		'\x19\x01',
+		// 		TOKENS.DOMAIN_SEPARATOR(),
+		// 		keccak256(abi.encode(PERMIT_TYPEHASH, msg.sender, address(this), permit.value, 0, 0))
+		// 	)
+		// );
+
 		if (permit.value > 0) {
 			TOKENS.permit(msg.sender, address(this), permit.value, permit.deadline, permit.v, permit.r, permit.s);
 		}

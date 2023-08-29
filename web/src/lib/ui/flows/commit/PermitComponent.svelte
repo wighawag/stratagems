@@ -5,27 +5,32 @@
 	import {formatUnits} from 'viem';
 	import {initialContractsInfos} from '$lib/config';
 
+	// TODO this does not work for some reason
+	const MAX_VALUE = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
+	// const MAX_VALUE = BigInt('115792089237316195423570985008687907853269984665640564039457584007913129639935');
+
+	// this works for some reason (one less than max vlue)
+	// const MAX_VALUE = BigInt('115792089237316195423570985008687907853269984665640564039457584007913129639934');
+
 	export let state: Writable<CommitState>;
 
 	let initialValue: bigint = 0n;
 	onMount(() => {
-		initialValue = $state.amountToAdd || 0n;
+		initialValue = $state.amountToAllow || 0n;
 	});
 
 	function setAmount(ev: Event) {
 		console.log({ev});
-		$state.amountToAdd = (ev.target as HTMLInputElement).checked
-			? BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')
-			: initialValue;
+		$state.amountToAllow = (ev.target as HTMLInputElement).checked ? MAX_VALUE : initialValue;
 	}
 
 	const symbol = initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol;
 
-	$: formatedValue = $state.amountToAdd
-		? $state.amountToAdd === BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')
+	$: formatedValue = $state.amountToAllow
+		? $state.amountToAllow === MAX_VALUE
 			? 'all'
 			: formatUnits(
-					$state.amountToAdd,
+					$state.amountToAllow,
 					Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
 			  )
 		: '0';

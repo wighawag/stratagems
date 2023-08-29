@@ -37,12 +37,6 @@ export async function startCommit() {
 		const tokenApproved = await contracts.TestTokens.read.allowance([account.address, contracts.Stratagems.address]);
 		const amountToAllow = amountToAdd > tokenApproved ? amountToAdd : 0n;
 
-		console.log({
-			tokenApproved,
-			tokenInReserve,
-			tokenNeeded,
-		});
-
 		const steps: Step<CommitState>[] = [];
 		if (amountToAllow > 0n) {
 			const permitStep = {
@@ -51,7 +45,7 @@ export async function startCommit() {
 				description: `allow the spending of tokens`,
 				component: PermitComponent,
 				execute: async (state: CommitState) => {
-					const amountToAllow = state.amountToAllow || 0n; // sjould not be zero
+					const amountToAllow = state.amountToAllow || 0n; // should not be zero
 					const chainId = parseInt(initialContractsInfos.chainId);
 					const nonce = Number(await contracts.TestTokens.read.nonces([account.address]));
 					const permit = {
@@ -98,6 +92,7 @@ export async function startCommit() {
 					});
 
 					state.permit = {signature, amount: amountToAllow, nonce};
+
 					return state;
 				},
 			};
@@ -110,6 +105,7 @@ export async function startCommit() {
 			description: `commit your moves`,
 			// component: PermitComponent,
 			execute: async (state: CommitState) => {
+				// TODO random secret, actually not random, just based on secret private key + epoch
 				const secret = '0x0000000000000000000000000000000000000000000000000000000000000000';
 				const {hash, moves} = prepareCommitment(localMoves.map(localMoveToContractMove), secret);
 
