@@ -3,8 +3,8 @@ import {xyToXYID, type ContractCell, bigIntIDToBigintXY, bigIntIDToXY, Stratagem
 import type {Data} from 'stratagems-indexer';
 import {derived} from 'svelte/store';
 import {state} from '$lib/blockchain/state/State';
-import type {OffchainState, OnChainActions} from '$lib/web3/account-data';
-import {accountData} from '$lib/web3';
+import {localMoveToContractMove, type OffchainState, type OnChainActions} from '$lib/web3/account-data';
+import {account, accountData} from '$lib/web3';
 import {epoch, epochInfo} from '$lib/blockchain/state/Epoch';
 
 export type ViewCell = ContractCell & {
@@ -19,44 +19,13 @@ export type ViewData = Data & {
 };
 
 function merge(state: Data, offchainState: OffchainState, onchainActions: OnChainActions, epoch: number): ViewData {
-	const stratagems = new StratagemsContract(state, 7);
-	const viewState: ViewData = {cells: {}, owners: {}};
-	for (const cellID of Object.keys(state.cells)) {
-		const {x, y} = bigIntIDToXY(BigInt(cellID));
-		const cell = state.cells[cellID];
-		const updatedCell = stratagems.getUpdatedCell(BigInt(cellID), epoch + 1);
-		// console.log({
-		// 	x,
-		// 	y,
-		// 	cell,
-		// 	updatedCell,
-		// 	epoch,
-		// });
-		viewState.cells[xyToXYID(x, y)] = updatedCell;
-	}
-	for (const ownerAddr of Object.keys(state.owners)) {
-		viewState.owners[ownerAddr] = state.owners[ownerAddr];
-	}
+	const copyState = copy(state);
+	const stratagems = new StratagemsContract(copyState, 7);
+
 	if (offchainState.moves !== undefined) {
 		for (const move of offchainState.moves) {
-			const cellID = xyToXYID(move.x, move.y);
-			const existingCell = viewState.cells[cellID];
-			if (!existingCell) {
-				const newCell: ViewCell = {
-					color: move.color,
-					localState: 'planned',
-					delta: 0, // TODO delta for viewState
-					enemymask: 0, // TODO enemymask for viewState
-					epochWhenTokenIsAdded: 0, // TODO current epoch
-					lastEpochUpdate: 0, // TODO lastEpochUpdate for viewState
-					life: 1,
-				};
-				// console.log({newCell});
-				viewState.cells[cellID] = newCell;
-				viewState.owners[cellID] = move.player as `0x${string}`;
-			} else {
-				// TODO
-			}
+			// TODO we should have access to the account from offchainState
+			stratagems.computeMove(account.$state.address as `0x${string}`, epoch, localMoveToContractMove(move));
 		}
 	} else {
 		for (const txHash of Object.keys(onchainActions)) {
@@ -67,29 +36,30 @@ function merge(state: Data, offchainState: OffchainState, onchainActions: OnChai
 					// TODO
 					if (metadata.epoch == epoch) {
 						for (const move of metadata.localMoves) {
-							const cellID = xyToXYID(move.x, move.y);
-							const existingCell = viewState.cells[cellID];
-							if (!existingCell) {
-								const newCell: ViewCell = {
-									color: move.color,
-									localState: 'planned',
-									delta: 0, // TODO delta for viewState
-									enemymask: 0, // TODO enemymask for viewState
-									epochWhenTokenIsAdded: 0, // TODO current epoch
-									lastEpochUpdate: 0, // TODO lastEpochUpdate for viewState
-									life: 1,
-								};
-								// console.log({newCell});
-								viewState.cells[cellID] = newCell;
-								viewState.owners[cellID] = move.player as `0x${string}`;
-							} else {
-								// TODO
-							}
+							stratagems.computeMove(account.$state.address as `0x${string}`, epoch, localMoveToContractMove(move));
 						}
 					}
 				}
 			}
 		}
+	}
+
+	const viewState: ViewData = {cells: {}, owners: {}};
+	for (const cellID of Object.keys(copyState.cells)) {
+		const {x, y} = bigIntIDToXY(BigInt(cellID));
+		const cell = copyState.cells[cellID];
+		const updatedCell = stratagems.getUpdatedCell(BigInt(cellID), epoch + 1);
+		// console.log({
+		// 	x,
+		// 	y,
+		// 	cell,
+		// 	updatedCell,
+		// 	epoch,
+		// });
+		viewState.cells[xyToXYID(x, y)] = updatedCell;
+	}
+	for (const ownerAddr of Object.keys(copyState.owners)) {
+		viewState.owners[ownerAddr] = copyState.owners[ownerAddr];
 	}
 
 	return viewState;

@@ -302,7 +302,7 @@ export class StratagemsContract {
 			data.newDelta += enemyOrFriend;
 		}
 		{
-			const rightPosition = xyToBigIntID(y + 1, y);
+			const rightPosition = xyToBigIntID(x + 1, y);
 			const enemyOrFriend = this.updateCell(rightPosition, epoch, 1, oldColor, newColor);
 			if (enemyOrFriend < 0) {
 				data.newEnemymask = data.newEnemymask | 8;

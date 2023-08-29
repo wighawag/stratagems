@@ -72,8 +72,8 @@ importers:
         specifier: ^0.2.1
         version: 0.2.1
       ethereum-indexer-browser:
-        specifier: ^0.6.6
-        version: 0.6.6(typescript@5.1.6)
+        specifier: ^0.6.7
+        version: 0.6.7(typescript@5.1.6)
       hardhat:
         specifier: ^2.17.1
         version: 2.17.1(typescript@5.1.6)
@@ -147,8 +147,8 @@ importers:
   indexer:
     dependencies:
       ethereum-indexer-js-processor:
-        specifier: ^0.6.6
-        version: 0.6.6(typescript@5.1.6)
+        specifier: ^0.6.7
+        version: 0.6.7(typescript@5.1.6)
       named-logs:
         specifier: ^0.2.2
         version: 0.2.2
@@ -157,8 +157,8 @@ importers:
         version: link:../common
     devDependencies:
       ethereum-indexer-server:
-        specifier: ^0.6.8
-        version: 0.6.8(typescript@5.1.6)
+        specifier: ^0.6.9
+        version: 0.6.9(typescript@5.1.6)
       ldenv:
         specifier: ^0.3.7
         version: 0.3.7
@@ -181,8 +181,8 @@ importers:
         specifier: ^4.17.8
         version: 4.17.8
       ethereum-indexer-browser:
-        specifier: ^0.6.6
-        version: 0.6.6(typescript@5.1.6)
+        specifier: ^0.6.7
+        version: 0.6.7(typescript@5.1.6)
       ethereum-tx-observer:
         specifier: ^0.0.3
         version: 0.0.3
@@ -288,7 +288,7 @@ importers:
         version: 5.1.6
       vite:
         specifier: ^4.4.9
-        version: 4.4.9
+        version: 4.4.9(@types/node@20.5.4)
       wait-on:
         specifier: ^7.0.1
         version: 7.0.1
@@ -2023,7 +2023,7 @@ packages:
       sirv: 2.0.3
       svelte: 4.2.0
       undici: 5.23.0
-      vite: 4.4.9
+      vite: 4.4.9(@types/node@20.5.4)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -2037,9 +2037,9 @@ packages:
       vite: ^4.0.0
     dependencies:
       '@sveltejs/vite-plugin-svelte': 2.4.5(svelte@4.2.0)(vite@4.4.9)
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@8.1.1)
       svelte: 4.2.0
-      vite: 4.4.9
+      vite: 4.4.9(@types/node@20.5.4)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -2052,13 +2052,13 @@ packages:
       vite: ^4.0.0
     dependencies:
       '@sveltejs/vite-plugin-svelte-inspector': 1.0.4(@sveltejs/vite-plugin-svelte@2.4.5)(svelte@4.2.0)(vite@4.4.9)
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@8.1.1)
       deepmerge: 4.3.1
       kleur: 4.1.5
       magic-string: 0.30.3
       svelte: 4.2.0
       svelte-hmr: 0.15.3(svelte@4.2.0)
-      vite: 4.4.9
+      vite: 4.4.9(@types/node@20.5.4)
       vitefu: 0.2.4(vite@4.4.9)
     transitivePeerDependencies:
       - supports-color
@@ -2142,7 +2142,7 @@ packages:
     resolution: {integrity: sha512-MxObHvNl4A69ofaTRU8DFqvgzzv8s9yRtaPPm5gud9HDNvpB3GPQFvNuTWAI59B9huVGV5jXYJwbCsmBsOGYWA==}
     dependencies:
       '@types/jsonfile': 6.1.1
-      '@types/node': 20.5.0
+      '@types/node': 20.5.7
     dev: true
 
   /@types/glob@7.2.0:
@@ -2155,7 +2155,7 @@ packages:
   /@types/jsonfile@6.1.1:
     resolution: {integrity: sha512-GSgiRCVeapDN+3pqA35IkQwasaCh/0YFH5dEF6S88iDvEn901DjOeH3/QPY+XYP1DFzDZPvIvfeEgk+7br5png==}
     dependencies:
-      '@types/node': 20.5.0
+      '@types/node': 20.5.7
     dev: true
 
   /@types/lodash-es@4.17.8:
@@ -2180,16 +2180,16 @@ packages:
     resolution: {integrity: sha512-N+0kuo9KgrUQ1Sn/ifDXsvg0TTleP7rIy4zOBGECxAljqvqfqpTfzx0Q1NUedOixRMBfe2Whhb056a42cWs26Q==}
     dev: true
 
-  /@types/node@20.5.0:
-    resolution: {integrity: sha512-Mgq7eCtoTjT89FqNoTzzXg2XvCi5VMhRV6+I2aYanc6kQCBImeNaAYRs/DyoVqk1YEUJK5gN9VO7HRIdz4Wo3Q==}
-    dev: true
-
   /@types/node@20.5.2:
     resolution: {integrity: sha512-5j/lXt7unfPOUlrKC34HIaedONleyLtwkKggiD/0uuMfT8gg2EOpg0dz4lCD15Ga7muC+1WzJZAjIB9simWd6Q==}
     dev: true
 
   /@types/node@20.5.4:
     resolution: {integrity: sha512-Y9vbIAoM31djQZrPYjpTLo0XlaSwOIsrlfE3LpulZeRblttsLQRFRlBAppW0LOxyT3ALj2M5vU1ucQQayQH3jA==}
+
+  /@types/node@20.5.7:
+    resolution: {integrity: sha512-dP7f3LdZIysZnmvP3ANJYTSwg+wLLl8p7RqniVlV7j+oXSXAbt9h0WIBFmJy5inWZoX9wZN6eXx+YXd9Rh3RBA==}
+    dev: true
 
   /@types/offscreencanvas@2019.7.0:
     resolution: {integrity: sha512-PGcyveRIpL1XIqK8eBsmRBt76eFgtzuPiSTyKHZxnGemp2yzGzWpjYKAfK3wIMiU7eH+851yEpiuP8JZerTmWg==}
@@ -2867,7 +2867,7 @@ packages:
   /axios@0.27.2:
     resolution: {integrity: sha512-t+yRIyySRTp/wua5xEr+z1q60QmLq8ABsS5O9Me1AsE5dfKqgnCFzwiCZZ/cGNd1lq4/7akDWMxdhVlucjmnOQ==}
     dependencies:
-      follow-redirects: 1.15.2
+      follow-redirects: 1.15.2(debug@4.3.4)
       form-data: 4.0.0
     transitivePeerDependencies:
       - debug
@@ -3785,18 +3785,6 @@ packages:
       ms: 2.1.3
     dev: true
 
-  /debug@4.3.4:
-    resolution: {integrity: sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==}
-    engines: {node: '>=6.0'}
-    peerDependencies:
-      supports-color: '*'
-    peerDependenciesMeta:
-      supports-color:
-        optional: true
-    dependencies:
-      ms: 2.1.2
-    dev: true
-
   /debug@4.3.4(supports-color@8.1.1):
     resolution: {integrity: sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==}
     engines: {node: '>=6.0'}
@@ -4374,10 +4362,10 @@ packages:
       '@scure/bip39': 1.1.1
     dev: true
 
-  /ethereum-indexer-browser@0.6.6(typescript@5.1.6):
-    resolution: {integrity: sha512-V1R/+58IblrJUUZhv4dBcEGsh70ib5PdS0snQ3tzERg2sTZO1b3dmv2vGOrxNF6UOQSwL5hiz3jehcvhrJ90bw==}
+  /ethereum-indexer-browser@0.6.7(typescript@5.1.6):
+    resolution: {integrity: sha512-aBAhUvl1zRJTeAdgsPGgFxClgnuv5VOLZrgBhdjV3wvwnDd1an6CkaS6xFT8J4RD23nC3mfrisFxm1squMyyCQ==}
     dependencies:
-      ethereum-indexer: 0.6.5(typescript@5.1.6)
+      ethereum-indexer: 0.6.6(typescript@5.1.6)
       idb-keyval: 6.2.1
       named-logs: 0.2.2
       sveltore: 0.0.2
@@ -4388,10 +4376,10 @@ packages:
       - utf-8-validate
       - zod
 
-  /ethereum-indexer-db-utils@0.6.5(typescript@5.1.6):
-    resolution: {integrity: sha512-8PYElfUCGe2r4iDjgQvIjDBlaluNM6t4nSkZUVeqhcHYW3ux2Mn2FkP4LAcbLlTP8jfIfl6tNVJ1co3rTB5+zQ==}
+  /ethereum-indexer-db-utils@0.6.6(typescript@5.1.6):
+    resolution: {integrity: sha512-TuLV5BDl6ZPrzijl2TkoR8XGVerBTQGVUYSdhfAu+j4MV+00P5W2bHFEPEZAUXvb6O6RBR7T1P3CT1hxhJ/h0A==}
     dependencies:
-      ethereum-indexer: 0.6.5(typescript@5.1.6)
+      ethereum-indexer: 0.6.6(typescript@5.1.6)
       named-logs: 0.2.2
       pouchdb: 8.0.1
       pouchdb-find: 8.0.1
@@ -4403,11 +4391,11 @@ packages:
       - zod
     dev: true
 
-  /ethereum-indexer-fs-cache@0.6.5(typescript@5.1.6):
-    resolution: {integrity: sha512-qqrrp6Yr6LEBKvKbUbTYjy555O8GdL2OtbWYPvud3f13BMRI3+28AQZFqQNXAjGfAMSujXe0ly8tqE07B99uUg==}
+  /ethereum-indexer-fs-cache@0.6.6(typescript@5.1.6):
+    resolution: {integrity: sha512-xJXnyBEYSi9kS2V3J5EAtHVxxa+Gkis1oDXzPfbFWEPbYIyhGREgcT3KtGg4KUcPqIaS56EF4e1XsflisrMBZg==}
     dependencies:
       '@types/fs-extra': 11.0.1
-      ethereum-indexer: 0.6.5(typescript@5.1.6)
+      ethereum-indexer: 0.6.6(typescript@5.1.6)
       fs-extra: 11.1.1
       named-logs: 0.2.2
       pouchdb: 8.0.1
@@ -4420,10 +4408,10 @@ packages:
       - zod
     dev: true
 
-  /ethereum-indexer-js-processor@0.6.6(typescript@5.1.6):
-    resolution: {integrity: sha512-rt/dQA1PLR9P49m5T8IsT3Cw5rgkeQO91JUShWuWIyFJNnXEpo9oUONeaOtgKKzbi14/aCvILn9gE+H5tSiwcA==}
+  /ethereum-indexer-js-processor@0.6.7(typescript@5.1.6):
+    resolution: {integrity: sha512-jBaVHs3aPGrYMvJqcL09nIXsj+DfWCvt5wORKVUPm0m1kMdOgOsU192bTfmP9510GfTJ7T+gacNahpI1OMXchw==}
     dependencies:
-      ethereum-indexer: 0.6.5(typescript@5.1.6)
+      ethereum-indexer: 0.6.6(typescript@5.1.6)
       named-logs: 0.2.2
     transitivePeerDependencies:
       - bufferutil
@@ -4432,16 +4420,16 @@ packages:
       - zod
     dev: false
 
-  /ethereum-indexer-server@0.6.8(typescript@5.1.6):
-    resolution: {integrity: sha512-6GbCsKyTfHKhTKKzbSbaIuUmqeGsBR519dT0eUklIU3Iz2vEOVZYtobpM/IS2sVEac9arVEX/CNR0tdgfiNz6A==}
+  /ethereum-indexer-server@0.6.9(typescript@5.1.6):
+    resolution: {integrity: sha512-tne3VYQHBiInsPdtuiahAvCSrjSEVC8y+RQccFwdf8QZfMnRKp/uKmNLEHy/0Y1E09efleLepHYGmSqo3oVoAw==}
     hasBin: true
     dependencies:
       '@ethersproject/bignumber': 5.7.0
       commander: 10.0.1
       eip-1193-json-provider: 0.1.8
-      ethereum-indexer: 0.6.5(typescript@5.1.6)
-      ethereum-indexer-db-utils: 0.6.5(typescript@5.1.6)
-      ethereum-indexer-fs-cache: 0.6.5(typescript@5.1.6)
+      ethereum-indexer: 0.6.6(typescript@5.1.6)
+      ethereum-indexer-db-utils: 0.6.6(typescript@5.1.6)
+      ethereum-indexer-fs-cache: 0.6.6(typescript@5.1.6)
       figlet: 1.6.0
       koa: 2.14.2
       koa-bodyparser: 4.4.1
@@ -4462,8 +4450,8 @@ packages:
       - zod
     dev: true
 
-  /ethereum-indexer@0.6.5(typescript@5.1.6):
-    resolution: {integrity: sha512-hPQAsy9hXQrMGN2UuGiozykcnYrf+UoZEcF4GqmmhSmKKmPITwp7U+5YsNxSAKFLB2qdBdOZw4lA6Atf3CTQKA==}
+  /ethereum-indexer@0.6.6(typescript@5.1.6):
+    resolution: {integrity: sha512-s9nRppMGGVLgwOH+7JjwhtFqVVl7mtfwSeCaqqqZ+Ju7CYHNrHG5ZYZO0M5bGj777q+eMrw9/mI/Ys/LHn+dlA==}
     dependencies:
       named-logs: 0.2.2
       viem: 0.1.26(typescript@5.1.6)
@@ -4760,16 +4748,6 @@ packages:
     resolution: {integrity: sha512-p6vGNNWLDGwJCiEjkSK6oERj/hEyI9ITsSwIUICBoKLlWiTWXJRfQibCwcoi50rTZdbi87qDtUlMCmQwsGSgPw==}
     dependencies:
       tabbable: 6.2.0
-    dev: true
-
-  /follow-redirects@1.15.2:
-    resolution: {integrity: sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==}
-    engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
-    peerDependenciesMeta:
-      debug:
-        optional: true
     dev: true
 
   /follow-redirects@1.15.2(debug@4.3.4):
@@ -5367,7 +5345,7 @@ packages:
     dependencies:
       '@tootallnate/once': 1.1.2
       agent-base: 6.0.2
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -6078,7 +6056,7 @@ packages:
   /koa-route@3.2.0:
     resolution: {integrity: sha512-8FsuWw/L+CUWJfpgN6vrlYUDNTheEinG8Zkm97GyuLJNyWjCVUs9p10Ih3jTIWwmDVQcz6827l0RKadAS5ibqA==}
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@8.1.1)
       methods: 1.1.2
       path-to-regexp: 1.8.0
     transitivePeerDependencies:
@@ -6099,7 +6077,7 @@ packages:
     resolution: {integrity: sha512-tmcyQ/wXXuxpDxyNXv5yNNkdAMdFRqwtegBXUaowiQzUKqJehttS0x2j0eOZDQAyloAth5w6wwBImnFzkUz3pQ==}
     engines: {node: '>= 8'}
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@8.1.1)
       http-errors: 1.8.1
       resolve-path: 1.4.0
     transitivePeerDependencies:
@@ -6125,7 +6103,7 @@ packages:
       content-disposition: 0.5.4
       content-type: 1.0.5
       cookies: 0.8.0
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@8.1.1)
       delegates: 1.0.0
       depd: 2.0.0
       destroy: 1.2.0
@@ -9782,41 +9760,6 @@ packages:
       - terser
     dev: true
 
-  /vite@4.4.9:
-    resolution: {integrity: sha512-2mbUn2LlUmNASWwSCNSJ/EG2HuSRTnVNaydp6vMCm5VIqJsjMfbIWtbH2kDuwUVW5mMUKKZvGPX/rqeqVvv1XA==}
-    engines: {node: ^14.18.0 || >=16.0.0}
-    hasBin: true
-    peerDependencies:
-      '@types/node': '>= 14'
-      less: '*'
-      lightningcss: ^1.21.0
-      sass: '*'
-      stylus: '*'
-      sugarss: '*'
-      terser: ^5.4.0
-    peerDependenciesMeta:
-      '@types/node':
-        optional: true
-      less:
-        optional: true
-      lightningcss:
-        optional: true
-      sass:
-        optional: true
-      stylus:
-        optional: true
-      sugarss:
-        optional: true
-      terser:
-        optional: true
-    dependencies:
-      esbuild: 0.18.20
-      postcss: 8.4.28
-      rollup: 3.28.0
-    optionalDependencies:
-      fsevents: 2.3.3
-    dev: true
-
   /vite@4.4.9(@types/node@20.5.2):
     resolution: {integrity: sha512-2mbUn2LlUmNASWwSCNSJ/EG2HuSRTnVNaydp6vMCm5VIqJsjMfbIWtbH2kDuwUVW5mMUKKZvGPX/rqeqVvv1XA==}
     engines: {node: ^14.18.0 || >=16.0.0}
@@ -9897,7 +9840,7 @@ packages:
       vite:
         optional: true
     dependencies:
-      vite: 4.4.9
+      vite: 4.4.9(@types/node@20.5.4)
     dev: true
 
   /vitepress@1.0.0-rc.4(@algolia/client-search@4.19.1)(search-insights@2.7.0):
