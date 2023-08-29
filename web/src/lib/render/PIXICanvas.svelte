@@ -21,6 +21,7 @@
 			backgroundColor: 0x6495ed,
 			resizeTo: window,
 		});
+		(window as any).__PIXI_APP__ = app;
 
 		const grid = new Grid(1, [0x4a / 256, 0x4e / 256, 0x69 / 256, 1]);
 		app.stage.addChild(grid);

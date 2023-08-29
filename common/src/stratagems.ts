@@ -42,7 +42,8 @@ export function xyToXYID(x: number, y: number) {
 }
 
 export function xyToBigIntID(x: number, y: number): bigint {
-	const bn = BigInt.asUintN(32, BigInt(x)) + (BigInt.asUintN(32, BigInt(y)) << 32n);
+	// const bn = (BigInt.asUintN(32, BigInt(x)) + BigInt.asUintN(32, BigInt(y))) << 32n;
+	const bn = (x < 0 ? 2n ** 32n + BigInt(x) : BigInt(x)) + ((y < 0 ? 2n ** 32n + BigInt(y) : BigInt(y)) << 32n);
 	return bn;
 }
 
@@ -268,14 +269,14 @@ export class StratagemsContract {
 		oldColor: Color,
 		newColor: Color,
 	): {newDelta: number; newEnemymask: number} {
-		const {x, y} = bigIntIDToBigintXY(position);
+		const {x, y} = bigIntIDToXY(position);
 		const data = {
 			newDelta: 0,
 			newEnemymask: 0,
 		};
 
 		{
-			const upPosition = ((y - 1n) << 32n) + x;
+			const upPosition = xyToBigIntID(x, y - 1);
 			const enemyOrFriend = this.updateCell(upPosition, epoch, 2, oldColor, newColor);
 			if (enemyOrFriend < 0) {
 				data.newEnemymask = data.newEnemymask | 1;
@@ -283,7 +284,7 @@ export class StratagemsContract {
 			data.newDelta += enemyOrFriend;
 		}
 		{
-			const leftPosition = (y << 32n) + (x - 1n);
+			const leftPosition = xyToBigIntID(x - 1, y);
 
 			const enemyOrFriend = this.updateCell(leftPosition, epoch, 3, oldColor, newColor);
 			if (enemyOrFriend < 0) {
@@ -293,7 +294,7 @@ export class StratagemsContract {
 		}
 
 		{
-			const downPosition = ((y + 1n) << 32n) + x;
+			const downPosition = xyToBigIntID(x, y + 1);
 			const enemyOrFriend = this.updateCell(downPosition, epoch, 0, oldColor, newColor);
 			if (enemyOrFriend < 0) {
 				data.newEnemymask = data.newEnemymask | 4;
@@ -301,7 +302,7 @@ export class StratagemsContract {
 			data.newDelta += enemyOrFriend;
 		}
 		{
-			const rightPosition = (y << 32n) + (x + 1n);
+			const rightPosition = xyToBigIntID(y + 1, y);
 			const enemyOrFriend = this.updateCell(rightPosition, epoch, 1, oldColor, newColor);
 			if (enemyOrFriend < 0) {
 				data.newEnemymask = data.newEnemymask | 8;
@@ -313,6 +314,12 @@ export class StratagemsContract {
 
 	computeMove(player: `0x${string}`, epoch: number, move: ContractMove) {
 		const MAX_LIFE = this.MAX_LIFE;
+
+		const {x, y} = bigIntIDToXY(move.position);
+		const newPosition = xyToBigIntID(x, y);
+		if (move.position != newPosition) {
+			console.log({x, y, position: move.position, newPosition});
+		}
 
 		const currentState = this.getUpdatedCell(move.position, epoch);
 
@@ -467,11 +474,11 @@ export class StratagemsContract {
 	}
 
 	updateNeighbosrDelta(center: bigint, color: Color, epoch: number): {delta: number; enemymask: number} {
-		const {x, y} = bigIntIDToBigintXY(center);
+		const {x, y} = bigIntIDToXY(center);
 		const data = {delta: 0, enemymask: 0};
 
 		{
-			const upPosition = ((y - 1n) << 32n) + x;
+			const upPosition = xyToBigIntID(x, y - 1);
 			const cell = this.getCellInMemory(upPosition);
 			if (cell.color != Color.None) {
 				const enemyOrFriend = this.isEnemyOrFriend(color, cell.color);
@@ -483,7 +490,7 @@ export class StratagemsContract {
 			}
 		}
 		{
-			const leftPosition = (y << 32n) + (x - 1n);
+			const leftPosition = xyToBigIntID(x - 1, y);
 			const cell = this.getCellInMemory(leftPosition);
 			if (cell.color != Color.None) {
 				const enemyOrFriend = this.isEnemyOrFriend(color, cell.color);
@@ -496,7 +503,7 @@ export class StratagemsContract {
 		}
 
 		{
-			const downPosition = ((y + 1n) << 32n) + x;
+			const downPosition = xyToBigIntID(x, y + 1);
 			const cell = this.getCellInMemory(downPosition);
 			if (cell.color != Color.None) {
 				const enemyOrFriend = this.isEnemyOrFriend(color, cell.color);
@@ -508,7 +515,7 @@ export class StratagemsContract {
 			}
 		}
 		{
-			const rightPosition = (y << 32n) + (x + 1n);
+			const rightPosition = xyToBigIntID(x + 1, y);
 			const cell = this.getCellInMemory(rightPosition);
 			if (cell.color != Color.None) {
 				const enemyOrFriend = this.isEnemyOrFriend(color, cell.color);

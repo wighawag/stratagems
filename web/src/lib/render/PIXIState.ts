@@ -28,10 +28,26 @@ export class PIXIState {
 		return elem;
 	}
 
+	upateCell(cellID: string, cell: ViewCell, sprite: Sprite) {
+		if (sprite.children.length != cell.life) {
+			sprite.removeChildren();
+			for (let i = 0; i < cell.life; i++) {
+				const child = sprite.addChild(new Sprite(Texture.WHITE));
+				const offset = 0.2 * Texture.WHITE.width;
+				const margin = 0.3 * Texture.WHITE.width;
+				child.tint = 0x000000;
+				child.width = child.height = Texture.WHITE.width / 5;
+				child.position.set(offset + margin * (i % 3), offset + margin * Math.floor(i / 3));
+			}
+		}
+	}
+
 	update(state: ViewData) {
 		const unseen = new Map(this.elements);
 		for (const cellID of Object.keys(state.cells)) {
-			const element = this.getOrAddElement(cellID, state.cells[cellID]);
+			const cell = state.cells[cellID];
+			const element = this.getOrAddElement(cellID, cell);
+			this.upateCell(cellID, cell, element as Sprite);
 			unseen.delete(cellID);
 		}
 		for (const elem of unseen.entries()) {

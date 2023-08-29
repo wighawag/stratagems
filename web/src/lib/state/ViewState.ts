@@ -1,5 +1,5 @@
 import {copy} from '$lib/utils/js';
-import {xyToXYID, type ContractCell, bigIntIDToBigintXY, bigIntIDToXY} from 'stratagems-common';
+import {xyToXYID, type ContractCell, bigIntIDToBigintXY, bigIntIDToXY, StratagemsContract} from 'stratagems-common';
 import type {Data} from 'stratagems-indexer';
 import {derived} from 'svelte/store';
 import {state} from '$lib/blockchain/state/State';
@@ -19,10 +19,20 @@ export type ViewData = Data & {
 };
 
 function merge(state: Data, offchainState: OffchainState, onchainActions: OnChainActions, epoch: number): ViewData {
+	const stratagems = new StratagemsContract(state, 7);
 	const viewState: ViewData = {cells: {}, owners: {}};
 	for (const cellID of Object.keys(state.cells)) {
 		const {x, y} = bigIntIDToXY(BigInt(cellID));
-		viewState.cells[xyToXYID(x, y)] = state.cells[cellID];
+		const cell = state.cells[cellID];
+		const updatedCell = stratagems.getUpdatedCell(BigInt(cellID), epoch + 1);
+		// console.log({
+		// 	x,
+		// 	y,
+		// 	cell,
+		// 	updatedCell,
+		// 	epoch,
+		// });
+		viewState.cells[xyToXYID(x, y)] = updatedCell;
 	}
 	for (const ownerAddr of Object.keys(state.owners)) {
 		viewState.owners[ownerAddr] = state.owners[ownerAddr];
