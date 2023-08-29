@@ -1,27 +1,34 @@
 <script lang="ts">
-	import {balance, devProvider, account, accountData} from '$lib/web3';
-	import {startCommit} from '$lib/ui/flows/commit';
+	import {accountData} from '$lib/web3';
+	import type {CommitMetadata} from '$lib/web3/account-data';
+	import {startReveal} from '../flows/reveal';
+
 	import {getTransactionToReveal} from './utilts';
+	import {bnReplacer} from 'stratagems-common';
 
 	const onchainActions = accountData.onchainActions;
 
 	$: toResolve = getTransactionToReveal($onchainActions);
 
+	$: first = toResolve.length > 0 ? toResolve[0] : undefined;
+
 	async function startResolving(e: MouseEvent) {
 		e.preventDefault();
-		// commit.start();
-		// await startCommit();
+		if (!first) {
+			throw new Error(`no action to resolve`);
+		}
+		startReveal(first.hash, first.action.tx.metadata as CommitMetadata);
 	}
 </script>
 
-{#if toResolve.length > 0}
+{#if first}
 	<div class="pointer-events-none select-none fixed top-0 h-full grid place-items-end w-full max-w-full">
 		<div class="flex flex-row-reverse sm:m-2 w-full">
 			<div class="card w-full sm:w-96 bg-base-content glass">
 				<div class="card-body">
 					<h2 class="card-title text-primary">Your Move:</h2>
 					<p class="text-secondary">
-						{toResolve[0].tx.nonce}: {toResolve[0].tx.metadata}
+						{first.action.tx.nonce}: {JSON.stringify(first.action.tx.metadata, bnReplacer)}
 					</p>
 
 					<!-- {`${currentReserve > 0 ? `+ ${currentReserveString} in reserve` : ''}`}. -->

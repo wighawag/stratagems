@@ -73,7 +73,12 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 
 	function _epoch() internal view virtual returns (uint32 epoch, bool commiting) {
 		uint256 epochDuration = COMMIT_PHASE_DURATION + RESOLUTION_PHASE_DURATION;
+		console.log(COMMIT_PHASE_DURATION);
+		console.log(RESOLUTION_PHASE_DURATION);
+		console.log(START_TIME);
+		console.log(epochDuration);
 		uint256 time = _timestamp();
+		console.log(time);
 		require(time >= START_TIME, 'GAME_NOT_STARTED');
 		uint256 timePassed = time - START_TIME;
 		epoch = uint32(timePassed / epochDuration + 2); // epoch start at 2, this make the hypothetical previous resolution phase's epoch to be 1

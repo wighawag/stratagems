@@ -5,6 +5,7 @@ import {initTransactionProcessor} from 'ethereum-tx-observer';
 import {initViemContracts} from 'web3-connection-viem';
 import {logs} from 'named-logs';
 import {initBalance} from '$lib/blockchain/state/balance';
+import {time} from '$lib/time';
 
 const logger = logs('stratagems');
 
@@ -108,3 +109,5 @@ if (typeof window !== 'undefined') {
 
 	(window as any).accountData = accountData;
 }
+
+time.setTimeKeeperContract(initialContractsInfos.contracts.Stratagems.address);

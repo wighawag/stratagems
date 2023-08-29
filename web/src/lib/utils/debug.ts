@@ -1,5 +1,16 @@
-import {devProvider} from '$lib/web3';
-import {readable, writable, type Readable} from 'svelte/store';
+import {contracts, devProvider} from '$lib/web3';
+import {writable, type Readable} from 'svelte/store';
+
+export function initIncreaseContractTime(name: string) {
+	return async (numSeconds: number) => {
+		contracts.execute(async ({contracts, account}) => {
+			const contract = (contracts as any)[name];
+			// const stratagems = contracts.Stratagems;
+			// await stratagems.write.increaseTime([BigInt(numSeconds)], {account: account.address});
+			await contract.write.increaseTime([BigInt(numSeconds)], {account: account.address});
+		});
+	};
+}
 
 export async function increaseBlockTime(numSeconds: number) {
 	if (!devProvider) {
@@ -36,7 +47,7 @@ export async function enableAnvilLogging() {
 // TODO move in promise utitilies
 export type Execution<T> = {executing: boolean; error?: any; result?: T};
 export function createExecutor<T, F extends (...args: any[]) => Promise<T>>(
-	func: F
+	func: F,
 ): Readable<Execution<T>> & {
 	execute: F;
 	acknowledgeError: () => void;
@@ -67,3 +78,5 @@ export function createExecutor<T, F extends (...args: any[]) => Promise<T>>(
 		execute,
 	};
 }
+
+export const increaseContractTime = initIncreaseContractTime('Stratagems');

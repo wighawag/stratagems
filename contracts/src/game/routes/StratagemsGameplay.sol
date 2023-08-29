@@ -174,6 +174,8 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 
 		require(!commiting, 'IN_COMMITING_PHASE');
 		require(commitment.epoch != 0, 'NOTHING_TO_RESOLVE');
+		console.log(commitment.epoch);
+		console.log(epoch);
 		require(commitment.epoch == epoch, 'INVALID_EPOCH');
 
 		_checkHash(commitment.hash, secret, moves, furtherMoves);

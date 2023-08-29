@@ -11,13 +11,12 @@ import {
 	randomSecret,
 	toContractSimpleCell,
 	xyToBigIntID,
+	zeroBytes32,
+	zeroBytes24,
 } from 'stratagems-common';
 import {ContractWithViemClient} from '../../utils/connection';
 import {parseEther} from 'viem';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
-
-const zeroBytes32 = `0x0000000000000000000000000000000000000000000000000000000000000000`;
-const zeroBytes24 = `0x000000000000000000000000000000000000000000000000`;
 
 export type GridEnv = {
 	Stratagems: ContractWithViemClient<typeof artifacts.IStratagemsWithDebug.abi>;
@@ -55,7 +54,7 @@ export async function withGrid(env: GridEnv, gridString: string) {
 			const player = env.otherAccounts[action.owner];
 			await env.Stratagems.write.forceMoves(
 				[player, [{position: xyToBigIntID(action.x, action.y), color: action.color}]],
-				{account: env.stratagemsAdmin}
+				{account: env.stratagemsAdmin},
 			);
 		}
 		await env.Stratagems.write.increaseTime([config.resolutionPhaseDuration], {account: env.stratagemsAdmin});
@@ -94,7 +93,7 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 		await env.TestTokens.write.approve([env.Stratagems.address, amountOfTokens], {account: player});
 		await env.Stratagems.write.makeCommitmentWithExtraReserve(
 			[commitment.hash, amountOfTokens, {deadline: 0n, value: 0n, v: 0, r: zeroBytes32, s: zeroBytes32}],
-			{account: player}
+			{account: player},
 		);
 		commitments.push({...commitment, player});
 	}
@@ -119,7 +118,7 @@ export async function getGrid(
 		y: number;
 		width: number;
 		height: number;
-	}
+	},
 ): Promise<Grid> {
 	const listOfCoords: CellXYPosition[] = [];
 	for (let h = 0; h < location.height; h++) {
