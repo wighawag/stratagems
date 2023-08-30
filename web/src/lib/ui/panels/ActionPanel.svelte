@@ -102,6 +102,6 @@
 			</div>
 		</div>
 	{/if}
-{:else}
-	<ResolutionPanel />
 {/if}
+
+<ResolutionPanel />

@@ -45,7 +45,7 @@ export default execute(
 		const config = {
 			tokens: TestTokens.address,
 			numTokensPerGems,
-			burnAddress: zeroAddress,
+			burnAddress: `0xDEADDEADDEADDEADDEADDEADDEADDEADDEADDEAD`, //zeroAddress,
 
 			startTime,
 			commitPhaseDuration: BigInt(days(1)) - BigInt(hours(1)), // BigInt(minutes(5)), // TODO support more complex period to support a special weekend commit period

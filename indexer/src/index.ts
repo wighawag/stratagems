@@ -10,6 +10,9 @@ export type Data = {
 	owners: {
 		[position: string]: `0x${string}`;
 	};
+	commitments: {
+		[address: string]: {epoch: number; hash: `0x${string}`};
+	};
 };
 
 type ContractsABI = MergedAbis<typeof contractsInfo.contracts>;
@@ -18,17 +21,32 @@ const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
 	// version is automatically populated via version.cjs to let the browser knows to reindex on changes
 	version: '__VERSION_HASH__',
 	construct(): Data {
-		return {cells: {}, owners: {}};
+		return {cells: {}, owners: {}, commitments: {}};
 	},
 	onCommitmentResolved(state, event) {
+		const account = event.args.player.toLowerCase();
 		const stratagemsContract = new StratagemsContract(state, 7);
 		for (const move of event.args.moves) {
 			stratagemsContract.computeMove(event.args.player, event.args.epoch, move);
 		}
+		// TODO only keep track of the connected player ?
+		delete state.commitments[account];
 	},
-	onCommitmentCancelled(state, event) {},
-	onCommitmentMade(state, event) {},
-	onCommitmentVoid(state, event) {},
+	onCommitmentCancelled(state, event) {
+		const account = event.args.player.toLowerCase();
+		// TODO only keep track of the connected player ?
+		delete state.commitments[account];
+	},
+	onCommitmentMade(state, event) {
+		const account = event.args.player.toLowerCase();
+		// TODO only keep track of the connected player ?
+		state.commitments[account] = {epoch: event.args.epoch, hash: event.args.commitmentHash};
+	},
+	onCommitmentVoid(state, event) {
+		const account = event.args.player.toLowerCase();
+		// TODO only keep track of the connected player ?
+		delete state.commitments[account];
+	},
 	onReserveDeposited(state, event) {},
 	onReserveWithdrawn(state, event) {},
 	onTimeIncreased(state, event) {},

@@ -111,7 +111,7 @@ export async function startCommit() {
 
 				const commitMetadata: CommitMetadata = {
 					type: 'commit',
-					epoch: get(epoch),
+					epoch: get(epoch), // TODO use from smart contract to ensure correct value
 					localMoves,
 					secret,
 				};
@@ -134,6 +134,7 @@ export async function startCommit() {
 				} else {
 					await contracts.Stratagems.write.makeCommitment([hash], {account: account.address});
 				}
+				accountData.offchainState.reset();
 				return state;
 			},
 		};
