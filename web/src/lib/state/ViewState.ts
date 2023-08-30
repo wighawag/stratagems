@@ -72,3 +72,5 @@ export const viewState = derived(
 		return merge($state, $offchainState, $onchainActions, $epoch);
 	},
 );
+
+export type ViewState = Omit<typeof viewState, '$state'>;

@@ -2,7 +2,6 @@ import type {ViewCell, ViewData} from '$lib/state/ViewState';
 import type {DisplayObject} from 'pixi.js';
 import {Sprite, Texture} from 'pixi.js';
 import type {Viewport} from 'pixi-viewport';
-import {bigIntIDToXY} from 'stratagems-common';
 import {COLORS} from './colors';
 
 export class PIXIState {

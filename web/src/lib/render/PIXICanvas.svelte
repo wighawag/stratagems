@@ -1,18 +1,19 @@
 <script lang="ts">
 	import {ActionHandler} from '$lib/action/ActionHandler';
-	import type {State} from '$lib/blockchain/state/State';
 	import {onMount} from 'svelte';
 	import {Application, Texture, Sprite} from 'pixi.js';
 	import {Viewport} from 'pixi-viewport';
 	import {Grid} from './grid/Grid';
 	import {PIXIState} from './PIXIState';
+	import type {ViewState} from '$lib/state/ViewState';
 
-	export let state: State;
+	export let state: ViewState;
 
 	// let unsubscribe: (() => void) | undefined;
 
 	onMount(() => {
 		const canvas = document.querySelector('#canvas') as HTMLCanvasElement;
+		canvas.onselectstart = () => false; // remove dbl-click select
 
 		const app = new Application({
 			view: canvas,
