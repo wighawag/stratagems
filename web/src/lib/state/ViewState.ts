@@ -6,26 +6,35 @@ import {state} from '$lib/blockchain/state/State';
 import {localMoveToContractMove, type OffchainState, type OnChainActions} from '$lib/web3/account-data';
 import {account, accountData} from '$lib/web3';
 import {epoch, epochInfo} from '$lib/blockchain/state/Epoch';
+import type {AccountState} from 'web3-connection';
 
 export type ViewCell = ContractCell & {
 	localState?: 'pending' | 'planned';
 };
 
+export type ViewCellData = {next: ViewCell; future: ViewCell; currentPlayer: boolean};
+
 export type ViewData = {
 	cells: {
-		[pos: string]: {next: ViewCell; future: ViewCell};
+		[pos: string]: ViewCellData;
 	};
 	owners: {[pos: string]: `0x${string}`};
 };
 
-function merge(state: Data, offchainState: OffchainState, onchainActions: OnChainActions, epoch: number): ViewData {
+function merge(
+	state: Data,
+	offchainState: OffchainState,
+	onchainActions: OnChainActions,
+	epoch: number,
+	account: AccountState<`0x${string}`>,
+): ViewData {
 	const copyState = copy(state);
 	const stratagems = new StratagemsContract(copyState, 7);
 
 	if (offchainState.moves !== undefined) {
 		for (const move of offchainState.moves) {
 			// TODO we should have access to the account from offchainState
-			stratagems.computeMove(account.$state.address as `0x${string}`, epoch + 1, localMoveToContractMove(move));
+			stratagems.computeMove(account.address as `0x${string}`, epoch + 1, localMoveToContractMove(move));
 		}
 	} else {
 		for (const txHash of Object.keys(onchainActions)) {
@@ -36,7 +45,7 @@ function merge(state: Data, offchainState: OffchainState, onchainActions: OnChai
 					// TODO
 					if (metadata.epoch == epoch) {
 						for (const move of metadata.localMoves) {
-							stratagems.computeMove(account.$state.address as `0x${string}`, epoch + 1, localMoveToContractMove(move));
+							stratagems.computeMove(account.address as `0x${string}`, epoch + 1, localMoveToContractMove(move));
 						}
 					}
 				}
@@ -57,7 +66,11 @@ function merge(state: Data, offchainState: OffchainState, onchainActions: OnChai
 		// 	updatedCell,
 		// 	epoch,
 		// });
-		viewState.cells[xyToXYID(x, y)] = {next, future};
+		viewState.cells[xyToXYID(x, y)] = {
+			next,
+			future,
+			currentPlayer: copyState.owners[cellID].toLowerCase() === account.address?.toLowerCase(),
+		};
 	}
 	for (const ownerAddr of Object.keys(copyState.owners)) {
 		viewState.owners[ownerAddr] = copyState.owners[ownerAddr];
@@ -67,9 +80,9 @@ function merge(state: Data, offchainState: OffchainState, onchainActions: OnChai
 }
 
 export const viewState = derived(
-	[state, accountData.offchainState, accountData.onchainActions, epoch],
-	([$state, $offchainState, $onchainActions, $epoch]) => {
-		return merge($state, $offchainState, $onchainActions, $epoch);
+	[state, accountData.offchainState, accountData.onchainActions, epoch, account],
+	([$state, $offchainState, $onchainActions, $epoch, $account]) => {
+		return merge($state, $offchainState, $onchainActions, $epoch, $account);
 	},
 );
 

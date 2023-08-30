@@ -50,6 +50,7 @@
 
 	<Executor func={() => addContractTime(1)}>Contract: Add 1 hours</Executor>
 	<Executor func={() => addContractTime(23)}>Contract: Add 23 hours</Executor>
+	<Executor func={() => addContractTime(1 / 6)}>Contract: Add 10 min</Executor>
 	<form>
 		<label for="hours" />
 		<input id="hours" type="number" bind:value={hours} />

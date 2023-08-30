@@ -3,7 +3,7 @@ import {currentFlow, type Flow, type Step} from '..';
 import {accountData, contracts} from '$lib/web3';
 import {initialContractsInfos} from '$lib/config';
 import PermitComponent from './PermitComponent.svelte';
-import {prepareCommitment} from 'stratagems-common';
+import {prepareCommitment, zeroBytes32} from 'stratagems-common';
 import {hexToSignature} from 'viem';
 import {localMoveToContractMove, type CommitMetadata} from '$lib/web3/account-data';
 import {epoch} from '$lib/blockchain/state/Epoch';
@@ -116,12 +116,21 @@ export async function startCommit() {
 					secret,
 				};
 				connection.provider.setNextMetadata(commitMetadata);
-				if (state.permit) {
-					const {v, r, s} = hexToSignature(state.permit.signature);
-					await contracts.Stratagems.write.makeCommitmentWithExtraReserve(
-						[hash, amountToAdd, {deadline: 0n, value: state.permit.amount, v: Number(v), r, s}],
-						{account: account.address},
-					);
+				if (amountToAdd > 0n) {
+					let permitStruct: {deadline: bigint; value: bigint; v: number; r: `0x${string}`; s: `0x${string}`} = {
+						deadline: 0n,
+						value: 0n,
+						v: 0,
+						r: zeroBytes32,
+						s: zeroBytes32,
+					};
+					if (state.permit) {
+						const {v, r, s} = hexToSignature(state.permit.signature);
+						permitStruct = {deadline: 0n, value: state.permit.amount, v: Number(v), r, s};
+					}
+					await contracts.Stratagems.write.makeCommitmentWithExtraReserve([hash, amountToAdd, permitStruct], {
+						account: account.address,
+					});
 				} else {
 					await contracts.Stratagems.write.makeCommitment([hash], {account: account.address});
 				}
