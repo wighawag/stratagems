@@ -1,8 +1,8 @@
 import {account, accountData} from '$lib/web3';
 
-import {state} from '$lib/blockchain/state/State';
 import {xyToXYID, type Color} from 'stratagems-common';
 import {get} from 'svelte/store';
+import {viewState} from '$lib/state/ViewState';
 
 export class ActionHandler {
 	onCell(x: number, y: number) {
@@ -12,10 +12,10 @@ export class ActionHandler {
 			console.log('no account');
 			// return; // TODO
 		}
-		const currentState = get(state);
+		const currentState = get(viewState);
 		const currentOffchainState = get(accountData.offchainState);
 		const cellID = xyToXYID(x, y);
-		const currentCell = currentState.cells[cellID];
+
 		const currentMove = currentOffchainState.moves?.find((v) => v.x === x && v.y === y);
 		if (currentMove) {
 			accountData.offchainState.removeMove(x, y);
@@ -24,6 +24,9 @@ export class ActionHandler {
 				accountData.offchainState.addMove({x, y, color, player});
 			}
 		} else {
+			if (currentState.cells[cellID] && currentState.cells[cellID].next.life !== 0) {
+				throw new Error(`Cell already occupied`);
+			}
 			accountData.offchainState.addMove({x, y, color: 1, player});
 		}
 	}

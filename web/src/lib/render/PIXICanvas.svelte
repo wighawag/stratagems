@@ -32,6 +32,8 @@
 			// screenHeight: window.innerHeight,
 			worldWidth: 32,
 			worldHeight: 32,
+			allowPreserveDragOutside: true,
+			// disableOnContextMenu: true,
 
 			events: app.renderer.events, // the interaction module is important for wheel to work properly when renderer.view is placed or scaled
 		});
@@ -48,7 +50,7 @@
 		app.stage.addChild(viewport);
 
 		// activate plugins
-		viewport.drag().wheel();
+		viewport.drag().wheel().pinch().clampZoom({maxScale: 100, minScale: 5});
 		viewport.fitWorld();
 		viewport.moveCenter(0, 0);
 
