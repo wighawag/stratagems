@@ -103,7 +103,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			0,
 			string.concat('_computeMove at epoch ', Strings.toString(epoch)),
 			move.position,
-			currentState
+			currentState,
+			address(uint160(_owners[move.position]))
 		);
 
 		if (move.color == Color.None) {
@@ -193,8 +194,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				}
 			}
 		} else if (currentState.life == 0 && (currentState.lastEpochUpdate == 0 || currentState.color != Color.None)) {
-			if (currentState.life == 0 || currentState.color != move.color) {
-				// only update neighbour if color changed or if life is zero, since in that case the delta is lost (TODO revisit this)
+			if (currentState.color != move.color) {
+				// only update neighbour if color changed
 				(int8 newDelta, uint8 newEnemymask, uint256 latestNumAddressesToDistributeTo) = _updateNeighbours(
 					transfers,
 					newNumAddressesToDistributeTo,
@@ -212,11 +213,17 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				currentState.delta = newDelta;
 				currentState.enemymask = newEnemymask;
 
-				logger.logCell(0, 'after: _updateNeighbor', move.position, currentState);
+				// logger.logCell(
+				// 	0,
+				// 	'after: _updateNeighbor',
+				// 	move.position,
+				// 	currentState,
+				// 	address(uint160(_owners[move.position]))
+				// );
 			} else {
-				// TODO fetch neighbours to compute delta
-				currentState.delta = 0;
-				currentState.enemymask = 0;
+				currentState.life = 1;
+				currentState.epochWhenTokenIsAdded = epoch;
+				currentState.lastEpochUpdate = epoch;
 			}
 
 			emit ColorPlaced(move.position, player, move.color);
@@ -368,7 +375,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 	) internal returns (int8 enemyOrFriend, uint256 newNumAddressesToDistributeTo) {
 		Cell memory cell = _cells[position];
 
-		logger.logCell(1, '_updateCell', position, cell);
+		// logger.logCell(1, '_updateCell', position, cell, address(uint160(_owners[position])));
 
 		// no need to call if oldColor == newColor, so we assume they are different
 		assert(oldColor != newColor);
@@ -385,9 +392,9 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		// 	uint8(newColor)
 		// );
 
-		if (lastUpdate >= 1 && color != Color.None && cell.life > 0) {
+		if (lastUpdate >= 1 && color != Color.None) {
 			// we only consider cell with color that are not dead
-			if (lastUpdate < epoch) {
+			if (cell.life > 0 && lastUpdate < epoch) {
 				// of there is life to update we compute the new life
 				(uint8 newLife, uint32 epochUsed) = _computeNewLife(
 					lastUpdate,
@@ -410,12 +417,9 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 						newLife,
 						epochUsed
 					);
-				} else {
-					// if not dead we update the delta and enemymask
-					_updateCellFromNeighbor(position, cell, newLife, epoch, neighbourIndex, oldColor, newColor);
 				}
+				_updateCellFromNeighbor(position, cell, newLife, epoch, neighbourIndex, oldColor, newColor);
 			} else {
-				// else if we simply update the delta and enemymask
 				_updateCellFromNeighbor(position, cell, cell.life, epoch, neighbourIndex, oldColor, newColor);
 			}
 		}
@@ -433,7 +437,6 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 	) internal returns (uint256 newNumAddressesToDistributeTo) {
 		cell.life = newLife;
 		cell.lastEpochUpdate = epochUsed;
-		cell.delta = 0;
 
 		numAddressesToDistributeTo = _distributeDeath(
 			transfers,
@@ -457,12 +460,10 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		Color newColor
 	) internal {
 		if (newColor == Color.None) {
-			// COLLISION, previous update added a color that should not be there
 			if (cell.color == oldColor) {
 				cell.delta -= 1;
 			} else {
 				cell.delta += 1;
-				// remove enemy as it was added by COLLISION
 				cell.enemymask = cell.enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
 			}
 		} else if (cell.color == oldColor) {
@@ -474,18 +475,30 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			cell.delta += (oldColor == Color.None ? int8(1) : int8(2));
 			cell.enemymask = cell.enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
 
-			logger.logCell(2, 'after neibhor change to a friendly color', position, cell);
+			// logger.logCell(
+			// 	2,
+			// 	'after neibhor change to a friendly color',
+			// 	position,
+			// 	cell,
+			// 	address(uint160(_owners[position]))
+			// );
 		} else if (oldColor == Color.None) {
 			// if there were no oldCOlor and the newColor is not your (already checked in previous if clause)
 			cell.delta -= 1;
 			cell.enemymask = cell.enemymask | uint8(1 << neighbourIndex);
-			logger.logCell(2, 'after neibhor change to a enemy color', position, cell);
+			// logger.logCell(
+			// 	2,
+			// 	'after neibhor change to a enemy color',
+			// 	position,
+			// 	cell,
+			// 	address(uint160(_owners[position]))
+			// );
 		}
 		cell.lastEpochUpdate = epoch;
 		cell.life = newLife;
 		_cells[position] = cell;
 
-		logger.logCell(2, '_updateCellFromNeighbor', position, cell);
+		// logger.logCell(2, '_updateCellFromNeighbor', position, cell, address(uint160(_owners[position])));
 	}
 
 	/// @dev this distribute the token in the cell who just died to the neighboring enemies that are still alive
@@ -497,6 +510,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		uint8 enemymask,
 		uint32 epoch
 	) internal view returns (uint256) {
+		// console.log('distrubute death');
+		// console.log(epoch);
 		(address[4] memory enemies, uint8 numEnemiesAlive) = _getNeihbourEnemiesAliveWithPlayers(
 			position,
 			enemymask,
@@ -533,6 +548,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		uint256 numAddressesToDistributeTo,
 		TokenTransfer memory newTransfer
 	) internal pure returns (uint256) {
+		console.log('_collectTransfer');
+		console.log(newTransfer.to);
 		// we look for the newTransfer address in case it is already present
 		for (uint256 k = 0; k < numAddressesToDistributeTo; k++) {
 			if (collected[k].to == newTransfer.to) {

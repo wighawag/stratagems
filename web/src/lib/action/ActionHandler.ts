@@ -16,6 +16,8 @@ export class ActionHandler {
 		const currentOffchainState = get(accountData.offchainState);
 		const cellID = xyToXYID(x, y);
 
+		console.log({x, y, cellID});
+
 		const currentMove = currentOffchainState.moves?.find((v) => v.x === x && v.y === y);
 		if (currentMove) {
 			accountData.offchainState.removeMove(x, y);

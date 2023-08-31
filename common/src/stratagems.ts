@@ -161,9 +161,6 @@ export class StratagemsContract {
 				updatedCell.life,
 				epoch,
 			);
-			if (newLife == 0) {
-				updatedCell.delta = 0;
-			}
 			updatedCell.life = newLife;
 			updatedCell.lastEpochUpdate = epochUsed;
 		}
@@ -178,7 +175,6 @@ export class StratagemsContract {
 	updateCellAsDead(position: bigint, cell: ContractCell, newLife: number, epochUsed: number) {
 		cell.life = newLife;
 		cell.lastEpochUpdate = epochUsed;
-		cell.delta = 0;
 		this.state.cells[position.toString()] = cell;
 		// console.log({
 		// 	DEAD: 'DEAD',
@@ -197,12 +193,10 @@ export class StratagemsContract {
 		newColor: Color,
 	) {
 		if (newColor == Color.None) {
-			// COLLISION, previous update added a color that should not be there
 			if (cell.color == oldColor) {
 				cell.delta -= 1;
 			} else {
 				cell.delta += 1;
-				// remove enemy as it was added by COLLISION
 				cell.enemymask = cell.enemymask & ((1 << neighbourIndex) ^ 0xff);
 			}
 		} else if (cell.color == oldColor) {
@@ -238,26 +232,23 @@ export class StratagemsContract {
 			enemyOrFriend = color == newColor ? 1 : -1;
 		}
 
-		if (lastUpdate >= 1 && color != Color.None && cell.life > 0) {
-			// we only consider cell with color that are not dead
-			if (lastUpdate < epoch) {
-				// of there is life to update we compute the new life
-				const {newLife, epochUsed} = this.computeNewLife(lastUpdate, cell.enemymask, cell.delta, cell.life, epoch);
+		let life = cell.life;
 
+		if (lastUpdate >= 1 && color != Color.None) {
+			// we only consider cell with color that are not dead
+			if (life > 0 && lastUpdate < epoch) {
+				// of there is life to update we compute the new life
+				const {newLife, epochUsed} = this.computeNewLife(lastUpdate, cell.enemymask, cell.delta, life, epoch);
+				life = newLife;
 				// console.log('    newLife: %s ', newLife);
 				// console.log('    epochUsed: %s ', epochUsed);
 
-				if (newLife == 0) {
+				if (life == 0) {
 					// if dead, no need to update delta and enemymask
 					this.updateCellAsDead(position, cell, newLife, epochUsed);
-				} else {
-					// if not dead we update the delta and enemymask
-					this.updateCellFromNeighbor(position, cell, newLife, epoch, neighbourIndex, oldColor, newColor);
 				}
-			} else {
-				// else if we simply update the delta and enemymask
-				this.updateCellFromNeighbor(position, cell, cell.life, epoch, neighbourIndex, oldColor, newColor);
 			}
+			this.updateCellFromNeighbor(position, cell, life, epoch, neighbourIndex, oldColor, newColor);
 		}
 
 		return enemyOrFriend;
@@ -386,8 +377,8 @@ export class StratagemsContract {
 				}
 			}
 		} else if (currentState.life == 0 && (currentState.lastEpochUpdate == 0 || currentState.color != Color.None)) {
-			if (currentState.life == 0 || currentState.color != move.color) {
-				// only update neighbour if color changed or if life is zero, since in that case the delta is lost (TODO revisit this)
+			if (currentState.color != move.color) {
+				// only update neighbour if color changed
 				const {newDelta, newEnemymask} = this.updateNeighbours(move.position, epoch, currentState.color, move.color);
 
 				currentState.life = 1;
@@ -397,9 +388,9 @@ export class StratagemsContract {
 				currentState.delta = newDelta;
 				currentState.enemymask = newEnemymask;
 			} else {
-				// TODO fetch neighbours to compute delta
-				currentState.delta = 0;
-				currentState.enemymask = 0;
+				currentState.life = 1;
+				currentState.epochWhenTokenIsAdded = epoch;
+				currentState.lastEpochUpdate = epoch;
 			}
 
 			this.state.cells[move.position.toString()] = currentState;

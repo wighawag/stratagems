@@ -22,8 +22,15 @@ library logger {
 
 	// _sendLogPayload(abi.encodeWithSignature('log(string,int256,int256)', 'cell %s', x, y));
 
-	function logCell(uint8 i, string memory title, uint64 id, UsingStratagemsTypes.Cell memory cell) internal view {
+	function logCell(
+		uint8 i,
+		string memory title,
+		uint64 id,
+		UsingStratagemsTypes.Cell memory cell,
+		address owner
+	) internal view {
 		// string memory indent = i == 0 ? '' : i == 1 ? '    ' : i == 2 ? '        ' : '            ';
+		// string memory indent = '';
 		// console.log('%s%s', indent, title);
 		// int256 x = int256(int32(int256(uint256(id) & 0xFFFFFFFF)));
 		// int256 y = int256(int32(int256(uint256(id) >> 32)));
@@ -34,6 +41,7 @@ library logger {
 		// console.log('%s - epochWhenTokenIsAdded:  %s', indent, cell.epochWhenTokenIsAdded);
 		// console.log('%s - color:  %s', indent, uint8(cell.color));
 		// console.log('%s - life:  %s', indent, cell.life);
+		// console.log('%s - owner:  %s', indent, owner);
 		// console.log('%s - delta: %s', indent, Strings.toString(cell.delta));
 		// console.log('%s - enemymask:  %s', indent, cell.enemymask);
 		// console.log('%s-------------------------------------------------------------', indent);
@@ -95,12 +103,18 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 			int256 y = int256(int32(int256(uint256(position) >> 32)));
 
 			if (enemyMask & 1 == 1) {
-				uint256 cellPos = ((uint256(y - 1) << 32) + uint256(x));
+				uint256 cellPos = ((uint256(uint32(int32(y - 1))) << 32) + uint256(x));
+				// console.log(uint64(cellPos));
+				// console.log(cellPos);
 				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
 				// we consider cells to be alive either because
 				// their life > 0 after being updated
 				// or that their last death update is the same epoch
-				if (cell.life > 0 || cell.lastEpochUpdate == epoch) {
+				if (
+					cell.life > 0 ||
+					(cell.lastEpochUpdate == epoch && address(uint160((_owners[cellPos]))) != address(0))
+				) {
+					logger.logCell(0, 'enemyMask & 1 == 1', uint64(cellPos), cell, address(uint160(_owners[cellPos])));
 					enemies[numEnemiesAlive] = _ownerOf(cellPos);
 					numEnemiesAlive++;
 				}
@@ -108,7 +122,11 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 			if (enemyMask & 2 == 2) {
 				uint256 cellPos = ((uint256(y) << 32) + uint256(x - 1));
 				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
-				if (cell.life > 0 || cell.lastEpochUpdate == epoch) {
+				if (
+					cell.life > 0 ||
+					(cell.lastEpochUpdate == epoch && address(uint160((_owners[cellPos]))) != address(0))
+				) {
+					logger.logCell(0, 'enemyMask & 2 == 2', uint64(cellPos), cell, address(uint160(_owners[cellPos])));
 					enemies[numEnemiesAlive] = _ownerOf(cellPos);
 					numEnemiesAlive++;
 				}
@@ -116,7 +134,11 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 			if (enemyMask & 4 == 4) {
 				uint256 cellPos = ((uint256(y + 1) << 32) + uint256(x));
 				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
-				if (cell.life > 0 || cell.lastEpochUpdate == epoch) {
+				if (
+					cell.life > 0 ||
+					(cell.lastEpochUpdate == epoch && address(uint160((_owners[cellPos]))) != address(0))
+				) {
+					logger.logCell(0, 'enemyMask & 4 == 4', uint64(cellPos), cell, address(uint160(_owners[cellPos])));
 					enemies[numEnemiesAlive] = _ownerOf(cellPos);
 					numEnemiesAlive++;
 				}
@@ -124,7 +146,11 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 			if (enemyMask & 8 == 8) {
 				uint256 cellPos = ((uint256(y) << 32) + uint256(x + 1));
 				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
-				if (cell.life > 0 || cell.lastEpochUpdate == epoch) {
+				if (
+					cell.life > 0 ||
+					(cell.lastEpochUpdate == epoch && address(uint160((_owners[cellPos]))) != address(0))
+				) {
+					logger.logCell(0, 'enemyMask & 8 == 8', uint64(cellPos), cell, address(uint160(_owners[cellPos])));
 					enemies[numEnemiesAlive] = _ownerOf(cellPos);
 					numEnemiesAlive++;
 				}
@@ -192,11 +218,9 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 		uint32 lastUpdate = updatedCell.lastEpochUpdate;
 		int8 delta = updatedCell.delta;
 		uint8 life = updatedCell.life;
+		logger.logCell(0, 'before update', position, updatedCell, address(uint160(_owners[position])));
 		if (lastUpdate >= 1 && life > 0) {
 			(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, updatedCell.enemymask, delta, life, epoch);
-			if (newLife == 0) {
-				updatedCell.delta = 0;
-			}
 			updatedCell.life = newLife;
 			updatedCell.lastEpochUpdate = epochUsed;
 		}
