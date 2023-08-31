@@ -19,7 +19,7 @@ export class ActionHandler {
 		const currentMove = currentOffchainState.moves?.find((v) => v.x === x && v.y === y);
 		if (currentMove) {
 			accountData.offchainState.removeMove(x, y);
-			const color = ((currentMove.color + 1) % 5) as Color;
+			const color = ((currentMove.color + 1) % 6) as Color;
 			if (color > 0) {
 				accountData.offchainState.addMove({x, y, color, player});
 			}

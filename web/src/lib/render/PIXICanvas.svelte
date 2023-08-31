@@ -19,7 +19,7 @@
 			view: canvas,
 			resolution: 1, // window.devicePixelRatio || 1,
 			// autoDensity: true,
-			backgroundColor: 0x6495ed,
+			backgroundColor: 0x47aba9,
 			resizeTo: window,
 		});
 		(window as any).__PIXI_APP__ = app;

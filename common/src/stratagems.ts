@@ -49,12 +49,12 @@ export function xyToBigIntID(x: number, y: number): bigint {
 
 export enum Color {
 	None = 0,
-	Blue = 1,
-	Red = 2,
-	Green = 3,
-	Yellow = 4,
-	Purple = 5,
-	Evil = 6,
+	Blue = 1, // 5ab9bb
+	Red = 2, // c5836e
+	Green = 3, // 8bffcb
+	Yellow = 4, // d3d66d
+	Purple = 5, // a9799d
+	Evil = 6, // 3d3d3d
 }
 
 export type ContractCell = {

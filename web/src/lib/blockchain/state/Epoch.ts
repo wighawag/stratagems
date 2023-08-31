@@ -11,7 +11,7 @@ export function computeEpoch(time: number) {
 	const RESOLUTION_PHASE_DURATION = TOTAL - ACTION_PERIOD;
 	const START_TIME = 0;
 	// --------------------
-
+	// From Solidity
 	const epochDuration = COMMIT_PHASE_DURATION + RESOLUTION_PHASE_DURATION;
 	// const time = _timestamp();
 	const timePassed = time - START_TIME;
@@ -25,29 +25,6 @@ export function computeEpoch(time: number) {
 	const timeLeftToReveal = isActionPhase ? -1 : epochDuration - timePassedFromEpochStart;
 	const timeLeftToEpochEnd = epochDuration - timePassedFromEpochStart;
 	return {epoch, timeLeftToEpochEnd, timeLeftToReveal, timeLeftToCommit, isActionPhase};
-
-	// const totalTimePassed = time;
-	// const epoch = Math.floor(totalTimePassed / TOTAL + 1);
-	// const epochStartTime = (epoch - 1) * TOTAL;
-	// const timePassed = time - epochStartTime;
-	// const isActionPhase = timePassed < ACTION_PERIOD;
-	// const timeLeftToCommit = ACTION_PERIOD - timePassed;
-	// const timeLeftToReveal = isActionPhase ? -1 : TOTAL - timePassed;
-	// const timeLeftToEpochEnd = TOTAL - timePassed;
-	// return {epoch, timeLeftToEpochEnd, timeLeftToReveal, timeLeftToCommit, isActionPhase};
-	/*
-		uint256 epochDuration = COMMIT_PHASE_DURATION + RESOLUTION_PHASE_DURATION;
-		console.log(COMMIT_PHASE_DURATION);
-		console.log(RESOLUTION_PHASE_DURATION);
-		console.log(START_TIME);
-		console.log(epochDuration);
-		uint256 time = _timestamp();
-		console.log(time);
-		require(time >= START_TIME, 'GAME_NOT_STARTED');
-		uint256 timePassed = time - START_TIME;
-		epoch = uint32(timePassed / epochDuration + 2); // epoch start at 2, this make the hypothetical previous resolution phase's epoch to be 1
-		commiting = timePassed - ((epoch - 2) * epochDuration) < COMMIT_PHASE_DURATION;
-	*/
 }
 
 export type EpochState = {

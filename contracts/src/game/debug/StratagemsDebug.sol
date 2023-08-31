@@ -79,12 +79,15 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 			// we act as if the token were added in previous epochs
 			// this is so it does not affect the resolution phase
 			int256 potentialLife = int256(uint256(cell.life)) - cell.delta;
-			if (potentialLife <= 0) {
+			if (potentialLife < 0) {
+				potentialLife = 0;
+			}
+			if (uint256(potentialLife) > MAX_LIFE) {
 				unchecked {
 					int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
 					int256 y = int256(int32(int256(uint256(position) >> 32)));
 					require(
-						potentialLife > 0,
+						uint256(potentialLife) > MAX_LIFE,
 						string.concat('INVALID_LIFE_CONFIGURATION: ', Strings.toString(x), ',', Strings.toString(y))
 					);
 				}
