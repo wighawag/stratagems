@@ -10,7 +10,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 	function _makeCommitment(address player, bytes24 commitmentHash, uint256 inReserve) internal {
 		Commitment storage commitment = _commitments[player];
 
-		(uint32 epoch, bool commiting) = _epoch();
+		(uint24 epoch, bool commiting) = _epoch();
 
 		require(commiting, 'IN_RESOLUTION_PHASE');
 		require(commitment.epoch == 0 || commitment.epoch == epoch, 'PREVIOUS_COMMITMENT_TO_RESOLVE');
@@ -26,7 +26,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 
 	function _resolveMoves(
 		address player,
-		uint32 epoch,
+		uint24 epoch,
 		Move[] memory moves,
 		address tokenGiver
 	) internal returns (uint256 newReserveAmount) {
@@ -85,7 +85,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		TokenTransfer[] memory transfers,
 		uint256 numAddressesToDistributeTo,
 		address player,
-		uint32 epoch,
+		uint24 epoch,
 		Move memory move
 	)
 		internal
@@ -136,7 +136,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				currentState.color = Color.None;
 				currentState.lastEpochUpdate = epoch;
 				currentState.delta = 0;
-				currentState.enemymask = 0;
+				currentState.enemyMap = 0;
 				currentState.epochWhenTokenIsAdded = 0;
 				_cells[move.position] = currentState;
 				_owners[move.position] = 0;
@@ -154,7 +154,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				transfers,
 				numAddressesToDistributeTo,
 				move.position,
-				currentState.enemymask,
+				currentState.enemyMap,
 				currentState.lastEpochUpdate
 			);
 		}
@@ -165,7 +165,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			// keep the stake
 			if (currentState.life != 0) {
 				if (currentState.color != Color.Evil) {
-					(int8 newDelta, uint8 newEnemymask, uint256 latestNumAddressesToDistributeTo) = _updateNeighbours(
+					(int8 newDelta, uint8 newenemyMap, uint256 latestNumAddressesToDistributeTo) = _updateNeighbours(
 						transfers,
 						newNumAddressesToDistributeTo,
 						move.position,
@@ -177,7 +177,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 
 					currentState.color = Color.Evil; // TODO keep track of num token staked here, or do we burn ?
 					currentState.delta = newDelta;
-					currentState.enemymask = newEnemymask;
+					currentState.enemyMap = newenemyMap;
 					_cells[move.position] = currentState;
 					_owners[move.position] = uint256(uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF));
 				} else {
@@ -196,7 +196,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		} else if (currentState.life == 0 && (currentState.lastEpochUpdate == 0 || currentState.color != Color.None)) {
 			if (currentState.color != move.color) {
 				// only update neighbour if color changed
-				(int8 newDelta, uint8 newEnemymask, uint256 latestNumAddressesToDistributeTo) = _updateNeighbours(
+				(int8 newDelta, uint8 newenemyMap, uint256 latestNumAddressesToDistributeTo) = _updateNeighbours(
 					transfers,
 					newNumAddressesToDistributeTo,
 					move.position,
@@ -211,7 +211,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				currentState.lastEpochUpdate = epoch;
 				currentState.color = move.color;
 				currentState.delta = newDelta;
-				currentState.enemymask = newEnemymask;
+				currentState.enemyMap = newenemyMap;
 
 				// logger.logCell(
 				// 	0,
@@ -248,15 +248,15 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		uint256 numAddressesToDistributeTo,
 		uint64 position
 	) internal returns (uint256 newNumAddressesToDistributeTo) {
-		(uint32 epoch, ) = _epoch();
+		(uint24 epoch, ) = _epoch();
 		Cell memory cell = _cells[position];
-		uint32 lastUpdate = cell.lastEpochUpdate;
+		uint24 lastUpdate = cell.lastEpochUpdate;
 		Color color = cell.color;
 		uint8 life = cell.life;
 		int8 delta = cell.delta;
 		if (lastUpdate >= 1 && color != Color.None && life > 0) {
 			// the cell is alive here
-			(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, cell.enemymask, delta, life, epoch);
+			(uint8 newLife, uint24 epochUsed) = _computeNewLife(lastUpdate, cell.enemyMap, delta, life, epoch);
 			cell.life = newLife;
 			cell.lastEpochUpdate = epochUsed;
 			if (newLife == 0) {
@@ -267,7 +267,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 					transfers,
 					numAddressesToDistributeTo,
 					position,
-					cell.enemymask,
+					cell.enemyMap,
 					epochUsed
 				);
 			}
@@ -282,10 +282,10 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		TokenTransfer[] memory transfers,
 		uint256 numAddressesToDistributeTo,
 		uint64 position,
-		uint32 epoch,
+		uint24 epoch,
 		Color oldColor,
 		Color newColor
-	) internal returns (int8 newDelta, uint8 newEnemymask, uint256 newNumAddressesToDistributeTo) {
+	) internal returns (int8 newDelta, uint8 newenemyMap, uint256 newNumAddressesToDistributeTo) {
 		unchecked {
 			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
 			int256 y = int256(int32(int256(uint256(position) >> 32)));
@@ -305,7 +305,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 					newColor
 				);
 				if (enemyOrFriend < 0) {
-					newEnemymask = newEnemymask | 1;
+					newenemyMap = newenemyMap | 1;
 				}
 				newDelta += enemyOrFriend;
 			}
@@ -322,7 +322,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 					newColor
 				);
 				if (enemyOrFriend < 0) {
-					newEnemymask = newEnemymask | 2;
+					newenemyMap = newenemyMap | 2;
 				}
 				newDelta += enemyOrFriend;
 			}
@@ -339,7 +339,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 					newColor
 				);
 				if (enemyOrFriend < 0) {
-					newEnemymask = newEnemymask | 4;
+					newenemyMap = newenemyMap | 4;
 				}
 				newDelta += enemyOrFriend;
 			}
@@ -355,7 +355,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 					newColor
 				);
 				if (enemyOrFriend < 0) {
-					newEnemymask = newEnemymask | 8;
+					newenemyMap = newenemyMap | 8;
 				}
 				newDelta += enemyOrFriend;
 			}
@@ -368,7 +368,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		TokenTransfer[] memory transfers,
 		uint256 numAddressesToDistributeTo,
 		uint64 position,
-		uint32 epoch,
+		uint24 epoch,
 		uint8 neighbourIndex,
 		Color oldColor,
 		Color newColor
@@ -379,7 +379,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 
 		// no need to call if oldColor == newColor, so we assume they are different
 		assert(oldColor != newColor);
-		uint32 lastUpdate = cell.lastEpochUpdate;
+		uint24 lastUpdate = cell.lastEpochUpdate;
 		Color color = cell.color;
 		if (color != Color.None) {
 			enemyOrFriend = color == newColor ? int8(1) : int8(-1);
@@ -396,9 +396,9 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			// we only consider cell with color that are not dead
 			if (cell.life > 0 && lastUpdate < epoch) {
 				// of there is life to update we compute the new life
-				(uint8 newLife, uint32 epochUsed) = _computeNewLife(
+				(uint8 newLife, uint24 epochUsed) = _computeNewLife(
 					lastUpdate,
-					cell.enemymask,
+					cell.enemyMap,
 					cell.delta,
 					cell.life,
 					epoch
@@ -408,7 +408,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				// console.log('    epochUsed: %s ', epochUsed);
 
 				if (newLife == 0) {
-					// if dead, no need to update delta and enemymask
+					// if dead, no need to update delta and enemyMap
 					numAddressesToDistributeTo = _updateCellAsDead(
 						transfers,
 						numAddressesToDistributeTo,
@@ -433,7 +433,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		uint64 position,
 		Cell memory cell,
 		uint8 newLife,
-		uint32 epochUsed
+		uint24 epochUsed
 	) internal returns (uint256 newNumAddressesToDistributeTo) {
 		cell.life = newLife;
 		cell.lastEpochUpdate = epochUsed;
@@ -442,7 +442,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			transfers,
 			numAddressesToDistributeTo,
 			position,
-			cell.enemymask,
+			cell.enemyMap,
 			epochUsed
 		);
 
@@ -454,7 +454,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		uint64 position,
 		Cell memory cell,
 		uint8 newLife,
-		uint32 epoch,
+		uint24 epoch,
 		uint8 neighbourIndex,
 		Color oldColor,
 		Color newColor
@@ -464,16 +464,16 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				cell.delta -= 1;
 			} else {
 				cell.delta += 1;
-				cell.enemymask = cell.enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
+				cell.enemyMap = cell.enemyMap & uint8((1 << neighbourIndex) ^ 0xFF);
 			}
 		} else if (cell.color == oldColor) {
 			// then newColor is different (see assert above)
-			cell.enemymask = cell.enemymask | uint8(1 << neighbourIndex);
+			cell.enemyMap = cell.enemyMap | uint8(1 << neighbourIndex);
 			cell.delta -= 2;
 		} else if (cell.color == newColor) {
 			// then old color was different
 			cell.delta += (oldColor == Color.None ? int8(1) : int8(2));
-			cell.enemymask = cell.enemymask & uint8((1 << neighbourIndex) ^ 0xFF);
+			cell.enemyMap = cell.enemyMap & uint8((1 << neighbourIndex) ^ 0xFF);
 
 			// logger.logCell(
 			// 	2,
@@ -485,7 +485,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		} else if (oldColor == Color.None) {
 			// if there were no oldCOlor and the newColor is not your (already checked in previous if clause)
 			cell.delta -= 1;
-			cell.enemymask = cell.enemymask | uint8(1 << neighbourIndex);
+			cell.enemyMap = cell.enemyMap | uint8(1 << neighbourIndex);
 			// logger.logCell(
 			// 	2,
 			// 	'after neibhor change to a enemy color',
@@ -507,14 +507,14 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		TokenTransfer[] memory transfers,
 		uint256 numAddressesToDistributeTo,
 		uint64 position,
-		uint8 enemymask,
-		uint32 epoch
+		uint8 enemyMap,
+		uint24 epoch
 	) internal view returns (uint256) {
 		// console.log('distrubute death');
 		// console.log(epoch);
 		(address[4] memory enemies, uint8 numEnemiesAlive) = _getNeihbourEnemiesAliveWithPlayers(
 			position,
-			enemymask,
+			enemyMap,
 			epoch
 		);
 		uint256 total = NUM_TOKENS_PER_GEMS;

@@ -14,7 +14,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 
 	/// @inheritdoc IStratagemsGameplay
 	function getCell(uint256 id) external view returns (FullCell memory) {
-		(uint32 epoch, ) = _epoch();
+		(uint24 epoch, ) = _epoch();
 		// console.log('epoch %s', epoch);
 		Cell memory updatedCell = _getUpdatedCell(uint64(id), epoch);
 		return
@@ -25,13 +25,14 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 				color: updatedCell.color,
 				life: updatedCell.life,
 				delta: updatedCell.delta,
-				enemymask: updatedCell.enemymask
+				enemyMap: updatedCell.enemyMap,
+				distributionMap: updatedCell.distributionMap
 			});
 	}
 
 	/// @inheritdoc IStratagemsGameplay
 	function getCells(uint256[] memory ids) external view returns (FullCell[] memory cells) {
-		(uint32 epoch, ) = _epoch();
+		(uint24 epoch, ) = _epoch();
 		uint256 numCells = ids.length;
 		cells = new FullCell[](numCells);
 		for (uint256 i = 0; i < numCells; i++) {
@@ -43,7 +44,8 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 				color: updatedCell.color,
 				life: updatedCell.life,
 				delta: updatedCell.delta,
-				enemymask: updatedCell.enemymask
+				enemyMap: updatedCell.enemyMap,
+				distributionMap: updatedCell.distributionMap
 			});
 		}
 	}
@@ -129,7 +131,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 	/// @inheritdoc IStratagemsGameplay
 	function cancelCommitment() external {
 		Commitment storage commitment = _commitments[msg.sender];
-		(uint32 epoch, bool commiting) = _epoch();
+		(uint24 epoch, bool commiting) = _epoch();
 		require(commiting, 'IN_RESOLUTION_PHASE');
 		require(commitment.epoch == epoch, 'PREVIOUS_COMMITMENT_TO_RESOLVE');
 
@@ -144,7 +146,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 	function withdrawFromReserve(uint256 amount) external {
 		Commitment storage commitment = _commitments[msg.sender];
 
-		(uint32 epoch, bool commiting) = _epoch();
+		(uint24 epoch, bool commiting) = _epoch();
 
 		require(commitment.epoch == 0 || (commiting && commitment.epoch == epoch), 'PREVIOUS_COMMITMENT_TO_RESOLVE');
 
@@ -170,7 +172,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 		bool useReserve
 	) external {
 		Commitment storage commitment = _commitments[player];
-		(uint32 epoch, bool commiting) = _epoch();
+		(uint24 epoch, bool commiting) = _epoch();
 
 		require(!commiting, 'IN_COMMITING_PHASE');
 		require(commitment.epoch != 0, 'NOTHING_TO_RESOLVE');
@@ -201,7 +203,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 		bytes24 furtherMoves
 	) external {
 		Commitment storage commitment = _commitments[player];
-		(uint32 epoch, ) = _epoch();
+		(uint24 epoch, ) = _epoch();
 		require(commitment.epoch > 0 && commitment.epoch != epoch, 'NO_NEED');
 
 		uint256 numMoves = moves.length;
@@ -224,7 +226,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 	/// @inheritdoc IStratagemsGameplay
 	function acknowledgeMissedResolutionByBurningAllReserve() external {
 		Commitment storage commitment = _commitments[msg.sender];
-		(uint32 epoch, ) = _epoch();
+		(uint24 epoch, ) = _epoch();
 
 		require(commitment.epoch > 0 && commitment.epoch != epoch, 'NO_NEED');
 		commitment.epoch = 0;

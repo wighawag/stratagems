@@ -8,19 +8,19 @@ interface UsingStratagemsEvents is UsingStratagemsTypes {
 	/// @param player account taking the staking risk (can be a different account than the one controlling the gems)
 	/// @param epoch epoch number on which this commit belongs to
 	/// @param commitmentHash the hash of moves
-	event CommitmentMade(address indexed player, uint32 indexed epoch, bytes24 commitmentHash);
+	event CommitmentMade(address indexed player, uint24 indexed epoch, bytes24 commitmentHash);
 
 	/// @notice A player has cancelled its current commitment (before it reached the resolution phase)
 	/// @param player account taking the staking risk (can be a different account than the one controlling the gems)
 	/// @param epoch epoch number on which this commit belongs to
-	event CommitmentCancelled(address indexed player, uint32 indexed epoch);
+	event CommitmentCancelled(address indexed player, uint24 indexed epoch);
 
 	/// @notice A player has canceled a previous commitment by burning some tokens
 	/// @param player the account that made the commitment
 	/// @param epoch epoch number on which this commit belongs to
 	/// @param amountBurnt amount of token to burn
 	/// @param furtherMoves hash of further moves, unless bytes32(0) which indicate end.
-	event CommitmentVoid(address indexed player, uint32 indexed epoch, uint256 amountBurnt, bytes24 furtherMoves);
+	event CommitmentVoid(address indexed player, uint24 indexed epoch, uint256 amountBurnt, bytes24 furtherMoves);
 
 	/// @notice Player has resolved its previous commitment
 	/// @param player account who commited
@@ -30,7 +30,7 @@ interface UsingStratagemsEvents is UsingStratagemsTypes {
 	/// @param furtherMoves hash of further moves, unless bytes32(0) which indicate end.
 	event CommitmentResolved(
 		address indexed player,
-		uint32 indexed epoch,
+		uint24 indexed epoch,
 		bytes24 indexed commitmentHash,
 		Move[] moves,
 		bytes24 furtherMoves,

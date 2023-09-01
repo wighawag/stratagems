@@ -79,7 +79,7 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 		NUM_TOKENS_PER_GEMS = config.numTokensPerGems;
 	}
 
-	function _epoch() internal view virtual returns (uint32 epoch, bool commiting) {
+	function _epoch() internal view virtual returns (uint24 epoch, bool commiting) {
 		uint256 epochDuration = COMMIT_PHASE_DURATION + RESOLUTION_PHASE_DURATION;
 		console.log(COMMIT_PHASE_DURATION);
 		console.log(RESOLUTION_PHASE_DURATION);
@@ -89,14 +89,14 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 		console.log(time);
 		require(time >= START_TIME, 'GAME_NOT_STARTED');
 		uint256 timePassed = time - START_TIME;
-		epoch = uint32(timePassed / epochDuration + 2); // epoch start at 2, this make the hypothetical previous resolution phase's epoch to be 1
+		epoch = uint24(timePassed / epochDuration + 2); // epoch start at 2, this make the hypothetical previous resolution phase's epoch to be 1
 		commiting = timePassed - ((epoch - 2) * epochDuration) < COMMIT_PHASE_DURATION;
 	}
 
 	function _getNeihbourEnemiesAliveWithPlayers(
 		uint64 position,
 		uint8 enemyMask,
-		uint32 epoch
+		uint24 epoch
 	) internal view returns (address[4] memory enemies, uint8 numEnemiesAlive) {
 		unchecked {
 			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
@@ -159,12 +159,12 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 	}
 
 	function _computeNewLife(
-		uint32 lastUpdate,
+		uint24 lastUpdate,
 		uint8 enemymask,
 		int8 delta,
 		uint8 life,
-		uint32 epoch
-	) internal view returns (uint8 newLife, uint32 epochUsed) {
+		uint24 epoch
+	) internal view returns (uint8 newLife, uint24 epochUsed) {
 		if (lastUpdate >= 1 && life > 0) {
 			uint256 epochDelta = epoch - lastUpdate;
 			if (epochDelta > 0) {
@@ -184,7 +184,7 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 							life = MAX_LIFE;
 						}
 						newLife = life;
-						epochUsed = lastUpdate + uint32(epochDelta);
+						epochUsed = lastUpdate + uint24(epochDelta);
 					} else {
 						newLife = life;
 						epochUsed = lastUpdate;
@@ -200,7 +200,7 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 					} else {
 						newLife = life - lifeLoss;
 					}
-					epochUsed = lastUpdate + uint32(epochDelta);
+					epochUsed = lastUpdate + uint24(epochDelta);
 				} else {
 					newLife = life;
 					epochUsed = lastUpdate;
@@ -212,15 +212,15 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 		}
 	}
 
-	function _getUpdatedCell(uint64 position, uint32 epoch) internal view returns (Cell memory updatedCell) {
+	function _getUpdatedCell(uint64 position, uint24 epoch) internal view returns (Cell memory updatedCell) {
 		// load from state
 		updatedCell = _cells[position];
-		uint32 lastUpdate = updatedCell.lastEpochUpdate;
+		uint24 lastUpdate = updatedCell.lastEpochUpdate;
 		int8 delta = updatedCell.delta;
 		uint8 life = updatedCell.life;
 		logger.logCell(0, 'before update', position, updatedCell, address(uint160(_owners[position])));
 		if (lastUpdate >= 1 && life > 0) {
-			(uint8 newLife, uint32 epochUsed) = _computeNewLife(lastUpdate, updatedCell.enemymask, delta, life, epoch);
+			(uint8 newLife, uint24 epochUsed) = _computeNewLife(lastUpdate, updatedCell.enemyMap, delta, life, epoch);
 			updatedCell.life = newLife;
 			updatedCell.lastEpochUpdate = epochUsed;
 		}
