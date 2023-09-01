@@ -397,7 +397,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 	) internal returns (bool due) {
 		if (cell.life > 0 && newLife == 0) {
 			// we just died, we establish the distributionMap
-			cell.distributionMap = cell.enemyMap;
+			cell.distributionMap = cell.enemyMap; // TODO add due ratio (1,2,3, or 4) based on delta
 		}
 
 		if (cell.distributionMap & (2 ** neighbourIndex) == 2 ** neighbourIndex) {
