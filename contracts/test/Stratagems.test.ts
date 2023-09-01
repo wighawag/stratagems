@@ -31,7 +31,7 @@ describe('Stratagems', function () {
 		|    |    |    |    |    |
 		|    |    |    |    |    |
 		-------------------------
-		`
+		`,
 		);
 		expect((await Stratagems.read.getRawCell([xyToBigIntID(1, 2)])).life).to.equal(2);
 		await Stratagems.write.increaseTime([config.commitPhaseDuration + config.resolutionPhaseDuration], {
@@ -63,18 +63,18 @@ describe('Stratagems', function () {
 		|    |    |    |    |    |
 		|    |    |    |    |    |
 		-------------------------
-		`
+		`,
 			)
 				.then(() =>
 					setup.Stratagems.write.increaseTime(
 						[setup.config.commitPhaseDuration + setup.config.resolutionPhaseDuration],
 						{
 							account: setup.stratagemsAdmin,
-						}
-					)
+						},
+					),
 				)
 				.then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}))
-				.then(renderGrid)
+				.then(renderGrid),
 		).to.equal(
 			renderGrid(
 				parseGrid(`
@@ -94,8 +94,8 @@ describe('Stratagems', function () {
 		|    |    |    |    |    |
 		|    |    |    |    |    |
 		-------------------------
-		`)
-			)
+		`),
+			),
 		);
 	});
 
@@ -138,7 +138,7 @@ describe('Stratagems', function () {
 		|    |    |    |    |    |
 		|    |    |    |    |    |
 		-------------------------
-		`
+		`,
 		);
 	});
 
@@ -181,7 +181,7 @@ describe('Stratagems', function () {
 		|    |    |    |    |    |
 		|    |    |    |    |    |
 		-------------------------
-		`
+		`,
 		);
 	});
 
@@ -224,7 +224,7 @@ describe('Stratagems', function () {
 		|    |    |    |    |    |
 		|    |    |    |    |    |
 		-------------------------
-		`
+		`,
 		);
 	});
 
@@ -312,7 +312,7 @@ describe('Stratagems', function () {
 			|    |    |    |    |    |
 			-------------------------
 			
-			`
+			`,
 		);
 	});
 

@@ -6,20 +6,23 @@ import '../interface/UsingStratagemsTypes.sol';
 import 'solidity-kit/solc_0.8/debug/time/interfaces/ITime.sol';
 
 interface IStratagemsDebug is UsingStratagemsTypes, ITime, ITimeSetter {
+	error InvalidCellOverwrite();
+	error InvalidLifeConfiguration(uint256 life, int32 x, int32 y);
+
 	event ForceCells(DebugCell[] cells);
-	event ForceSimpleCells(uint32 epoch, SimpleCell[] cells);
+	event ForceSimpleCells(uint24 epoch, SimpleCell[] cells);
 
 	function forceMoves(address player, Move[] memory moves) external;
 
 	struct DebugCell {
 		uint64 position;
 		address owner;
-		uint32 lastEpochUpdate;
-		uint32 epochWhenTokenIsAdded;
+		uint24 lastEpochUpdate;
+		uint24 epochWhenTokenIsAdded;
 		Color color;
 		uint8 life;
 		int8 delta;
-		uint8 enemymask;
+		uint8 enemyMap;
 	}
 
 	function forceCells(DebugCell[] memory cells) external;

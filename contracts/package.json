@@ -45,7 +45,7 @@
     "compile:watch": "as-soon -w src pnpm compile",
     "deploy": "ldenv hardhat --network @@MODE deploy @@",
     "deploy:watch": "as-soon -w generated -w deploy pnpm run deploy",
-    "test": "vitest",
+    "test": "vitest --bail 1",
     "execute": "ldenv -n HARDHAT_NETWORK -m localhost tsx @@",
     "coverage:compile": "hardhat compile-for-coverage",
     "coverage:watch:compile": "as-soon -w src pnpm coverage:compile",

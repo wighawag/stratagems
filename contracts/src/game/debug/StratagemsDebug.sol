@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
+import 'solidity-kit/solc_0.8/utils/GenericErrors.sol';
 import 'solidity-kit/solc_0.8/debug/time/implementations/UsingControlledTime.sol';
 import '../internal/UsingStratagemsSetters.sol';
 import './IStratagemsWithDebug.sol';
@@ -20,8 +21,10 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 	}
 
 	function forceMoves(address player, Move[] memory moves) external {
-		require(msg.sender == _getOwner(), 'NOT_AUTHORIZED');
-		(uint32 epoch, bool commiting) = _epoch();
+		if (msg.sender != _getOwner()) {
+			revert NotAuthorized();
+		}
+		(uint24 epoch, bool commiting) = _epoch();
 		if (commiting) {
 			epoch--;
 		}
@@ -33,7 +36,9 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 	}
 
 	function forceCells(DebugCell[] memory cells) external {
-		require(msg.sender == _getOwner(), 'NOT_AUTHORIZED');
+		if (msg.sender != _getOwner()) {
+			revert NotAuthorized();
+		}
 		for (uint256 i = 0; i < cells.length; i++) {
 			DebugCell memory debugCell = cells[i];
 			_cells[debugCell.position] = Cell({
@@ -42,7 +47,8 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				color: debugCell.color,
 				life: debugCell.life,
 				delta: debugCell.delta,
-				enemymask: debugCell.enemymask
+				enemyMap: debugCell.enemyMap,
+				distributionMap: 0 // TODO let debug distributionMap ?
 			});
 			_owners[debugCell.position] = uint256(uint160(debugCell.owner));
 		}
@@ -50,16 +56,19 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 	}
 
 	function forceSimpleCells(SimpleCell[] memory cells) external {
-		require(msg.sender == _getOwner(), 'NOT_AUTHORIZED');
-		(uint32 epoch, ) = _epoch();
+		if (msg.sender != _getOwner()) {
+			revert NotAuthorized();
+		}
+		(uint24 epoch, ) = _epoch();
 
 		for (uint256 i = 0; i < cells.length; i++) {
 			SimpleCell memory simpleCell = cells[i];
-			require(_cells[simpleCell.position].lastEpochUpdate == 0, 'NO_OVERWRITE');
-			// require(simpleCell.life > 0, 'ZERO_LIFE');
+			if (_cells[simpleCell.position].lastEpochUpdate != 0) {
+				revert InvalidCellOverwrite();
+			}
 			TOKENS.transferFrom(msg.sender, address(this), NUM_TOKENS_PER_GEMS);
 
-			(int8 delta, uint8 enemymask) = _updateNeighbosrDelta(simpleCell.position, simpleCell.color, epoch);
+			(int8 delta, uint8 enemyMap) = _updateNeighbosrDelta(simpleCell.position, simpleCell.color, epoch);
 
 			_cells[simpleCell.position] = Cell({
 				lastEpochUpdate: epoch,
@@ -67,7 +76,8 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				color: simpleCell.color,
 				life: simpleCell.life,
 				delta: delta,
-				enemymask: enemymask
+				enemyMap: enemyMap,
+				distributionMap: 0
 			});
 			_owners[simpleCell.position] = uint256(uint160(simpleCell.owner));
 		}
@@ -78,30 +88,41 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 
 			// we act as if the token were added in previous epochs
 			// this is so it does not affect the resolution phase
-			int256 potentialLife = int256(uint256(cell.life)) - cell.delta;
+			int8 effectiveDelta = cell.delta != 0 ? cell.delta : -1;
+			if (effectiveDelta < 0 && cell.enemyMap == 0) {
+				effectiveDelta = 0;
+			}
+			int256 potentialLife = int256(uint256(cell.life)) - effectiveDelta;
 			if (potentialLife < 0) {
 				potentialLife = 0;
 			}
 			if (uint256(potentialLife) > MAX_LIFE) {
 				unchecked {
-					int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
-					int256 y = int256(int32(int256(uint256(position) >> 32)));
-					require(
-						uint256(potentialLife) > MAX_LIFE,
-						string.concat('INVALID_LIFE_CONFIGURATION: ', Strings.toString(x), ',', Strings.toString(y))
-					);
+					int32 x = int32(int256(uint256(position) & 0xFFFFFFFF));
+					int32 y = int32(int256(uint256(position) >> 32));
+					revert InvalidLifeConfiguration(uint256(potentialLife), x, y);
 				}
 			}
 			cell.life = uint8(uint256(potentialLife));
 
-			_cells[position] = Cell({
+			Cell memory updatedCell = Cell({
 				lastEpochUpdate: epoch - 1,
 				epochWhenTokenIsAdded: epoch - 1,
 				color: cell.color,
 				life: cell.life,
 				delta: cell.delta,
-				enemymask: cell.enemymask
+				enemyMap: cell.enemyMap,
+				distributionMap: 0 // TODO let debug distributionMap ?
 			});
+			_cells[position] = updatedCell;
+
+			logger.logCell(
+				0,
+				string.concat('forceSimpleCells at epoch ', Strings.toString(epoch)),
+				uint64(position),
+				updatedCell,
+				address(uint160(_owners[position]))
+			);
 		}
 
 		emit ForceSimpleCells(epoch, cells);
@@ -114,7 +135,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 		return 0;
 	}
 
-	function _computeDelta(uint64 position, Color color) internal view returns (int8 delta, uint8 enemymask) {
+	function _computeDelta(uint64 position, Color color) internal view returns (int8 delta, uint8 enemyMap) {
 		unchecked {
 			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
 			int256 y = int256(int32(int256(uint256(position) >> 32)));
@@ -122,7 +143,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				uint64 upPosition = uint64((uint256(y - 1) << 32) + uint256(x));
 				int8 enemyOrFriend = isEnemyOrFriend(color, _cells[upPosition].color);
 				if (enemyOrFriend < 0) {
-					enemymask = enemymask | 1;
+					enemyMap = enemyMap | 1;
 				}
 				delta += enemyOrFriend;
 			}
@@ -130,7 +151,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				uint64 leftPosition = uint64((uint256(y) << 32) + uint256(x - 1));
 				int8 enemyOrFriend = isEnemyOrFriend(color, _cells[leftPosition].color);
 				if (enemyOrFriend < 0) {
-					enemymask = enemymask | 1;
+					enemyMap = enemyMap | 1;
 				}
 				delta += enemyOrFriend;
 			}
@@ -139,7 +160,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				uint64 downPosition = uint64((uint256(y + 1) << 32) + uint256(x));
 				int8 enemyOrFriend = isEnemyOrFriend(color, _cells[downPosition].color);
 				if (enemyOrFriend < 0) {
-					enemymask = enemymask | 1;
+					enemyMap = enemyMap | 1;
 				}
 				delta += enemyOrFriend;
 			}
@@ -147,7 +168,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				uint64 rightPosition = uint64((uint256(y) << 32) + uint256(x + 1));
 				int8 enemyOrFriend = isEnemyOrFriend(color, _cells[rightPosition].color);
 				if (enemyOrFriend < 0) {
-					enemymask = enemymask | 1;
+					enemyMap = enemyMap | 1;
 				}
 				delta += enemyOrFriend;
 			}
@@ -157,8 +178,8 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 	function _updateNeighbosrDelta(
 		uint64 center,
 		Color color,
-		uint32 epoch
-	) internal returns (int8 delta, uint8 enemymask) {
+		uint24 epoch
+	) internal returns (int8 delta, uint8 enemyMap) {
 		unchecked {
 			int256 x = int256(int32(int256(uint256(center) & 0xFFFFFFFF)));
 			int256 y = int256(int32(int256(uint256(center) >> 32)));
@@ -168,7 +189,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				if (cell.color != Color.None) {
 					int8 enemyOrFriend = isEnemyOrFriend(color, cell.color);
 					if (enemyOrFriend < 0) {
-						enemymask = enemymask | 1;
+						enemyMap = enemyMap | 1;
 					}
 					delta += enemyOrFriend;
 					_updateCellFromNeighbor(upPosition, cell, cell.life, epoch, 2, Color.None, color);
@@ -180,7 +201,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				if (cell.color != Color.None) {
 					int8 enemyOrFriend = isEnemyOrFriend(color, cell.color);
 					if (enemyOrFriend < 0) {
-						enemymask = enemymask | 2;
+						enemyMap = enemyMap | 2;
 					}
 					delta += enemyOrFriend;
 					_updateCellFromNeighbor(leftPosition, cell, cell.life, epoch, 3, Color.None, color);
@@ -193,7 +214,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				if (cell.color != Color.None) {
 					int8 enemyOrFriend = isEnemyOrFriend(color, cell.color);
 					if (enemyOrFriend < 0) {
-						enemymask = enemymask | 4;
+						enemyMap = enemyMap | 4;
 					}
 					delta += enemyOrFriend;
 					_updateCellFromNeighbor(downPosition, cell, cell.life, epoch, 0, Color.None, color);
@@ -205,7 +226,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				if (cell.color != Color.None) {
 					int8 enemyOrFriend = isEnemyOrFriend(color, cell.color);
 					if (enemyOrFriend < 0) {
-						enemymask = enemymask | 8;
+						enemyMap = enemyMap | 8;
 					}
 					delta += enemyOrFriend;
 					_updateCellFromNeighbor(rightPosition, cell, cell.life, epoch, 1, Color.None, color);

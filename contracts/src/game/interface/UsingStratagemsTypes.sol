@@ -22,8 +22,8 @@ interface UsingStratagemsTypes {
 	}
 
 	struct Move {
-		uint64 position;
-		Color color; // Color.None to indicate exit and Color.Evil is not allowed here
+		uint64 position; // TODO make it bigger ? uint32 * uint32 is probably infinitely big enough
+		Color color;
 	}
 
 	struct Permit {
@@ -46,33 +46,34 @@ interface UsingStratagemsTypes {
 
 	struct FullCell {
 		address owner;
-		uint32 lastEpochUpdate;
-		uint32 epochWhenTokenIsAdded;
+		uint24 lastEpochUpdate;
+		uint24 epochWhenTokenIsAdded;
 		Color color;
 		uint8 life;
 		int8 delta;
-		uint8 enemymask;
+		uint8 enemyMap;
+		uint8 distributionMap;
 	}
 
 	// --------------------------------------------------------------------------------------------
 	// STORAGE TYPES
 	// --------------------------------------------------------------------------------------------
 	struct Cell {
-		uint32 lastEpochUpdate; // TODO uint24 is enough
-		uint32 epochWhenTokenIsAdded; // TODO uint24 is enough
+		uint24 lastEpochUpdate;
+		uint24 epochWhenTokenIsAdded;
 		Color color;
 		uint8 life;
 		int8 delta;
-		uint8 enemymask; // rename to enemyMap
+		uint8 enemyMap;
 		uint8 distributionMap; // this encode who is left to be given reward
-		// TODO could be encoded in "delta" or "enemymask" // but delta and enemymask could also be together
-		// alternatively we could reuse enemymask
+		// TODO could be encoded in "delta" or "enemyMap" // but delta and enemyMap could also be together
+		// alternatively we could reuse enemyMap
 		// and reset it if token is revived (delta could also be recomputed on revival)
 	}
 
 	struct Commitment {
 		bytes24 hash;
-		uint32 epoch;
+		uint24 epoch;
 	}
 
 	// --------------------------------------------------------------------------------------------
@@ -82,6 +83,11 @@ interface UsingStratagemsTypes {
 	struct TokenTransfer {
 		address payable to;
 		uint256 amount;
+	}
+
+	struct TokenTransferCollection {
+		TokenTransfer[] transfers;
+		uint256 numTransfers;
 	}
 
 	struct MoveTokens {
