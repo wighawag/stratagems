@@ -43,7 +43,7 @@ library logger {
 		// console.log('%s - life:  %s', indent, cell.life);
 		// console.log('%s - owner:  %s', indent, owner);
 		// console.log('%s - delta: %s', indent, Strings.toString(cell.delta));
-		// console.log('%s - enemymask:  %s', indent, cell.enemymask);
+		// console.log('%s - enemyMap:  %s', indent, cell.enemyMap);
 		// console.log('%s-------------------------------------------------------------', indent);
 	}
 }
@@ -81,12 +81,7 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 
 	function _epoch() internal view virtual returns (uint24 epoch, bool commiting) {
 		uint256 epochDuration = COMMIT_PHASE_DURATION + RESOLUTION_PHASE_DURATION;
-		console.log(COMMIT_PHASE_DURATION);
-		console.log(RESOLUTION_PHASE_DURATION);
-		console.log(START_TIME);
-		console.log(epochDuration);
 		uint256 time = _timestamp();
-		console.log(time);
 		require(time >= START_TIME, 'GAME_NOT_STARTED');
 		uint256 timePassed = time - START_TIME;
 		epoch = uint24(timePassed / epochDuration + 2); // epoch start at 2, this make the hypothetical previous resolution phase's epoch to be 1
@@ -95,14 +90,14 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 
 	function _getNeihbourEnemiesAliveWithPlayers(
 		uint64 position,
-		uint8 enemyMask,
+		uint8 enemyMap,
 		uint24 epoch
 	) internal view returns (address[4] memory enemies, uint8 numEnemiesAlive) {
 		unchecked {
 			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
 			int256 y = int256(int32(int256(uint256(position) >> 32)));
 
-			if (enemyMask & 1 == 1) {
+			if (enemyMap & 1 == 1) {
 				uint256 cellPos = ((uint256(uint32(int32(y - 1))) << 32) + uint256(x));
 				// console.log(uint64(cellPos));
 				// console.log(cellPos);
@@ -114,43 +109,43 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 					cell.life > 0 ||
 					(cell.lastEpochUpdate == epoch && address(uint160((_owners[cellPos]))) != address(0))
 				) {
-					logger.logCell(0, 'enemyMask & 1 == 1', uint64(cellPos), cell, address(uint160(_owners[cellPos])));
+					logger.logCell(0, 'enemyMap & 1 == 1', uint64(cellPos), cell, address(uint160(_owners[cellPos])));
 					enemies[numEnemiesAlive] = _ownerOf(cellPos);
 					numEnemiesAlive++;
 				}
 			}
-			if (enemyMask & 2 == 2) {
+			if (enemyMap & 2 == 2) {
 				uint256 cellPos = ((uint256(y) << 32) + uint256(x - 1));
 				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
 				if (
 					cell.life > 0 ||
 					(cell.lastEpochUpdate == epoch && address(uint160((_owners[cellPos]))) != address(0))
 				) {
-					logger.logCell(0, 'enemyMask & 2 == 2', uint64(cellPos), cell, address(uint160(_owners[cellPos])));
+					logger.logCell(0, 'enemyMap & 2 == 2', uint64(cellPos), cell, address(uint160(_owners[cellPos])));
 					enemies[numEnemiesAlive] = _ownerOf(cellPos);
 					numEnemiesAlive++;
 				}
 			}
-			if (enemyMask & 4 == 4) {
+			if (enemyMap & 4 == 4) {
 				uint256 cellPos = ((uint256(y + 1) << 32) + uint256(x));
 				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
 				if (
 					cell.life > 0 ||
 					(cell.lastEpochUpdate == epoch && address(uint160((_owners[cellPos]))) != address(0))
 				) {
-					logger.logCell(0, 'enemyMask & 4 == 4', uint64(cellPos), cell, address(uint160(_owners[cellPos])));
+					logger.logCell(0, 'enemyMap & 4 == 4', uint64(cellPos), cell, address(uint160(_owners[cellPos])));
 					enemies[numEnemiesAlive] = _ownerOf(cellPos);
 					numEnemiesAlive++;
 				}
 			}
-			if (enemyMask & 8 == 8) {
+			if (enemyMap & 8 == 8) {
 				uint256 cellPos = ((uint256(y) << 32) + uint256(x + 1));
 				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
 				if (
 					cell.life > 0 ||
 					(cell.lastEpochUpdate == epoch && address(uint160((_owners[cellPos]))) != address(0))
 				) {
-					logger.logCell(0, 'enemyMask & 8 == 8', uint64(cellPos), cell, address(uint160(_owners[cellPos])));
+					logger.logCell(0, 'enemyMap & 8 == 8', uint64(cellPos), cell, address(uint160(_owners[cellPos])));
 					enemies[numEnemiesAlive] = _ownerOf(cellPos);
 					numEnemiesAlive++;
 				}
@@ -160,7 +155,7 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 
 	function _computeNewLife(
 		uint24 lastUpdate,
-		uint8 enemymask,
+		uint8 enemyMap,
 		int8 delta,
 		uint8 life,
 		uint24 epoch
@@ -169,7 +164,7 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 			uint256 epochDelta = epoch - lastUpdate;
 			if (epochDelta > 0) {
 				int8 effectiveDelta = delta != 0 ? delta : -1;
-				if (effectiveDelta < 0 && enemymask == 0) {
+				if (effectiveDelta < 0 && enemyMap == 0) {
 					effectiveDelta = 0;
 				}
 				if (effectiveDelta > 0) {
