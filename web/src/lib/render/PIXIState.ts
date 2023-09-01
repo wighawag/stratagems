@@ -3,6 +3,7 @@ import type {DisplayObject} from 'pixi.js';
 import {Container, Sprite, Texture} from 'pixi.js';
 import type {Viewport} from 'pixi-viewport';
 import {COLORS} from './colors';
+import {Color} from 'stratagems-common';
 
 export class PIXIState {
 	protected elements: Map<string, Container>;
@@ -87,6 +88,9 @@ export class PIXIState {
 		const unseen = new Map(this.elements);
 		for (const cellID of Object.keys(state.cells)) {
 			const cell = state.cells[cellID];
+			if (cell.next.color === Color.None) {
+				continue;
+			}
 			const element = this.getOrAddElement(cellID, cell.next);
 			this.upateCell(cellID, cell, element);
 			unseen.delete(cellID);

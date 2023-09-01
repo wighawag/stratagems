@@ -174,7 +174,7 @@ export class StratagemsContract {
 
 	updateCellAsDead(position: bigint, cell: ContractCell, newLife: number, epochUsed: number) {
 		cell.life = newLife;
-		cell.lastEpochUpdate = epochUsed;
+		cell.lastEpochUpdate = epochUsed; // just been killed, we distribute right away? and we can track that
 		this.state.cells[position.toString()] = cell;
 		// console.log({
 		// 	DEAD: 'DEAD',
@@ -316,7 +316,7 @@ export class StratagemsContract {
 
 		if (move.color == Color.None) {
 			// this is a leave move
-			if (currentState.life == MAX_LIFE && this.ownerOf(move.position) == player) {
+			if (currentState.life == MAX_LIFE && this.ownerOf(move.position).toLowerCase() == player.toLowerCase()) {
 				// only valid id life == MAX_LIFE and player is owner
 
 				this.updateNeighbours(move.position, epoch, currentState.color, Color.None);

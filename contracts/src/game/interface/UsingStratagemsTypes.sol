@@ -58,12 +58,16 @@ interface UsingStratagemsTypes {
 	// STORAGE TYPES
 	// --------------------------------------------------------------------------------------------
 	struct Cell {
-		uint32 lastEpochUpdate;
-		uint32 epochWhenTokenIsAdded;
+		uint32 lastEpochUpdate; // TODO uint24 is enough
+		uint32 epochWhenTokenIsAdded; // TODO uint24 is enough
 		Color color;
 		uint8 life;
 		int8 delta;
-		uint8 enemymask;
+		uint8 enemymask; // rename to enemyMap
+		uint8 distributionMap; // this encode who is left to be given reward
+		// TODO could be encoded in "delta" or "enemymask" // but delta and enemymask could also be together
+		// alternatively we could reuse enemymask
+		// and reset it if token is revived (delta could also be recomputed on revival)
 	}
 
 	struct Commitment {

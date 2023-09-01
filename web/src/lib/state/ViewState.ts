@@ -76,14 +76,17 @@ function merge(
 		// 	updatedCell,
 		// 	epoch,
 		// });
-		viewState.cells[xyToXYID(x, y)] = {
+		const viewCell = {
 			next,
 			future,
 			currentPlayer: copyState.owners[cellID].toLowerCase() === account.address?.toLowerCase(),
 		};
+		viewState.cells[xyToXYID(x, y)] = viewCell;
+		console.log(`${x}, ${y}`, viewCell);
 	}
-	for (const ownerAddr of Object.keys(copyState.owners)) {
-		viewState.owners[ownerAddr] = copyState.owners[ownerAddr];
+	for (const pos of Object.keys(state.owners)) {
+		const {x, y} = bigIntIDToXY(BigInt(pos));
+		viewState.owners[xyToXYID(x, y)] = state.owners[pos];
 	}
 
 	if (account.address) {
