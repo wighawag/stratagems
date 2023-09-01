@@ -1,8 +1,9 @@
 <script lang="ts">
+	import {epoch} from '$lib/blockchain/state/Epoch';
 	import {viewState} from '$lib/state/ViewState';
 	import {accountData, contracts} from '$lib/web3';
 	import type {CommitMetadata} from '$lib/web3/account-data';
-	import {startReveal} from '../flows/reveal';
+	import {startAcknowledgFailedReveal, startReveal} from '../flows/reveal';
 
 	import {getTransactionToReveal} from './utilts';
 	import {bnReplacer} from 'stratagems-common';
@@ -19,10 +20,17 @@
 			throw new Error(`no action to resolve`);
 		}
 		if ($viewState.hasCommitmentToResolve.commit) {
-			startReveal(
-				$viewState.hasCommitmentToResolve.commit.hash,
-				$viewState.hasCommitmentToResolve.commit.tx.metadata as CommitMetadata,
-			);
+			if ($viewState.hasCommitmentToResolve.commit.tx.metadata?.epoch !== $epoch) {
+				startAcknowledgFailedReveal(
+					$viewState.hasCommitmentToResolve.commit.hash,
+					$viewState.hasCommitmentToResolve.commit.tx.metadata as CommitMetadata,
+				);
+			} else {
+				startReveal(
+					$viewState.hasCommitmentToResolve.commit.hash,
+					$viewState.hasCommitmentToResolve.commit.tx.metadata as CommitMetadata,
+				);
+			}
 		} else {
 			// TODO use flow
 			await contracts.execute(async ({contracts, account}) => {

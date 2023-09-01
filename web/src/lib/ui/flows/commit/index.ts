@@ -88,7 +88,7 @@ export async function startCommit() {
 					};
 					const signature = await connection.provider.request({
 						method: 'eth_signTypedData_v4',
-						params: [account.address, permit],
+						params: [account.address, JSON.stringify(permit)],
 					});
 
 					state.permit = {signature, amount: amountToAllow, nonce};
