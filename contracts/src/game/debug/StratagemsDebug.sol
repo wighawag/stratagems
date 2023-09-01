@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
+import 'solidity-kit/solc_0.8/utils/GenericErrors.sol';
 import 'solidity-kit/solc_0.8/debug/time/implementations/UsingControlledTime.sol';
 import '../internal/UsingStratagemsSetters.sol';
 import './IStratagemsWithDebug.sol';
@@ -20,7 +21,9 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 	}
 
 	function forceMoves(address player, Move[] memory moves) external {
-		require(msg.sender == _getOwner(), 'NOT_AUTHORIZED');
+		if (msg.sender != _getOwner()) {
+			revert NotAuthorized();
+		}
 		(uint24 epoch, bool commiting) = _epoch();
 		if (commiting) {
 			epoch--;
@@ -33,7 +36,9 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 	}
 
 	function forceCells(DebugCell[] memory cells) external {
-		require(msg.sender == _getOwner(), 'NOT_AUTHORIZED');
+		if (msg.sender != _getOwner()) {
+			revert NotAuthorized();
+		}
 		for (uint256 i = 0; i < cells.length; i++) {
 			DebugCell memory debugCell = cells[i];
 			_cells[debugCell.position] = Cell({
@@ -51,13 +56,16 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 	}
 
 	function forceSimpleCells(SimpleCell[] memory cells) external {
-		require(msg.sender == _getOwner(), 'NOT_AUTHORIZED');
+		if (msg.sender != _getOwner()) {
+			revert NotAuthorized();
+		}
 		(uint24 epoch, ) = _epoch();
 
 		for (uint256 i = 0; i < cells.length; i++) {
 			SimpleCell memory simpleCell = cells[i];
-			require(_cells[simpleCell.position].lastEpochUpdate == 0, 'NO_OVERWRITE');
-			// require(simpleCell.life > 0, 'ZERO_LIFE');
+			if (_cells[simpleCell.position].lastEpochUpdate != 0) {
+				revert InvalidCellOverwrite();
+			}
 			TOKENS.transferFrom(msg.sender, address(this), NUM_TOKENS_PER_GEMS);
 
 			(int8 delta, uint8 enemyMap) = _updateNeighbosrDelta(simpleCell.position, simpleCell.color, epoch);
@@ -86,12 +94,9 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 			}
 			if (uint256(potentialLife) > MAX_LIFE) {
 				unchecked {
-					int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
-					int256 y = int256(int32(int256(uint256(position) >> 32)));
-					require(
-						uint256(potentialLife) > MAX_LIFE,
-						string.concat('INVALID_LIFE_CONFIGURATION: ', Strings.toString(x), ',', Strings.toString(y))
-					);
+					int32 x = int32(int256(uint256(position) & 0xFFFFFFFF));
+					int32 y = int32(int256(uint256(position) >> 32));
+					revert InvalidLifeConfiguration(uint256(potentialLife), x, y);
 				}
 			}
 			cell.life = uint8(uint256(potentialLife));

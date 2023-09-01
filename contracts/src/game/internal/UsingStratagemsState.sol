@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import './UsingStratagemsStore.sol';
 import '../interface/UsingStratagemsEvents.sol';
+import '../interface/UsingStratagemsErrors.sol';
 import './UsingVirtualTime.sol';
 
 // TODO use hardhat-preprocessor
@@ -48,7 +49,12 @@ library logger {
 	}
 }
 
-abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsEvents, UsingVirtualTime {
+abstract contract UsingStratagemsState is
+	UsingStratagemsStore,
+	UsingStratagemsEvents,
+	UsingStratagemsErrors,
+	UsingVirtualTime
+{
 	/// @notice The token used for the game. Each gems on the board contains that token
 	IERC20WithIERC2612 internal immutable TOKENS;
 	/// @notice the timestamp (in seconds) at which the game start, it start in the commit phase
@@ -65,7 +71,7 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 	address payable internal immutable BURN_ADDRESS;
 
 	/// @notice the number of moves a hash represent, after that players make use of furtherMoves
-	uint8 internal constant NUM_MOVES_PER_HASH = 16;
+	uint8 internal constant MAX_NUM_MOVES_PER_HASH = 16;
 
 	/// @notice Create an instance of a Stratagems game
 	/// @param config configuration options for the game
@@ -82,7 +88,9 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 	function _epoch() internal view virtual returns (uint24 epoch, bool commiting) {
 		uint256 epochDuration = COMMIT_PHASE_DURATION + RESOLUTION_PHASE_DURATION;
 		uint256 time = _timestamp();
-		require(time >= START_TIME, 'GAME_NOT_STARTED');
+		if (time < START_TIME) {
+			revert GameNotStarted();
+		}
 		uint256 timePassed = time - START_TIME;
 		epoch = uint24(timePassed / epochDuration + 2); // epoch start at 2, this make the hypothetical previous resolution phase's epoch to be 1
 		commiting = timePassed - ((epoch - 2) * epochDuration) < COMMIT_PHASE_DURATION;
@@ -217,7 +225,7 @@ abstract contract UsingStratagemsState is UsingStratagemsStore, UsingStratagemsE
 		if (lastUpdate >= 1 && life > 0) {
 			(uint8 newLife, uint24 epochUsed) = _computeNewLife(lastUpdate, updatedCell.enemyMap, delta, life, epoch);
 			updatedCell.life = newLife;
-			updatedCell.lastEpochUpdate = epochUsed;
+			updatedCell.lastEpochUpdate = epochUsed; // TODO check if this is useful to cap it to epoch where it died
 		}
 	}
 

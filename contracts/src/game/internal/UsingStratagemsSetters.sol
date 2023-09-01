@@ -12,14 +12,21 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 
 		(uint24 epoch, bool commiting) = _epoch();
 
-		require(commiting, 'IN_RESOLUTION_PHASE');
-		require(commitment.epoch == 0 || commitment.epoch == epoch, 'PREVIOUS_COMMITMENT_TO_RESOLVE');
+		if (!commiting) {
+			revert InResolutionPhase();
+		}
+		if (commitment.epoch != 0 && commitment.epoch != epoch) {
+			revert PreviousCommitmentNotResolved();
+		}
 
 		commitment.hash = commitmentHash;
 		commitment.epoch = epoch;
 
 		// for withdrawal, we still require a minimal reserve so player cannot change its mind without losing at least one token
-		require(inReserve >= NUM_TOKENS_PER_GEMS, 'NEED_AT_LEAST_ONE_TOKEN_IN_RESERVE');
+		if (inReserve < NUM_TOKENS_PER_GEMS) {
+			// TODO? special error for this case ?
+			revert ReserveTooLow(inReserve, NUM_TOKENS_PER_GEMS);
+		}
 
 		emit CommitmentMade(player, epoch, commitmentHash);
 	}
@@ -58,7 +65,9 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 
 		// Note: even if funds can comes from outside the reserver, we still check it
 		// This ensure player have to have a reserve and cannot escape the slash if not
-		require(newReserveAmount >= tokens.tokensPlaced + tokens.tokensBurnt, 'NOT_ENOUGH_RESERVE');
+		if (newReserveAmount < tokens.tokensPlaced + tokens.tokensBurnt) {
+			revert ReserveTooLow(newReserveAmount, tokens.tokensPlaced + tokens.tokensBurnt);
+		}
 		if (tokenGiver == address(0)) {
 			newReserveAmount -= tokens.tokensPlaced + tokens.tokensBurnt;
 			_tokensInReserve[player] = newReserveAmount;
@@ -96,7 +105,9 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			uint256 newNumAddressesToDistributeTo
 		)
 	{
+		// TODO allow for Color.Evil
 		require(move.color != Color.Evil, 'INVALID_EVIL_MOVE');
+
 		Cell memory currentState = _getUpdatedCell(move.position, epoch);
 
 		logger.logCell(

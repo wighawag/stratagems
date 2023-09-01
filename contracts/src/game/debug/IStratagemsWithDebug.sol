@@ -6,6 +6,9 @@ import '../interface/UsingStratagemsTypes.sol';
 import 'solidity-kit/solc_0.8/debug/time/interfaces/ITime.sol';
 
 interface IStratagemsDebug is UsingStratagemsTypes, ITime, ITimeSetter {
+	error InvalidCellOverwrite();
+	error InvalidLifeConfiguration(uint256 life, int32 x, int32 y);
+
 	event ForceCells(DebugCell[] cells);
 	event ForceSimpleCells(uint24 epoch, SimpleCell[] cells);
 

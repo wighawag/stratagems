@@ -132,8 +132,12 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 	function cancelCommitment() external {
 		Commitment storage commitment = _commitments[msg.sender];
 		(uint24 epoch, bool commiting) = _epoch();
-		require(commiting, 'IN_RESOLUTION_PHASE');
-		require(commitment.epoch == epoch, 'PREVIOUS_COMMITMENT_TO_RESOLVE');
+		if (!commiting) {
+			revert InResolutionPhase();
+		}
+		if (commitment.epoch != epoch) {
+			revert PreviousCommitmentNotResolved();
+		}
 
 		// Note that we do not reset the hash
 		// This ensure the slot do not get reset and keep the gas cost consistent across execution
@@ -148,14 +152,18 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 
 		(uint24 epoch, bool commiting) = _epoch();
 
-		require(commitment.epoch == 0 || (commiting && commitment.epoch == epoch), 'PREVIOUS_COMMITMENT_TO_RESOLVE');
+		if (commitment.epoch != 0 && (!commiting || commitment.epoch != epoch)) {
+			revert PreviousCommitmentNotResolved();
+		}
 
 		uint256 inReserve = _tokensInReserve[msg.sender];
 		if (amount == type(uint256).max) {
 			amount = inReserve;
 			inReserve = 0;
 		} else {
-			require(amount <= inReserve, 'NOT_ENOUGH');
+			if (inReserve < amount) {
+				revert ReserveTooLow(inReserve, amount);
+			}
 			inReserve -= amount;
 		}
 		_tokensInReserve[msg.sender] = inReserve;
@@ -174,11 +182,17 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 		Commitment storage commitment = _commitments[player];
 		(uint24 epoch, bool commiting) = _epoch();
 
-		require(!commiting, 'IN_COMMITING_PHASE');
-		require(commitment.epoch != 0, 'NOTHING_TO_RESOLVE');
+		if (commiting) {
+			revert InCommitmentPhase();
+		}
+		if (commitment.epoch == 0) {
+			revert NothingToResolve();
+		}
 		console.log(commitment.epoch);
 		console.log(epoch);
-		require(commitment.epoch == epoch, 'INVALID_EPOCH');
+		if (commitment.epoch != epoch) {
+			revert InvalidEpoch();
+		}
 
 		_checkHash(commitment.hash, secret, moves, furtherMoves);
 
@@ -186,7 +200,9 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 
 		bytes24 hashResolved = commitment.hash;
 		if (furtherMoves != bytes24(0)) {
-			require(moves.length == NUM_MOVES_PER_HASH, 'INVALID_FURTHER_MOVES');
+			if (moves.length != MAX_NUM_MOVES_PER_HASH) {
+				revert InvalidFurtherMoves();
+			}
 			commitment.hash = furtherMoves;
 		} else {
 			commitment.epoch = 0; // used
@@ -204,14 +220,18 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 	) external {
 		Commitment storage commitment = _commitments[player];
 		(uint24 epoch, ) = _epoch();
-		require(commitment.epoch > 0 && commitment.epoch != epoch, 'NO_NEED');
+		if (commitment.epoch == 0 || commitment.epoch == epoch) {
+			revert CanStillResolve();
+		}
 
 		uint256 numMoves = moves.length;
 
 		_checkHash(commitment.hash, secret, moves, furtherMoves);
 
 		if (furtherMoves != bytes24(0)) {
-			require(numMoves == NUM_MOVES_PER_HASH, 'INVALID_FURTHER_MOVES');
+			if (numMoves != MAX_NUM_MOVES_PER_HASH) {
+				revert InvalidFurtherMoves();
+			}
 			commitment.hash = furtherMoves;
 		} else {
 			commitment.epoch = 0; // used
@@ -228,7 +248,10 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 		Commitment storage commitment = _commitments[msg.sender];
 		(uint24 epoch, ) = _epoch();
 
-		require(commitment.epoch > 0 && commitment.epoch != epoch, 'NO_NEED');
+		if (commitment.epoch == 0 || commitment.epoch == epoch) {
+			revert CanStillResolve();
+		}
+
 		commitment.epoch = 0;
 		uint256 amount = _tokensInReserve[msg.sender];
 		_tokensInReserve[msg.sender] = 0;
