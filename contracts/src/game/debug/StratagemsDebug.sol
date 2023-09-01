@@ -48,7 +48,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				life: debugCell.life,
 				delta: debugCell.delta,
 				enemyMap: debugCell.enemyMap,
-				distributionMap: 0 // TODO let debug distributionMap ?
+				distribution: 0 // TODO let debug distribution ?
 			});
 			_owners[debugCell.position] = uint256(uint160(debugCell.owner));
 		}
@@ -77,7 +77,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				life: simpleCell.life,
 				delta: delta,
 				enemyMap: enemyMap,
-				distributionMap: 0
+				distribution: 0
 			});
 			_owners[simpleCell.position] = uint256(uint160(simpleCell.owner));
 		}
@@ -112,7 +112,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				life: cell.life,
 				delta: cell.delta,
 				enemyMap: cell.enemyMap,
-				distributionMap: 0 // TODO let debug distributionMap ?
+				distribution: 0 // TODO let debug distribution ?
 			});
 			_cells[position] = updatedCell;
 

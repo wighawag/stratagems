@@ -52,7 +52,7 @@ interface UsingStratagemsTypes {
 		uint8 life;
 		int8 delta;
 		uint8 enemyMap;
-		uint8 distributionMap;
+		uint8 distribution;
 	}
 
 	// --------------------------------------------------------------------------------------------
@@ -65,10 +65,7 @@ interface UsingStratagemsTypes {
 		uint8 life;
 		int8 delta;
 		uint8 enemyMap;
-		uint8 distributionMap; // this encode who is left to be given reward
-		// TODO could be encoded in "delta" or "enemyMap" // but delta and enemyMap could also be together
-		// alternatively we could reuse enemyMap
-		// and reset it if token is revived (delta could also be recomputed on revival)
+		uint8 distribution; // this encode who is left to be given reward (4 left most bits) and the reard (4 most right bits)
 	}
 
 	struct Commitment {

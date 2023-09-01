@@ -42,6 +42,7 @@ library logger {
 		console.log('%s - epochWhenTokenIsAdded:  %s', indent, cell.epochWhenTokenIsAdded);
 		console.log('%s - color:  %s', indent, uint8(cell.color));
 		console.log('%s - life:  %s', indent, cell.life);
+		console.log('%s - distribution:  %s', indent, cell.distribution);
 		console.log('%s - owner:  %s', indent, owner);
 		console.log('%s - delta: %s', indent, Strings.toString(cell.delta));
 		console.log('%s - enemyMap:  %s', indent, cell.enemyMap);

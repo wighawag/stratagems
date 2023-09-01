@@ -26,7 +26,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 				life: updatedCell.life,
 				delta: updatedCell.delta,
 				enemyMap: updatedCell.enemyMap,
-				distributionMap: updatedCell.distributionMap
+				distribution: updatedCell.distribution
 			});
 	}
 
@@ -45,7 +45,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 				life: updatedCell.life,
 				delta: updatedCell.delta,
 				enemyMap: updatedCell.enemyMap,
-				distributionMap: updatedCell.distributionMap
+				distribution: updatedCell.distribution
 			});
 		}
 	}

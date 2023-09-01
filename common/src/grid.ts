@@ -324,11 +324,11 @@ export function fromContractFullCellToCell(
 					: undefined,
 		};
 
-		console.log(`--------------`);
-		console.log(cell);
-		console.log(`------------- processed cell from contract`);
-		console.log(processedCell);
-		console.log(`--------------`);
+		// console.log(`--------------`);
+		// console.log(cell);
+		// console.log(`------------- processed cell from contract`);
+		// console.log(processedCell);
+		// console.log(`--------------`);
 		return processedCell;
 	};
 }

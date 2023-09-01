@@ -134,7 +134,7 @@ export async function expectWallet(env: GridEnv, expectedWalletsAfter: {[playerI
 		const player = env.otherAccounts[playerIndex];
 		const amount = await env.TestTokens.read.balanceOf([player]);
 		const expectedAmount = parseEther(expectedWalletsAfter[playerIndex].toString());
-		expect(amount, `player ${playerIndex}`).to.equal(expectedAmount);
+		expect(amount, `player ${playerIndex} (${player})`).to.equal(expectedAmount);
 	}
 }
 

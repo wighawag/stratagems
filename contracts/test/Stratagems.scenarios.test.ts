@@ -81,7 +81,7 @@ const scenarios = fs
 	});
 
 describe('Stratagems Scenarios', function () {
-	it.each([scenarios[5]])(`$name`, async (data) => {
+	it.each(scenarios)(`$name`, async (data) => {
 		const setup = await loadFixture(deployStratagemsWithTestConfig);
 		await setupWallets(setup, data.walletsBefore);
 		await expectGridChangeAfterActions(setup, data.startGrid, data.actions, data.expectedGrid);

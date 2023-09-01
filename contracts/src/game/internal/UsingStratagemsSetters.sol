@@ -85,8 +85,16 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		// option to return in reserve ?
 		// TODO use TransferCollection too here
 		if (tokens.tokensReturned != 0) {
-			console.log(tokens.tokensReturned);
+			// console.log("tokensReturned");
+			// console.log(tokens.tokensReturned);
 			TOKENS.transfer(player, tokens.tokensReturned);
+		}
+	}
+
+	function _countBits(uint8 n) internal pure returns (uint8 count) {
+		while (n != 0) {
+			n = n & (n - 1);
+			count++;
 		}
 	}
 
@@ -111,11 +119,11 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		);
 
 		// we might have distribution still to do
-		uint8 distributionMap = currentState.distributionMap;
+		uint8 distribution = currentState.distribution;
 		if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
 			// if we just died, currentState.lastEpochUpdate > 0
 			// we have to distribute to all
-			distributionMap = currentState.enemyMap;
+			distribution = (currentState.enemyMap << 4) + _countBits(currentState.enemyMap);
 
 			/// we are now dead for real
 			currentState.lastEpochUpdate = 0;
@@ -148,11 +156,12 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			move,
 			epoch,
 			currentState.color,
-			distributionMap
+			distribution
 		);
 
 		emit MoveProcessed(move.position, player, currentState.color, move.color);
 		currentState.color = move.color;
+		currentState.distribution = 0;
 		currentState.epochWhenTokenIsAdded = epoch; // used to prevent overwriting, even Color.None
 
 		if (currentState.color == Color.None) {
@@ -166,7 +175,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			tokensPlaced = NUM_TOKENS_PER_GEMS;
 
 			currentState.enemyMap = newEnemyMap;
-			currentState.distributionMap = 0;
+
 			currentState.delta = newDelta;
 			currentState.life = 1;
 			currentState.lastEpochUpdate = epoch;
@@ -193,26 +202,26 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		Move memory move,
 		uint24 epoch,
 		Color color,
-		uint8 distributionMap
+		uint8 distribution
 	) internal returns (int8 newDelta, uint8 newEnemyMap) {
 		(
 			int8 newComputedDelta,
 			uint8 newComputedEnemyMap,
 			uint8 numDue,
 			address[4] memory ownersToPay
-		) = _updateNeighbours(move.position, epoch, color, move.color, distributionMap);
+		) = _updateNeighbours(move.position, epoch, color, move.color, distribution);
 
 		if (numDue > 0) {
 			_collectTransfer(
 				transferCollection,
-				TokenTransfer({to: payable(_ownerOf(move.position)), amount: numDue * NUM_TOKENS_PER_GEMS})
+				TokenTransfer({to: payable(_ownerOf(move.position)), amount: (numDue * NUM_TOKENS_PER_GEMS) / 12})
 			);
 		}
 		for (uint8 i = 0; i < 4; i++) {
 			if (ownersToPay[i] != address(0)) {
 				_collectTransfer(
 					transferCollection,
-					TokenTransfer({to: payable(ownersToPay[i]), amount: NUM_TOKENS_PER_GEMS})
+					TokenTransfer({to: payable(ownersToPay[i]), amount: (NUM_TOKENS_PER_GEMS / (distribution & 0x0f))})
 				);
 			}
 		}
@@ -233,11 +242,11 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		);
 
 		// we might have distribution still to do
-		uint8 distributionMap = currentState.distributionMap;
+		uint8 distribution = currentState.distribution;
 		if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
 			// if we just died, currentState.lastEpochUpdate > 0
 			// we have to distribute to all
-			distributionMap = currentState.enemyMap;
+			distribution = (currentState.enemyMap << 4) + _countBits(currentState.enemyMap);
 
 			/// we are now dead for real
 			currentState.lastEpochUpdate = 0;
@@ -248,7 +257,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			epoch,
 			currentState.color,
 			currentState.color,
-			distributionMap
+			distribution
 		);
 
 		if (numDue > 0) {
@@ -266,7 +275,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			}
 		}
 
-		currentState.distributionMap = 0;
+		currentState.distribution = 0;
 		_cells[position] = currentState;
 	}
 
@@ -275,25 +284,27 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		uint24 epoch,
 		Color oldColor,
 		Color newColor,
-		uint8 distributionMap
+		uint8 distribution
 	) internal returns (int8 newDelta, uint8 newenemyMap, uint8 numDue, address[4] memory ownersToPay) {
+		console.log('------------------updateNeighbours-------------------');
 		unchecked {
 			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
 			int256 y = int256(int32(int256(uint256(position) >> 32)));
 
 			int8 enemyOrFriend;
-			bool due;
+			uint8 due;
 			{
 				uint64 upPosition = uint64((uint256(y - 1) << 32) + uint256(x));
 				(enemyOrFriend, due) = _updateCell(upPosition, epoch, 2, oldColor, newColor);
 				if (enemyOrFriend < 0) {
 					newenemyMap = newenemyMap | 1;
 				}
-				if (due) {
-					numDue++;
-				}
-				if (distributionMap & 1 == 1) {
+				numDue += due;
+				if ((distribution >> 4) & 4 == 4) {
+					console.log('upPosition owner to pay');
+					console.log('cell (%s,%s)', Strings.toString(x), Strings.toString(y - 1));
 					// TODO?: if we decide to group owner in the cell struct, we should get the cell in memory in that function
+					console.log('owner %s', _ownerOf(upPosition));
 					ownersToPay[0] = _ownerOf(upPosition);
 				}
 				newDelta += enemyOrFriend;
@@ -305,10 +316,11 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				if (enemyOrFriend < 0) {
 					newenemyMap = newenemyMap | 2;
 				}
-				if (due) {
-					numDue++;
-				}
-				if (distributionMap & 2 == 2) {
+				numDue += due;
+				if ((distribution >> 4) & 8 == 8) {
+					console.log('leftPosition owner to pay');
+					console.log('cell (%s,%s)', Strings.toString(x - 1), Strings.toString(y));
+					console.log('owner %s', _ownerOf(leftPosition));
 					ownersToPay[1] = _ownerOf(leftPosition);
 				}
 				newDelta += enemyOrFriend;
@@ -320,10 +332,11 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				if (enemyOrFriend < 0) {
 					newenemyMap = newenemyMap | 4;
 				}
-				if (due) {
-					numDue++;
-				}
-				if (distributionMap & 4 == 4) {
+				numDue += due;
+				if ((distribution >> 4) & 1 == 1) {
+					console.log('downPosition owner to pay');
+					console.log('cell (%s,%s)', Strings.toString(x), Strings.toString(y + 1));
+					console.log('owner %s', _ownerOf(downPosition));
 					ownersToPay[2] = _ownerOf(downPosition);
 				}
 				newDelta += enemyOrFriend;
@@ -334,15 +347,17 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				if (enemyOrFriend < 0) {
 					newenemyMap = newenemyMap | 8;
 				}
-				if (due) {
-					numDue++;
-				}
-				if (distributionMap & 8 == 8) {
+				numDue += due;
+				if ((distribution >> 4) & 2 == 2) {
+					console.log('rightPosition owner to pay');
+					console.log('cell (%s,%s)', Strings.toString(x + 1), Strings.toString(y));
+					console.log('owner %s', _ownerOf(rightPosition));
 					ownersToPay[3] = _ownerOf(rightPosition);
 				}
 				newDelta += enemyOrFriend;
 			}
 		}
+		console.log('------------------updateNeighbours-------------------');
 	}
 
 	/// @dev This update the cell in storage
@@ -352,7 +367,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		uint8 neighbourIndex,
 		Color oldColor,
 		Color newColor
-	) internal returns (int8 enemyOrFriend, bool due) {
+	) internal returns (int8 enemyOrFriend, uint8 due) {
 		Cell memory cell = _cells[position];
 
 		uint24 lastUpdate = cell.lastEpochUpdate;
@@ -371,17 +386,17 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 					cell.life,
 					epoch
 				);
-				console.log('newLife');
-				console.log(newLife);
-				console.log('epochUsed');
-				console.log(epochUsed);
+				// console.log('newLife');
+				// console.log(newLife);
+				// console.log('epochUsed');
+				// console.log(epochUsed);
 				due = _updateCellFromNeighbor(position, cell, newLife, epochUsed, neighbourIndex, oldColor, newColor);
-				console.log('due');
-				console.log(due);
+				// console.log('due');
+				// console.log(due);
 			} else {
 				due = _updateCellFromNeighbor(position, cell, cell.life, epoch, neighbourIndex, oldColor, newColor);
-				console.log('due');
-				console.log(due);
+				// console.log('due');
+				// console.log(due);
 			}
 		}
 	}
@@ -394,15 +409,29 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		uint8 neighbourIndex, // the neighbor triggering the update and for which we return whether it should receive its due
 		Color oldColor, // old color of that neighbor
 		Color newColor // new color of that neighbor
-	) internal returns (bool due) {
+	) internal returns (uint8 due) {
 		if (cell.life > 0 && newLife == 0) {
-			// we just died, we establish the distributionMap
-			cell.distributionMap = cell.enemyMap; // TODO add due ratio (1,2,3, or 4) based on delta
+			// we just died, we establish the distributionMap and counts
+			cell.distribution = (cell.enemyMap << 4) + _countBits(cell.enemyMap);
 		}
 
-		if (cell.distributionMap & (2 ** neighbourIndex) == 2 ** neighbourIndex) {
-			due = true;
-			cell.distributionMap = uint8(uint256(cell.distributionMap) & ~(2 ** uint256(neighbourIndex)));
+		logger.logCell(
+			0,
+			string.concat('_updateCellFromNeighbor  index', Strings.toString(neighbourIndex)),
+			position,
+			cell,
+			address(uint160(_owners[position]))
+		);
+
+		if ((cell.distribution >> 4) & (2 ** neighbourIndex) == 2 ** neighbourIndex) {
+			due = 12 / (cell.distribution & 0x0f);
+			cell.distribution =
+				(uint8(uint256(cell.distribution >> 4) & (~(2 ** uint256(neighbourIndex)))) << 4) +
+				(cell.distribution & 0x0f);
+			console.log('--------------------------------');
+			console.log('due');
+			console.log(due);
+			console.log('--------------------------------');
 		}
 
 		if (oldColor != newColor) {
@@ -433,7 +462,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 
 		logger.logCell(
 			0,
-			string.concat('_updateCellFromNeighbor  index', Strings.toString(neighbourIndex)),
+			string.concat('AFTER _updateCellFromNeighbor  index', Strings.toString(neighbourIndex)),
 			position,
 			cell,
 			address(uint160(_owners[position]))
@@ -446,9 +475,9 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		TokenTransferCollection memory transferCollection,
 		TokenTransfer memory newTransfer
 	) internal pure {
-		console.log('_collectTransfer');
-		console.log(newTransfer.to);
-		console.log(newTransfer.amount);
+		// console.log('_collectTransfer');
+		// console.log(newTransfer.to);
+		// console.log(newTransfer.amount);
 		// we look for the newTransfer address in case it is already present
 		for (uint256 k = 0; k < transferCollection.numTransfers; k++) {
 			if (transferCollection.transfers[k].to == newTransfer.to) {
