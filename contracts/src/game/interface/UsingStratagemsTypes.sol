@@ -46,8 +46,8 @@ interface UsingStratagemsTypes {
 
 	struct FullCell {
 		address owner;
-		uint32 lastEpochUpdate;
-		uint32 epochWhenTokenIsAdded;
+		uint24 lastEpochUpdate;
+		uint24 epochWhenTokenIsAdded;
 		Color color;
 		uint8 life;
 		int8 delta;
