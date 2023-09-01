@@ -37,29 +37,28 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		Move[] memory moves,
 		address tokenGiver
 	) internal returns (uint256 newReserveAmount) {
-		// max number of transfer is (4+8) * moves.length
+		// max number of transfer is (4+1) * moves.length
 		// (for each move's cell's neighbours potentially being a different account)
-		// + each neighbor death distributions
-		// limiting the number of move per commitment resolution to 16 should cover this unlikely scenario
-		TokenTransfer[] memory transfers = new TokenTransfer[](moves.length * 12);
-		uint256 numAddressesToDistributeTo = 0;
+		// limiting the number of move per commitment resolution to 32 or, even more probably, should cover this unlikely scenario
+		TokenTransferCollection memory transferCollection = TokenTransferCollection({
+			transfers: new TokenTransfer[](moves.length * 5),
+			numTransfers: 0
+		});
 		MoveTokens memory tokens;
 		for (uint256 i = 0; i < moves.length; i++) {
-			(uint256 placed, uint256 burnt, uint256 returned, uint256 newNumAddressesToDistributeTo) = _computeMove(
-				transfers,
-				numAddressesToDistributeTo,
+			(uint256 placed, uint256 burnt, uint256 returned) = _computeMove(
+				transferCollection,
 				player,
 				epoch,
 				moves[i]
 			);
 
-			numAddressesToDistributeTo = newNumAddressesToDistributeTo;
 			tokens.tokensPlaced += placed;
 			tokens.tokensBurnt += burnt;
 			tokens.tokensReturned += returned;
 		}
 
-		_multiTransfer(transfers, numAddressesToDistributeTo);
+		_multiTransfer(transferCollection);
 
 		newReserveAmount = _tokensInReserve[player];
 
@@ -86,28 +85,15 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 	}
 
 	// Note on COLLISION
-	// we could order color in a certain way so one color takes precedence over another
-	// And if the same color was used, we could consider the cell having N owner and N times the number of tokens
+	// If one color was used more than other, we could consider the cell having N owner and N times the number of tokens
 	// such cells would be a good target for others
-	// On the other end,  on winning agains other cells, owner of such cell would have to divide the winnings
+	// On the other end, on winning agains other cells, owner of such cell would have to divide the winnings
 	function _computeMove(
-		TokenTransfer[] memory transfers,
-		uint256 numAddressesToDistributeTo,
+		TokenTransferCollection memory transferCollection,
 		address player,
 		uint24 epoch,
 		Move memory move
-	)
-		internal
-		returns (
-			uint256 tokensPlaced,
-			uint256 tokensBurnt,
-			uint256 tokensReturned,
-			uint256 newNumAddressesToDistributeTo
-		)
-	{
-		// TODO allow for Color.Evil
-		require(move.color != Color.Evil, 'INVALID_EVIL_MOVE');
-
+	) internal returns (uint256 tokensPlaced, uint256 tokensBurnt, uint256 tokensReturned) {
 		Cell memory currentState = _getUpdatedCell(move.position, epoch);
 
 		logger.logCell(
@@ -118,291 +104,247 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			address(uint160(_owners[move.position]))
 		);
 
-		if (move.color == Color.None) {
-			// this is a leave move
-			if (currentState.life == MAX_LIFE && _ownerOf(move.position) == player) {
-				// only valid id life == MAX_LIFE and player is owner
-
-				(, , uint256 latestNumAddressesToDistributeTo) = _updateNeighbours(
-					transfers,
-					numAddressesToDistributeTo,
-					move.position,
-					epoch,
-					currentState.color,
-					Color.None
-				);
-				newNumAddressesToDistributeTo = latestNumAddressesToDistributeTo;
-
-				newNumAddressesToDistributeTo = _collectTransfer(
-					transfers,
-					newNumAddressesToDistributeTo,
-					TokenTransfer({to: payable(player), amount: NUM_TOKENS_PER_GEMS})
-				);
-
-				emit ColorWithdrawn(move.position, player, currentState.color);
-
-				// we reset all, except the lastEpochUpdate
-				// this allow us to make sure nobody else can make a move on that cell
-				currentState.life = 0;
-				currentState.color = Color.None;
-				currentState.lastEpochUpdate = epoch;
-				currentState.delta = 0;
-				currentState.enemyMap = 0;
-				currentState.epochWhenTokenIsAdded = 0;
-				_cells[move.position] = currentState;
-				_owners[move.position] = 0;
-			} else {
-				// TODO ?
-			}
-			// we return
-			return (0, 0, NUM_TOKENS_PER_GEMS, newNumAddressesToDistributeTo);
-		}
-
+		// we might have distribution still to do
+		uint8 distributionMap = currentState.distributionMap;
 		if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
-			// we are here because life reach zero (lastEpochUpdate != 0 indicates that the cell was alive and not reset like below)
-			// Note: we need to pay attention when we add the leave mechanism
-			newNumAddressesToDistributeTo = _distributeDeath(
-				transfers,
-				numAddressesToDistributeTo,
-				move.position,
-				currentState.enemyMap,
-				currentState.lastEpochUpdate
-			);
+			// if we just died, currentState.lastEpochUpdate > 0
+			// we have to distribute to all
+			distributionMap = currentState.enemyMap;
+
+			/// we are now dead for real
+			currentState.lastEpochUpdate = 0;
 		}
 
+		// we then apply our move:
+
+		// first we do some validity checks
+		if (move.color == Color.None) {
+			if (currentState.life != MAX_LIFE || _ownerOf(move.position) == player) {
+				// invalid move
+				return (0, 0, NUM_TOKENS_PER_GEMS);
+			}
+		}
+
+		// then we consider the case of collision and transform such move as Color Evol
 		if (currentState.epochWhenTokenIsAdded == epoch) {
-			// COLLISION
-			// Evil Color is added instead
-			// keep the stake
 			if (currentState.life != 0) {
-				if (currentState.color != Color.Evil) {
-					(int8 newDelta, uint8 newenemyMap, uint256 latestNumAddressesToDistributeTo) = _updateNeighbours(
-						transfers,
-						newNumAddressesToDistributeTo,
-						move.position,
-						epoch,
-						currentState.color,
-						Color.Evil
-					);
-					newNumAddressesToDistributeTo = latestNumAddressesToDistributeTo;
-
-					currentState.color = Color.Evil; // TODO keep track of num token staked here, or do we burn ?
-					currentState.delta = newDelta;
-					currentState.enemyMap = newenemyMap;
-					_cells[move.position] = currentState;
-					_owners[move.position] = uint256(uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF));
-				} else {
-					// TODO Add further stake, or do we burn?
-				}
-				emit ColorPlaced(move.position, player, Color.Evil);
+				move.color = Color.Evil;
+				// TODO Add further stake, or do we burn? or return?
 			} else {
-				// we skip
-				// tokensPlaced = 0 so this is not counted
-				if (currentState.life == 0) {
-					_cells[move.position] = currentState;
-					_owners[move.position] = 0;
-					// TODO Transfer
-				}
-			}
-		} else if (currentState.life == 0 && (currentState.lastEpochUpdate == 0 || currentState.color != Color.None)) {
-			if (currentState.color != move.color) {
-				// only update neighbour if color changed
-				(int8 newDelta, uint8 newenemyMap, uint256 latestNumAddressesToDistributeTo) = _updateNeighbours(
-					transfers,
-					newNumAddressesToDistributeTo,
-					move.position,
-					epoch,
-					currentState.color,
-					move.color
-				);
-				newNumAddressesToDistributeTo = latestNumAddressesToDistributeTo;
-
-				currentState.life = 1;
-				currentState.epochWhenTokenIsAdded = epoch;
-				currentState.lastEpochUpdate = epoch;
-				currentState.color = move.color;
-				currentState.delta = newDelta;
-				currentState.enemyMap = newenemyMap;
-
-				// logger.logCell(
-				// 	0,
-				// 	'after: _updateNeighbor',
-				// 	move.position,
-				// 	currentState,
-				// 	address(uint160(_owners[move.position]))
-				// );
-			} else {
-				currentState.life = 1;
-				currentState.epochWhenTokenIsAdded = epoch;
-				currentState.lastEpochUpdate = epoch;
-			}
-
-			emit ColorPlaced(move.position, player, move.color);
-
-			tokensPlaced = NUM_TOKENS_PER_GEMS;
-			_cells[move.position] = currentState;
-			_owners[move.position] = uint256(uint160(player));
-			// TODO Transfer
-		} else {
-			// invalid move
-			tokensBurnt = NUM_TOKENS_PER_GEMS;
-			if (currentState.life == 0) {
-				_cells[move.position] = currentState;
-				_owners[move.position] = 0;
-				// TODO Transfer
+				// invalid move, on top of a MAX, that become None ?
+				return (0, 0, NUM_TOKENS_PER_GEMS);
 			}
 		}
+
+		(int8 newDelta, uint8 newEnemyMap) = _propagate(
+			transferCollection,
+			move,
+			epoch,
+			currentState.color,
+			distributionMap
+		);
+
+		emit MoveProcessed(move.position, player, currentState.color, move.color);
+		currentState.color = move.color;
+		currentState.epochWhenTokenIsAdded = epoch; // used to prevent overwriting, even Color.None
+
+		if (currentState.color == Color.None) {
+			currentState.life = 0;
+			currentState.lastEpochUpdate = 0;
+			currentState.delta = 0;
+			currentState.enemyMap = 0;
+			_owners[move.position] = 0;
+		} else {
+			currentState.enemyMap = newEnemyMap;
+			currentState.distributionMap = 0;
+			currentState.delta = newDelta;
+			currentState.life = 1;
+			currentState.lastEpochUpdate = epoch;
+			if (currentState.color == Color.Evil) {
+				_owners[move.position] = uint256(uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF));
+			} else {
+				_owners[move.position] = uint256(uint160(player));
+			}
+		}
+
+		_cells[move.position] = currentState;
+
+		tokensPlaced = NUM_TOKENS_PER_GEMS;
+		_owners[move.position] = uint256(uint160(player));
 	}
 
-	function _poke(
-		TokenTransfer[] memory transfers,
-		uint256 numAddressesToDistributeTo,
-		uint64 position
-	) internal returns (uint256 newNumAddressesToDistributeTo) {
-		(uint24 epoch, ) = _epoch();
-		Cell memory cell = _cells[position];
-		uint24 lastUpdate = cell.lastEpochUpdate;
-		Color color = cell.color;
-		uint8 life = cell.life;
-		int8 delta = cell.delta;
-		if (lastUpdate >= 1 && color != Color.None && life > 0) {
-			// the cell is alive here
-			(uint8 newLife, uint24 epochUsed) = _computeNewLife(lastUpdate, cell.enemyMap, delta, life, epoch);
-			cell.life = newLife;
-			cell.lastEpochUpdate = epochUsed;
-			if (newLife == 0) {
-				// but not anymore here
-				cell.delta = 0;
-				// we thus distribute the tokens to enemy neighbours
-				newNumAddressesToDistributeTo = _distributeDeath(
-					transfers,
-					numAddressesToDistributeTo,
-					position,
-					cell.enemyMap,
-					epochUsed
+	function _propagate(
+		TokenTransferCollection memory transferCollection,
+		Move memory move,
+		uint24 epoch,
+		Color color,
+		uint8 distributionMap
+	) internal returns (int8 newDelta, uint8 newEnemyMap) {
+		(
+			int8 newComputedDelta,
+			uint8 newComputedEnemyMap,
+			uint8 numDue,
+			address[4] memory ownersToPay
+		) = _updateNeighbours(move.position, epoch, color, move.color, distributionMap);
+
+		if (numDue > 0) {
+			_collectTransfer(
+				transferCollection,
+				TokenTransfer({to: payable(_ownerOf(move.position)), amount: numDue * NUM_TOKENS_PER_GEMS})
+			);
+		}
+		for (uint8 i = 0; i < 4; i++) {
+			if (ownersToPay[i] != address(0)) {
+				_collectTransfer(
+					transferCollection,
+					TokenTransfer({to: payable(ownersToPay[i]), amount: NUM_TOKENS_PER_GEMS})
 				);
 			}
-			_cells[position] = cell;
-			// we keep the owner as it is used to compute winnings from this cell
-			// alternative would be to always compute the 5 cells distribution
-			// but the other 4 cell would have the same problem, they would be half computed anyway
 		}
+		newDelta = newComputedDelta;
+		newEnemyMap = newComputedEnemyMap;
+	}
+
+	function _poke(TokenTransferCollection memory transferCollection, uint64 position) internal {
+		(uint24 epoch, ) = _epoch();
+		Cell memory currentState = _getUpdatedCell(position, epoch);
+
+		logger.logCell(
+			0,
+			string.concat('_poke at epoch ', Strings.toString(epoch)),
+			position,
+			currentState,
+			address(uint160(_owners[position]))
+		);
+
+		// we might have distribution still to do
+		uint8 distributionMap = currentState.distributionMap;
+		if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
+			// if we just died, currentState.lastEpochUpdate > 0
+			// we have to distribute to all
+			distributionMap = currentState.enemyMap;
+
+			/// we are now dead for real
+			currentState.lastEpochUpdate = 0;
+		}
+
+		(, , uint8 numDue, address[4] memory ownersToPay) = _updateNeighbours(
+			position,
+			epoch,
+			currentState.color,
+			currentState.color,
+			distributionMap
+		);
+
+		if (numDue > 0) {
+			_collectTransfer(
+				transferCollection,
+				TokenTransfer({to: payable(_ownerOf(position)), amount: numDue * NUM_TOKENS_PER_GEMS})
+			);
+		}
+		for (uint8 i = 0; i < 4; i++) {
+			if (ownersToPay[i] != address(0)) {
+				_collectTransfer(
+					transferCollection,
+					TokenTransfer({to: payable(ownersToPay[i]), amount: NUM_TOKENS_PER_GEMS})
+				);
+			}
+		}
+
+		currentState.distributionMap = 0;
+		_cells[position] = currentState;
 	}
 
 	function _updateNeighbours(
-		TokenTransfer[] memory transfers,
-		uint256 numAddressesToDistributeTo,
 		uint64 position,
 		uint24 epoch,
 		Color oldColor,
-		Color newColor
-	) internal returns (int8 newDelta, uint8 newenemyMap, uint256 newNumAddressesToDistributeTo) {
+		Color newColor,
+		uint8 distributionMap
+	) internal returns (int8 newDelta, uint8 newenemyMap, uint8 numDue, address[4] memory ownersToPay) {
 		unchecked {
 			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
 			int256 y = int256(int32(int256(uint256(position) >> 32)));
 
-			// console.log('%s => %s', uint8(oldColor), uint8(newColor));
-
 			int8 enemyOrFriend;
+			bool due;
 			{
 				uint64 upPosition = uint64((uint256(y - 1) << 32) + uint256(x));
-				(enemyOrFriend, numAddressesToDistributeTo) = _updateCell(
-					transfers,
-					numAddressesToDistributeTo,
-					upPosition,
-					epoch,
-					2,
-					oldColor,
-					newColor
-				);
+				(enemyOrFriend, due) = _updateCell(upPosition, epoch, 2, oldColor, newColor);
 				if (enemyOrFriend < 0) {
 					newenemyMap = newenemyMap | 1;
+				}
+				if (due) {
+					numDue++;
+				}
+				if (distributionMap & 1 == 1) {
+					// TODO?: if we decide to group owner in the cell struct, we should get the cell in memory in that function
+					ownersToPay[0] = _ownerOf(upPosition);
 				}
 				newDelta += enemyOrFriend;
 			}
 			{
 				uint64 leftPosition = uint64((uint256(y) << 32) + uint256(x - 1));
 
-				(enemyOrFriend, numAddressesToDistributeTo) = _updateCell(
-					transfers,
-					numAddressesToDistributeTo,
-					leftPosition,
-					epoch,
-					3,
-					oldColor,
-					newColor
-				);
+				(enemyOrFriend, due) = _updateCell(leftPosition, epoch, 3, oldColor, newColor);
 				if (enemyOrFriend < 0) {
 					newenemyMap = newenemyMap | 2;
+				}
+				if (due) {
+					numDue++;
+				}
+				if (distributionMap & 2 == 2) {
+					ownersToPay[1] = _ownerOf(leftPosition);
 				}
 				newDelta += enemyOrFriend;
 			}
 
 			{
 				uint64 downPosition = uint64((uint256(y + 1) << 32) + uint256(x));
-				(enemyOrFriend, numAddressesToDistributeTo) = _updateCell(
-					transfers,
-					numAddressesToDistributeTo,
-					downPosition,
-					epoch,
-					0,
-					oldColor,
-					newColor
-				);
+				(enemyOrFriend, due) = _updateCell(downPosition, epoch, 0, oldColor, newColor);
 				if (enemyOrFriend < 0) {
 					newenemyMap = newenemyMap | 4;
+				}
+				if (due) {
+					numDue++;
+				}
+				if (distributionMap & 4 == 4) {
+					ownersToPay[2] = _ownerOf(downPosition);
 				}
 				newDelta += enemyOrFriend;
 			}
 			{
 				uint64 rightPosition = uint64((uint256(y) << 32) + uint256(x + 1));
-				(enemyOrFriend, numAddressesToDistributeTo) = _updateCell(
-					transfers,
-					numAddressesToDistributeTo,
-					rightPosition,
-					epoch,
-					1,
-					oldColor,
-					newColor
-				);
+				(enemyOrFriend, due) = _updateCell(rightPosition, epoch, 1, oldColor, newColor);
 				if (enemyOrFriend < 0) {
 					newenemyMap = newenemyMap | 8;
+				}
+				if (due) {
+					numDue++;
+				}
+				if (distributionMap & 8 == 8) {
+					ownersToPay[3] = _ownerOf(rightPosition);
 				}
 				newDelta += enemyOrFriend;
 			}
 		}
-		newNumAddressesToDistributeTo = numAddressesToDistributeTo;
 	}
 
 	/// @dev This update the cell in storage
 	function _updateCell(
-		TokenTransfer[] memory transfers,
-		uint256 numAddressesToDistributeTo,
 		uint64 position,
 		uint24 epoch,
 		uint8 neighbourIndex,
 		Color oldColor,
 		Color newColor
-	) internal returns (int8 enemyOrFriend, uint256 newNumAddressesToDistributeTo) {
+	) internal returns (int8 enemyOrFriend, bool due) {
 		Cell memory cell = _cells[position];
 
-		// logger.logCell(1, '_updateCell', position, cell, address(uint160(_owners[position])));
-
-		// no need to call if oldColor == newColor, so we assume they are different
-		assert(oldColor != newColor);
 		uint24 lastUpdate = cell.lastEpochUpdate;
 		Color color = cell.color;
 		if (color != Color.None) {
 			enemyOrFriend = color == newColor ? int8(1) : int8(-1);
 		}
-
-		// console.log(
-		// 	'    enemyOrFriend: %s (%s => %s)',
-		// 	Strings.toString(enemyOrFriend),
-		// 	uint8(oldColor),
-		// 	uint8(newColor)
-		// );
-
 		if (lastUpdate >= 1 && color != Color.None) {
 			// we only consider cell with color that are not dead
 			if (cell.life > 0 && lastUpdate < epoch) {
@@ -415,172 +357,83 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 					epoch
 				);
 
-				// console.log('    newLife: %s ', newLife);
-				// console.log('    epochUsed: %s ', epochUsed);
-
-				if (newLife == 0) {
-					// if dead, no need to update delta and enemyMap
-					numAddressesToDistributeTo = _updateCellAsDead(
-						transfers,
-						numAddressesToDistributeTo,
-						position,
-						cell,
-						newLife,
-						epochUsed
-					);
-				}
-				_updateCellFromNeighbor(position, cell, newLife, epoch, neighbourIndex, oldColor, newColor);
+				due = _updateCellFromNeighbor(position, cell, newLife, epochUsed, neighbourIndex, oldColor, newColor);
 			} else {
-				_updateCellFromNeighbor(position, cell, cell.life, epoch, neighbourIndex, oldColor, newColor);
+				due = _updateCellFromNeighbor(position, cell, cell.life, epoch, neighbourIndex, oldColor, newColor);
 			}
 		}
-
-		newNumAddressesToDistributeTo = numAddressesToDistributeTo;
-	}
-
-	function _updateCellAsDead(
-		TokenTransfer[] memory transfers,
-		uint256 numAddressesToDistributeTo,
-		uint64 position,
-		Cell memory cell,
-		uint8 newLife,
-		uint24 epochUsed
-	) internal returns (uint256 newNumAddressesToDistributeTo) {
-		cell.life = newLife;
-		cell.lastEpochUpdate = epochUsed;
-
-		numAddressesToDistributeTo = _distributeDeath(
-			transfers,
-			numAddressesToDistributeTo,
-			position,
-			cell.enemyMap,
-			epochUsed
-		);
-
-		_cells[position] = cell;
-		return numAddressesToDistributeTo;
 	}
 
 	function _updateCellFromNeighbor(
-		uint64 position,
-		Cell memory cell,
-		uint8 newLife,
-		uint24 epoch,
-		uint8 neighbourIndex,
-		Color oldColor,
-		Color newColor
-	) internal {
-		if (newColor == Color.None) {
-			if (cell.color == oldColor) {
-				cell.delta -= 1;
-			} else {
-				cell.delta += 1;
-				cell.enemyMap = cell.enemyMap & uint8((1 << neighbourIndex) ^ 0xFF);
-			}
-		} else if (cell.color == oldColor) {
-			// then newColor is different (see assert above)
-			cell.enemyMap = cell.enemyMap | uint8(1 << neighbourIndex);
-			cell.delta -= 2;
-		} else if (cell.color == newColor) {
-			// then old color was different
-			cell.delta += (oldColor == Color.None ? int8(1) : int8(2));
-			cell.enemyMap = cell.enemyMap & uint8((1 << neighbourIndex) ^ 0xFF);
-
-			// logger.logCell(
-			// 	2,
-			// 	'after neibhor change to a friendly color',
-			// 	position,
-			// 	cell,
-			// 	address(uint160(_owners[position]))
-			// );
-		} else if (oldColor == Color.None) {
-			// if there were no oldCOlor and the newColor is not your (already checked in previous if clause)
-			cell.delta -= 1;
-			cell.enemyMap = cell.enemyMap | uint8(1 << neighbourIndex);
-			// logger.logCell(
-			// 	2,
-			// 	'after neibhor change to a enemy color',
-			// 	position,
-			// 	cell,
-			// 	address(uint160(_owners[position]))
-			// );
+		uint64 position, // position of the cell to be updated
+		Cell memory cell, // cell to be updated
+		uint8 newLife, // new life value for the celll
+		uint24 epoch, // epoch at which the update occured (epochUsed TODO: confirm its use)
+		uint8 neighbourIndex, // the neighbor triggering the update and for which we return whether it should receive its due
+		Color oldColor, // old color of that neighbor
+		Color newColor // new color of that neighbor
+	) internal returns (bool due) {
+		if (cell.life > 0 && newLife == 0) {
+			// we just died, we establish the distributionMap
+			cell.distributionMap = cell.enemyMap;
 		}
+
+		if (cell.distributionMap & (2 ** neighbourIndex) == 2 ** neighbourIndex) {
+			due = true;
+			cell.distributionMap = uint8(uint256(cell.distributionMap) & ~(2 ** uint256(neighbourIndex)));
+		}
+
+		if (oldColor != newColor) {
+			if (newColor == Color.None) {
+				if (cell.color == oldColor) {
+					cell.delta -= 1;
+				} else {
+					cell.delta += 1;
+					cell.enemyMap = cell.enemyMap & uint8((1 << neighbourIndex) ^ 0xFF);
+				}
+			} else if (cell.color == oldColor) {
+				// then newColor is different (see assert above)
+				cell.enemyMap = cell.enemyMap | uint8(1 << neighbourIndex);
+				cell.delta -= 2;
+			} else if (cell.color == newColor) {
+				// then old color was different
+				cell.delta += (oldColor == Color.None ? int8(1) : int8(2));
+				cell.enemyMap = cell.enemyMap & uint8((1 << neighbourIndex) ^ 0xFF);
+			} else if (oldColor == Color.None) {
+				// if there were no oldCOlor and the newColor is not your (already checked in previous if clause)
+				cell.delta -= 1;
+				cell.enemyMap = cell.enemyMap | uint8(1 << neighbourIndex);
+			}
+		}
+
 		cell.lastEpochUpdate = epoch;
 		cell.life = newLife;
 		_cells[position] = cell;
-
-		// logger.logCell(2, '_updateCellFromNeighbor', position, cell, address(uint160(_owners[position])));
-	}
-
-	/// @dev this distribute the token in the cell who just died to the neighboring enemies that are still alive
-	///  If none of the cell have living enemies, then the tokens are given back to the player
-	function _distributeDeath(
-		TokenTransfer[] memory transfers,
-		uint256 numAddressesToDistributeTo,
-		uint64 position,
-		uint8 enemyMap,
-		uint24 epoch
-	) internal view returns (uint256) {
-		// console.log('distrubute death');
-		// console.log(epoch);
-		(address[4] memory enemies, uint8 numEnemiesAlive) = _getNeihbourEnemiesAliveWithPlayers(
-			position,
-			enemyMap,
-			epoch
-		);
-		uint256 total = NUM_TOKENS_PER_GEMS;
-
-		if (numEnemiesAlive == 0) {
-			return
-				_collectTransfer(
-					transfers,
-					numAddressesToDistributeTo,
-					TokenTransfer({to: payable(_ownerOf(position)), amount: total})
-				);
-		}
-
-		uint256 amountPerEnenies = total / numEnemiesAlive;
-		for (uint8 i = 0; i < numEnemiesAlive; i++) {
-			if (i == numEnemiesAlive - 1) {
-				amountPerEnenies = total;
-			}
-			total -= amountPerEnenies;
-			numAddressesToDistributeTo = _collectTransfer(
-				transfers,
-				numAddressesToDistributeTo,
-				TokenTransfer({to: payable(enemies[i]), amount: amountPerEnenies})
-			);
-		}
-		return numAddressesToDistributeTo;
 	}
 
 	function _collectTransfer(
-		TokenTransfer[] memory collected,
-		uint256 numAddressesToDistributeTo,
+		TokenTransferCollection memory transferCollection,
 		TokenTransfer memory newTransfer
-	) internal pure returns (uint256) {
+	) internal pure {
 		console.log('_collectTransfer');
 		console.log(newTransfer.to);
 		// we look for the newTransfer address in case it is already present
-		for (uint256 k = 0; k < numAddressesToDistributeTo; k++) {
-			if (collected[k].to == newTransfer.to) {
+		for (uint256 k = 0; k < transferCollection.numTransfers; k++) {
+			if (transferCollection.transfers[k].to == newTransfer.to) {
 				// if we found we add the amount
-				collected[k].amount += newTransfer.amount;
-				// and return
-				return numAddressesToDistributeTo;
+				transferCollection.transfers[k].amount += newTransfer.amount;
 			}
 		}
 		// if we did not find that address we add it to the end
-		collected[numAddressesToDistributeTo].to = newTransfer.to;
-		collected[numAddressesToDistributeTo].amount = newTransfer.amount;
+		transferCollection.transfers[transferCollection.numTransfers].to = newTransfer.to;
+		transferCollection.transfers[transferCollection.numTransfers].amount = newTransfer.amount;
 		// and increase the size to lookup for next time
-		numAddressesToDistributeTo++;
-		return numAddressesToDistributeTo;
+		transferCollection.numTransfers++;
 	}
 
-	function _multiTransfer(TokenTransfer[] memory transfers, uint256 numAddressesToDistributeTo) internal {
-		for (uint256 i = 0; i < numAddressesToDistributeTo; i++) {
-			TOKENS.transfer(transfers[i].to, transfers[i].amount);
+	function _multiTransfer(TokenTransferCollection memory transferCollection) internal {
+		for (uint256 i = 0; i < transferCollection.numTransfers; i++) {
+			TOKENS.transfer(transferCollection.transfers[i].to, transferCollection.transfers[i].amount);
 		}
 	}
 }

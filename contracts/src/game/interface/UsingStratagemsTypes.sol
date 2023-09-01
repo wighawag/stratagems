@@ -85,6 +85,11 @@ interface UsingStratagemsTypes {
 		uint256 amount;
 	}
 
+	struct TokenTransferCollection {
+		TokenTransfer[] transfers;
+		uint256 numTransfers;
+	}
+
 	struct MoveTokens {
 		uint256 tokensPlaced;
 		uint256 tokensBurnt;

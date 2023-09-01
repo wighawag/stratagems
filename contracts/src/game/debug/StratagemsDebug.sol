@@ -77,7 +77,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				life: simpleCell.life,
 				delta: delta,
 				enemyMap: enemyMap,
-				distributionMap: 0 // TODO let debug distributionMap ?
+				distributionMap: 0
 			});
 			_owners[simpleCell.position] = uint256(uint160(simpleCell.owner));
 		}

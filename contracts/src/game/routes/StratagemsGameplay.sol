@@ -264,23 +264,30 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 
 	/// @inheritdoc IStratagemsGameplay
 	function poke(uint64 position) external {
-		// max number of transfer is 4 (for each neighbour's potentially being a different account)
-		TokenTransfer[] memory transfers = new TokenTransfer[](4);
-		uint256 numAddressesToDistributeTo = _poke(transfers, 0, position);
-		_multiTransfer(transfers, numAddressesToDistributeTo);
+		// max number of transfer is 5 (for each neighbour's potentially being a different account + own cell)
+
+		TokenTransferCollection memory transferCollection = TokenTransferCollection({
+			transfers: new TokenTransfer[](5),
+			numTransfers: 0
+		});
+		_poke(transferCollection, position);
+
+		_multiTransfer(transferCollection);
 		// TODO events?
 	}
 
 	/// @inheritdoc IStratagemsGameplay
 	function pokeMultiple(uint64[] calldata positions) external {
 		uint256 numCells = positions.length;
-		// max number of transfer is 4 * numCells (for each cell's neighbours potentially being a different account)
-		TokenTransfer[] memory transfers = new TokenTransfer[](numCells * 4);
-		uint256 numAddressesToDistributeTo = 0;
+		// max number of transfer is 4 * numCells (for each cell's neighbours potentially being a different account + own cell)
+		TokenTransferCollection memory transferCollection = TokenTransferCollection({
+			transfers: new TokenTransfer[](numCells * 5),
+			numTransfers: 0
+		});
 		for (uint256 i = 0; i < numCells; i++) {
-			numAddressesToDistributeTo = _poke(transfers, numAddressesToDistributeTo, positions[i]);
+			_poke(transferCollection, positions[i]);
 		}
-		_multiTransfer(transfers, numAddressesToDistributeTo);
+		_multiTransfer(transferCollection);
 		// TODO events?
 	}
 }

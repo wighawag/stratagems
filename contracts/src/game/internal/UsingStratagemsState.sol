@@ -30,22 +30,22 @@ library logger {
 		UsingStratagemsTypes.Cell memory cell,
 		address owner
 	) internal view {
-		// string memory indent = i == 0 ? '' : i == 1 ? '    ' : i == 2 ? '        ' : '            ';
+		string memory indent = i == 0 ? '' : i == 1 ? '    ' : i == 2 ? '        ' : '            ';
 		// string memory indent = '';
-		// console.log('%s%s', indent, title);
-		// int256 x = int256(int32(int256(uint256(id) & 0xFFFFFFFF)));
-		// int256 y = int256(int32(int256(uint256(id) >> 32)));
-		// console.log('%s-------------------------------------------------------------', indent);
-		// console.log('%scell (%s,%s)', indent, Strings.toString(x), Strings.toString(y));
-		// console.log('%s-------------------------------------------------------------', indent);
-		// console.log('%s - lastEpochUpdate:  %s', indent, cell.lastEpochUpdate);
-		// console.log('%s - epochWhenTokenIsAdded:  %s', indent, cell.epochWhenTokenIsAdded);
-		// console.log('%s - color:  %s', indent, uint8(cell.color));
-		// console.log('%s - life:  %s', indent, cell.life);
-		// console.log('%s - owner:  %s', indent, owner);
-		// console.log('%s - delta: %s', indent, Strings.toString(cell.delta));
-		// console.log('%s - enemyMap:  %s', indent, cell.enemyMap);
-		// console.log('%s-------------------------------------------------------------', indent);
+		console.log('%s%s', indent, title);
+		int256 x = int256(int32(int256(uint256(id) & 0xFFFFFFFF)));
+		int256 y = int256(int32(int256(uint256(id) >> 32)));
+		console.log('%s-------------------------------------------------------------', indent);
+		console.log('%scell (%s,%s)', indent, Strings.toString(x), Strings.toString(y));
+		console.log('%s-------------------------------------------------------------', indent);
+		console.log('%s - lastEpochUpdate:  %s', indent, cell.lastEpochUpdate);
+		console.log('%s - epochWhenTokenIsAdded:  %s', indent, cell.epochWhenTokenIsAdded);
+		console.log('%s - color:  %s', indent, uint8(cell.color));
+		console.log('%s - life:  %s', indent, cell.life);
+		console.log('%s - owner:  %s', indent, owner);
+		console.log('%s - delta: %s', indent, Strings.toString(cell.delta));
+		console.log('%s - enemyMap:  %s', indent, cell.enemyMap);
+		console.log('%s-------------------------------------------------------------', indent);
 	}
 }
 
@@ -94,71 +94,6 @@ abstract contract UsingStratagemsState is
 		uint256 timePassed = time - START_TIME;
 		epoch = uint24(timePassed / epochDuration + 2); // epoch start at 2, this make the hypothetical previous resolution phase's epoch to be 1
 		commiting = timePassed - ((epoch - 2) * epochDuration) < COMMIT_PHASE_DURATION;
-	}
-
-	function _getNeihbourEnemiesAliveWithPlayers(
-		uint64 position,
-		uint8 enemyMap,
-		uint24 epoch
-	) internal view returns (address[4] memory enemies, uint8 numEnemiesAlive) {
-		unchecked {
-			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
-			int256 y = int256(int32(int256(uint256(position) >> 32)));
-
-			if (enemyMap & 1 == 1) {
-				uint256 cellPos = ((uint256(uint32(int32(y - 1))) << 32) + uint256(x));
-				// console.log(uint64(cellPos));
-				// console.log(cellPos);
-				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
-				// we consider cells to be alive either because
-				// their life > 0 after being updated
-				// or that their last death update is the same epoch
-				if (
-					cell.life > 0 ||
-					(cell.lastEpochUpdate == epoch && address(uint160((_owners[cellPos]))) != address(0))
-				) {
-					logger.logCell(0, 'enemyMap & 1 == 1', uint64(cellPos), cell, address(uint160(_owners[cellPos])));
-					enemies[numEnemiesAlive] = _ownerOf(cellPos);
-					numEnemiesAlive++;
-				}
-			}
-			if (enemyMap & 2 == 2) {
-				uint256 cellPos = ((uint256(y) << 32) + uint256(x - 1));
-				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
-				if (
-					cell.life > 0 ||
-					(cell.lastEpochUpdate == epoch && address(uint160((_owners[cellPos]))) != address(0))
-				) {
-					logger.logCell(0, 'enemyMap & 2 == 2', uint64(cellPos), cell, address(uint160(_owners[cellPos])));
-					enemies[numEnemiesAlive] = _ownerOf(cellPos);
-					numEnemiesAlive++;
-				}
-			}
-			if (enemyMap & 4 == 4) {
-				uint256 cellPos = ((uint256(y + 1) << 32) + uint256(x));
-				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
-				if (
-					cell.life > 0 ||
-					(cell.lastEpochUpdate == epoch && address(uint160((_owners[cellPos]))) != address(0))
-				) {
-					logger.logCell(0, 'enemyMap & 4 == 4', uint64(cellPos), cell, address(uint160(_owners[cellPos])));
-					enemies[numEnemiesAlive] = _ownerOf(cellPos);
-					numEnemiesAlive++;
-				}
-			}
-			if (enemyMap & 8 == 8) {
-				uint256 cellPos = ((uint256(y) << 32) + uint256(x + 1));
-				Cell memory cell = _getUpdatedCell(uint64(cellPos), epoch);
-				if (
-					cell.life > 0 ||
-					(cell.lastEpochUpdate == epoch && address(uint160((_owners[cellPos]))) != address(0))
-				) {
-					logger.logCell(0, 'enemyMap & 8 == 8', uint64(cellPos), cell, address(uint160(_owners[cellPos])));
-					enemies[numEnemiesAlive] = _ownerOf(cellPos);
-					numEnemiesAlive++;
-				}
-			}
-		}
 	}
 
 	function _computeNewLife(
@@ -221,7 +156,7 @@ abstract contract UsingStratagemsState is
 		uint24 lastUpdate = updatedCell.lastEpochUpdate;
 		int8 delta = updatedCell.delta;
 		uint8 life = updatedCell.life;
-		logger.logCell(0, 'before update', position, updatedCell, address(uint160(_owners[position])));
+		// logger.logCell(0, 'before update', position, updatedCell, address(uint160(_owners[position])));
 		if (lastUpdate >= 1 && life > 0) {
 			(uint8 newLife, uint24 epochUsed) = _computeNewLife(lastUpdate, updatedCell.enemyMap, delta, life, epoch);
 			updatedCell.life = newLife;

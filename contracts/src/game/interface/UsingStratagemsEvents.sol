@@ -54,6 +54,5 @@ interface UsingStratagemsEvents is UsingStratagemsTypes {
 	// TODO get rid ?
 	// --------------------------------------------------------------------------------------------
 
-	event ColorWithdrawn(uint64 indexed position, address indexed player, Color color);
-	event ColorPlaced(uint64 indexed position, address indexed player, Color color);
+	event MoveProcessed(uint64 indexed position, address indexed player, Color oldColor, Color newColor);
 }
