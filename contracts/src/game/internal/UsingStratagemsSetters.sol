@@ -58,6 +58,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			tokens.tokensReturned += returned;
 		}
 
+		logger.logTransfers(0, 'resolve', transferCollection);
+
 		_multiTransfer(transferCollection);
 
 		newReserveAmount = _tokensInReserve[player];
@@ -72,14 +74,18 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			_tokensInReserve[player] = newReserveAmount;
 		} else {
 			if (tokens.tokensPlaced != 0) {
+				// TODO use TransferCollection too here
 				TOKENS.transferFrom(tokenGiver, address(this), tokens.tokensPlaced);
 			}
 			if (tokens.tokensBurnt != 0) {
+				// TODO use TransferCollection too here
 				TOKENS.transferFrom(tokenGiver, BURN_ADDRESS, tokens.tokensBurnt);
 			}
 		}
 		// option to return in reserve ?
+		// TODO use TransferCollection too here
 		if (tokens.tokensReturned != 0) {
+			console.log(tokens.tokensReturned);
 			TOKENS.transfer(player, tokens.tokensReturned);
 		}
 	}
@@ -119,14 +125,15 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 
 		// first we do some validity checks
 		if (move.color == Color.None) {
-			if (currentState.life != MAX_LIFE || _ownerOf(move.position) == player) {
+			if (currentState.life != MAX_LIFE || _ownerOf(move.position) != player) {
 				// invalid move
 				return (0, 0, NUM_TOKENS_PER_GEMS);
 			}
-		}
 
+			_collectTransfer(transferCollection, TokenTransfer({to: payable(player), amount: NUM_TOKENS_PER_GEMS}));
+		}
 		// then we consider the case of collision and transform such move as Color Evol
-		if (currentState.epochWhenTokenIsAdded == epoch) {
+		else if (currentState.epochWhenTokenIsAdded == epoch) {
 			if (currentState.life != 0) {
 				move.color = Color.Evil;
 				// TODO Add further stake, or do we burn? or return?
@@ -154,7 +161,10 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			currentState.delta = 0;
 			currentState.enemyMap = 0;
 			_owners[move.position] = 0;
+			tokensReturned = NUM_TOKENS_PER_GEMS;
 		} else {
+			tokensPlaced = NUM_TOKENS_PER_GEMS;
+
 			currentState.enemyMap = newEnemyMap;
 			currentState.distributionMap = 0;
 			currentState.delta = newDelta;
@@ -169,8 +179,13 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 
 		_cells[move.position] = currentState;
 
-		tokensPlaced = NUM_TOKENS_PER_GEMS;
-		_owners[move.position] = uint256(uint160(player));
+		logger.logCell(
+			0,
+			string.concat('AFTER ', Strings.toString(epoch)),
+			move.position,
+			currentState,
+			address(uint160(_owners[move.position]))
+		);
 	}
 
 	function _propagate(
@@ -356,10 +371,17 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 					cell.life,
 					epoch
 				);
-
+				console.log('newLife');
+				console.log(newLife);
+				console.log('epochUsed');
+				console.log(epochUsed);
 				due = _updateCellFromNeighbor(position, cell, newLife, epochUsed, neighbourIndex, oldColor, newColor);
+				console.log('due');
+				console.log(due);
 			} else {
 				due = _updateCellFromNeighbor(position, cell, cell.life, epoch, neighbourIndex, oldColor, newColor);
+				console.log('due');
+				console.log(due);
 			}
 		}
 	}
@@ -408,6 +430,15 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 
 		cell.lastEpochUpdate = epoch;
 		cell.life = newLife;
+
+		logger.logCell(
+			0,
+			string.concat('_updateCellFromNeighbor  index', Strings.toString(neighbourIndex)),
+			position,
+			cell,
+			address(uint160(_owners[position]))
+		);
+
 		_cells[position] = cell;
 	}
 
@@ -417,11 +448,13 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 	) internal pure {
 		console.log('_collectTransfer');
 		console.log(newTransfer.to);
+		console.log(newTransfer.amount);
 		// we look for the newTransfer address in case it is already present
 		for (uint256 k = 0; k < transferCollection.numTransfers; k++) {
 			if (transferCollection.transfers[k].to == newTransfer.to) {
 				// if we found we add the amount
 				transferCollection.transfers[k].amount += newTransfer.amount;
+				return;
 			}
 		}
 		// if we did not find that address we add it to the end

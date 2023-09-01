@@ -24,13 +24,13 @@ library logger {
 	// _sendLogPayload(abi.encodeWithSignature('log(string,int256,int256)', 'cell %s', x, y));
 
 	function logCell(
-		uint8 i,
+		uint8 ii,
 		string memory title,
 		uint64 id,
 		UsingStratagemsTypes.Cell memory cell,
 		address owner
 	) internal view {
-		string memory indent = i == 0 ? '' : i == 1 ? '    ' : i == 2 ? '        ' : '            ';
+		string memory indent = ii == 0 ? '' : ii == 1 ? '    ' : ii == 2 ? '        ' : '            ';
 		// string memory indent = '';
 		console.log('%s%s', indent, title);
 		int256 x = int256(int32(int256(uint256(id) & 0xFFFFFFFF)));
@@ -45,6 +45,27 @@ library logger {
 		console.log('%s - owner:  %s', indent, owner);
 		console.log('%s - delta: %s', indent, Strings.toString(cell.delta));
 		console.log('%s - enemyMap:  %s', indent, cell.enemyMap);
+		console.log('%s-------------------------------------------------------------', indent);
+	}
+
+	function logTransfers(
+		uint8 ii,
+		string memory title,
+		UsingStratagemsTypes.TokenTransferCollection memory transferCollection
+	) internal pure {
+		string memory indent = ii == 0 ? '' : ii == 1 ? '    ' : ii == 2 ? '        ' : '            ';
+		// string memory indent = '';
+		console.log('%s%s', indent, title);
+		console.log('%s-------------------------------------------------------------', indent);
+		for (uint256 i = 0; i < transferCollection.numTransfers; i++) {
+			console.log(
+				'%stransfer (%s,%s)',
+				indent,
+				transferCollection.transfers[i].to,
+				Strings.toString(transferCollection.transfers[i].amount)
+			);
+		}
+
 		console.log('%s-------------------------------------------------------------', indent);
 	}
 }
@@ -141,7 +162,7 @@ abstract contract UsingStratagemsState is
 					epochUsed = lastUpdate + uint24(epochDelta);
 				} else {
 					newLife = life;
-					epochUsed = lastUpdate;
+					epochUsed = epoch;
 				}
 			} else {
 				newLife = life;

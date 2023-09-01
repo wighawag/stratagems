@@ -88,7 +88,11 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 
 			// we act as if the token were added in previous epochs
 			// this is so it does not affect the resolution phase
-			int256 potentialLife = int256(uint256(cell.life)) - cell.delta;
+			int8 effectiveDelta = cell.delta != 0 ? cell.delta : -1;
+			if (effectiveDelta < 0 && cell.enemyMap == 0) {
+				effectiveDelta = 0;
+			}
+			int256 potentialLife = int256(uint256(cell.life)) - effectiveDelta;
 			if (potentialLife < 0) {
 				potentialLife = 0;
 			}
@@ -101,7 +105,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 			}
 			cell.life = uint8(uint256(potentialLife));
 
-			_cells[position] = Cell({
+			Cell memory updatedCell = Cell({
 				lastEpochUpdate: epoch - 1,
 				epochWhenTokenIsAdded: epoch - 1,
 				color: cell.color,
@@ -110,6 +114,15 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				enemyMap: cell.enemyMap,
 				distributionMap: 0 // TODO let debug distributionMap ?
 			});
+			_cells[position] = updatedCell;
+
+			logger.logCell(
+				0,
+				string.concat('forceSimpleCells at epoch ', Strings.toString(epoch)),
+				uint64(position),
+				updatedCell,
+				address(uint160(_owners[position]))
+			);
 		}
 
 		emit ForceSimpleCells(epoch, cells);

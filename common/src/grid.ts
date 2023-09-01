@@ -305,7 +305,7 @@ export function fromContractFullCellToCell(
 
 		const accountIndex = accounts.indexOf(cell.owner);
 
-		return {
+		const processedCell = {
 			x,
 			y,
 			lastEpochUpdate: cell.lastEpochUpdate,
@@ -323,6 +323,13 @@ export function fromContractFullCellToCell(
 					? -1
 					: undefined,
 		};
+
+		console.log(`--------------`);
+		console.log(cell);
+		console.log(`------------- processed cell from contract`);
+		console.log(processedCell);
+		console.log(`--------------`);
+		return processedCell;
 	};
 }
 

@@ -185,7 +185,7 @@ describe('Stratagems', function () {
 		);
 	});
 
-	it.only('placing 3 gems should have the desired effect', async function () {
+	it('placing 3 gems should have the desired effect', async function () {
 		const setup = await loadFixture(deployStratagemsWithTestConfig);
 		await expectGridChange(
 			setup,
