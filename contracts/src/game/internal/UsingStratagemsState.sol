@@ -30,23 +30,23 @@ library logger {
 		UsingStratagemsTypes.Cell memory cell,
 		address owner
 	) internal view {
-		string memory indent = ii == 0 ? '' : ii == 1 ? '    ' : ii == 2 ? '        ' : '            ';
-		// string memory indent = '';
-		console.log('%s%s', indent, title);
-		int256 x = int256(int32(int256(uint256(id) & 0xFFFFFFFF)));
-		int256 y = int256(int32(int256(uint256(id) >> 32)));
-		console.log('%s-------------------------------------------------------------', indent);
-		console.log('%scell (%s,%s)', indent, Strings.toString(x), Strings.toString(y));
-		console.log('%s-------------------------------------------------------------', indent);
-		console.log('%s - lastEpochUpdate:  %s', indent, cell.lastEpochUpdate);
-		console.log('%s - epochWhenTokenIsAdded:  %s', indent, cell.epochWhenTokenIsAdded);
-		console.log('%s - color:  %s', indent, uint8(cell.color));
-		console.log('%s - life:  %s', indent, cell.life);
-		console.log('%s - distribution:  %s', indent, cell.distribution);
-		console.log('%s - owner:  %s', indent, owner);
-		console.log('%s - delta: %s', indent, Strings.toString(cell.delta));
-		console.log('%s - enemyMap:  %s', indent, cell.enemyMap);
-		console.log('%s-------------------------------------------------------------', indent);
+		// string memory indent = ii == 0 ? '' : ii == 1 ? '    ' : ii == 2 ? '        ' : '            ';
+		// // string memory indent = '';
+		// console.log('%s%s', indent, title);
+		// int256 x = int256(int32(int256(uint256(id) & 0xFFFFFFFF)));
+		// int256 y = int256(int32(int256(uint256(id) >> 32)));
+		// console.log('%s-------------------------------------------------------------', indent);
+		// console.log('%scell (%s,%s)', indent, Strings.toString(x), Strings.toString(y));
+		// console.log('%s-------------------------------------------------------------', indent);
+		// console.log('%s - lastEpochUpdate:  %s', indent, cell.lastEpochUpdate);
+		// console.log('%s - epochWhenTokenIsAdded:  %s', indent, cell.epochWhenTokenIsAdded);
+		// console.log('%s - color:  %s', indent, uint8(cell.color));
+		// console.log('%s - life:  %s', indent, cell.life);
+		// console.log('%s - distribution:  %s', indent, cell.distribution);
+		// console.log('%s - owner:  %s', indent, owner);
+		// console.log('%s - delta: %s', indent, Strings.toString(cell.delta));
+		// console.log('%s - enemyMap:  %s', indent, cell.enemyMap);
+		// console.log('%s-------------------------------------------------------------', indent);
 	}
 
 	function logTransfers(
@@ -54,20 +54,19 @@ library logger {
 		string memory title,
 		UsingStratagemsTypes.TokenTransferCollection memory transferCollection
 	) internal pure {
-		string memory indent = ii == 0 ? '' : ii == 1 ? '    ' : ii == 2 ? '        ' : '            ';
-		// string memory indent = '';
-		console.log('%s%s', indent, title);
-		console.log('%s-------------------------------------------------------------', indent);
-		for (uint256 i = 0; i < transferCollection.numTransfers; i++) {
-			console.log(
-				'%stransfer (%s,%s)',
-				indent,
-				transferCollection.transfers[i].to,
-				Strings.toString(transferCollection.transfers[i].amount)
-			);
-		}
-
-		console.log('%s-------------------------------------------------------------', indent);
+		// string memory indent = ii == 0 ? '' : ii == 1 ? '    ' : ii == 2 ? '        ' : '            ';
+		// // string memory indent = '';
+		// console.log('%s%s', indent, title);
+		// console.log('%s-------------------------------------------------------------', indent);
+		// for (uint256 i = 0; i < transferCollection.numTransfers; i++) {
+		// 	console.log(
+		// 		'%stransfer (%s,%s)',
+		// 		indent,
+		// 		transferCollection.transfers[i].to,
+		// 		Strings.toString(transferCollection.transfers[i].amount)
+		// 	);
+		// }
+		// console.log('%s-------------------------------------------------------------', indent);
 	}
 }
 

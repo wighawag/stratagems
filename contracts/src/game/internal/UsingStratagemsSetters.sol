@@ -3,8 +3,9 @@ pragma solidity ^0.8.0;
 
 import './UsingStratagemsState.sol';
 import '../interface/UsingStratagemsEvents.sol';
+import './UsingStratagemsUtils.sol';
 
-abstract contract UsingStratagemsSetters is UsingStratagemsState {
+abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagemsUtils {
 	constructor(Config memory config) UsingStratagemsState(config) {}
 
 	function _makeCommitment(address player, bytes24 commitmentHash, uint256 inReserve) internal {
@@ -22,7 +23,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		commitment.hash = commitmentHash;
 		commitment.epoch = epoch;
 
-		// for withdrawal, we still require a minimal reserve so player cannot change its mind without losing at least one token
+		// for withdrawal, we still require a minimal reserve so player cannot change their mind without losing at least one token
+		// TODO we might want to increase that value to 10x as 10 moves might quite common, at least on some networks
 		if (inReserve < NUM_TOKENS_PER_GEMS) {
 			// TODO? special error for this case ?
 			revert ReserveTooLow(inReserve, NUM_TOKENS_PER_GEMS);
@@ -60,11 +62,11 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 
 		logger.logTransfers(0, 'resolve', transferCollection);
 
-		_multiTransfer(transferCollection);
+		_multiTransfer(TOKENS, transferCollection);
 
 		newReserveAmount = _tokensInReserve[player];
 
-		// Note: even if funds can comes from outside the reserver, we still check it
+		// Note: even if funds can comes from outside the reserve, we still check it
 		// This ensure player have to have a reserve and cannot escape the slash if not
 		if (newReserveAmount < tokens.tokensPlaced + tokens.tokensBurnt) {
 			revert ReserveTooLow(newReserveAmount, tokens.tokensPlaced + tokens.tokensBurnt);
@@ -102,6 +104,16 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 	// If one color was used more than other, we could consider the cell having N owner and N times the number of tokens
 	// such cells would be a good target for others
 	// On the other end, on winning agains other cells, owner of such cell would have to divide the winnings
+	// TODO revisit this
+	// we could also refund the part
+	// so if there is 3 green 2 blue and 1 red, then green win and the cell become green
+	// player we put blue or red get refunded their respective gems
+	// the players we put green get refunded 2/3 so that the cell still contains only 1
+	// if there was 3 green and 3 blue and 1 red then the cell becomes black
+	// every player get refunded 6/7 so that the black cell only has 1
+	// note that the issue with green winning above is that winnings need to be distributed to all 3 players we put green
+	// and since the number is technically unbounded, we have to use a splitter contract where player withdraw their winnings
+	// this add UX complexity and some cost for withdrawals
 	function _computeMove(
 		TokenTransferCollection memory transferCollection,
 		address player,
@@ -140,7 +152,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 
 			_collectTransfer(transferCollection, TokenTransfer({to: payable(player), amount: NUM_TOKENS_PER_GEMS}));
 		}
-		// then we consider the case of collision and transform such move as Color Evol
+		// then we consider the case of collision and transform such move as Color Evil
 		else if (currentState.epochWhenTokenIsAdded == epoch) {
 			if (currentState.life != 0) {
 				move.color = Color.Evil;
@@ -286,7 +298,6 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		Color newColor,
 		uint8 distribution
 	) internal returns (int8 newDelta, uint8 newenemyMap, uint8 numDue, address[4] memory ownersToPay) {
-		console.log('------------------updateNeighbours-------------------');
 		unchecked {
 			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
 			int256 y = int256(int32(int256(uint256(position) >> 32)));
@@ -301,10 +312,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				}
 				numDue += due;
 				if ((distribution >> 4) & 4 == 4) {
-					console.log('upPosition owner to pay');
-					console.log('cell (%s,%s)', Strings.toString(x), Strings.toString(y - 1));
 					// TODO?: if we decide to group owner in the cell struct, we should get the cell in memory in that function
-					console.log('owner %s', _ownerOf(upPosition));
 					ownersToPay[0] = _ownerOf(upPosition);
 				}
 				newDelta += enemyOrFriend;
@@ -318,9 +326,6 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				}
 				numDue += due;
 				if ((distribution >> 4) & 8 == 8) {
-					console.log('leftPosition owner to pay');
-					console.log('cell (%s,%s)', Strings.toString(x - 1), Strings.toString(y));
-					console.log('owner %s', _ownerOf(leftPosition));
 					ownersToPay[1] = _ownerOf(leftPosition);
 				}
 				newDelta += enemyOrFriend;
@@ -334,9 +339,6 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				}
 				numDue += due;
 				if ((distribution >> 4) & 1 == 1) {
-					console.log('downPosition owner to pay');
-					console.log('cell (%s,%s)', Strings.toString(x), Strings.toString(y + 1));
-					console.log('owner %s', _ownerOf(downPosition));
 					ownersToPay[2] = _ownerOf(downPosition);
 				}
 				newDelta += enemyOrFriend;
@@ -349,15 +351,11 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 				}
 				numDue += due;
 				if ((distribution >> 4) & 2 == 2) {
-					console.log('rightPosition owner to pay');
-					console.log('cell (%s,%s)', Strings.toString(x + 1), Strings.toString(y));
-					console.log('owner %s', _ownerOf(rightPosition));
 					ownersToPay[3] = _ownerOf(rightPosition);
 				}
 				newDelta += enemyOrFriend;
 			}
 		}
-		console.log('------------------updateNeighbours-------------------');
 	}
 
 	/// @dev This update the cell in storage
@@ -386,17 +384,9 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 					cell.life,
 					epoch
 				);
-				// console.log('newLife');
-				// console.log(newLife);
-				// console.log('epochUsed');
-				// console.log(epochUsed);
 				due = _updateCellFromNeighbor(position, cell, newLife, epochUsed, neighbourIndex, oldColor, newColor);
-				// console.log('due');
-				// console.log(due);
 			} else {
 				due = _updateCellFromNeighbor(position, cell, cell.life, epoch, neighbourIndex, oldColor, newColor);
-				// console.log('due');
-				// console.log(due);
 			}
 		}
 	}
@@ -428,10 +418,6 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 			cell.distribution =
 				(uint8(uint256(cell.distribution >> 4) & (~(2 ** uint256(neighbourIndex)))) << 4) +
 				(cell.distribution & 0x0f);
-			console.log('--------------------------------');
-			console.log('due');
-			console.log(due);
-			console.log('--------------------------------');
 		}
 
 		if (oldColor != newColor) {
@@ -469,33 +455,5 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState {
 		);
 
 		_cells[position] = cell;
-	}
-
-	function _collectTransfer(
-		TokenTransferCollection memory transferCollection,
-		TokenTransfer memory newTransfer
-	) internal pure {
-		// console.log('_collectTransfer');
-		// console.log(newTransfer.to);
-		// console.log(newTransfer.amount);
-		// we look for the newTransfer address in case it is already present
-		for (uint256 k = 0; k < transferCollection.numTransfers; k++) {
-			if (transferCollection.transfers[k].to == newTransfer.to) {
-				// if we found we add the amount
-				transferCollection.transfers[k].amount += newTransfer.amount;
-				return;
-			}
-		}
-		// if we did not find that address we add it to the end
-		transferCollection.transfers[transferCollection.numTransfers].to = newTransfer.to;
-		transferCollection.transfers[transferCollection.numTransfers].amount = newTransfer.amount;
-		// and increase the size to lookup for next time
-		transferCollection.numTransfers++;
-	}
-
-	function _multiTransfer(TokenTransferCollection memory transferCollection) internal {
-		for (uint256 i = 0; i < transferCollection.numTransfers; i++) {
-			TOKENS.transfer(transferCollection.transfers[i].to, transferCollection.transfers[i].amount);
-		}
 	}
 }

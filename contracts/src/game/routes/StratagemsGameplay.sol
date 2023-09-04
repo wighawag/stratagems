@@ -5,7 +5,7 @@ import '../interface/IStratagems.sol';
 import '../internal/UsingStratagemsSetters.sol';
 import '../internal/UsingStratagemsUtils.sol';
 
-contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, UsingStratagemsUtils {
+contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 	constructor(Config memory config) UsingStratagemsSetters(config) {}
 
 	// --------------------------------------------------------------------------------------------
@@ -272,7 +272,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 		});
 		_poke(transferCollection, position);
 
-		_multiTransfer(transferCollection);
+		_multiTransfer(TOKENS, transferCollection);
 		// TODO events?
 	}
 
@@ -287,7 +287,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters, Usin
 		for (uint256 i = 0; i < numCells; i++) {
 			_poke(transferCollection, positions[i]);
 		}
-		_multiTransfer(transferCollection);
+		_multiTransfer(TOKENS, transferCollection);
 		// TODO events?
 	}
 }
