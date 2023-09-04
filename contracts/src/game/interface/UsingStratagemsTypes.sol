@@ -21,11 +21,13 @@ interface UsingStratagemsTypes {
 		Evil
 	}
 
+	/// @notice Move struct that define position and color
 	struct Move {
 		uint64 position; // TODO make it bigger ? uint32 * uint32 is probably infinitely big enough
 		Color color;
 	}
 
+	/// @notice Permit struct to authorize EIP2612 ERC20 contracts
 	struct Permit {
 		uint256 value;
 		uint256 deadline;
@@ -34,6 +36,7 @@ interface UsingStratagemsTypes {
 		bytes32 s;
 	}
 
+	/// @notice Config struct to configure the game instance
 	struct Config {
 		IERC20WithIERC2612 tokens;
 		address payable burnAddress;
@@ -44,6 +47,7 @@ interface UsingStratagemsTypes {
 		uint256 numTokensPerGems;
 	}
 
+	/// @notice Cell struct representing the current state of a cell
 	struct FullCell {
 		address owner;
 		uint24 lastEpochUpdate;

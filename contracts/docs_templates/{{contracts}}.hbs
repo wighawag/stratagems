@@ -66,7 +66,10 @@ outline: deep
 {{#each errors}}
 ### **{{{name}}}**
 
-{{{notice}}}
+{{#each notice}}
+{{{this}}}
+
+{{/each}}
 
 {{{fullFormat}}}
 

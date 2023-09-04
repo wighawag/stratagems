@@ -261,6 +261,7 @@ event Transfer(address indexed from, address indexed to, uint256 value)
 
 The permit has expired
 
+
 error DeadlineOver(uint256 currentTime, uint256 deadline)
 
 | Name | Description 
@@ -272,6 +273,7 @@ error DeadlineOver(uint256 currentTime, uint256 deadline)
 
 An invalid address is specified (for example: zero address)
 
+
 error InvalidAddress(address addr)
 
 | Name | Description 
@@ -281,6 +283,7 @@ error InvalidAddress(address addr)
 ### **InvalidMsgValue**
 
 The msg value do not match the expected value
+
 
 error InvalidMsgValue(uint256 provided, uint256 expected)
 
@@ -293,11 +296,13 @@ error InvalidMsgValue(uint256 provided, uint256 expected)
 
 The signature do not match the expected signer
 
+
 error InvalidSignature()
 
 ### **InvalidTotalAmount**
 
 The total amount provided do not match the expected value
+
 
 error InvalidTotalAmount(uint256 provided, uint256 expected)
 
@@ -310,6 +315,7 @@ error InvalidTotalAmount(uint256 provided, uint256 expected)
 
 the amount requested exceed the allowance
 
+
 error NotAuthorizedAllowance(uint256 currentAllowance, uint256 expected)
 
 | Name | Description 
@@ -320,6 +326,7 @@ error NotAuthorizedAllowance(uint256 currentAllowance, uint256 expected)
 ### **NotEnoughTokens**
 
 the amount requested exceed the balance
+
 
 error NotEnoughTokens(uint256 currentBalance, uint256 expected)
 

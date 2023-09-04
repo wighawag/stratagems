@@ -36,7 +36,10 @@ interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
 	function addToReserve(uint256 tokensAmountToAdd, Permit calldata permit) external;
 
 	/// @notice called by players to commit their moves
-	///  this can be called multiple time, the last call overriding the previous.
+	///  this can be called multiple time in the same epoch, the last call overriding the previous.
+	///  When a commitment is made, it needs to be resolved in the resolution phase of the same epoch.abi
+	///  If missed, player can still reveal its moves but none of them will be resolved.
+	///   The player would lose its associated reserved amount.
 	/// @param commitmentHash the hash of the moves
 	function makeCommitment(bytes24 commitmentHash) external;
 
@@ -70,8 +73,10 @@ interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
 	/// @param secret the secret used to make the commit
 	/// @param moves the actual moves
 	/// @param furtherMoves if moves cannot be contained in one tx, further moves are represented by a hash to resolve too
-	///  Note that you have to that number of mvoes
-	/// @param useReserve whether the tokens are taken from the reserve or from approvals
+	///  Note that you have to that have enough moves (specified by MAX_NUM_MOVES_PER_HASH = 32)
+	/// @param useReserve whether the tokens are taken from the reserve or from approvals.
+	///  This allow player to keep their reserve intact and use it on their next move.
+	///  Note that this require the Stratagems contract to have enough allowance.
 	function resolve(
 		address player,
 		bytes32 secret,
@@ -80,7 +85,7 @@ interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
 		bool useReserve
 	) external;
 
-	/// @notice called by player if they missed the resolution phase and want to minimze the token loss
+	/// @notice called by player if they missed the resolution phase and want to minimze the token loss.
 	///  By providing the moves, they will be slashed only the amount of token required to make the moves
 	/// @param player the account who committed the move
 	/// @param secret the secret used to make the commit
@@ -95,14 +100,15 @@ interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
 
 	/// @notice should only be called as last resort
 	/// this will burn all tokens in reserve
-	/// If player has access to the secret, better call acknowledgeMissedResolution
+	/// If player has access to the secret, better call `acknowledgeMissedResolution`
 	function acknowledgeMissedResolutionByBurningAllReserve() external;
 
-	/// @notice poke a position, resolving its virtual state and if dead, reward neighboor enemies colors
+	/// @notice poke a position, resolving its virtual state.
+	//  If dead as a result, it will reward neighboor enemies colors
 	/// @param position the cell position
 	function poke(uint64 position) external;
 
-	/// poke and collect the tokens won
+	/// @notice poke and collect the tokens won across multiple cells
 	/// @param positions cell positions to collect from
 	function pokeMultiple(uint64[] calldata positions) external;
 }

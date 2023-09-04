@@ -93,7 +93,7 @@ abstract contract UsingStratagemsState is
 	address payable internal immutable BURN_ADDRESS;
 
 	/// @notice the number of moves a hash represent, after that players make use of furtherMoves
-	uint8 internal constant MAX_NUM_MOVES_PER_HASH = 16;
+	uint8 internal constant MAX_NUM_MOVES_PER_HASH = 32;
 
 	/// @notice Create an instance of a Stratagems game
 	/// @param config configuration options for the game

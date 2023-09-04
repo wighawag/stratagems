@@ -53,6 +53,10 @@ interface UsingStratagemsEvents is UsingStratagemsTypes {
 	// Event to make it easier to check what is happening
 	// TODO get rid ?
 	// --------------------------------------------------------------------------------------------
-
+	/// @notice A move has been resolved.
+	/// @param position cell at which the move take place
+	/// @param player account making the move
+	/// @param oldColor previous color of the cell
+	/// @param newColor color that takes over
 	event MoveProcessed(uint64 indexed position, address indexed player, Color oldColor, Color newColor);
 }
