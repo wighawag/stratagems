@@ -74,7 +74,7 @@ export async function expectIndexedGridToMatch(env: GridEnv, resultGrid: string,
 	const grid = fromStateToGrid(env, state.$state, epoch);
 	// console.log(grid);
 	// TODO reenable
-	// await expect(renderGrid(grid)).to.equal(renderGrid(parseGrid(resultGrid)));
+	await expect(renderGrid(grid)).to.equal(renderGrid(parseGrid(resultGrid)));
 }
 
 export function fromStateToGrid(env: GridEnv, state: Data, epoch: number): Grid {
@@ -106,7 +106,7 @@ export function fromStateToGrid(env: GridEnv, state: Data, epoch: number): Grid 
 			lastEpochUpdate: cell.lastEpochUpdate,
 			epochWhenTokenIsAdded: cell.epochWhenTokenIsAdded,
 			delta: cell.delta,
-			enemymask: cell.enemymask,
+			enemyMap: cell.enemyMap,
 		};
 		gridCells.push(gridCell);
 

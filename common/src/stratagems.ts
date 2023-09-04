@@ -63,7 +63,8 @@ export type ContractCell = {
 	color: number;
 	life: number;
 	delta: number;
-	enemymask: number;
+	enemyMap: number;
+	distribution: number;
 };
 
 export type ContractFullCell = ContractCell & {
@@ -78,7 +79,7 @@ export class StratagemsContract {
 
 	computeNewLife(
 		lastUpdate: number,
-		enemymask: number,
+		enemyMap: number,
 		delta: number,
 		life: number,
 		epoch: number,
@@ -93,7 +94,7 @@ export class StratagemsContract {
 			let epochDelta = epoch - lastUpdate;
 			if (epochDelta > 0) {
 				let effectiveDelta = delta != 0 ? delta : -1;
-				if (effectiveDelta < 0 && enemymask == 0) {
+				if (effectiveDelta < 0 && enemyMap == 0) {
 					effectiveDelta = 0;
 				}
 				if (effectiveDelta > 0) {
@@ -144,9 +145,10 @@ export class StratagemsContract {
 			lastEpochUpdate: cell?.lastEpochUpdate || 0,
 			color: cell?.color || Color.None,
 			delta: cell?.delta || 0,
-			enemymask: cell?.enemymask || 0,
+			enemyMap: cell?.enemyMap || 0,
 			epochWhenTokenIsAdded: cell?.epochWhenTokenIsAdded || 0,
 			life: cell?.life || 0,
+			distribution: cell?.distribution || 0,
 		};
 	}
 
@@ -156,7 +158,7 @@ export class StratagemsContract {
 		if (updatedCell.lastEpochUpdate >= 1 && updatedCell.life > 0) {
 			const {newLife, epochUsed} = this.computeNewLife(
 				updatedCell.lastEpochUpdate,
-				updatedCell.enemymask,
+				updatedCell.enemyMap,
 				updatedCell.delta,
 				updatedCell.life,
 				epoch,
@@ -191,67 +193,71 @@ export class StratagemsContract {
 		neighbourIndex: number,
 		oldColor: Color,
 		newColor: Color,
-	) {
-		if (newColor == Color.None) {
-			if (cell.color == oldColor) {
+	): number {
+		let due = 0;
+		if (cell.life > 0 && newLife == 0) {
+			// we just died, we establish the distributionMap and counts
+			cell.distribution = (cell.enemyMap << 4) + this.countBits(cell.enemyMap);
+		}
+
+		if (((cell.distribution >> 4) & (2 ** neighbourIndex)) == 2 ** neighbourIndex) {
+			due = 12 / (cell.distribution & 0x0f);
+			cell.distribution = ((cell.distribution >> 4) & (~(2 ** neighbourIndex) << 4)) + (cell.distribution & 0x0f);
+		}
+
+		if (oldColor != newColor) {
+			if (newColor == Color.None) {
+				if (cell.color == oldColor) {
+					cell.delta -= 1;
+				} else {
+					cell.delta += 1;
+					cell.enemyMap = cell.enemyMap & ((1 << neighbourIndex) ^ 0xff);
+				}
+			} else if (cell.color == oldColor) {
+				// then newColor is different (see assert above)
+				cell.enemyMap = cell.enemyMap | (1 << neighbourIndex);
+				cell.delta -= 2;
+			} else if (cell.color == newColor) {
+				// then old color was different
+				cell.delta += oldColor == Color.None ? 1 : 2;
+				cell.enemyMap = cell.enemyMap & ((1 << neighbourIndex) ^ 0xff);
+			} else if (oldColor == Color.None) {
+				// if there were no oldCOlor and the newColor is not your (already checked in previous if clause)
 				cell.delta -= 1;
-			} else {
-				cell.delta += 1;
-				cell.enemymask = cell.enemymask & ((1 << neighbourIndex) ^ 0xff);
+				cell.enemyMap = cell.enemyMap | (1 << neighbourIndex);
 			}
-		} else if (cell.color == oldColor) {
-			// then newColor is different (see assert above)
-			cell.enemymask = cell.enemymask | (1 << neighbourIndex);
-			cell.delta -= 2;
-		} else if (cell.color == newColor) {
-			// then old color was different
-			cell.delta += oldColor == Color.None ? 1 : 2;
-			cell.enemymask = cell.enemymask & ((1 << neighbourIndex) ^ 0xff);
-		} else if (oldColor == Color.None) {
-			// if there were no oldCOlor and the newColor is not your (already checked in previous if clause)
-			cell.delta -= 1;
-			cell.enemymask = cell.enemymask | (1 << neighbourIndex);
 		}
 		cell.lastEpochUpdate = epoch;
 		cell.life = newLife;
 		this.state.cells[position.toString()] = cell;
-		// console.log({
-		// 	UPDATE_FROM_NEIGBOR: 'UPDATE_FROM_NEIGBOR',
-		// 	position: bigIntIDToXY(position),
-		// 	cell,
-		// });
+		return due;
 	}
 
-	updateCell(position: bigint, epoch: number, neighbourIndex: number, oldColor: Color, newColor: Color): number {
-		let enemyOrFriend = 0;
+	updateCell(position: bigint, epoch: number, neighbourIndex: number, oldColor: Color, newColor: Color) {
+		const data = {
+			enemyOrFriend: 0,
+			due: 0,
+		};
 		const cell = this.getCellInMemory(position);
 
 		const lastUpdate = cell.lastEpochUpdate;
 		const color = cell.color;
 		if (color != Color.None) {
-			enemyOrFriend = color == newColor ? 1 : -1;
+			data.enemyOrFriend = color == newColor ? 1 : -1;
 		}
-
-		let life = cell.life;
 
 		if (lastUpdate >= 1 && color != Color.None) {
 			// we only consider cell with color that are not dead
-			if (life > 0 && lastUpdate < epoch) {
+			if (cell.life > 0 && lastUpdate < epoch) {
 				// of there is life to update we compute the new life
-				const {newLife, epochUsed} = this.computeNewLife(lastUpdate, cell.enemymask, cell.delta, life, epoch);
-				life = newLife;
-				// console.log('    newLife: %s ', newLife);
-				// console.log('    epochUsed: %s ', epochUsed);
-
-				if (life == 0) {
-					// if dead, no need to update delta and enemymask
-					this.updateCellAsDead(position, cell, newLife, epochUsed);
-				}
+				const {newLife, epochUsed} = this.computeNewLife(lastUpdate, cell.enemyMap, cell.delta, cell.life, epoch);
+				data.due = this.updateCellFromNeighbor(position, cell, newLife, epochUsed, neighbourIndex, oldColor, newColor);
+			} else {
+				data.due = this.updateCellFromNeighbor(position, cell, cell.life, epoch, neighbourIndex, oldColor, newColor);
 			}
-			this.updateCellFromNeighbor(position, cell, life, epoch, neighbourIndex, oldColor, newColor);
 		}
 
-		return enemyOrFriend;
+		return data;
 	}
 
 	updateNeighbours(
@@ -259,163 +265,189 @@ export class StratagemsContract {
 		epoch: number,
 		oldColor: Color,
 		newColor: Color,
-	): {newDelta: number; newEnemymask: number} {
+		distribution: number,
+	): {newComputedDelta: number; newComputedEnemyMap: number; numDue: number} {
 		const {x, y} = bigIntIDToXY(position);
 		const data = {
-			newDelta: 0,
-			newEnemymask: 0,
+			newComputedDelta: 0,
+			newComputedEnemyMap: 0,
+			numDue: 0,
 		};
 
 		{
 			const upPosition = xyToBigIntID(x, y - 1);
-			const enemyOrFriend = this.updateCell(upPosition, epoch, 2, oldColor, newColor);
+			const {enemyOrFriend, due} = this.updateCell(upPosition, epoch, 2, oldColor, newColor);
 			if (enemyOrFriend < 0) {
-				data.newEnemymask = data.newEnemymask | 1;
+				data.newComputedEnemyMap = data.newComputedEnemyMap | 1;
 			}
-			data.newDelta += enemyOrFriend;
+			data.numDue += due;
+			// if (((distribution >> 4) & 4) == 4) {
+			// owner -->
+			// }
+			data.newComputedDelta += enemyOrFriend;
 		}
+
 		{
 			const leftPosition = xyToBigIntID(x - 1, y);
-
-			const enemyOrFriend = this.updateCell(leftPosition, epoch, 3, oldColor, newColor);
+			const {enemyOrFriend, due} = this.updateCell(leftPosition, epoch, 2, oldColor, newColor);
 			if (enemyOrFriend < 0) {
-				data.newEnemymask = data.newEnemymask | 2;
+				data.newComputedEnemyMap = data.newComputedEnemyMap | 2;
 			}
-			data.newDelta += enemyOrFriend;
+			data.numDue += due;
+			// if (((distribution >> 4) & 8) == 8) {
+			// owner -->
+			// }
+			data.newComputedDelta += enemyOrFriend;
 		}
 
 		{
 			const downPosition = xyToBigIntID(x, y + 1);
-			const enemyOrFriend = this.updateCell(downPosition, epoch, 0, oldColor, newColor);
+			const {enemyOrFriend, due} = this.updateCell(downPosition, epoch, 2, oldColor, newColor);
 			if (enemyOrFriend < 0) {
-				data.newEnemymask = data.newEnemymask | 4;
+				data.newComputedEnemyMap = data.newComputedEnemyMap | 4;
 			}
-			data.newDelta += enemyOrFriend;
+			data.numDue += due;
+			// if (((distribution >> 4) & 1) == 1) {
+			// owner -->
+			// }
+			data.newComputedDelta += enemyOrFriend;
 		}
+
 		{
 			const rightPosition = xyToBigIntID(x + 1, y);
-			const enemyOrFriend = this.updateCell(rightPosition, epoch, 1, oldColor, newColor);
+			const {enemyOrFriend, due} = this.updateCell(rightPosition, epoch, 2, oldColor, newColor);
 			if (enemyOrFriend < 0) {
-				data.newEnemymask = data.newEnemymask | 8;
+				data.newComputedEnemyMap = data.newComputedEnemyMap | 8;
 			}
-			data.newDelta += enemyOrFriend;
+			data.numDue += due;
+			// if (((distribution >> 4) & 2) == 2) {
+			// owner -->
+			// }
+			data.newComputedDelta += enemyOrFriend;
 		}
+
 		return data;
 	}
 
-	computeMove(player: `0x${string}`, epoch: number, move: ContractMove) {
+	countBits(n: number): number {
+		let count = 0;
+		while (n != 0) {
+			n = n & (n - 1);
+			count++;
+		}
+		return count;
+	}
+
+	propagate(move: ContractMove, epoch: number, color: Color, distribution: number) {
+		const data = {
+			newDelta: 0,
+			newEnemyMap: 0,
+		};
+
+		const {
+			newComputedDelta,
+			newComputedEnemyMap,
+			numDue,
+			// ownersToPay
+		} = this.updateNeighbours(move.position, epoch, color, move.color, distribution);
+
+		// if (numDue > 0) {
+		// 	_collectTransfer(
+		// 		transferCollection,
+		// 		TokenTransfer({to: payable(_ownerOf(move.position)), amount: (numDue * NUM_TOKENS_PER_GEMS) / 12})
+		// 	);
+		// }
+		// for (uint8 i = 0; i < 4; i++) {
+		// 	if (ownersToPay[i] != address(0)) {
+		// 		_collectTransfer(
+		// 			transferCollection,
+		// 			TokenTransfer({to: payable(ownersToPay[i]), amount: (NUM_TOKENS_PER_GEMS / (distribution & 0x0f))})
+		// 		);
+		// 	}
+		// }
+		data.newDelta = newComputedDelta;
+		data.newEnemyMap = newComputedEnemyMap;
+
+		return data;
+	}
+
+	computeMove(player: `0x${string}`, epoch: number, moveAsInput: ContractMove) {
+		const move = {...moveAsInput};
 		const MAX_LIFE = this.MAX_LIFE;
 
 		const currentState = this.getUpdatedCell(move.position, epoch);
 
+		// we might have distribution still to do
+		let distribution = currentState.distribution;
+		if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
+			// if we just died, currentState.lastEpochUpdate > 0
+			// we have to distribute to all
+			distribution = (currentState.enemyMap << 4) + this.countBits(currentState.enemyMap);
+
+			/// we are now dead for real
+			currentState.lastEpochUpdate = 0;
+		}
+
+		// we then apply our move:
+
+		// first we do some validity checks
 		if (move.color == Color.None) {
-			// this is a leave move
-			if (currentState.life == MAX_LIFE && this.ownerOf(move.position).toLowerCase() == player.toLowerCase()) {
-				// only valid id life == MAX_LIFE and player is owner
-
-				this.updateNeighbours(move.position, epoch, currentState.color, Color.None);
-
-				// we reset all, except the lastEpochUpdate
-				// this allow us to make sure nobody else can make a move on that cell
-				currentState.life = 0;
-				currentState.color = Color.None;
-				currentState.lastEpochUpdate = epoch;
-				currentState.delta = 0;
-				currentState.enemymask = 0;
-				currentState.epochWhenTokenIsAdded = 0;
-				this.state.cells[move.position.toString()] = currentState;
-				this.state.owners[move.position.toString()] = zeroAddress;
-				// console.log({
-				// 	None: 'None',
-				// 	position: bigIntIDToXY(move.position),
-				// 	currentState,
-				// });
-			} else {
-				// TODO ?
+			if (currentState.life != MAX_LIFE || this.ownerOf(move.position) != player) {
+				// invalid move
+				// return (0, 0, NUM_TOKENS_PER_GEMS);
+				return;
 			}
-		}
 
-		if (currentState.epochWhenTokenIsAdded == epoch) {
-			// COLLISION
-			// Evil Color is added instead
-			// keep the stake
+			// _collectTransfer(transferCollection, TokenTransfer({to: payable(player), amount: NUM_TOKENS_PER_GEMS}));
+		}
+		// then we consider the case of collision and transform such move as Color Evil
+		else if (currentState.epochWhenTokenIsAdded == epoch) {
 			if (currentState.life != 0) {
-				if (currentState.color != Color.Evil) {
-					const {newDelta, newEnemymask} = this.updateNeighbours(move.position, epoch, currentState.color, Color.Evil);
-
-					currentState.color = Color.Evil; // TODO keep track of num token staked here, or do we burn ?
-					currentState.delta = newDelta;
-					currentState.enemymask = newEnemymask;
-					this.state.cells[move.position.toString()] = currentState;
-					this.state.owners[move.position.toString()] = '0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF';
-					// console.log({
-					// 	COLLISION: 'COLLISION',
-					// 	position: bigIntIDToXY(move.position),
-					// 	currentState,
-					// });
-				} else {
-					// TODO Add further stake, or do we burn?
-				}
+				move.color = Color.Evil;
+				// TODO Add further stake, or do we burn? or return?
 			} else {
-				// we skip
-				// tokensPlaced = 0 so this is not counted
-				if (currentState.life == 0) {
-					this.state.cells[move.position.toString()] = currentState;
-					this.state.owners[move.position.toString()] = zeroAddress;
-					// console.log({
-					// 	SKIP: 'SKIP',
-					// 	position: bigIntIDToXY(move.position),
-					// 	currentState,
-					// });
-					// TODO Transfer
-				}
-			}
-		} else if (currentState.life == 0 && (currentState.lastEpochUpdate == 0 || currentState.color != Color.None)) {
-			if (currentState.color != move.color) {
-				// only update neighbour if color changed
-				const {newDelta, newEnemymask} = this.updateNeighbours(move.position, epoch, currentState.color, move.color);
-
-				currentState.life = 1;
-				currentState.epochWhenTokenIsAdded = epoch;
-				currentState.lastEpochUpdate = epoch;
-				currentState.color = move.color;
-				currentState.delta = newDelta;
-				currentState.enemymask = newEnemymask;
-			} else {
-				currentState.life = 1;
-				currentState.epochWhenTokenIsAdded = epoch;
-				currentState.lastEpochUpdate = epoch;
-			}
-
-			this.state.cells[move.position.toString()] = currentState;
-			this.state.owners[move.position.toString()] = player;
-			// console.log({
-			// 	PLAYER: 'PLAYER',
-			// 	position: bigIntIDToXY(move.position),
-			// 	currentState,
-			// });
-			// TODO Transfer
-		} else {
-			// invalid move
-			if (currentState.life == 0) {
-				this.state.cells[move.position.toString()] = currentState;
-				this.state.owners[move.position.toString()] = zeroAddress;
-
-				// console.log({
-				// 	INVALID: 'INVALID',
-				// 	position: bigIntIDToXY(move.position),
-				// 	currentState,
-				// });
-				// TODO Transfer
+				// invalid move, on top of a MAX, that become None ?
+				// return (0, 0, NUM_TOKENS_PER_GEMS);
+				return;
 			}
 		}
+
+		const {newDelta, newEnemyMap} = this.propagate(move, epoch, currentState.color, distribution);
+
+		currentState.color = move.color;
+		currentState.distribution = 0;
+		currentState.epochWhenTokenIsAdded = epoch; // used to prevent overwriting, even Color.None
+
+		if (currentState.color == Color.None) {
+			currentState.life = 0;
+			currentState.lastEpochUpdate = 0;
+			currentState.delta = 0;
+			currentState.enemyMap = 0;
+			this.state.owners[move.position.toString()] = zeroAddress;
+			// tokensReturned = NUM_TOKENS_PER_GEMS;
+		} else {
+			// tokensPlaced = NUM_TOKENS_PER_GEMS;
+
+			currentState.enemyMap = newEnemyMap;
+
+			currentState.delta = newDelta;
+			currentState.life = 1;
+			currentState.lastEpochUpdate = epoch;
+			if (currentState.color == Color.Evil) {
+				this.state.owners[move.position.toString()] = '0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF';
+			} else {
+				this.state.owners[move.position.toString()] = player;
+			}
+		}
+
+		this.state.cells[move.position.toString()] = currentState;
 	}
 
 	// ----------------------
 
 	forceSimpleCells(epoch: number, cells: readonly ContractSimpleCell[]) {
 		for (const simpleCell of cells) {
-			const {delta, enemymask} = this.updateNeighbosrDelta(simpleCell.position, simpleCell.color, epoch);
+			const {delta, enemyMap} = this.updateNeighbosrDelta(simpleCell.position, simpleCell.color, epoch);
 
 			this.state.cells[simpleCell.position.toString()] = {
 				lastEpochUpdate: epoch,
@@ -423,7 +455,8 @@ export class StratagemsContract {
 				color: simpleCell.color,
 				life: simpleCell.life,
 				delta: delta,
-				enemymask: enemymask,
+				enemyMap: enemyMap,
+				distribution: 0,
 			};
 			this.state.owners[simpleCell.position.toString()] = simpleCell.owner;
 			// console.log({
@@ -447,7 +480,8 @@ export class StratagemsContract {
 				color: cell.color,
 				life: cell.life,
 				delta: cell.delta,
-				enemymask: cell.enemymask,
+				enemyMap: cell.enemyMap,
+				distribution: 0,
 			};
 
 			// console.log({
@@ -458,9 +492,9 @@ export class StratagemsContract {
 		}
 	}
 
-	updateNeighbosrDelta(center: bigint, color: Color, epoch: number): {delta: number; enemymask: number} {
+	updateNeighbosrDelta(center: bigint, color: Color, epoch: number): {delta: number; enemyMap: number} {
 		const {x, y} = bigIntIDToXY(center);
-		const data = {delta: 0, enemymask: 0};
+		const data = {delta: 0, enemyMap: 0};
 
 		{
 			const upPosition = xyToBigIntID(x, y - 1);
@@ -468,7 +502,7 @@ export class StratagemsContract {
 			if (cell.color != Color.None) {
 				const enemyOrFriend = this.isEnemyOrFriend(color, cell.color);
 				if (enemyOrFriend < 0) {
-					data.enemymask = data.enemymask | 1;
+					data.enemyMap = data.enemyMap | 1;
 				}
 				data.delta += enemyOrFriend;
 				this.updateCellFromNeighbor(upPosition, cell, cell.life, epoch, 2, Color.None, color);
@@ -480,7 +514,7 @@ export class StratagemsContract {
 			if (cell.color != Color.None) {
 				const enemyOrFriend = this.isEnemyOrFriend(color, cell.color);
 				if (enemyOrFriend < 0) {
-					data.enemymask = data.enemymask | 2;
+					data.enemyMap = data.enemyMap | 2;
 				}
 				data.delta += enemyOrFriend;
 				this.updateCellFromNeighbor(leftPosition, cell, cell.life, epoch, 3, Color.None, color);
@@ -493,7 +527,7 @@ export class StratagemsContract {
 			if (cell.color != Color.None) {
 				const enemyOrFriend = this.isEnemyOrFriend(color, cell.color);
 				if (enemyOrFriend < 0) {
-					data.enemymask = data.enemymask | 4;
+					data.enemyMap = data.enemyMap | 4;
 				}
 				data.delta += enemyOrFriend;
 				this.updateCellFromNeighbor(downPosition, cell, cell.life, epoch, 0, Color.None, color);
@@ -505,7 +539,7 @@ export class StratagemsContract {
 			if (cell.color != Color.None) {
 				const enemyOrFriend = this.isEnemyOrFriend(color, cell.color);
 				if (enemyOrFriend < 0) {
-					data.enemymask = data.enemymask | 8;
+					data.enemyMap = data.enemyMap | 8;
 				}
 				data.delta += enemyOrFriend;
 				this.updateCellFromNeighbor(rightPosition, cell, cell.life, epoch, 1, Color.None, color);

@@ -11,7 +11,7 @@ export type Cell = {
 	lastEpochUpdate?: number;
 	epochWhenTokenIsAdded?: number;
 	delta?: number;
-	enemymask?: number;
+	enemyMap?: number;
 };
 
 type TmpCell = Cell & {
@@ -313,7 +313,7 @@ export function fromContractFullCellToCell(
 			color: cell.color,
 			life: cell.life,
 			delta: cell.delta,
-			enemymask: cell.enemymask,
+			enemyMap: cell.enemyMap,
 			owner:
 				cell.owner == zeroAddress
 					? undefined
@@ -341,7 +341,7 @@ export function fromContractFullCellToCell(
 // 				y: 2,
 // 				color: Color.Red,
 // 				delta: 0,
-// 				enemymask: 0,
+// 				enemyMap: 0,
 // 				epochWhenTokenIsAdded: 1,
 // 				lastEpochUpdate: 1,
 // 				life: 1,
@@ -383,7 +383,7 @@ export function fromContractFullCellToCell(
 // 						y: 2,
 // 						color: Color.Red,
 // 						delta: 0,
-// 						enemymask: 0,
+// 						enemyMap: 0,
 // 						epochWhenTokenIsAdded: 1,
 // 						lastEpochUpdate: 1,
 // 						life: 1,
