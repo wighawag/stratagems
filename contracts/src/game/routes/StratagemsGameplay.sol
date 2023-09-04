@@ -188,8 +188,6 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 		if (commitment.epoch == 0) {
 			revert NothingToResolve();
 		}
-		console.log(commitment.epoch);
-		console.log(epoch);
 		if (commitment.epoch != epoch) {
 			revert InvalidEpoch();
 		}

@@ -306,12 +306,6 @@ export class StratagemsContract {
 	computeMove(player: `0x${string}`, epoch: number, move: ContractMove) {
 		const MAX_LIFE = this.MAX_LIFE;
 
-		const {x, y} = bigIntIDToXY(move.position);
-		const newPosition = xyToBigIntID(x, y);
-		if (move.position != newPosition) {
-			console.log({x, y, position: move.position, newPosition});
-		}
-
 		const currentState = this.getUpdatedCell(move.position, epoch);
 
 		if (move.color == Color.None) {
