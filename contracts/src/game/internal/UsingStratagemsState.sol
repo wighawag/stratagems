@@ -124,6 +124,7 @@ abstract contract UsingStratagemsState is
 		uint8 life,
 		uint24 epoch
 	) internal view returns (uint8 newLife, uint24 epochUsed) {
+		epochUsed = lastUpdate;
 		if (lastUpdate >= 1 && life > 0) {
 			uint256 epochDelta = epoch - lastUpdate;
 			if (epochDelta > 0) {

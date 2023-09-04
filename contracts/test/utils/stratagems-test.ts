@@ -1,7 +1,7 @@
 import {expect} from 'vitest';
 import './viem-matchers';
 
-import {parseGrid, renderGrid, Grid, Cell, bigIntIDToXY, StratagemsContract} from 'stratagems-common';
+import {parseGrid, renderGrid, Grid, Cell, bigIntIDToXY, StratagemsContract, xyToBigIntID} from 'stratagems-common';
 import {Data, createProcessor} from 'stratagems-indexer';
 import {createIndexerState} from 'ethereum-indexer-browser';
 
@@ -84,6 +84,10 @@ export function fromStateToGrid(env: GridEnv, state: Data, epoch: number): Grid 
 	// let minY = 0;
 	// let maxX = 0;
 	// let maxY = 0;
+
+	// console.log('FROM STATE TO GRID 3,1');
+	// console.log(state.cells[xyToBigIntID(3, 1).toString()]);
+
 	for (const positionString of Object.keys(state.cells)) {
 		const position = BigInt(positionString);
 		const cell = stratagemsContract.getUpdatedCell(position, epoch);
@@ -111,7 +115,7 @@ export function fromStateToGrid(env: GridEnv, state: Data, epoch: number): Grid 
 		gridCells.push(gridCell);
 
 		const epochDelta = epoch - cell.lastEpochUpdate;
-		if (epochDelta > 0) {
+		if (epochDelta > 0 && gridCell.life > 0) {
 			gridCell.life += gridCell.delta * epochDelta;
 			if (gridCell.life > 7) {
 				// TODO MAX_LIFE

@@ -88,7 +88,7 @@ export class StratagemsContract {
 
 		const data = {
 			newLife: life,
-			epochUsed: epoch,
+			epochUsed: lastUpdate,
 		};
 		if (lastUpdate >= 1 && life > 0) {
 			let epochDelta = epoch - lastUpdate;
@@ -222,6 +222,7 @@ export class StratagemsContract {
 		cell.life = newLife;
 		this.state.cells[position.toString()] = cell;
 		// console.log(`AFTER updateCellFromNeighbor `, cell);
+		// console.log(`AFTER updateCellFromNeighbor `, this.getUpdatedCell(position, epoch));
 		return due;
 	}
 
@@ -282,7 +283,7 @@ export class StratagemsContract {
 
 		{
 			const leftPosition = xyToBigIntID(x - 1, y);
-			const {enemyOrFriend, due} = this.updateCell(leftPosition, epoch, 2, oldColor, newColor);
+			const {enemyOrFriend, due} = this.updateCell(leftPosition, epoch, 3, oldColor, newColor);
 			if (enemyOrFriend < 0) {
 				data.newComputedEnemyMap = data.newComputedEnemyMap | 2;
 			}
@@ -295,7 +296,7 @@ export class StratagemsContract {
 
 		{
 			const downPosition = xyToBigIntID(x, y + 1);
-			const {enemyOrFriend, due} = this.updateCell(downPosition, epoch, 2, oldColor, newColor);
+			const {enemyOrFriend, due} = this.updateCell(downPosition, epoch, 0, oldColor, newColor);
 			if (enemyOrFriend < 0) {
 				data.newComputedEnemyMap = data.newComputedEnemyMap | 4;
 			}
@@ -308,7 +309,7 @@ export class StratagemsContract {
 
 		{
 			const rightPosition = xyToBigIntID(x + 1, y);
-			const {enemyOrFriend, due} = this.updateCell(rightPosition, epoch, 2, oldColor, newColor);
+			const {enemyOrFriend, due} = this.updateCell(rightPosition, epoch, 1, oldColor, newColor);
 			if (enemyOrFriend < 0) {
 				data.newComputedEnemyMap = data.newComputedEnemyMap | 8;
 			}
@@ -474,10 +475,13 @@ export class StratagemsContract {
 			if (effectiveDelta < 0 && cell.enemyMap == 0) {
 				effectiveDelta = 0;
 			}
-			const potentialLife = cell.life - effectiveDelta;
+			let potentialLife = cell.life - effectiveDelta;
+			if (potentialLife < 0) {
+				potentialLife = 0;
+			}
 			cell.life = potentialLife;
 
-			this.state.cells[simpleCell.position.toString()] = {
+			const newCell = {
 				lastEpochUpdate: epoch - 1,
 				epochWhenTokenIsAdded: epoch - 1,
 				color: cell.color,
@@ -486,6 +490,10 @@ export class StratagemsContract {
 				enemyMap: cell.enemyMap,
 				distribution: 0,
 			};
+
+			this.state.cells[simpleCell.position.toString()] = newCell;
+			// const {x, y} = bigIntIDToXY(simpleCell.position);
+			// console.log(`forceSimpleCell ${x}, ${y}`, newCell);
 
 			// console.log({
 			// 	FORCE: 'FORCE',
