@@ -74,5 +74,33 @@
 		},
 		"finality": 12,
 		"averageBblockTime": 5
+	},
+	"8453": {
+		"config": {
+			"rpcUrls": ["https://mainnet.base.org"],
+			"blockExplorerUrls": ["https://basescan.org"],
+			"chainName": "Base Mainnet",
+			"nativeCurrency": {
+				"name": "Ether",
+				"symbol": "ETH",
+				"decimals": 18
+			}
+		},
+		"finality": 12,
+		"averageBblockTime": 5
+	},
+	"84531": {
+		"config": {
+			"rpcUrls": ["https://goerli.base.org"],
+			"blockExplorerUrls": ["https://goerli.basescan.org"],
+			"chainName": "Base Goerli",
+			"nativeCurrency": {
+				"name": "Ether",
+				"symbol": "ETH",
+				"decimals": 18
+			}
+		},
+		"finality": 12,
+		"averageBblockTime": 5
 	}
 }
