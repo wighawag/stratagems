@@ -174,17 +174,6 @@ export class StratagemsContract {
 		return this.state.owners[position.toString()] || zeroAddress;
 	}
 
-	updateCellAsDead(position: bigint, cell: ContractCell, newLife: number, epochUsed: number) {
-		cell.life = newLife;
-		cell.lastEpochUpdate = epochUsed; // just been killed, we distribute right away? and we can track that
-		this.state.cells[position.toString()] = cell;
-		// console.log({
-		// 	DEAD: 'DEAD',
-		// 	position: bigIntIDToXY(position),
-		// 	cell,
-		// });
-	}
-
 	updateCellFromNeighbor(
 		position: bigint,
 		cell: ContractCell,
@@ -194,6 +183,8 @@ export class StratagemsContract {
 		oldColor: Color,
 		newColor: Color,
 	): number {
+		// const {x, y} = bigIntIDToXY(position);
+		// console.log(`updateCellFromNeighbor ${x},${y}`, cell);
 		let due = 0;
 		if (cell.life > 0 && newLife == 0) {
 			// we just died, we establish the distributionMap and counts
@@ -230,6 +221,7 @@ export class StratagemsContract {
 		cell.lastEpochUpdate = epoch;
 		cell.life = newLife;
 		this.state.cells[position.toString()] = cell;
+		// console.log(`AFTER updateCellFromNeighbor `, cell);
 		return due;
 	}
 
@@ -268,6 +260,7 @@ export class StratagemsContract {
 		distribution: number,
 	): {newComputedDelta: number; newComputedEnemyMap: number; numDue: number} {
 		const {x, y} = bigIntIDToXY(position);
+		// console.log(`updating neighbors of ${x},${y}`);
 		const data = {
 			newComputedDelta: 0,
 			newComputedEnemyMap: 0,
@@ -377,6 +370,10 @@ export class StratagemsContract {
 
 		const currentState = this.getUpdatedCell(move.position, epoch);
 
+		// const {x, y} = bigIntIDToXY(move.position);
+		// console.log(`COMPUTE_MOVE for ${x}, ${y}`, currentState);
+		// console.log(this.state.cells[move.position.toString()]);
+
 		// we might have distribution still to do
 		let distribution = currentState.distribution;
 		if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
@@ -441,6 +438,8 @@ export class StratagemsContract {
 		}
 
 		this.state.cells[move.position.toString()] = currentState;
+
+		// console.log(`AFTER`, currentState);
 	}
 
 	// ----------------------
@@ -471,7 +470,11 @@ export class StratagemsContract {
 
 			// we act as if the token were added in previous epochs
 			// this is so it does not affect the resolution phase
-			const potentialLife = cell.life - cell.delta;
+			let effectiveDelta = cell.delta != 0 ? cell.delta : -1;
+			if (effectiveDelta < 0 && cell.enemyMap == 0) {
+				effectiveDelta = 0;
+			}
+			const potentialLife = cell.life - effectiveDelta;
 			cell.life = potentialLife;
 
 			this.state.cells[simpleCell.position.toString()] = {
