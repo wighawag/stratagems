@@ -19,25 +19,9 @@
 			{name}
 		</h2>
 		<div class="!text-xl flex justify-center space-x-2">
-			<h3>
-				<span class="bg-gradient-to-br from-blue-500 to-cyan-300 bg-clip-text text-transparent box-decoration-clone"
-					>Build</span
-				>
-			</h3>
-			<h3>and</h3>
-			<h3>
-				<span class="bg-gradient-to-br from-red-500 to-yellow-500 bg-clip-text text-transparent box-decoration-clone"
-					>Deploy</span
-				>
-			</h3>
-			<h3>for</h3>
-			<h3>
-				<span class="bg-gradient-to-br from-pink-500 to-violet-500 bg-clip-text text-transparent box-decoration-clone"
-					>Eternity.</span
-				>
-			</h3>
+			<h3>The Infinite Boardgame</h3>
 		</div>
-		<p class="my-6 m-6 !text-3xl font-black">Welcome to your <span id="spin" />!</p>
+		<p class="my-6 m-6 !text-3xl font-black">Let's play!</p>
 		<div class="max-w-md mx-auto pt-1 mt-5 space-y-3 md:m-8 md:space-y-5">
 			<div class="space-y-5 sm:flex sm:justify-center sm:space-y-0 sm:space-x-3">
 				<a class="btn btn-primary btn-wide" href={route('/demo/')} aria-label="Try the Demo!">Demo</a>
