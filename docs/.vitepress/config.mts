@@ -4,8 +4,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const contracts = fs.readdirSync(path.join(__dirname, '../contracts')).map(filename => {
-  const name = path.basename(filename, '.md');
+const mainContract = 'Stratagems';
+
+const contractFilenames = fs.readdirSync(path.join(__dirname, '../contracts'));
+const contractNames = contractFilenames.map((filename) => path.basename(filename, '.md'));
+const firstContractName = contractNames.indexOf(mainContract) == -1 ? contractNames[0] : mainContract;
+
+const contracts = contractNames.sort((a,b) => a === firstContractName ? -1 : b === firstContractName ? 1 : (a > b ? 1: a <b ? -1 : 0))
+.map(name => {
   return {
     text: name, link: `/contracts/${name}`
   };
@@ -23,7 +29,7 @@ export default defineConfig({
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Guide', link: '/guide/getting-started' },
-      { text: 'Contracts', link: '/contracts/Gems' }
+      { text: 'Contracts', link: `/contracts/${firstContractName}` }
     ],
 
     sidebar: [
@@ -37,7 +43,7 @@ export default defineConfig({
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/wighawag/stratagems' }
+      { icon: 'github', link: 'https://github.com/wighawag/stratagems#readme' }
     ]
   }
 })
