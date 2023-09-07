@@ -246,7 +246,11 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 		Commitment storage commitment = _commitments[msg.sender];
 		(uint24 epoch, ) = _epoch();
 
-		if (commitment.epoch == 0 || commitment.epoch == epoch) {
+		if (commitment.epoch == 0) {
+			revert NothingToResolve();
+		}
+
+		if (commitment.epoch == epoch) {
 			revert CanStillResolve();
 		}
 

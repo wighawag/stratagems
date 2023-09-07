@@ -17,6 +17,10 @@
 			"path": "./web"
 		},
 		{
+			"name": "helper-services",
+			"path": "./helper-services"
+		},
+		{
 			"name": "docs",
 			"path": "./docs"
 		},
