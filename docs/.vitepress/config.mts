@@ -43,7 +43,18 @@ export default defineConfig({
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/wighawag/stratagems#readme' }
-    ]
+      { icon: 'github', link: 'https://github.com/wighawag/stratagems#readme' },
+      { icon: 'twitter', link: 'https://twitter.com/stratagems_eth' },
+      { icon: 'discord', link: 'https://discord.gg/Qb4gr2ekfr' },
+    ],
+
+    search: {
+      provider: 'local'
+    },
+
+    footer: {
+      message: 'Released under the GPL 3.0 License.',
+      copyright: 'Copyright © 2022-present Ronan Sandford'
+    }
   }
 })

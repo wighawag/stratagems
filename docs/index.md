@@ -26,3 +26,63 @@ features:
     details: The whole game is a smart contract
 ---
 
+
+<script setup>
+import { ref } from 'vue'
+
+const obj = ref({
+  type: 'Idle',
+  // working: false, TODO
+  message: ""
+})
+
+function acknowledge() {
+  obj.value.type = 'Idle';
+}
+async function subscribe(e) {
+  e.preventDefault();
+  console.log("subscribing...");
+  const form = document.getElementById('subscribeForm');;
+  const formData = new FormData(form);
+  const data = new URLSearchParams([...formData]);
+  console.log({ data: data.toString() });
+  try {
+      const result = await fetch(form.action, {
+          method: form.method,
+          body: data,
+      });
+      const json = await result.json();
+      console.log(json);
+      if (json.error) {
+          throw new Error(json.error);
+      }
+      obj.value = {type: 'Success', message : 'Subscribed'};
+      setTimeout(() => acknowledge(), 3000);
+  } catch (e) {
+    obj.value = { type: 'Error', message: e.message || '' + e };
+  }
+}
+
+</script>
+
+
+<div class="custom-layout">
+  <h1>Subscribe to Our <a href="https://etherplay.io" target="_blank" rel="noreferer noopener" style="text-decoration: underline;">Etherplay</a> mailing list for updates on Stratagems.</h1>
+  
+  <span v-if="obj.type=='Error'" style="color: #dc2626;">{{obj.message}}</span>
+  <span v-if="obj.type=='Success'" style="color: #16a34a;">{{obj.message}}</span>
+  <form id="subscribeForm" action="https://etherplay-newsletter-subscription.rim.workers.dev" method="POST">
+    <!-- TODO <label for="email" class="sr-only">Email address</label> -->
+    <input type="hidden" name="main_list" value="announcements@etherplay.io" />
+    <input type="hidden" name="sub_list" value="stratagems-announcements@etherplay.io"/>
+    <input
+      id="email"
+      name="email"
+      type="email"
+      placeholder="Enter your email"
+						/>
+    <button id="submit" class="btn" @click="subscribe">
+    Subscribe
+    </button>
+  </form>
+</div>
