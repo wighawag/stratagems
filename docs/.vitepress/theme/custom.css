@@ -9,16 +9,16 @@
   font: var(--vp-font-family-base);
   background-color: var(--vp-c-bg-soft);
   color: var(--vp-c-text-1);
-  padding: 1.5rem;
+  padding: 0rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   gap: 1rem;
-  min-height: 400px;
+  /* min-height: 400px; */
   max-width: 1152px;
-  margin: 6rem auto;
+  margin: 3rem auto;
   border-radius: 10px;
 }
 
@@ -29,14 +29,19 @@
   font-weight: 600;
 }
 
-#email {
+#email-address {
   font-size: 1rem;
-  margin: 1rem;
+  margin: 1rem 3rem 3rem 3rem;
   border-radius: 1rem;
   padding: 0.8rem;
   background-color: rgb(22, 22, 24);
 }
 
+
+#call-to-action {
+  font-size: 1.5rem;
+  margin: 2rem;
+}
 
 
 .custom-layout .btn {

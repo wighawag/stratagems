@@ -67,22 +67,32 @@ async function subscribe(e) {
 
 
 <div class="custom-layout">
-  <h1>Subscribe to Our <a href="https://etherplay.io" target="_blank" rel="noreferer noopener" style="text-decoration: underline;">Etherplay</a> mailing list for updates on Stratagems.</h1>
-  
-  <span v-if="obj.type=='Error'" style="color: #dc2626;">{{obj.message}}</span>
-  <span v-if="obj.type=='Success'" style="color: #16a34a;">{{obj.message}}</span>
-  <form id="subscribeForm" action="https://etherplay-newsletter-subscription.rim.workers.dev" method="POST">
-    <!-- TODO <label for="email" class="sr-only">Email address</label> -->
-    <input type="hidden" name="main_list" value="announcements@etherplay.io" />
-    <input type="hidden" name="sub_list" value="stratagems-announcements@etherplay.io"/>
-    <input
-      id="email"
-      name="email"
-      type="email"
-      placeholder="Enter your email"
+  <form
+					class="mt-1 max-w-sm"
+					action="https://tinyletter.com/stratagems"
+					method="post"
+					target="popupwindow"
+					onsubmit="window.open('https://tinyletter.com/stratagems', 'popupwindow', 'scrollbars=yes,width=800,height=600');return true"
+				>
+					<p id="call-to-action">
+						Subscribe for updates on Stratagems!
+					</p>
+					<div class="flex gap-x-4">
+						<!-- <label for="email-address" class="sr-only">Email address</label> -->
+						<input
+							id="email-address"
+							name="email"
+							type="email"
+							autocomplete="email"
+							required
+							placeholder="Enter your email"
 						/>
-    <button id="submit" class="btn" @click="subscribe">
-    Subscribe
-    </button>
-  </form>
+						<button
+              class="btn"
+              id="submit"
+							type="submit"
+							>Subscribe</button
+						>
+					</div>
+				</form>
 </div>
