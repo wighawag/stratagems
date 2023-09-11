@@ -150,8 +150,8 @@ importers:
   helper-services/fuzd:
     devDependencies:
       fuzd-cf-worker:
-        specifier: ^0.0.3
-        version: 0.0.3(typescript@5.1.6)
+        specifier: ^0.0.4
+        version: 0.0.4(typescript@5.1.6)
       wrangler:
         specifier: ^3.5.1
         version: 3.5.1
@@ -5403,8 +5403,8 @@ packages:
     resolution: {integrity: sha512-xckBUXyTIqT97tq2x2AMb+g163b5JFysYk0x4qxNFwbfQkmNZoiRHb6sPzI9/QV33WeuvVYBUIiD4NzNIyqaRQ==}
     dev: true
 
-  /fuzd-cf-worker@0.0.3(typescript@5.1.6):
-    resolution: {integrity: sha512-OTqXKfh+lhgSeyA0jj3JuxQOMB4AIWZsb2VbPQDQ9Z76TiVB8IDYsnIa+7iamA6pzf4s6Dw//1qFjCPf4qT6bQ==}
+  /fuzd-cf-worker@0.0.4(typescript@5.1.6):
+    resolution: {integrity: sha512-H80c+4p7lwQdcvYSa9w26bXz5CQFgpLVQrRn4VBClTq+k7Q3d/AH6RXm86tVPb2IHhQC9YgUiSxLAtG632AKOw==}
     dependencies:
       '@scure/bip32': 1.3.2
       '@scure/bip39': 1.2.1

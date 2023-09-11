@@ -6,6 +6,7 @@ import {initViemContracts} from 'web3-connection-viem';
 import {logs} from 'named-logs';
 import {initBalance} from '$lib/blockchain/state/balance';
 import {time} from '$lib/time';
+import {hashMessage, stringToHex} from 'viem';
 
 const logger = logs('stratagems');
 
@@ -35,6 +36,27 @@ const stores = init({
 			console.log({loading: '...'});
 			const chainId = state.network.chainId;
 			const address = state.address;
+
+			async function signMessage() {
+				const msg = stringToHex(
+					'Welcome to Stratagems, Please sign this message only on trusted frontend. This gives access to your local data that you are supposed to keep secret.',
+				);
+				const signature = await state.connection.provider
+					.request({
+						method: 'personal_sign',
+						params: [msg, address],
+					})
+					.catch((e: any) => {
+						account.rejectLoadingStep();
+					});
+				account.acceptLoadingStep(signature);
+			}
+			// setLoadingMessage('Please Sign The Authentication Message To Go Forward');
+
+			await waitForStep('WELCOME');
+			signMessage();
+			const signature = await waitForStep('SIGNING');
+			console.log({signature});
 			await accountData.load(address, chainId, state.network.genesisHash);
 		},
 		async unload() {

@@ -1,11 +1,11 @@
 {
     "name": "fuzd-service",
     "devDependencies": {
-        "fuzd-cf-worker": "^0.0.3",
+        "fuzd-cf-worker": "^0.0.4",
         "wrangler": "^3.5.1"
     },
     "scripts": {
-        "fuzd": "wrangler dev -c ./wrangler.toml",
+        "dev": "wrangler dev -c ./wrangler.toml",
         "wrangler": "wrangler"
     }
 }
