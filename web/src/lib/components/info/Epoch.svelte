@@ -10,7 +10,9 @@
 
 	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
 	async function nextPhase() {
-		await increaseContractTime($epochInfo.isActionPhase ? $epochInfo.timeLeftToCommit : $epochInfo.timeLeftToReveal);
+		const timeToSkip = $epochInfo.isActionPhase ? $epochInfo.timeLeftToCommit : $epochInfo.timeLeftToReveal;
+		console.log({timeToSkip: timeToText(timeToSkip)});
+		await increaseContractTime(timeToSkip);
 	}
 </script>
 

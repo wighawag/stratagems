@@ -18,7 +18,7 @@ export type ViewCell = ContractCell & {
 	localState?: 'pending' | 'planned';
 };
 
-export type ViewCellData = {next: ViewCell; future: ViewCell; currentPlayer: boolean};
+export type ViewCellData = {next: ViewCell; future: ViewCell; contract?: ContractCell; currentPlayer: boolean};
 
 export type ViewData = {
 	cells: {
@@ -38,6 +38,8 @@ function merge(
 ): ViewData {
 	const copyState = copy(state);
 	const stratagems = new StratagemsContract(copyState, 7);
+
+	console.log({epoch: epochState.epoch, isActionPhase: epochState.isActionPhase});
 
 	let hasCommitment = false;
 	if (offchainState.moves !== undefined) {
@@ -70,8 +72,8 @@ function merge(
 	for (const cellID of Object.keys(copyState.cells)) {
 		const {x, y} = bigIntIDToXY(BigInt(cellID));
 		const cell = copyState.cells[cellID];
-		const next = stratagems.getUpdatedCell(BigInt(cellID), epochState.epoch + 1);
-		const future = stratagems.getUpdatedCell(BigInt(cellID), epochState.epoch + 2);
+		const next = stratagems.getUpdatedCell(BigInt(cellID), epochState.epoch + 0);
+		const future = stratagems.getUpdatedCell(BigInt(cellID), epochState.epoch + 1);
 		// console.log({
 		// 	x,
 		// 	y,
@@ -82,6 +84,7 @@ function merge(
 		const viewCell = {
 			next,
 			future,
+			contract: state.cells[cellID],
 			currentPlayer: copyState.owners[cellID].toLowerCase() === account.address?.toLowerCase(),
 		};
 		viewState.cells[xyToXYID(x, y)] = viewCell;

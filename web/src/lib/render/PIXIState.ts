@@ -48,6 +48,16 @@ export class PIXIState {
 			sprite.y = 0.08;
 			sprite.width = sprite.height = 0.84;
 
+			// if (cell.contract) {
+			// for (let i = 0; i < cell.contract.life; i++) {
+			// 	const child = sprite.addChild(new Sprite(Texture.WHITE));
+			// 	const offset = 0.2 * Texture.WHITE.width;
+			// 	const margin = 0.3 * Texture.WHITE.width;
+			// 	child.tint = 0x000000;
+			// 	child.width = child.height = Texture.WHITE.width / 5;
+			// 	child.position.set(offset + margin * (i % 3), offset + margin * Math.floor(i / 3));
+			// }
+			// } else {
 			for (let i = 0; i < cell.next.life; i++) {
 				const child = sprite.addChild(new Sprite(Texture.WHITE));
 				const offset = 0.2 * Texture.WHITE.width;
@@ -75,6 +85,7 @@ export class PIXIState {
 					child.position.set(offset + margin * (i % 3), offset + margin * Math.floor(i / 3));
 				}
 			}
+			// }
 
 			elem.last = {
 				nextLife: cell.next.life,
