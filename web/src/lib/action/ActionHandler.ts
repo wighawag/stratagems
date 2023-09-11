@@ -28,9 +28,13 @@ export class ActionHandler {
 				console.log(`remove cell at ${x}, ${y}, ${player}`);
 				accountData.offchainState.removeMove(x, y);
 			} else {
-				const color = ((currentMove.color + 1) % 6) as Color;
-				console.log(`switch color ${color} cell at ${x}, ${y}, ${player}`);
-				accountData.offchainState.addMove({x, y, color, player});
+				const color = ((currentMove.color + 1) % 6) as Color; // 7 to put black
+				if (color == Color.None) {
+					accountData.offchainState.removeMove(x, y);
+				} else {
+					console.log(`switch color ${color} cell at ${x}, ${y}, ${player}`);
+					accountData.offchainState.addMove({x, y, color, player});
+				}
 			}
 		} else {
 			if (

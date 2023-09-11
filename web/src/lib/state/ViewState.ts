@@ -26,6 +26,7 @@ export type ViewData = {
 	};
 	owners: {[pos: string]: `0x${string}`};
 	hasCommitmentToResolve?: {epoch: number; commit?: {hash: `0x${string}`; tx: StratagemsTransaction}};
+	hasCommitment: boolean;
 };
 
 function merge(
@@ -38,6 +39,7 @@ function merge(
 	const copyState = copy(state);
 	const stratagems = new StratagemsContract(copyState, 7);
 
+	let hasCommitment = false;
 	if (offchainState.moves !== undefined) {
 		for (const move of offchainState.moves) {
 			stratagems.computeMove(account.address as `0x${string}`, epochState.epoch + 1, localMoveToContractMove(move));
@@ -50,6 +52,7 @@ function merge(
 				if (metadata.type === 'commit') {
 					// TODO
 					if (metadata.epoch == epochState.epoch && epochState.isActionPhase) {
+						hasCommitment = true;
 						for (const move of metadata.localMoves) {
 							stratagems.computeMove(
 								account.address as `0x${string}`,
@@ -63,7 +66,7 @@ function merge(
 		}
 	}
 
-	const viewState: ViewData = {cells: {}, owners: {}, hasCommitmentToResolve: undefined};
+	const viewState: ViewData = {cells: {}, owners: {}, hasCommitmentToResolve: undefined, hasCommitment};
 	for (const cellID of Object.keys(copyState.cells)) {
 		const {x, y} = bigIntIDToXY(BigInt(cellID));
 		const cell = copyState.cells[cellID];

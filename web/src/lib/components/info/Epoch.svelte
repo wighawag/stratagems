@@ -1,7 +1,17 @@
 <script lang="ts">
 	import {epoch, epochInfo} from '$lib/blockchain/state/Epoch';
+	import {contractsInfos} from '$lib/config';
+	import {viewState} from '$lib/state/ViewState';
 	import {time} from '$lib/time';
+	import {increaseContractTime} from '$lib/utils/debug';
 	import {timeToText} from '$lib/utils/time';
+	import {account} from '$lib/web3';
+	import Executor from '../utilities/Executor.svelte';
+
+	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
+	async function nextPhase() {
+		await increaseContractTime($epochInfo.isActionPhase ? $epochInfo.timeLeftToCommit : $epochInfo.timeLeftToReveal);
+	}
 </script>
 
 {#if !$time.synced}
@@ -14,7 +24,7 @@
 				d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
 			/></svg
 		>
-		<p>Syncing ...</p>
+		<p>Syncing ..., you might need to connect your wallet.</p>
 	</div>
 {:else if $epochInfo.timeLeftToReveal > 0}
 	<div class="alert alert-warning absolute">
@@ -42,6 +52,19 @@
 			</svg>
 		</p>
 		<p>{timeToText($epochInfo.timeLeftToReveal)} left</p>
+		{#if isAdmin}<Executor btn="btn-sm" func={() => nextPhase()}>Skip To New Round</Executor>{/if}
+	</div>
+{:else}
+	<div class="alert alert-info absolute">
+		{#if $viewState.hasCommitment}
+			<p>Please wait until commit phase is over, or replace your moves</p>
+		{:else}
+			<p>Please make your move.</p>
+		{/if}
+
+		<p>{timeToText($epochInfo.timeLeftToCommit)} left</p>
+
+		{#if isAdmin}<Executor btn="btn-sm" func={() => nextPhase()}>Skip to Reveal Phase</Executor>{/if}
 	</div>
 {/if}
 
