@@ -44,7 +44,7 @@ function merge(
 	let hasCommitment = false;
 	if (offchainState.moves !== undefined) {
 		for (const move of offchainState.moves) {
-			stratagems.computeMove(account.address as `0x${string}`, epochState.epoch + 1, localMoveToContractMove(move));
+			stratagems.computeMove(account.address as `0x${string}`, epochState.epoch, localMoveToContractMove(move));
 		}
 	} else {
 		for (const txHash of Object.keys(onchainActions)) {
