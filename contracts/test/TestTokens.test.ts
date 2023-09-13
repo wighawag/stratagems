@@ -111,5 +111,28 @@ describe('TestTokens', function () {
 			const allowance = await TestTokens.read.allowance([owner, spender]);
 			expect(allowance).to.equal(value);
 		});
+
+		it('TestTokens permit fails with viem hexToSignature as it shorten remove leading zeroes', async function () {
+			const {TestTokens, TestTokensPermitSigner, tokensBeneficiary, otherAccounts} = await loadFixture(
+				deployStratagemsWithDefaultConfig,
+			);
+			const owner = tokensBeneficiary;
+			const spender = otherAccounts[2];
+			const value = parseEther('7');
+			const nonce = 0;
+			const deadline = 0;
+			const signature = await TestTokensPermitSigner.sign(tokensBeneficiary, {
+				owner,
+				spender,
+				value: value.toString(),
+				nonce,
+				deadline,
+			});
+			const {v, r, s} = hexToSignature(signature);
+
+			await expect(
+				TestTokens.write.permit([owner, spender, value, BigInt(deadline), Number(v), r, s], {account: spender}),
+			).rejects.toThrow();
+		});
 	});
 });
