@@ -54,8 +54,7 @@
 	<div class="flex-1">
 		<NavTabs
 			pages={[
-				{pathname: '/', title: 'Home'},
-				{pathname: '/demo/', title: 'Demo'},
+				{pathname: '/', title: 'Play'},
 				{pathname: '/debug/', title: 'Debug'},
 				{pathname: '/about/', title: 'About'},
 			]}

@@ -1,13 +1,9 @@
-<script lang="ts">
-	import CopyBlock from '$lib/components/utilities/CopyBlock.svelte';
-
-	import {name} from 'web-config';
-</script>
-
 <section class="py-2 px-4 text-center">
 	<div class="max-w-auto md:max-w-lg mx-auto">
-		<p class="!text-2xl flex justify-center space-x-2 font-black my-8">
-			{name} is a permission-less and persistent board game where a set of colors compete for the control of the board.
+		<p class="flex justify-center space-x-2 font-black my-8">
+			Stratagems is an independent universe forever running where players strategicaly place colors on an infinite grid
+			using ETH with the hope to collect more of it from the other players. Alliances and betrayal are part of the
+			arsenal as the colors mix and shift.
 		</p>
 	</div>
 
