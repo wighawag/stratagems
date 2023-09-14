@@ -1,8 +1,13 @@
 :root {
-    --vp-c-brand: #646cff;
-    --vp-c-brand-light: #747bff;
-  }
+  --vp-c-brand-darker: #86198f;
+  --vp-c-brand-dark: #a21caf;
+  --vp-c-brand: #c026d3;
+  --vp-c-brand-light: #d946ef;
+  --vp-c-brand-lighter: #e879f9;
+  --vp-c-brand-lightest: #f5d0fe;
 
+  --vp-c-brand-dimm: rgba(100, 108, 255, 0.08);
+}
 
   /* Custom Stlye */
 .custom-layout {
