@@ -2004,5 +2004,20 @@
     "hash": "0x166317a721a5396c6775e747e1966601a59850f50c2ee823c20bbcb6d786f6a3",
     "nonce": "0x8c",
     "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
+  },
+  "linkedData": {
+    "tokens": "0x4c78783faac7636c0d55605ae5bd1d6b9a62f496",
+    "numTokensPerGems": "1000000000000000000n",
+    "burnAddress": "0xDEADDEADDEADDEADDEADDEADDEADDEADDEADDEAD",
+    "startTime": 0,
+    "commitPhaseDuration": "82800n",
+    "resolutionPhaseDuration": "3600n",
+    "maxLife": 7,
+    "currency": {
+      "symbol": "TOKEN",
+      "name": "Tokens",
+      "decimals": "18n"
+    },
+    "admin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
   }
 }
