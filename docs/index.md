@@ -20,7 +20,7 @@ hero:
       link: /contracts/Gems
     - theme: alt
       text: Play Test
-      link: https://test.stratagems.world
+      link: https://betallion.com/stratagems/join/tKbn9Mph
 
 features:
   - title: Permission-less
