@@ -1,11 +1,12 @@
 <script lang="ts">
 	import {epoch, epochInfo} from '$lib/blockchain/state/Epoch';
-	import {contractsInfos} from '$lib/config';
+	import {contractsInfos, initialContractsInfos} from '$lib/config';
 	import {viewState} from '$lib/state/ViewState';
 	import {time} from '$lib/time';
 	import {increaseContractTime} from '$lib/utils/debug';
 	import {timeToText} from '$lib/utils/time';
-	import {account} from '$lib/web3';
+	import {account, balance, contracts} from '$lib/web3';
+	import {parseEther} from 'viem';
 	import Executor from '../utilities/Executor.svelte';
 
 	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
@@ -13,6 +14,15 @@
 		const timeToSkip = $epochInfo.isActionPhase ? $epochInfo.timeLeftToCommit : $epochInfo.timeLeftToReveal;
 		console.log({timeToSkip: timeToText(timeToSkip)});
 		await increaseContractTime(timeToSkip);
+	}
+
+	const isSepolia = (initialContractsInfos.chainId as any) === '11155111';
+
+	async function topupToken() {
+		await contracts.execute(async ({contracts, account}) => {
+			const contract = contracts.TestTokens;
+			await contract.write.topup({account: account.address, value: parseEther('0.01')});
+		});
 	}
 </script>
 
@@ -65,6 +75,12 @@
 		{/if}
 
 		<p>{timeToText($epochInfo.timeLeftToCommit)} left</p>
+
+		{#if isSepolia && $balance.state === 'Loaded' && $balance.nativeBalance < parseEther('0.001')}
+			<a href="https://sepoliafaucet.com/" target="_blank" rel="noopener noreferrer ">Request test ETH</a>
+		{:else if $balance.tokenBalance === 0n}
+			<Executor btn="btn-sm" func={() => topupToken()}>Get Test token</Executor>
+		{/if}
 
 		{#if isAdmin}<Executor btn="btn-sm" func={() => nextPhase()}>Skip to Reveal Phase</Executor>{/if}
 	</div>

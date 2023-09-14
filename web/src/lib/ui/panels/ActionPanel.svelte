@@ -54,7 +54,7 @@
 		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
 	);
 
-	$: currentBalance = $balance.balance;
+	$: currentBalance = $balance.tokenBalance;
 	$: currentBalnceString = formatUnits(
 		currentBalance,
 		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
