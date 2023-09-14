@@ -5,7 +5,7 @@ layout: home
 hero:
   name: "Stratagems"
   text: "The Genesis of a New World"
-  tagline: Stratagems is an independent universe forever running where players strategicaly place colors on an infinite grid using ETH with the hope to collect more of it from the other players. Alliances and betrayal are part of the arsenal as the colors mix and shift.
+  tagline: "Stratagems is an independent universe forever running where players strategicaly place colors on an infinite grid using ETH with the hope to collect more of it from the other players. Alliances and betrayal are part of the arsenal as the colors mix and shift."
   # text: "The Genesis Of A New World"
   # tagline: Stratagems is an independent universe forever running where players act as gods and compete by deploying new lands and units in the world's endless sea. Alliances and betrayal are part of the arsenal as the population under their control fight for domination.
   image:
