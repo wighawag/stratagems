@@ -6,7 +6,7 @@ But the game does not stop there. Stratagems is a world being created by each pl
 
 # How to play ?
 
-Right now, we are play-testing the game at https://test.stratagems.world 
+Right now, we are play-testing the game using [Betallion](https://betallion.com/stratagems/join/tKbn9Mph) to gather feedback. Feel free to join in.
 
 The interface is in constant evolution so the current guide might be out of date at short notice, but as it stand, the game work as follow:
 
