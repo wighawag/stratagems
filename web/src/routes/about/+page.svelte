@@ -10,6 +10,7 @@
 	<div class="pt-3 pb-4">
 		<p class="mt-6 text-base-300">
 			Find out more on
+			<a class="underline" href="https://stratagems.world" target="_blank" rel="noreferrer">our website</a> or on
 			<a class="underline" href="https://github.com/wighawag/stratagems#readme" target="_blank" rel="noreferrer"
 				>github</a
 			>
