@@ -1,4 +1,30 @@
-# basic rules
+# Introduction
+
+Stratagems is at its core a social game of coordination. It takes place on an infinite grid where cells of different colors decide the fate of the game world. Each day players stake a small amount of ETH for each cell they want to own. The next day they discover whether their stratagy was wise. The social elements quickly comes into play as who knows the other's moves get an advantages over those we do not.
+
+But the game does not stop there. Stratagems is a world being created by each player's action and new mechanics can be added on top, giving infinite possibilities to its inhabitants.
+
+# How to play ?
+
+Right now, we are play-testing the game at https://test.stratagems.world 
+
+The interface is in constant evolution so the current guide might be out of date at short notice, but as it stand, the game work as follow:
+
+The game has 2 phases: Commit and Reveal.
+
+The commit phase last 23h and the reveal phase, 1 hour only.
+
+> Currently for the test, the time will be accelerated to accomodate a more synchronous and fast gameplay among the participants.
+
+Player needs to own some Test Tokens (Join our [discord](https://discord.gg/Qb4gr2ekfr) for this)
+
+Once they get some, they can place color on the board by depositing 1 token on each cell they want to place. They pick the color by clicking on the cell.
+
+Once you are happy with your moves, you can commit and wait for the reveal phase, which will then notify you to reveal your previous move.
+
+if you missed on the resolution, your token get burnt.
+
+# The Rules
 
 Stratagems takes place on an infinite grid. Actually it is bounded to some high mumber but in practise this does not matter.
 
@@ -39,9 +65,6 @@ Furthermore, the deposited token on that cell is distributed to all the neighbor
 When life reaches 7 life, the cell reaches its ultimate state and the owner of the cell can withdraw it to get back the deposit.
 
 
-# The web Interface
-
-Please come back later for more !
-
 
 # The Contract Interface
+

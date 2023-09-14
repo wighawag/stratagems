@@ -4,8 +4,10 @@ layout: home
 
 hero:
   name: "Stratagems"
-  text: "The Infinite Board Game"
-  tagline: Stratagems is a persistent and permission-less game where players use a specific set of colors to compete for the control of the board. Alliances and betrayal are part of the arsenal as colors mix and shift on the board.
+  text: "The Genesis Of A New World"
+  tagline: Stratagems is an independent universe forever running where players strategicaly place colors on an infinite grid using ETH with the hope to collect more of it from the other players. Alliances and betrayal are part of the arsenal as the colors mix and shift.
+  # text: "The Genesis Of A New World"
+  # tagline: Stratagems is an independent universe forever running where players act as gods and compete by deploying new lands and units in the world's endless sea. Alliances and betrayal are part of the arsenal as the population under their control fight for domination.
   image:
     src: /five-gems.svg
     alt: Stratagems Logo
@@ -16,14 +18,17 @@ hero:
     - theme: alt
       text: Contracts
       link: /contracts/Gems
+    - theme: alt
+      text: Play Test
+      link: https://test.stratagems.world
 
 features:
   - title: Permission-less
     details: Any player can join at any time.
   - title: Persistent
     details: The game never ends
-  - title: Interoperable
-    details: The whole game is a smart contract
+  - title: Composable
+    details: New Games are being built on top.
 ---
 
 

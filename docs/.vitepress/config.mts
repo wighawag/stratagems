@@ -30,6 +30,7 @@ export default defineConfig({
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Guide', link: '/guide/getting-started' },
+      { text: 'Extend', link: `/guide/extending-the-world` },
       { text: 'Contracts', link: `/contracts/${firstContractName}` }
     ],
 
@@ -37,7 +38,8 @@ export default defineConfig({
       {
         text: 'Documentation',
         items: [
-          { text: 'Guide', link: '/guide/getting-started' },
+          { text: 'Getting Started', link: '/guide/getting-started' },
+          { text: 'Extending The World', link: `/guide/extending-the-world` },
           { text: 'Contracts', items: contracts}
         ]
       }
