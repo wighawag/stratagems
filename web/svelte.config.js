@@ -1,7 +1,18 @@
 import preprocess from 'svelte-preprocess';
 import adapter from '@sveltejs/adapter-static';
 import {vitePreprocess} from '@sveltejs/kit/vite';
-import {getVersion} from './version.js';
+
+import {execSync} from 'child_process';
+
+export function getVersion() {
+	try {
+		return execSync('git rev-parse HEAD').toString().trim();
+	} catch {
+		const timestamp = Date.now().toString();
+		console.error(`could not get commit-hash to set a version id, falling back on timestamp ${timestamp}`);
+		return timestamp;
+	}
+}
 
 const VERSION = getVersion();
 
