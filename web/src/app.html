@@ -45,6 +45,20 @@
 		})();
 		</script>
 
+		<script>
+			window.SENTRY_RELEASE = {
+				id: '__SENTRY_RELEASE__',
+			};
+		</script>
+		<script src="%sveltekit.assets%/sentry.js" crossorigin="anonymous"></script>
+		<script>
+			Sentry.onLoad(function () {
+				Sentry.init({
+					tunnel: 'https://sentry-tunnel.rim.workers.dev/tunnel',
+				});
+			});
+		</script>
+
 		%sveltekit.head%
 		<!-- ensure theme is considered right away, no flash -->
 		<!-- <script>
