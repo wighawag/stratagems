@@ -158,6 +158,15 @@ importers:
 
   helper-services/remote-indexer: {}
 
+  helper-services/secp256k1-db:
+    devDependencies:
+      secp256k1-db:
+        specifier: ^0.0.1
+        version: 0.0.1
+      wrangler:
+        specifier: ^3.5.1
+        version: 3.5.1
+
   indexer:
     dependencies:
       ethereum-indexer-js-processor:
@@ -9282,6 +9291,12 @@ packages:
   /search-insights@2.7.0:
     resolution: {integrity: sha512-GLbVaGgzYEKMvuJbHRhLi1qoBFnjXZGZ6l4LxOYPCp4lI2jDRB3jPU9/XNhMwv6kvnA9slTreq6pvK+b3o3aqg==}
     engines: {node: '>=8.16.0'}
+    dev: true
+
+  /secp256k1-db@0.0.1:
+    resolution: {integrity: sha512-dckzfUEbf9EiXNSh6aSw6n5Ardh91r3mN23KK69eQYM4PnMAy8M5m0QIjgd7h9LmYXnZQl1seGCUjNWobgTxtg==}
+    dependencies:
+      '@ethersproject/wallet': 5.7.0
     dev: true
 
   /secp256k1@4.0.3:
