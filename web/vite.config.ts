@@ -1,7 +1,7 @@
 import {sentryVitePlugin} from '@sentry/vite-plugin';
 import {sveltekit} from '@sveltejs/kit/vite';
 import {defineConfig} from 'vite';
-import {getReleaseID} from './release.js';
+import {getVersion} from './version.js';
 
 export default defineConfig({
 	plugins: [
@@ -12,7 +12,7 @@ export default defineConfig({
 		}),
 	],
 	define: {
-		__SENTRY_RELEASE__: getReleaseID(),
+		__SENTRY_RELEASE__: getVersion(),
 	},
 	build: {
 		minify: false,

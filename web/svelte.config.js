@@ -1,9 +1,9 @@
 import preprocess from 'svelte-preprocess';
 import adapter from '@sveltejs/adapter-static';
 import {vitePreprocess} from '@sveltejs/kit/vite';
-import {getReleaseID} from './release.js';
+import {getVersion} from './version.js';
 
-const VERSION = getReleaseID();
+const VERSION = getVersion();
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {

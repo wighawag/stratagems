@@ -1,6 +1,6 @@
 import {execSync} from 'child_process';
 
-export function getReleaseID() {
+export function getVersion() {
 	try {
 		return execSync('git rev-parse HEAD').toString().trim();
 	} catch {
