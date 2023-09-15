@@ -52,11 +52,13 @@
 		</script>
 		<script src="%sveltekit.assets%/sentry.js" crossorigin="anonymous"></script>
 		<script>
-			Sentry.onLoad(function () {
-				Sentry.init({
-					tunnel: 'https://sentry-tunnel.rim.workers.dev/tunnel',
+			if (typeof Sentry !== 'undefined') {
+				Sentry.onLoad(function () {
+					Sentry.init({
+						tunnel: 'https://sentry-tunnel.rim.workers.dev/tunnel',
+					});
 				});
-			});
+			}
 		</script>
 
 		%sveltekit.head%
