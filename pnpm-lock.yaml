@@ -156,7 +156,14 @@ importers:
         specifier: ^3.5.1
         version: 3.5.1
 
-  helper-services/remote-indexer: {}
+  helper-services/remote-indexer:
+    devDependencies:
+      ethereum-indexer-server:
+        specifier: ^0.6.9
+        version: 0.6.9(typescript@5.1.6)
+      stratagems-indexer:
+        specifier: workspace:*
+        version: link:../../indexer
 
   helper-services/secp256k1-db:
     devDependencies:

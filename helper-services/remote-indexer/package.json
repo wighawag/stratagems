@@ -1,7 +1,10 @@
 {
     "name": "remote-indexer-service",
-    "devDependencies": {},
+    "devDependencies": {
+        "ethereum-indexer-server": "^0.6.9",
+        "stratagems-indexer": "workspace:*"
+    },
     "scripts": {
-        "dev": "echo TODO"
+        "dev": "eis -p ./node_modules/stratagems-indexer/dist/index.cjs -d ../../contracts/deployments/localhost -n http://127.0.0.1:8545"
     }
 }
