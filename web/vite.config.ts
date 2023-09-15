@@ -7,12 +7,13 @@ export default defineConfig({
 	plugins: [
 		sveltekit(),
 		sentryVitePlugin({
+			telemetry: false,
 			org: 'etherplay',
 			project: 'stratagems',
 		}),
 	],
 	define: {
-		__SENTRY_RELEASE__: getVersion(),
+		__PUBLIC_SENTRY_RELEASE__: `'${getVersion()}'`,
 	},
 	build: {
 		minify: false,
