@@ -156,6 +156,8 @@ importers:
         specifier: ^3.5.1
         version: 3.5.1
 
+  helper-services/remote-indexer: {}
+
   indexer:
     dependencies:
       ethereum-indexer-js-processor:

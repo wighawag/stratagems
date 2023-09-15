@@ -1,0 +1,7 @@
+{
+    "name": "remote-indexer-service",
+    "devDependencies": {},
+    "scripts": {
+        "dev": "echo TODO"
+    }
+}
