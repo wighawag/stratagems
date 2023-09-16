@@ -99,8 +99,8 @@ importers:
         specifier: ^0.6.13
         version: 0.6.13(rocketh@0.6.13)
       rocketh-export:
-        specifier: ^0.6.13
-        version: 0.6.13(rocketh@0.6.13)
+        specifier: ^0.6.14
+        version: 0.6.14(rocketh@0.6.13)
       rocketh-signer:
         specifier: ^0.6.13
         version: 0.6.13(rocketh@0.6.13)
@@ -9099,8 +9099,8 @@ packages:
       - utf-8-validate
     dev: true
 
-  /rocketh-export@0.6.13(rocketh@0.6.13):
-    resolution: {integrity: sha512-bAxPjgou95Q3hLtR+40bfIzGi5crcwAmi6aFQFlF5RvWW3RC4G08lZu85kMfwaSzFskg6GkS9qQIB+wmIxaQ0A==}
+  /rocketh-export@0.6.14(rocketh@0.6.13):
+    resolution: {integrity: sha512-6CgnaBCKfPHp1IBQeky1dHu6LYByl40jUijhO4m3c29rpyXPE9JEiF9tr7lv8ItVo4zE/vIg+rLvHtjehW4pTA==}
     hasBin: true
     peerDependencies:
       rocketh: 0.6.13
