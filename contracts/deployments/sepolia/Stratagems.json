@@ -2006,6 +2006,7 @@
     "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
   },
   "receipt": {
+    "confirmations": 12,
     "blockHash": "0xad915a8fe47639257fdd76d0c0e80ce92da215858fece43f0fc3518495fabb8b",
     "blockNumber": "0x414c75",
     "transactionIndex": "0x4"
