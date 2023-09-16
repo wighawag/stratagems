@@ -193,5 +193,11 @@
     "hash": "0x166317a721a5396c6775e747e1966601a59850f50c2ee823c20bbcb6d786f6a3",
     "nonce": "0x8c",
     "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
+  },
+  "receipt": {
+    "confirmations": 12,
+    "blockHash": "0xad915a8fe47639257fdd76d0c0e80ce92da215858fece43f0fc3518495fabb8b",
+    "blockNumber": "0x414c75",
+    "transactionIndex": "0x4"
   }
 }

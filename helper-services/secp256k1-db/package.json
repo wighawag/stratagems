@@ -1,7 +1,7 @@
 {
-    "name": "fuzd-service",
+    "name": "secp256k1-db-service",
     "devDependencies": {
-        "fuzd-cf-worker": "^0.0.3",
+        "secp256k1-db": "^0.0.1",
         "wrangler": "^3.5.1"
     },
     "scripts": {
