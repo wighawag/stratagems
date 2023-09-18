@@ -37,27 +37,42 @@ const stores = init({
 			const chainId = state.network.chainId;
 			const address = state.address;
 
-			async function signMessage() {
-				const msg = stringToHex(
-					'Welcome to Stratagems, Please sign this message only on trusted frontend. This gives access to your local data that you are supposed to keep secret.',
-				);
-				const signature = await state.connection.provider
-					.request({
-						method: 'personal_sign',
-						params: [msg, address],
-					})
-					.catch((e: any) => {
-						account.rejectLoadingStep();
-					});
-				account.acceptLoadingStep(signature);
-			}
-			// setLoadingMessage('Please Sign The Authentication Message To Go Forward');
+			let signature: `0x${string}` | undefined;
+			const private_signature_key = `__private_signature__${address.toLowerCase()}`;
+			try {
+				const fromStorage = localStorage.getItem(private_signature_key);
+				if (fromStorage && fromStorage.startsWith('0x')) {
+					signature = fromStorage as `0x${string}`;
+				}
+			} catch (err) {}
 
-			await waitForStep('WELCOME');
-			signMessage();
-			const signature = await waitForStep('SIGNING');
-			console.log({signature});
-			await accountData.load(address, chainId, state.network.genesisHash);
+			if (!signature) {
+				async function signMessage() {
+					const msg = stringToHex(
+						'Welcome to Stratagems, Please sign this message only on trusted frontend. This gives access to your local data that you are supposed to keep secret.',
+					);
+					const signature = await state.connection.provider
+						.request({
+							method: 'personal_sign',
+							params: [msg, address],
+						})
+						.catch((e: any) => {
+							account.rejectLoadingStep();
+						});
+					account.acceptLoadingStep(signature);
+				}
+				// setLoadingMessage('Please Sign The Authentication Message To Go Forward');
+
+				const doNotAskAgainSignature = (await waitForStep('WELCOME')) as boolean;
+				signMessage();
+				signature = (await waitForStep('SIGNING')) as `0x${string}`;
+				if (doNotAskAgainSignature) {
+					try {
+						localStorage.setItem(private_signature_key, signature);
+					} catch (err) {}
+				}
+			}
+			await accountData.load({address, chainId, genesisHash: state.network.genesisHash, privateSignature: signature});
 		},
 		async unload() {
 			console.log({unloading: '...'});

@@ -92,8 +92,13 @@ export function initAccountData() {
 	const offchainState = writable<OffchainState>($offchainState);
 
 	let key: string | undefined;
-	async function load(address: `0x${string}`, chainId: string, genesisHash?: string) {
-		const data = await _load(address, chainId, genesisHash);
+	async function load(info: {
+		address: `0x${string}`;
+		chainId: string;
+		genesisHash?: string;
+		privateSignature: `0x${string}`;
+	}) {
+		const data = await _load(info.address, info.chainId, info.genesisHash);
 
 		if (data.offchainState) {
 			$offchainState.moves = data.offchainState.moves;
