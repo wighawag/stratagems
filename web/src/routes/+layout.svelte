@@ -55,19 +55,24 @@
 			(function () {
 				let params = new URLSearchParams(window.location.search);
 				const eruda_options = params.get('_d_eruda');
-				if (eruda_options !== "" && !eruda_options && localStorage.getItem('active-eruda') != 'true') return;
+				if (eruda_options !== '' && !eruda_options && localStorage.getItem('active-eruda') != 'true') return;
 				const _ = '';
 				let add_plugins = '';
 				let load_plugins = '';
 				if (eruda_options.length > 0) {
-					for (const plugin of eruda_options.split(",")) {
-						let [package, v] = plugin.split(":");
-						v = v || package.split('-').map((split, i) => i > 0 ? split[0].toUpperCase() + split.slice(1): split).join('');
+					for (const plugin of eruda_options.split(',')) {
+						let [package, v] = plugin.split(':');
+						v =
+							v ||
+							package
+								.split('-')
+								.map((split, i) => (i > 0 ? split[0].toUpperCase() + split.slice(1) : split))
+								.join('');
 						load_plugins += `document.write(\`<scr\${_}ipt src="//cdn.jsdelivr.net/npm/${package}"></scr\${_}ipt>\`);`;
 						add_plugins += `eruda.add(${v});`;
 					}
 				}
-			
+
 				document.write(`
 					<scr${_}ipt>
 						const _ = '';
@@ -80,7 +85,7 @@
 				`);
 			})();
 		</script>
-		
+
 		<script>
 			window.SENTRY_RELEASE = {
 				id: version,
@@ -97,7 +102,6 @@
 			}
 		</script>
 	{/if}
-	
 </svelte:head>
 
 <div class="relative top-0 z-50 navbar bg-base-100 h-16 p-1 border-b-2 border-primary">

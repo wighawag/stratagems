@@ -66,24 +66,34 @@
 		<p>{timeToText($epochInfo.timeLeftToReveal)} left</p>
 		{#if isAdmin}<Executor btn="btn-sm" func={() => nextPhase()}>Skip To New Round</Executor>{/if}
 	</div>
-{:else}
-	<div class="alert alert-info absolute">
-		{#if $viewState.hasCommitment}
-			<p>Please wait until commit phase is over, or replace your moves</p>
-		{:else}
-			<p>Please make your move.</p>
-		{/if}
-
-		<p>{timeToText($epochInfo.timeLeftToCommit)} left</p>
-
-		{#if isSepolia && $balance.state === 'Loaded' && $balance.nativeBalance < parseEther('0.001')}
-			<a href="https://sepoliafaucet.com/" target="_blank" rel="noopener noreferrer ">Request test ETH</a>
-		{:else if $balance.tokenBalance === 0n}
+{:else if $balance.state === 'Loaded'}
+	{#if $balance.nativeBalance < parseEther('0.001')}
+		<div class="alert alert-warning absolute">
+			{#if isSepolia}
+				<a href="https://sepoliafaucet.com/" target="_blank" rel="noopener noreferrer ">Request test ETH</a>
+			{:else}
+				You have not enough ETH. Please topup your wallet and come back to get some test tokens to play.
+			{/if}
+		</div>
+	{:else if $balance.tokenBalance === 0n}
+		<div class="alert alert-warning absolute">
 			<Executor btn="btn-sm" func={() => topupToken()}>Get Test token</Executor>
-		{/if}
+		</div>
+	{:else}
+		<div class="alert alert-info absolute">
+			{#if $viewState.hasCommitment}
+				<p>Please wait until commit phase is over, or replace your moves</p>
+			{:else}
+				<p>Please make your move.</p>
+			{/if}
 
-		{#if isAdmin}<Executor btn="btn-sm" func={() => nextPhase()}>Skip to Reveal Phase</Executor>{/if}
-	</div>
+			<p>{timeToText($epochInfo.timeLeftToCommit)} left</p>
+
+			{#if isAdmin}<Executor btn="btn-sm" func={() => nextPhase()}>Skip to Reveal Phase</Executor>{/if}
+		</div>
+	{/if}
+{:else}
+	<div class="alert alert-info absolute">please wait ...</div>
 {/if}
 
 <!-- <label for="epoch">Epoch</label>

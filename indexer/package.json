@@ -7,12 +7,12 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "ethereum-indexer-js-processor": "^0.6.7",
+    "ethereum-indexer-js-processor": "^0.6.8",
     "named-logs": "^0.2.2",
     "stratagems-common": "workspace:*"
   },
   "devDependencies": {
-    "ethereum-indexer-server": "^0.6.9",
+    "ethereum-indexer-server": "^0.6.10",
     "ldenv": "^0.3.7",
     "prettier": "^3.0.2",
     "tsup": "^7.2.0",
