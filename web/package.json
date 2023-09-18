@@ -29,6 +29,7 @@
     "wait-on": "^7.0.1"
   },
   "dependencies": {
+    "@metamask/onboarding": "^1.0.1",
     "@sentry/vite-plugin": "^2.7.1",
     "@types/lodash-es": "^4.17.8",
     "ethereum-indexer-browser": "^0.6.8",
@@ -44,7 +45,7 @@
     "theme-change": "^2.5.0",
     "twgl.js": "^5.5.3",
     "viem": "^1.7.0",
-    "web3-connection": "^0.1.5",
+    "web3-connection": "^0.1.6",
     "web3-connection-viem": "^0.0.1"
   },
   "scripts": {

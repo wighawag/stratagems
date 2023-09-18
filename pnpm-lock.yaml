@@ -210,6 +210,9 @@ importers:
 
   web:
     dependencies:
+      '@metamask/onboarding':
+        specifier: ^1.0.1
+        version: 1.0.1
       '@sentry/vite-plugin':
         specifier: ^2.7.1
         version: 2.7.1
@@ -256,8 +259,8 @@ importers:
         specifier: ^1.7.0
         version: 1.7.0(typescript@5.1.6)
       web3-connection:
-        specifier: ^0.1.5
-        version: 0.1.5(svelte@4.2.0)
+        specifier: ^0.1.6
+        version: 0.1.6(svelte@4.2.0)
       web3-connection-viem:
         specifier: ^0.0.1
         version: 0.0.1(viem@1.7.0)
@@ -1499,6 +1502,12 @@ packages:
       tweetnacl: 1.0.3
       tweetnacl-util: 0.15.1
     dev: true
+
+  /@metamask/onboarding@1.0.1:
+    resolution: {integrity: sha512-FqHhAsCI+Vacx2qa5mAFcWNSrTcVGMNjzxVgaX8ECSny/BJ9/vgXP9V7WF/8vb9DltPeQkxr+Fnfmm6GHfmdTQ==}
+    dependencies:
+      bowser: 2.11.0
+    dev: false
 
   /@noble/bls12-381@1.4.0:
     resolution: {integrity: sha512-mIYqC2jMX7Lcu1QtU/FFftMPDSXNCdlGex6BSf5nPojHjnzzBgs1klFWpB1R8YjqHmOO9xrCzF19f2c42+z3vg==}
@@ -3554,6 +3563,10 @@ packages:
   /boolbase@1.0.0:
     resolution: {integrity: sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==}
     dev: true
+
+  /bowser@2.11.0:
+    resolution: {integrity: sha512-AlcaJBi/pqqJBIQ8U9Mcpc9i8Aqxn88Skv5d+xBX006BY5u8N3mGLHa5Lgppa7L/HfwgwLgZ6NYs+Ag6uUmJRA==}
+    dev: false
 
   /brace-expansion@1.1.11:
     resolution: {integrity: sha512-iCuPHDFgrHX7H2vEI/5xpz07zSHB00TpugqhmYtVmMO6518mCuRMoOYFldEBl0g187ufozdaHgWKcYFb61qGiA==}
@@ -11076,8 +11089,8 @@ packages:
       viem: 1.7.0(typescript@5.1.6)
     dev: false
 
-  /web3-connection@0.1.5(svelte@4.2.0):
-    resolution: {integrity: sha512-Guzjd7TMYnS2LX7AkOqj6NbqST3gPk3PFFm9VBSayLexmeqjHa+BBkVlQNUdt/cYwwb67dqvpbbOffiTsRGWEQ==}
+  /web3-connection@0.1.6(svelte@4.2.0):
+    resolution: {integrity: sha512-Tg5cIT4TsNZWpnVnBZg3SEF8EX1zc0Gda/PIffz8t1vLwhlIhXr5sEZLthOVavqUFkcXVvzYGq00qGLSS2Ioog==}
     peerDependencies:
       svelte: ^4.0.0
     dependencies:

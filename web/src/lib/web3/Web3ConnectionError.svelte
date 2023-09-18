@@ -4,13 +4,89 @@
 	export let connection: typeof Connection;
 	import AlertWithSlot from '$lib/components/alert/AlertWithSlot.svelte';
 	import Alert from '$lib/components/alert/Alert.svelte';
+	import Modal from '$lib/components/modals/Modal.svelte';
+	import MetaMaskOnboarding from '@metamask/onboarding';
+	import {url} from '$lib/utils/path';
+	import {contractsInfos} from '$lib/config';
+	import {getNetworkConfig} from '$lib/blockchain/networks';
 
-	const builtin = connection.builtin;
+	let onboarding: MetaMaskOnboarding | undefined;
+	let interval: any | undefined;
+	function onboard() {
+		if (!onboarding) {
+			onboarding = new MetaMaskOnboarding();
+			onboarding.startOnboarding();
+			// TODO better ? handle it in web3-connection
+			// including onboarding improvement
+			localStorage.setItem('_web3w_previous_wallet_type', 'builtin');
+			async function check() {
+				if (MetaMaskOnboarding.isMetaMaskInstalled()) {
+					if (interval) {
+						clearInterval(interval);
+						interval = undefined;
+					}
+					if (onboarding) {
+						onboarding.stopOnboarding();
+						onboarding = undefined;
+					}
+					connection.select('builtin');
+				}
+			}
+			interval = setInterval(check, 1000);
+		}
+	}
+
+	function cancelOnboarding() {
+		if (interval) {
+			clearInterval(interval);
+			interval = undefined;
+		}
+		if (onboarding) {
+			onboarding.stopOnboarding();
+			onboarding = undefined;
+		}
+		connection.acknowledgeError();
+	}
 </script>
 
-{#if $connection.error}
-	<!-- TODO remove or retest-->
-	<!-- {#if $connection.error?.code == 7221}
+{#if onboarding}
+	<Modal>
+		<h3 class="font-bold text-lg">Installing Metamask...</h3>
+		<p class="py-4">Please Follow The Instructions</p>
+		<div class="modal-action justify-end">
+			<form method="dialog">
+				<!-- <button class="btn btn-primary" on:click={() => connection.select('builtin')}>I am done</button> -->
+				<button class="btn" on:click={() => cancelOnboarding()}>Cancel</button>
+			</form>
+		</div>
+	</Modal>
+{:else if $connection.error}
+	{#if $connection.error.id === 'NoBuiltinWallet'}
+		<Modal>
+			<h3 class="font-bold text-lg">No Web3 Wallet Found</h3>
+			<p class="py-4">Please Install A Wallet like Metamask</p>
+			<div class="modal-action justify-end">
+				<form method="dialog">
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
+					<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+					<img
+						class="h-12 inline-block"
+						src={url('/images/wallets/metamask-install.svg')}
+						alt="Metamask"
+						on:click={() => onboard()}
+					/>
+					<!-- if there is a button in form, it will close the modal -->
+					<button class="btn" on:click={() => connection.acknowledgeError()}>Cancel</button>
+				</form>
+			</div>
+			<!-- <h2>We could not detect any web3 wallet. Please install a wallet like Metamask</h2>
+			<div class="mt-4 modal-action justify-end">
+				<button class="btn btn-primary" on:click={() => onboard()}>OK</button>
+			</div> -->
+		</Modal>
+	{:else}
+		<!-- TODO remove or retest-->
+		<!-- {#if $connection.error?.code == 7221}
 		<AlertWithSlot onClose={connection.acknowledgeError}>
 			{#if $builtin.vendor === 'Metamask'}
 				<p>
@@ -29,8 +105,27 @@
 			{/if}
 		</AlertWithSlot>
 	{:else} -->
-	<Alert data={$connection.error} onClose={connection.acknowledgeError} />
-	<!-- {/if} -->
+		<Alert data={$connection.error} onClose={connection.acknowledgeError} />
+		<!-- {/if} -->
+	{/if}
+{:else if $network.notSupported}
+	<Modal>
+		<h3 class="font-bold text-lg">Wrong Network</h3>
+		<p class="py-4">Your Wallet is connected to the wrong network.</p>
+		<div class="modal-action justify-end">
+			<form method="dialog">
+				<button
+					class="btn"
+					on:click={() => network.switchTo($contractsInfos.chainId, getNetworkConfig($contractsInfos.chainId))}
+					>Switch</button
+				>
+			</form>
+		</div>
+		<!-- <h2>We could not detect any web3 wallet. Please install a wallet like Metamask</h2>
+	<div class="mt-4 modal-action justify-end">
+		<button class="btn btn-primary" on:click={() => onboard()}>OK</button>
+	</div> -->
+	</Modal>
 {:else if $network.genesisNotMatching}
 	<AlertWithSlot>
 		<p class="m-2">Chain reset detected! Metamask need to have its account reset!</p>
