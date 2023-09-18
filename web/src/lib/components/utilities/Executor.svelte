@@ -4,6 +4,8 @@
 	let className = '';
 	export {className as class};
 
+	export let btn = '';
+
 	export let func: (...args: any[]) => Promise<any>;
 	export let args: any[] = [];
 
@@ -13,10 +15,10 @@
 <div class={className}>
 	{#if $execution.error}
 		{$execution.error}
-		<button class={`btn btn-error m-2`} on:click={() => execution.acknowledgeError()}>Ok</button>
+		<button class={`btn ${btn} btn-error m-2`} on:click={() => execution.acknowledgeError()}>Ok</button>
 	{:else}
 		<button
-			class={`btn btn-secondary ${$execution.executing ? 'btn-disabled' : ''} m-2`}
+			class={`btn ${btn} btn-secondary ${$execution.executing ? 'btn-disabled' : ''} m-2`}
 			on:click={() => execution.execute(args)}><slot /></button
 		>
 	{/if}

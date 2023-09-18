@@ -13,5 +13,5 @@ export default execute(
 			args: [tokensBeneficiary, parseEther('1000000000')], // 18 decimal like ether
 		});
 	},
-	{tags: ['TestTokens', 'TestTokens_deploy']}
+	{tags: ['TestTokens', 'TestTokens_deploy']},
 );

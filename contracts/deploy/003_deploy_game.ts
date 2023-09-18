@@ -42,6 +42,8 @@ export default execute(
 
 		const numTokensPerGems = BigInt(10) ** decimals;
 
+		const admin = accounts.deployer;
+
 		const config = {
 			tokens: TestTokens.address,
 			numTokensPerGems,
@@ -78,7 +80,7 @@ export default execute(
 				args: [config],
 			},
 			{
-				owner: accounts.deployer,
+				owner: admin,
 				linkedData: {
 					...config,
 					currency: {
@@ -86,6 +88,7 @@ export default execute(
 						name,
 						decimals,
 					},
+					admin,
 				},
 			},
 		);

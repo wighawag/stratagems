@@ -17,10 +17,11 @@ const contracts = contractNames.sort((a,b) => a === firstContractName ? -1 : b =
   };
 });
 
+const isRunningOnVercel = !!process.env.VERCEL;
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  base: '/stratagems/',
+  base: isRunningOnVercel ? '/' : '/stratagems/',
   title: "Stratagems",
   description: "Stratagems is an infinite board game, a persistent and permission-less game where players use a specific set of colors to compete for the control of the board. Alliances and betrayal are part of the arsenal as colors mix and shift on the board.",
   themeConfig: {
@@ -28,7 +29,8 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Guide', link: '/guide/getting-started' },
+      { text: 'Getting Started', link: '/guide/getting-started' },
+      { text: 'Extend', link: `/guide/extending-the-world` },
       { text: 'Contracts', link: `/contracts/${firstContractName}` }
     ],
 
@@ -36,7 +38,8 @@ export default defineConfig({
       {
         text: 'Documentation',
         items: [
-          { text: 'Guide', link: '/guide/getting-started' },
+          { text: 'Getting Started', link: '/guide/getting-started' },
+          { text: 'Extending The World', link: `/guide/extending-the-world` },
           { text: 'Contracts', items: contracts}
         ]
       }

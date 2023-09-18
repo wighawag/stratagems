@@ -1,0 +1,12 @@
+{
+    "name": "remote-indexer-service",
+    "devDependencies": {
+        "ethereum-indexer-cli": "^0.6.6",
+        "ethereum-indexer-server": "^0.6.12",
+        "stratagems-indexer": "workspace:*"
+    },
+    "scripts": {
+        "dev": "eis -p stratagems-indexer -d ../../contracts/deployments/localhost -n http://127.0.0.1:8545",
+        "generate": "ei -f data.json -p stratagems-indexer -d ../../contracts/deployments/localhost -n http://127.0.0.1:8545"
+    }
+}

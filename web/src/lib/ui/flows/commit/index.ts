@@ -4,9 +4,9 @@ import {accountData, contracts} from '$lib/web3';
 import {initialContractsInfos} from '$lib/config';
 import PermitComponent from './PermitComponent.svelte';
 import {prepareCommitment, zeroBytes32} from 'stratagems-common';
-import {hexToSignature} from 'viem';
 import {localMoveToContractMove, type CommitMetadata} from '$lib/web3/account-data';
 import {epoch} from '$lib/blockchain/state/Epoch';
+import {hexToVRS} from '$lib/utils/eth/signatures';
 
 export type CommitState = {
 	permit?: {
@@ -90,7 +90,6 @@ export async function startCommit() {
 						method: 'eth_signTypedData_v4',
 						params: [account.address, JSON.stringify(permit)],
 					});
-
 					state.permit = {signature, amount: amountToAllow, nonce};
 
 					return state;
@@ -125,8 +124,14 @@ export async function startCommit() {
 						s: zeroBytes32,
 					};
 					if (state.permit) {
-						const {v, r, s} = hexToSignature(state.permit.signature);
-						permitStruct = {deadline: 0n, value: state.permit.amount, v: Number(v), r, s};
+						const {v, r, s} = hexToVRS(state.permit.signature);
+						permitStruct = {
+							deadline: 0n,
+							value: state.permit.amount,
+							v,
+							r,
+							s,
+						};
 					}
 					await contracts.Stratagems.write.makeCommitmentWithExtraReserve([hash, amountToAdd, permitStruct], {
 						account: account.address,

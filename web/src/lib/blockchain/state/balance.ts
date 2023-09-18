@@ -7,7 +7,8 @@ import type {AccountState, ConnectionState} from 'web3-connection';
 export type BalanceData = {
 	state: 'Idle' | 'Loaded';
 	fetching: boolean;
-	balance: bigint;
+	tokenBalance: bigint;
+	nativeBalance: bigint;
 	reserve: bigint;
 	account?: Address;
 };
@@ -23,7 +24,7 @@ export function initBalance({
 	account: Readable<AccountState<Address>>;
 	depositContract?: Address;
 }) {
-	const $state: BalanceData = {state: 'Idle', fetching: false, balance: 0n, reserve: 0n};
+	const $state: BalanceData = {state: 'Idle', fetching: false, tokenBalance: 0n, nativeBalance: 0n, reserve: 0n};
 
 	let cancelAccountSubscription: (() => void) | undefined = undefined;
 	let cancelConnectionSubscription: (() => void) | undefined = undefined;
@@ -71,11 +72,13 @@ export function initBalance({
 						],
 					});
 				}
-				let balance: string;
+				const nativeBalance = await provider.request({method: 'eth_getBalance', params: [account]});
+
+				let tokenBalance: string;
 				if (token === zeroAddress) {
-					balance = await provider.request({method: 'eth_getBalance', params: [account]});
+					tokenBalance = nativeBalance; // TODO do not do this ? or rename tokenBalance to gameBalance or something ?
 				} else {
-					balance = await provider.request({
+					tokenBalance = await provider.request({
 						method: 'eth_call',
 						params: [
 							{
@@ -95,7 +98,8 @@ export function initBalance({
 				if ($state.account !== account) {
 					return;
 				}
-				$state.balance = BigInt(balance);
+				$state.tokenBalance = BigInt(tokenBalance);
+				$state.nativeBalance = BigInt(nativeBalance);
 				$state.reserve = BigInt(reserve);
 				$state.state = 'Loaded';
 				$state.fetching = false;

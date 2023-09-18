@@ -1,7 +1,29 @@
 <script lang="ts">
 	import {epoch, epochInfo} from '$lib/blockchain/state/Epoch';
+	import {contractsInfos, initialContractsInfos} from '$lib/config';
+	import {viewState} from '$lib/state/ViewState';
 	import {time} from '$lib/time';
+	import {increaseContractTime} from '$lib/utils/debug';
 	import {timeToText} from '$lib/utils/time';
+	import {account, balance, contracts} from '$lib/web3';
+	import {parseEther} from 'viem';
+	import Executor from '../utilities/Executor.svelte';
+
+	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
+	async function nextPhase() {
+		const timeToSkip = $epochInfo.isActionPhase ? $epochInfo.timeLeftToCommit : $epochInfo.timeLeftToReveal;
+		console.log({timeToSkip: timeToText(timeToSkip)});
+		await increaseContractTime(timeToSkip);
+	}
+
+	const isSepolia = (initialContractsInfos.chainId as any) === '11155111';
+
+	async function topupToken() {
+		await contracts.execute(async ({contracts, account}) => {
+			const contract = contracts.TestTokens;
+			await contract.write.topup({account: account.address, value: parseEther('0.01')});
+		});
+	}
 </script>
 
 {#if !$time.synced}
@@ -14,7 +36,7 @@
 				d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
 			/></svg
 		>
-		<p>Syncing ...</p>
+		<p>Syncing ..., you might need to connect your wallet.</p>
 	</div>
 {:else if $epochInfo.timeLeftToReveal > 0}
 	<div class="alert alert-warning absolute">
@@ -42,7 +64,36 @@
 			</svg>
 		</p>
 		<p>{timeToText($epochInfo.timeLeftToReveal)} left</p>
+		{#if isAdmin}<Executor btn="btn-sm" func={() => nextPhase()}>Skip To New Round</Executor>{/if}
 	</div>
+{:else if $balance.state === 'Loaded'}
+	{#if $balance.nativeBalance < parseEther('0.001')}
+		<div class="alert alert-warning absolute">
+			{#if isSepolia}
+				<a href="https://sepoliafaucet.com/" target="_blank" rel="noopener noreferrer ">Request test ETH</a>
+			{:else}
+				You have not enough ETH. Please topup your wallet and come back to get some test tokens to play.
+			{/if}
+		</div>
+	{:else if $balance.tokenBalance === 0n}
+		<div class="alert alert-warning absolute">
+			<Executor btn="btn-sm" func={() => topupToken()}>Get Test token</Executor>
+		</div>
+	{:else}
+		<div class="alert alert-info absolute">
+			{#if $viewState.hasCommitment}
+				<p>Please wait until commit phase is over, or replace your moves</p>
+			{:else}
+				<p>Please make your move.</p>
+			{/if}
+
+			<p>{timeToText($epochInfo.timeLeftToCommit)} left</p>
+
+			{#if isAdmin}<Executor btn="btn-sm" func={() => nextPhase()}>Skip to Reveal Phase</Executor>{/if}
+		</div>
+	{/if}
+{:else}
+	<div class="alert alert-info absolute">please wait ...</div>
 {/if}
 
 <!-- <label for="epoch">Epoch</label>

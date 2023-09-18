@@ -30,22 +30,17 @@ export class EIP712Signer {
 export class EIP712SignerFactory {
 	constructor(private context: EIP712MessageContext) {}
 
-	createSigner(domain: EIP712Domain): {
-		sign: (
-			provider: EIP1193PTypedSignv4Provider,
-			account: `0x${string}`,
-			message: Record<string, any>,
-		) => Promise<string>;
+	createSigner(
+		provider: EIP1193PTypedSignv4Provider,
+		domain: EIP712Domain,
+	): {
+		sign: (account: `0x${string}`, message: Record<string, any>) => Promise<`0x${string}`>;
 	} {
 		const domainToUse = Object.assign(this.context.domain, domain);
-		const types = this.context.types;
 		const primaryType = this.context.primaryType;
+		const context = this.context;
 		return {
-			async sign(
-				provider: EIP1193PTypedSignv4Provider,
-				account: `0x${string}`,
-				message: Record<string, any>,
-			): Promise<string> {
+			async sign(account: `0x${string}`, message: Record<string, any>): Promise<`0x${string}`> {
 				if (domainToUse.chainId === 0) {
 					domainToUse.chainId = parseInt(
 						(await (provider as unknown as EIP1193ChainIdProvider).request({method: 'eth_chainId'})).slice(2),
@@ -53,9 +48,33 @@ export class EIP712SignerFactory {
 					);
 				}
 
+				const types = {...context.types};
+				const domainTypes: {name: string; type: string}[] = [];
+				if (domainToUse.name) {
+					domainTypes.push({
+						name: 'name',
+						type: 'string',
+					});
+				}
+				if (domainToUse.chainId) {
+					domainTypes.push({
+						name: 'chainId',
+						type: 'uint256',
+					});
+				}
+				if (domainToUse.verifyingContract) {
+					domainTypes.push({
+						name: 'verifyingContract',
+						type: 'address',
+					});
+				}
+				// TODO more
+				types['EIP712Domain'] = domainTypes;
+
+				// console.log(JSON.stringify({domain: domainToUse, types, primaryType, message}, null, 2));
 				return provider.request({
 					method: 'eth_signTypedData_v4',
-					params: [account, {...this.context, message: message}],
+					params: [account, {domain: domainToUse, types, primaryType, message}],
 				});
 			},
 		};

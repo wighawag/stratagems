@@ -5,6 +5,8 @@ import 'solidity-kit/solc_0.8/ERC20/implementations/ERC20Base.sol';
 import 'solidity-kit/solc_0.8/ERC20/ERC2612/implementations/UsingPermitWithDynamicChainID.sol';
 
 contract TestTokens is ERC20Base, UsingPermitWithDynamicChainID {
+	error NotEnoughETH();
+
 	constructor(address to, uint256 amount) UsingPermitWithDynamicChainID(address(this)) {
 		_mint(to, amount);
 	}
@@ -13,5 +15,12 @@ contract TestTokens is ERC20Base, UsingPermitWithDynamicChainID {
 
 	function name() public pure override(IERC20, Named) returns (string memory) {
 		return 'Tokens';
+	}
+
+	function topup() external payable {
+		if (msg.value < 0.01 ether) {
+			revert NotEnoughETH();
+		}
+		_mint(msg.sender, 15 ether);
 	}
 }
