@@ -72,7 +72,12 @@ const stores = init({
 					} catch (err) {}
 				}
 			}
-			await accountData.load({address, chainId, genesisHash: state.network.genesisHash, privateSignature: signature});
+			await accountData.load({
+				address,
+				chainId,
+				genesisHash: state.network.genesisHash || '',
+				privateSignature: signature,
+			});
 		},
 		async unload() {
 			console.log({unloading: '...'});

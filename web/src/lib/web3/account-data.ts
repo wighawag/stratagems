@@ -2,15 +2,13 @@ import type {EIP1193TransactionWithMetadata} from 'web3-connection';
 import type {PendingTransaction, PendingTransactionState} from 'ethereum-tx-observer';
 import {initEmitter} from 'radiate';
 import {writable} from 'svelte/store';
-import {Color, bnReplacer, bnReviver, type ContractMove, xyToBigIntID} from 'stratagems-common';
-import {xchacha20poly1305} from '@noble/ciphers/chacha';
-import {utf8ToBytes, bytesToUtf8} from '@noble/ciphers/utils';
-import {randomBytes} from '@noble/ciphers/webcrypto/utils';
-import {base64url} from '@scure/base';
-
+import {Color, type ContractMove, xyToBigIntID} from 'stratagems-common';
 import {logs} from 'named-logs';
 import {hexToBytes} from 'viem';
-import {compressToUint8Array, decompressFromUint8Array} from '$lib/utils/data';
+import {AccountDB, type SyncingState} from '$lib/utils/sync';
+import {SYNC_DB_NAME, SYNC_URI} from '$lib/config';
+import {time} from '$lib/time';
+
 const logger = logs('account-data');
 
 export type LocalMove = {
@@ -32,12 +30,14 @@ export function localMoveToContractMove(localMove: LocalMove): ContractMove {
 export type Epoch = {number: number};
 
 export type OffchainState = {
+	timestamp: number;
 	epoch?: Epoch;
 	lastEpochAcknowledged: number;
 	moves?: LocalMoves;
 };
 
 const defaultOffchainState: OffchainState = {
+	timestamp: 0,
 	moves: undefined,
 	lastEpochAcknowledged: 0,
 };
@@ -97,12 +97,12 @@ export function initAccountData() {
 	const $offchainState: OffchainState = defaultOffchainState;
 	const offchainState = writable<OffchainState>($offchainState);
 
-	let storageKey: string | undefined;
-	let privateKey: Uint8Array | undefined;
+	let accountDB: AccountDB<AccountData> | undefined;
+	let unsubscribeFromSync: (() => void) | undefined;
 	async function load(info: {
 		address: `0x${string}`;
 		chainId: string;
-		genesisHash?: string;
+		genesisHash: string;
 		privateSignature: `0x${string}`;
 	}) {
 		const key = hexToBytes(info.privateSignature).slice(0, 32);
@@ -152,7 +152,11 @@ export function initAccountData() {
 		//save before unload
 		await save();
 
-		privateKey = undefined;
+		if (unsubscribeFromSync) {
+			unsubscribeFromSync();
+			unsubscribeFromSync = undefined;
+		}
+		accountDB = undefined;
 
 		// delete all
 		for (const hash of Object.keys($onchainActions)) {
@@ -175,51 +179,85 @@ export function initAccountData() {
 		});
 	}
 
+	function _merge(
+		localData?: AccountData,
+		remoteData?: AccountData,
+	): {newData: AccountData; newDataOnLocal: boolean; newDataOnRemote: boolean} {
+		let newDataOnLocal = false;
+		let newDataOnRemote = false;
+		let newData = localData;
+
+		if (!newData) {
+			newData = {
+				onchainActions: {},
+				offchainState: defaultOffchainState,
+			};
+		} else {
+			newDataOnLocal = true;
+		}
+
+		// hmm check if valid
+		if (!remoteData || !remoteData.onchainActions || !remoteData.offchainState) {
+			remoteData = {
+				onchainActions: {},
+				offchainState: defaultOffchainState,
+			};
+		}
+
+		for (const key of Object.keys(remoteData.onchainActions)) {
+			const txHash = key as `0x${string}`;
+			if (!newData.onchainActions[txHash]) {
+				newData.onchainActions[txHash] = remoteData.onchainActions[txHash];
+				newDataOnRemote = true;
+			}
+		}
+
+		if (remoteData.offchainState.timestamp > newData.offchainState.timestamp) {
+			newData.offchainState = remoteData.offchainState;
+			newDataOnRemote = true;
+		} else if (newData.offchainState.timestamp > remoteData.offchainState.timestamp) {
+			newDataOnLocal = true;
+		}
+
+		return {
+			newData,
+			newDataOnLocal,
+			newDataOnRemote,
+		};
+	}
+
 	async function _load(info: {
 		address: `0x${string}`;
 		chainId: string;
-		genesisHash?: string;
+		genesisHash: string;
 		key: Uint8Array;
 	}): Promise<AccountData> {
-		storageKey = `account_${info.address}_${info.chainId}_${info.genesisHash}`;
-		privateKey = info.key;
-		let dataSTR: string | undefined | null;
-		try {
-			dataSTR = localStorage.getItem(storageKey);
-		} catch {}
-		if (dataSTR) {
-			if (dataSTR.startsWith('~')) {
-				const secondDoubleColumnIndex = dataSTR.slice(1).indexOf('~');
-				if (secondDoubleColumnIndex != -1) {
-					const nonceString = dataSTR.slice(1, secondDoubleColumnIndex + 1);
-					const nonce24 = base64url.decode(nonceString);
-					const stream_xc = xchacha20poly1305(privateKey, nonce24);
+		const privateKey = info.key;
+		accountDB = new AccountDB(
+			info.address,
+			info.chainId,
+			info.genesisHash,
+			SYNC_URI,
+			SYNC_DB_NAME,
+			privateKey,
+			_merge,
+			true,
+		);
+		unsubscribeFromSync = accountDB.subscribe(onSync);
+		return (await accountDB.requestSync(true)) || emptyAccountData;
+	}
 
-					const dataString = dataSTR.slice(secondDoubleColumnIndex + 2);
-					const ciphertext = base64url.decode(dataString);
-					const plaintext_xc = stream_xc.decrypt(ciphertext);
-					dataSTR = decompressFromUint8Array(plaintext_xc);
-				} else {
-					return emptyAccountData;
-				}
-			}
-			const data: AccountData = JSON.parse(dataSTR, bnReviver);
-			return data;
-		} else {
-			return emptyAccountData;
-		}
+	function onSync(syncingState: SyncingState<AccountData>): void {
+		// TODO ?
+		// $onchainActions = syncingState.data?.onchainActions || {};
+		// onchainActions.set($onchainActions);
+		// $offchainState = syncingState.data?.offchainState;
+		// offchainState.set($offchainState);
 	}
 
 	async function _save(accountData: AccountData) {
-		if (storageKey && privateKey) {
-			const dataString = JSON.stringify(accountData, bnReplacer);
-			logger.info(`saving account data`);
-			const nonce24 = randomBytes(24); // 192-bit nonce
-			const stream = xchacha20poly1305(privateKey, nonce24);
-			const data = compressToUint8Array(dataString);
-			const ciphertext = stream.encrypt(data);
-			const str = `~${base64url.encode(nonce24)}~${base64url.encode(ciphertext)}`;
-			localStorage.setItem(storageKey, str);
+		if (accountDB) {
+			accountDB.save(accountData);
 		}
 	}
 
@@ -310,13 +348,12 @@ export function initAccountData() {
 	// use with caution
 	async function _reset() {
 		await unload();
-		if (storageKey) {
-			localStorage.removeItem(storageKey);
-		}
+		accountDB?.clearData();
 	}
 
 	function resetOffchainState(alsoSave: boolean = true) {
 		$offchainState.moves = undefined;
+		$offchainState.timestamp = time.now;
 
 		$offchainState.epoch = undefined;
 		if (alsoSave) {
@@ -332,6 +369,7 @@ export function initAccountData() {
 				$offchainState.moves = [];
 			}
 			$offchainState.moves.push(move);
+			$offchainState.timestamp = time.now;
 		} else {
 			existingMove.color = move.color;
 		}
@@ -349,6 +387,7 @@ export function initAccountData() {
 					i--;
 				}
 			}
+			$offchainState.timestamp = time.now;
 			save();
 			offchainState.set($offchainState);
 		}
@@ -357,12 +396,14 @@ export function initAccountData() {
 	function back() {
 		// TODO undo
 		// $offchainState.moves.splice($offchainState.moves.length - 1, 1);
+		// $offchainState.timestamp = time.now;
 		// save();
 		// offchainState.set($offchainState);
 	}
 
 	function acknowledgeEpoch(epochNumber: number) {
 		$offchainState.lastEpochAcknowledged = epochNumber;
+		$offchainState.timestamp = time.now;
 		save();
 		offchainState.set($offchainState);
 	}
