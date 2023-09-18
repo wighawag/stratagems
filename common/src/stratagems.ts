@@ -244,7 +244,7 @@ export class StratagemsContract {
 			if (cell.life > 0 && lastUpdate < epoch) {
 				// of there is life to update we compute the new life
 				const {newLife, epochUsed} = this.computeNewLife(lastUpdate, cell.enemyMap, cell.delta, cell.life, epoch);
-				data.due = this.updateCellFromNeighbor(position, cell, newLife, epochUsed, neighbourIndex, oldColor, newColor);
+				data.due = this.updateCellFromNeighbor(position, cell, newLife, epoch, neighbourIndex, oldColor, newColor);
 			} else {
 				data.due = this.updateCellFromNeighbor(position, cell, cell.life, epoch, neighbourIndex, oldColor, newColor);
 			}
