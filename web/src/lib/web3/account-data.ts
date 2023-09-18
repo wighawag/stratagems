@@ -10,6 +10,7 @@ import {base64url} from '@scure/base';
 
 import {logs} from 'named-logs';
 import {hexToBytes} from 'viem';
+import {compressToUint8Array, decompressFromUint8Array} from '$lib/utils/data';
 const logger = logs('account-data');
 
 export type LocalMove = {
@@ -197,7 +198,7 @@ export function initAccountData() {
 					const dataString = dataSTR.slice(secondDoubleColumnIndex + 2);
 					const ciphertext = base64url.decode(dataString);
 					const plaintext_xc = stream_xc.decrypt(ciphertext);
-					dataSTR = bytesToUtf8(plaintext_xc);
+					dataSTR = decompressFromUint8Array(plaintext_xc);
 				} else {
 					return emptyAccountData;
 				}
@@ -215,7 +216,7 @@ export function initAccountData() {
 			logger.info(`saving account data`);
 			const nonce24 = randomBytes(24); // 192-bit nonce
 			const stream = xchacha20poly1305(privateKey, nonce24);
-			const data = utf8ToBytes(dataString);
+			const data = compressToUint8Array(dataString);
 			const ciphertext = stream.encrypt(data);
 			const str = `~${base64url.encode(nonce24)}~${base64url.encode(ciphertext)}`;
 			localStorage.setItem(storageKey, str);
