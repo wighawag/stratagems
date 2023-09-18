@@ -84,15 +84,15 @@ function merge(
 		const viewCell = {
 			next,
 			future,
-			contract: state.cells[cellID],
+			contract: copyState.cells[cellID],
 			currentPlayer: copyState.owners[cellID].toLowerCase() === account.address?.toLowerCase(),
 		};
 		viewState.cells[xyToXYID(x, y)] = viewCell;
 		console.log(`${x}, ${y}`, viewCell);
 	}
-	for (const pos of Object.keys(state.owners)) {
+	for (const pos of Object.keys(copyState.owners)) {
 		const {x, y} = bigIntIDToXY(BigInt(pos));
-		viewState.owners[xyToXYID(x, y)] = state.owners[pos];
+		viewState.owners[xyToXYID(x, y)] = copyState.owners[pos];
 	}
 
 	if (account.address) {

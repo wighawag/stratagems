@@ -377,14 +377,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 			// we only consider cell with color that are not dead
 			if (cell.life > 0 && lastUpdate < epoch) {
 				// of there is life to update we compute the new life
-				(uint8 newLife, uint24 epochUsed) = _computeNewLife(
-					lastUpdate,
-					cell.enemyMap,
-					cell.delta,
-					cell.life,
-					epoch
-				);
-				due = _updateCellFromNeighbor(position, cell, newLife, epochUsed, neighbourIndex, oldColor, newColor);
+				(uint8 newLife, ) = _computeNewLife(lastUpdate, cell.enemyMap, cell.delta, cell.life, epoch);
+				due = _updateCellFromNeighbor(position, cell, newLife, epoch, neighbourIndex, oldColor, newColor);
 			} else {
 				due = _updateCellFromNeighbor(position, cell, cell.life, epoch, neighbourIndex, oldColor, newColor);
 			}

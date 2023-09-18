@@ -6,6 +6,7 @@ import {initViemContracts} from 'web3-connection-viem';
 import {logs} from 'named-logs';
 import {initBalance} from '$lib/blockchain/state/balance';
 import {time} from '$lib/time';
+import {hashMessage, stringToHex} from 'viem';
 
 const logger = logs('stratagems');
 
@@ -35,7 +36,48 @@ const stores = init({
 			console.log({loading: '...'});
 			const chainId = state.network.chainId;
 			const address = state.address;
-			await accountData.load(address, chainId, state.network.genesisHash);
+
+			let signature: `0x${string}` | undefined;
+			const private_signature_key = `__private_signature__${address.toLowerCase()}`;
+			try {
+				const fromStorage = localStorage.getItem(private_signature_key);
+				if (fromStorage && fromStorage.startsWith('0x')) {
+					signature = fromStorage as `0x${string}`;
+				}
+			} catch (err) {}
+
+			if (!signature) {
+				async function signMessage() {
+					const msg = stringToHex(
+						'Welcome to Stratagems, Please sign this message only on trusted frontend. This gives access to your local data that you are supposed to keep secret.',
+					);
+					const signature = await state.connection.provider
+						.request({
+							method: 'personal_sign',
+							params: [msg, address],
+						})
+						.catch((e: any) => {
+							account.rejectLoadingStep();
+						});
+					account.acceptLoadingStep(signature);
+				}
+				// setLoadingMessage('Please Sign The Authentication Message To Go Forward');
+
+				const doNotAskAgainSignature = (await waitForStep('WELCOME')) as boolean;
+				signMessage();
+				signature = (await waitForStep('SIGNING')) as `0x${string}`;
+				if (doNotAskAgainSignature) {
+					try {
+						localStorage.setItem(private_signature_key, signature);
+					} catch (err) {}
+				}
+			}
+			await accountData.load({
+				address,
+				chainId,
+				genesisHash: state.network.genesisHash || '',
+				privateSignature: signature,
+			});
 		},
 		async unload() {
 			console.log({unloading: '...'});

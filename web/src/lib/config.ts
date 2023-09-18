@@ -7,6 +7,7 @@ import {
 	PUBLIC_ETH_NODE_URI,
 	PUBLIC_LOCALHOST_BLOCK_TIME,
 	PUBLIC_DEV_NODE_URI,
+	PUBLIC_SYNC_URI,
 } from '$env/static/public';
 
 import _contractsInfos from '$data/contracts';
@@ -47,7 +48,10 @@ const localRPC =
 
 const defaultRPC = defaultRPCURL ? {chainId: contractsChainId, url: defaultRPCURL} : undefined;
 
-export {defaultRPC, isUsingLocalDevNetwork, localRPC, blockTime};
+const SYNC_URI = params.sync || PUBLIC_SYNC_URI; //  'http://invalid.io'; // to emulate connection loss :)
+const SYNC_DB_NAME = 'stratagems-' + initialContractsInfos.contracts.Stratagems.address;
+
+export {defaultRPC, isUsingLocalDevNetwork, localRPC, blockTime, SYNC_DB_NAME, SYNC_URI};
 
 let _setContractsInfos: any;
 export const contractsInfos = readable<NetworkConfig>(_contractsInfos, (set) => {

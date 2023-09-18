@@ -95,9 +95,11 @@
 {:else}
 	<div class="alert alert-info absolute">please wait ...</div>
 {/if}
+<!-- 
+<div class="alert alert-info absolute top-32">
+	<label for="epoch">Epoch</label>
+	<p id="epoch">{$epoch}</p>
 
-<!-- <label for="epoch">Epoch</label>
-<p id="epoch">{$epoch}</p>
-
-<label for="epochInfo">epochInfo</label>
-<p id="epochInfo">{$epochInfo.timeLeftToCommit}</p> -->
+	<label for="epochInfo">epochInfo</label>
+	<p id="epochInfo">{$epochInfo.timeLeftToCommit}</p>
+</div> -->

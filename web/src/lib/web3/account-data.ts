@@ -2,9 +2,13 @@ import type {EIP1193TransactionWithMetadata} from 'web3-connection';
 import type {PendingTransaction, PendingTransactionState} from 'ethereum-tx-observer';
 import {initEmitter} from 'radiate';
 import {writable} from 'svelte/store';
-import {Color, bnReplacer, bnReviver, type ContractMove, xyToBigIntID} from 'stratagems-common';
-
+import {Color, type ContractMove, xyToBigIntID} from 'stratagems-common';
 import {logs} from 'named-logs';
+import {hexToBytes} from 'viem';
+import {AccountDB, type SyncingState} from '$lib/utils/sync';
+import {SYNC_DB_NAME, SYNC_URI} from '$lib/config';
+import {time} from '$lib/time';
+
 const logger = logs('account-data');
 
 export type LocalMove = {
@@ -26,12 +30,14 @@ export function localMoveToContractMove(localMove: LocalMove): ContractMove {
 export type Epoch = {number: number};
 
 export type OffchainState = {
+	timestamp: number;
 	epoch?: Epoch;
 	lastEpochAcknowledged: number;
 	moves?: LocalMoves;
 };
 
 const defaultOffchainState: OffchainState = {
+	timestamp: 0,
 	moves: undefined,
 	lastEpochAcknowledged: 0,
 };
@@ -91,9 +97,21 @@ export function initAccountData() {
 	const $offchainState: OffchainState = defaultOffchainState;
 	const offchainState = writable<OffchainState>($offchainState);
 
-	let key: string | undefined;
-	async function load(address: `0x${string}`, chainId: string, genesisHash?: string) {
-		const data = await _load(address, chainId, genesisHash);
+	let accountDB: AccountDB<AccountData> | undefined;
+	let unsubscribeFromSync: (() => void) | undefined;
+	async function load(info: {
+		address: `0x${string}`;
+		chainId: string;
+		genesisHash: string;
+		privateSignature: `0x${string}`;
+	}) {
+		const key = hexToBytes(info.privateSignature).slice(0, 32);
+		const data = await _load({
+			address: info.address,
+			chainId: info.chainId,
+			genesisHash: info.genesisHash,
+			key,
+		});
 
 		if (data.offchainState) {
 			$offchainState.moves = data.offchainState.moves;
@@ -134,6 +152,12 @@ export function initAccountData() {
 		//save before unload
 		await save();
 
+		if (unsubscribeFromSync) {
+			unsubscribeFromSync();
+			unsubscribeFromSync = undefined;
+		}
+		accountDB = undefined;
+
 		// delete all
 		for (const hash of Object.keys($onchainActions)) {
 			delete ($onchainActions as any)[hash];
@@ -155,20 +179,85 @@ export function initAccountData() {
 		});
 	}
 
-	async function _load(address: `0x${string}`, chainId: string, genesisHash?: string): Promise<AccountData> {
-		key = `account_${address}_${chainId}_${genesisHash}`;
-		let dataSTR: string | undefined | null;
-		try {
-			dataSTR = localStorage.getItem(key);
-		} catch {}
-		const data: AccountData = dataSTR ? JSON.parse(dataSTR, bnReviver) : emptyAccountData;
-		return data;
+	function _merge(
+		localData?: AccountData,
+		remoteData?: AccountData,
+	): {newData: AccountData; newDataOnLocal: boolean; newDataOnRemote: boolean} {
+		let newDataOnLocal = false;
+		let newDataOnRemote = false;
+		let newData = localData;
+
+		if (!newData) {
+			newData = {
+				onchainActions: {},
+				offchainState: defaultOffchainState,
+			};
+		} else {
+			newDataOnLocal = true;
+		}
+
+		// hmm check if valid
+		if (!remoteData || !remoteData.onchainActions || !remoteData.offchainState) {
+			remoteData = {
+				onchainActions: {},
+				offchainState: defaultOffchainState,
+			};
+		}
+
+		for (const key of Object.keys(remoteData.onchainActions)) {
+			const txHash = key as `0x${string}`;
+			if (!newData.onchainActions[txHash]) {
+				newData.onchainActions[txHash] = remoteData.onchainActions[txHash];
+				newDataOnRemote = true;
+			}
+		}
+
+		if (remoteData.offchainState.timestamp > newData.offchainState.timestamp) {
+			newData.offchainState = remoteData.offchainState;
+			newDataOnRemote = true;
+		} else if (newData.offchainState.timestamp > remoteData.offchainState.timestamp) {
+			newDataOnLocal = true;
+		}
+
+		return {
+			newData,
+			newDataOnLocal,
+			newDataOnRemote,
+		};
+	}
+
+	async function _load(info: {
+		address: `0x${string}`;
+		chainId: string;
+		genesisHash: string;
+		key: Uint8Array;
+	}): Promise<AccountData> {
+		const privateKey = info.key;
+		accountDB = new AccountDB(
+			info.address,
+			info.chainId,
+			info.genesisHash,
+			SYNC_URI,
+			SYNC_DB_NAME,
+			privateKey,
+			_merge,
+			true,
+		);
+		unsubscribeFromSync = accountDB.subscribe(onSync);
+		return (await accountDB.requestSync(true)) || emptyAccountData;
+	}
+
+	function onSync(syncingState: SyncingState<AccountData>): void {
+		// TODO ?
+		// $onchainActions = syncingState.data?.onchainActions || {};
+		// onchainActions.set($onchainActions);
+		// $offchainState = syncingState.data?.offchainState;
+		// offchainState.set($offchainState);
 	}
 
 	async function _save(accountData: AccountData) {
-		if (key) {
-			logger.info(`saving account data`);
-			localStorage.setItem(key, JSON.stringify(accountData, bnReplacer));
+		if (accountDB) {
+			accountDB.save(accountData);
 		}
 	}
 
@@ -259,13 +348,12 @@ export function initAccountData() {
 	// use with caution
 	async function _reset() {
 		await unload();
-		if (key) {
-			localStorage.removeItem(key);
-		}
+		accountDB?.clearData();
 	}
 
 	function resetOffchainState(alsoSave: boolean = true) {
 		$offchainState.moves = undefined;
+		$offchainState.timestamp = time.now;
 
 		$offchainState.epoch = undefined;
 		if (alsoSave) {
@@ -281,6 +369,7 @@ export function initAccountData() {
 				$offchainState.moves = [];
 			}
 			$offchainState.moves.push(move);
+			$offchainState.timestamp = time.now;
 		} else {
 			existingMove.color = move.color;
 		}
@@ -298,6 +387,7 @@ export function initAccountData() {
 					i--;
 				}
 			}
+			$offchainState.timestamp = time.now;
 			save();
 			offchainState.set($offchainState);
 		}
@@ -306,12 +396,14 @@ export function initAccountData() {
 	function back() {
 		// TODO undo
 		// $offchainState.moves.splice($offchainState.moves.length - 1, 1);
+		// $offchainState.timestamp = time.now;
 		// save();
 		// offchainState.set($offchainState);
 	}
 
 	function acknowledgeEpoch(epochNumber: number) {
 		$offchainState.lastEpochAcknowledged = epochNumber;
+		$offchainState.timestamp = time.now;
 		save();
 		offchainState.set($offchainState);
 	}

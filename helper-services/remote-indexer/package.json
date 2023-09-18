@@ -6,7 +6,7 @@
         "stratagems-indexer": "workspace:*"
     },
     "scripts": {
-        "dev": "eis -p stratagems-indexer -d ../../contracts/deployments/localhost -n http://127.0.0.1:8545",
-        "generate": "ei -f data.json -p stratagems-indexer -d ../../contracts/deployments/localhost -n http://127.0.0.1:8545"
+        "dev": "eis -p stratagems-indexer -d ../../contracts/deployments/localhost -n http://127.0.0.1:8545 --port 34003",
+        "generate": "ei -f data.json -p stratagems-indexer -d ../../contracts/deployments/localhost -n http://127.0.0.1:8545--port 34003"
     }
 }
