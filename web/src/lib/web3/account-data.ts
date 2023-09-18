@@ -3,8 +3,13 @@ import type {PendingTransaction, PendingTransactionState} from 'ethereum-tx-obse
 import {initEmitter} from 'radiate';
 import {writable} from 'svelte/store';
 import {Color, bnReplacer, bnReviver, type ContractMove, xyToBigIntID} from 'stratagems-common';
+import {xchacha20poly1305} from '@noble/ciphers/chacha';
+import {utf8ToBytes, bytesToUtf8} from '@noble/ciphers/utils';
+import {randomBytes} from '@noble/ciphers/webcrypto/utils';
+import {base64url} from '@scure/base';
 
 import {logs} from 'named-logs';
+import {hexToBytes} from 'viem';
 const logger = logs('account-data');
 
 export type LocalMove = {
@@ -91,14 +96,21 @@ export function initAccountData() {
 	const $offchainState: OffchainState = defaultOffchainState;
 	const offchainState = writable<OffchainState>($offchainState);
 
-	let key: string | undefined;
+	let storageKey: string | undefined;
+	let privateKey: Uint8Array | undefined;
 	async function load(info: {
 		address: `0x${string}`;
 		chainId: string;
 		genesisHash?: string;
 		privateSignature: `0x${string}`;
 	}) {
-		const data = await _load(info.address, info.chainId, info.genesisHash);
+		const key = hexToBytes(info.privateSignature).slice(0, 32);
+		const data = await _load({
+			address: info.address,
+			chainId: info.chainId,
+			genesisHash: info.genesisHash,
+			key,
+		});
 
 		if (data.offchainState) {
 			$offchainState.moves = data.offchainState.moves;
@@ -139,6 +151,8 @@ export function initAccountData() {
 		//save before unload
 		await save();
 
+		privateKey = undefined;
+
 		// delete all
 		for (const hash of Object.keys($onchainActions)) {
 			delete ($onchainActions as any)[hash];
@@ -160,20 +174,51 @@ export function initAccountData() {
 		});
 	}
 
-	async function _load(address: `0x${string}`, chainId: string, genesisHash?: string): Promise<AccountData> {
-		key = `account_${address}_${chainId}_${genesisHash}`;
+	async function _load(info: {
+		address: `0x${string}`;
+		chainId: string;
+		genesisHash?: string;
+		key: Uint8Array;
+	}): Promise<AccountData> {
+		storageKey = `account_${info.address}_${info.chainId}_${info.genesisHash}`;
+		privateKey = info.key;
 		let dataSTR: string | undefined | null;
 		try {
-			dataSTR = localStorage.getItem(key);
+			dataSTR = localStorage.getItem(storageKey);
 		} catch {}
-		const data: AccountData = dataSTR ? JSON.parse(dataSTR, bnReviver) : emptyAccountData;
-		return data;
+		if (dataSTR) {
+			if (dataSTR.startsWith('~')) {
+				const secondDoubleColumnIndex = dataSTR.slice(1).indexOf('~');
+				if (secondDoubleColumnIndex != -1) {
+					const nonceString = dataSTR.slice(1, secondDoubleColumnIndex + 1);
+					const nonce24 = base64url.decode(nonceString);
+					const stream_xc = xchacha20poly1305(privateKey, nonce24);
+
+					const dataString = dataSTR.slice(secondDoubleColumnIndex + 2);
+					const ciphertext = base64url.decode(dataString);
+					const plaintext_xc = stream_xc.decrypt(ciphertext);
+					dataSTR = bytesToUtf8(plaintext_xc);
+				} else {
+					return emptyAccountData;
+				}
+			}
+			const data: AccountData = JSON.parse(dataSTR, bnReviver);
+			return data;
+		} else {
+			return emptyAccountData;
+		}
 	}
 
 	async function _save(accountData: AccountData) {
-		if (key) {
+		if (storageKey && privateKey) {
+			const dataString = JSON.stringify(accountData, bnReplacer);
 			logger.info(`saving account data`);
-			localStorage.setItem(key, JSON.stringify(accountData, bnReplacer));
+			const nonce24 = randomBytes(24); // 192-bit nonce
+			const stream = xchacha20poly1305(privateKey, nonce24);
+			const data = utf8ToBytes(dataString);
+			const ciphertext = stream.encrypt(data);
+			const str = `~${base64url.encode(nonce24)}~${base64url.encode(ciphertext)}`;
+			localStorage.setItem(storageKey, str);
 		}
 	}
 
@@ -264,8 +309,8 @@ export function initAccountData() {
 	// use with caution
 	async function _reset() {
 		await unload();
-		if (key) {
-			localStorage.removeItem(key);
+		if (storageKey) {
+			localStorage.removeItem(storageKey);
 		}
 	}
 
