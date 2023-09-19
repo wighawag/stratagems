@@ -38,11 +38,23 @@ const stores = init({
 			const address = state.address;
 
 			let signature: `0x${string}` | undefined;
-			const private_signature_key = `__private_signature__${address.toLowerCase()}`;
+
+			const private_signature_storageKey = `__private_signature__${address.toLowerCase()}`;
 			try {
-				const fromStorage = localStorage.getItem(private_signature_key);
+				const fromStorage = localStorage.getItem(private_signature_storageKey);
 				if (fromStorage && fromStorage.startsWith('0x')) {
 					signature = fromStorage as `0x${string}`;
+				}
+			} catch (err) {}
+
+			let remoteSyncEnabled: boolean | undefined;
+			const remoteSync_storageKey = `__remoteSync_${address.toLowerCase}`;
+			try {
+				const fromStorage = localStorage.getItem(remoteSync_storageKey);
+				if (fromStorage === 'true') {
+					remoteSyncEnabled = true;
+				} else if (fromStorage === 'false') {
+					remoteSyncEnabled = false;
 				}
 			} catch (err) {}
 
@@ -63,12 +75,19 @@ const stores = init({
 				}
 				// setLoadingMessage('Please Sign The Authentication Message To Go Forward');
 
-				const doNotAskAgainSignature = (await waitForStep('WELCOME')) as boolean;
+				const {doNotAskAgainSignature, remoteSyncEnabled: remoteSyncEnabledAsked} = (await waitForStep('WELCOME')) as {
+					remoteSyncEnabled: boolean;
+					doNotAskAgainSignature: boolean;
+				};
+				remoteSyncEnabled = remoteSyncEnabledAsked;
+				try {
+					localStorage.setItem(remoteSync_storageKey, remoteSyncEnabled ? 'true' : 'false');
+				} catch (err) {}
 				signMessage();
 				signature = (await waitForStep('SIGNING')) as `0x${string}`;
 				if (doNotAskAgainSignature) {
 					try {
-						localStorage.setItem(private_signature_key, signature);
+						localStorage.setItem(private_signature_storageKey, signature);
 					} catch (err) {}
 				}
 			}
@@ -77,6 +96,7 @@ const stores = init({
 				chainId,
 				genesisHash: state.network.genesisHash || '',
 				privateSignature: signature,
+				remoteSyncEnabled: !!remoteSyncEnabled,
 			});
 		},
 		async unload() {

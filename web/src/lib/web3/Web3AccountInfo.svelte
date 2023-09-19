@@ -4,6 +4,7 @@
 	export let account: typeof Account;
 
 	let doNotAskAgainSignature: boolean = false;
+	let remoteSyncEnabled: boolean = true;
 </script>
 
 {#if $account.unlocking}
@@ -38,10 +39,16 @@
 					<span class="label-text">Do not ask again (trust computer)</span>
 					<input type="checkbox" bind:checked={doNotAskAgainSignature} class="checkbox" />
 				</label>
+				<label class="label cursor-pointer">
+					<span class="label-text">Sync across devices (encrypted)</span>
+					<input type="checkbox" bind:checked={remoteSyncEnabled} class="checkbox" />
+				</label>
 			</div>
 			<div class="modal-action">
 				<button on:click={() => account.rejectLoadingStep()} class="btn btn-error">Cancel</button>
-				<button on:click={() => account.acceptLoadingStep(doNotAskAgainSignature)} class="btn">Sign</button>
+				<button on:click={() => account.acceptLoadingStep({doNotAskAgainSignature, remoteSyncEnabled})} class="btn"
+					>Sign</button
+				>
 			</div>
 		</Modal>
 	{:else}

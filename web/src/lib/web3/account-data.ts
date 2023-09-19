@@ -104,6 +104,7 @@ export function initAccountData() {
 		chainId: string;
 		genesisHash: string;
 		privateSignature: `0x${string}`;
+		remoteSyncEnabled: boolean;
 	}) {
 		const key = hexToBytes(info.privateSignature).slice(0, 32);
 		const data = await _load({
@@ -111,6 +112,7 @@ export function initAccountData() {
 			chainId: info.chainId,
 			genesisHash: info.genesisHash,
 			key,
+			remoteSyncEnabled: info.remoteSyncEnabled,
 		});
 
 		if (data.offchainState) {
@@ -231,6 +233,7 @@ export function initAccountData() {
 		chainId: string;
 		genesisHash: string;
 		key: Uint8Array;
+		remoteSyncEnabled: boolean;
 	}): Promise<AccountData> {
 		const privateKey = info.key;
 		accountDB = new AccountDB(
@@ -241,7 +244,7 @@ export function initAccountData() {
 			SYNC_DB_NAME,
 			privateKey,
 			_merge,
-			true,
+			info.remoteSyncEnabled,
 		);
 		unsubscribeFromSync = accountDB.subscribe(onSync);
 		return (await accountDB.requestSync(true)) || emptyAccountData;
