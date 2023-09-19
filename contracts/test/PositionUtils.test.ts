@@ -1,15 +1,8 @@
 import {expect, describe, it} from 'vitest';
 import './utils/viem-matchers';
-
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
-import {Deployment, loadAndExecuteDeployments} from 'rocketh';
-
 import {getConnection, fetchContract} from '../utils/connection';
-
 import artifacts from '../generated/artifacts';
-import {network} from 'hardhat';
-import {PermitFactory} from './eip712/permit';
-import {getContract, hexToSignature, parseEther} from 'viem';
 import {bigIntIDToXY, xyToBigIntID} from 'stratagems-common';
 
 async function deployTestPositionUtils() {
@@ -22,11 +15,9 @@ async function deployTestPositionUtils() {
 	});
 
 	const receipt = await publicClient.getTransactionReceipt({hash: deploymentHash});
-	const TestPositionUtils = getContract({
+	const TestPositionUtils = await fetchContract({
 		...artifacts.TestPositionUtils,
 		address: receipt.contractAddress as `0x${string}`,
-		publicClient,
-		walletClient,
 	});
 
 	return {
