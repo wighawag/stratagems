@@ -3,6 +3,7 @@ import {currentFlow, type Flow, type Step} from '..';
 import {accountData, contracts} from '$lib/web3';
 import {prepareCommitment, zeroBytes24} from 'stratagems-common';
 import {localMoveToContractMove, type CommitMetadata, type RevealMetadata} from '$lib/web3/account-data';
+import {zeroAddress} from 'viem';
 
 export type RevealState = {};
 
@@ -35,7 +36,7 @@ export async function startReveal(commitTx: `0x${string}`, data: CommitMetadata)
 				// Move[] calldata moves,
 				// bytes24 furtherMoves,
 				// bool useReserve
-				await contracts.Stratagems.write.resolve([account.address, data.secret, moves, zeroBytes24, true]);
+				await contracts.Stratagems.write.reveal([account.address, data.secret, moves, zeroBytes24, true, zeroAddress]);
 				return state;
 			},
 		};
@@ -78,12 +79,7 @@ export async function startAcknowledgFailedReveal(commitTx: `0x${string}`, data:
 				// Move[] calldata moves,
 				// bytes24 furtherMoves,
 				// bool useReserve
-				await contracts.Stratagems.write.acknowledgeMissedResolution([
-					account.address,
-					data.secret,
-					moves,
-					zeroBytes24,
-				]);
+				await contracts.Stratagems.write.acknowledgeMissedReveal([account.address, data.secret, moves, zeroBytes24]);
 				return state;
 			},
 		};

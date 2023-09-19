@@ -470,7 +470,7 @@ export class StratagemsContract {
 			const cell = this.getCellInMemory(simpleCell.position);
 
 			// we act as if the token were added in previous epochs
-			// this is so it does not affect the resolution phase
+			// this is so it does not affect the reveal phase
 			let effectiveDelta = cell.delta != 0 ? cell.delta : -1;
 			if (effectiveDelta < 0 && cell.enemyMap == 0) {
 				effectiveDelta = 0;

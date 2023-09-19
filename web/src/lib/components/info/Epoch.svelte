@@ -49,7 +49,7 @@
 			/></svg
 		>
 		<p>
-			Please wait while everyone resolve their moves... <svg
+			Please wait while everyone reveal their moves... <svg
 				class="stroke-current shrink-0 h-6 w-6 inline"
 				xmlns="http://www.w3.org/2000/svg"
 				fill="none"

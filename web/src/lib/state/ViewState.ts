@@ -25,7 +25,7 @@ export type ViewData = {
 		[pos: string]: ViewCellData;
 	};
 	owners: {[pos: string]: `0x${string}`};
-	hasCommitmentToResolve?: {epoch: number; commit?: {hash: `0x${string}`; tx: StratagemsTransaction}};
+	hasCommitmentToReveal?: {epoch: number; commit?: {hash: `0x${string}`; tx: StratagemsTransaction}};
 	hasCommitment: boolean;
 };
 
@@ -39,7 +39,7 @@ function merge(
 	const copyState = copy(state);
 	const stratagems = new StratagemsContract(copyState, 7);
 
-	console.log({epoch: epochState.epoch, isActionPhase: epochState.isActionPhase});
+	// console.log({epoch: epochState.epoch, isActionPhase: epochState.isActionPhase});
 
 	let hasCommitment = false;
 	if (offchainState.moves !== undefined) {
@@ -53,7 +53,7 @@ function merge(
 				const metadata = action.tx.metadata;
 				if (metadata.type === 'commit') {
 					// TODO
-					if (metadata.epoch == epochState.epoch && epochState.isActionPhase) {
+					if ((metadata.epoch == epochState.epoch && epochState.isActionPhase) || !action.revealTx) {
 						hasCommitment = true;
 						for (const move of metadata.localMoves) {
 							stratagems.computeMove(account.address as `0x${string}`, epochState.epoch, localMoveToContractMove(move));
@@ -64,7 +64,7 @@ function merge(
 		}
 	}
 
-	const viewState: ViewData = {cells: {}, owners: {}, hasCommitmentToResolve: undefined, hasCommitment};
+	const viewState: ViewData = {cells: {}, owners: {}, hasCommitmentToReveal: undefined, hasCommitment};
 	for (const cellID of Object.keys(copyState.cells)) {
 		const {x, y} = bigIntIDToXY(BigInt(cellID));
 		const cell = copyState.cells[cellID];
@@ -84,7 +84,7 @@ function merge(
 			currentPlayer: copyState.owners[cellID]?.toLowerCase() === account.address?.toLowerCase(),
 		};
 		viewState.cells[xyToXYID(x, y)] = viewCell;
-		console.log(`${x}, ${y}`, viewCell);
+		// console.log(`${x}, ${y}`, viewCell);
 	}
 	for (const pos of Object.keys(copyState.owners)) {
 		const {x, y} = bigIntIDToXY(BigInt(pos));
@@ -94,14 +94,14 @@ function merge(
 	if (account.address) {
 		const commitment = state.commitments[account.address.toLowerCase()];
 		if (commitment && (!epochState.isActionPhase || commitment.epoch < epochState.epoch)) {
-			viewState.hasCommitmentToResolve = {epoch: commitment.epoch};
+			viewState.hasCommitmentToReveal = {epoch: commitment.epoch};
 			for (const txHash of Object.keys(onchainActions)) {
 				const action = onchainActions[txHash as `0x${string}`];
 				if (action.tx.metadata) {
 					const metadata = action.tx.metadata;
 					if (metadata.type === 'commit') {
 						if (metadata.epoch == commitment.epoch) {
-							viewState.hasCommitmentToResolve = {
+							viewState.hasCommitmentToReveal = {
 								epoch: commitment.epoch,
 								commit: {hash: txHash as `0x${string}`, tx: action.tx},
 							};

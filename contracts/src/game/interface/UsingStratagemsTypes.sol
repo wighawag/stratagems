@@ -42,7 +42,7 @@ interface UsingStratagemsTypes {
 		address payable burnAddress;
 		uint256 startTime;
 		uint256 commitPhaseDuration;
-		uint256 resolutionPhaseDuration;
+		uint256 revealPhaseDuration;
 		uint8 maxLife;
 		uint256 numTokensPerGems;
 	}

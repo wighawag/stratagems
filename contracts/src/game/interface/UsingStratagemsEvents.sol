@@ -4,13 +4,13 @@ pragma solidity ^0.8.0;
 import './UsingStratagemsTypes.sol';
 
 interface UsingStratagemsEvents is UsingStratagemsTypes {
-	/// @notice A player has commited to make a move and resolve it on the resolution phase
+	/// @notice A player has commited to make a move and reveal it on the reveal phase
 	/// @param player account taking the staking risk (can be a different account than the one controlling the gems)
 	/// @param epoch epoch number on which this commit belongs to
 	/// @param commitmentHash the hash of moves
 	event CommitmentMade(address indexed player, uint24 indexed epoch, bytes24 commitmentHash);
 
-	/// @notice A player has cancelled its current commitment (before it reached the resolution phase)
+	/// @notice A player has cancelled its current commitment (before it reached the reveal phase)
 	/// @param player account taking the staking risk (can be a different account than the one controlling the gems)
 	/// @param epoch epoch number on which this commit belongs to
 	event CommitmentCancelled(address indexed player, uint24 indexed epoch);
@@ -22,13 +22,13 @@ interface UsingStratagemsEvents is UsingStratagemsTypes {
 	/// @param furtherMoves hash of further moves, unless bytes32(0) which indicate end.
 	event CommitmentVoid(address indexed player, uint24 indexed epoch, uint256 amountBurnt, bytes24 furtherMoves);
 
-	/// @notice Player has resolved its previous commitment
+	/// @notice Player has revealed its previous commitment
 	/// @param player account who commited
 	/// @param epoch epoch number on which this commit belongs to
 	/// @param commitmentHash the hash of the moves
 	/// @param moves the moves
 	/// @param furtherMoves hash of further moves, unless bytes32(0) which indicate end.
-	event CommitmentResolved(
+	event CommitmentRevealed(
 		address indexed player,
 		uint24 indexed epoch,
 		bytes24 indexed commitmentHash,
@@ -53,7 +53,7 @@ interface UsingStratagemsEvents is UsingStratagemsTypes {
 	// Event to make it easier to check what is happening
 	// TODO get rid ?
 	// --------------------------------------------------------------------------------------------
-	/// @notice A move has been resolved.
+	/// @notice A move has been revealed.
 	/// @param position cell at which the move take place
 	/// @param player account making the move
 	/// @param oldColor previous color of the cell

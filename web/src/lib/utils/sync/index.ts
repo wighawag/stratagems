@@ -66,7 +66,7 @@ export class AccountDB<T extends Record<string, unknown>> implements Readable<Sy
 	}
 
 	_syncNow() {
-		console.log(`SYNC: _syncNow`);
+		logger.info(`SYNC: _syncNow`);
 		this._syncDelay = undefined;
 		this._syncRemote();
 	}
@@ -76,11 +76,11 @@ export class AccountDB<T extends Record<string, unknown>> implements Readable<Sy
 			if (this._lastSyncTime && time.now - this._lastSyncTime < 1) {
 				this._syncDelay = setTimeout(this._syncNow.bind(this), 1000);
 			} else {
-				console.log(`SYNC: _syncRemote now`);
+				logger.info(`SYNC: _syncRemote now`);
 				this._syncRemote();
 			}
 		} else {
-			console.log(`SYNC: _skip`);
+			logger.info(`SYNC: _skip`);
 		}
 	}
 
@@ -91,7 +91,7 @@ export class AccountDB<T extends Record<string, unknown>> implements Readable<Sy
 			this._notify('save');
 		}
 
-		console.log(`SYNC: _syncLater after save`);
+		logger.info(`SYNC: _syncLater after save`);
 		this._syncLater();
 	}
 
@@ -144,7 +144,6 @@ export class AccountDB<T extends Record<string, unknown>> implements Readable<Sy
 		let counter: bigint = 0n;
 		try {
 			const remoteResult = await this._fetchRemoteData();
-			console.log({remoteResult});
 			remoteData = remoteResult.data;
 			counter = remoteResult.counter;
 		} catch (e) {
@@ -155,7 +154,6 @@ export class AccountDB<T extends Record<string, unknown>> implements Readable<Sy
 		if (!error && remoteData) {
 			const {newData, newDataOnLocal, newDataOnRemote} = this.merge(this.state.data, remoteData);
 			if (newDataOnRemote) {
-				console.log(`newDataOnRemote`);
 				this.state.data = newData;
 				const notified = await this._syncLocal();
 				if (!notified) {
@@ -163,7 +161,6 @@ export class AccountDB<T extends Record<string, unknown>> implements Readable<Sy
 				}
 			}
 			if (newDataOnLocal && this.state.data) {
-				console.log(`newDataOnLocal`);
 				this._postToRemote(this.state.data, counter);
 			}
 			this.state.remoteFetchedAtLeastOnce = true;
@@ -276,7 +273,7 @@ export class AccountDB<T extends Record<string, unknown>> implements Readable<Sy
 			console.error('sync no success', json);
 			return; // TODO retry ?
 		} else {
-			// console.log('synced!');
+			// logger.info('synced!');
 		}
 	}
 
@@ -317,7 +314,7 @@ export class AccountDB<T extends Record<string, unknown>> implements Readable<Sy
 	}
 
 	private _notify(message: string): void {
-		console.log(`AccountDB:notify: ${message}`);
+		logger.info(`AccountDB:notify: ${message}`);
 		this.store.set(this.state);
 	}
 }

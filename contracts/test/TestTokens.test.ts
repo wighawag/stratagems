@@ -14,7 +14,7 @@ import {hexToSignature, parseEther} from 'viem';
 async function deployStratagems(config?: {
 	startTime: bigint;
 	commitPeriod: bigint;
-	resolutionPeriod: bigint;
+	revealPeriod: bigint;
 	maxLife: number;
 }) {
 	const {accounts, walletClient, publicClient} = await getConnection();

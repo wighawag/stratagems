@@ -23,6 +23,12 @@ library logger {
 
 	// _sendLogPayload(abi.encodeWithSignature('log(string,int256,int256)', 'cell %s', x, y));
 
+	function logPosition(string memory title, uint64 pos) internal view {
+		int256 x = int256(int32(int32(uint32(pos) & 0xFFFFFFFF)));
+		int256 y = int256(int32(int32(uint32(pos) >> 32)));
+		console.log('%s: (%s,%s)', title, Strings.toString(x), Strings.toString(y));
+	}
+
 	function logCell(
 		uint8 ii,
 		string memory title,
@@ -30,23 +36,23 @@ library logger {
 		UsingStratagemsTypes.Cell memory cell,
 		address owner
 	) internal view {
-		// string memory indent = ii == 0 ? '' : ii == 1 ? '    ' : ii == 2 ? '        ' : '            ';
-		// // string memory indent = '';
-		// console.log('%s%s', indent, title);
-		// int256 x = int256(int32(int256(uint256(id) & 0xFFFFFFFF)));
-		// int256 y = int256(int32(int256(uint256(id) >> 32)));
-		// console.log('%s-------------------------------------------------------------', indent);
-		// console.log('%scell (%s,%s)', indent, Strings.toString(x), Strings.toString(y));
-		// console.log('%s-------------------------------------------------------------', indent);
-		// console.log('%s - lastEpochUpdate:  %s', indent, cell.lastEpochUpdate);
-		// console.log('%s - epochWhenTokenIsAdded:  %s', indent, cell.epochWhenTokenIsAdded);
-		// console.log('%s - color:  %s', indent, uint8(cell.color));
-		// console.log('%s - life:  %s', indent, cell.life);
-		// console.log('%s - distribution:  %s', indent, cell.distribution);
-		// console.log('%s - owner:  %s', indent, owner);
-		// console.log('%s - delta: %s', indent, Strings.toString(cell.delta));
-		// console.log('%s - enemyMap:  %s', indent, cell.enemyMap);
-		// console.log('%s-------------------------------------------------------------', indent);
+		string memory indent = ii == 0 ? '' : ii == 1 ? '    ' : ii == 2 ? '        ' : '            ';
+		// string memory indent = '';
+		console.log('%s%s', indent, title);
+		int256 x = int256(int32(int256(uint256(id) & 0xFFFFFFFF)));
+		int256 y = int256(int32(int256(uint256(id) >> 32)));
+		console.log('%s-------------------------------------------------------------', indent);
+		console.log('%scell (%s,%s)', indent, Strings.toString(x), Strings.toString(y));
+		console.log('%s-------------------------------------------------------------', indent);
+		console.log('%s - lastEpochUpdate:  %s', indent, cell.lastEpochUpdate);
+		console.log('%s - epochWhenTokenIsAdded:  %s', indent, cell.epochWhenTokenIsAdded);
+		console.log('%s - color:  %s', indent, uint8(cell.color));
+		console.log('%s - life:  %s', indent, cell.life);
+		console.log('%s - distribution:  %s', indent, cell.distribution);
+		console.log('%s - owner:  %s', indent, owner);
+		console.log('%s - delta: %s', indent, Strings.toString(cell.delta));
+		console.log('%s - enemyMap:  %s', indent, cell.enemyMap);
+		console.log('%s-------------------------------------------------------------', indent);
 	}
 
 	function logTransfers(
@@ -54,19 +60,19 @@ library logger {
 		string memory title,
 		UsingStratagemsTypes.TokenTransferCollection memory transferCollection
 	) internal pure {
-		// string memory indent = ii == 0 ? '' : ii == 1 ? '    ' : ii == 2 ? '        ' : '            ';
-		// // string memory indent = '';
-		// console.log('%s%s', indent, title);
-		// console.log('%s-------------------------------------------------------------', indent);
-		// for (uint256 i = 0; i < transferCollection.numTransfers; i++) {
-		// 	console.log(
-		// 		'%stransfer (%s,%s)',
-		// 		indent,
-		// 		transferCollection.transfers[i].to,
-		// 		Strings.toString(transferCollection.transfers[i].amount)
-		// 	);
-		// }
-		// console.log('%s-------------------------------------------------------------', indent);
+		string memory indent = ii == 0 ? '' : ii == 1 ? '    ' : ii == 2 ? '        ' : '            ';
+		// string memory indent = '';
+		console.log('%s%s', indent, title);
+		console.log('%s-------------------------------------------------------------', indent);
+		for (uint256 i = 0; i < transferCollection.numTransfers; i++) {
+			console.log(
+				'%stransfer (%s,%s)',
+				indent,
+				transferCollection.transfers[i].to,
+				Strings.toString(transferCollection.transfers[i].amount)
+			);
+		}
+		console.log('%s-------------------------------------------------------------', indent);
 	}
 }
 
@@ -82,8 +88,8 @@ abstract contract UsingStratagemsState is
 	uint256 internal immutable START_TIME;
 	/// @notice the duration of the commit phase in seconds
 	uint256 internal immutable COMMIT_PHASE_DURATION;
-	/// @notice the duration of the resolution phase in seconds
-	uint256 internal immutable RESOLUTION_PHASE_DURATION;
+	/// @notice the duration of the reveal phase in seconds
+	uint256 internal immutable REVEAL_PHASE_DURATION;
 	/// @notice the max number of level a cell can reach in the game
 	uint8 internal immutable MAX_LIFE;
 	/// @notice the number of tokens underlying each gems on the board.
@@ -101,19 +107,19 @@ abstract contract UsingStratagemsState is
 		BURN_ADDRESS = config.burnAddress;
 		START_TIME = config.startTime;
 		COMMIT_PHASE_DURATION = config.commitPhaseDuration;
-		RESOLUTION_PHASE_DURATION = config.resolutionPhaseDuration;
+		REVEAL_PHASE_DURATION = config.revealPhaseDuration;
 		MAX_LIFE = config.maxLife;
 		NUM_TOKENS_PER_GEMS = config.numTokensPerGems;
 	}
 
 	function _epoch() internal view virtual returns (uint24 epoch, bool commiting) {
-		uint256 epochDuration = COMMIT_PHASE_DURATION + RESOLUTION_PHASE_DURATION;
+		uint256 epochDuration = COMMIT_PHASE_DURATION + REVEAL_PHASE_DURATION;
 		uint256 time = _timestamp();
 		if (time < START_TIME) {
 			revert GameNotStarted();
 		}
 		uint256 timePassed = time - START_TIME;
-		epoch = uint24(timePassed / epochDuration + 2); // epoch start at 2, this make the hypothetical previous resolution phase's epoch to be 1
+		epoch = uint24(timePassed / epochDuration + 2); // epoch start at 2, this make the hypothetical previous reveal phase's epoch to be 1
 		commiting = timePassed - ((epoch - 2) * epochDuration) < COMMIT_PHASE_DURATION;
 	}
 

@@ -23,7 +23,7 @@ const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
 	construct(): Data {
 		return {cells: {}, owners: {}, commitments: {}};
 	},
-	onCommitmentResolved(state, event) {
+	onCommitmentRevealed(state, event) {
 		const account = event.args.player.toLowerCase();
 		const stratagemsContract = new StratagemsContract(state, 7);
 		for (const move of event.args.moves) {

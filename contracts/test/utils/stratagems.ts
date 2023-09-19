@@ -30,7 +30,7 @@ export type GridEnv = {
 		burnAddress: `0x${string}`;
 		startTime: bigint;
 		commitPhaseDuration: bigint;
-		resolutionPhaseDuration: bigint;
+		revealPhaseDuration: bigint;
 		maxLife: number;
 		numTokensPerGems: bigint;
 	};
@@ -57,7 +57,7 @@ export async function withGrid(env: GridEnv, gridString: string) {
 				{account: env.stratagemsAdmin},
 			);
 		}
-		await env.Stratagems.write.increaseTime([config.resolutionPhaseDuration], {account: env.stratagemsAdmin});
+		await env.Stratagems.write.increaseTime([config.revealPhaseDuration], {account: env.stratagemsAdmin});
 	}
 }
 
@@ -100,12 +100,15 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 	await env.Stratagems.write.increaseTime([config.commitPhaseDuration], {account: env.stratagemsAdmin});
 
 	for (const commitment of commitments) {
-		await env.Stratagems.write.resolve([commitment.player, commitment.secret, commitment.moves, zeroBytes24, true], {
-			account: env.stratagemsAdmin,
-		});
+		await env.Stratagems.write.reveal(
+			[commitment.player, commitment.secret, commitment.moves, zeroBytes24, true, zeroAddress],
+			{
+				account: env.stratagemsAdmin,
+			},
+		);
 	}
 
-	await env.Stratagems.write.increaseTime([config.resolutionPhaseDuration], {account: env.stratagemsAdmin});
+	await env.Stratagems.write.increaseTime([config.revealPhaseDuration], {account: env.stratagemsAdmin});
 }
 
 export async function getGrid(

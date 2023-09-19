@@ -4,7 +4,7 @@
 	import {encodeFunctionData, formatEther, formatUnits} from 'viem';
 	import {startCommit} from '$lib/ui/flows/commit';
 	import {epochInfo} from '$lib/blockchain/state/Epoch';
-	import ResolutionPanel from './ResolutionPanel.svelte';
+	import RevealPanel from './RevealPanel.svelte';
 
 	const offchainState = accountData.offchainState;
 
@@ -104,4 +104,4 @@
 	{/if}
 {/if}
 
-<ResolutionPanel />
+<RevealPanel />

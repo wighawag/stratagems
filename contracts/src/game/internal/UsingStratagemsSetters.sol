@@ -14,10 +14,10 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 		(uint24 epoch, bool commiting) = _epoch();
 
 		if (!commiting) {
-			revert InResolutionPhase();
+			revert InRevealPhase();
 		}
 		if (commitment.epoch != 0 && commitment.epoch != epoch) {
-			revert PreviousCommitmentNotResolved();
+			revert PreviousCommitmentNotRevealed();
 		}
 
 		commitment.hash = commitmentHash;
@@ -41,7 +41,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 	) internal returns (uint256 newReserveAmount) {
 		// max number of transfer is (4+1) * moves.length
 		// (for each move's cell's neighbours potentially being a different account)
-		// limiting the number of move per commitment resolution to 32 or, even more probably, should cover this unlikely scenario
+		// limiting the number of move per commitment reveal to 32 or, even more probably, should cover this unlikely scenario
 		TokenTransferCollection memory transferCollection = TokenTransferCollection({
 			transfers: new TokenTransfer[](moves.length * 5),
 			numTransfers: 0
@@ -60,7 +60,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 			tokens.tokensReturned += returned;
 		}
 
-		logger.logTransfers(0, 'resolve', transferCollection);
+		logger.logTransfers(0, 'resolveMoves', transferCollection);
 
 		_multiTransfer(TOKENS, transferCollection);
 
@@ -299,13 +299,16 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 		uint8 distribution
 	) internal returns (int8 newDelta, uint8 newenemyMap, uint8 numDue, address[4] memory ownersToPay) {
 		unchecked {
-			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
-			int256 y = int256(int32(int256(uint256(position) >> 32)));
+			int256 x = int256(int32(int32(uint32(position) & 0xFFFFFFFF)));
+			int256 y = int256(int32(int32(uint32(position) >> 32)));
+
+			logger.logPosition('from', position);
 
 			int8 enemyOrFriend;
 			uint8 due;
 			{
 				uint64 upPosition = uint64((uint256(y - 1) << 32) + uint256(x));
+				logger.logPosition('upPosition', upPosition);
 				(enemyOrFriend, due) = _updateCell(upPosition, epoch, 2, oldColor, newColor);
 				if (enemyOrFriend < 0) {
 					newenemyMap = newenemyMap | 1;
@@ -319,7 +322,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 			}
 			{
 				uint64 leftPosition = uint64((uint256(y) << 32) + uint256(x - 1));
-
+				logger.logPosition('leftPosition', leftPosition);
 				(enemyOrFriend, due) = _updateCell(leftPosition, epoch, 3, oldColor, newColor);
 				if (enemyOrFriend < 0) {
 					newenemyMap = newenemyMap | 2;
@@ -333,6 +336,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
 			{
 				uint64 downPosition = uint64((uint256(y + 1) << 32) + uint256(x));
+				logger.logPosition('downPosition', downPosition);
 				(enemyOrFriend, due) = _updateCell(downPosition, epoch, 0, oldColor, newColor);
 				if (enemyOrFriend < 0) {
 					newenemyMap = newenemyMap | 4;
@@ -345,6 +349,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 			}
 			{
 				uint64 rightPosition = uint64((uint256(y) << 32) + uint256(x + 1));
+				logger.logPosition('rightPosition', rightPosition);
 				(enemyOrFriend, due) = _updateCell(rightPosition, epoch, 1, oldColor, newColor);
 				if (enemyOrFriend < 0) {
 					newenemyMap = newenemyMap | 8;

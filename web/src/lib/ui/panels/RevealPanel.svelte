@@ -10,46 +10,46 @@
 
 	// const onchainActions = accountData.onchainActions;
 
-	// $: toResolve = getTransactionToReveal($onchainActions);
+	// $: toReveal = getTransactionToReveal($onchainActions);
 
-	// $: first = toResolve.length > 0 ? toResolve[0] : undefined;
+	// $: first = toReveal.length > 0 ? toReveal[0] : undefined;
 
-	async function startResolving(e: MouseEvent) {
+	async function startRevealing(e: MouseEvent) {
 		e.preventDefault();
-		if (!$viewState.hasCommitmentToResolve) {
-			throw new Error(`no action to resolve`);
+		if (!$viewState.hasCommitmentToReveal) {
+			throw new Error(`no action to reveal`);
 		}
-		if ($viewState.hasCommitmentToResolve.commit) {
-			if ($viewState.hasCommitmentToResolve.commit.tx.metadata?.epoch !== $epoch) {
+		if ($viewState.hasCommitmentToReveal.commit) {
+			if ($viewState.hasCommitmentToReveal.commit.tx.metadata?.epoch !== $epoch) {
 				startAcknowledgFailedReveal(
-					$viewState.hasCommitmentToResolve.commit.hash,
-					$viewState.hasCommitmentToResolve.commit.tx.metadata as CommitMetadata,
+					$viewState.hasCommitmentToReveal.commit.hash,
+					$viewState.hasCommitmentToReveal.commit.tx.metadata as CommitMetadata,
 				);
 			} else {
 				startReveal(
-					$viewState.hasCommitmentToResolve.commit.hash,
-					$viewState.hasCommitmentToResolve.commit.tx.metadata as CommitMetadata,
+					$viewState.hasCommitmentToReveal.commit.hash,
+					$viewState.hasCommitmentToReveal.commit.tx.metadata as CommitMetadata,
 				);
 			}
 		} else {
 			// TODO use flow
 			await contracts.execute(async ({contracts, account}) => {
 				console.log(account);
-				await contracts.Stratagems.write.acknowledgeMissedResolutionByBurningAllReserve({account: account.address});
+				await contracts.Stratagems.write.acknowledgeMissedRevealByBurningAllReserve({account: account.address});
 			});
 		}
 	}
 </script>
 
-{#if $viewState.hasCommitmentToResolve}
+{#if $viewState.hasCommitmentToReveal}
 	<div class="pointer-events-none select-none fixed top-0 h-full grid place-items-end w-full max-w-full">
 		<div class="flex flex-row-reverse sm:m-2 w-full">
 			<div class="card w-full sm:w-96 bg-base-content glass">
 				<div class="card-body">
 					<h2 class="card-title text-primary">Your Move:</h2>
 					<p class="text-secondary">
-						{#if $viewState.hasCommitmentToResolve.commit}
-							{JSON.stringify($viewState.hasCommitmentToResolve, bnReplacer)}
+						{#if $viewState.hasCommitmentToReveal.commit}
+							{JSON.stringify($viewState.hasCommitmentToReveal, bnReplacer)}
 						{:else}
 							no commit tx found
 						{/if}
@@ -57,7 +57,7 @@
 
 					<!-- {`${currentReserve > 0 ? `+ ${currentReserveString} in reserve` : ''}`}. -->
 					<div class="mt-4 card-actions justify-end">
-						<button class={`pointer-events-auto btn btn-primary`} on:click={startResolving}>Resolve</button>
+						<button class={`pointer-events-auto btn btn-primary`} on:click={startRevealing}>Reveal</button>
 					</div>
 				</div>
 			</div>

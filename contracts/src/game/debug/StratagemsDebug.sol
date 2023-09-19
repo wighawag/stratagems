@@ -87,7 +87,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 			Cell memory cell = _cells[position];
 
 			// we act as if the token were added in previous epochs
-			// this is so it does not affect the resolution phase
+			// this is so it does not affect the reveal phase
 			int8 effectiveDelta = cell.delta != 0 ? cell.delta : -1;
 			if (effectiveDelta < 0 && cell.enemyMap == 0) {
 				effectiveDelta = 0;
@@ -181,8 +181,8 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 		uint24 epoch
 	) internal returns (int8 delta, uint8 enemyMap) {
 		unchecked {
-			int256 x = int256(int32(int256(uint256(center) & 0xFFFFFFFF)));
-			int256 y = int256(int32(int256(uint256(center) >> 32)));
+			int256 x = int256(int32(int32(uint32(center) & 0xFFFFFFFF)));
+			int256 y = int256(int32(int32(uint32(center) >> 32)));
 			{
 				uint64 upPosition = uint64((uint256(y - 1) << 32) + uint256(x));
 				Cell memory cell = _cells[upPosition];

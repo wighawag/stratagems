@@ -34,7 +34,7 @@ describe('Stratagems', function () {
 		`,
 		);
 		expect((await Stratagems.read.getRawCell([xyToBigIntID(1, 2)])).life).to.equal(2);
-		await Stratagems.write.increaseTime([config.commitPhaseDuration + config.resolutionPhaseDuration], {
+		await Stratagems.write.increaseTime([config.commitPhaseDuration + config.revealPhaseDuration], {
 			account: stratagemsAdmin,
 		});
 		await Stratagems.write.poke([xyToBigIntID(1, 2)], {account: deployer});
@@ -66,12 +66,9 @@ describe('Stratagems', function () {
 		`,
 			)
 				.then(() =>
-					setup.Stratagems.write.increaseTime(
-						[setup.config.commitPhaseDuration + setup.config.resolutionPhaseDuration],
-						{
-							account: setup.stratagemsAdmin,
-						},
-					),
+					setup.Stratagems.write.increaseTime([setup.config.commitPhaseDuration + setup.config.revealPhaseDuration], {
+						account: setup.stratagemsAdmin,
+					}),
 				)
 				.then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}))
 				.then(renderGrid),

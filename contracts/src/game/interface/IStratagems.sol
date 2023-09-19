@@ -17,13 +17,13 @@ interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
 	function getCells(uint256[] memory ids) external view returns (FullCell[] memory cells);
 
 	/// @notice the number of token in reserve per account
-	///  This is used to slash player who do not resolve their commit
+	///  This is used to slash player who do not reveal their moves
 	///  The amount can be greater than the number of token required for the next move
 	///  This allow player to potentially hide their intention.
 	/// @param account the address to retrived the amount in reserve of.
 	function getTokensInReserve(address account) external view returns (uint256 amount);
 
-	/// @notice The commitment to be resolved. zeroed if no commitment need to be made.
+	/// @notice The commitment to be revealed. zeroed if no commitment need to be made.
 	/// @param account the address of which to retrieve the commitment
 	function getCommitment(address account) external view returns (Commitment memory commitment);
 
@@ -37,7 +37,7 @@ interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
 
 	/// @notice called by players to commit their moves
 	///  this can be called multiple time in the same epoch, the last call overriding the previous.
-	///  When a commitment is made, it needs to be resolved in the resolution phase of the same epoch.abi
+	///  When a commitment is made, it needs to be revealed in the reveal phase of the same epoch.abi
 	///  If missed, player can still reveal its moves but none of them will be resolved.
 	///   The player would lose its associated reserved amount.
 	/// @param commitmentHash the hash of the moves
@@ -68,33 +68,35 @@ interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
 	/// @param amount number of tokens to withdraw
 	function withdrawFromReserve(uint256 amount) external;
 
-	/// @notice called by player to resolve their commitment
+	/// @notice called by player to reveal their moves
 	///  this is where the core logic of the game takes place
 	///  This is where the game board evolves
-	///  The game is designed so that resolution order do not matter
+	///  The game is designed so that reveal order does not matter
 	/// @param player the account who committed the move
 	/// @param secret the secret used to make the commit
 	/// @param moves the actual moves
-	/// @param furtherMoves if moves cannot be contained in one tx, further moves are represented by a hash to resolve too
+	/// @param furtherMoves if moves cannot be contained in one tx, further moves are represented by a hash to reveal too
 	///  Note that you have to that have enough moves (specified by MAX_NUM_MOVES_PER_HASH = 32)
 	/// @param useReserve whether the tokens are taken from the reserve or from approvals.
 	///  This allow player to keep their reserve intact and use it on their next move.
 	///  Note that this require the Stratagems contract to have enough allowance.
-	function resolve(
+	/// @param payee address to send ETH to along the reveal
+	function reveal(
 		address player,
 		bytes32 secret,
 		Move[] calldata moves,
 		bytes24 furtherMoves,
-		bool useReserve
-	) external;
+		bool useReserve,
+		address payable payee
+	) external payable;
 
-	/// @notice called by player if they missed the resolution phase and want to minimze the token loss.
+	/// @notice called by player if they missed the reveal phase and want to minimze the token loss.
 	///  By providing the moves, they will be slashed only the amount of token required to make the moves
 	/// @param player the account who committed the move
 	/// @param secret the secret used to make the commit
 	/// @param moves the actual moves
-	/// @param furtherMoves if moves cannot be contained in one tx, further moves are represented by a hash to resolve too
-	function acknowledgeMissedResolution(
+	/// @param furtherMoves if moves cannot be contained in one tx, further moves are represented by a hash to reveal too
+	function acknowledgeMissedReveal(
 		address player,
 		bytes32 secret,
 		Move[] calldata moves,
@@ -103,8 +105,8 @@ interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
 
 	/// @notice should only be called as last resort
 	/// this will burn all tokens in reserve
-	/// If player has access to the secret, better call `acknowledgeMissedResolution`
-	function acknowledgeMissedResolutionByBurningAllReserve() external;
+	/// If player has access to the secret, better call `acknowledgeMissedReveal`
+	function acknowledgeMissedRevealByBurningAllReserve() external;
 
 	/// @notice poke a position, resolving its virtual state.
 	//  If dead as a result, it will reward neighboor enemies colors

@@ -66,7 +66,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 		config.burnAddress = BURN_ADDRESS;
 		config.startTime = START_TIME;
 		config.commitPhaseDuration = COMMIT_PHASE_DURATION;
-		config.resolutionPhaseDuration = RESOLUTION_PHASE_DURATION;
+		config.revealPhaseDuration = REVEAL_PHASE_DURATION;
 		config.maxLife = MAX_LIFE;
 		config.numTokensPerGems = NUM_TOKENS_PER_GEMS;
 	}
@@ -141,10 +141,10 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 		Commitment storage commitment = _commitments[msg.sender];
 		(uint24 epoch, bool commiting) = _epoch();
 		if (!commiting) {
-			revert InResolutionPhase();
+			revert InRevealPhase();
 		}
 		if (commitment.epoch != epoch) {
-			revert PreviousCommitmentNotResolved();
+			revert PreviousCommitmentNotRevealed();
 		}
 
 		// Note that we do not reset the hash
@@ -161,7 +161,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 		(uint24 epoch, bool commiting) = _epoch();
 
 		if (commitment.epoch != 0 && (!commiting || commitment.epoch != epoch)) {
-			revert PreviousCommitmentNotResolved();
+			revert PreviousCommitmentNotRevealed();
 		}
 
 		uint256 inReserve = _tokensInReserve[msg.sender];
@@ -180,13 +180,14 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 	}
 
 	/// @inheritdoc IStratagemsGameplay
-	function resolve(
+	function reveal(
 		address player,
 		bytes32 secret,
 		Move[] calldata moves,
 		bytes24 furtherMoves,
-		bool useReserve
-	) external {
+		bool useReserve,
+		address payable payee
+	) external payable {
 		Commitment storage commitment = _commitments[player];
 		(uint24 epoch, bool commiting) = _epoch();
 
@@ -194,7 +195,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 			revert InCommitmentPhase();
 		}
 		if (commitment.epoch == 0) {
-			revert NothingToResolve();
+			revert NothingToReveal();
 		}
 		if (commitment.epoch != epoch) {
 			revert InvalidEpoch();
@@ -204,7 +205,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 
 		uint256 newReserveAmount = _resolveMoves(player, epoch, moves, useReserve ? address(0) : player);
 
-		bytes24 hashResolved = commitment.hash;
+		bytes24 hashRevealed = commitment.hash;
 		if (furtherMoves != bytes24(0)) {
 			if (moves.length != MAX_NUM_MOVES_PER_HASH) {
 				revert InvalidFurtherMoves();
@@ -214,11 +215,15 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 			commitment.epoch = 0; // used
 		}
 
-		emit CommitmentResolved(player, epoch, hashResolved, moves, furtherMoves, newReserveAmount);
+		emit CommitmentRevealed(player, epoch, hashRevealed, moves, furtherMoves, newReserveAmount);
+
+		if (payee != address(0)) {
+			payee.transfer(msg.value);
+		}
 	}
 
 	/// @inheritdoc IStratagemsGameplay
-	function acknowledgeMissedResolution(
+	function acknowledgeMissedReveal(
 		address player,
 		bytes32 secret,
 		Move[] calldata moves,
@@ -227,7 +232,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 		Commitment storage commitment = _commitments[player];
 		(uint24 epoch, ) = _epoch();
 		if (commitment.epoch == 0 || commitment.epoch == epoch) {
-			revert CanStillResolve();
+			revert CanStillReveal();
 		}
 
 		uint256 numMoves = moves.length;
@@ -250,16 +255,16 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 	}
 
 	/// @inheritdoc IStratagemsGameplay
-	function acknowledgeMissedResolutionByBurningAllReserve() external {
+	function acknowledgeMissedRevealByBurningAllReserve() external {
 		Commitment storage commitment = _commitments[msg.sender];
 		(uint24 epoch, ) = _epoch();
 
 		if (commitment.epoch == 0) {
-			revert NothingToResolve();
+			revert NothingToReveal();
 		}
 
 		if (commitment.epoch == epoch) {
-			revert CanStillResolve();
+			revert CanStillReveal();
 		}
 
 		commitment.epoch = 0;

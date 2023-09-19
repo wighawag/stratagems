@@ -8,14 +8,14 @@ const TOTAL = 24 * 3600;
 export function computeEpoch(time: number) {
 	// reuse same variable name
 	const COMMIT_PHASE_DURATION = ACTION_PERIOD;
-	const RESOLUTION_PHASE_DURATION = TOTAL - ACTION_PERIOD;
+	const REVEAL_PHASE_DURATION = TOTAL - ACTION_PERIOD;
 	const START_TIME = 0;
 	// --------------------
 	// From Solidity
-	const epochDuration = COMMIT_PHASE_DURATION + RESOLUTION_PHASE_DURATION;
+	const epochDuration = COMMIT_PHASE_DURATION + REVEAL_PHASE_DURATION;
 	// const time = _timestamp();
 	const timePassed = time - START_TIME;
-	const epoch = Math.floor(timePassed / epochDuration + 2); // epoch start at 2, this make the hypothetical previous resolution phase's epoch to be 1
+	const epoch = Math.floor(timePassed / epochDuration + 2); // epoch start at 2, this make the hypothetical previous reveal phase's epoch to be 1
 	const commiting = timePassed - (epoch - 2) * epochDuration < COMMIT_PHASE_DURATION;
 	// ---------------
 	const epochStartTime = (epoch - 2) * epochDuration;

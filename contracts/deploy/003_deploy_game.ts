@@ -12,7 +12,7 @@ export type GameConfig = {
 	burnAddress: `0x${string}`;
 	startTime: number;
 	commitPhaseDuration: bigint;
-	resolutionPhaseDuration: bigint;
+	revealPhaseDuration: bigint;
 	maxLife: number;
 };
 
@@ -51,7 +51,7 @@ export default execute(
 
 			startTime,
 			commitPhaseDuration: BigInt(days(1)) - BigInt(hours(1)), // BigInt(minutes(5)), // TODO support more complex period to support a special weekend commit period
-			resolutionPhaseDuration: BigInt(hours(1)),
+			revealPhaseDuration: BigInt(hours(1)),
 			maxLife: 7, // 7 is a good number, because with 4 enemy neighbors, it take 2 turns to die, with 3 it takes 3, with 2 it takes 4, with 1 it takes 7
 			...configOverride,
 		};
