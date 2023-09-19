@@ -156,4 +156,48 @@ describe('TestPositionUtils', function () {
 		expect(x).to.equal(num.x + offset.x);
 		expect(y).to.equal(num.y + offset.y);
 	});
+
+	it('max x and negative offset', async function () {
+		const num = {x: 2_147_483_647, y: -1002};
+		const offset = {x: -999, y: -11};
+		const pos = xyToBigIntID(num.x, num.y);
+		const {TestPositionUtils} = await loadFixture(deployTestPositionUtils);
+		const newPos = await TestPositionUtils.read.offset([pos, offset.x, offset.y]);
+		const {x, y} = bigIntIDToXY(newPos);
+		expect(x).to.equal(num.x + offset.x);
+		expect(y).to.equal(num.y + offset.y);
+	});
+	// it('max x and positive offset should fail', async function () {
+	// 	const num = {x: 2_147_483_647, y: -1002};
+	// 	const offset = {x: 1, y: -11};
+	// 	const pos = xyToBigIntID(num.x, num.y);
+	// 	const {TestPositionUtils} = await loadFixture(deployTestPositionUtils);
+	// 	const newPos = await TestPositionUtils.read.offset([pos, offset.x, offset.y]);
+	// 	const {x, y} = bigIntIDToXY(newPos);
+	// 	expect(x).to.equal(num.x + offset.x);
+	// 	expect(y).to.equal(num.y + offset.y);
+	// });
+
+	it('offset result in max positive', async function () {
+		const num = {x: 2_147_483_645, y: -1002};
+		const offset = {x: 2, y: -11};
+		const pos = xyToBigIntID(num.x, num.y);
+		const {TestPositionUtils} = await loadFixture(deployTestPositionUtils);
+		const newPos = await TestPositionUtils.read.offset([pos, offset.x, offset.y]);
+		const {x, y} = bigIntIDToXY(newPos);
+		expect(x).to.equal(num.x + offset.x);
+		expect(y).to.equal(num.y + offset.y);
+	});
+
+	it('offset result in max negative', async function () {
+		const num = {x: -2_147_483_645, y: -1003};
+		const offset = {x: -3, y: -2_147_482_645};
+		const pos = xyToBigIntID(num.x, num.y);
+		const {TestPositionUtils} = await loadFixture(deployTestPositionUtils);
+		const newPos = await TestPositionUtils.read.offset([pos, offset.x, offset.y]);
+		const {x, y} = bigIntIDToXY(newPos);
+		console.log({newPos: newPos.toString(16), x, y});
+		expect(x).to.equal(num.x + offset.x);
+		expect(y).to.equal(num.y + offset.y);
+	});
 });
