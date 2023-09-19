@@ -5,12 +5,15 @@ import './UsingStratagemsStore.sol';
 import '../interface/UsingStratagemsEvents.sol';
 import '../interface/UsingStratagemsErrors.sol';
 import './UsingVirtualTime.sol';
+import '../../utils/PositionUtils.sol';
 
 // TODO use hardhat-preprocessor
 import 'hardhat/console.sol';
 import '@openzeppelin/contracts/utils/Strings.sol';
 
 library logger {
+	using PositionUtils for uint64;
+
 	address constant CONSOLE_ADDRESS = 0x000000000000000000636F6e736F6c652e6c6f67;
 
 	function _sendLogPayload(bytes memory payload) private view {
@@ -24,8 +27,7 @@ library logger {
 	// _sendLogPayload(abi.encodeWithSignature('log(string,int256,int256)', 'cell %s', x, y));
 
 	function logPosition(string memory title, uint64 pos) internal view {
-		int256 x = int256(int32(int32(uint32(pos) & 0xFFFFFFFF)));
-		int256 y = int256(int32(int32(uint32(pos) >> 32)));
+		(int32 x, int32 y) = pos.toXY();
 		console.log('%s: (%s,%s)', title, Strings.toString(x), Strings.toString(y));
 	}
 
@@ -39,8 +41,7 @@ library logger {
 		string memory indent = ii == 0 ? '' : ii == 1 ? '    ' : ii == 2 ? '        ' : '            ';
 		// string memory indent = '';
 		console.log('%s%s', indent, title);
-		int256 x = int256(int32(int256(uint256(id) & 0xFFFFFFFF)));
-		int256 y = int256(int32(int256(uint256(id) >> 32)));
+		(int32 x, int32 y) = id.toXY();
 		console.log('%s-------------------------------------------------------------', indent);
 		console.log('%scell (%s,%s)', indent, Strings.toString(x), Strings.toString(y));
 		console.log('%s-------------------------------------------------------------', indent);

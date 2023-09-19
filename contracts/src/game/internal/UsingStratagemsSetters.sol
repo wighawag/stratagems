@@ -4,8 +4,11 @@ pragma solidity ^0.8.0;
 import './UsingStratagemsState.sol';
 import '../interface/UsingStratagemsEvents.sol';
 import './UsingStratagemsUtils.sol';
+import '../../utils/PositionUtils.sol';
 
 abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagemsUtils {
+	using PositionUtils for uint64;
+
 	constructor(Config memory config) UsingStratagemsState(config) {}
 
 	function _makeCommitment(address player, bytes24 commitmentHash, uint256 inReserve) internal {
@@ -299,15 +302,12 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 		uint8 distribution
 	) internal returns (int8 newDelta, uint8 newenemyMap, uint8 numDue, address[4] memory ownersToPay) {
 		unchecked {
-			int256 x = int256(int32(int32(uint32(position) & 0xFFFFFFFF)));
-			int256 y = int256(int32(int32(uint32(position) >> 32)));
-
 			logger.logPosition('from', position);
 
 			int8 enemyOrFriend;
 			uint8 due;
 			{
-				uint64 upPosition = uint64((uint256(y - 1) << 32) + uint256(x));
+				uint64 upPosition = position.offset(0, -1);
 				logger.logPosition('upPosition', upPosition);
 				(enemyOrFriend, due) = _updateCell(upPosition, epoch, 2, oldColor, newColor);
 				if (enemyOrFriend < 0) {
@@ -321,7 +321,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 				newDelta += enemyOrFriend;
 			}
 			{
-				uint64 leftPosition = uint64((uint256(y) << 32) + uint256(x - 1));
+				uint64 leftPosition = position.offset(-1, 0);
 				logger.logPosition('leftPosition', leftPosition);
 				(enemyOrFriend, due) = _updateCell(leftPosition, epoch, 3, oldColor, newColor);
 				if (enemyOrFriend < 0) {
@@ -335,7 +335,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 			}
 
 			{
-				uint64 downPosition = uint64((uint256(y + 1) << 32) + uint256(x));
+				uint64 downPosition = position.offset(0, 1);
 				logger.logPosition('downPosition', downPosition);
 				(enemyOrFriend, due) = _updateCell(downPosition, epoch, 0, oldColor, newColor);
 				if (enemyOrFriend < 0) {
@@ -348,7 +348,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 				newDelta += enemyOrFriend;
 			}
 			{
-				uint64 rightPosition = uint64((uint256(y) << 32) + uint256(x + 1));
+				uint64 rightPosition = position.offset(1, 0);
 				logger.logPosition('rightPosition', rightPosition);
 				(enemyOrFriend, due) = _updateCell(rightPosition, epoch, 1, oldColor, newColor);
 				if (enemyOrFriend < 0) {

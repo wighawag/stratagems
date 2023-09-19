@@ -5,8 +5,11 @@ import 'solidity-kit/solc_0.8/utils/GenericErrors.sol';
 import 'solidity-kit/solc_0.8/debug/time/implementations/UsingControlledTime.sol';
 import '../internal/UsingStratagemsSetters.sol';
 import './IStratagemsWithDebug.sol';
+import '../../utils/PositionUtils.sol';
 
 contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStratagemsDebug {
+	using PositionUtils for uint64;
+
 	constructor(Config memory config) UsingStratagemsSetters(config) {}
 
 	function getRawCell(uint256 id) external view returns (Cell memory) {
@@ -137,10 +140,8 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 
 	function _computeDelta(uint64 position, Color color) internal view returns (int8 delta, uint8 enemyMap) {
 		unchecked {
-			int256 x = int256(int32(int256(uint256(position) & 0xFFFFFFFF)));
-			int256 y = int256(int32(int256(uint256(position) >> 32)));
 			{
-				uint64 upPosition = uint64((uint256(y - 1) << 32) + uint256(x));
+				uint64 upPosition = position.offset(0, -1);
 				int8 enemyOrFriend = isEnemyOrFriend(color, _cells[upPosition].color);
 				if (enemyOrFriend < 0) {
 					enemyMap = enemyMap | 1;
@@ -148,7 +149,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				delta += enemyOrFriend;
 			}
 			{
-				uint64 leftPosition = uint64((uint256(y) << 32) + uint256(x - 1));
+				uint64 leftPosition = position.offset(-1, 0);
 				int8 enemyOrFriend = isEnemyOrFriend(color, _cells[leftPosition].color);
 				if (enemyOrFriend < 0) {
 					enemyMap = enemyMap | 1;
@@ -157,7 +158,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 			}
 
 			{
-				uint64 downPosition = uint64((uint256(y + 1) << 32) + uint256(x));
+				uint64 downPosition = position.offset(0, 1);
 				int8 enemyOrFriend = isEnemyOrFriend(color, _cells[downPosition].color);
 				if (enemyOrFriend < 0) {
 					enemyMap = enemyMap | 1;
@@ -165,7 +166,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				delta += enemyOrFriend;
 			}
 			{
-				uint64 rightPosition = uint64((uint256(y) << 32) + uint256(x + 1));
+				uint64 rightPosition = position.offset(1, 0);
 				int8 enemyOrFriend = isEnemyOrFriend(color, _cells[rightPosition].color);
 				if (enemyOrFriend < 0) {
 					enemyMap = enemyMap | 1;
@@ -181,10 +182,8 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 		uint24 epoch
 	) internal returns (int8 delta, uint8 enemyMap) {
 		unchecked {
-			int256 x = int256(int32(int32(uint32(center) & 0xFFFFFFFF)));
-			int256 y = int256(int32(int32(uint32(center) >> 32)));
 			{
-				uint64 upPosition = uint64((uint256(y - 1) << 32) + uint256(x));
+				uint64 upPosition = center.offset(0, -1);
 				Cell memory cell = _cells[upPosition];
 				if (cell.color != Color.None) {
 					int8 enemyOrFriend = isEnemyOrFriend(color, cell.color);
@@ -196,7 +195,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				}
 			}
 			{
-				uint64 leftPosition = uint64((uint256(y) << 32) + uint256(x - 1));
+				uint64 leftPosition = center.offset(-1, 0);
 				Cell memory cell = _cells[leftPosition];
 				if (cell.color != Color.None) {
 					int8 enemyOrFriend = isEnemyOrFriend(color, cell.color);
@@ -209,7 +208,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 			}
 
 			{
-				uint64 downPosition = uint64((uint256(y + 1) << 32) + uint256(x));
+				uint64 downPosition = center.offset(0, 1);
 				Cell memory cell = _cells[downPosition];
 				if (cell.color != Color.None) {
 					int8 enemyOrFriend = isEnemyOrFriend(color, cell.color);
@@ -221,7 +220,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 				}
 			}
 			{
-				uint64 rightPosition = uint64((uint256(y) << 32) + uint256(x + 1));
+				uint64 rightPosition = center.offset(1, 0);
 				Cell memory cell = _cells[rightPosition];
 				if (cell.color != Color.None) {
 					int8 enemyOrFriend = isEnemyOrFriend(color, cell.color);
