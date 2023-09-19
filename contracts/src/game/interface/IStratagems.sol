@@ -41,7 +41,8 @@ interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
 	///  If missed, player can still reveal its moves but none of them will be resolved.
 	///   The player would lose its associated reserved amount.
 	/// @param commitmentHash the hash of the moves
-	function makeCommitment(bytes24 commitmentHash) external;
+	/// @param payee address to send ETH to along the commitment. Can be used to pay for reveal
+	function makeCommitment(bytes24 commitmentHash, address payable payee) external payable;
 
 	/// @notice called by players to cancel their current commitment
 	///  Can only be called during the commit phase in which the commitment was made
@@ -52,11 +53,13 @@ interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
 	/// @param commitmentHash the has of the moves
 	/// @param tokensAmountToAdd amount of tokens to add to the reserve. the resulting total must be enough to cover the moves
 	/// @param permit permit EIP2612, value = zero if not needed
+	/// @param payee address to send ETH to along the commitment. Can be used to pay for reveal
 	function makeCommitmentWithExtraReserve(
 		bytes24 commitmentHash,
 		uint256 tokensAmountToAdd,
-		Permit calldata permit
-	) external;
+		Permit calldata permit,
+		address payable payee
+	) external payable;
 
 	/// @notice called by players to withdraw tokens from the reserve
 	///  can only be called if no commitments are pending

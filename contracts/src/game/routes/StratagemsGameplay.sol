@@ -91,16 +91,20 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 	}
 
 	/// @inheritdoc IStratagemsGameplay
-	function makeCommitment(bytes24 commitmentHash) external {
+	function makeCommitment(bytes24 commitmentHash, address payable payee) external payable {
 		_makeCommitment(msg.sender, commitmentHash, _tokensInReserve[msg.sender]);
+		if (payee != address(0)) {
+			payee.transfer(msg.value);
+		}
 	}
 
 	/// @inheritdoc IStratagemsGameplay
 	function makeCommitmentWithExtraReserve(
 		bytes24 commitmentHash,
 		uint256 tokensAmountToAdd,
-		Permit calldata permit
-	) external {
+		Permit calldata permit,
+		address payable payee
+	) external payable {
 		uint256 inReserve = _tokensInReserve[msg.sender];
 		inReserve += tokensAmountToAdd;
 		_tokensInReserve[msg.sender] = inReserve;
@@ -125,6 +129,10 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 		if (tokensAmountToAdd > 0) {
 			TOKENS.transferFrom(msg.sender, address(this), tokensAmountToAdd);
 			emit ReserveDeposited(msg.sender, tokensAmountToAdd, inReserve);
+		}
+
+		if (payee != address(0)) {
+			payee.transfer(msg.value);
 		}
 	}
 

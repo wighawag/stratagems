@@ -7,6 +7,7 @@ import {prepareCommitment, zeroBytes32} from 'stratagems-common';
 import {localMoveToContractMove, type CommitMetadata} from '$lib/web3/account-data';
 import {epoch} from '$lib/blockchain/state/Epoch';
 import {hexToVRS} from '$lib/utils/eth/signatures';
+import {zeroAddress} from 'viem';
 
 export type CommitState = {
 	permit?: {
@@ -133,11 +134,14 @@ export async function startCommit() {
 							s,
 						};
 					}
-					await contracts.Stratagems.write.makeCommitmentWithExtraReserve([hash, amountToAdd, permitStruct], {
-						account: account.address,
-					});
+					await contracts.Stratagems.write.makeCommitmentWithExtraReserve(
+						[hash, amountToAdd, permitStruct, zeroAddress],
+						{
+							account: account.address,
+						},
+					);
 				} else {
-					await contracts.Stratagems.write.makeCommitment([hash], {account: account.address});
+					await contracts.Stratagems.write.makeCommitment([hash, zeroAddress], {account: account.address});
 				}
 				accountData.offchainState.reset();
 				return state;

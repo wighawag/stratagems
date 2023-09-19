@@ -15,7 +15,7 @@ import {
 	zeroBytes24,
 } from 'stratagems-common';
 import {ContractWithViemClient} from '../../utils/connection';
-import {parseEther} from 'viem';
+import {parseEther, zeroAddress} from 'viem';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 
 export type GridEnv = {
@@ -92,7 +92,7 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 		// await env.TestTokens.write.transfer([player, amountOfTokens], {account: env.tokensBeneficiary});
 		await env.TestTokens.write.approve([env.Stratagems.address, amountOfTokens], {account: player});
 		await env.Stratagems.write.makeCommitmentWithExtraReserve(
-			[commitment.hash, amountOfTokens, {deadline: 0n, value: 0n, v: 0, r: zeroBytes32, s: zeroBytes32}],
+			[commitment.hash, amountOfTokens, {deadline: 0n, value: 0n, v: 0, r: zeroBytes32, s: zeroBytes32}, zeroAddress],
 			{account: player},
 		);
 		commitments.push({...commitment, player});
