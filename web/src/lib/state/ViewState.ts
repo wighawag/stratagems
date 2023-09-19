@@ -85,7 +85,7 @@ function merge(
 			next,
 			future,
 			contract: copyState.cells[cellID],
-			currentPlayer: copyState.owners[cellID].toLowerCase() === account.address?.toLowerCase(),
+			currentPlayer: copyState.owners[cellID]?.toLowerCase() === account.address?.toLowerCase(),
 		};
 		viewState.cells[xyToXYID(x, y)] = viewCell;
 		console.log(`${x}, ${y}`, viewCell);

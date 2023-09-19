@@ -47,7 +47,7 @@ const stores = init({
 				}
 			} catch (err) {}
 
-			let remoteSyncEnabled: boolean | undefined;
+			let remoteSyncEnabled: boolean = true;
 			const remoteSync_storageKey = `__remoteSync_${address.toLowerCase}`;
 			try {
 				const fromStorage = localStorage.getItem(remoteSync_storageKey);
@@ -75,7 +75,10 @@ const stores = init({
 				}
 				// setLoadingMessage('Please Sign The Authentication Message To Go Forward');
 
-				const {doNotAskAgainSignature, remoteSyncEnabled: remoteSyncEnabledAsked} = (await waitForStep('WELCOME')) as {
+				console.log({remoteSyncEnabled});
+				const {doNotAskAgainSignature, remoteSyncEnabled: remoteSyncEnabledAsked} = (await waitForStep('WELCOME', {
+					remoteSyncEnabled,
+				})) as {
 					remoteSyncEnabled: boolean;
 					doNotAskAgainSignature: boolean;
 				};

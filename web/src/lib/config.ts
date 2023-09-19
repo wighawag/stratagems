@@ -8,6 +8,7 @@ import {
 	PUBLIC_LOCALHOST_BLOCK_TIME,
 	PUBLIC_DEV_NODE_URI,
 	PUBLIC_SYNC_URI,
+	PUBLIC_FUZD_URI,
 } from '$env/static/public';
 
 import _contractsInfos from '$data/contracts';
@@ -51,7 +52,9 @@ const defaultRPC = defaultRPCURL ? {chainId: contractsChainId, url: defaultRPCUR
 const SYNC_URI = params.sync || PUBLIC_SYNC_URI; //  'http://invalid.io'; // to emulate connection loss :)
 const SYNC_DB_NAME = 'stratagems-' + initialContractsInfos.contracts.Stratagems.address;
 
-export {defaultRPC, isUsingLocalDevNetwork, localRPC, blockTime, SYNC_DB_NAME, SYNC_URI};
+const FUZD_URI = params.fuzd || PUBLIC_FUZD_URI;
+
+export {defaultRPC, isUsingLocalDevNetwork, localRPC, blockTime, SYNC_DB_NAME, SYNC_URI, FUZD_URI};
 
 let _setContractsInfos: any;
 export const contractsInfos = readable<NetworkConfig>(_contractsInfos, (set) => {
