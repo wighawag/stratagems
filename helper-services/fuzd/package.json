@@ -1,11 +1,15 @@
 {
     "name": "fuzd-service",
     "devDependencies": {
-        "fuzd-cf-worker": "^0.0.5",
+        "fuzd-cf-worker": "^0.0.9",
+        "ldenv": "^0.3.7",
+        "set-defaults": "^0.0.1",
+        "wait-on": "^7.0.1",
         "wrangler": "^3.8.0"
     },
     "scripts": {
-        "dev": "wrangler dev -c ./wrangler.toml --port 34002",
+        "prepare": "set-defaults .",
+        "dev": "echo 'waiting for contracts.json...'; wait-on contracts.json && node generate-env.js && wrangler dev -c ./wrangler.toml --port 34002",
         "wrangler": "wrangler"
     }
 }

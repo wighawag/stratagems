@@ -1,0 +1,12 @@
+diff --git a/package.json b/package.json
+index 7d3e532730d75576681048f12847295b8e7f9261..da4d6bb43a756515720053d5e920a063b4e47f65 100644
+--- a/package.json
++++ b/package.json
+@@ -4,7 +4,6 @@
+   "description": "A library to encrypt data that can only be decrypted in the future using drand",
+   "source": "src/index.ts",
+   "main": "index.js",
+-  "module": "module.js",
+   "types": "index.d.ts",
+   "targets": {
+     "default": {

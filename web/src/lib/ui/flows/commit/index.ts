@@ -3,11 +3,13 @@ import {currentFlow, type Flow, type Step} from '..';
 import {accountData, contracts} from '$lib/web3';
 import {initialContractsInfos} from '$lib/config';
 import PermitComponent from './PermitComponent.svelte';
-import {prepareCommitment, zeroBytes32} from 'stratagems-common';
+import {prepareCommitment, zeroBytes24, zeroBytes32} from 'stratagems-common';
 import {localMoveToContractMove, type CommitMetadata} from '$lib/web3/account-data';
-import {epoch} from '$lib/blockchain/state/Epoch';
+import {epoch, epochInfo} from '$lib/blockchain/state/Epoch';
 import {hexToVRS} from '$lib/utils/eth/signatures';
-import {zeroAddress} from 'viem';
+import {encodeFunctionData, parseEther, zeroAddress} from 'viem';
+import {time} from '$lib/time';
+import {timeToText} from '$lib/utils/time';
 
 export type CommitState = {
 	permit?: {
@@ -105,6 +107,29 @@ export async function startCommit() {
 			description: `commit your moves`,
 			// component: PermitComponent,
 			execute: async (state: CommitState) => {
+				const fuzd = await accountData.getFuzd();
+				// TODO if fuzd
+				const result = await connection.provider.request({
+					method: 'eth_feeHistory',
+					params: ['0x1', 'latest', [90]], //['0x5A']], //0x5A = 90 percentile
+				});
+				const maxFeePerGas = parseEther('100', 'gwei');
+				const maxPriorityFeePerGas = parseEther('1', 'gwei');
+				const revealGas = 5000000n; //TODO
+				const remoteAccount = fuzd.remoteAccount;
+				let value = 0n;
+				if (remoteAccount !== zeroAddress) {
+					const balanceHex = await connection.provider.request({
+						method: 'eth_getBalance',
+						params: [remoteAccount],
+					});
+					const balance = BigInt(balanceHex);
+
+					const valueNeeded = maxFeePerGas * revealGas;
+					value = valueNeeded > balance ? valueNeeded - balance : 0n;
+				}
+
+				let txHash: `0x${string}`;
 				// TODO random secret, actually not random, just based on secret private key + epoch
 				const secret = '0x0000000000000000000000000000000000000000000000000000000000000000';
 				const {hash, moves} = prepareCommitment(localMoves.map(localMoveToContractMove), secret);
@@ -114,6 +139,7 @@ export async function startCommit() {
 					epoch: get(epoch), // TODO use from smart contract to ensure correct value
 					localMoves,
 					secret,
+					fuzd: 'pendingTx',
 				};
 				connection.provider.setNextMetadata(commitMetadata);
 				if (amountToAdd > 0n) {
@@ -134,16 +160,44 @@ export async function startCommit() {
 							s,
 						};
 					}
-					await contracts.Stratagems.write.makeCommitmentWithExtraReserve(
-						[hash, amountToAdd, permitStruct, zeroAddress],
+					txHash = await contracts.Stratagems.write.makeCommitmentWithExtraReserve(
+						[hash, amountToAdd, permitStruct, remoteAccount],
 						{
 							account: account.address,
+							value,
 						},
 					);
 				} else {
-					await contracts.Stratagems.write.makeCommitment([hash, zeroAddress], {account: account.address});
+					txHash = await contracts.Stratagems.write.makeCommitment([hash, remoteAccount], {
+						account: account.address,
+						value,
+					});
 				}
 				accountData.offchainState.reset();
+
+				const timeToBroadcastReveal = time.now + get(epochInfo).timeLeftToCommit;
+				const data = encodeFunctionData({
+					abi: contracts.Stratagems.abi,
+					functionName: 'reveal',
+					args: [account.address, secret, moves, zeroBytes24, true, zeroAddress],
+				});
+				// await contracts.Stratagems.write.reveal([account.address, data.secret, moves, zeroBytes24, true, zeroAddress]);
+
+				const scheduleInfo = await fuzd.submitExecution(
+					{
+						broadcastSchedule: [{duration: 3600, maxFeePerGas, maxPriorityFeePerGas}],
+						data,
+						to: contracts.Stratagems.address,
+						time: timeToBroadcastReveal,
+						chainId: initialContractsInfos.chainId,
+						gas: revealGas,
+					},
+					// TODO remove, for now, we basically encrypt with a current drand round, so decryption still need to operate but we can speed up the reveal time
+					{fakeEncrypt: true},
+				);
+
+				console.log(`will be executed in ${timeToText(scheduleInfo.checkinTime - time.now)}`);
+
 				return state;
 			},
 		};
