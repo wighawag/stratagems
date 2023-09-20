@@ -7,32 +7,32 @@ outline: deep
 
 ## Functions
 
-### **acknowledgeMissedResolution**
+### **acknowledgeMissedReveal**
 
-called by player if they missed the resolution phase and want to minimze the token loss.  By providing the moves, they will be slashed only the amount of token required to make the moves
+called by player if they missed the reveal phase and want to minimze the token loss.  By providing the moves, they will be slashed only the amount of token required to make the moves
 
-*sig hash*: `0x81ca54b9`
+*sig hash*: `0x599a71c6`
 
-*Signature*: acknowledgeMissedResolution(address,bytes32,(uint64,uint8)[],bytes24)
+*Signature*: acknowledgeMissedReveal(address,bytes32,(uint64,uint8)[],bytes24)
 
-function acknowledgeMissedResolution(address player, bytes32 secret, tuple(uint64 position, uint8 color)[] moves, bytes24 furtherMoves)
+function acknowledgeMissedReveal(address player, bytes32 secret, tuple(uint64 position, uint8 color)[] moves, bytes24 furtherMoves)
 
 | Name | Description 
 | ---- | ----------- 
 | player | the account who committed the move
 | secret | the secret used to make the commit
 | moves | the actual moves
-| furtherMoves | if moves cannot be contained in one tx, further moves are represented by a hash to resolve too
+| furtherMoves | if moves cannot be contained in one tx, further moves are represented by a hash to reveal too
 
-### **acknowledgeMissedResolutionByBurningAllReserve**
+### **acknowledgeMissedRevealByBurningAllReserve**
 
-should only be called as last resort this will burn all tokens in reserve If player has access to the secret, better call `acknowledgeMissedResolution`
+should only be called as last resort this will burn all tokens in reserve If player has access to the secret, better call `acknowledgeMissedReveal`
 
-*sig hash*: `0x24a27240`
+*sig hash*: `0x1fdd8a69`
 
-*Signature*: acknowledgeMissedResolutionByBurningAllReserve()
+*Signature*: acknowledgeMissedRevealByBurningAllReserve()
 
-function acknowledgeMissedResolutionByBurningAllReserve()
+function acknowledgeMissedRevealByBurningAllReserve()
 
 ### **addToReserve**
 
@@ -89,7 +89,7 @@ function getCells(uint256[] ids) view returns (tuple(address owner, uint24 lastE
 
 ### **getCommitment**
 
-The commitment to be resolved. zeroed if no commitment need to be made.
+The commitment to be revealed. zeroed if no commitment need to be made.
 
 *sig hash*: `0xfa1026dd`
 
@@ -109,11 +109,11 @@ return the config used to initialise the Game
 
 *Signature*: getConfig()
 
-function getConfig() view returns (tuple(address tokens, address burnAddress, uint256 startTime, uint256 commitPhaseDuration, uint256 resolutionPhaseDuration, uint8 maxLife, uint256 numTokensPerGems) config)
+function getConfig() view returns (tuple(address tokens, address burnAddress, uint256 startTime, uint256 commitPhaseDuration, uint256 revealPhaseDuration, uint8 maxLife, uint256 numTokensPerGems) config)
 
 ### **getTokensInReserve**
 
-the number of token in reserve per account  This is used to slash player who do not resolve their commit  The amount can be greater than the number of token required for the next move  This allow player to potentially hide their intention.
+the number of token in reserve per account  This is used to slash player who do not reveal their moves  The amount can be greater than the number of token required for the next move  This allow player to potentially hide their intention.
 
 *sig hash*: `0x990b0509`
 
@@ -127,33 +127,35 @@ function getTokensInReserve(address account) view returns (uint256 amount)
 
 ### **makeCommitment**
 
-called by players to commit their moves  this can be called multiple time in the same epoch, the last call overriding the previous.  When a commitment is made, it needs to be resolved in the resolution phase of the same epoch.abi  If missed, player can still reveal its moves but none of them will be resolved.   The player would lose its associated reserved amount.
+called by players to commit their moves  this can be called multiple time in the same epoch, the last call overriding the previous.  When a commitment is made, it needs to be revealed in the reveal phase of the same epoch.abi  If missed, player can still reveal its moves but none of them will be resolved.   The player would lose its associated reserved amount.
 
-*sig hash*: `0xb3015773`
+*sig hash*: `0xae37a62d`
 
-*Signature*: makeCommitment(bytes24)
+*Signature*: makeCommitment(bytes24,address)
 
-function makeCommitment(bytes24 commitmentHash)
+function makeCommitment(bytes24 commitmentHash, address payee) payable
 
 | Name | Description 
 | ---- | ----------- 
 | commitmentHash | the hash of the moves
+| payee | address to send ETH to along the commitment. Can be used to pay for reveal
 
 ### **makeCommitmentWithExtraReserve**
 
 called to make a commitment along with tokens to add to the reserve
 
-*sig hash*: `0xc0e75387`
+*sig hash*: `0x10837a39`
 
-*Signature*: makeCommitmentWithExtraReserve(bytes24,uint256,(uint256,uint256,uint8,bytes32,bytes32))
+*Signature*: makeCommitmentWithExtraReserve(bytes24,uint256,(uint256,uint256,uint8,bytes32,bytes32),address)
 
-function makeCommitmentWithExtraReserve(bytes24 commitmentHash, uint256 tokensAmountToAdd, tuple(uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) permit)
+function makeCommitmentWithExtraReserve(bytes24 commitmentHash, uint256 tokensAmountToAdd, tuple(uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) permit, address payee) payable
 
 | Name | Description 
 | ---- | ----------- 
 | commitmentHash | the has of the moves
 | tokensAmountToAdd | amount of tokens to add to the reserve. the resulting total must be enough to cover the moves
 | permit | permit EIP2612, value = zero if not needed
+| payee | address to send ETH to along the commitment. Can be used to pay for reveal
 
 ### **pokeMultiple**
 
@@ -169,23 +171,24 @@ function pokeMultiple(uint64[] positions)
 | ---- | ----------- 
 | positions | cell positions to collect from
 
-### **resolve**
+### **reveal**
 
-called by player to resolve their commitment  this is where the core logic of the game takes place  This is where the game board evolves  The game is designed so that resolution order do not matter
+called by player to reveal their moves  this is where the core logic of the game takes place  This is where the game board evolves  The game is designed so that reveal order does not matter
 
-*sig hash*: `0x145165a9`
+*sig hash*: `0xd4019783`
 
-*Signature*: resolve(address,bytes32,(uint64,uint8)[],bytes24,bool)
+*Signature*: reveal(address,bytes32,(uint64,uint8)[],bytes24,bool,address)
 
-function resolve(address player, bytes32 secret, tuple(uint64 position, uint8 color)[] moves, bytes24 furtherMoves, bool useReserve)
+function reveal(address player, bytes32 secret, tuple(uint64 position, uint8 color)[] moves, bytes24 furtherMoves, bool useReserve, address payee) payable
 
 | Name | Description 
 | ---- | ----------- 
 | player | the account who committed the move
 | secret | the secret used to make the commit
 | moves | the actual moves
-| furtherMoves | if moves cannot be contained in one tx, further moves are represented by a hash to resolve too  Note that you have to that have enough moves (specified by MAX_NUM_MOVES_PER_HASH = 32)
+| furtherMoves | if moves cannot be contained in one tx, further moves are represented by a hash to reveal too  Note that you have to that have enough moves (specified by MAX_NUM_MOVES_PER_HASH = 32)
 | useReserve | whether the tokens are taken from the reserve or from approvals.  This allow player to keep their reserve intact and use it on their next move.  Note that this require the Stratagems contract to have enough allowance.
+| payee | address to send ETH to along the reveal
 
 ### **withdrawFromReserve**
 
@@ -413,7 +416,7 @@ function transferFrom(address from, address to, uint256 tokenID)
 
 ### **CommitmentCancelled**
 
-A player has cancelled its current commitment (before it reached the resolution phase)
+A player has cancelled its current commitment (before it reached the reveal phase)
 
 event CommitmentCancelled(address indexed player, uint24 indexed epoch)
 
@@ -424,7 +427,7 @@ event CommitmentCancelled(address indexed player, uint24 indexed epoch)
 
 ### **CommitmentMade**
 
-A player has commited to make a move and resolve it on the resolution phase
+A player has commited to make a move and reveal it on the reveal phase
 
 event CommitmentMade(address indexed player, uint24 indexed epoch, bytes24 commitmentHash)
 
@@ -434,11 +437,11 @@ event CommitmentMade(address indexed player, uint24 indexed epoch, bytes24 commi
 | epoch | epoch number on which this commit belongs to
 | commitmentHash | the hash of moves
 
-### **CommitmentResolved**
+### **CommitmentRevealed**
 
-Player has resolved its previous commitment
+Player has revealed its previous commitment
 
-event CommitmentResolved(address indexed player, uint24 indexed epoch, bytes24 indexed commitmentHash, tuple(uint64 position, uint8 color)[] moves, bytes24 furtherMoves, uint256 newReserveAmount)
+event CommitmentRevealed(address indexed player, uint24 indexed epoch, bytes24 indexed commitmentHash, tuple(uint64 position, uint8 color)[] moves, bytes24 furtherMoves, uint256 newReserveAmount)
 
 | Name | Description 
 | ---- | ----------- 
@@ -463,7 +466,7 @@ event CommitmentVoid(address indexed player, uint24 indexed epoch, uint256 amoun
 
 ### **MoveProcessed**
 
-A move has been resolved.
+A move has been revealed.
 
 event MoveProcessed(uint64 indexed position, address indexed player, uint8 oldColor, uint8 newColor)
 
@@ -537,16 +540,16 @@ event Transfer(address indexed from, address indexed to, uint256 indexed tokenID
 
 ## Errors
 
-### **CanStillResolve**
+### **CanStillReveal**
 
-Player have to resolve if they can Stratagems will prevent them from acknowledging missed resolution if there is still time to resolve.
+Player have to reveal if they can Stratagems will prevent them from acknowledging missed reveal if there is still time to reveal.
 
 
-error CanStillResolve()
+error CanStillReveal()
 
 ### **CommitmentHashNotMatching**
 
-Player have to reveal their commitment using the exact same move values  If they provide different value, the commitment hash will differ and Stratagems will reject their resolution.
+Player have to reveal their commitment using the exact same move values  If they provide different value, the commitment hash will differ and Stratagems will reject their reveal.
 
 
 error CommitmentHashNotMatching()
@@ -560,53 +563,53 @@ error GameNotStarted()
 
 ### **InCommitmentPhase**
 
-When in Commit phase, player can make new commitment but they cannot resolve their move yet.
+When in Commit phase, player can make new commitment but they cannot reveal their move yet.
 
 
 error InCommitmentPhase()
 
-### **InResolutionPhase**
+### **InRevealPhase**
 
-When in Resolution phase, it is not possible to commit new moves or cancel previous commitment  During Resolution phase, players have to reveal their commitment, if not already done.
+When in Reveal phase, it is not possible to commit new moves or cancel previous commitment  During Reveal phase, players have to reveal their commitment, if not already done.
 
 
-error InResolutionPhase()
+error InRevealPhase()
 
 ### **InvalidEpoch**
 
-Player can only resolve their move in the same epoch they commited.abi  If a player resolve later it can only do to minimize the reserve burn cost by calling : `acknowledgeMissedResolution`
+Player can only reveal their move in the same epoch they commited.abi  If a player reveal later it can only do to minimize the reserve burn cost by calling : `acknowledgeMissedReveal`
 
 
 error InvalidEpoch()
 
 ### **InvalidFurtherMoves**
 
-Player can make arbitrary number of moves per epoch. To do so they group moves into (MAX_NUM_MOVES_PER_HASH = 32) moves  This result in a recursive series of hash that they can then submit in turn while resolving.  The limit  (MAX_NUM_MOVES_PER_HASH = 32) ensure a resolution batch fits in a block.
+Player can make arbitrary number of moves per epoch. To do so they group moves into (MAX_NUM_MOVES_PER_HASH = 32) moves  This result in a recursive series of hash that they can then submit in turn while revealing.  The limit  (MAX_NUM_MOVES_PER_HASH = 32) ensure a reveal batch fits in a block.
 
 
 error InvalidFurtherMoves()
 
-### **NothingToResolve**
+### **NothingToReveal**
 
-Player can only resolve moves they commited.
+Player can only reveal moves they commited.
 
 
-error NothingToResolve()
+error NothingToReveal()
 
-### **PreviousCommitmentNotResolved**
+### **PreviousCommitmentNotRevealed**
 
-Previous commitment need to be resolved before making a new one. Even if the corresponding reveal phase has passed.
+Previous commitment need to be revealed before making a new one. Even if the corresponding reveal phase has passed.
 
   It is also not possible to withdraw any amount from reserve until the commitment is revealed.
 
 If player lost the information to reveal, it can acknowledge failure which will burn all its reserve.
 
 
-error PreviousCommitmentNotResolved()
+error PreviousCommitmentNotRevealed()
 
 ### **ReserveTooLow**
 
-to make a commitment you always need at least one `config.numTokensPerGems` amount in reserve  Player also need one `config.numTokensPerGems`  per moves during the resolution phase.
+to make a commitment you always need at least one `config.numTokensPerGems` amount in reserve  Player also need one `config.numTokensPerGems`  per moves during the Reveal phase.
 
 
 error ReserveTooLow(uint256 inReserve, uint256 expected)

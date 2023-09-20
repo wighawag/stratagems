@@ -1,8 +1,8 @@
 {
     "name": "fuzd-service",
     "devDependencies": {
-        "fuzd-cf-worker": "^0.0.4",
-        "wrangler": "^3.5.1"
+        "fuzd-cf-worker": "^0.0.5",
+        "wrangler": "^3.8.0"
     },
     "scripts": {
         "dev": "wrangler dev -c ./wrangler.toml --port 34002",
