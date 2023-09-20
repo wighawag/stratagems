@@ -10,6 +10,8 @@ hero:
   # tagline: Stratagems is an independent universe forever running where players act as gods and compete by deploying new lands and units in the world's endless sea. Alliances and betrayal are part of the arsenal as the population under their control fight for domination.
   image:
     src: /five-gems.svg
+    width: 512
+    height: 512
     alt: Stratagems Logo
   actions:
     - theme: brand

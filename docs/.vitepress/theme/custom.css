@@ -1,12 +1,35 @@
 :root {
-  --vp-c-brand-darker: #86198f;
-  --vp-c-brand-dark: #a21caf;
-  --vp-c-brand: #c026d3;
-  --vp-c-brand-light: #d946ef;
-  --vp-c-brand-lighter: #e879f9;
-  --vp-c-brand-lightest: #f5d0fe;
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #bd34fe 30%, #41d1ff);
 
-  --vp-c-brand-dimm: rgba(100, 108, 255, 0.08);
+  --vp-home-hero-image-background-image: linear-gradient(-45deg, #bd34fe 50%, #47caff 50%);
+  --vp-home-hero-image-filter: blur(40px);
+}
+
+@media (min-width: 640px) {
+  :root {
+    --vp-home-hero-image-filter: blur(56px);
+  }
+}
+
+@media (min-width: 960px) {
+  :root {
+    --vp-home-hero-image-filter: blur(72px);
+  }
+}
+
+:root {
+  --vp-c-stratagems-1: #c026d3;
+  --vp-c-stratagems-2: #a21caf;
+  --vp-c-stratagems-3: #86198f;
+  --vp-c-stratagems-soft: rgba(162, 28, 175, 0.14);
+}
+
+:root {
+  --vp-c-brand-1: var(--vp-c-stratagems-1);
+  --vp-c-brand-2: var(--vp-c-stratagems-2);
+  --vp-c-brand-3: var(--vp-c-stratagems-3);
+  --vp-c-brand-soft: var(--vp-c-stratagems-soft);
 }
 
   /* Custom Stlye */
