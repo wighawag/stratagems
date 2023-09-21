@@ -42,6 +42,7 @@ export function createClient(config: ClientConfig) {
 	}
 	async function submitExecution(
 		execution: {
+			slot: string;
 			chainId: `0x${string}` | string;
 			gas: bigint;
 			broadcastSchedule: [
@@ -90,6 +91,7 @@ export function createClient(config: ClientConfig) {
 
 		const payload = await timelockEncrypt(round, Buffer.from(payloadAsJSONString, 'utf-8'), config.drand);
 		executionToSend = {
+			slot: execution.slot,
 			chainId,
 			timing: {
 				type: 'fixed',
@@ -101,7 +103,7 @@ export function createClient(config: ClientConfig) {
 			},
 			type: 'time-locked',
 			payload,
-		};
+		} as any;
 		const jsonAsString = JSON.stringify(executionToSend);
 		const signature = await wallet.signMessage({message: jsonAsString});
 		if (typeof config.schedulerEndPoint === 'string') {

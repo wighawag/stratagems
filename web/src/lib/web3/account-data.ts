@@ -9,6 +9,7 @@ import {AccountDB, type SyncingState} from '$lib/utils/sync';
 import {FUZD_URI, SYNC_DB_NAME, SYNC_URI} from '$lib/config';
 import {time} from '$lib/time';
 import {createClient, mainnetClient} from '$lib/fuzd';
+import type {ScheduleInfo} from 'fuzd-scheduler';
 
 const logger = logs('account-data');
 
@@ -48,7 +49,7 @@ export type CommitMetadata = {
 	epoch: number;
 	localMoves: LocalMoves;
 	secret: `0x${string}`;
-	fuzd?: 'pendingTx';
+	fuzd: boolean;
 };
 
 export type RevealMetadata = {
@@ -70,6 +71,7 @@ export type StratagemsTransaction<T = AnyMetadata> = EIP1193TransactionWithMetad
 export type OnChainAction<T = AnyMetadata> = {
 	tx: StratagemsTransaction<T>;
 	revealTx?: PendingTransaction;
+	fuzd?: {timestamp: number; state: 'replaced' | ScheduleInfo};
 } & PendingTransactionState;
 export type OnChainActions = {[hash: `0x${string}`]: OnChainAction};
 
@@ -209,6 +211,25 @@ export function initAccountData() {
 				onchainActions: {},
 				offchainState: defaultOffchainState,
 			};
+		}
+
+		for (const key of Object.keys(newData.onchainActions)) {
+			const txHash = key as `0x${string}`;
+
+			const remoteAction = remoteData.onchainActions[txHash];
+			const localAction = newData.onchainActions[txHash];
+			if (remoteAction) {
+				if (remoteAction.fuzd) {
+					if (remoteAction.fuzd.timestamp > (localAction.fuzd?.timestamp || 0)) {
+						localAction.fuzd = remoteAction.fuzd;
+						newDataOnRemote = true;
+					}
+				}
+				if (remoteAction.revealTx && !localAction.revealTx) {
+					localAction.revealTx = remoteAction.revealTx;
+					newDataOnRemote = true;
+				}
+			}
 		}
 
 		for (const key of Object.keys(remoteData.onchainActions)) {
@@ -433,6 +454,7 @@ export function initAccountData() {
 			remoteAccount,
 			submitExecution(
 				execution: {
+					slot: string;
 					chainId: string;
 					gas: bigint;
 					broadcastSchedule: [{duration: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint}];
@@ -450,10 +472,39 @@ export function initAccountData() {
 		};
 	}
 
+	function recordFUZD(hash: `0x${string}`, data: ScheduleInfo) {
+		// TODO ensure timestamp synced ?
+		const timestamp = time.now;
+		const onchainAction = $onchainActions[hash];
+		if (!onchainAction) {
+			throw new Error(`Cannot find onchainAction with hash: ${hash}`);
+		}
+		if (onchainAction.tx.metadata?.type === 'commit') {
+			for (const key of Object.keys($onchainActions)) {
+				const action = $onchainActions[key as `0x${string}`];
+				if (
+					typeof action.fuzd?.state === 'object' &&
+					action.fuzd.state.account === data.account &&
+					action.fuzd.state.chainId === data.chainId &&
+					action.fuzd.state.slot === data.slot
+				) {
+					action.fuzd = {timestamp, state: 'replaced'};
+				}
+			}
+			onchainAction.fuzd = {timestamp, state: data};
+
+			save();
+			onchainActions.set($onchainActions);
+		} else {
+			throw new Error(`Action is not of type "commit"`);
+		}
+	}
+
 	return {
 		$onchainActions,
 		onchainActions: {
 			subscribe: onchainActions.subscribe,
+			recordFUZD,
 		},
 
 		$offchainState,

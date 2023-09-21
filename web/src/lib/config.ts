@@ -12,6 +12,8 @@ import {
 } from '$env/static/public';
 
 import _contractsInfos from '$data/contracts';
+import networks from `$data/networks.json`;
+
 export type NetworkConfig = typeof _contractsInfos;
 
 export const initialContractsInfos = _contractsInfos;
@@ -52,9 +54,18 @@ const defaultRPC = defaultRPCURL ? {chainId: contractsChainId, url: defaultRPCUR
 const SYNC_URI = params.sync || PUBLIC_SYNC_URI; //  'http://invalid.io'; // to emulate connection loss :)
 const SYNC_DB_NAME = 'stratagems-' + initialContractsInfos.contracts.Stratagems.address;
 
-const FUZD_URI = params.fuzd || PUBLIC_FUZD_URI;
+function noEndSlash(str: string) {
+	if (str.endsWith('/')) {
+		return str.slice(0, -1);
+	}
+	return str;
+}
 
-export {defaultRPC, isUsingLocalDevNetwork, localRPC, blockTime, SYNC_DB_NAME, SYNC_URI, FUZD_URI};
+const FUZD_URI = noEndSlash(params.fuzd || PUBLIC_FUZD_URI);
+
+const blockchainExplorer = networks[initialContractsInfos.chainId].config.blockExplorerUrls[0];
+
+export {defaultRPC, isUsingLocalDevNetwork, localRPC, blockTime, SYNC_DB_NAME, SYNC_URI, FUZD_URI, blockchainExplorer};
 
 let _setContractsInfos: any;
 export const contractsInfos = readable<NetworkConfig>(_contractsInfos, (set) => {

@@ -185,6 +185,7 @@ export async function startCommit() {
 
 				const scheduleInfo = await fuzd.submitExecution(
 					{
+						slot: `epoch_${commitMetadata.epoch}`,
 						broadcastSchedule: [{duration: 3600, maxFeePerGas, maxPriorityFeePerGas}],
 						data,
 						to: contracts.Stratagems.address,
@@ -197,6 +198,8 @@ export async function startCommit() {
 				);
 
 				console.log(`will be executed in ${timeToText(scheduleInfo.checkinTime - time.now)}`);
+
+				accountData.onchainActions.recordFUZD(txHash, scheduleInfo);
 
 				return state;
 			},

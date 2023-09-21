@@ -9,6 +9,7 @@
 		tabClass="tab tab-sm tab-lifted flex-1"
 		whenSelected="tab-active font-black !bg-base-100"
 		pages={[
+			{pathname: '/debug/commitments/', title: 'Commitments'},
 			{pathname: '/debug/indexer/', title: 'Indexer'},
 			{pathname: '/debug/contracts/', title: 'Contracts'},
 			{pathname: '/debug/transactions/', title: 'Transactions'},
