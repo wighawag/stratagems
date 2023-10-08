@@ -16,10 +16,10 @@ hero:
   actions:
     - theme: brand
       text: Guide
-      link: /guide/getting-started
+      link: /guide/getting-started/
     - theme: alt
       text: Contracts
-      link: /contracts/Gems
+      link: /contracts/Gems/
     - theme: alt
       text: Play Test
       link: https://betallion.com/stratagems/join/tKbn9Mph

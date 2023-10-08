@@ -13,7 +13,7 @@ const firstContractName = contractNames.indexOf(mainContract) == -1 ? contractNa
 const contracts = contractNames.sort((a,b) => a === firstContractName ? -1 : b === firstContractName ? 1 : (a > b ? 1: a <b ? -1 : 0))
 .map(name => {
   return {
-    text: name, link: `/contracts/${name}`
+    text: name, link: `/contracts/${name}/`
   };
 });
 
@@ -56,17 +56,17 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Getting Started', link: '/guide/getting-started' },
-      { text: 'Extend', link: `/guide/extending-the-world` },
-      { text: 'Contracts', link: `/contracts/${firstContractName}` }
+      { text: 'Getting Started', link: '/guide/getting-started/' },
+      { text: 'Extend', link: `/guide/extending-the-world/` },
+      { text: 'Contracts', link: `/contracts/${firstContractName}/` }
     ],
 
     sidebar: [
       {
         text: 'Documentation',
         items: [
-          { text: 'Getting Started', link: '/guide/getting-started' },
-          { text: 'Extending The World', link: `/guide/extending-the-world` },
+          { text: 'Getting Started', link: '/guide/getting-started/' },
+          { text: 'Extending The World', link: `/guide/extending-the-world/` },
           { text: 'Contracts', items: contracts}
         ]
       }
@@ -86,5 +86,8 @@ export default defineConfig({
       message: 'Released under the GPL 3.0 License.',
       copyright: 'Copyright © 2022-present Ronan Sandford'
     }
+  },
+  rewrites: {
+    'contracts/:pkg.md': 'contracts/:pkg/index.md'
   }
 })
