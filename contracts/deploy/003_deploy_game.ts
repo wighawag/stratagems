@@ -57,14 +57,15 @@ export default execute(
 		};
 
 		const routes = [
-			{name: 'Core', artifact: artifacts.StratagemsGameplay, args: [config]},
+			{name: 'Getters', artifact: artifacts.StratagemsGetters, args: [config]},
+			{name: 'Setters', artifact: artifacts.StratagemsSetters, args: [config]},
 			{name: 'ERC721', artifact: artifacts.StratagemsERC721 as any, args: [config]},
 		];
 		if (!network.tags['mainnet']) {
 			routes.push({name: 'Debug', artifact: artifacts.StratagemsDebug as any, args: [config]});
 		}
 
-		await deployViaProxy(
+		await deployViaProxy( 
 			'Stratagems',
 			{
 				account: deployer,

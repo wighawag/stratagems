@@ -7,7 +7,8 @@ import 'solidity-kit/solc_0.8/ERC165/interfaces/IERC165.sol';
 import './UsingStratagemsTypes.sol';
 import './UsingStratagemsEvents.sol';
 
-interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
+
+interface IStratagemsGetters is UsingStratagemsTypes, UsingStratagemsEvents {
 	/// @notice return updated cell (based on current epoch)
 	/// @param id the cell id
 	function getCell(uint256 id) external view returns (FullCell memory cell);
@@ -29,6 +30,9 @@ interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
 
 	/// @notice return the config used to initialise the Game
 	function getConfig() external view returns (Config memory config);
+}
+
+interface IStratagemsSetters is UsingStratagemsTypes, UsingStratagemsEvents {
 
 	/// @notice called by players to add tokens to their reserve
 	/// @param tokensAmountToAdd amount of tokens to add
@@ -118,4 +122,4 @@ interface IStratagemsGameplay is UsingStratagemsTypes, UsingStratagemsEvents {
 	function pokeMultiple(uint64[] calldata positions) external;
 }
 
-interface IStratagems is IStratagemsGameplay, IERC721, IERC721Metadata {}
+interface IStratagems is IStratagemsSetters, IStratagemsGetters, IERC721, IERC721Metadata {}

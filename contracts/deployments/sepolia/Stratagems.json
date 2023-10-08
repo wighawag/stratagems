@@ -1,9 +1,9 @@
 {
-  "address": "0x564c4045fce3de04911c0bd1ed79db9c8781cd0f",
+  "address": "0x2a1dcbfcf181a070b1a9596ab5f297aebe78e4c2",
   "abi": [
     {
       "inputs": [],
-      "name": "CanStillResolve",
+      "name": "CanStillReveal",
       "type": "error"
     },
     {
@@ -23,7 +23,7 @@
     },
     {
       "inputs": [],
-      "name": "InResolutionPhase",
+      "name": "InRevealPhase",
       "type": "error"
     },
     {
@@ -38,12 +38,12 @@
     },
     {
       "inputs": [],
-      "name": "NothingToResolve",
+      "name": "NothingToReveal",
       "type": "error"
     },
     {
       "inputs": [],
-      "name": "PreviousCommitmentNotResolved",
+      "name": "PreviousCommitmentNotRevealed",
       "type": "error"
     },
     {
@@ -158,7 +158,7 @@
           "type": "uint256"
         }
       ],
-      "name": "CommitmentResolved",
+      "name": "CommitmentRevealed",
       "type": "event"
     },
     {
@@ -272,105 +272,6 @@
       ],
       "name": "ReserveWithdrawn",
       "type": "event"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "player",
-          "type": "address"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "secret",
-          "type": "bytes32"
-        },
-        {
-          "components": [
-            {
-              "internalType": "uint64",
-              "name": "position",
-              "type": "uint64"
-            },
-            {
-              "internalType": "enum UsingStratagemsTypes.Color",
-              "name": "color",
-              "type": "uint8"
-            }
-          ],
-          "internalType": "struct UsingStratagemsTypes.Move[]",
-          "name": "moves",
-          "type": "tuple[]"
-        },
-        {
-          "internalType": "bytes24",
-          "name": "furtherMoves",
-          "type": "bytes24"
-        }
-      ],
-      "name": "acknowledgeMissedResolution",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "acknowledgeMissedResolutionByBurningAllReserve",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "tokensAmountToAdd",
-          "type": "uint256"
-        },
-        {
-          "components": [
-            {
-              "internalType": "uint256",
-              "name": "value",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "deadline",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint8",
-              "name": "v",
-              "type": "uint8"
-            },
-            {
-              "internalType": "bytes32",
-              "name": "r",
-              "type": "bytes32"
-            },
-            {
-              "internalType": "bytes32",
-              "name": "s",
-              "type": "bytes32"
-            }
-          ],
-          "internalType": "struct UsingStratagemsTypes.Permit",
-          "name": "permit",
-          "type": "tuple"
-        }
-      ],
-      "name": "addToReserve",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "cancelCommitment",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
     },
     {
       "inputs": [
@@ -553,7 +454,7 @@
             },
             {
               "internalType": "uint256",
-              "name": "resolutionPhaseDuration",
+              "name": "revealPhaseDuration",
               "type": "uint256"
             },
             {
@@ -597,14 +498,118 @@
     {
       "inputs": [
         {
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "secret",
+          "type": "bytes32"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint64",
+              "name": "position",
+              "type": "uint64"
+            },
+            {
+              "internalType": "enum UsingStratagemsTypes.Color",
+              "name": "color",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct UsingStratagemsTypes.Move[]",
+          "name": "moves",
+          "type": "tuple[]"
+        },
+        {
+          "internalType": "bytes24",
+          "name": "furtherMoves",
+          "type": "bytes24"
+        }
+      ],
+      "name": "acknowledgeMissedReveal",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "acknowledgeMissedRevealByBurningAllReserve",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokensAmountToAdd",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "deadline",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint8",
+              "name": "v",
+              "type": "uint8"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "r",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "s",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct UsingStratagemsTypes.Permit",
+          "name": "permit",
+          "type": "tuple"
+        }
+      ],
+      "name": "addToReserve",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "cancelCommitment",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "bytes24",
           "name": "commitmentHash",
           "type": "bytes24"
+        },
+        {
+          "internalType": "address payable",
+          "name": "payee",
+          "type": "address"
         }
       ],
       "name": "makeCommitment",
       "outputs": [],
-      "stateMutability": "nonpayable",
+      "stateMutability": "payable",
       "type": "function"
     },
     {
@@ -650,11 +655,16 @@
           "internalType": "struct UsingStratagemsTypes.Permit",
           "name": "permit",
           "type": "tuple"
+        },
+        {
+          "internalType": "address payable",
+          "name": "payee",
+          "type": "address"
         }
       ],
       "name": "makeCommitmentWithExtraReserve",
       "outputs": [],
-      "stateMutability": "nonpayable",
+      "stateMutability": "payable",
       "type": "function"
     },
     {
@@ -721,11 +731,16 @@
           "internalType": "bool",
           "name": "useReserve",
           "type": "bool"
+        },
+        {
+          "internalType": "address payable",
+          "name": "payee",
+          "type": "address"
         }
       ],
-      "name": "resolve",
+      "name": "reveal",
       "outputs": [],
-      "stateMutability": "nonpayable",
+      "stateMutability": "payable",
       "type": "function"
     },
     {
@@ -1505,20 +1520,6 @@
     "kind": "dev",
     "version": 1,
     "methods": {
-      "acknowledgeMissedResolution(address,bytes32,(uint64,uint8)[],bytes24)": {
-        "params": {
-          "furtherMoves": "if moves cannot be contained in one tx, further moves are represented by a hash to resolve too",
-          "moves": "the actual moves",
-          "player": "the account who committed the move",
-          "secret": "the secret used to make the commit"
-        }
-      },
-      "addToReserve(uint256,(uint256,uint256,uint8,bytes32,bytes32))": {
-        "params": {
-          "permit": "permit EIP2612, .value = zero if not needed",
-          "tokensAmountToAdd": "amount of tokens to add"
-        }
-      },
       "getCell(uint256)": {
         "params": {
           "id": "the cell id"
@@ -1539,14 +1540,30 @@
           "account": "the address to retrived the amount in reserve of."
         }
       },
-      "makeCommitment(bytes24)": {
+      "acknowledgeMissedReveal(address,bytes32,(uint64,uint8)[],bytes24)": {
         "params": {
-          "commitmentHash": "the hash of the moves"
+          "furtherMoves": "if moves cannot be contained in one tx, further moves are represented by a hash to reveal too",
+          "moves": "the actual moves",
+          "player": "the account who committed the move",
+          "secret": "the secret used to make the commit"
         }
       },
-      "makeCommitmentWithExtraReserve(bytes24,uint256,(uint256,uint256,uint8,bytes32,bytes32))": {
+      "addToReserve(uint256,(uint256,uint256,uint8,bytes32,bytes32))": {
+        "params": {
+          "permit": "permit EIP2612, .value = zero if not needed",
+          "tokensAmountToAdd": "amount of tokens to add"
+        }
+      },
+      "makeCommitment(bytes24,address)": {
+        "params": {
+          "commitmentHash": "the hash of the moves",
+          "payee": "address to send ETH to along the commitment. Can be used to pay for reveal"
+        }
+      },
+      "makeCommitmentWithExtraReserve(bytes24,uint256,(uint256,uint256,uint8,bytes32,bytes32),address)": {
         "params": {
           "commitmentHash": "the has of the moves",
+          "payee": "address to send ETH to along the commitment. Can be used to pay for reveal",
           "permit": "permit EIP2612, value = zero if not needed",
           "tokensAmountToAdd": "amount of tokens to add to the reserve. the resulting total must be enough to cover the moves"
         }
@@ -1561,10 +1578,11 @@
           "positions": "cell positions to collect from"
         }
       },
-      "resolve(address,bytes32,(uint64,uint8)[],bytes24,bool)": {
+      "reveal(address,bytes32,(uint64,uint8)[],bytes24,bool,address)": {
         "params": {
-          "furtherMoves": "if moves cannot be contained in one tx, further moves are represented by a hash to resolve too  Note that you have to that have enough moves (specified by MAX_NUM_MOVES_PER_HASH = 32)",
+          "furtherMoves": "if moves cannot be contained in one tx, further moves are represented by a hash to reveal too  Note that you have to that have enough moves (specified by MAX_NUM_MOVES_PER_HASH = 32)",
           "moves": "the actual moves",
+          "payee": "address to send ETH to along the reveal",
           "player": "the account who committed the move",
           "secret": "the secret used to make the commit",
           "useReserve": "whether the tokens are taken from the reserve or from approvals.  This allow player to keep their reserve intact and use it on their next move.  Note that this require the Stratagems contract to have enough allowance."
@@ -1681,7 +1699,7 @@
           "player": "account taking the staking risk (can be a different account than the one controlling the gems)"
         }
       },
-      "CommitmentResolved(address,uint24,bytes24,(uint64,uint8)[],bytes24,uint256)": {
+      "CommitmentRevealed(address,uint24,bytes24,(uint64,uint8)[],bytes24,uint256)": {
         "params": {
           "commitmentHash": "the hash of the moves",
           "epoch": "epoch number on which this commit belongs to",
@@ -1796,18 +1814,6 @@
     "kind": "user",
     "version": 1,
     "methods": {
-      "acknowledgeMissedResolution(address,bytes32,(uint64,uint8)[],bytes24)": {
-        "notice": "called by player if they missed the resolution phase and want to minimze the token loss.  By providing the moves, they will be slashed only the amount of token required to make the moves"
-      },
-      "acknowledgeMissedResolutionByBurningAllReserve()": {
-        "notice": "should only be called as last resort this will burn all tokens in reserve If player has access to the secret, better call `acknowledgeMissedResolution`"
-      },
-      "addToReserve(uint256,(uint256,uint256,uint8,bytes32,bytes32))": {
-        "notice": "called by players to add tokens to their reserve"
-      },
-      "cancelCommitment()": {
-        "notice": "called by players to cancel their current commitment  Can only be called during the commit phase in which the commitment was made  It cannot be called afterward"
-      },
       "getCell(uint256)": {
         "notice": "return updated cell (based on current epoch)"
       },
@@ -1815,25 +1821,37 @@
         "notice": "return the list of updated cells (based on current epoch) whose ids is given"
       },
       "getCommitment(address)": {
-        "notice": "The commitment to be resolved. zeroed if no commitment need to be made."
+        "notice": "The commitment to be revealed. zeroed if no commitment need to be made."
       },
       "getConfig()": {
         "notice": "return the config used to initialise the Game"
       },
       "getTokensInReserve(address)": {
-        "notice": "the number of token in reserve per account  This is used to slash player who do not resolve their commit  The amount can be greater than the number of token required for the next move  This allow player to potentially hide their intention."
+        "notice": "the number of token in reserve per account  This is used to slash player who do not reveal their moves  The amount can be greater than the number of token required for the next move  This allow player to potentially hide their intention."
       },
-      "makeCommitment(bytes24)": {
-        "notice": "called by players to commit their moves  this can be called multiple time in the same epoch, the last call overriding the previous.  When a commitment is made, it needs to be resolved in the resolution phase of the same epoch.abi  If missed, player can still reveal its moves but none of them will be resolved.   The player would lose its associated reserved amount."
+      "acknowledgeMissedReveal(address,bytes32,(uint64,uint8)[],bytes24)": {
+        "notice": "called by player if they missed the reveal phase and want to minimze the token loss.  By providing the moves, they will be slashed only the amount of token required to make the moves"
       },
-      "makeCommitmentWithExtraReserve(bytes24,uint256,(uint256,uint256,uint8,bytes32,bytes32))": {
+      "acknowledgeMissedRevealByBurningAllReserve()": {
+        "notice": "should only be called as last resort this will burn all tokens in reserve If player has access to the secret, better call `acknowledgeMissedReveal`"
+      },
+      "addToReserve(uint256,(uint256,uint256,uint8,bytes32,bytes32))": {
+        "notice": "called by players to add tokens to their reserve"
+      },
+      "cancelCommitment()": {
+        "notice": "called by players to cancel their current commitment  Can only be called during the commit phase in which the commitment was made  It cannot be called afterward"
+      },
+      "makeCommitment(bytes24,address)": {
+        "notice": "called by players to commit their moves  this can be called multiple time in the same epoch, the last call overriding the previous.  When a commitment is made, it needs to be revealed in the reveal phase of the same epoch.abi  If missed, player can still reveal its moves but none of them will be resolved.   The player would lose its associated reserved amount."
+      },
+      "makeCommitmentWithExtraReserve(bytes24,uint256,(uint256,uint256,uint8,bytes32,bytes32),address)": {
         "notice": "called to make a commitment along with tokens to add to the reserve"
       },
       "pokeMultiple(uint64[])": {
         "notice": "poke and collect the tokens won across multiple cells"
       },
-      "resolve(address,bytes32,(uint64,uint8)[],bytes24,bool)": {
-        "notice": "called by player to resolve their commitment  this is where the core logic of the game takes place  This is where the game board evolves  The game is designed so that resolution order do not matter"
+      "reveal(address,bytes32,(uint64,uint8)[],bytes24,bool,address)": {
+        "notice": "called by player to reveal their moves  this is where the core logic of the game takes place  This is where the game board evolves  The game is designed so that reveal order does not matter"
       },
       "withdrawFromReserve(uint256)": {
         "notice": "called by players to withdraw tokens from the reserve  can only be called if no commitments are pending  Note that while you can withdraw after commiting, note that if you do not have enough tokens  you'll have your commitment failing."
@@ -1886,19 +1904,19 @@
     },
     "events": {
       "CommitmentCancelled(address,uint24)": {
-        "notice": "A player has cancelled its current commitment (before it reached the resolution phase)"
+        "notice": "A player has cancelled its current commitment (before it reached the reveal phase)"
       },
       "CommitmentMade(address,uint24,bytes24)": {
-        "notice": "A player has commited to make a move and resolve it on the resolution phase"
+        "notice": "A player has commited to make a move and reveal it on the reveal phase"
       },
-      "CommitmentResolved(address,uint24,bytes24,(uint64,uint8)[],bytes24,uint256)": {
-        "notice": "Player has resolved its previous commitment"
+      "CommitmentRevealed(address,uint24,bytes24,(uint64,uint8)[],bytes24,uint256)": {
+        "notice": "Player has revealed its previous commitment"
       },
       "CommitmentVoid(address,uint24,uint256,bytes24)": {
         "notice": "A player has canceled a previous commitment by burning some tokens"
       },
       "MoveProcessed(uint64,address,uint8,uint8)": {
-        "notice": "A move has been resolved."
+        "notice": "A move has been revealed."
       },
       "ReserveDeposited(address,uint256,uint256)": {
         "notice": "Player has deposited token in the reserve, allowing it to use that much in game"
@@ -1917,14 +1935,14 @@
       }
     },
     "errors": {
-      "CanStillResolve()": [
+      "CanStillReveal()": [
         {
-          "notice": "Player have to resolve if they can Stratagems will prevent them from acknowledging missed resolution if there is still time to resolve."
+          "notice": "Player have to reveal if they can Stratagems will prevent them from acknowledging missed reveal if there is still time to reveal."
         }
       ],
       "CommitmentHashNotMatching()": [
         {
-          "notice": "Player have to reveal their commitment using the exact same move values  If they provide different value, the commitment hash will differ and Stratagems will reject their resolution."
+          "notice": "Player have to reveal their commitment using the exact same move values  If they provide different value, the commitment hash will differ and Stratagems will reject their reveal."
         }
       ],
       "GameNotStarted()": [
@@ -1934,37 +1952,37 @@
       ],
       "InCommitmentPhase()": [
         {
-          "notice": "When in Commit phase, player can make new commitment but they cannot resolve their move yet."
+          "notice": "When in Commit phase, player can make new commitment but they cannot reveal their move yet."
         }
       ],
-      "InResolutionPhase()": [
+      "InRevealPhase()": [
         {
-          "notice": "When in Resolution phase, it is not possible to commit new moves or cancel previous commitment  During Resolution phase, players have to reveal their commitment, if not already done."
+          "notice": "When in Reveal phase, it is not possible to commit new moves or cancel previous commitment  During Reveal phase, players have to reveal their commitment, if not already done."
         }
       ],
       "InvalidEpoch()": [
         {
-          "notice": "Player can only resolve their move in the same epoch they commited.abi  If a player resolve later it can only do to minimize the reserve burn cost by calling : `acknowledgeMissedResolution`"
+          "notice": "Player can only reveal their move in the same epoch they commited.abi  If a player reveal later it can only do to minimize the reserve burn cost by calling : `acknowledgeMissedReveal`"
         }
       ],
       "InvalidFurtherMoves()": [
         {
-          "notice": "Player can make arbitrary number of moves per epoch. To do so they group moves into (MAX_NUM_MOVES_PER_HASH = 32) moves  This result in a recursive series of hash that they can then submit in turn while resolving.  The limit  (MAX_NUM_MOVES_PER_HASH = 32) ensure a resolution batch fits in a block."
+          "notice": "Player can make arbitrary number of moves per epoch. To do so they group moves into (MAX_NUM_MOVES_PER_HASH = 32) moves  This result in a recursive series of hash that they can then submit in turn while revealing.  The limit  (MAX_NUM_MOVES_PER_HASH = 32) ensure a reveal batch fits in a block."
         }
       ],
-      "NothingToResolve()": [
+      "NothingToReveal()": [
         {
-          "notice": "Player can only resolve moves they commited."
+          "notice": "Player can only reveal moves they commited."
         }
       ],
-      "PreviousCommitmentNotResolved()": [
+      "PreviousCommitmentNotRevealed()": [
         {
-          "notice": "Previous commitment need to be resolved before making a new one. Even if the corresponding reveal phase has passed.\\  It is also not possible to withdraw any amount from reserve until the commitment is revealed.\\If player lost the information to reveal, it can acknowledge failure which will burn all its reserve.\\"
+          "notice": "Previous commitment need to be revealed before making a new one. Even if the corresponding reveal phase has passed.\\  It is also not possible to withdraw any amount from reserve until the commitment is revealed.\\If player lost the information to reveal, it can acknowledge failure which will burn all its reserve.\\"
         }
       ],
       "ReserveTooLow(uint256,uint256)": [
         {
-          "notice": "to make a commitment you always need at least one `config.numTokensPerGems` amount in reserve  Player also need one `config.numTokensPerGems`  per moves during the resolution phase."
+          "notice": "to make a commitment you always need at least one `config.numTokensPerGems` amount in reserve  Player also need one `config.numTokensPerGems`  per moves during the Reveal phase."
         }
       ],
       "InvalidAddress(address)": [
@@ -1999,25 +2017,14 @@
       ]
     }
   },
-  "argsData": "0x0000000000000000000000003f75e916ac2871bcdeb8b6e5b28f29052407333600000000000000000000000061c461ecc993aadeb7e4b47e96d1b8cc37314b2000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000",
-  "transaction": {
-    "hash": "0x166317a721a5396c6775e747e1966601a59850f50c2ee823c20bbcb6d786f6a3",
-    "nonce": "0x8c",
-    "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
-  },
-  "receipt": {
-    "confirmations": 12,
-    "blockHash": "0xad915a8fe47639257fdd76d0c0e80ce92da215858fece43f0fc3518495fabb8b",
-    "blockNumber": "0x414c75",
-    "transactionIndex": "0x4"
-  },
+  "argsData": "0x000000000000000000000000290e32780fb19bccf8662f290a7af8c39d81273300000000000000000000000061c461ecc993aadeb7e4b47e96d1b8cc37314b2000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000",
   "linkedData": {
-    "tokens": "0x77ff1d71fec90100141635a6e6224446b3a1443c",
+    "tokens": "0xdf193665aad68cb3d0af345e0dccdde04192b628",
     "numTokensPerGems": "1000000000000000000n",
     "burnAddress": "0xDEADDEADDEADDEADDEADDEADDEADDEADDEADDEAD",
     "startTime": 0,
     "commitPhaseDuration": "82800n",
-    "resolutionPhaseDuration": "3600n",
+    "revealPhaseDuration": "3600n",
     "maxLife": 7,
     "currency": {
       "symbol": "TOKEN",
@@ -2025,5 +2032,16 @@
       "decimals": "18n"
     },
     "admin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
+  },
+  "transaction": {
+    "hash": "0x7aa7c5aa1144c3b017f2b3cd0c9ed882d8ed8f6b44e9c32887cfbf99b13f8f60",
+    "nonce": "0xaa",
+    "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
+  },
+  "receipt": {
+    "confirmations": 0,
+    "blockHash": "0xc1df1444f29fb29b064eca00abbe034d1ead1f0f42dd45355713fa33b97f8279",
+    "blockNumber": "0x43e907",
+    "transactionIndex": "0x29"
   }
 }

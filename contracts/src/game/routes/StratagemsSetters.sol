@@ -5,77 +5,11 @@ import '../interface/IStratagems.sol';
 import '../internal/UsingStratagemsSetters.sol';
 import '../internal/UsingStratagemsUtils.sol';
 
-contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
+contract StratagemsSetters is IStratagemsSetters, UsingStratagemsSetters {
 	constructor(Config memory config) UsingStratagemsSetters(config) {}
 
-	// --------------------------------------------------------------------------------------------
-	// Getters
-	// --------------------------------------------------------------------------------------------
-
-	/// @inheritdoc IStratagemsGameplay
-	function getCell(uint256 id) external view returns (FullCell memory) {
-		(uint24 epoch, ) = _epoch();
-		// console.log('epoch %s', epoch);
-		Cell memory updatedCell = _getUpdatedCell(uint64(id), epoch);
-		return
-			FullCell({
-				owner: _ownerOf(id),
-				lastEpochUpdate: updatedCell.lastEpochUpdate,
-				epochWhenTokenIsAdded: updatedCell.epochWhenTokenIsAdded,
-				color: updatedCell.color,
-				life: updatedCell.life,
-				delta: updatedCell.delta,
-				enemyMap: updatedCell.enemyMap,
-				distribution: updatedCell.distribution
-			});
-	}
-
-	/// @inheritdoc IStratagemsGameplay
-	function getCells(uint256[] memory ids) external view returns (FullCell[] memory cells) {
-		(uint24 epoch, ) = _epoch();
-		uint256 numCells = ids.length;
-		cells = new FullCell[](numCells);
-		for (uint256 i = 0; i < numCells; i++) {
-			Cell memory updatedCell = _getUpdatedCell(uint64(ids[i]), epoch);
-			cells[i] = FullCell({
-				owner: _ownerOf(ids[i]),
-				lastEpochUpdate: updatedCell.lastEpochUpdate,
-				epochWhenTokenIsAdded: updatedCell.epochWhenTokenIsAdded,
-				color: updatedCell.color,
-				life: updatedCell.life,
-				delta: updatedCell.delta,
-				enemyMap: updatedCell.enemyMap,
-				distribution: updatedCell.distribution
-			});
-		}
-	}
-
-	/// @inheritdoc IStratagemsGameplay
-	function getTokensInReserve(address account) external view returns (uint256 amount) {
-		return _tokensInReserve[account];
-	}
-
-	/// @inheritdoc IStratagemsGameplay
-	function getCommitment(address account) external view returns (Commitment memory commitment) {
-		return _commitments[account];
-	}
-
-	/// @inheritdoc IStratagemsGameplay
-	function getConfig() external view returns (Config memory config) {
-		config.tokens = TOKENS;
-		config.burnAddress = BURN_ADDRESS;
-		config.startTime = START_TIME;
-		config.commitPhaseDuration = COMMIT_PHASE_DURATION;
-		config.revealPhaseDuration = REVEAL_PHASE_DURATION;
-		config.maxLife = MAX_LIFE;
-		config.numTokensPerGems = NUM_TOKENS_PER_GEMS;
-	}
-
-	// --------------------------------------------------------------------------------------------
-	// Setters
-	// --------------------------------------------------------------------------------------------
-
-	/// @inheritdoc IStratagemsGameplay
+	
+	/// @inheritdoc IStratagemsSetters
 	function addToReserve(uint256 tokensAmountToAdd, Permit calldata permit) external {
 		if (tokensAmountToAdd > 0) {
 			uint256 newAmount = _tokensInReserve[msg.sender];
@@ -90,7 +24,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 		}
 	}
 
-	/// @inheritdoc IStratagemsGameplay
+	/// @inheritdoc IStratagemsSetters
 	function makeCommitment(bytes24 commitmentHash, address payable payee) external payable {
 		_makeCommitment(msg.sender, commitmentHash, _tokensInReserve[msg.sender]);
 		if (payee != address(0)) {
@@ -98,7 +32,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 		}
 	}
 
-	/// @inheritdoc IStratagemsGameplay
+	/// @inheritdoc IStratagemsSetters
 	function makeCommitmentWithExtraReserve(
 		bytes24 commitmentHash,
 		uint256 tokensAmountToAdd,
@@ -136,7 +70,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 		}
 	}
 
-	/// @inheritdoc IStratagemsGameplay
+	/// @inheritdoc IStratagemsSetters
 	function cancelCommitment() external {
 		Commitment storage commitment = _commitments[msg.sender];
 		(uint24 epoch, bool commiting) = _epoch();
@@ -154,7 +88,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 		emit CommitmentCancelled(msg.sender, epoch);
 	}
 
-	/// @inheritdoc IStratagemsGameplay
+	/// @inheritdoc IStratagemsSetters
 	function withdrawFromReserve(uint256 amount) external {
 		Commitment storage commitment = _commitments[msg.sender];
 
@@ -179,7 +113,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 		emit ReserveWithdrawn(msg.sender, amount, inReserve);
 	}
 
-	/// @inheritdoc IStratagemsGameplay
+	/// @inheritdoc IStratagemsSetters
 	function reveal(
 		address player,
 		bytes32 secret,
@@ -222,7 +156,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 		}
 	}
 
-	/// @inheritdoc IStratagemsGameplay
+	/// @inheritdoc IStratagemsSetters
 	function acknowledgeMissedReveal(
 		address player,
 		bytes32 secret,
@@ -254,7 +188,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 		emit CommitmentVoid(player, epoch, amount, furtherMoves);
 	}
 
-	/// @inheritdoc IStratagemsGameplay
+	/// @inheritdoc IStratagemsSetters
 	function acknowledgeMissedRevealByBurningAllReserve() external {
 		Commitment storage commitment = _commitments[msg.sender];
 		(uint24 epoch, ) = _epoch();
@@ -277,7 +211,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 		emit CommitmentVoid(msg.sender, epoch, amount, bytes24(0));
 	}
 
-	/// @inheritdoc IStratagemsGameplay
+	/// @inheritdoc IStratagemsSetters
 	function poke(uint64 position) external {
 		// max number of transfer is 5 (for each neighbour's potentially being a different account + own cell)
 
@@ -291,7 +225,7 @@ contract StratagemsGameplay is IStratagemsGameplay, UsingStratagemsSetters {
 		// TODO events?
 	}
 
-	/// @inheritdoc IStratagemsGameplay
+	/// @inheritdoc IStratagemsSetters
 	function pokeMultiple(uint64[] calldata positions) external {
 		uint256 numCells = positions.length;
 		// max number of transfer is 4 * numCells (for each cell's neighbours potentially being a different account + own cell)
