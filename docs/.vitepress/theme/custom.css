@@ -57,45 +57,6 @@
   font-weight: 600;
 }
 
-.gui-toast-group {
-  position: fixed;
-  z-index: 1;
-  inset-block-end: 0;
-  inset-inline: 0;
-  padding-block-end: 5vh;
-}
-
-.gui-toast-group {
-  display: grid;
-  justify-items: center;
-  justify-content: center;
-  gap: 1vh;
-}
-
-.gui-toast {
-  max-inline-size: min(25ch, 90vw);
-  padding-block: .5ch;
-  padding-inline: 1ch;
-  border-radius: 3px;
-  font-size: 1rem;
-}
-
-.gui-toast-group {
-  pointer-events: none;
-}
-
-.gui-toast {
-  --_bg-lightness: 90%;
-
-  color: black;
-  background: hsl(0 0% var(--_bg-lightness) / 90%);
-}
-
-:root.dark .gui-toast {
-    color: white;
-    --_bg-lightness: 20%;
-}
-
 @keyframes fade-in {
   from { opacity: 0 }
 }
@@ -108,21 +69,18 @@
   from { transform: translateY(var(--_travel-distance, 10px)) }
 }
 
-.gui-toast {
-  --_duration: 3s;
-  --_travel-distance: 0;
+.topbar {
+  position:fixed;
+  top: 10px;
+  display: block;
+  z-index: 99999;
+  box-sizing: border-box;
+  width: 90%;
+  padding: 10px;
+  text-align: center;
+  transition: top 1s;
 
-  will-change: transform;
-  animation: 
-    fade-in .3s ease,
-    slide-in .3s ease,
-    fade-out .3s ease var(--_duration);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .gui-toast {
-    --_travel-distance: 5vh;
-  }
+  border-style: solid;;border-width: 3px 0 0 0; border-radius: 0em 0em 5px 5px;
 }
 
 #email {

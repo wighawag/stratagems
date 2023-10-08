@@ -19,7 +19,7 @@ hero:
       link: /guide/getting-started/
     - theme: alt
       text: Contracts
-      link: /contracts/Gems/
+      link: /contracts/Stratagems/
     - theme: alt
       text: Play Test
       link: https://betallion.com/stratagems/join/tKbn9Mph
@@ -80,11 +80,9 @@ async function subscribe(e) {
 
 <div class="custom-layout">
 
-<section class="gui-toast-group">
-  <output role="status" class="gui-toast" v-if="obj.type=='Error'" style="color: #dc2626;">{{obj.message}}</output>
-  <output role="status" class="gui-toast" v-if="obj.type=='Success'" style="color: #16a34a;">{{obj.message}}</output>
-</section>
-  
+<p class="topbar" v-if="obj.type=='Error'" style="color:rgb(197,48,48);background-color:rgb(255, 245, 245);border-color:rgb(252, 129, 129);">{{obj.message}}</p>
+<p  class="topbar" v-if="obj.type=='Success'" style="color:rgb(35,78,82);background-color:rgb(230, 255, 250);border-color:rgb(56, 178, 172);">{{obj.message}}</p>
+
   <form id="subscribeForm" action="https://etherplay-newsletter-subscription.rim.workers.dev" method="POST">
     <!-- TODO <label for="email" class="sr-only">Email address</label> -->
     <p id="call-to-action">
