@@ -5,6 +5,7 @@ import type {RenderViewState} from './renderview';
 import {GridLayer} from './programs/Grid';
 import {Colored2DLayer} from './programs/Colored2D';
 import type {ViewData} from '$lib/state/ViewState';
+import {Textured2DLayer} from './programs/Textured2D';
 
 export class WebGLRenderer implements Readable<RenderViewState> {
 	private state!: ViewData;
@@ -13,7 +14,8 @@ export class WebGLRenderer implements Readable<RenderViewState> {
 	private cameraState!: CameraState;
 	private store: Writable<RenderViewState>;
 	private gridLayer: GridLayer = new GridLayer(1);
-	private cellLayer: Colored2DLayer = new Colored2DLayer(1, 0.1);
+	// private cellLayer: Colored2DLayer = new Colored2DLayer(1, 0.1);
+	private cellLayer: Textured2DLayer = new Textured2DLayer(1);
 
 	constructor() {
 		this.store = writable({devicePixelRatio: 1, width: 0, height: 0});
