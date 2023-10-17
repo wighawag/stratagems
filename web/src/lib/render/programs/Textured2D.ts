@@ -34,7 +34,16 @@ for (const key of Object.keys(texPerSprites)) {
 	const y2 = y + h;
 	value.uv = [x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2];
 }
-const grass = texPerSprites['grass/grass-1.png'];
+const grasses = [
+	texPerSprites['grass/grass-1.png'],
+	texPerSprites['grass/grass-2.png'],
+	texPerSprites['grass/grass-3.png'],
+	texPerSprites['grass/grass-4.png'],
+	texPerSprites['grass/grass-5.png'],
+	texPerSprites['grass/grass-6.png'],
+	texPerSprites['grass/grass-7.png'],
+	texPerSprites['grass/grass-8.png'],
+];
 
 const vertexShaderSource = `#version 300 es
 
@@ -91,7 +100,7 @@ export class Textured2DLayer {
 		this.bufferInfo = twgl.createBufferInfoFromArrays(GL, attributes);
 
 		this.textures = twgl.createTextures(GL, {
-			sheet: {src: sheetURL},
+			sheet: {src: sheetURL, mag: GL.NEAREST},
 		});
 	}
 
@@ -121,13 +130,20 @@ export class Textured2DLayer {
 			const [x, y] = cellPos.split(',').map((v) => parseInt(v));
 			const width = this.size;
 			const height = this.size;
-			const x1 = x * this.size;
-			const x2 = x * this.size + width;
-			const y1 = y * this.size;
-			const y2 = y * this.size + height;
 
-			a_positions.push(x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2);
-			a_texs.push(...grass.uv);
+			const numTiles = 6;
+			const offset = this.size / (numTiles + 1) / 2;
+			for (let cy = 0; cy < numTiles; cy++) {
+				for (let cx = 0; cx < numTiles; cx++) {
+					const x1 = offset + x * this.size + (cx * this.size) / (numTiles + 1);
+					const x2 = offset + x * this.size + (cx * this.size) / (numTiles + 1) + width / (numTiles + 1);
+					const y1 = offset + y * this.size + (cy * this.size) / (numTiles + 1);
+					const y2 = offset + y * this.size + (cy * this.size) / (numTiles + 1) + height / (numTiles + 1);
+
+					a_positions.push(x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2);
+					a_texs.push(...grasses[(cx + cy) % 8].uv);
+				}
+			}
 		}
 
 		// we update the buffer with the new arrays
