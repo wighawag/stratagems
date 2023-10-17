@@ -1,13 +1,13 @@
-import type {Data} from 'stratagems-indexer';
 import {writable, type Readable, type Subscriber, type Unsubscriber, type Writable} from 'svelte/store';
 import * as twgl from 'twgl.js';
 import type {CameraState} from './camera';
 import type {RenderViewState} from './renderview';
 import {GridLayer} from './programs/Grid';
 import {Colored2DLayer} from './programs/Colored2D';
+import type {ViewData} from '$lib/state/ViewState';
 
 export class WebGLRenderer implements Readable<RenderViewState> {
-	private state!: Data;
+	private state!: ViewData;
 	private canvas!: HTMLCanvasElement;
 	private gl!: WebGL2RenderingContext;
 	private cameraState!: CameraState;
@@ -22,7 +22,7 @@ export class WebGLRenderer implements Readable<RenderViewState> {
 	subscribe(run: Subscriber<RenderViewState>, invalidate?: (value?: RenderViewState) => void): Unsubscriber {
 		return this.store.subscribe(run, invalidate);
 	}
-	updateState(state: Data) {
+	updateState(state: ViewData) {
 		this.state = state;
 	}
 	updateView(cameraState: CameraState) {

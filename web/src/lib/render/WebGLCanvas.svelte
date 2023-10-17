@@ -1,10 +1,10 @@
 <script lang="ts">
 	import {ActionHandler} from '$lib/action/ActionHandler';
-	import type {State} from '$lib/blockchain/state/State';
 	import {onMount} from 'svelte';
 	import {Camera} from './camera';
 	import {WebGLRenderer} from './WebGLRenderer';
-	export let state: State;
+	import type {ViewState} from '$lib/state/ViewState';
+	export let state: ViewState;
 
 	let renderer: WebGLRenderer = new WebGLRenderer();
 	let camera: Camera;

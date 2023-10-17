@@ -3,11 +3,11 @@
 	import {viewState} from '$lib/state/ViewState';
 	import ActionPanel from '$lib/ui/panels/ActionPanel.svelte';
 	import Epoch from '$lib/components/info/Epoch.svelte';
-	import PixiCanvas from '$lib/render/PIXICanvas.svelte';
+	import WebGlCanvas from '$lib/render/WebGLCanvas.svelte';
 	import Flow from '$lib/ui/flows/Flow.svelte';
 </script>
 
-<PixiCanvas state={viewState} />
+<WebGlCanvas state={viewState} />
 
 <Epoch></Epoch>
 
