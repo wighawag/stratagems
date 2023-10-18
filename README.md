@@ -33,7 +33,7 @@
 
 [Stratagems](https://stratagems.world) is an autonomous world where players are actual gods. They are literaly the one creating the world.
 
-As an Autonomous World, Stratagems is permission-less and persistent. Its rules are immutable yet it is fully composable. We like to call them ["Infinite Games"](https://ronan.eth.limo/blog/infinite-games/)
+As an Autonomous World, Stratagems is permission-less and persistent. Its rules are immutable yet it is fully composable. We like to call such games: ["Infinite Games"](https://ronan.eth.limo/blog/infinite-games/)
 
 ## ♟️ What is stratagems exactly ?
 
