@@ -41,8 +41,6 @@
     "lodash-es": "^4.17.21",
     "lz-string": "^1.5.0",
     "named-logs": "^0.2.2",
-    "pixi-viewport": "^5.0.2",
-    "pixi.js": "^7.3.0",
     "pretty-ms": "^8.0.0",
     "radiate": "^0.0.1",
     "remote-account": "^0.0.4",

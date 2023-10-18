@@ -56,7 +56,6 @@
   },
   "pnpm": {
     "patchedDependencies": {
-      "pixi-viewport@5.0.2": "patches/pixi-viewport@5.0.2.patch",
       "tlock-js@0.6.1": "patches/tlock-js@0.6.1.patch"
     }
   }
