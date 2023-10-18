@@ -1,5 +1,6 @@
 import sheetURL from '$lib/assets/sheet.png';
 import sheet from '$lib/assets/sheet.json';
+import {Color} from 'stratagems-common';
 
 export {sheetURL};
 
@@ -114,6 +115,42 @@ const seaMediumDeep = [
 	texPerSprites['transitions/seawater-medium-seawater-deep/seawater-medium-seawater-deep-11.png'],
 	texPerSprites['transitions/seawater-medium-seawater-deep/seawater-medium-seawater-deep-12.png'],
 ];
+
+const houses = {
+	[Color.Blue]: texPerSprites['buildings/blue-house.png'],
+	[Color.Red]: texPerSprites['buildings/red-house.png'],
+	[Color.Green]: texPerSprites['buildings/green-house.png'],
+	[Color.Yellow]: texPerSprites['buildings/orange-house.png'],
+	[Color.Purple]: texPerSprites['buildings/purple-house.png'],
+	[Color.Evil]: texPerSprites['buildings/black-house.png'],
+};
+
+const tents = {
+	[Color.Blue]: texPerSprites['buildings/yellow-tent.png'],
+	[Color.Red]: texPerSprites['buildings/yellow-tent.png'],
+	[Color.Green]: texPerSprites['buildings/yellow-tent.png'],
+	[Color.Yellow]: texPerSprites['buildings/yellow-tent.png'],
+	[Color.Purple]: texPerSprites['buildings/yellow-tent.png'],
+	[Color.Evil]: texPerSprites['buildings/yellow-tent.png'],
+};
+
+const castles = {
+	[Color.Blue]: texPerSprites['buildings/blue-castle-01.png'],
+	[Color.Red]: texPerSprites['buildings/red-castle-04.png'],
+	[Color.Green]: texPerSprites['buildings/green-castle-02.png'],
+	[Color.Yellow]: texPerSprites['buildings/orange-castle-03.png'],
+	[Color.Purple]: texPerSprites['buildings/purple-castle-05.png'],
+	[Color.Evil]: texPerSprites['buildings/black-castle-06.png'],
+};
+
+const soldiers = {
+	[Color.Blue]: texPerSprites['units/generic-soldier/generic-soldier-0.png'],
+	[Color.Red]: texPerSprites['units/generic-soldier/generic-soldier-0.png'],
+	[Color.Green]: texPerSprites['units/generic-soldier/generic-soldier-0.png'],
+	[Color.Yellow]: texPerSprites['units/generic-soldier/generic-soldier-0.png'],
+	[Color.Purple]: texPerSprites['units/generic-soldier/generic-soldier-0.png'],
+	[Color.Evil]: texPerSprites['units/generic-soldier/generic-soldier-0.png'],
+};
 
 function drawTile(
 	a_positions: number[],
@@ -451,4 +488,30 @@ export function drawGrassCenter(
 			a_texs.push(...grasses[(cx + cy) % 8].uv);
 		}
 	}
+}
+
+export function drawHouse(
+	a_positions: number[],
+	a_texs: number[],
+	cellSize: number,
+	offset: number,
+	tileSize: number,
+	numTiles: number,
+	x: number,
+	y: number,
+) {}
+
+export function drawCastle(
+	a_positions: number[],
+	a_texs: number[],
+	cellSize: number,
+	tileSize: number,
+	x: number,
+	y: number,
+	color: Color,
+) {
+	if (color === Color.None) {
+		return;
+	}
+	drawTile(a_positions, a_texs, x + cellSize / 2 - tileSize, y + cellSize / 2 - tileSize, castles[color], tileSize * 2);
 }

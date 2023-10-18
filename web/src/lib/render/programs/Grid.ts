@@ -33,7 +33,7 @@ void main() {
 `;
 
 const GRID_COLORS = {
-	lines: parseColorV4('4a4e69'),
+	lines: parseColorV4('777777'),
 	background: parseColorV4('038AAB'),
 };
 

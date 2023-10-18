@@ -2,7 +2,7 @@ import * as twgl from 'twgl.js';
 import * as m3 from '$lib/m3';
 import type {CameraState} from '../camera';
 import type {ViewData} from '$lib/state/ViewState';
-import {drawCorners, drawGrassCenter, sheetURL} from '../tiles';
+import {drawCastle, drawCorners, drawGrassCenter, drawHouse, sheetURL} from '../tiles';
 
 const vertexShaderSource = `#version 300 es
 
@@ -107,6 +107,28 @@ export class Textured2DLayer {
 			const cell = state.cells[cellPos];
 			const [x, y] = cellPos.split(',').map((v) => parseInt(v));
 			drawGrassCenter(a_positions, a_texs, this.size, offset, tileSize, numTiles, x, y);
+
+			drawCastle(a_positions, a_texs, this.size, tileSize, x, y, cell.next.color);
+
+			// for (let i = 0; i < cell.next.life; i++) {
+			// 	const offset = 0.2 * tileSize;
+			// 	const margin = 0.3 * tileSize;
+			// 	drawHouse(offset + margin * (i % 3), offset + margin * Math.floor(i / 3));
+			// }
+			// if (cell.future.life > cell.next.life) {
+			// 	for (let i = cell.next.life; i < cell.future.life; i++) {
+			// 		const offset = 0.2 * tileSize;
+			// 		const margin = 0.3 * tileSize;
+
+			// 		drawHouse(offset + margin * (i % 3), offset + margin * Math.floor(i / 3));
+			// 	}
+			// } else if (cell.future.life < cell.next.life) {
+			// 	for (let i = Math.max(0, cell.next.life - (cell.next.life - cell.future.life)); i < cell.next.life; i++) {
+			// 		const offset = 0.2 * tileSize;
+			// 		const margin = 0.3 * tileSize;
+			// 		drawHouse(offset + margin * (i % 3), offset + margin * Math.floor(i / 3));
+			// 	}
+			// }
 		}
 
 		// we update the buffer with the new arrays
