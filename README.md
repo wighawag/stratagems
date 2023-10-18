@@ -31,13 +31,13 @@
 
 # 🎮👾♟️ An infinite game
 
-[Stratagems](https://stratagems.eth.limo) is an "infinite game", a permission-less, immutable, and interoperable game. An Unstoppable game where all meaningful actions happen on-chain.
+[Stratagems](https://stratagems.world) is an autonomous world where players are actual gods. They are literaly the one creating the world.
 
-If you are interested to know more about infinite games and autonomous worlds, check out our [blog post](https://ronan.eth.limo/blog/infinite-games/)
+As an Autonomous World, Stratagems is permission-less and persistent. Its rules are immutable yet it is fully composable. We like to call them ["Infinite Games"](https://ronan.eth.limo/blog/infinite-games/)
 
 ## ♟️ What is stratagems exactly ?
 
-Stratagems is an infinite digital board game. it is both persistent and permission-less, anyone can join at any time. Players then use a specific set of colors to compete for control of the board. Alliances and betrayal are part of the arsenal as colors mix and shift on the board.
+Stratagems is a world created by players and anyone can join at any time. Players use a specific set of factions/colors to compete for control of the world. Alliances and betrayal are part of the arsenal as colors mix and shift on the board.
 
 Stratagems is thus first and foremost a social game. Its main inspiration is [conquest.eth](https://conquest.game) who successfully created a deeply social game out of simple mechanics. Stratagems explores this further by having even simpler rules. It also reduces the gas cost to a minimum by spreading the actions over a week. It works because most of the game plays out in the conversations and strategies happening among the players.
 
@@ -45,17 +45,17 @@ While maximally on-chain, Stratagems scales with players by offering compelling 
 
 ## 🎮 How do you play ?
 
-Players participate in the game by depositing ETH (ratio to be defined) to place a gem on the board. They specify the location and the color of the gem.
+Players participate in the game by depositing ETH (ratio to be defined) to place a new piece of land on the infinite sea. They specify its location and color/faction.
 
 By doing so, they risk the associated ETH but also get a chance to potentially capture the same (and more) from other players.
 
-More details coming soon! Follow our [twitter](https://twitter.com/stratagems_eth) or register your interest on our [website](https://stratagems.eth.limo)!
+More details coming soon! Follow our [twitter](https://twitter.com/stratagems_eth) or register your interest on our [website](https://stratagems.world)!
 
 ## 🎎 Who we are?
 
 For now, it is just me, [Ronan Sandford](https://twitter.com/wighawag).
 
-Ronan is a game designer working on Autonomous Worlds (including [conquest.eth](https://conquest.game) and [Ethernal](https://ethernal.world)). He likes to call them ["Infinite Games"](https://ronan.eth.limo/infinite-games/). He is also an active developer in the web3 space with contributions towards EIP like [EIP-1155](https://eips.ethereum.org/EIPS/eip-1155) and [EIP-2771](https://eips.ethereum.org/EIPS/eip-2771), but also tools like [hardhat-deploy](https://github.com/wighawag/hardhat-deploy) and [Jolly-Roger](https://jolly-roger.eth.limo). He has been tinkering with on-chain NFTs with [Mandalas](https://mandalas.eth.limo) and [Bleeps](https://bleeps.art). You can find more on his [personal website](https://ronan.eth.limo).
+Ronan is a game designer working on Autonomous Worlds (including [conquest.eth](https://conquest.game) and [Ethernal](https://ethernal.land)). He likes to call them ["Infinite Games"](https://ronan.eth.limo/infinite-games/). He is also an active developer in the web3 space with contributions towards EIP like [EIP-1155](https://eips.ethereum.org/EIPS/eip-1155) and [EIP-2771](https://eips.ethereum.org/EIPS/eip-2771), but also tools like [hardhat-deploy](https://github.com/wighawag/hardhat-deploy) and [Jolly-Roger](https://jolly-roger.eth.limo). He has been tinkering with on-chain NFTs with [Mandalas](https://mandalas.eth.limo) and [Bleeps](https://bleeps.art). You can find more on his [personal website](https://ronan.eth.limo).
 
 ## 💻 Install
 
@@ -144,7 +144,7 @@ Here's how you can get involved:
 
 - **Submit a Pull Request:** If you see any potential improvement, go for it. We welcome any kind of contributions
 
-- **Reach out to us if you want to join the project**, We are especially looking for web dev (css experience), game dev (pixi.js experience) and web/UX designer.
+- **Reach out to us if you want to join the project**, We are especially looking for web dev (css experience), game dev and web/UX designer.
 
 - **Sponsor us** We're looking for at least 5000$ in sponsorship so we can get full time contributors.
 
