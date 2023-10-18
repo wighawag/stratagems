@@ -9,6 +9,7 @@
 	import {url} from '$lib/utils/path';
 	import Install from '$lib/components/web/Install.svelte';
 	import ConnectButton from '$lib/web3/ConnectButton.svelte';
+	import WipNotice from '$lib/components/utilities/WipNotice.svelte';
 
 	const host = canonicalURL.endsWith('/') ? canonicalURL : canonicalURL + '/';
 	const previewImage = host + 'preview.png';
@@ -137,3 +138,7 @@
 <!-- </div> -->
 
 <!-- </div> -->
+
+{#if !dev}
+	<WipNotice />
+{/if}
