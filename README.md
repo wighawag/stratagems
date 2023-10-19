@@ -61,6 +61,8 @@ Ronan is a game designer working on Autonomous Worlds (including [conquest.eth](
 
 > We are assuming here that you have [nodejs](https://nodejs.org/en) and [pnpm](https://pnpm.io/) installed
 >
+> !! You also need [git LFS (Large File Storage)](https://git-lfs.com/) !!
+>
 > We also recommend to install [zellij](https://zellij.dev/)
 
 1. Clone the repository
