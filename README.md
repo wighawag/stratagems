@@ -59,6 +59,16 @@ Ronan is a game designer working on Autonomous Worlds (including [conquest.eth](
 
 ## 💻 Install
 
+::warning
+ You also need [git LFS (Large File Storage)](https://git-lfs.com/)
+::
+
+Note that if you install git lfs after already cloning the repo, do the following:
+```sh
+git lfs install
+git lfs pull
+```
+
 > We are assuming here that you have [nodejs](https://nodejs.org/en) and [pnpm](https://pnpm.io/) installed
 >
 > !! You also need [git LFS (Large File Storage)](https://git-lfs.com/) !!
