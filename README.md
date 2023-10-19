@@ -59,19 +59,6 @@ Ronan is a game designer working on Autonomous Worlds (including [conquest.eth](
 
 ## 💻 Install
 
-> Note that you will need [git LFS (Large File Storage)](https://git-lfs.com/)
-
-Then, ensure the hooks are present:
-
-```sh
-git lfs install
-```
-
-And note that if you install git lfs after already cloning the repo, you will also need to execute the following:
-```sh
-git lfs pull
-```
-
 > We are assuming here that you have [nodejs](https://nodejs.org/en) and [pnpm](https://pnpm.io/) installed
 >
 > We also recommend to install [zellij](https://zellij.dev/)
@@ -82,6 +69,20 @@ git lfs pull
    git clone https://github.com/wighawag/stratagems.git
    cd stratagems
    ```
+
+   > Note that you will need [git LFS (Large File Storage)](https://git-lfs.com/)
+
+    Then, ensure the hooks are present:
+
+    ```sh
+    git lfs install
+    ```
+
+    And note that if you install git lfs after already cloning the repo, you will also need to execute the following:
+    ```sh
+    git lfs pull
+    ```
+
 
 2. Install dependencies
 
