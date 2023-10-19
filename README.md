@@ -65,23 +65,26 @@ Ronan is a game designer working on Autonomous Worlds (including [conquest.eth](
 
 1. Clone the repository
 
-   ```
-   git clone https://github.com/wighawag/stratagems.git
-   cd stratagems
-   ```
+    > Before cloning you will need to have [git LFS (Large File Storage)](https://git-lfs.com/) installed
 
-   > Note that you will need [git LFS (Large File Storage)](https://git-lfs.com/)
+    
+    ```
+    git clone https://github.com/wighawag/stratagems.git
+    cd stratagems
+    ```
 
-    Then, ensure the hooks are present:
+    Then, ensure the LFS hooks are present:
 
     ```sh
     git lfs install
     ```
 
-    And note that if you install git lfs after already cloning the repo, you will also need to execute the following:
+    > If you installed git lfs after already cloning the repo, you will also need to execute the following:
     ```sh
     git lfs pull
     ```
+
+
 
 
 2. Install dependencies
