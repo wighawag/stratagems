@@ -16,6 +16,7 @@
 	let error: string | undefined;
 	onMount(() => {
 		const canvas = document.querySelector('#canvas') as HTMLCanvasElement;
+		// const gl = canvas.getContext('webgl2', {alpha: false});
 		const gl = canvas.getContext('webgl2');
 		if (!gl) {
 			error = `could not create WebGL2 context`;

@@ -153,254 +153,271 @@ const soldiers = {
 };
 
 function drawTile(
-	a_positions: number[],
-	a_texs: number[],
+	attributes: Attributes,
 	x1: number,
 	y1: number,
 	tile: FrameDataWithUV,
 	tileSize: number,
+	opacity: number,
 ) {
 	const x2 = x1 + tileSize;
 	const y2 = y1 + tileSize;
 
-	a_positions.push(x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2);
-	a_texs.push(...tile.uv);
+	attributes.positions.push(x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2);
+	attributes.texs.push(...tile.uv);
+	attributes.alphas.push(opacity, opacity, opacity, opacity, opacity, opacity); // TODO
 }
-function drawTileRow(p: number[], t: number[], x: number, y: number, tile: FrameDataWithUV, s: number, num: number) {
+function drawTileRow(
+	attributes: Attributes,
+	x: number,
+	y: number,
+	tile: FrameDataWithUV,
+	s: number,
+	num: number,
+	opacity: number,
+) {
 	for (let i = 0; i < num; i++) {
-		drawTile(p, t, x + i * s, y, tile, s);
+		drawTile(attributes, x + i * s, y, tile, s, opacity);
 	}
 }
-function drawTileCol(p: number[], t: number[], x: number, y: number, tile: FrameDataWithUV, s: number, num: number) {
+function drawTileCol(
+	attributes: Attributes,
+	x: number,
+	y: number,
+	tile: FrameDataWithUV,
+	s: number,
+	num: number,
+	opacity: number,
+) {
 	for (let i = 0; i < num; i++) {
-		drawTile(p, t, x, y + i * s, tile, s);
+		drawTile(attributes, x, y + i * s, tile, s, opacity);
 	}
 }
 
-function drawEmptyBottomRightCorner(p: number[], t: number[], x: number, y: number, s: number) {
+function drawEmptyBottomRightCorner(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
 	// diagonal
-	drawTile(p, t, x + s * 1, y - s * 0, sandSeaLight[0], s);
-	drawTile(p, t, x + s * 2, y + s * 1, seaLightMedium[0], s);
-	drawTile(p, t, x + s * 3, y + s * 2, seaMediumDeep[0], s);
+	drawTile(attributes, x + s * 1, y - s * 0, sandSeaLight[0], s, opacity);
+	drawTile(attributes, x + s * 2, y + s * 1, seaLightMedium[0], s, opacity);
+	drawTile(attributes, x + s * 3, y + s * 2, seaMediumDeep[0], s, opacity);
 
-	drawTileRow(p, t, x + s * 1, y - s * 1, sandGrasses[1], s, 3);
-	drawTileRow(p, t, x + s * 2, y - s * 0, sandSeaLight[1], s, 2);
-	drawTile(p, t, x + s * 3, y + s * 1, seaLightMedium[1], s);
+	drawTileRow(attributes, x + s * 1, y - s * 1, sandGrasses[1], s, 3, opacity);
+	drawTileRow(attributes, x + s * 2, y - s * 0, sandSeaLight[1], s, 2, opacity);
+	drawTile(attributes, x + s * 3, y + s * 1, seaLightMedium[1], s, opacity);
 
-	drawTileCol(p, t, x - s * 0, y - s * 0, sandGrasses[5], s, 3);
-	drawTileCol(p, t, x + s * 1, y + s * 1, sandSeaLight[5], s, 2);
-	drawTile(p, t, x + s * 2, y + s * 2, seaLightMedium[5], s);
+	drawTileCol(attributes, x - s * 0, y - s * 0, sandGrasses[5], s, 3, opacity);
+	drawTileCol(attributes, x + s * 1, y + s * 1, sandSeaLight[5], s, 2, opacity);
+	drawTile(attributes, x + s * 2, y + s * 2, seaLightMedium[5], s, opacity);
 }
 
-function drawEmptyBottomLeftCorner(p: number[], t: number[], x: number, y: number, s: number) {
+function drawEmptyBottomLeftCorner(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
 	// diagonal
-	drawTile(p, t, x - s * 2, y + s * 1, sandSeaLight[2], s);
-	drawTile(p, t, x - s * 3, y + s * 2, seaLightMedium[2], s);
-	drawTile(p, t, x - s * 4, y + s * 3, seaMediumDeep[2], s);
+	drawTile(attributes, x - s * 2, y + s * 1, sandSeaLight[2], s, opacity);
+	drawTile(attributes, x - s * 3, y + s * 2, seaLightMedium[2], s, opacity);
+	drawTile(attributes, x - s * 4, y + s * 3, seaMediumDeep[2], s, opacity);
 
-	drawTileRow(p, t, x - s * 4, y + s * 0, sandGrasses[1], s, 3);
-	drawTileRow(p, t, x - s * 4, y + s * 1, sandSeaLight[1], s, 2);
-	drawTile(p, t, x - s * 4, y + s * 2, seaLightMedium[1], s);
+	drawTileRow(attributes, x - s * 4, y + s * 0, sandGrasses[1], s, 3, opacity);
+	drawTileRow(attributes, x - s * 4, y + s * 1, sandSeaLight[1], s, 2, opacity);
+	drawTile(attributes, x - s * 4, y + s * 2, seaLightMedium[1], s, opacity);
 
-	drawTileCol(p, t, x - s * 1, y + s * 1, sandGrasses[7], s, 3);
-	drawTileCol(p, t, x - s * 2, y + s * 2, sandSeaLight[7], s, 2);
-	drawTile(p, t, x - s * 3, y + s * 3, seaLightMedium[7], s);
+	drawTileCol(attributes, x - s * 1, y + s * 1, sandGrasses[7], s, 3, opacity);
+	drawTileCol(attributes, x - s * 2, y + s * 2, sandSeaLight[7], s, 2, opacity);
+	drawTile(attributes, x - s * 3, y + s * 3, seaLightMedium[7], s, opacity);
 }
 
-function drawEmptyTopLeftCorner(p: number[], t: number[], x: number, y: number, s: number) {
+function drawEmptyTopLeftCorner(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
 	// diagonal
-	drawTile(p, t, x - s * 3, y - s * 4, seaMediumDeep[12], s);
-	drawTile(p, t, x - s * 2, y - s * 3, seaLightMedium[12], s);
-	drawTile(p, t, x - s * 1, y - s * 2, sandSeaLight[12], s);
+	drawTile(attributes, x - s * 3, y - s * 4, seaMediumDeep[12], s, opacity);
+	drawTile(attributes, x - s * 2, y - s * 3, seaLightMedium[12], s, opacity);
+	drawTile(attributes, x - s * 1, y - s * 2, sandSeaLight[12], s, opacity);
 
-	drawTile(p, t, x - s * 2, y - s * 4, seaLightMedium[7], s);
-	drawTileCol(p, t, x - s * 1, y - s * 4, sandSeaLight[7], s, 2);
-	drawTileCol(p, t, x - s * 0, y - s * 4, sandGrasses[7], s, 3);
+	drawTile(attributes, x - s * 2, y - s * 4, seaLightMedium[7], s, opacity);
+	drawTileCol(attributes, x - s * 1, y - s * 4, sandSeaLight[7], s, 2, opacity);
+	drawTileCol(attributes, x - s * 0, y - s * 4, sandGrasses[7], s, 3, opacity);
 
-	drawTile(p, t, x - s * 3, y - s * 3, seaLightMedium[11], s);
-	drawTileRow(p, t, x - s * 3, y - s * 2, sandSeaLight[11], s, 2);
-	drawTileRow(p, t, x - s * 3, y - s * 1, sandGrasses[11], s, 3);
+	drawTile(attributes, x - s * 3, y - s * 3, seaLightMedium[11], s, opacity);
+	drawTileRow(attributes, x - s * 3, y - s * 2, sandSeaLight[11], s, 2, opacity);
+	drawTileRow(attributes, x - s * 3, y - s * 1, sandGrasses[11], s, 3, opacity);
 }
 
-function drawEmptyTopRightCorner(p: number[], t: number[], x: number, y: number, s: number) {
+function drawEmptyTopRightCorner(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
 	// diagonal
-	drawTile(p, t, x + s * 3, y - s * 4, seaMediumDeep[10], s);
-	drawTile(p, t, x + s * 2, y - s * 3, seaLightMedium[10], s);
-	drawTile(p, t, x + s * 1, y - s * 2, sandSeaLight[10], s);
+	drawTile(attributes, x + s * 3, y - s * 4, seaMediumDeep[10], s, opacity);
+	drawTile(attributes, x + s * 2, y - s * 3, seaLightMedium[10], s, opacity);
+	drawTile(attributes, x + s * 1, y - s * 2, sandSeaLight[10], s, opacity);
 
-	drawTile(p, t, x + s * 2, y - s * 4, seaLightMedium[5], s);
-	drawTileCol(p, t, x + s * 1, y - s * 4, sandSeaLight[5], s, 2);
-	drawTileCol(p, t, x + s * 0, y - s * 4, sandGrasses[5], s, 3);
+	drawTile(attributes, x + s * 2, y - s * 4, seaLightMedium[5], s, opacity);
+	drawTileCol(attributes, x + s * 1, y - s * 4, sandSeaLight[5], s, 2, opacity);
+	drawTileCol(attributes, x + s * 0, y - s * 4, sandGrasses[5], s, 3, opacity);
 
-	drawTile(p, t, x + s * 3, y - s * 3, seaLightMedium[11], s);
-	drawTileRow(p, t, x + s * 2, y - s * 2, sandSeaLight[11], s, 2);
-	drawTileRow(p, t, x + s * 1, y - s * 1, sandGrasses[11], s, 3);
+	drawTile(attributes, x + s * 3, y - s * 3, seaLightMedium[11], s, opacity);
+	drawTileRow(attributes, x + s * 2, y - s * 2, sandSeaLight[11], s, 2, opacity);
+	drawTileRow(attributes, x + s * 1, y - s * 1, sandGrasses[11], s, 3, opacity);
 }
 
-function drawNorthEast000(p: number[], t: number[], x: number, y: number, s: number) {
-	drawTileRow(p, t, x - s * 3, y - s * 4, seaMediumDeep[11], s, 6);
-	drawTile(p, t, x + s * 3, y - s * 4, seaMediumDeep[8], s);
-	drawTileCol(p, t, x + s * 3, y - s * 3, seaMediumDeep[5], s, 6);
+function drawNorthEast000(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
+	drawTileRow(attributes, x - s * 3, y - s * 4, seaMediumDeep[11], s, 6, opacity);
+	drawTile(attributes, x + s * 3, y - s * 4, seaMediumDeep[8], s, opacity);
+	drawTileCol(attributes, x + s * 3, y - s * 3, seaMediumDeep[5], s, 6, opacity);
 
-	drawTileRow(p, t, x - s * 3, y - s * 3, seaLightMedium[11], s, 5);
-	drawTile(p, t, x + s * 2, y - s * 3, seaLightMedium[8], s);
-	drawTileCol(p, t, x + s * 2, y - s * 2, seaLightMedium[5], s, 5);
+	drawTileRow(attributes, x - s * 3, y - s * 3, seaLightMedium[11], s, 5, opacity);
+	drawTile(attributes, x + s * 2, y - s * 3, seaLightMedium[8], s, opacity);
+	drawTileCol(attributes, x + s * 2, y - s * 2, seaLightMedium[5], s, 5, opacity);
 
-	drawTileRow(p, t, x - s * 3, y - s * 2, sandSeaLight[11], s, 4);
-	drawTile(p, t, x + s * 1, y - s * 2, sandSeaLight[8], s);
-	drawTileCol(p, t, x + s * 1, y - s * 1, sandSeaLight[5], s, 4);
+	drawTileRow(attributes, x - s * 3, y - s * 2, sandSeaLight[11], s, 4, opacity);
+	drawTile(attributes, x + s * 1, y - s * 2, sandSeaLight[8], s, opacity);
+	drawTileCol(attributes, x + s * 1, y - s * 1, sandSeaLight[5], s, 4, opacity);
 
-	drawTileRow(p, t, x - s * 3, y - s * 1, sandGrasses[11], s, 4);
-	drawTile(p, t, x + s * 0, y - s * 1, sandGrasses[8], s);
-	drawTileCol(p, t, x + s * 0, y - s * 0, sandGrasses[5], s, 4);
+	drawTileRow(attributes, x - s * 3, y - s * 1, sandGrasses[11], s, 4, opacity);
+	drawTile(attributes, x + s * 0, y - s * 1, sandGrasses[8], s, opacity);
+	drawTileCol(attributes, x + s * 0, y - s * 0, sandGrasses[5], s, 4, opacity);
 }
 
-function drawNorthEast100(p: number[], t: number[], x: number, y: number, s: number) {
-	drawTileRow(p, t, x - s * 3, y - s * 1, grasses[1], s, 3); // TODO randomize
+function drawNorthEast100(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
+	drawTileRow(attributes, x - s * 3, y - s * 1, grasses[1], s, 3, opacity); // TODO randomize
 
-	drawTileCol(p, t, x + s * 3, y - s * 4, seaMediumDeep[5], s, 7);
-	drawTileCol(p, t, x + s * 2, y - s * 4, seaLightMedium[5], s, 7);
-	drawTileCol(p, t, x + s * 1, y - s * 4, sandSeaLight[5], s, 7);
-	drawTileCol(p, t, x + s * 0, y - s * 4, sandGrasses[5], s, 7);
+	drawTileCol(attributes, x + s * 3, y - s * 4, seaMediumDeep[5], s, 7, opacity);
+	drawTileCol(attributes, x + s * 2, y - s * 4, seaLightMedium[5], s, 7, opacity);
+	drawTileCol(attributes, x + s * 1, y - s * 4, sandSeaLight[5], s, 7, opacity);
+	drawTileCol(attributes, x + s * 0, y - s * 4, sandGrasses[5], s, 7, opacity);
 }
 
-function drawNorthEast001(p: number[], t: number[], x: number, y: number, s: number) {
-	drawTileCol(p, t, x - s * 0, y - s * 0, grasses[1], s, 3); // TODO randomize
+function drawNorthEast001(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
+	drawTileCol(attributes, x - s * 0, y - s * 0, grasses[1], s, 3, opacity); // TODO randomize
 
-	drawTileRow(p, t, x - s * 3, y - s * 4, seaMediumDeep[11], s, 7);
-	drawTileRow(p, t, x - s * 3, y - s * 3, seaLightMedium[11], s, 7);
-	drawTileRow(p, t, x - s * 3, y - s * 2, sandSeaLight[11], s, 7);
-	drawTileRow(p, t, x - s * 3, y - s * 1, sandGrasses[11], s, 7);
+	drawTileRow(attributes, x - s * 3, y - s * 4, seaMediumDeep[11], s, 7, opacity);
+	drawTileRow(attributes, x - s * 3, y - s * 3, seaLightMedium[11], s, 7, opacity);
+	drawTileRow(attributes, x - s * 3, y - s * 2, sandSeaLight[11], s, 7, opacity);
+	drawTileRow(attributes, x - s * 3, y - s * 1, sandGrasses[11], s, 7, opacity);
 }
 
-function drawNorthEast010(p: number[], t: number[], x: number, y: number, s: number) {
+function drawNorthEast010(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
 	// diagonal
-	drawTile(p, t, x - s * 0, y - s * 1, sandGrasses[13], s);
+	drawTile(attributes, x - s * 0, y - s * 1, sandGrasses[13], s, opacity);
 
-	drawEmptyTopLeftCorner(p, t, x, y, s);
-	drawEmptyBottomRightCorner(p, t, x, y, s);
+	drawEmptyTopLeftCorner(attributes, x, y, s, opacity);
+	drawEmptyBottomRightCorner(attributes, x, y, s, opacity);
 }
 
-function drawNorthEast110(p: number[], t: number[], x: number, y: number, s: number) {
+function drawNorthEast110(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
 	// diagonal
-	drawTile(p, t, x - s * 0, y - s * 1, sandGrasses[0], s);
+	drawTile(attributes, x - s * 0, y - s * 1, sandGrasses[0], s, opacity);
 
-	drawEmptyBottomRightCorner(p, t, x, y, s);
+	drawEmptyBottomRightCorner(attributes, x, y, s, opacity);
 
-	drawTileRow(p, t, x - s * 3, y - s * 1, grasses[1], s, 3); // TODO randomize
-	drawTileCol(p, t, x - s * 0, y - s * 4, grasses[1], s, 3); // TODO randomize
+	drawTileRow(attributes, x - s * 3, y - s * 1, grasses[1], s, 3, opacity); // TODO randomize
+	drawTileCol(attributes, x - s * 0, y - s * 4, grasses[1], s, 3, opacity); // TODO randomize
 }
 
-function drawNorthEast011(p: number[], t: number[], x: number, y: number, s: number) {
+function drawNorthEast011(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
 	// diagonal
-	drawTile(p, t, x - s * 0, y - s * 1, sandGrasses[12], s);
+	drawTile(attributes, x - s * 0, y - s * 1, sandGrasses[12], s, opacity);
 
-	drawEmptyTopLeftCorner(p, t, x, y, s);
+	drawEmptyTopLeftCorner(attributes, x, y, s, opacity);
 
-	drawTileRow(p, t, x + s * 1, y - s * 1, grasses[1], s, 3); // TODO randomize
-	drawTileCol(p, t, x - s * 0, y - s * 0, grasses[1], s, 3); // TODO randomize
+	drawTileRow(attributes, x + s * 1, y - s * 1, grasses[1], s, 3, opacity); // TODO randomize
+	drawTileCol(attributes, x - s * 0, y - s * 0, grasses[1], s, 3, opacity); // TODO randomize
 }
 
-function drawNorthEast101(p: number[], t: number[], x: number, y: number, s: number) {
+function drawNorthEast101(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
 	// diagonal
-	drawTile(p, t, x - s * 0, y - s * 1, sandGrasses[10], s);
+	drawTile(attributes, x - s * 0, y - s * 1, sandGrasses[10], s, opacity);
 
-	drawEmptyTopRightCorner(p, t, x, y, s);
+	drawEmptyTopRightCorner(attributes, x, y, s, opacity);
 
-	drawTileRow(p, t, x - s * 3, y - s * 1, grasses[1], s, 3); // TODO randomize
-	drawTileCol(p, t, x - s * 0, y - s * 0, grasses[1], s, 3); // TODO randomize
+	drawTileRow(attributes, x - s * 3, y - s * 1, grasses[1], s, 3, opacity); // TODO randomize
+	drawTileCol(attributes, x - s * 0, y - s * 0, grasses[1], s, 3, opacity); // TODO randomize
 }
 
-function drawNorthEast111(p: number[], t: number[], x: number, y: number, s: number) {
-	drawTileRow(p, t, x - s * 3, y - s * 1, grasses[1], s, 7); // TODO randomize
-	drawTileCol(p, t, x - s * 0, y - s * 4, grasses[1], s, 3); // TODO randomize
-	drawTileCol(p, t, x - s * 0, y - s * 0, grasses[1], s, 3); // TODO randomize
+function drawNorthEast111(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
+	drawTileRow(attributes, x - s * 3, y - s * 1, grasses[1], s, 7, opacity); // TODO randomize
+	drawTileCol(attributes, x - s * 0, y - s * 4, grasses[1], s, 3, opacity); // TODO randomize
+	drawTileCol(attributes, x - s * 0, y - s * 0, grasses[1], s, 3, opacity); // TODO randomize
 }
 
-function drawSouthWest00(p: number[], t: number[], x: number, y: number, s: number) {
-	drawTileCol(p, t, x - s * 4, y - s * 3, seaMediumDeep[7], s, 6);
-	drawTile(p, t, x - s * 4, y + s * 3, seaMediumDeep[4], s);
-	drawTileRow(p, t, x - s * 3, y + s * 3, seaMediumDeep[1], s, 6);
+function drawSouthWest00(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
+	drawTileCol(attributes, x - s * 4, y - s * 3, seaMediumDeep[7], s, 6, opacity);
+	drawTile(attributes, x - s * 4, y + s * 3, seaMediumDeep[4], s, opacity);
+	drawTileRow(attributes, x - s * 3, y + s * 3, seaMediumDeep[1], s, 6, opacity);
 
-	drawTileCol(p, t, x - s * 3, y - s * 3, seaLightMedium[7], s, 5);
-	drawTile(p, t, x - s * 3, y + s * 2, seaLightMedium[4], s);
-	drawTileRow(p, t, x - s * 2, y + s * 2, seaLightMedium[1], s, 5);
+	drawTileCol(attributes, x - s * 3, y - s * 3, seaLightMedium[7], s, 5, opacity);
+	drawTile(attributes, x - s * 3, y + s * 2, seaLightMedium[4], s, opacity);
+	drawTileRow(attributes, x - s * 2, y + s * 2, seaLightMedium[1], s, 5, opacity);
 
-	drawTileCol(p, t, x - s * 2, y - s * 3, sandSeaLight[7], s, 4);
-	drawTile(p, t, x - s * 2, y + s * 1, sandSeaLight[4], s);
-	drawTileRow(p, t, x - s * 1, y + s * 1, sandSeaLight[1], s, 4);
+	drawTileCol(attributes, x - s * 2, y - s * 3, sandSeaLight[7], s, 4, opacity);
+	drawTile(attributes, x - s * 2, y + s * 1, sandSeaLight[4], s, opacity);
+	drawTileRow(attributes, x - s * 1, y + s * 1, sandSeaLight[1], s, 4, opacity);
 
-	drawTileCol(p, t, x - s * 1, y - s * 3, sandGrasses[7], s, 3);
-	drawTile(p, t, x - s * 1, y + s * 0, sandGrasses[4], s);
-	drawTileRow(p, t, x - s * 0, y + s * 0, sandGrasses[1], s, 3);
+	drawTileCol(attributes, x - s * 1, y - s * 3, sandGrasses[7], s, 3, opacity);
+	drawTile(attributes, x - s * 1, y + s * 0, sandGrasses[4], s, opacity);
+	drawTileRow(attributes, x - s * 0, y + s * 0, sandGrasses[1], s, 3, opacity);
 }
 
-function drawSouthWest10(p: number[], t: number[], x: number, y: number, s: number) {
-	drawTileCol(p, t, x - s * 1, y - s * 3, grasses[1], s, 3); // TODO randomize
+function drawSouthWest10(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
+	drawTileCol(attributes, x - s * 1, y - s * 3, grasses[1], s, 3, opacity); // TODO randomize
 
-	drawTileRow(p, t, x - s * 4, y + s * 3, seaMediumDeep[1], s, 7);
-	drawTileRow(p, t, x - s * 4, y + s * 2, seaLightMedium[1], s, 7);
-	drawTileRow(p, t, x - s * 4, y + s * 1, sandSeaLight[1], s, 7);
-	drawTileRow(p, t, x - s * 4, y + s * 0, sandGrasses[1], s, 7);
+	drawTileRow(attributes, x - s * 4, y + s * 3, seaMediumDeep[1], s, 7, opacity);
+	drawTileRow(attributes, x - s * 4, y + s * 2, seaLightMedium[1], s, 7, opacity);
+	drawTileRow(attributes, x - s * 4, y + s * 1, sandSeaLight[1], s, 7, opacity);
+	drawTileRow(attributes, x - s * 4, y + s * 0, sandGrasses[1], s, 7, opacity);
 }
 
-function drawSouthWest01(p: number[], t: number[], x: number, y: number, s: number) {
-	drawTileRow(p, t, x - s * 0, y - s * 0, grasses[1], s, 3); // TODO randomize
+function drawSouthWest01(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
+	drawTileRow(attributes, x - s * 0, y - s * 0, grasses[1], s, 3, opacity); // TODO randomize
 
-	drawTileCol(p, t, x - s * 4, y - s * 3, seaMediumDeep[7], s, 7);
-	drawTileCol(p, t, x - s * 3, y - s * 3, seaLightMedium[7], s, 7);
-	drawTileCol(p, t, x - s * 2, y - s * 3, sandSeaLight[7], s, 7);
-	drawTileCol(p, t, x - s * 1, y - s * 3, sandGrasses[7], s, 7);
+	drawTileCol(attributes, x - s * 4, y - s * 3, seaMediumDeep[7], s, 7, opacity);
+	drawTileCol(attributes, x - s * 3, y - s * 3, seaLightMedium[7], s, 7, opacity);
+	drawTileCol(attributes, x - s * 2, y - s * 3, sandSeaLight[7], s, 7, opacity);
+	drawTileCol(attributes, x - s * 1, y - s * 3, sandGrasses[7], s, 7, opacity);
 }
 
-function drawSouthWest11(p: number[], t: number[], x: number, y: number, s: number) {
-	drawTile(p, t, x - s * 1, y - s * 0, sandGrasses[2], s);
-	drawEmptyBottomLeftCorner(p, t, x, y, s);
+function drawSouthWest11(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
+	drawTile(attributes, x - s * 1, y - s * 0, sandGrasses[2], s, opacity);
+	drawEmptyBottomLeftCorner(attributes, x, y, s, opacity);
 
-	drawTileRow(p, t, x - s * 0, y - s * 0, grasses[1], s, 3); // TODO randomize
-	drawTileCol(p, t, x - s * 1, y - s * 3, grasses[1], s, 3); // TODO randomize
+	drawTileRow(attributes, x - s * 0, y - s * 0, grasses[1], s, 3, opacity); // TODO randomize
+	drawTileCol(attributes, x - s * 1, y - s * 3, grasses[1], s, 3, opacity); // TODO randomize
 }
 
-function drawSouthEast0(p: number[], t: number[], x: number, y: number, s: number) {
-	drawTileRow(p, t, x - s * 3, y + s * 3, seaMediumDeep[1], s, 6);
-	drawTile(p, t, x + s * 3, y + s * 3, seaMediumDeep[3], s);
-	drawTileCol(p, t, x + s * 3, y - s * 3, seaMediumDeep[5], s, 6);
+function drawSouthEast0(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
+	drawTileRow(attributes, x - s * 3, y + s * 3, seaMediumDeep[1], s, 6, opacity);
+	drawTile(attributes, x + s * 3, y + s * 3, seaMediumDeep[3], s, opacity);
+	drawTileCol(attributes, x + s * 3, y - s * 3, seaMediumDeep[5], s, 6, opacity);
 
-	drawTileRow(p, t, x - s * 3, y + s * 2, seaLightMedium[1], s, 5);
-	drawTile(p, t, x + s * 2, y + s * 2, seaLightMedium[3], s);
-	drawTileCol(p, t, x + s * 2, y - s * 3, seaLightMedium[5], s, 5);
+	drawTileRow(attributes, x - s * 3, y + s * 2, seaLightMedium[1], s, 5, opacity);
+	drawTile(attributes, x + s * 2, y + s * 2, seaLightMedium[3], s, opacity);
+	drawTileCol(attributes, x + s * 2, y - s * 3, seaLightMedium[5], s, 5, opacity);
 
-	drawTileRow(p, t, x - s * 3, y + s * 1, sandSeaLight[1], s, 4);
-	drawTile(p, t, x + s * 1, y + s * 1, sandSeaLight[3], s);
-	drawTileCol(p, t, x + s * 1, y - s * 3, sandSeaLight[5], s, 4);
+	drawTileRow(attributes, x - s * 3, y + s * 1, sandSeaLight[1], s, 4, opacity);
+	drawTile(attributes, x + s * 1, y + s * 1, sandSeaLight[3], s, opacity);
+	drawTileCol(attributes, x + s * 1, y - s * 3, sandSeaLight[5], s, 4, opacity);
 
-	drawTileRow(p, t, x - s * 3, y + s * 0, sandGrasses[1], s, 3);
-	drawTile(p, t, x + s * 0, y + s * 0, sandGrasses[3], s);
-	drawTileCol(p, t, x + s * 0, y - s * 3, sandGrasses[5], s, 3);
+	drawTileRow(attributes, x - s * 3, y + s * 0, sandGrasses[1], s, 3, opacity);
+	drawTile(attributes, x + s * 0, y + s * 0, sandGrasses[3], s, opacity);
+	drawTileCol(attributes, x + s * 0, y - s * 3, sandGrasses[5], s, 3, opacity);
 }
 
-function drawSouthEast1(p: number[], t: number[], x: number, y: number, s: number) {
-	drawTile(p, t, x - s * 0, y - s * 0, sandGrasses[14], s);
-	drawEmptyBottomLeftCorner(p, t, x + s, y, s);
-	drawEmptyTopRightCorner(p, t, x, y + s, s);
+function drawSouthEast1(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
+	drawTile(attributes, x - s * 0, y - s * 0, sandGrasses[14], s, opacity);
+	drawEmptyBottomLeftCorner(attributes, x + s, y, s, opacity);
+	drawEmptyTopRightCorner(attributes, x, y + s, s, opacity);
 }
 
-function drawNorthWest(p: number[], t: number[], x: number, y: number, s: number) {
-	drawTileCol(p, t, x - s * 4, y - s * 3, seaMediumDeep[7], s, 6);
-	drawTile(p, t, x - s * 4, y - s * 4, seaMediumDeep[9], s);
-	drawTileRow(p, t, x - s * 3, y - s * 4, seaMediumDeep[11], s, 6);
+function drawNorthWest(attributes: Attributes, x: number, y: number, s: number, opacity: number) {
+	drawTileCol(attributes, x - s * 4, y - s * 3, seaMediumDeep[7], s, 6, opacity);
+	drawTile(attributes, x - s * 4, y - s * 4, seaMediumDeep[9], s, opacity);
+	drawTileRow(attributes, x - s * 3, y - s * 4, seaMediumDeep[11], s, 6, opacity);
 
-	drawTileCol(p, t, x - s * 3, y - s * 2, seaLightMedium[7], s, 5);
-	drawTile(p, t, x - s * 3, y - s * 3, seaLightMedium[9], s);
-	drawTileRow(p, t, x - s * 2, y - s * 3, seaLightMedium[11], s, 5);
+	drawTileCol(attributes, x - s * 3, y - s * 2, seaLightMedium[7], s, 5, opacity);
+	drawTile(attributes, x - s * 3, y - s * 3, seaLightMedium[9], s, opacity);
+	drawTileRow(attributes, x - s * 2, y - s * 3, seaLightMedium[11], s, 5, opacity);
 
-	drawTileCol(p, t, x - s * 2, y - s * 1, sandSeaLight[7], s, 4);
-	drawTile(p, t, x - s * 2, y - s * 2, sandSeaLight[9], s);
-	drawTileRow(p, t, x - s * 1, y - s * 2, sandSeaLight[11], s, 4);
+	drawTileCol(attributes, x - s * 2, y - s * 1, sandSeaLight[7], s, 4, opacity);
+	drawTile(attributes, x - s * 2, y - s * 2, sandSeaLight[9], s, opacity);
+	drawTileRow(attributes, x - s * 1, y - s * 2, sandSeaLight[11], s, 4, opacity);
 
-	drawTileCol(p, t, x - s * 1, y - s * 0, sandGrasses[7], s, 3);
-	drawTile(p, t, x - s * 1, y - s * 1, sandGrasses[9], s);
-	drawTileRow(p, t, x - s * 0, y - s * 1, sandGrasses[11], s, 3);
+	drawTileCol(attributes, x - s * 1, y - s * 0, sandGrasses[7], s, 3, opacity);
+	drawTile(attributes, x - s * 1, y - s * 1, sandGrasses[9], s, opacity);
+	drawTileRow(attributes, x - s * 0, y - s * 1, sandGrasses[11], s, 3, opacity);
 }
 
 export type Neighbors = {
@@ -414,68 +431,70 @@ export type Neighbors = {
 	NW: boolean;
 };
 
+export type Attributes = {positions: number[]; texs: number[]; alphas: number[]};
+
 export function drawCorners(
-	a_positions: number[],
-	a_texs: number[],
+	attributes: Attributes,
 	cellSize: number,
 	offset: number,
 	neighbors: Neighbors,
 	tileSize: number,
 	x: number,
 	y: number,
+	opacity: number,
 ) {
 	if (!neighbors.N && !neighbors.NE && !neighbors.E) {
-		drawNorthEast000(a_positions, a_texs, x - offset + cellSize, y + offset, tileSize);
+		drawNorthEast000(attributes, x - offset + cellSize, y + offset, tileSize, opacity);
 	} else if (neighbors.N && !neighbors.NE && !neighbors.E) {
-		drawNorthEast100(a_positions, a_texs, x - offset + cellSize, y + offset, tileSize);
+		drawNorthEast100(attributes, x - offset + cellSize, y + offset, tileSize, opacity);
 	} else if (!neighbors.N && !neighbors.NE && neighbors.E) {
-		drawNorthEast001(a_positions, a_texs, x - offset + cellSize, y + offset, tileSize);
+		drawNorthEast001(attributes, x - offset + cellSize, y + offset, tileSize, opacity);
 	} else if (!neighbors.N && neighbors.NE && !neighbors.E) {
-		drawNorthEast010(a_positions, a_texs, x - offset + cellSize, y + offset, tileSize);
+		drawNorthEast010(attributes, x - offset + cellSize, y + offset, tileSize, opacity);
 	} else if (neighbors.N && neighbors.NE && !neighbors.E) {
-		drawNorthEast110(a_positions, a_texs, x - offset + cellSize, y + offset, tileSize);
+		drawNorthEast110(attributes, x - offset + cellSize, y + offset, tileSize, opacity);
 	} else if (!neighbors.N && neighbors.NE && neighbors.E) {
-		drawNorthEast011(a_positions, a_texs, x - offset + cellSize, y + offset, tileSize);
+		drawNorthEast011(attributes, x - offset + cellSize, y + offset, tileSize, opacity);
 	} else if (neighbors.N && !neighbors.NE && neighbors.E) {
-		drawNorthEast101(a_positions, a_texs, x - offset + cellSize, y + offset, tileSize);
+		drawNorthEast101(attributes, x - offset + cellSize, y + offset, tileSize, opacity);
 	} else {
-		drawNorthEast111(a_positions, a_texs, x - offset + cellSize, y + offset, tileSize);
+		drawNorthEast111(attributes, x - offset + cellSize, y + offset, tileSize, opacity);
 	}
 
 	if (!neighbors.SW) {
 		if (!neighbors.W && !neighbors.S) {
-			drawSouthWest00(a_positions, a_texs, x + offset, y - offset + cellSize, tileSize);
+			drawSouthWest00(attributes, x + offset, y - offset + cellSize, tileSize, opacity);
 		} else if (neighbors.W && !neighbors.S) {
-			drawSouthWest10(a_positions, a_texs, x + offset, y - offset + cellSize, tileSize);
+			drawSouthWest10(attributes, x + offset, y - offset + cellSize, tileSize, opacity);
 		} else if (!neighbors.W && neighbors.S) {
-			drawSouthWest01(a_positions, a_texs, x + offset, y - offset + cellSize, tileSize);
+			drawSouthWest01(attributes, x + offset, y - offset + cellSize, tileSize, opacity);
 		} else {
-			drawSouthWest11(a_positions, a_texs, x + offset, y - offset + cellSize, tileSize);
+			drawSouthWest11(attributes, x + offset, y - offset + cellSize, tileSize, opacity);
 		}
 	}
 
 	if (!neighbors.S && !neighbors.E) {
 		if (!neighbors.SE) {
-			drawSouthEast0(a_positions, a_texs, x - offset + cellSize, y - offset + cellSize, tileSize);
+			drawSouthEast0(attributes, x - offset + cellSize, y - offset + cellSize, tileSize, opacity);
 		} else {
-			drawSouthEast1(a_positions, a_texs, x - offset + cellSize, y - offset + cellSize, tileSize);
+			drawSouthEast1(attributes, x - offset + cellSize, y - offset + cellSize, tileSize, opacity);
 		}
 	}
 
 	if (!neighbors.W && !neighbors.N && !neighbors.NW) {
-		drawNorthWest(a_positions, a_texs, x + offset, y + offset, tileSize);
+		drawNorthWest(attributes, x + offset, y + offset, tileSize, opacity);
 	}
 }
 
 export function drawGrassCenter(
-	a_positions: number[],
-	a_texs: number[],
+	attributes: Attributes,
 	cellSize: number,
 	offset: number,
 	tileSize: number,
 	numTiles: number,
 	x: number,
 	y: number,
+	opacity: number,
 ) {
 	for (let cy = 0; cy < numTiles; cy++) {
 		for (let cx = 0; cx < numTiles; cx++) {
@@ -484,10 +503,50 @@ export function drawGrassCenter(
 			const y1 = offset + y * cellSize + cy * tileSize;
 			const y2 = y1 + tileSize;
 
-			a_positions.push(x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2);
-			a_texs.push(...grasses[(cx + cy) % 8].uv);
+			attributes.positions.push(x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2);
+			attributes.texs.push(...grasses[(cx + cy) % 8].uv);
+			attributes.alphas.push(opacity, opacity, opacity, opacity, opacity, opacity); // TODO
 		}
 	}
+}
+
+export function drawSandCenter(
+	attributes: Attributes,
+	cellSize: number,
+	offset: number,
+	tileSize: number,
+	numTiles: number,
+	x: number,
+	y: number,
+	opacity: number,
+) {
+	// for (let cy = 0; cy < numTiles; cy++) {
+	// 	for (let cx = 0; cx < numTiles; cx++) {
+	// 		const x1 = offset + x * cellSize + cx * tileSize;
+	// 		const x2 = x1 + tileSize;
+	// 		const y1 = offset + y * cellSize + cy * tileSize;
+	// 		const y2 = y1 + tileSize;
+
+	// 		attributes.positions.push(x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2);
+	// 		attributes.texs.push(...sandGrasses[6].uv);
+	// 		attributes.alphas.push(opacity, opacity, opacity, opacity, opacity, opacity); // TODO
+	// 	}
+	// }
+	const x1 = offset + x * cellSize;
+	const y1 = offset + y * cellSize;
+	drawTile(attributes, x1, y1, sandGrasses[0], tileSize, opacity);
+	drawTileRow(attributes, x1 + tileSize * 1, y1, sandGrasses[1], tileSize, 4, opacity);
+	drawTile(attributes, x1 + tileSize * 5, y1, sandGrasses[2], tileSize, opacity);
+	drawTileCol(attributes, x1 + tileSize * 5, y1 + tileSize * 1, sandGrasses[7], tileSize, 4, opacity);
+	drawTile(attributes, x1 + tileSize * 5, y1 + tileSize * 5, sandGrasses[12], tileSize, opacity);
+	drawTileRow(attributes, x1 + tileSize * 1, y1 + tileSize * 5, sandGrasses[11], tileSize, 4, opacity);
+	drawTile(attributes, x1, y1 + tileSize * 5, sandGrasses[10], tileSize, opacity);
+	drawTileCol(attributes, x1, y1 + tileSize * 1, sandGrasses[5], tileSize, 4, opacity);
+
+	drawTileRow(attributes, x1 + tileSize * 1, y1 + tileSize * 1, sandGrasses[6], tileSize, 4, opacity);
+	drawTileRow(attributes, x1 + tileSize * 1, y1 + tileSize * 2, sandGrasses[6], tileSize, 4, opacity);
+	drawTileRow(attributes, x1 + tileSize * 1, y1 + tileSize * 3, sandGrasses[6], tileSize, 4, opacity);
+	drawTileRow(attributes, x1 + tileSize * 1, y1 + tileSize * 4, sandGrasses[6], tileSize, 4, opacity);
 }
 
 export function drawHouse(
@@ -499,19 +558,20 @@ export function drawHouse(
 	numTiles: number,
 	x: number,
 	y: number,
+	opacity: number,
 ) {}
 
 export function drawCastle(
-	a_positions: number[],
-	a_texs: number[],
+	attributes: Attributes,
 	cellSize: number,
 	tileSize: number,
 	x: number,
 	y: number,
 	color: Color,
+	opacity: number,
 ) {
 	if (color === Color.None) {
 		return;
 	}
-	drawTile(a_positions, a_texs, x + cellSize / 2 - tileSize, y + cellSize / 2 - tileSize, castles[color], tileSize * 2);
+	drawTile(attributes, x + cellSize / 2 - tileSize, y + cellSize / 2 - tileSize, castles[color], tileSize * 2, opacity);
 }
