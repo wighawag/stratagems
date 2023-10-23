@@ -117,8 +117,8 @@ importers:
         specifier: ^0.8.4
         version: 0.8.4(hardhat@2.17.3)
       solidity-kit:
-        specifier: ^0.3.3
-        version: 0.3.3
+        specifier: ^0.3.4
+        version: 0.3.4
       solidity-proxy:
         specifier: ^0.2.3
         version: 0.2.3
@@ -9155,8 +9155,8 @@ packages:
       - supports-color
     dev: true
 
-  /solidity-kit@0.3.3:
-    resolution: {integrity: sha512-mnbx6NoF2MrWQgIbZq1W7iYIuIbEk3i1ULG2DSvO0j9FmV48Gfxlcbae6hCL7GDNQJSk//F741j045PQFC/fuQ==}
+  /solidity-kit@0.3.4:
+    resolution: {integrity: sha512-ivPmIEitH3hW3HdgNM54jDUVqH5K/HXSIDjXNqAe4/Nd+fST/ERRSbbqaMeRiKf0O5khyDxQlPqmvMDSrDwrnw==}
     dev: true
 
   /solidity-proxy@0.2.3:
