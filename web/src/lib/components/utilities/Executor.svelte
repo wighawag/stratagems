@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {createExecutor} from '$lib/utils/debug';
+	import {createExecutor} from './executor';
 
 	let className = '';
 	export {className as class};

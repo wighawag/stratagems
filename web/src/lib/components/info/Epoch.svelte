@@ -8,6 +8,7 @@
 	import {account, balance, contracts} from '$lib/web3';
 	import {parseEther} from 'viem';
 	import Executor from '../utilities/Executor.svelte';
+	import TxExecutor from '../utilities/TxExecutor.svelte';
 
 	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
 	async function nextPhase() {
@@ -19,9 +20,9 @@
 	const isSepolia = (initialContractsInfos.chainId as any) === '11155111';
 
 	async function topupToken() {
-		await contracts.execute(async ({contracts, account}) => {
+		return await contracts.execute(async ({contracts, account}) => {
 			const contract = contracts.TestTokens;
-			await contract.write.topup({account: account.address, value: parseEther('0.01')});
+			return contract.write.topup({account: account.address, value: parseEther('0.01')});
 		});
 	}
 </script>
@@ -77,7 +78,7 @@
 		</div>
 	{:else if $balance.tokenBalance === 0n}
 		<div class="alert alert-warning absolute">
-			<Executor btn="btn-sm" func={() => topupToken()}>Get Test token</Executor>
+			<TxExecutor btn="btn-sm" func={() => topupToken()}>Get Test token</TxExecutor>
 		</div>
 	{:else}
 		<div class="alert alert-info absolute">
