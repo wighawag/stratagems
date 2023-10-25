@@ -126,12 +126,12 @@ const houses = {
 };
 
 const tents = {
-	[Color.Blue]: texPerSprites['buildings/yellow-tent.png'],
-	[Color.Red]: texPerSprites['buildings/yellow-tent.png'],
-	[Color.Green]: texPerSprites['buildings/yellow-tent.png'],
+	[Color.Blue]: texPerSprites['buildings/blue-tent.png'],
+	[Color.Red]: texPerSprites['buildings/red-tent.png'],
+	[Color.Green]: texPerSprites['buildings/green-tent.png'],
 	[Color.Yellow]: texPerSprites['buildings/yellow-tent.png'],
-	[Color.Purple]: texPerSprites['buildings/yellow-tent.png'],
-	[Color.Evil]: texPerSprites['buildings/yellow-tent.png'],
+	[Color.Purple]: texPerSprites['buildings/purple-tent.png'],
+	[Color.Evil]: texPerSprites['buildings/black-tent.png'],
 };
 
 const castles = {
@@ -144,13 +144,32 @@ const castles = {
 };
 
 const soldiers = {
-	[Color.Blue]: texPerSprites['units/generic-soldier/generic-soldier-0.png'],
-	[Color.Red]: texPerSprites['units/generic-soldier/generic-soldier-0.png'],
-	[Color.Green]: texPerSprites['units/generic-soldier/generic-soldier-0.png'],
-	[Color.Yellow]: texPerSprites['units/generic-soldier/generic-soldier-0.png'],
-	[Color.Purple]: texPerSprites['units/generic-soldier/generic-soldier-0.png'],
-	[Color.Evil]: texPerSprites['units/generic-soldier/generic-soldier-0.png'],
+	[Color.Blue]: texPerSprites['units/assasin-blue/AssasinCyan-27.png'],
+	[Color.Red]: texPerSprites['units/assasin-red/AssasinRed-27.png'],
+	[Color.Green]: texPerSprites['units/assasin-green/AssasinLime-27.png'],
+	[Color.Yellow]: texPerSprites['units/assasin-orange/AssasinOrange-27.png'],
+	[Color.Purple]: texPerSprites['units/assasin-purple/AssasinPurple-27.png'],
+	[Color.Evil]: texPerSprites['units/generic-soldier/generic-soldier-0.png'], // TODO
 };
+
+const gems = {
+	[Color.Blue]: texPerSprites['gems/blue.png'],
+	[Color.Red]: texPerSprites['gems/red.png'],
+	[Color.Green]: texPerSprites['gems/green.png'],
+	[Color.Yellow]: texPerSprites['gems/yellow.png'],
+	[Color.Purple]: texPerSprites['gems/purple.png'],
+	[Color.Evil]: texPerSprites['gems/black.png'],
+};
+
+const fires = [
+	texPerSprites['fire/loop/fire1.png'],
+	texPerSprites['fire/loop/fire2.png'],
+	texPerSprites['fire/loop/fire3.png'],
+	texPerSprites['fire/loop/fire4.png'],
+	texPerSprites['fire/loop/fire5.png'],
+	texPerSprites['fire/loop/fire6.png'],
+	texPerSprites['fire/loop/fire7.png'],
+];
 
 function drawTile(
 	attributes: Attributes,
@@ -549,17 +568,148 @@ export function drawSandCenter(
 	drawTileRow(attributes, x1 + tileSize * 1, y1 + tileSize * 4, sandGrasses[6], tileSize, 4, opacity);
 }
 
+function getXYFromIndex(cellSize: number, tileSize: number, index: number) {
+	if (index === 0) {
+		return {
+			dx: -tileSize,
+			dy: -tileSize,
+		};
+	} else if (index === 1) {
+		return {
+			dx: tileSize * 2,
+			dy: -tileSize,
+		};
+	} else if (index === 2) {
+		return {
+			dx: -tileSize,
+			dy: tileSize * 2,
+		};
+	} else if (index === 3) {
+		return {
+			dx: tileSize * 2,
+			dy: tileSize * 2,
+		};
+	} else if (index === 4) {
+		return {
+			dx: -tileSize * 2,
+			dy: 0,
+		};
+	} else if (index === 5) {
+		return {
+			dx: tileSize * 3,
+			dy: tileSize * 1,
+		};
+	} else if (index === 6) {
+		return {
+			dx: 0,
+			dy: -tileSize * 2,
+		};
+	} else if (index === 7) {
+		return {
+			dx: tileSize * 1,
+			dy: tileSize * 3,
+		};
+	}
+	return {
+		dx: 0,
+		dy: 0,
+	};
+}
+
 export function drawHouse(
-	a_positions: number[],
-	a_texs: number[],
+	attributes: Attributes,
 	cellSize: number,
-	offset: number,
 	tileSize: number,
-	numTiles: number,
 	x: number,
 	y: number,
+	color: Color,
 	opacity: number,
-) {}
+	index: number,
+) {
+	if (color === Color.None) {
+		return;
+	}
+	const {dx, dy} = getXYFromIndex(cellSize, tileSize, index);
+	drawTile(
+		attributes,
+		x + cellSize / 2 - tileSize + dx,
+		y + cellSize / 2 - tileSize + dy,
+		houses[color],
+		tileSize,
+		opacity,
+	);
+}
+
+export function drawHouseInFire(
+	attributes: Attributes,
+	cellSize: number,
+	tileSize: number,
+	x: number,
+	y: number,
+	color: Color,
+	opacity: number,
+	index: number,
+) {
+	if (color === Color.None) {
+		return;
+	}
+	drawHouse(attributes, cellSize, tileSize, x, y, color, opacity, index);
+	const {dx, dy} = getXYFromIndex(cellSize, tileSize, index);
+	drawTile(
+		attributes,
+		x + cellSize / 2 - tileSize + dx,
+		y + cellSize / 2 - tileSize + dy - tileSize / 2,
+		fires[0],
+		tileSize,
+		opacity,
+	);
+}
+
+export function drawTent(
+	attributes: Attributes,
+	cellSize: number,
+	tileSize: number,
+	x: number,
+	y: number,
+	color: Color,
+	opacity: number,
+	index: number,
+) {
+	if (color === Color.None) {
+		return;
+	}
+	const {dx, dy} = getXYFromIndex(cellSize, tileSize, index);
+	drawTile(
+		attributes,
+		x + cellSize / 2 - tileSize + dx,
+		y + cellSize / 2 - tileSize + dy,
+		tents[color],
+		tileSize,
+		opacity,
+	);
+}
+
+export function drawGem(
+	attributes: Attributes,
+	cellSize: number,
+	tileSize: number,
+	x: number,
+	y: number,
+	color: Color,
+	opacity: number,
+) {
+	if (color === Color.None) {
+		return;
+	}
+	drawTile(
+		attributes,
+		x + cellSize / 2 - tileSize,
+		y + cellSize / 2 - tileSize - tileSize,
+		gems[color],
+		tileSize * 2,
+		opacity,
+	);
+}
 
 export function drawCastle(
 	attributes: Attributes,
@@ -573,5 +723,36 @@ export function drawCastle(
 	if (color === Color.None) {
 		return;
 	}
-	drawTile(attributes, x + cellSize / 2 - tileSize, y + cellSize / 2 - tileSize, castles[color], tileSize * 2, opacity);
+	drawTile(
+		attributes,
+		x + cellSize / 2 - tileSize,
+		y + cellSize / 2 - tileSize + tileSize / 3,
+		castles[color],
+		tileSize * 2,
+		opacity,
+	);
+}
+
+export function drawUnit(
+	attributes: Attributes,
+	cellSize: number,
+	tileSize: number,
+	x: number,
+	y: number,
+	color: Color,
+	opacity: number,
+	dx: number,
+	dy: number,
+) {
+	if (color === Color.None) {
+		return;
+	}
+	drawTile(
+		attributes,
+		x + cellSize / 2 + tileSize * dx * 3 - tileSize / 2 + tileSize / 3,
+		y + cellSize / 2 + tileSize * dy * 3,
+		soldiers[color],
+		tileSize,
+		opacity,
+	);
 }

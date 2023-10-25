@@ -2,7 +2,19 @@ import * as twgl from 'twgl.js';
 import * as m3 from '$lib/m3';
 import type {CameraState} from '../camera';
 import type {ViewData} from '$lib/state/ViewState';
-import {drawCastle, drawCorners, drawGrassCenter, drawHouse, sheetURL, type Attributes, drawSandCenter} from '../tiles';
+import {
+	drawCastle,
+	drawCorners,
+	drawGrassCenter,
+	drawHouse,
+	sheetURL,
+	type Attributes,
+	drawSandCenter,
+	drawHouseInFire,
+	drawTent,
+	drawGem,
+	drawUnit,
+} from '../tiles';
 import {epoch} from '$lib/blockchain/state/Epoch';
 import {get} from 'svelte/store';
 
@@ -113,38 +125,51 @@ export class Textured2DLayer {
 				NW: !!state.cells[`${x - 1},${y - 1}`],
 			};
 			drawCorners(attributes, this.size, offset, neighbors, tileSize, x, y, 1);
-		}
-
-		for (let cellPos of Object.keys(state.cells)) {
-			const cell = state.cells[cellPos];
-			const [x, y] = cellPos.split(',').map((v) => parseInt(v));
 			if (cell.next.epochWhenTokenIsAdded >= get(epoch) /* TODO access to epcoh*/) {
 				drawSandCenter(attributes, this.size, offset, tileSize, numTiles, x, y, 1);
 			} else {
 				drawGrassCenter(attributes, this.size, offset, tileSize, numTiles, x, y, 1);
 			}
+		}
+
+		for (let cellPos of Object.keys(state.cells)) {
+			const cell = state.cells[cellPos];
+			const [x, y] = cellPos.split(',').map((v) => parseInt(v));
 
 			drawCastle(attributes, this.size, tileSize, x, y, cell.next.color, 1);
 
-			// for (let i = 0; i < cell.next.life; i++) {
-			// 	const offset = 0.2 * tileSize;
-			// 	const margin = 0.3 * tileSize;
-			// 	drawHouse(offset + margin * (i % 3), offset + margin * Math.floor(i / 3));
-			// }
-			// if (cell.future.life > cell.next.life) {
-			// 	for (let i = cell.next.life; i < cell.future.life; i++) {
-			// 		const offset = 0.2 * tileSize;
-			// 		const margin = 0.3 * tileSize;
+			for (let i = 0; i < cell.next.life; i++) {
+				drawHouse(attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
+			}
 
-			// 		drawHouse(offset + margin * (i % 3), offset + margin * Math.floor(i / 3));
-			// 	}
-			// } else if (cell.future.life < cell.next.life) {
-			// 	for (let i = Math.max(0, cell.next.life - (cell.next.life - cell.future.life)); i < cell.next.life; i++) {
-			// 		const offset = 0.2 * tileSize;
-			// 		const margin = 0.3 * tileSize;
-			// 		drawHouse(offset + margin * (i % 3), offset + margin * Math.floor(i / 3));
-			// 	}
-			// }
+			if (cell.next.life > 0) {
+				drawGem(attributes, this.size, tileSize, x, y, cell.next.color, 1);
+			}
+
+			if (cell.future.life > cell.next.life) {
+				for (let i = cell.next.life; i < cell.future.life; i++) {
+					drawTent(attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
+				}
+			} else if (cell.future.life < cell.next.life) {
+				for (let i = Math.max(0, cell.next.life - (cell.next.life - cell.future.life)); i < cell.next.life; i++) {
+					const offset = 0.2 * tileSize;
+					const margin = 0.3 * tileSize;
+					drawHouseInFire(attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
+				}
+			}
+
+			if ((cell.next.enemyMap & 1) == 1) {
+				drawUnit(attributes, this.size, tileSize, x, y, cell.next.color, 1, 0, -1);
+			}
+			if ((cell.next.enemyMap & 2) == 2) {
+				drawUnit(attributes, this.size, tileSize, x, y, cell.next.color, 1, -1, 0);
+			}
+			if ((cell.next.enemyMap & 4) == 4) {
+				drawUnit(attributes, this.size, tileSize, x, y, cell.next.color, 1, 0, 1);
+			}
+			if ((cell.next.enemyMap & 8) == 8) {
+				drawUnit(attributes, this.size, tileSize, x, y, cell.next.color, 1, 1, 0);
+			}
 		}
 
 		// we update the buffer with the new arrays
