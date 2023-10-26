@@ -19,3 +19,6 @@ bindings = [
 [[migrations]]
 tag = "v1"
 new_classes = ["SchedulerDO"]
+
+[triggers]
+crons = ["* * * * *", "*/1 * * * *"]
