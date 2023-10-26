@@ -53,7 +53,8 @@ function merge(
 				const metadata = action.tx.metadata;
 				if (metadata.type === 'commit') {
 					// TODO
-					if ((metadata.epoch == epochState.epoch && epochState.isActionPhase) || !action.revealTx) {
+					// TODO || || !action.revealTx
+					if (metadata.epoch == epochState.epoch && epochState.isActionPhase) {
 						hasCommitment = true;
 						for (const move of metadata.localMoves) {
 							stratagems.computeMove(account.address as `0x${string}`, epochState.epoch, localMoveToContractMove(move));
