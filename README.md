@@ -1,6 +1,6 @@
 <p align="center">
-  <a href="https://stratagems.eth.limo">
-    <img src="web/static/logo_and_title.png" alt="Stratagems Logo" width="500">
+  <a href="https://stratagems.world">
+    <img src="docs/public/title.png" alt="Stratagems Logo" width="500">
   </a>
 </p>
 <p align="center">
@@ -29,15 +29,18 @@
 
 ---
 
-# 🎮👾♟️ An infinite game
+# 🎮👾♟️ An Autonomous World In Constant Evolution
 
-[Stratagems](https://stratagems.world) is an autonomous world where players are actual gods. They are literaly the one creating the world.
+[Stratagems](https://stratagems.world) is an Wutonomous World where players are actual gods. They are literaly the one creating the world and its inhabitants.
 
-As an Autonomous World, Stratagems is permission-less and persistent. Its rules are immutable yet it is fully composable. We like to call such games: ["Infinite Games"](https://ronan.eth.limo/blog/infinite-games/)
+Stratagems is thus permission-less and persistent. Its rules are immutable yet it is fully composable and as a community players can bring new dimension to world all permissionlessly.
+
+We expand on that idea in our latest essay: ["Natural Compoability in Autonomous Worlds"](https://etherplay.io/blog/natural-composability/).
 
 ## ♟️ What is stratagems exactly ?
 
-Stratagems is a world created by players and anyone can join at any time. Players use a specific set of factions/colors to compete for control of the world. Alliances and betrayal are part of the arsenal as colors mix and shift on the board.
+<img align="right" style="width:200px" src="docs/public/icon.png">
+Stratagems is a world created by players and anyone can join at any time. Players use a specific set of factions/colors to compete for control of the world. Alliances and betrayal are part of the arsenal as factions mixes on the lands created this way.
 
 Stratagems is thus first and foremost a social game. Its main inspiration is [conquest.eth](https://conquest.game) who successfully created a deeply social game out of simple mechanics. Stratagems explores this further by having even simpler rules. It also reduces the gas cost to a minimum by spreading the actions over a week. It works because most of the game plays out in the conversations and strategies happening among the players.
 
@@ -51,11 +54,19 @@ By doing so, they risk the associated ETH but also get a chance to potentially c
 
 More details coming soon! Follow our [twitter](https://twitter.com/stratagems_eth) or register your interest on our [website](https://stratagems.world)!
 
+<p align="center">
+  <a href="https://stratagems.world">
+    <img src="docs/public/stratagems-screenshot.png" alt="Stratagems Screenshot" width="500">
+  </a>
+</p>
+
 ## 🎎 Who we are?
 
-For now, it is just me, [Ronan Sandford](https://twitter.com/wighawag).
+We are [Etherplay](https://etherplay.io), an Open Source Game Studio building Autonomous worlds.
 
-Ronan is a game designer working on Autonomous Worlds (including [conquest.eth](https://conquest.game) and [Ethernal](https://ethernal.land)). He likes to call them ["Infinite Games"](https://ronan.eth.limo/infinite-games/). He is also an active developer in the web3 space with contributions towards EIP like [EIP-1155](https://eips.ethereum.org/EIPS/eip-1155) and [EIP-2771](https://eips.ethereum.org/EIPS/eip-2771), but also tools like [hardhat-deploy](https://github.com/wighawag/hardhat-deploy) and [Jolly-Roger](https://jolly-roger.eth.limo). He has been tinkering with on-chain NFTs with [Mandalas](https://mandalas.eth.limo) and [Bleeps](https://bleeps.art). You can find more on his [personal website](https://ronan.eth.limo).
+We have been building fully on-chain games since 2016-[2017](https://etherplay.io/blog/our-first-unstoppable-game-tug-of-war/) and what we consider to be Autonomous Worlds since [early 2019](https://github.com/wighawag/the_eternal_dungeon/commit/b283988cccf37c63c290b5bd5465bfe5bb3dc7ad) following in the footsteps of [Huntercoin](https://xaya.io/huntercoin-legacy). We started our adventure with the aptly named "[Ethernal](https://ethernal.land/)" in collaboration with [Jia](https://twitter.com/OhJia), and then launched the autonomous version of [Conquest.eth](https://conquest.game) in April 2022 which will remain live until [Gnosis](https://www.gnosis.io/), the chain it runs on, dies if ever (See our recent [announcement](https://etherplay.io/blog/conquest-is-open-source/)).
+
+Our founder, [Ronan Sandford](https://ronan.eth.limo) is also an active developer in the web3 space with contributions towards EIP like [EIP-1155](https://eips.ethereum.org/EIPS/eip-1155) and [EIP-2771](https://eips.ethereum.org/EIPS/eip-2771), but also tools like [hardhat-deploy](https://github.com/wighawag/hardhat-deploy) and [Jolly-Roger](https://jolly-roger.eth.limo). He has been tinkering with on-chain NFTs with [Mandalas](https://mandalas.eth.limo) and [Bleeps](https://bleeps.art). You can find more on his [personal website](https://ronan.eth.limo).
 
 ## 💻 Install
 
@@ -65,27 +76,24 @@ Ronan is a game designer working on Autonomous Worlds (including [conquest.eth](
 
 1. Clone the repository
 
-    > Before cloning you will need to have [git LFS (Large File Storage)](https://git-lfs.com/) installed
+   > Before cloning you will need to have [git LFS (Large File Storage)](https://git-lfs.com/) installed
 
-    
-    ```
-    git clone https://github.com/wighawag/stratagems.git
-    cd stratagems
-    ```
+   ```
+   git clone https://github.com/wighawag/stratagems.git
+   cd stratagems
+   ```
 
-    Then, ensure the LFS hooks are present:
+   Then, ensure the LFS hooks are present:
 
-    ```sh
-    git lfs install
-    ```
+   ```sh
+   git lfs install
+   ```
 
-    > If you installed git lfs after already cloning the repo, you will also need to execute the following:
-    ```sh
-    git lfs pull
-    ```
+   > If you installed git lfs after already cloning the repo, you will also need to execute the following:
 
-
-
+   ```sh
+   git lfs pull
+   ```
 
 2. Install dependencies
 
