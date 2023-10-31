@@ -8,9 +8,13 @@ const config = toml.parse(wranglerConfigStr);
 
 if (config.triggers?.crons) {
     for (const trigger of config.triggers.crons) {
-        cron.schedule(trigger, () => {
+        cron.schedule(trigger, async () => {
             console.log(`triggering ${trigger} ... `)
-            fetch(`http://localhost:34002/cdn-cgi/mf/scheduled?cron=${trigger}`)
+            try {
+                await fetch(`http://localhost:34002/cdn-cgi/mf/scheduled?cron=${trigger}`)
+            } catch(e) {
+                console.log(`failed to fetch...`, e)
+            }
         })
     }
 }
