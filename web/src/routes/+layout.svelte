@@ -36,7 +36,7 @@
 	<!-- minimal -->
 	<!-- use SVG, if need PNG, adapt accordingly -->
 	<!-- TODO automatise -->
-	<link rel="icon" href={url('/pwa/favicon.svg')} type="image/svg+xml" />
+	<link rel="icon" href={url('/pwa/favicon.png')} type="image/svg+xml" />
 	<link rel="icon" href={url('/pwa/favicon.ico')} sizes="any" /><!-- 32×32 -->
 	<link rel="apple-touch-icon" href={url('/pwa/apple-touch-icon.png')} /><!-- 180×180 -->
 	<link rel="manifest" href={url('/pwa/manifest.webmanifest')} />
@@ -126,7 +126,7 @@
 <!-- <Install src={url('/icon.svg')} alt="Stratagems" /> -->
 
 <!-- Here is Notification for new version -->
-<NewVersionNotification src={url('/icon.svg')} alt="Stratagems" />
+<NewVersionNotification src={url('/icon.png')} alt="Stratagems" />
 
 <slot />
 

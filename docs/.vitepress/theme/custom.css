@@ -6,6 +6,17 @@
   --vp-home-hero-image-filter: blur(40px);
 }
 
+
+@font-face {
+  font-family: 'Rank9h';
+  src: url('Rank\ 9h.ttf');
+}
+
+/* :root {
+  --vp-font-family-base: Rank9h;
+  --vp-font-family-mono: Rank9h;
+} */
+
 @media (min-width: 640px) {
   :root {
     --vp-home-hero-image-filter: blur(56px);
@@ -30,6 +41,13 @@
   --vp-c-brand-2: var(--vp-c-stratagems-2);
   --vp-c-brand-3: var(--vp-c-stratagems-3);
   --vp-c-brand-soft: var(--vp-c-stratagems-soft);
+}
+
+.clip {
+  font-family: Rank9h;
+}
+.text {
+  font-family: Rank9h;
 }
 
   /* Custom Stlye */

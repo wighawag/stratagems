@@ -7,58 +7,6 @@ outline: deep
 
 ## Functions
 
-### **acknowledgeMissedReveal**
-
-called by player if they missed the reveal phase and want to minimze the token loss.  By providing the moves, they will be slashed only the amount of token required to make the moves
-
-*sig hash*: `0x599a71c6`
-
-*Signature*: acknowledgeMissedReveal(address,bytes32,(uint64,uint8)[],bytes24)
-
-function acknowledgeMissedReveal(address player, bytes32 secret, tuple(uint64 position, uint8 color)[] moves, bytes24 furtherMoves)
-
-| Name | Description 
-| ---- | ----------- 
-| player | the account who committed the move
-| secret | the secret used to make the commit
-| moves | the actual moves
-| furtherMoves | if moves cannot be contained in one tx, further moves are represented by a hash to reveal too
-
-### **acknowledgeMissedRevealByBurningAllReserve**
-
-should only be called as last resort this will burn all tokens in reserve If player has access to the secret, better call `acknowledgeMissedReveal`
-
-*sig hash*: `0x1fdd8a69`
-
-*Signature*: acknowledgeMissedRevealByBurningAllReserve()
-
-function acknowledgeMissedRevealByBurningAllReserve()
-
-### **addToReserve**
-
-called by players to add tokens to their reserve
-
-*sig hash*: `0xd6710112`
-
-*Signature*: addToReserve(uint256,(uint256,uint256,uint8,bytes32,bytes32))
-
-function addToReserve(uint256 tokensAmountToAdd, tuple(uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) permit)
-
-| Name | Description 
-| ---- | ----------- 
-| tokensAmountToAdd | amount of tokens to add
-| permit | permit EIP2612, .value = zero if not needed
-
-### **cancelCommitment**
-
-called by players to cancel their current commitment  Can only be called during the commit phase in which the commitment was made  It cannot be called afterward
-
-*sig hash*: `0xafa1e2d1`
-
-*Signature*: cancelCommitment()
-
-function cancelCommitment()
-
 ### **getCell**
 
 return updated cell (based on current epoch)
@@ -124,6 +72,58 @@ function getTokensInReserve(address account) view returns (uint256 amount)
 | Name | Description 
 | ---- | ----------- 
 | account | the address to retrived the amount in reserve of.
+
+### **acknowledgeMissedReveal**
+
+called by player if they missed the reveal phase and want to minimze the token loss.  By providing the moves, they will be slashed only the amount of token required to make the moves
+
+*sig hash*: `0x599a71c6`
+
+*Signature*: acknowledgeMissedReveal(address,bytes32,(uint64,uint8)[],bytes24)
+
+function acknowledgeMissedReveal(address player, bytes32 secret, tuple(uint64 position, uint8 color)[] moves, bytes24 furtherMoves)
+
+| Name | Description 
+| ---- | ----------- 
+| player | the account who committed the move
+| secret | the secret used to make the commit
+| moves | the actual moves
+| furtherMoves | if moves cannot be contained in one tx, further moves are represented by a hash to reveal too
+
+### **acknowledgeMissedRevealByBurningAllReserve**
+
+should only be called as last resort this will burn all tokens in reserve If player has access to the secret, better call `acknowledgeMissedReveal`
+
+*sig hash*: `0x1fdd8a69`
+
+*Signature*: acknowledgeMissedRevealByBurningAllReserve()
+
+function acknowledgeMissedRevealByBurningAllReserve()
+
+### **addToReserve**
+
+called by players to add tokens to their reserve
+
+*sig hash*: `0xd6710112`
+
+*Signature*: addToReserve(uint256,(uint256,uint256,uint8,bytes32,bytes32))
+
+function addToReserve(uint256 tokensAmountToAdd, tuple(uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) permit)
+
+| Name | Description 
+| ---- | ----------- 
+| tokensAmountToAdd | amount of tokens to add
+| permit | permit EIP2612, .value = zero if not needed
+
+### **cancelCommitment**
+
+called by players to cancel their current commitment  Can only be called during the commit phase in which the commitment was made  It cannot be called afterward
+
+*sig hash*: `0xafa1e2d1`
+
+*Signature*: cancelCommitment()
+
+function cancelCommitment()
 
 ### **makeCommitment**
 

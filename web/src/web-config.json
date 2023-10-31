@@ -6,7 +6,7 @@
 	"ENSName": "stratagems.eth",
 	"themeColor": "#000000",
 	"appleStatusBarStyle": "black-translucent",
-	"icon": "static/icon.svg",
+	"icon": "static/icon.png",
 	"maskableIcons": [
 		{
 			"src": "../maskable_icon_512x512.png",

@@ -25,7 +25,7 @@ export default defineConfig({
   title: "Stratagems",
   description: "Stratagems is an infinite board game, a persistent and permission-less game where players use a specific set of colors to compete for the control of the board. Alliances and betrayal are part of the arsenal as colors mix and shift on the board.",
   head: [
-    ['link', { rel: 'icon', href: '/icon.svg' }],
+    ['link', { rel: 'icon', href: '/icon.png' }],
     ['meta', { name: 'theme-color', content: '#9F5FED' }],
     
     ['meta', { name: 'og:url', content: 'https://stratagems.world' }],
@@ -52,7 +52,7 @@ export default defineConfig({
     ],
   ],
   themeConfig: {
-    logo: "/five-gems.svg",
+    logo: "/logo.png",
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Home', link: '/' },
