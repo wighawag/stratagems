@@ -29,7 +29,7 @@
 
 ---
 
-# 🎮👾♟️ An Autonomous World In Constant Evolution
+# 👾🌍 An Autonomous World In Constant Evolution
 
 [Stratagems](https://stratagems.world) is an game where players are actual gods. They are literaly the one creating the world and its inhabitants.
 
@@ -40,15 +40,17 @@ We expand on that idea in our latest essay: ["Natural Compoability in Autonomous
 ## ♟️ What is stratagems exactly ?
 
 <img align="right" style="width:200px" src="docs/public/icon.png">
-Stratagems is a world created by players and anyone can join at any time. Players use a specific set of factions/colors to compete for control of the world. Alliances and betrayal are part of the arsenal as factions mixes on the lands created this way.
+Stratagems is a world created by players and anyone can join at any time. Players use a specific set of factions to compete for control of the world. Alliances and betrayal are part of the arsenal as factions mixes around the world thus created.
 
-Stratagems is thus first and foremost a social game. Its main inspiration is [conquest.eth](https://conquest.game) who successfully created a deeply social game out of simple mechanics. Stratagems explores this further by having even simpler rules. It also reduces the gas cost to a minimum by spreading the actions over a week. It works because most of the game plays out in the conversations and strategies happening among the players.
+Stratagems is thus first and foremost a social game. Its main inspiration is [Conquest.eth](https://conquest.game) who successfully created a deeply social game out of simple mechanics.
+
+Stratagems explores this further by having even simpler rules. It also reduces the gas cost to a minimum by spreading the actions over a week. It works because most of the game plays out in the conversations and strategies happening among the players.
 
 While maximally on-chain, Stratagems scales with players by offering compelling off-chain gameplay thanks to its associated social complexity.
 
 ## 🎮 How do you play ?
 
-Players participate in the game by depositing ETH (ratio to be defined) to place a new piece of land on the infinite sea. They specify its location and color/faction.
+Players participate in the game by depositing ETH (ratio to be defined) to place a new piece of land on the endless sea. They specify its location and faction.
 
 By doing so, they risk the associated ETH but also get a chance to potentially capture the same (and more) from other players.
 
@@ -64,9 +66,9 @@ More details coming soon! Follow our [twitter](https://twitter.com/stratagems_et
 
 We are [Etherplay](https://etherplay.io), an Open Source Game Studio building Autonomous worlds.
 
-We have been building fully on-chain games since 2016-[2017](https://etherplay.io/blog/our-first-unstoppable-game-tug-of-war/) and what we consider to be Autonomous Worlds since [early 2019](https://github.com/wighawag/the_eternal_dungeon/commit/b283988cccf37c63c290b5bd5465bfe5bb3dc7ad) following in the footsteps of [Huntercoin](https://xaya.io/huntercoin-legacy). We started our adventure with the aptly named "[Ethernal](https://ethernal.land/)" in collaboration with [Jia](https://twitter.com/OhJia), and then launched the autonomous version of [Conquest.eth](https://conquest.game) in April 2022 which will remain live until [Gnosis](https://www.gnosis.io/), the chain it runs on, dies if ever (See our recent [announcement](https://etherplay.io/blog/conquest-is-open-source/)).
+We have been building fully on-chain games since 2016-[2017](https://etherplay.io/blog/our-first-unstoppable-game-tug-of-war/) and what we consider to be Autonomous Worlds since [early 2019](https://github.com/wighawag/the_eternal_dungeon/commit/b283988cccf37c63c290b5bd5465bfe5bb3dc7ad) following in the footsteps of [Huntercoin](https://xaya.io/huntercoin-legacy). We started our adventure with the aptly named "[Ethernal](https://ethernal.land/)" and then launched the autonomous version of [Conquest.eth](https://conquest.game) in April 2022 which will remain live until [Gnosis](https://www.gnosis.io/), the chain it runs on, dies if ever (See our recent [announcement](https://etherplay.io/blog/conquest-is-open-source/)).
 
-Our founder, [Ronan Sandford](https://ronan.eth.limo) is also an active developer in the web3 space with contributions towards EIP like [EIP-1155](https://eips.ethereum.org/EIPS/eip-1155) and [EIP-2771](https://eips.ethereum.org/EIPS/eip-2771), but also tools like [hardhat-deploy](https://github.com/wighawag/hardhat-deploy) and [Jolly-Roger](https://jolly-roger.eth.limo). He has been tinkering with on-chain NFTs with [Mandalas](https://mandalas.eth.limo) and [Bleeps](https://bleeps.art). You can find more on his [personal website](https://ronan.eth.limo).
+Our founder, [Ronan Sandford](https://ronan.eth.limo) is also an active developer in the web3 space with contributions towards EIP like [ERC-1155](https://ercs.ethereum.org/ERCS/erc-1155) and [ERC-2771](https://ercs.ethereum.org/ERCS/erc-2771), but also tools like [hardhat-deploy](https://github.com/wighawag/hardhat-deploy) and [Jolly-Roger](https://jolly-roger.eth.limo). He has been tinkering with on-chain NFTs with [Mandalas](https://mandalas.eth.limo) and [Bleeps](https://bleeps.art). You can find more on his [personal website](https://ronan.eth.limo).
 
 ## 💻 Install
 
