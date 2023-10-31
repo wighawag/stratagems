@@ -31,7 +31,7 @@
 
 # 🎮👾♟️ An Autonomous World In Constant Evolution
 
-[Stratagems](https://stratagems.world) is an Wutonomous World where players are actual gods. They are literaly the one creating the world and its inhabitants.
+[Stratagems](https://stratagems.world) is an Autonomous World where players are actual gods. They are literaly the one creating the world and its inhabitants.
 
 Stratagems is thus permission-less and persistent. Its rules are immutable yet it is fully composable and as a community players can bring new dimension to world all permissionlessly.
 
