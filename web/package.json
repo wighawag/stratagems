@@ -54,7 +54,7 @@
     "web3-connection-viem": "^0.0.1"
   },
   "scripts": {
-    "prepare": "pwag static/icon.png src/web-config.json",
+    "prepare": "pwag static/icon.svg src/web-config.json",
     "dev": "echo 'waiting for src/data/contracts.ts...'; wait-on src/data/contracts.ts && vite dev",
     "build": "npm run prepare && vite build",
     "preview": "vite preview",
