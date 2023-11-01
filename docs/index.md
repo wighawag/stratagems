@@ -5,7 +5,7 @@ layout: home
 hero:
   # name: "Stratagems"
   text: "The Genesis of a New World"
-  tagline: "Stratagems is an independent universe forever running where players strategicaly place island along with their inhabitants in an endless sea using ETH with the hope to collect more of it from the other players. Alliances and betrayal are part of the arsenal as factions mix and shift."
+  tagline: "Stratagems is an independent universe forever running where players, like actual gods create islands on an endless sea using ETH with the hope to collect more of it from the other players. Alliances and betrayal are part of the arsenal as factions battle for the control of the world."
   image:
     src: /logo.png
     width: 512
