@@ -31,7 +31,7 @@
 
 # 👾🌍 An Autonomous World In Constant Evolution
 
-[Stratagems](https://stratagems.world) is an game where players are actual gods. They are literaly the one creating the world and its inhabitants.
+[Stratagems](https://stratagems.world) is a game where players are actual gods. They are literaly the one creating the world and its inhabitants.
 
 Stratagems is an [Autonomous World](https://0xparc.org/blog/autonomous-worlds) and is thus permission-less and persistent. Its rules are immutable yet it is fully composable and as a community players can bring new dimensions to the world all permissionlessly.
 
