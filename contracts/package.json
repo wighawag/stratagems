@@ -21,7 +21,7 @@
     "rocketh-doc": "^0.6.15",
     "rocketh-export": "^0.6.17",
     "rocketh-signer": "^0.6.15",
-    "rocketh-verifier": "^0.6.15",
+    "rocketh-verifier": "^0.6.18",
     "rollup-plugin-node-builtins": "^2.1.2",
     "set-defaults": "^0.0.1",
     "solidity-coverage": "^0.8.4",

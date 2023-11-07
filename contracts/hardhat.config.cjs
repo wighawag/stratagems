@@ -37,7 +37,6 @@ const config = {
 			addNetworksFromEnv({
 				hardhat: {
 					initialBaseFeePerGas: 0,
-					allowUnlimitedContractSize: true,
 					mining: {
 						auto: process.env['BLOCK_TIME'] ? true : false,
 						interval: process.env['BLOCK_TIME'] ? parseInt(process.env['BLOCK_TIME']) * 1000 : undefined,
