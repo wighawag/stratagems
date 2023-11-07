@@ -90,8 +90,8 @@ importers:
         specifier: ^0.6.17
         version: 0.6.17(rocketh@0.6.15)(typescript@5.2.2)
       rocketh-deploy-proxy:
-        specifier: ^0.6.20
-        version: 0.6.20(rocketh@0.6.15)(typescript@5.2.2)
+        specifier: ^0.6.21
+        version: 0.6.21(rocketh@0.6.15)(typescript@5.2.2)
       rocketh-deploy-router:
         specifier: ^0.6.24
         version: 0.6.24(rocketh@0.6.15)(typescript@5.2.2)
@@ -105,8 +105,8 @@ importers:
         specifier: ^0.6.15
         version: 0.6.15(rocketh@0.6.15)
       rocketh-verifier:
-        specifier: ^0.6.18
-        version: 0.6.18(typescript@5.2.2)
+        specifier: ^0.6.19
+        version: 0.6.19(typescript@5.2.2)
       rollup-plugin-node-builtins:
         specifier: ^2.1.2
         version: 2.1.2
@@ -8637,8 +8637,8 @@ packages:
       bn.js: 5.2.1
     dev: true
 
-  /rocketh-deploy-proxy@0.6.20(rocketh@0.6.15)(typescript@5.2.2):
-    resolution: {integrity: sha512-e57/UOfFMWQUZiQRrx3ov0Q6ZuIzzILGwpiih6RiLjuHiU0/NMS9mTGTGfz3YLti1ytOSY/yZuz6obkXDOQGpQ==}
+  /rocketh-deploy-proxy@0.6.21(rocketh@0.6.15)(typescript@5.2.2):
+    resolution: {integrity: sha512-eTAD4vSlsxw5VZmUAO0TJCUB+Tqc0IKzL80TgGyQPYLXEPTkkmuMV6PI0qi0eydNz94HqAGdsSJbog6V9hKjyA==}
     peerDependencies:
       rocketh: 0.6.15
     dependencies:
@@ -8723,8 +8723,8 @@ packages:
       rocketh: 0.6.15(typescript@5.2.2)
     dev: true
 
-  /rocketh-verifier@0.6.18(typescript@5.2.2):
-    resolution: {integrity: sha512-Y4jUR42uG7kNnayGHOJSICAWuvgNmYBhfTIhgU1cMmgyyWpWpwDdCoZYprK2K1SFDj6pPzvzDmBgI5xNSLtw+g==}
+  /rocketh-verifier@0.6.19(typescript@5.2.2):
+    resolution: {integrity: sha512-nc04wJPeeFgD5OSrt5+fCkJtRA/ufKlKLUtZsB66rhsI43zz0QVIeOWnlOZh4D8Vz0qKl1lekhW1wAmxS076vA==}
     hasBin: true
     dependencies:
       chalk: 5.3.0
