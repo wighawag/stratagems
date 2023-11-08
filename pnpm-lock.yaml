@@ -150,8 +150,8 @@ importers:
   helper-services/fuzd:
     devDependencies:
       fuzd-cf-worker:
-        specifier: ^0.0.16
-        version: 0.0.16(typescript@5.2.2)
+        specifier: ^0.0.18
+        version: 0.0.18(typescript@5.2.2)
       ldenv:
         specifier: ^0.3.7
         version: 0.3.7
@@ -5127,8 +5127,8 @@ packages:
     resolution: {integrity: sha512-xckBUXyTIqT97tq2x2AMb+g163b5JFysYk0x4qxNFwbfQkmNZoiRHb6sPzI9/QV33WeuvVYBUIiD4NzNIyqaRQ==}
     dev: true
 
-  /fuzd-cf-worker@0.0.16(typescript@5.2.2):
-    resolution: {integrity: sha512-d0+OWykz2qsHJeEX8eiMikN8bvZGuUKTgwSFQvaNUhzoJ9aEQ51C6TPJvZUxAM3f2kRS6ic88Mhxx3T3eO1dzg==}
+  /fuzd-cf-worker@0.0.18(typescript@5.2.2):
+    resolution: {integrity: sha512-edmWXp4ZZZtKxKGB59sLe7bx3GzBKI7DSDNuK7PMCBJ3SjpINNwOmB+DXF0C1nNKIrfTKkvlN7ARcM8L9ji7iA==}
     dependencies:
       '@scure/bip32': 1.3.2
       '@scure/bip39': 1.2.1
@@ -5136,15 +5136,14 @@ packages:
       eip-1193-signer: 0.0.1(typescript@5.2.2)
       fuzd-common: 0.1.4
       fuzd-executor: 0.1.5
-      fuzd-gateways: 0.1.6(typescript@5.2.2)
-      fuzd-scheduler: 0.1.5
-      fuzd-tlock-decrypter: 0.1.5
+      fuzd-gateways: 0.1.7(typescript@5.2.2)
+      fuzd-scheduler: 0.1.6
+      fuzd-tlock-decrypter: 0.1.6
       itty-durable: 2.1.0(itty-router@4.0.23)
       itty-router: 4.0.23
       named-logs: 0.2.2
       remote-account: 0.0.4
       tlock-js: 0.6.2
-      viem: 1.11.1(typescript@5.2.2)
     transitivePeerDependencies:
       - bufferutil
       - encoding
@@ -5169,11 +5168,11 @@ packages:
       zod: 3.22.2
     dev: true
 
-  /fuzd-gateways@0.1.6(typescript@5.2.2):
-    resolution: {integrity: sha512-vrrkP1ph1MCpCNKODJxM0Uv/i6azPqa6LS9ZFbPIr2oUeAkPiwO62YU/vot1SV9ibH1sxfzO9h+sfniHp9Ku4Q==}
+  /fuzd-gateways@0.1.7(typescript@5.2.2):
+    resolution: {integrity: sha512-CNo45PJrybW8ulTL4SCamnSIIges40RpQArCw/eEQVmFQKw4mfwnfWtO8xOLcf4CdME2bb5enSXm8dRQVpOlKw==}
     dependencies:
       fuzd-executor: 0.1.5
-      fuzd-scheduler: 0.1.5
+      fuzd-scheduler: 0.1.6
       named-logs: 0.2.2
       viem: 1.11.1(typescript@5.2.2)
       wighawag-ono: 7.1.3
@@ -5192,10 +5191,18 @@ packages:
       zod: 3.22.2
     dev: true
 
-  /fuzd-tlock-decrypter@0.1.5:
-    resolution: {integrity: sha512-hKSXaKUzA/Rml1s82/L6unRKhVe6w4HRlRJagvou5gWBYu6A61nJVOiWviqTr5G74K62UKu3tX965lV4Skgwrw==}
+  /fuzd-scheduler@0.1.6:
+    resolution: {integrity: sha512-iJAcQxXlFw70+SQ/jf6TbGYGAnNP/dWmzxtoHGUfB4hzO7WvvIgxtx/YQObc6eckH93aBe6d7z4rNKrzj1NK1g==}
     dependencies:
-      fuzd-scheduler: 0.1.5
+      named-logs: 0.2.2
+      wighawag-ono: 7.1.3
+      zod: 3.22.2
+    dev: true
+
+  /fuzd-tlock-decrypter@0.1.6:
+    resolution: {integrity: sha512-NWzoiLn5Y3YU4HtHj1l3KmRf7e438DZTHL0IpVDOY2JWsHLUPPewgOjQ4al99na53RfPM0m50vVjr5JLKBWJ/g==}
+    dependencies:
+      fuzd-scheduler: 0.1.6
       named-logs: 0.2.2
       tlock-js: 0.6.2
     dev: true

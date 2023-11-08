@@ -1,7 +1,7 @@
 {
     "name": "fuzd-service",
     "devDependencies": {
-        "fuzd-cf-worker": "^0.0.16",
+        "fuzd-cf-worker": "^0.0.18",
         "ldenv": "^0.3.7",
         "node-cron": "^3.0.2",
         "set-defaults": "^0.0.1",
