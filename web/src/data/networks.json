@@ -12,6 +12,19 @@
 		},
 		"finality": 12
 	},
+	"766578": {
+		"config": {
+			"rpcUrls": ["http://ethereum.local:8545"],
+			"blockExplorerUrls": ["http://ethereum.local:4000"],
+			"chainName": "LAN",
+			"nativeCurrency": {
+				"name": "Ether",
+				"symbol": "ETH",
+				"decimals": 18
+			}
+		},
+		"finality": 12
+	},
 	"1": {
 		"config": {
 			"blockExplorerUrls": ["https://etherscan.io"],

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import {epoch, epochInfo} from '$lib/blockchain/state/Epoch';
-	import {contractsInfos, initialContractsInfos} from '$lib/config';
+	import {FUZD_URI, contractsInfos, initialContractsInfos} from '$lib/config';
 	import {viewState} from '$lib/state/ViewState';
 	import {time} from '$lib/time';
 	import {increaseContractTime} from '$lib/utils/debug';
@@ -12,9 +12,43 @@
 
 	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
 	async function nextPhase() {
-		const timeToSkip = $epochInfo.isActionPhase ? $epochInfo.timeLeftToCommit : $epochInfo.timeLeftToReveal;
+		const isActionPhase = $epochInfo.isActionPhase;
+		if (!isActionPhase) {
+			await fetch(`${FUZD_URI}/processQueue`)
+				.then((v) => v.text())
+				.then((v) => console.log(v));
+		}
+		const timeToSkip = isActionPhase ? $epochInfo.timeLeftToCommit : $epochInfo.timeLeftToReveal;
 		console.log({timeToSkip: timeToText(timeToSkip)});
-		await increaseContractTime(timeToSkip);
+		const hash = await increaseContractTime(timeToSkip);
+
+		if (isActionPhase) {
+			if (hash) {
+				// TODO wait for inclusion
+				await fetch(`${FUZD_URI}/processQueue`)
+					.then((v) => v.text())
+					.then((v) => console.log(v));
+			} else {
+			}
+		}
+	}
+
+	async function nextEpoch() {
+		const isActionPhase = $epochInfo.isActionPhase;
+		const timeToSkip = isActionPhase ? $epochInfo.timeLeftToCommit : $epochInfo.timeLeftToReveal;
+		console.log({timeToSkip: timeToText(timeToSkip)});
+		const hash = await increaseContractTime(timeToSkip);
+
+		if (isActionPhase) {
+			if (hash) {
+				// TODO wait for inclusion
+				await fetch(`${FUZD_URI}/processQueue`)
+					.then((v) => v.text())
+					.then((v) => console.log(v));
+				await increaseContractTime(parseInt($contractsInfos.contracts.Stratagems.linkedData.revealPhaseDuration));
+			} else {
+			}
+		}
 	}
 
 	const isSepolia = (initialContractsInfos.chainId as any) === '11155111';
