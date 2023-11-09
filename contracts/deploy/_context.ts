@@ -9,6 +9,9 @@ export const context = {
 		tokensBeneficiary: {
 			default: 1,
 		},
+		timeOwner: {
+			default: 0,
+		},
 	},
 	artifacts,
 } as const;
