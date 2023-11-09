@@ -1,7 +1,7 @@
 import {execute} from 'rocketh';
 import 'rocketh-deploy';
 import {context} from '../_context';
-import SolidityKit from 'solidity-kit/artifacts';
+import SolidityKit from 'solidity-kit/generated/artifacts';
 
 export default execute(
 	context,
