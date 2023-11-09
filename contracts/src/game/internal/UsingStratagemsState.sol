@@ -103,7 +103,7 @@ abstract contract UsingStratagemsState is
 
 	/// @notice Create an instance of a Stratagems game
 	/// @param config configuration options for the game
-	constructor(Config memory config) {
+	constructor(Config memory config) UsingVirtualTime(config) {
 		TOKENS = config.tokens;
 		BURN_ADDRESS = config.burnAddress;
 		START_TIME = config.startTime;

@@ -44,6 +44,12 @@ export default execute(
 
 		const admin = accounts.deployer;
 
+		let time: `0x${string}` = zeroAddress;
+		const timeContract = await deployments['Time'];
+		if (timeContract && !network.tags['mainnet']) {
+			time = timeContract.address;
+		}
+
 		const config = {
 			tokens: TestTokens.address,
 			numTokensPerGems,
@@ -53,6 +59,7 @@ export default execute(
 			commitPhaseDuration: BigInt(days(1)) - BigInt(hours(1)), // BigInt(minutes(5)), // TODO support more complex period to support a special weekend commit period
 			revealPhaseDuration: BigInt(hours(1)),
 			maxLife: 7, // 7 is a good number, because with 4 enemy neighbors, it take 2 turns to die, with 3 it takes 3, with 2 it takes 4, with 1 it takes 7
+			time,
 			...configOverride,
 		};
 
@@ -65,7 +72,7 @@ export default execute(
 			routes.push({name: 'Debug', artifact: artifacts.StratagemsDebug as any, args: [config]});
 		}
 
-		await deployViaProxy( 
+		await deployViaProxy(
 			'Stratagems',
 			{
 				account: deployer,

@@ -3,9 +3,8 @@ pragma solidity ^0.8.0;
 
 import '../interface/IStratagems.sol';
 import '../interface/UsingStratagemsTypes.sol';
-import 'solidity-kit/solc_0.8/debug/time/interfaces/ITime.sol';
 
-interface IStratagemsDebug is UsingStratagemsTypes, ITime, ITimeSetter {
+interface IStratagemsDebug is UsingStratagemsTypes {
 	error InvalidCellOverwrite();
 	error InvalidLifeConfiguration(uint256 life, int32 x, int32 y);
 

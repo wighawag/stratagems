@@ -78,8 +78,8 @@ importers:
         specifier: ^2.17.3
         version: 2.17.3(typescript@5.2.2)
       hardhat-rocketh:
-        specifier: ^0.6.28
-        version: 0.6.28(rocketh@0.6.20)
+        specifier: ^0.6.30
+        version: 0.6.30(rocketh@0.6.20)
       ldenv:
         specifier: ^0.3.7
         version: 0.3.7
@@ -117,8 +117,8 @@ importers:
         specifier: ^0.8.4
         version: 0.8.4(hardhat@2.17.3)
       solidity-kit:
-        specifier: ^0.3.10
-        version: 0.3.10
+        specifier: ^0.3.11
+        version: 0.3.11
       solidity-proxy:
         specifier: ^0.2.3
         version: 0.2.3
@@ -5542,8 +5542,8 @@ packages:
       har-schema: 2.0.0
     dev: true
 
-  /hardhat-rocketh@0.6.28(rocketh@0.6.20):
-    resolution: {integrity: sha512-cznRxdOV0qbjf8KSuZ19yPcD1XPxe41lvdZDtfQVz10VjA/386X1o3Fl7aMx+PBcOg2CsRccTmb4sTc4jzkBNg==}
+  /hardhat-rocketh@0.6.30(rocketh@0.6.20):
+    resolution: {integrity: sha512-7VyeUxJTGUywMgy3j/o/dXzFw1620det8gh4aBAqsCDW5fbBHLcKK8aPWjizwq+xuYtTmNIw+6LfqeU/OKwWWw==}
     peerDependencies:
       rocketh: 0.6.20
     dependencies:
@@ -9267,8 +9267,8 @@ packages:
       - supports-color
     dev: true
 
-  /solidity-kit@0.3.10:
-    resolution: {integrity: sha512-DOKhzwfwHONzW01KPo/Y2VO73okm/blWcaLLkmxyvRe6QTWgMxRfOwae6nlYt/hu+noJzt2EQpZ0V5f9JF+QjA==}
+  /solidity-kit@0.3.11:
+    resolution: {integrity: sha512-HzbnP+l/asjLjD220Pw51ZXgPyPIPs80sBw8OJB/OCy2r/QNWNPXh9G3tHLYdOJ5rBUFXlfpgnfKbEeXOdPSnw==}
     dev: true
 
   /solidity-proxy@0.2.3:

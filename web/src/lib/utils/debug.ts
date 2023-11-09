@@ -4,10 +4,8 @@ import {writable, type Readable} from 'svelte/store';
 export function initIncreaseContractTime(name: string) {
 	return async (numSeconds: number) => {
 		return contracts.execute(async ({contracts, account}) => {
-			const contract = contracts.Stratagems;
-			// const stratagems = contracts.Stratagems;
-			// await stratagems.write.increaseTime([BigInt(numSeconds)], {account: account.address});
-			return contract.write.increaseTime([BigInt(numSeconds)], {account: account.address});
+			const timeContract = contracts.Time;
+			return timeContract.write.increaseTime([BigInt(numSeconds)], {account: account.address});
 		});
 	};
 }

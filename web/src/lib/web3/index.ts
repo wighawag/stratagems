@@ -175,4 +175,4 @@ if (typeof window !== 'undefined') {
 	(window as any).accountData = accountData;
 }
 
-time.setTimeKeeperContract(initialContractsInfos.contracts.Stratagems.address);
+time.setTimeKeeperContract(initialContractsInfos.contracts.Time.address);

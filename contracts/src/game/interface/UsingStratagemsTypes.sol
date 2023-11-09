@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import 'solidity-kit/solc_0.8/ERC721/interfaces/IERC721.sol';
 import 'solidity-kit/solc_0.8/ERC165/interfaces/IERC165.sol';
 import 'solidity-kit/solc_0.8/ERC20/ERC2612/interfaces/IERC20WithIERC2612.sol';
+import 'solidity-kit/solc_0.8/debug/time/interfaces/ITime.sol';
 
 interface UsingStratagemsTypes {
 	// --------------------------------------------------------------------------------------------
@@ -45,6 +46,7 @@ interface UsingStratagemsTypes {
 		uint256 revealPhaseDuration;
 		uint8 maxLife;
 		uint256 numTokensPerGems;
+		ITime time;
 	}
 
 	/// @notice Cell struct representing the current state of a cell

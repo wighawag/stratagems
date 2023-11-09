@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import 'solidity-kit/solc_0.8/utils/GenericErrors.sol';
-import 'solidity-kit/solc_0.8/debug/time/implementations/UsingControlledTime.sol';
 import '../internal/UsingStratagemsSetters.sol';
 import './IStratagemsWithDebug.sol';
 import '../../utils/PositionUtils.sol';
 
-contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStratagemsDebug {
+contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
 	using PositionUtils for uint64;
 
 	constructor(Config memory config) UsingStratagemsSetters(config) {}
@@ -16,7 +14,7 @@ contract StratagemsDebug is UsingStratagemsSetters, UsingControlledTime, IStrata
 		return _cells[id];
 	}
 
-	function _getOwner() internal view override returns (address ownerAddress) {
+	function _getOwner() internal view returns (address ownerAddress) {
 		// solhint-disable-next-line security/no-inline-assembly
 		assembly {
 			ownerAddress := sload(0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103)
