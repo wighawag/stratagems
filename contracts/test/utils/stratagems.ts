@@ -1,4 +1,5 @@
 import artifacts from '../../generated/artifacts';
+import solidityKitArtifacts from 'solidity-kit/generated/artifacts';
 import {
 	Action,
 	CellXYPosition,
@@ -21,6 +22,7 @@ import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 export type GridEnv = {
 	Stratagems: ContractWithViemClient<typeof artifacts.IStratagemsWithDebug.abi>;
 	TestTokens: ContractWithViemClient<typeof artifacts.TestTokens.abi>;
+	Time: ContractWithViemClient<typeof solidityKitArtifacts.Time.abi>;
 	otherAccounts: `0x${string}`[];
 	stratagemsAdmin: `0x${string}`;
 	tokensBeneficiary: `0x${string}`;
@@ -48,7 +50,7 @@ export async function withGrid(env: GridEnv, gridString: string) {
 	// TODO wait for receipt so the test work on real networks
 	if (grid.actions) {
 		const config = await env.Stratagems.read.getConfig();
-		await env.Stratagems.write.increaseTime([config.commitPhaseDuration], {account: env.stratagemsAdmin});
+		await env.Time.write.increaseTime([config.commitPhaseDuration], {account: env.stratagemsAdmin});
 
 		for (const action of grid.actions) {
 			const player = env.otherAccounts[action.owner];
@@ -57,7 +59,7 @@ export async function withGrid(env: GridEnv, gridString: string) {
 				{account: env.stratagemsAdmin},
 			);
 		}
-		await env.Stratagems.write.increaseTime([config.revealPhaseDuration], {account: env.stratagemsAdmin});
+		await env.Time.write.increaseTime([config.revealPhaseDuration], {account: env.stratagemsAdmin});
 	}
 }
 
@@ -97,7 +99,7 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 		);
 		commitments.push({...commitment, player});
 	}
-	await env.Stratagems.write.increaseTime([config.commitPhaseDuration], {account: env.stratagemsAdmin});
+	await env.Time.write.increaseTime([config.commitPhaseDuration], {account: env.stratagemsAdmin});
 
 	for (const commitment of commitments) {
 		await env.Stratagems.write.reveal(
@@ -108,7 +110,7 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 		);
 	}
 
-	await env.Stratagems.write.increaseTime([config.revealPhaseDuration], {account: env.stratagemsAdmin});
+	await env.Time.write.increaseTime([config.revealPhaseDuration], {account: env.stratagemsAdmin});
 }
 
 export async function getGrid(

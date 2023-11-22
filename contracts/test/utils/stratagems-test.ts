@@ -1,5 +1,6 @@
 import {expect} from 'vitest';
 import './viem-matchers';
+import solidityKitArtifacts from 'solidity-kit/generated/artifacts';
 
 import {parseGrid, renderGrid, Grid, Cell, bigIntIDToXY, StratagemsContract, xyToBigIntID} from 'stratagems-common';
 import {Data, createProcessor} from 'stratagems-indexer';
@@ -160,6 +161,7 @@ async function deployStratagems(override?: Partial<GameConfig>) {
 	const Stratagems = await fetchContract(
 		deployments['Stratagems'] as Deployment<typeof artifacts.IStratagemsWithDebug.abi>,
 	);
+	const Time = await fetchContract(deployments['Time'] as Deployment<typeof solidityKitArtifacts.Time.abi>);
 
 	const config = await Stratagems.read.getConfig();
 
@@ -176,6 +178,7 @@ async function deployStratagems(override?: Partial<GameConfig>) {
 		otherAccounts,
 		provider: provider as any,
 		Gems,
+		Time,
 	};
 }
 

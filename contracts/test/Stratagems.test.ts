@@ -11,7 +11,7 @@ import {parseEther} from 'viem';
 describe('Stratagems', function () {
 	it('poking on a virtually dead cell sync its state accordingly', async function () {
 		const setup = await loadFixture(deployStratagemsWithTestConfig);
-		const {Stratagems, deployer, config, stratagemsAdmin} = setup;
+		const {Stratagems, deployer, config, stratagemsAdmin, Time} = setup;
 		await withGrid(
 			setup,
 			`
@@ -34,7 +34,7 @@ describe('Stratagems', function () {
 		`,
 		);
 		expect((await Stratagems.read.getRawCell([xyToBigIntID(1, 2)])).life).to.equal(2);
-		await Stratagems.write.increaseTime([config.commitPhaseDuration + config.revealPhaseDuration], {
+		await Time.write.increaseTime([config.commitPhaseDuration + config.revealPhaseDuration], {
 			account: stratagemsAdmin,
 		});
 		await Stratagems.write.poke([xyToBigIntID(1, 2)], {account: deployer});
@@ -66,7 +66,7 @@ describe('Stratagems', function () {
 		`,
 			)
 				.then(() =>
-					setup.Stratagems.write.increaseTime([setup.config.commitPhaseDuration + setup.config.revealPhaseDuration], {
+					setup.Time.write.increaseTime([setup.config.commitPhaseDuration + setup.config.revealPhaseDuration], {
 						account: setup.stratagemsAdmin,
 					}),
 				)
