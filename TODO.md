@@ -1,0 +1,14 @@
+- [ ] show your lands (flags ?)
+- [ ] display winnings (keep track of each cell to withdraw)
+- [ ] show your winnings as event
+- [ ] show your loss as event
+- [ ] show events since last time (max x days ?)
+- [ ] show warning for x minutes left to commit (especially when advancing time in dev mode)
+- [ ] show warning for x minutes left to reveal
+- [ ] Fix the display of new island (with sand/grass)
+- [ ] Show player owning each Land
+- [ ] add account owner smart contract as NFT
+- [ ] show owner of the smart contract as owner of the Land ? maybe on details ?
+- [ ] add public chat
+- [ ] add one-to-one chat
+- [ ] add local wallet
