@@ -3,7 +3,7 @@
 	import {onMount} from 'svelte';
 	import {Camera} from './camera';
 	import {WebGLRenderer} from './WebGLRenderer';
-	import type {ViewState} from '$lib/state/ViewState';
+	import type {ViewState} from '$lib/blockchain/state/ViewState';
 	export let state: ViewState;
 
 	let renderer: WebGLRenderer = new WebGLRenderer();

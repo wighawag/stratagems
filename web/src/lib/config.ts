@@ -11,8 +11,10 @@ import {
 	PUBLIC_FUZD_URI,
 } from '$env/static/public';
 
+import {env} from '$env/dynamic/public';
+
 import _contractsInfos from '$data/contracts';
-import networks from `$data/networks.json`;
+import {networks} from './blockchain/networks';
 
 export type NetworkConfig = typeof _contractsInfos;
 
@@ -65,7 +67,17 @@ const FUZD_URI = noEndSlash(params.fuzd || PUBLIC_FUZD_URI);
 
 const blockchainExplorer = networks[initialContractsInfos.chainId].config.blockExplorerUrls[0];
 
-export {defaultRPC, isUsingLocalDevNetwork, localRPC, blockTime, SYNC_DB_NAME, SYNC_URI, FUZD_URI, blockchainExplorer};
+export {
+	defaultRPC,
+	isUsingLocalDevNetwork,
+	localRPC,
+	blockTime,
+	env,
+	SYNC_DB_NAME,
+	SYNC_URI,
+	FUZD_URI,
+	blockchainExplorer,
+};
 
 let _setContractsInfos: any;
 export const contractsInfos = readable<NetworkConfig>(_contractsInfos, (set) => {

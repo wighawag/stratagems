@@ -1,22 +1,35 @@
 import {createProcessor} from 'stratagems-indexer';
-import {createIndexerState} from 'ethereum-indexer-browser';
+import {createIndexerState, keepStateOnIndexedDB} from 'ethereum-indexer-browser';
 import {initialContractsInfos} from '$lib/config';
 import {connection, network} from '$lib/web3';
 import {browser} from '$app/environment';
 import type {EIP1193Provider} from 'eip-1193';
 import {logs} from 'named-logs';
+import {url} from '$lib/utils/path';
 
 const namedLogger = logs('state');
 
 export const processor = createProcessor();
 
+const remoteIndexedState = url(`/indexed-state-${initialContractsInfos.name}.json`);
 /**
  * We setup the indexer and make it process the event continuously once connected to the right chain
  */
-export const {state, syncing, status, init, indexToLatest, indexMore, startAutoIndexing, indexMoreAndCatchupIfNeeded} =
-	createIndexerState(processor, {trackNumRequests: true});
-
-export type State = Omit<typeof state, '$state'>;
+export const {
+	state,
+	syncing,
+	status,
+	init,
+	reset: resetIndexer,
+	indexToLatest,
+	indexMore,
+	startAutoIndexing,
+	indexMoreAndCatchupIfNeeded,
+} = createIndexerState(processor, {
+	trackNumRequests: true,
+	// logRequests: true,
+	keepState: keepStateOnIndexedDB('jolly-roger', remoteIndexedState) as any, // TODO types
+});
 
 async function indexIfNotIndexing() {
 	await indexMoreAndCatchupIfNeeded();
@@ -39,6 +52,10 @@ function initialize(provider: EIP1193Provider) {
 			contracts: Object.keys(initialContractsInfos.contracts).map(
 				(name) => (initialContractsInfos as any).contracts[name],
 			),
+			genesisHash: initialContractsInfos.genesisHash,
+		},
+		config: {
+			logLevel: 1,
 		},
 	}).then((v) => {
 		namedLogger.log(`initialised`, v);
@@ -51,9 +68,9 @@ if (browser) {
 	network.subscribe(($network) => {
 		if ($network.chainId === initialContractsInfos.chainId) {
 			try {
-				if (!provider && connection.$state.provider) {
+				if (!provider && connection.$state.provider !== undefined) {
 					provider = connection.$state.provider;
-					initialize(provider!);
+					initialize(connection.$state.provider);
 				}
 			} catch (err) {
 				console.error(`caught exception `, err);

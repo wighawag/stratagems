@@ -1,18 +1,19 @@
 import {copy} from '$lib/utils/js';
-import {xyToXYID, type ContractCell, bigIntIDToBigintXY, bigIntIDToXY, StratagemsContract} from 'stratagems-common';
+import {xyToXYID, type ContractCell, bigIntIDToXY, StratagemsContract} from 'stratagems-common';
 import type {Data} from 'stratagems-indexer';
 import {derived} from 'svelte/store';
 import {state} from '$lib/blockchain/state/State';
-import {
-	localMoveToContractMove,
-	type OffchainState,
-	type OnChainActions,
-	type StratagemsTransaction,
-} from '$lib/web3/account-data';
 import {account, accountData} from '$lib/web3';
 import {epochState, type EpochState} from '$lib/blockchain/state/Epoch';
 import type {AccountState} from 'web3-connection';
-import type {PendingTransaction} from 'ethereum-tx-observer';
+import {
+	localMoveToContractMove,
+	type OffchainState,
+	type StratagemsMetadata,
+	type StratagemsTransaction,
+} from '$lib/account/account-data';
+import type {OnChainActions} from '$lib/account/base';
+import {createDraft, finishDraft} from 'immer';
 
 export type ViewCell = ContractCell & {
 	localState?: 'pending' | 'planned';
@@ -32,11 +33,13 @@ export type ViewData = {
 function merge(
 	state: Data,
 	offchainState: OffchainState,
-	onchainActions: OnChainActions,
+	onchainActions: OnChainActions<StratagemsMetadata>,
 	epochState: EpochState,
 	account: AccountState<`0x${string}`>,
 ): ViewData {
-	const copyState = copy(state);
+	const copyState = createDraft(state);
+	// TODO use finishDraft ?
+
 	const stratagems = new StratagemsContract(copyState, 7);
 
 	// console.log({epoch: epochState.epoch, isActionPhase: epochState.isActionPhase});

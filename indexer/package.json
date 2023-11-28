@@ -7,12 +7,13 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "ethereum-indexer-js-processor": "^0.6.16",
+    "ethereum-indexer-js-processor": "^0.6.27",
     "named-logs": "^0.2.2",
     "stratagems-common": "workspace:*"
   },
   "devDependencies": {
-    "ethereum-indexer-server": "^0.6.20",
+    "ethereum-indexer-cli": "^0.6.23",
+    "ethereum-indexer-server": "^0.6.26",
     "ldenv": "^0.3.7",
     "prettier": "^3.1.0",
     "tsup": "^8.0.1",
@@ -21,7 +22,9 @@
   },
   "scripts": {
     "eis": "eis",
-    "serve": "ldenv eis run -n @@RPC_URL_:MODE,RPC_URL -p ./dist/index.cjs --disable-cache --deployments ../contracts/deployments/@@MODE @@",
+    "serve": "ldenv eis run -n @@ETH_NODE_URI_:MODE,ETH_NODE_URI -p ./dist/index.cjs --disable-cache --deployments ../contracts/deployments/@@MODE @@",
+    "index": "ldenv ei -n @@ETH_NODE_URI_:MODE,ETH_NODE_URI -p ./dist/index.cjs -d src/contracts.ts -f indexed/@@MODE@:.json @@",
+    "index-to-file": "ei -p ./dist/index.cjs",
     "build": "tsup src/index.ts --dts --format esm,cjs",
     "dev": "echo 'waiting for src/contracts.ts...'; wait-on src/contracts.ts && tsup src/index.ts --dts --format esm,cjs --watch",
     "format:check": "prettier --check .",

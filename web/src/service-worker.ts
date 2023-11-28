@@ -1,3 +1,4 @@
+/// <reference types="@sveltejs/kit" />
 import {build, version, prerendered, files} from '$service-worker';
 // ------------------- CONFIG ---------------------------
 const DEV = true;
@@ -67,7 +68,7 @@ self.addEventListener('install', (event: any) => {
 			.then(() => {
 				// (self as any).skipWaiting();
 				log(`cache fully fetched!`);
-			})
+			}),
 	);
 });
 
@@ -82,10 +83,10 @@ self.addEventListener('activate', (event: any) => {
 						log(`[Service Worker] Deleting: ${thisCacheName}`);
 						return caches.delete(thisCacheName);
 					}
-				})
+				}),
 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			).then(() => (self as any).clients.claim());
-		})
+		}),
 	);
 });
 

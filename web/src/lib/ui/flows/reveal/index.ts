@@ -2,8 +2,9 @@ import {get, writable} from 'svelte/store';
 import {currentFlow, type Flow, type Step} from '..';
 import {accountData, contracts} from '$lib/web3';
 import {prepareCommitment, zeroBytes24} from 'stratagems-common';
-import {localMoveToContractMove, type CommitMetadata, type RevealMetadata} from '$lib/web3/account-data';
 import {zeroAddress} from 'viem';
+import {localMoveToContractMove, type CommitMetadata} from '$lib/account/account-data';
+import type {RevealMetadata} from '$lib/account/base';
 
 export type RevealState = {};
 

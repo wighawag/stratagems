@@ -2,14 +2,14 @@ import {get, writable} from 'svelte/store';
 import {currentFlow, type Flow, type Step} from '..';
 import {accountData, contracts} from '$lib/web3';
 import {initialContractsInfos} from '$lib/config';
-import PermitComponent from './PermitComponent.svelte';
 import {prepareCommitment, zeroBytes24, zeroBytes32} from 'stratagems-common';
-import {localMoveToContractMove, type CommitMetadata} from '$lib/web3/account-data';
 import {epoch, epochInfo} from '$lib/blockchain/state/Epoch';
 import {hexToVRS} from '$lib/utils/eth/signatures';
 import {encodeFunctionData, parseEther, zeroAddress} from 'viem';
 import {time} from '$lib/time';
 import {timeToText} from '$lib/utils/time';
+import {localMoveToContractMove, type CommitMetadata} from '$lib/account/account-data';
+import PermitComponent from './PermitComponent.svelte';
 
 export type CommitState = {
 	permit?: {
@@ -173,7 +173,7 @@ export async function startCommit() {
 						value,
 					});
 				}
-				accountData.offchainState.reset();
+				accountData.resetOffchainState();
 
 				const timeToBroadcastReveal = time.now + get(epochInfo).timeLeftToCommit;
 				const data = encodeFunctionData({
@@ -183,7 +183,7 @@ export async function startCommit() {
 				});
 				// await contracts.Stratagems.write.reveal([account.address, data.secret, moves, zeroBytes24, true, zeroAddress]);
 
-				const scheduleInfo = await fuzd.submitExecution(
+				const scheduleInfo = await fuzd.scheduleExecution(
 					{
 						slot: `epoch_${commitMetadata.epoch}`,
 						broadcastSchedule: [{duration: 3600, maxFeePerGas, maxPriorityFeePerGas}],
@@ -199,7 +199,7 @@ export async function startCommit() {
 
 				console.log(`will be executed in ${timeToText(scheduleInfo.checkinTime - time.now)}`);
 
-				accountData.onchainActions.recordFUZD(txHash, scheduleInfo);
+				accountData.recordFUZD(txHash, scheduleInfo);
 
 				return state;
 			},

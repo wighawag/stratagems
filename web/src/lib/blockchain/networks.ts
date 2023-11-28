@@ -21,3 +21,5 @@ export function getNetworkConfig(chainId: string) {
 	const network = (networks as any)[chainId] as NetworkData | undefined;
 	return network?.config;
 }
+
+export {networks};

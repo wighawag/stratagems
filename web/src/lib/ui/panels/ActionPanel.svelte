@@ -10,7 +10,7 @@
 
 	function clear(e: MouseEvent) {
 		e.preventDefault();
-		offchainState.reset();
+		accountData.resetOffchainState();
 	}
 
 	async function startCommiting(e: MouseEvent) {

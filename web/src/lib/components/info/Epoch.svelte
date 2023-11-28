@@ -1,7 +1,7 @@
 <script lang="ts">
 	import {epoch, epochInfo} from '$lib/blockchain/state/Epoch';
 	import {FUZD_URI, contractsInfos, initialContractsInfos} from '$lib/config';
-	import {viewState} from '$lib/state/ViewState';
+	import {viewState} from '$lib/blockchain/state/ViewState';
 	import {time} from '$lib/time';
 	import {increaseContractTime} from '$lib/utils/debug';
 	import {timeToText} from '$lib/utils/time';

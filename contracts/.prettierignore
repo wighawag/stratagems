@@ -16,10 +16,11 @@ deployments/localhost
 /coverage-data.json
 cache
 artifacts
+
 docs
+*.hbs
+
 #############################################
 deployments
 package.json
 pnpm-lock.yaml
-
-*.hbs

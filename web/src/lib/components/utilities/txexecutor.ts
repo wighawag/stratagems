@@ -1,8 +1,8 @@
+import type {OnChainAction, OnChainActions} from '$lib/account/base';
 import {accountData} from '$lib/web3';
-import type {OnChainAction, OnChainActions} from '$lib/web3/account-data';
 import {writable, type Readable} from 'svelte/store';
 
-export type TxExecution = {waitingSigning: boolean; sent: boolean; error?: any; action?: OnChainAction};
+export type TxExecution = {waitingSigning: boolean; sent: boolean; error?: any; action?: OnChainAction<unknown>};
 export function createTxExecutor<T, F extends (...args: any[]) => Promise<undefined | `0x${string}`>>(
 	func: F,
 ): Readable<TxExecution> & {
@@ -10,8 +10,8 @@ export function createTxExecutor<T, F extends (...args: any[]) => Promise<undefi
 	acknowledgeError: () => void;
 } {
 	let txHash: `0x${string}` | undefined;
-	let action: OnChainAction | undefined;
-	let lastOnchainActions: OnChainActions | undefined;
+	let action: OnChainAction<unknown> | undefined;
+	let lastOnchainActions: OnChainActions<unknown> | undefined;
 
 	function updateAction(hash: `0x${string}` | undefined) {
 		if (!hash) {

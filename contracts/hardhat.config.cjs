@@ -4,9 +4,15 @@ require('@nomicfoundation/hardhat-network-helpers');
 const {addForkConfiguration, addNetworksFromEnv} = require('hardhat-rocketh');
 require('vitest-solidity-coverage/hardhat');
 
-// console.log({
-// 	BLOCK_TIME: process.env['BLOCK_TIME'],
-// });
+const {task} = require('hardhat/config');
+// we override the node task to set up our block time interval
+// setting it up in the config below would also set it in tests and we do not want that
+task('node').setAction(async (args, hre, runSuper) => {
+	hre.config.networks.hardhat.mining.interval = process.env['BLOCK_TIME']
+		? parseInt(process.env['BLOCK_TIME']) * 1000
+		: undefined;
+	return runSuper(args);
+});
 
 const defaultVersion = '0.8.20';
 const defaultSettings = {

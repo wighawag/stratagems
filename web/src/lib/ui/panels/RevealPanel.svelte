@@ -1,11 +1,9 @@
 <script lang="ts">
+	import type {CommitMetadata} from '$lib/account/account-data';
 	import {epoch} from '$lib/blockchain/state/Epoch';
-	import {viewState} from '$lib/state/ViewState';
-	import {accountData, contracts} from '$lib/web3';
-	import type {CommitMetadata} from '$lib/web3/account-data';
+	import {viewState} from '$lib/blockchain/state/ViewState';
+	import {contracts} from '$lib/web3';
 	import {startAcknowledgFailedReveal, startReveal} from '../flows/reveal';
-
-	import {getTransactionToReveal} from './utilts';
 	import {bnReplacer} from 'stratagems-common';
 
 	// const onchainActions = accountData.onchainActions;
