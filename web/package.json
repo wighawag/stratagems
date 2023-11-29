@@ -51,7 +51,7 @@
     "tlock-js": "^0.6.1",
     "twgl.js": "^5.5.3",
     "viem": "^1.19.9",
-    "web3-connection": "^0.1.11",
+    "web3-connection": "^0.1.12",
     "web3-connection-viem": "^0.0.1"
   },
   "scripts": {
