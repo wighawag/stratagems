@@ -1,7 +1,7 @@
 <script lang="ts">
 	import {epoch, epochInfo} from '$lib/blockchain/state/Epoch';
 	import {FUZD_URI, contractsInfos, initialContractsInfos} from '$lib/config';
-	import {viewState} from '$lib/blockchain/state/ViewState';
+	import {stratagemsView} from '$lib/blockchain/state/ViewState';
 	import {time} from '$lib/time';
 	import {increaseContractTime} from '$lib/utils/debug';
 	import {timeToText} from '$lib/utils/time';
@@ -116,7 +116,7 @@
 		</div>
 	{:else}
 		<div class="alert alert-info absolute">
-			{#if $viewState.hasCommitment}
+			{#if $stratagemsView.hasCommitment}
 				<p>Please wait until commit phase is over, or replace your moves</p>
 			{:else}
 				<p>Please make your move.</p>

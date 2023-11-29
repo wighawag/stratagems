@@ -1,5 +1,5 @@
 import {encodeAbiParameters, keccak256} from 'viem';
-import type {ContractMove} from './stratagems';
+import type {ContractMove} from './types';
 import * as crypto from 'crypto';
 
 export type Commitment = {
@@ -36,8 +36,8 @@ export function prepareCommitment(moves: ContractMove[], secret: `0x${string}`) 
 					type: 'tuple[]',
 				},
 			],
-			[secret, moves]
-		)
+			[secret, moves],
+		),
 	).slice(0, 50) as `0x${string}`;
 
 	return {secret, hash: commitmentHash, moves};

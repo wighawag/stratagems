@@ -1,7 +1,7 @@
 import * as twgl from 'twgl.js';
 import * as m3 from '$lib/m3';
 import type {CameraState} from '../camera';
-import type {ViewData} from '$lib/state/ViewState';
+import type {StratagemsViewState} from '$lib/blockchain/state/ViewState';
 import {
 	drawCastle,
 	drawCorners,
@@ -88,7 +88,7 @@ export class Textured2DLayer {
 		GL.disable(GL.DEPTH_TEST);
 	}
 
-	render(cameraState: CameraState, state: ViewData) {
+	render(cameraState: CameraState, state: StratagemsViewState) {
 		const GL = this.gl;
 		// Compute the matrices
 		var projectionMatrix = m3.projection(cameraState.renderWidth, cameraState.renderHeight);
@@ -112,7 +112,7 @@ export class Textured2DLayer {
 			alphas: [],
 		};
 		for (let cellPos of Object.keys(state.cells)) {
-			const cell = state.cells[cellPos];
+			const cell = state.viewCells[cellPos];
 			const [x, y] = cellPos.split(',').map((v) => parseInt(v));
 			const neighbors = {
 				N: !!state.cells[`${x},${y - 1}`],
@@ -133,7 +133,7 @@ export class Textured2DLayer {
 		}
 
 		for (let cellPos of Object.keys(state.cells)) {
-			const cell = state.cells[cellPos];
+			const cell = state.viewCells[cellPos];
 			const [x, y] = cellPos.split(',').map((v) => parseInt(v));
 
 			drawCastle(attributes, this.size, tileSize, x, y, cell.next.color, 1);

@@ -1,5 +1,5 @@
 import {copy} from '$lib/utils/js';
-import {xyToXYID, type ContractCell, bigIntIDToXY, StratagemsContract} from 'stratagems-common';
+import {xyToXYID, type ContractCell, bigIntIDToXY, StratagemsContract, type StratagemsState} from 'stratagems-common';
 import type {Data} from 'stratagems-indexer';
 import {derived} from 'svelte/store';
 import {state} from '$lib/blockchain/state/State';
@@ -19,15 +19,15 @@ export type ViewCell = ContractCell & {
 	localState?: 'pending' | 'planned';
 };
 
-export type ViewCellData = {next: ViewCell; future: ViewCell; contract?: ContractCell; currentPlayer: boolean};
+export type ViewCellData = {next: ViewCell; future: ViewCell; currentPlayer: boolean};
 
-export type ViewData = {
-	cells: {
-		[pos: string]: ViewCellData;
+export type StratagemsViewState = StratagemsState & {
+	viewCells: {
+		[position: string]: ViewCellData;
 	};
-	owners: {[pos: string]: `0x${string}`};
+	owners: {[position: string]: `0x${string}`};
 	hasCommitmentToReveal?: {epoch: number; commit?: {hash: `0x${string}`; tx: StratagemsTransaction}};
-	hasCommitment: boolean;
+	hasCommitment?: boolean;
 };
 
 function merge(
@@ -36,7 +36,7 @@ function merge(
 	onchainActions: OnChainActions<StratagemsMetadata>,
 	epochState: EpochState,
 	account: AccountState<`0x${string}`>,
-): ViewData {
+): StratagemsViewState {
 	const copyState = createDraft(state);
 	// TODO use finishDraft ?
 
@@ -68,7 +68,13 @@ function merge(
 		}
 	}
 
-	const viewState: ViewData = {cells: {}, owners: {}, hasCommitmentToReveal: undefined, hasCommitment};
+	const viewState: StratagemsViewState = {
+		cells: {},
+		viewCells: {},
+		owners: {},
+		hasCommitmentToReveal: undefined,
+		hasCommitment,
+	};
 	for (const cellID of Object.keys(copyState.cells)) {
 		const {x, y} = bigIntIDToXY(BigInt(cellID));
 		const cell = copyState.cells[cellID];
@@ -84,10 +90,10 @@ function merge(
 		const viewCell = {
 			next,
 			future,
-			contract: copyState.cells[cellID],
 			currentPlayer: copyState.owners[cellID]?.toLowerCase() === account.address?.toLowerCase(),
 		};
-		viewState.cells[xyToXYID(x, y)] = viewCell;
+		viewState.viewCells[xyToXYID(x, y)] = viewCell;
+		viewState.cells[xyToXYID(x, y)] = copyState.cells[cellID];
 		// console.log(`${x}, ${y}`, viewCell);
 	}
 	for (const pos of Object.keys(copyState.owners)) {
@@ -119,15 +125,15 @@ function merge(
 	return viewState;
 }
 
-export const viewState = derived(
+export const stratagemsView = derived(
 	[state, accountData.offchainState, accountData.onchainActions, epochState, account],
 	([$state, $offchainState, $onchainActions, $epochState, $account]) => {
 		return merge($state, $offchainState, $onchainActions, $epochState, $account);
 	},
 );
 
-export type ViewState = Omit<typeof viewState, '$state'>;
+export type StratagemsView = Omit<typeof stratagemsView, '$state'>;
 
 if (typeof window !== 'undefined') {
-	(window as any).viewState = viewState;
+	(window as any).stratagemsView = stratagemsView;
 }

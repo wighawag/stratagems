@@ -1,19 +1,19 @@
-export function projection(width, height) {
+export function projection(width: number, height: number) {
 	// Note: This matrix flips the Y axis so that 0 is at the top.
 	return [2 / width, 0, 0, 0, -2 / height, 0, -1, 1, 1];
 }
 
-export function translation(tx, ty) {
+export function translation(tx: number, ty: number) {
 	return [1, 0, 0, 0, 1, 0, tx, ty, 1];
 }
 
-export function rotation(angleInRadians) {
+export function rotation(angleInRadians: number) {
 	var c = Math.cos(angleInRadians);
 	var s = Math.sin(angleInRadians);
 	return [c, -s, 0, s, c, 0, 0, 0, 1];
 }
 
-export function scaling(sx, sy) {
+export function scaling(sx: number, sy: number) {
 	return [sx, 0, 0, 0, sy, 0, 0, 0, 1];
 }
 
@@ -21,7 +21,7 @@ export function identity() {
 	return [1, 0, 0, 0, 1, 0, 0, 0, 1];
 }
 
-export function multiply(a, b) {
+export function multiply(a: number[], b: number[]) {
 	var a00 = a[0 * 3 + 0];
 	var a01 = a[0 * 3 + 1];
 	var a02 = a[0 * 3 + 2];

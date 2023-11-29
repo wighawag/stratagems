@@ -4,7 +4,7 @@ import * as m3 from '$lib/m3';
 import {parseColorV4} from '$lib/webgl/color';
 import type {CameraState} from '../camera';
 import {COLORS_VEC4} from '../colors';
-import type {ViewData} from '$lib/state/ViewState';
+import type {StratagemsViewState} from '$lib/blockchain/state/ViewState';
 
 const vertexShaderSource = `#version 300 es
      
@@ -60,7 +60,7 @@ export class Colored2DLayer {
 		this.gl.useProgram(this.programInfo.program);
 	}
 
-	render(cameraState: CameraState, state: ViewData) {
+	render(cameraState: CameraState, state: StratagemsViewState) {
 		const GL = this.gl;
 		// Compute the matrices
 		var projectionMatrix = m3.projection(cameraState.renderWidth, cameraState.renderHeight);
@@ -123,7 +123,7 @@ export class Colored2DLayer {
 		// twgl.drawBufferInfo(GL, bufferInfo, GL.TRIANGLES);
 
 		for (let cellPos of Object.keys(state.cells)) {
-			const cell = state.cells[cellPos];
+			const cell = state.viewCells[cellPos];
 			const [x, y] = cellPos.split(',').map((v) => parseInt(v));
 			const width = this.size;
 			const height = this.size;

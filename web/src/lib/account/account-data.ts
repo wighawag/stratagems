@@ -50,12 +50,6 @@ export type OffchainState = {
 	moves?: LocalMoves;
 };
 
-const defaultOffchainState: OffchainState = {
-	timestamp: 0,
-	moves: undefined,
-	lastEpochAcknowledged: 0,
-};
-
 export type AccountData = {
 	onchainActions: OnChainActions<StratagemsMetadata>;
 	offchainState: OffchainState;
@@ -74,6 +68,17 @@ function fromOnChainActionToPendingTransaction(
 	} as PendingTransaction;
 }
 
+function defaultData() {
+	return {
+		onchainActions: {},
+		offchainState: {
+			timestamp: 0,
+			moves: undefined,
+			lastEpochAcknowledged: 0,
+		},
+	};
+}
+
 export class StratagemsAccountData extends BaseAccountHandler<AccountData, StratagemsMetadata> {
 	fuzdClient: ReturnType<typeof createClient> | undefined;
 
@@ -81,11 +86,7 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 	public readonly offchainState: Readable<OffchainState>;
 
 	constructor() {
-		super(
-			'jolly-roger',
-			{onchainActions: {}, offchainState: defaultOffchainState},
-			fromOnChainActionToPendingTransaction,
-		);
+		super('jolly-roger', defaultData, fromOnChainActionToPendingTransaction);
 
 		this._offchainState = writable(this.$data.offchainState);
 		this.offchainState = {
@@ -111,9 +112,12 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		return super.load(info, syncInfo);
 	}
 
-	unload() {
+	async unload() {
 		this.fuzdClient = undefined;
-		return super.unload();
+		const result = await super.unload();
+		// TODO make it an abstract notifyUnload
+		this._offchainState.set(this.$data.offchainState);
+		return result;
 	}
 
 	_merge(
@@ -125,20 +129,14 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		let newData = localData;
 
 		if (!newData) {
-			newData = {
-				onchainActions: {},
-				offchainState: defaultOffchainState,
-			};
+			newData = defaultData();
 		} else {
 			newDataOnLocal = true;
 		}
 
 		// hmm check if valid
 		if (!remoteData || !remoteData.onchainActions || !remoteData.offchainState) {
-			remoteData = {
-				onchainActions: {},
-				offchainState: defaultOffchainState,
-			};
+			remoteData = defaultData();
 		}
 
 		for (const key of Object.keys(newData.onchainActions)) {

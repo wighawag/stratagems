@@ -1,4 +1,4 @@
-import {viewState} from '$lib/blockchain/state/ViewState';
+import {stratagemsView} from '$lib/blockchain/state/ViewState';
 import {account, accountData} from '$lib/web3';
 
 import {xyToXYID, Color} from 'stratagems-common';
@@ -12,7 +12,7 @@ export class ActionHandler {
 			console.log('no account');
 			return; // TODO
 		}
-		const currentState = get(viewState);
+		const currentState = get(stratagemsView);
 		const currentOffchainState = get(accountData.offchainState);
 		const cellID = xyToXYID(x, y);
 
@@ -40,11 +40,11 @@ export class ActionHandler {
 			if (
 				currentState.cells[cellID] &&
 				currentState.owners[cellID].toLowerCase() === account.$state.address?.toLowerCase() &&
-				currentState.cells[cellID].next.life === 7
+				currentState.viewCells[cellID].next.life === 7
 			) {
 				console.log(`remove cell at ${x}, ${y}, ${player}`);
 				accountData.addMove({x, y, color: Color.None, player});
-			} else if (currentState.cells[cellID] && currentState.cells[cellID].next.life !== 0) {
+			} else if (currentState.cells[cellID] && currentState.viewCells[cellID].next.life !== 0) {
 				throw new Error(`Cell already occupied`);
 			} else {
 				console.log(`add color at ${x}, ${y}, ${player}`);

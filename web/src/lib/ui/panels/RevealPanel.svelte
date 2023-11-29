@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type {CommitMetadata} from '$lib/account/account-data';
 	import {epoch} from '$lib/blockchain/state/Epoch';
-	import {viewState} from '$lib/blockchain/state/ViewState';
+	import {stratagemsView} from '$lib/blockchain/state/ViewState';
 	import {contracts} from '$lib/web3';
 	import {startAcknowledgFailedReveal, startReveal} from '../flows/reveal';
 	import {bnReplacer} from 'stratagems-common';
@@ -14,19 +14,19 @@
 
 	async function startRevealing(e: MouseEvent) {
 		e.preventDefault();
-		if (!$viewState.hasCommitmentToReveal) {
+		if (!$stratagemsView.hasCommitmentToReveal) {
 			throw new Error(`no action to reveal`);
 		}
-		if ($viewState.hasCommitmentToReveal.commit) {
-			if ($viewState.hasCommitmentToReveal.commit.tx.metadata?.epoch !== $epoch) {
+		if ($stratagemsView.hasCommitmentToReveal.commit) {
+			if ($stratagemsView.hasCommitmentToReveal.commit.tx.metadata?.epoch !== $epoch) {
 				startAcknowledgFailedReveal(
-					$viewState.hasCommitmentToReveal.commit.hash,
-					$viewState.hasCommitmentToReveal.commit.tx.metadata as CommitMetadata,
+					$stratagemsView.hasCommitmentToReveal.commit.hash,
+					$stratagemsView.hasCommitmentToReveal.commit.tx.metadata as CommitMetadata,
 				);
 			} else {
 				startReveal(
-					$viewState.hasCommitmentToReveal.commit.hash,
-					$viewState.hasCommitmentToReveal.commit.tx.metadata as CommitMetadata,
+					$stratagemsView.hasCommitmentToReveal.commit.hash,
+					$stratagemsView.hasCommitmentToReveal.commit.tx.metadata as CommitMetadata,
 				);
 			}
 		} else {
@@ -39,15 +39,15 @@
 	}
 </script>
 
-{#if $viewState.hasCommitmentToReveal}
+{#if $stratagemsView.hasCommitmentToReveal}
 	<div class="pointer-events-none select-none fixed top-0 h-full grid place-items-end w-full max-w-full">
 		<div class="flex flex-row-reverse sm:m-2 w-full">
 			<div class="card w-full sm:w-96 bg-base-content glass">
 				<div class="card-body">
 					<h2 class="card-title text-primary">Your Move:</h2>
 					<p class="text-secondary">
-						{#if $viewState.hasCommitmentToReveal.commit}
-							{JSON.stringify($viewState.hasCommitmentToReveal, bnReplacer)}
+						{#if $stratagemsView.hasCommitmentToReveal.commit}
+							{JSON.stringify($stratagemsView.hasCommitmentToReveal, bnReplacer)}
 						{:else}
 							no commit tx found
 						{/if}

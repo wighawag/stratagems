@@ -3,12 +3,11 @@ import * as twgl from 'twgl.js';
 import type {CameraState} from './camera';
 import type {RenderViewState} from './renderview';
 import {GridLayer} from './programs/Grid';
-import {Colored2DLayer} from './programs/Colored2D';
-import type {ViewData} from '$lib/state/ViewState';
+import type {StratagemsViewState} from '$lib/blockchain/state/ViewState';
 import {Textured2DLayer} from './programs/Textured2D';
 
 export class WebGLRenderer implements Readable<RenderViewState> {
-	private state!: ViewData;
+	private state!: StratagemsViewState;
 	private canvas!: HTMLCanvasElement;
 	private gl!: WebGL2RenderingContext;
 	private cameraState!: CameraState;
@@ -24,7 +23,7 @@ export class WebGLRenderer implements Readable<RenderViewState> {
 	subscribe(run: Subscriber<RenderViewState>, invalidate?: (value?: RenderViewState) => void): Unsubscriber {
 		return this.store.subscribe(run, invalidate);
 	}
-	updateState(state: ViewData) {
+	updateState(state: StratagemsViewState) {
 		this.state = state;
 	}
 	updateView(cameraState: CameraState) {

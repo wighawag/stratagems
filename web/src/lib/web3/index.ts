@@ -110,6 +110,7 @@ const stores = init({
 						localStorage.setItem(private_signature_storageKey, signature);
 					} catch (err) {}
 				}
+				console.log({signature});
 			}
 
 			await accountData.load(

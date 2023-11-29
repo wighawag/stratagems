@@ -1,17 +1,11 @@
 import {zeroAddress} from 'viem';
 import {ContractSimpleCell} from './grid';
-
-export type ContractMove = {position: bigint; color: Color};
+import {CellXYPosition, Color, ContractCell, ContractMove, StratagemsState} from './types';
 
 export function bigIntIDToXYID(position: bigint): string {
 	const {x, y} = bigIntIDToXY(position);
 	return '' + x + ',' + y;
 }
-
-export type CellXYPosition = {
-	x: number;
-	y: number;
-};
 
 // using 64 bits room id
 // const leftMostBit = BigInt('0x8000000000000000');
@@ -47,33 +41,9 @@ export function xyToBigIntID(x: number, y: number): bigint {
 	return bn;
 }
 
-export enum Color {
-	None = 0,
-	Blue = 1, // 5ab9bb
-	Red = 2, // c5836e
-	Green = 3, // 8bffcb
-	Yellow = 4, // d3d66d
-	Purple = 5, // a9799d
-	Evil = 6, // 3d3d3d
-}
-
-export type ContractCell = {
-	lastEpochUpdate: number;
-	epochWhenTokenIsAdded: number;
-	color: number;
-	life: number;
-	delta: number;
-	enemyMap: number;
-	distribution: number;
-};
-
-export type ContractFullCell = ContractCell & {
-	owner: `0x${string}`;
-};
-
 export class StratagemsContract {
 	constructor(
-		private state: {cells: {[position: string]: ContractCell}; owners: {[poistion: string]: `0x${string}`}},
+		private state: StratagemsState,
 		public MAX_LIFE: number,
 	) {}
 

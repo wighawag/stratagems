@@ -1,5 +1,6 @@
 import {zeroAddress} from 'viem';
-import {Color, ContractFullCell, bigIntIDToXY, xyToBigIntID} from './stratagems';
+import {Color, ContractFullCell} from './types';
+import {bigIntIDToXY, xyToBigIntID} from './stratagems';
 
 export type Cell = {
 	x: number;
@@ -318,10 +319,10 @@ export function fromContractFullCellToCell(
 				cell.owner == zeroAddress
 					? undefined
 					: accountIndex >= 0
-					? accountIndex
-					: cell.owner.toLowerCase() === '0xffffffffffffffffffffffffffffffffffffffff'
-					? -1
-					: undefined,
+					  ? accountIndex
+					  : cell.owner.toLowerCase() === '0xffffffffffffffffffffffffffffffffffffffff'
+					    ? -1
+					    : undefined,
 		};
 
 		// console.log(`--------------`);
