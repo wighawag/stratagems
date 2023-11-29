@@ -10,7 +10,7 @@
 	import Install from '$lib/components/web/Install.svelte';
 	import ConnectButton from '$lib/web3/ConnectButton.svelte';
 	import WipNotice from '$lib/components/utilities/WipNotice.svelte';
-	import {params} from '$lib/config';
+	import {initialContractsInfos, params} from '$lib/config';
 
 	const host = canonicalURL.endsWith('/') ? canonicalURL : canonicalURL + '/';
 	const previewImage = host + 'preview.png';
@@ -140,6 +140,7 @@
 
 <!-- </div> -->
 
-{#if !dev && !params['force']}
+<!-- We remove the notice when force is specified or if on base network -->
+{#if !dev && !params['force'] && (initialContractsInfos + '').chainId !== '8453'}
 	<WipNotice />
 {/if}
