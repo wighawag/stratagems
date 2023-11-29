@@ -10,6 +10,7 @@ import {time} from '$lib/time';
 import {timeToText} from '$lib/utils/time';
 import {localMoveToContractMove, type CommitMetadata} from '$lib/account/account-data';
 import PermitComponent from './PermitComponent.svelte';
+import type {EIP1193ProviderWithoutEvents} from 'eip-1193';
 
 export type CommitState = {
 	permit?: {
@@ -20,6 +21,71 @@ export type CommitState = {
 	amountToAdd?: bigint;
 	amountToAllow?: bigint;
 };
+
+function avg(arr: bigint[]) {
+	const sum = arr.reduce((a: bigint, v: bigint) => a + v);
+	return sum / BigInt(arr.length);
+}
+
+async function estimateGasPrice(provider: EIP1193ProviderWithoutEvents) {
+	const historicalBlocks = 20;
+	// TODO any
+	const rawFeeHistory: any = await provider.request({
+		method: 'eth_feeHistory',
+		params: [`0x${historicalBlocks.toString(16)}`, 'pending', [10, 50, 80]], //['0x5A']], //0x5A = 90 percentile
+	});
+
+	// console.log(JSON.stringify(rawFeeHistory));
+
+	let block = await provider.request({method: 'eth_getBlockByNumber', params: ['pending', false]});
+	if (!block) {
+		console.warn(`cannot get pending block`);
+		block = await provider.request({method: 'eth_getBlockByNumber', params: ['latest', false]});
+		if (!block) {
+			throw new Error(`cannot fetch block to compute estimate`);
+		}
+	}
+
+	// console.log(JSON.stringify(block));
+
+	let blockNum = Number(rawFeeHistory.oldestBlock);
+	const lastBlock = blockNum + historicalBlocks;
+	let index = 0;
+	const blocksHistory = [];
+	while (blockNum < lastBlock) {
+		blocksHistory.push({
+			number: blockNum,
+			baseFeePerGas: BigInt(rawFeeHistory.baseFeePerGas[index]),
+			gasUsedRatio: BigInt(rawFeeHistory.gasUsedRatio[index]),
+			priorityFeePerGas: rawFeeHistory.reward[index].map((x: `0x${string}`) => BigInt(x)),
+		});
+		blockNum += 1;
+		index += 1;
+	}
+	// if (includePending) {
+	// 	blocksHistory.push({
+	// 		number: 'pending',
+	// 		baseFeePerGas: Number(rawFeeHistory.baseFeePerGas[historicalBlocks]),
+	// 		gasUsedRatio: NaN,
+	// 		priorityFeePerGas: [],
+	// 	});
+	// }
+
+	const slow = avg(blocksHistory.map((b) => b.priorityFeePerGas[0]));
+	const average = avg(blocksHistory.map((b) => b.priorityFeePerGas[1]));
+	const fast = avg(blocksHistory.map((b) => b.priorityFeePerGas[2]));
+
+	if ((block as any).baseFeePerGas) {
+		const baseFeePerGas = BigInt((block as any).baseFeePerGas);
+		return {
+			slow: {maxFeePerGas: slow + baseFeePerGas, maxPriorityFeePerGas: slow},
+			average: {maxFeePerGas: average + baseFeePerGas, maxPriorityFeePerGas: average},
+			fast: {maxFeePerGas: fast + baseFeePerGas, maxPriorityFeePerGas: fast},
+		};
+	} else {
+		throw new Error(`no baseFeePerGas, need support for old gasPrice method ?`);
+	}
+}
 
 export type CommitFlow = Flow<CommitState>;
 
@@ -107,15 +173,17 @@ export async function startCommit() {
 			description: `commit your moves`,
 			// component: PermitComponent,
 			execute: async (state: CommitState) => {
+				let txHash: `0x${string}`;
+				// TODO random secret, actually not random, just based on secret private key + epoch
+				const secret = '0x0000000000000000000000000000000000000000000000000000000000000000';
+				const {hash, moves} = prepareCommitment(localMoves.map(localMoveToContractMove), secret);
+
 				const fuzd = await accountData.getFuzd();
+
 				// TODO if fuzd
-				const result = await connection.provider.request({
-					method: 'eth_feeHistory',
-					params: ['0x1', 'latest', [90]], //['0x5A']], //0x5A = 90 percentile
-				});
-				const maxFeePerGas = parseEther('100', 'gwei');
-				const maxPriorityFeePerGas = parseEther('1', 'gwei');
-				const revealGas = 5000000n; //TODO
+				const gasPriceEstimates = await estimateGasPrice(connection.provider);
+				const {maxFeePerGas, maxPriorityFeePerGas} = gasPriceEstimates.average;
+				const revealGas = 120000n * BigInt(moves.length); //TODO
 				const remoteAccount = fuzd.remoteAccount;
 				let value = 0n;
 				if (remoteAccount !== zeroAddress) {
@@ -125,14 +193,9 @@ export async function startCommit() {
 					});
 					const balance = BigInt(balanceHex);
 
-					const valueNeeded = maxFeePerGas * revealGas;
+					const valueNeeded = BigInt(maxFeePerGas) * revealGas;
 					value = valueNeeded > balance ? valueNeeded - balance : 0n;
 				}
-
-				let txHash: `0x${string}`;
-				// TODO random secret, actually not random, just based on secret private key + epoch
-				const secret = '0x0000000000000000000000000000000000000000000000000000000000000000';
-				const {hash, moves} = prepareCommitment(localMoves.map(localMoveToContractMove), secret);
 
 				const commitMetadata: CommitMetadata = {
 					type: 'commit',
