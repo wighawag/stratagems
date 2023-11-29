@@ -17,8 +17,8 @@ importers:
         specifier: ^0.0.1
         version: 0.0.1
       ldenv:
-        specifier: ^0.3.7
-        version: 0.3.7
+        specifier: ^0.3.8
+        version: 0.3.8
       syncpack:
         specifier: ^11.2.1
         version: 11.2.1
@@ -39,8 +39,8 @@ importers:
         version: 1.19.9(typescript@5.3.2)
     devDependencies:
       ldenv:
-        specifier: ^0.3.7
-        version: 0.3.7
+        specifier: ^0.3.8
+        version: 0.3.8
       prettier:
         specifier: ^3.1.0
         version: 3.1.0
@@ -81,20 +81,20 @@ importers:
         specifier: ^1.0.3
         version: 1.0.3(rocketh@0.7.3)
       ldenv:
-        specifier: ^0.3.7
-        version: 0.3.7
+        specifier: ^0.3.8
+        version: 0.3.8
       rocketh:
         specifier: ^0.7.3
         version: 0.7.3(typescript@5.3.2)
       rocketh-deploy:
-        specifier: ^1.0.3
-        version: 1.0.3(rocketh@0.7.3)(typescript@5.3.2)
+        specifier: ^1.0.4
+        version: 1.0.4(rocketh@0.7.3)(typescript@5.3.2)
       rocketh-deploy-proxy:
-        specifier: ^1.0.3
-        version: 1.0.3(rocketh@0.7.3)(typescript@5.3.2)
+        specifier: ^1.0.4
+        version: 1.0.4(rocketh@0.7.3)(typescript@5.3.2)
       rocketh-deploy-router:
-        specifier: ^1.0.3
-        version: 1.0.3(rocketh@0.7.3)(typescript@5.3.2)
+        specifier: ^1.0.4
+        version: 1.0.4(rocketh@0.7.3)(typescript@5.3.2)
       rocketh-doc:
         specifier: ^1.0.3
         version: 1.0.3(rocketh@0.7.3)
@@ -153,8 +153,8 @@ importers:
         specifier: ^0.0.20
         version: 0.0.20(typescript@5.3.2)
       ldenv:
-        specifier: ^0.3.7
-        version: 0.3.7
+        specifier: ^0.3.8
+        version: 0.3.8
       node-cron:
         specifier: ^3.0.3
         version: 3.0.3
@@ -211,8 +211,8 @@ importers:
         specifier: ^0.6.26
         version: 0.6.26(typescript@5.3.2)
       ldenv:
-        specifier: ^0.3.7
-        version: 0.3.7
+        specifier: ^0.3.8
+        version: 0.3.8
       prettier:
         specifier: ^3.1.0
         version: 3.1.0
@@ -5243,7 +5243,7 @@ packages:
       eip-1193-json-provider: 0.2.1
       ethereum-indexer: 0.6.18(typescript@5.3.2)
       ethereum-indexer-utils: 0.6.11
-      ldenv: 0.3.7
+      ldenv: 0.3.8
       named-logs: 0.2.2
       named-logs-console: 0.3.0
     transitivePeerDependencies:
@@ -5315,7 +5315,7 @@ packages:
       koa-json: 2.0.2
       koa-logger: 3.2.1
       koa-router: 12.0.1
-      ldenv: 0.3.7
+      ldenv: 0.3.8
       named-logs: 0.2.2
       named-logs-console: 0.3.0
       pouchdb: 8.0.1
@@ -7007,8 +7007,8 @@ packages:
       dotenv-expand: 10.0.0
     dev: true
 
-  /ldenv@0.3.7:
-    resolution: {integrity: sha512-rUO+f3AbegMO3hFLFEPi4JyjgeLoQ5bWr+1AQs75wGAzDvr5V69b/a7yRDXplbT86wzPmD9V6KO1Oyx9ayMxbQ==}
+  /ldenv@0.3.8:
+    resolution: {integrity: sha512-0dm7L0bgt2+wtT28z115mN5dM2pr2efyuNsgXyK9TXqmXX5pCah136VMsv15rYta3ih5QeunV+zArlFXQT/avg==}
     hasBin: true
     dependencies:
       dotenv: 16.3.1
@@ -8455,6 +8455,22 @@ packages:
       postcss: 8.4.31
     dev: true
 
+  /postcss-load-config@4.0.2:
+    resolution: {integrity: sha512-bSVhyJGL00wMVoPUzAVAnbEoWyqRxkjv64tUl427SKnPrENtq6hJwUojroMz2VB+Q1edmi4IfrAPpami5VVgMQ==}
+    engines: {node: '>= 14'}
+    peerDependencies:
+      postcss: '>=8.0.9'
+      ts-node: '>=9.0.0'
+    peerDependenciesMeta:
+      postcss:
+        optional: true
+      ts-node:
+        optional: true
+    dependencies:
+      lilconfig: 3.0.0
+      yaml: 2.3.4
+    dev: true
+
   /postcss-load-config@4.0.2(postcss@8.4.31):
     resolution: {integrity: sha512-bSVhyJGL00wMVoPUzAVAnbEoWyqRxkjv64tUl427SKnPrENtq6hJwUojroMz2VB+Q1edmi4IfrAPpami5VVgMQ==}
     engines: {node: '>= 14'}
@@ -9083,14 +9099,14 @@ packages:
       bn.js: 5.2.1
     dev: true
 
-  /rocketh-deploy-proxy@1.0.3(rocketh@0.7.3)(typescript@5.3.2):
-    resolution: {integrity: sha512-lxje3RrIL5HNRk1dJVd8O1fkQF3L99Zkm+mrye/gSjB3bP1PXqxTpI6VILRVTV4rcRp0uG03rgYDyqdlad9miQ==}
+  /rocketh-deploy-proxy@1.0.4(rocketh@0.7.3)(typescript@5.3.2):
+    resolution: {integrity: sha512-d+OSK+uU301HPvP7C3jR6TqHZONxwDTJZ9qSklAGf4aZ9AlFPD2Q0M33MtHKGXFIqXnmnuwTocx0r4pyR+N7uw==}
     peerDependencies:
       rocketh: 0.7.3
     dependencies:
       named-logs: 0.2.2
       rocketh: 0.7.3(typescript@5.3.2)
-      rocketh-deploy: 1.0.3(rocketh@0.7.3)(typescript@5.3.2)
+      rocketh-deploy: 1.0.4(rocketh@0.7.3)(typescript@5.3.2)
       solidity-proxy: 0.2.4
       viem: 1.19.9(typescript@5.3.2)
     transitivePeerDependencies:
@@ -9100,15 +9116,15 @@ packages:
       - zod
     dev: true
 
-  /rocketh-deploy-router@1.0.3(rocketh@0.7.3)(typescript@5.3.2):
-    resolution: {integrity: sha512-doS0ov0195uYQ/Xfh+UBND6RHRt34WDqVOmaiAh/6pLs08W2QNIeP/VVChc1rKPQZkDrIA46a0a8Up+23RdpHQ==}
+  /rocketh-deploy-router@1.0.4(rocketh@0.7.3)(typescript@5.3.2):
+    resolution: {integrity: sha512-UCj9eHkIfMZGRz6V1UqDC2bL9PqWH1L3eWA7R0QLQJwFXS/EIVYtYOtZ+bNplw7MUHdAMK/fQLsdK7K+KbwIlw==}
     peerDependencies:
       rocketh: 0.7.3
     dependencies:
       ethers: 6.9.0
       named-logs: 0.2.2
       rocketh: 0.7.3(typescript@5.3.2)
-      rocketh-deploy: 1.0.3(rocketh@0.7.3)(typescript@5.3.2)
+      rocketh-deploy: 1.0.4(rocketh@0.7.3)(typescript@5.3.2)
       solidity-proxy: 0.2.4
       viem: 1.19.9(typescript@5.3.2)
     transitivePeerDependencies:
@@ -9118,8 +9134,8 @@ packages:
       - zod
     dev: true
 
-  /rocketh-deploy@1.0.3(rocketh@0.7.3)(typescript@5.3.2):
-    resolution: {integrity: sha512-bT4O/BBtXOEwXrwsI7HTVQm5IWukF/KH5IsascEtN40SZlcTduxUOeWbJWF0SA+WlEEgAoP9Q/AmAsTsZH+fmA==}
+  /rocketh-deploy@1.0.4(rocketh@0.7.3)(typescript@5.3.2):
+    resolution: {integrity: sha512-gLWitxmggYGLcO0QjLTN0KgNJx6v0A/ycgLzsgVBAFs331DA3vKldS3yOTZfTBMIFjS2EwjQgWGxv0+YU3WuDQ==}
     peerDependencies:
       rocketh: 0.7.3
     dependencies:
@@ -9176,7 +9192,7 @@ packages:
       chalk: 5.3.0
       commander: 11.1.0
       fs-extra: 11.2.0
-      ldenv: 0.3.7
+      ldenv: 0.3.8
       qs: 6.11.2
       rocketh: 0.7.3(typescript@5.3.2)
     transitivePeerDependencies:
@@ -9196,7 +9212,7 @@ packages:
       esbuild: 0.19.8
       esbuild-register: 3.5.0(esbuild@0.19.8)
       figlet: 1.7.0
-      ldenv: 0.3.7
+      ldenv: 0.3.8
       named-logs: 0.2.2
       named-logs-console: 0.3.0
       viem: 1.19.9(typescript@5.3.2)
@@ -10366,7 +10382,7 @@ packages:
       execa: 5.1.1
       globby: 11.1.0
       joycon: 3.1.1
-      postcss-load-config: 4.0.2(postcss@8.4.31)
+      postcss-load-config: 4.0.2
       resolve-from: 5.0.0
       rollup: 4.5.1
       source-map: 0.8.0-beta.0
