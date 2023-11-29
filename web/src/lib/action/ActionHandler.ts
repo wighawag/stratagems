@@ -6,14 +6,14 @@ import {get} from 'svelte/store';
 
 export class ActionHandler {
 	onCell(x: number, y: number) {
-		// console.log(x, y);
+		console.log(x, y);
 		const player = account.$state.address;
 		if (!player) {
 			console.log('no account');
 			return; // TODO
 		}
 		const currentState = get(stratagemsView);
-		const currentOffchainState = get(accountData.offchainState);
+		const currentOffchainState = accountData.$offchainState;
 		const cellID = xyToXYID(x, y);
 
 		console.log({x, y, cellID});
