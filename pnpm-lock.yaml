@@ -87,14 +87,14 @@ importers:
         specifier: ^0.7.3
         version: 0.7.3(typescript@5.3.2)
       rocketh-deploy:
-        specifier: ^1.0.3
-        version: 1.0.3(rocketh@0.7.3)(typescript@5.3.2)
+        specifier: ^1.0.4
+        version: 1.0.4(rocketh@0.7.3)(typescript@5.3.2)
       rocketh-deploy-proxy:
-        specifier: ^1.0.3
-        version: 1.0.3(rocketh@0.7.3)(typescript@5.3.2)
+        specifier: ^1.0.4
+        version: 1.0.4(rocketh@0.7.3)(typescript@5.3.2)
       rocketh-deploy-router:
-        specifier: ^1.0.3
-        version: 1.0.3(rocketh@0.7.3)(typescript@5.3.2)
+        specifier: ^1.0.4
+        version: 1.0.4(rocketh@0.7.3)(typescript@5.3.2)
       rocketh-doc:
         specifier: ^1.0.3
         version: 1.0.3(rocketh@0.7.3)
@@ -9083,14 +9083,14 @@ packages:
       bn.js: 5.2.1
     dev: true
 
-  /rocketh-deploy-proxy@1.0.3(rocketh@0.7.3)(typescript@5.3.2):
-    resolution: {integrity: sha512-lxje3RrIL5HNRk1dJVd8O1fkQF3L99Zkm+mrye/gSjB3bP1PXqxTpI6VILRVTV4rcRp0uG03rgYDyqdlad9miQ==}
+  /rocketh-deploy-proxy@1.0.4(rocketh@0.7.3)(typescript@5.3.2):
+    resolution: {integrity: sha512-d+OSK+uU301HPvP7C3jR6TqHZONxwDTJZ9qSklAGf4aZ9AlFPD2Q0M33MtHKGXFIqXnmnuwTocx0r4pyR+N7uw==}
     peerDependencies:
       rocketh: 0.7.3
     dependencies:
       named-logs: 0.2.2
       rocketh: 0.7.3(typescript@5.3.2)
-      rocketh-deploy: 1.0.3(rocketh@0.7.3)(typescript@5.3.2)
+      rocketh-deploy: 1.0.4(rocketh@0.7.3)(typescript@5.3.2)
       solidity-proxy: 0.2.4
       viem: 1.19.9(typescript@5.3.2)
     transitivePeerDependencies:
@@ -9100,15 +9100,15 @@ packages:
       - zod
     dev: true
 
-  /rocketh-deploy-router@1.0.3(rocketh@0.7.3)(typescript@5.3.2):
-    resolution: {integrity: sha512-doS0ov0195uYQ/Xfh+UBND6RHRt34WDqVOmaiAh/6pLs08W2QNIeP/VVChc1rKPQZkDrIA46a0a8Up+23RdpHQ==}
+  /rocketh-deploy-router@1.0.4(rocketh@0.7.3)(typescript@5.3.2):
+    resolution: {integrity: sha512-UCj9eHkIfMZGRz6V1UqDC2bL9PqWH1L3eWA7R0QLQJwFXS/EIVYtYOtZ+bNplw7MUHdAMK/fQLsdK7K+KbwIlw==}
     peerDependencies:
       rocketh: 0.7.3
     dependencies:
       ethers: 6.9.0
       named-logs: 0.2.2
       rocketh: 0.7.3(typescript@5.3.2)
-      rocketh-deploy: 1.0.3(rocketh@0.7.3)(typescript@5.3.2)
+      rocketh-deploy: 1.0.4(rocketh@0.7.3)(typescript@5.3.2)
       solidity-proxy: 0.2.4
       viem: 1.19.9(typescript@5.3.2)
     transitivePeerDependencies:
@@ -9118,8 +9118,8 @@ packages:
       - zod
     dev: true
 
-  /rocketh-deploy@1.0.3(rocketh@0.7.3)(typescript@5.3.2):
-    resolution: {integrity: sha512-bT4O/BBtXOEwXrwsI7HTVQm5IWukF/KH5IsascEtN40SZlcTduxUOeWbJWF0SA+WlEEgAoP9Q/AmAsTsZH+fmA==}
+  /rocketh-deploy@1.0.4(rocketh@0.7.3)(typescript@5.3.2):
+    resolution: {integrity: sha512-gLWitxmggYGLcO0QjLTN0KgNJx6v0A/ycgLzsgVBAFs331DA3vKldS3yOTZfTBMIFjS2EwjQgWGxv0+YU3WuDQ==}
     peerDependencies:
       rocketh: 0.7.3
     dependencies:
