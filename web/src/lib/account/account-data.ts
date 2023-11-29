@@ -109,7 +109,10 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 				schedulerEndPoint: FUZD_URI,
 			});
 		}
-		return super.load(info, syncInfo);
+		const result = await super.load(info, syncInfo);
+		this._offchainState.set(this.$data.offchainState);
+
+		return result;
 	}
 
 	async unload() {
@@ -167,9 +170,11 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		}
 
 		if (remoteData.offchainState.timestamp > newData.offchainState.timestamp) {
+			console.log(`fresher remote offchainState data`);
 			newData.offchainState = remoteData.offchainState;
 			newDataOnRemote = true;
 		} else if (newData.offchainState.timestamp > remoteData.offchainState.timestamp) {
+			console.log(`fresher local offchainState data`);
 			newDataOnLocal = true;
 		}
 
@@ -233,6 +238,7 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 
 		this._save();
 		this._offchainState.set(this.$data.offchainState);
+		console.log(this.$data.offchainState.moves?.length);
 	}
 
 	removeMove(x: number, y: number) {
@@ -247,6 +253,7 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 			this.$data.offchainState.timestamp = time.now;
 			this._save();
 			this._offchainState.set(this.$data.offchainState);
+			console.log(this.$data.offchainState.moves?.length);
 		}
 	}
 
