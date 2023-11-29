@@ -96,3 +96,15 @@ if (import.meta.hot) {
 }
 
 console.log(`VERSION: ${version}`);
+
+if (typeof window != 'undefined') {
+	(window as any).env = env;
+	(window as any).staticEnv = {
+		PUBLIC_ETH_NODE_URI_LOCALHOST,
+		PUBLIC_ETH_NODE_URI,
+		PUBLIC_LOCALHOST_BLOCK_TIME,
+		PUBLIC_DEV_NODE_URI,
+		PUBLIC_SYNC_URI,
+		PUBLIC_FUZD_URI,
+	};
+}
