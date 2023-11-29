@@ -12,7 +12,7 @@
     "viem": "^1.19.9"
   },
   "devDependencies": {
-    "ldenv": "^0.3.7",
+    "ldenv": "^0.3.8",
     "prettier": "^3.1.0",
     "tsup": "^8.0.1",
     "typescript": "^5.3.2"
