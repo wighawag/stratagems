@@ -5,6 +5,7 @@ import type {RenderViewState} from './renderview';
 import {GridLayer} from './programs/Grid';
 import type {StratagemsViewState} from '$lib/blockchain/state/ViewState';
 import {Textured2DLayer} from './programs/Textured2D';
+import {Colored2DLayer} from './programs/Colored2D';
 
 export class WebGLRenderer implements Readable<RenderViewState> {
 	private state!: StratagemsViewState;
@@ -13,7 +14,7 @@ export class WebGLRenderer implements Readable<RenderViewState> {
 	private cameraState!: CameraState;
 	private store: Writable<RenderViewState>;
 	private gridLayer: GridLayer = new GridLayer(1);
-	// private cellLayer: Colored2DLayer = new Colored2DLayer(1, 0.1);
+	private coloredLayer: Colored2DLayer = new Colored2DLayer(1, 0.1);
 	private cellLayer: Textured2DLayer = new Textured2DLayer(1);
 
 	constructor() {
@@ -40,6 +41,7 @@ export class WebGLRenderer implements Readable<RenderViewState> {
 		});
 		this.gridLayer.initialize(gl);
 		this.cellLayer.initialize(gl);
+		this.coloredLayer.initialize(gl);
 	}
 
 	render(time: number) {
@@ -62,5 +64,8 @@ export class WebGLRenderer implements Readable<RenderViewState> {
 
 		this.cellLayer.use();
 		this.cellLayer.render(this.cameraState, this.state);
+
+		this.coloredLayer.use();
+		this.coloredLayer.render(this.cameraState, this.state);
 	}
 }
