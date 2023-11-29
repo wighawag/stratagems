@@ -56,7 +56,7 @@ async function estimateGasPrice(provider: EIP1193ProviderWithoutEvents) {
 		blocksHistory.push({
 			number: blockNum,
 			baseFeePerGas: BigInt(rawFeeHistory.baseFeePerGas[index]),
-			gasUsedRatio: BigInt(rawFeeHistory.gasUsedRatio[index]),
+			gasUsedRatio: Number(rawFeeHistory.gasUsedRatio[index]),
 			priorityFeePerGas: rawFeeHistory.reward[index].map((x: `0x${string}`) => BigInt(x)),
 		});
 		blockNum += 1;
