@@ -35,21 +35,8 @@ async function estimateGasPrice(provider: EIP1193ProviderWithoutEvents) {
 		params: [`0x${historicalBlocks.toString(16)}`, 'pending', [10, 50, 80]], //['0x5A']], //0x5A = 90 percentile
 	});
 
-	// console.log(JSON.stringify(rawFeeHistory));
-
-	let block = await provider.request({method: 'eth_getBlockByNumber', params: ['pending', false]});
-	if (!block) {
-		console.warn(`cannot get pending block`);
-		block = await provider.request({method: 'eth_getBlockByNumber', params: ['latest', false]});
-		if (!block) {
-			throw new Error(`cannot fetch block to compute estimate`);
-		}
-	}
-
-	// console.log(JSON.stringify(block));
-
 	let blockNum = Number(rawFeeHistory.oldestBlock);
-	const lastBlock = blockNum + historicalBlocks;
+	const lastBlock = blockNum + rawFeeHistory.reward.length;
 	let index = 0;
 	const blocksHistory = [];
 	while (blockNum < lastBlock) {
@@ -62,29 +49,17 @@ async function estimateGasPrice(provider: EIP1193ProviderWithoutEvents) {
 		blockNum += 1;
 		index += 1;
 	}
-	// if (includePending) {
-	// 	blocksHistory.push({
-	// 		number: 'pending',
-	// 		baseFeePerGas: Number(rawFeeHistory.baseFeePerGas[historicalBlocks]),
-	// 		gasUsedRatio: NaN,
-	// 		priorityFeePerGas: [],
-	// 	});
-	// }
 
 	const slow = avg(blocksHistory.map((b) => b.priorityFeePerGas[0]));
 	const average = avg(blocksHistory.map((b) => b.priorityFeePerGas[1]));
 	const fast = avg(blocksHistory.map((b) => b.priorityFeePerGas[2]));
 
-	if ((block as any).baseFeePerGas) {
-		const baseFeePerGas = BigInt((block as any).baseFeePerGas);
-		return {
-			slow: {maxFeePerGas: slow + baseFeePerGas, maxPriorityFeePerGas: slow},
-			average: {maxFeePerGas: average + baseFeePerGas, maxPriorityFeePerGas: average},
-			fast: {maxFeePerGas: fast + baseFeePerGas, maxPriorityFeePerGas: fast},
-		};
-	} else {
-		throw new Error(`no baseFeePerGas, need support for old gasPrice method ?`);
-	}
+	const baseFeePerGas = BigInt(rawFeeHistory.baseFeePerGas[rawFeeHistory.baseFeePerGas.length - 1]);
+	return {
+		slow: {maxFeePerGas: slow + baseFeePerGas, maxPriorityFeePerGas: slow},
+		average: {maxFeePerGas: average + baseFeePerGas, maxPriorityFeePerGas: average},
+		fast: {maxFeePerGas: fast + baseFeePerGas, maxPriorityFeePerGas: fast},
+	};
 }
 
 export type CommitFlow = Flow<CommitState>;
