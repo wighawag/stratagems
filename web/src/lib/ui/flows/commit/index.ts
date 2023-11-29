@@ -157,7 +157,12 @@ export async function startCommit() {
 
 				// TODO if fuzd
 				const gasPriceEstimates = await estimateGasPrice(connection.provider);
-				const {maxFeePerGas, maxPriorityFeePerGas} = gasPriceEstimates.average;
+				// we get the fast estimate
+				const estimate = gasPriceEstimates.fast;
+				// we then double the maxFeePerGas to accomodate for spikes
+				const maxFeePerGas = estimate.maxFeePerGas * 2n;
+				const maxPriorityFeePerGas = estimate.maxPriorityFeePerGas;
+
 				const revealGas = 120000n * BigInt(moves.length); //TODO
 				const remoteAccount = fuzd.remoteAccount;
 				let value = 0n;
