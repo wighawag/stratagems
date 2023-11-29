@@ -28,7 +28,7 @@ export const {
 } = createIndexerState(processor, {
 	trackNumRequests: true,
 	// logRequests: true,
-	keepState: keepStateOnIndexedDB('jolly-roger', remoteIndexedState) as any, // TODO types
+	keepState: keepStateOnIndexedDB('stratagems', remoteIndexedState) as any, // TODO types
 });
 
 async function indexIfNotIndexing() {
