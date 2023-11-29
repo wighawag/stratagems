@@ -6,6 +6,8 @@ import type {CameraState} from '../camera';
 import {COLORS_VEC4} from '../colors';
 import type {StratagemsViewState} from '$lib/blockchain/state/ViewState';
 
+const RED = parseColorV4('ffffff');
+
 const vertexShaderSource = `#version 300 es
      
 // an attribute is an input (in) to a vertex shader.
@@ -122,32 +124,49 @@ export class Colored2DLayer {
 		// twgl.setUniforms(colored2d, uniforms);
 		// twgl.drawBufferInfo(GL, bufferInfo, GL.TRIANGLES);
 
-		for (let cellPos of Object.keys(state.cells)) {
-			const cell = state.viewCells[cellPos];
-			const [x, y] = cellPos.split(',').map((v) => parseInt(v));
-			const width = this.size;
-			const height = this.size;
-			var x1 = x * this.size + this.tickness / 2;
-			var x2 = x * this.size + width - this.tickness / 2;
-			var y1 = y * this.size + this.tickness / 2;
-			var y2 = y * this.size + height - this.tickness / 2;
+		// colored cells:
 
-			// twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs.a_position, {
-			// 	numComponents: 2,
-			// 	data: [x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2],
-			// });
+		// for (let cellPos of Object.keys(state.cells)) {
+		// 	const cell = state.viewCells[cellPos];
+		// 	const [x, y] = cellPos.split(',').map((v) => parseInt(v));
+		// 	const width = this.size;
+		// 	const height = this.size;
+		// 	var x1 = x * this.size + this.tickness / 2;
+		// 	var x2 = x * this.size + width - this.tickness / 2;
+		// 	var y1 = y * this.size + this.tickness / 2;
+		// 	var y2 = y * this.size + height - this.tickness / 2;
 
-			const attributes = {
-				a_position: {numComponents: 2, data: [x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]},
-			};
-			this.bufferInfo = twgl.createBufferInfoFromArrays(GL, attributes, this.bufferInfo);
+		// 	// twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs.a_position, {
+		// 	// 	numComponents: 2,
+		// 	// 	data: [x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2],
+		// 	// });
 
-			twgl.setBuffersAndAttributes(GL, this.programInfo, this.bufferInfo);
+		// 	const attributes = {
+		// 		a_position: {numComponents: 2, data: [x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]},
+		// 	};
+		// 	this.bufferInfo = twgl.createBufferInfoFromArrays(GL, attributes, this.bufferInfo);
 
-			uniforms.u_color = COLORS_VEC4[cell.next.color];
-			twgl.setUniforms(this.programInfo, uniforms);
+		// 	twgl.setBuffersAndAttributes(GL, this.programInfo, this.bufferInfo);
 
-			twgl.drawBufferInfo(GL, this.bufferInfo, GL.TRIANGLES);
-		}
+		// 	uniforms.u_color = COLORS_VEC4[cell.next.color];
+		// 	twgl.setUniforms(this.programInfo, uniforms);
+
+		// 	twgl.drawBufferInfo(GL, this.bufferInfo, GL.TRIANGLES);
+		// }
+
+		const size = 0.2;
+		const a = -size / 2;
+		const b = size / 2;
+		const attributes = {
+			a_position: {numComponents: 2, data: [a, a, b, a, a, b, a, b, b, a, b, b]},
+		};
+		this.bufferInfo = twgl.createBufferInfoFromArrays(GL, attributes, this.bufferInfo);
+
+		twgl.setBuffersAndAttributes(GL, this.programInfo, this.bufferInfo);
+
+		uniforms.u_color = RED;
+		twgl.setUniforms(this.programInfo, uniforms);
+
+		twgl.drawBufferInfo(GL, this.bufferInfo, GL.TRIANGLES);
 	}
 }
