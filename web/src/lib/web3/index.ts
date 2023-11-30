@@ -43,6 +43,17 @@ const stores = init({
 			const address = state.address;
 
 			let remoteSyncEnabled = false;
+			const remoteSync_storageKey = `__remoteSync_${address.toLowerCase}`;
+			try {
+				const fromStorage = localStorage.getItem(remoteSync_storageKey);
+				if (fromStorage === 'true') {
+					remoteSyncEnabled = true;
+				} else if (fromStorage === 'false') {
+					remoteSyncEnabled = false;
+				}
+			} catch (err) {}
+			console.log({remoteSyncEnabled});
+
 			let signature: `0x${string}` | undefined;
 			const private_signature_storageKey = `__private_signature__${address.toLowerCase()}`;
 			try {
@@ -72,16 +83,6 @@ const stores = init({
 				let doNotAskAgainSignature = false;
 				if (syncInfo) {
 					remoteSyncEnabled = true;
-					const remoteSync_storageKey = `__remoteSync_${address.toLowerCase}`;
-					try {
-						const fromStorage = localStorage.getItem(remoteSync_storageKey);
-						if (fromStorage === 'true') {
-							remoteSyncEnabled = true;
-						} else if (fromStorage === 'false') {
-							remoteSyncEnabled = false;
-						}
-					} catch (err) {}
-					console.log({remoteSyncEnabled});
 					const {doNotAskAgainSignature: saveSignature, remoteSyncEnabled: remoteSyncEnabledAsked} = (await waitForStep(
 						'WELCOME',
 						{
