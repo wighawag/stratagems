@@ -15,7 +15,7 @@ return updated cell (based on current epoch)
 
 *Signature*: getCell(uint256)
 
-function getCell(uint256 id) view returns (tuple(address owner, uint24 lastEpochUpdate, uint24 epochWhenTokenIsAdded, uint8 color, uint8 life, int8 delta, uint8 enemyMap, uint8 distribution))
+function getCell(uint256 id) view returns ((address owner, uint24 lastEpochUpdate, uint24 epochWhenTokenIsAdded, uint8 color, uint8 life, int8 delta, uint8 enemyMap, uint8 distribution))
 
 | Name | Description 
 | ---- | ----------- 
@@ -29,7 +29,7 @@ return the list of updated cells (based on current epoch) whose ids is given
 
 *Signature*: getCells(uint256[])
 
-function getCells(uint256[] ids) view returns (tuple(address owner, uint24 lastEpochUpdate, uint24 epochWhenTokenIsAdded, uint8 color, uint8 life, int8 delta, uint8 enemyMap, uint8 distribution)[] cells)
+function getCells(uint256[] ids) view returns ((address owner, uint24 lastEpochUpdate, uint24 epochWhenTokenIsAdded, uint8 color, uint8 life, int8 delta, uint8 enemyMap, uint8 distribution)[] cells)
 
 | Name | Description 
 | ---- | ----------- 
@@ -43,7 +43,7 @@ The commitment to be revealed. zeroed if no commitment need to be made.
 
 *Signature*: getCommitment(address)
 
-function getCommitment(address account) view returns (tuple(bytes24 hash, uint24 epoch) commitment)
+function getCommitment(address account) view returns ((bytes24 hash, uint24 epoch) commitment)
 
 | Name | Description 
 | ---- | ----------- 
@@ -57,7 +57,7 @@ return the config used to initialise the Game
 
 *Signature*: getConfig()
 
-function getConfig() view returns (tuple(address tokens, address burnAddress, uint256 startTime, uint256 commitPhaseDuration, uint256 revealPhaseDuration, uint8 maxLife, uint256 numTokensPerGems) config)
+function getConfig() view returns ((address tokens, address burnAddress, uint256 startTime, uint256 commitPhaseDuration, uint256 revealPhaseDuration, uint8 maxLife, uint256 numTokensPerGems, address time) config)
 
 ### **getTokensInReserve**
 
@@ -81,7 +81,7 @@ called by player if they missed the reveal phase and want to minimze the token l
 
 *Signature*: acknowledgeMissedReveal(address,bytes32,(uint64,uint8)[],bytes24)
 
-function acknowledgeMissedReveal(address player, bytes32 secret, tuple(uint64 position, uint8 color)[] moves, bytes24 furtherMoves)
+function acknowledgeMissedReveal(address player, bytes32 secret, (uint64 position, uint8 color)[] moves, bytes24 furtherMoves)
 
 | Name | Description 
 | ---- | ----------- 
@@ -108,7 +108,7 @@ called by players to add tokens to their reserve
 
 *Signature*: addToReserve(uint256,(uint256,uint256,uint8,bytes32,bytes32))
 
-function addToReserve(uint256 tokensAmountToAdd, tuple(uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) permit)
+function addToReserve(uint256 tokensAmountToAdd, (uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) permit)
 
 | Name | Description 
 | ---- | ----------- 
@@ -148,7 +148,7 @@ called to make a commitment along with tokens to add to the reserve
 
 *Signature*: makeCommitmentWithExtraReserve(bytes24,uint256,(uint256,uint256,uint8,bytes32,bytes32),address)
 
-function makeCommitmentWithExtraReserve(bytes24 commitmentHash, uint256 tokensAmountToAdd, tuple(uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) permit, address payee) payable
+function makeCommitmentWithExtraReserve(bytes24 commitmentHash, uint256 tokensAmountToAdd, (uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) permit, address payee) payable
 
 | Name | Description 
 | ---- | ----------- 
@@ -179,7 +179,7 @@ called by player to reveal their moves  this is where the core logic of the game
 
 *Signature*: reveal(address,bytes32,(uint64,uint8)[],bytes24,bool,address)
 
-function reveal(address player, bytes32 secret, tuple(uint64 position, uint8 color)[] moves, bytes24 furtherMoves, bool useReserve, address payee) payable
+function reveal(address player, bytes32 secret, (uint64 position, uint8 color)[] moves, bytes24 furtherMoves, bool useReserve, address payee) payable
 
 | Name | Description 
 | ---- | ----------- 
@@ -276,7 +276,7 @@ Get the list of owner of a token and the blockNumber of its last transfer, usefu
 
 *Signature*: ownerAndLastTransferBlockNumberList(uint256[])
 
-function ownerAndLastTransferBlockNumberList(uint256[] tokenIDs) view returns (tuple(address owner, uint256 lastTransferBlockNumber)[] ownersData)
+function ownerAndLastTransferBlockNumberList(uint256[] tokenIDs) view returns ((address owner, uint256 lastTransferBlockNumber)[] ownersData)
 
 | Name | Description 
 | ---- | ----------- 
@@ -441,7 +441,7 @@ event CommitmentMade(address indexed player, uint24 indexed epoch, bytes24 commi
 
 Player has revealed its previous commitment
 
-event CommitmentRevealed(address indexed player, uint24 indexed epoch, bytes24 indexed commitmentHash, tuple(uint64 position, uint8 color)[] moves, bytes24 furtherMoves, uint256 newReserveAmount)
+event CommitmentRevealed(address indexed player, uint24 indexed epoch, bytes24 indexed commitmentHash, (uint64 position, uint8 color)[] moves, bytes24 furtherMoves, uint256 newReserveAmount)
 
 | Name | Description 
 | ---- | ----------- 
