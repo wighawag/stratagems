@@ -193,7 +193,7 @@ Here's how you can get involved:
 
 - **Reach out to us if you want to join the project**, We are especially looking for web dev (css experience), game dev and web/UX designer.
 
-- **Sponsor us** We're looking for at least 5000$ in sponsorship so we can get full time contributors.
+- **Sponsor us** Any amounts are welcome. It will help us continue improving the game. All our work is open-source and any sponsor is thus for the public good :)
 
 - **Partner with us** Our game is unique in that you can put funds in it and promote your own project. There is even scope to bring your project's token in the game. Reach out to us if you want to know more
 
