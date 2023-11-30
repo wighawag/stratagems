@@ -1,10 +1,42 @@
-type Color = string;
+type Color = {h: number; s: number; l: number};
+
+export function hue2rgb(p: number, q: number, t: number): number {
+	if (t < 0) t += 1;
+	if (t > 1) t -= 1;
+	if (t < 1 / 6) return p + (q - p) * 6 * t;
+	if (t < 1 / 2) return q;
+	if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+	return p;
+}
+
+export function hslToRgb({h, s, l}: {h: number; s: number; l: number}) {
+	let r, g, b;
+
+	if (s === 0) {
+		r = g = b = l; // achromatic
+	} else {
+		const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+		const p = 2 * l - q;
+		r = hue2rgb(p, q, h + 1 / 3);
+		g = hue2rgb(p, q, h);
+		b = hue2rgb(p, q, h - 1 / 3);
+	}
+
+	return [r, g, b];
+}
+
+export function hslToStyle({h, s, l}: {h: number; s: number; l: number}): string {
+	return 'hsl(' + h * 360 + ',' + s * 100 + '%,' + l * 100 + '%)';
+}
 
 export class Blockie {
-	imageData: number[]; // TODO Uint8Array ?
+	imageData: number[];
 	color: Color;
 	bgcolor: Color;
 	spotcolor: Color;
+	colorRGB: number[];
+	bgcolorRGB: number[];
+	spotcolorRGB: number[];
 	scale: number;
 	size: number;
 
@@ -47,6 +79,12 @@ export class Blockie {
 		this.bgcolor = this.createColor();
 		this.spotcolor = this.createColor();
 		this.imageData = this.createImageData(this.size);
+
+		this.colorRGB = hslToRgb(this.color);
+		this.bgcolorRGB = hslToRgb(this.bgcolor);
+		this.spotcolorRGB = hslToRgb(this.spotcolor);
+
+		console.log(this);
 	}
 
 	//TODO Image Texture
@@ -55,7 +93,7 @@ export class Blockie {
 		x: number,
 		y: number,
 		furtherScale: number,
-		options?: {offset?: number; border?: number}
+		options?: {offset?: number; border?: number},
 	): void {
 		const oldColor = ctx.fillStyle;
 		const appliedScale = this.scale * furtherScale;
@@ -78,7 +116,7 @@ export class Blockie {
 				Math.floor(x - appliedScale),
 				Math.floor(y - appliedScale),
 				Math.floor(appliedSize + appliedScale * 2),
-				Math.floor(appliedSize + appliedScale * 2)
+				Math.floor(appliedSize + appliedScale * 2),
 			);
 		}
 		// else if (border === 2) {
@@ -93,14 +131,14 @@ export class Blockie {
 		//   );
 		// }
 
-		ctx.fillStyle = this.bgcolor;
+		ctx.fillStyle = hslToStyle(this.bgcolor);
 
 		if (options?.offset) {
 			ctx.fillRect(
 				Math.floor(x),
 				Math.floor(y),
 				Math.floor(appliedSize + options.offset * 2),
-				Math.floor(appliedSize + options.offset * 2)
+				Math.floor(appliedSize + options.offset * 2),
 			);
 			x += options.offset;
 			y += options.offset;
@@ -111,14 +149,14 @@ export class Blockie {
 			const row = Math.floor(i / this.size);
 			const col = i % this.size;
 			// if data is 2, choose spot color, if 1 choose foreground
-			ctx.fillStyle = this.imageData[i] == 1 ? this.color : this.spotcolor;
+			ctx.fillStyle = hslToStyle(this.imageData[i] == 1 ? this.color : this.spotcolor);
 			// if data is 0, leave the background
 			if (this.imageData[i] != 0) {
 				ctx.fillRect(
 					Math.floor(x + col * appliedScale),
 					Math.floor(y + row * appliedScale),
 					Math.ceil(appliedScale),
-					Math.ceil(appliedScale)
+					Math.ceil(appliedScale),
 				);
 			}
 		}
@@ -146,25 +184,14 @@ export class Blockie {
 		return (this.randseed[3] >>> 0) / ((1 << 31) >>> 0);
 	}
 
-	createColor(): Color {
+	createColor(): {h: number; s: number; l: number} {
 		// saturation is the whole color spectrum
-		const h = Math.floor(this.rand() * 360);
+		const h = Math.floor(this.rand() * 360) / 360;
 		// saturation goes from 40 to 100, it avoids greyish colors
-		const s = Math.floor(1000 * (this.rand() * 60 + 40)) / 1000 + '%';
+		const s = Math.floor(1000 * (this.rand() * 60 + 40)) / 100000;
 		// lightness can be anything from 0 to 100, but probabilities are a bell curve around 50%
-		const l = Math.floor(1000 * (this.rand() + this.rand() + this.rand() + this.rand()) * 25) / 1000 + '%';
-
-		const color = 'hsl(' + h + ',' + s + ',' + l + ')';
-		return color;
-	}
-
-	hue2rgb(p: number, q: number, t: number): number {
-		if (t < 0) t += 1;
-		if (t > 1) t -= 1;
-		if (t < 1 / 6) return p + (q - p) * 6 * t;
-		if (t < 1 / 2) return q;
-		if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-		return p;
+		const l = Math.floor(1000 * (this.rand() + this.rand() + this.rand() + this.rand()) * 25) / 100000;
+		return {h, s, l};
 	}
 
 	createImageData(size: number): number[] {

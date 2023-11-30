@@ -6,6 +6,7 @@ import {GridLayer} from './programs/Grid';
 import type {StratagemsViewState} from '$lib/blockchain/state/ViewState';
 import {Textured2DLayer} from './programs/Textured2D';
 import {Colored2DLayer} from './programs/Colored2D';
+import {BlockiesLayer} from './programs/Blockies';
 
 export class WebGLRenderer implements Readable<RenderViewState> {
 	private state!: StratagemsViewState;
@@ -16,6 +17,7 @@ export class WebGLRenderer implements Readable<RenderViewState> {
 	private gridLayer: GridLayer = new GridLayer(1);
 	private coloredLayer: Colored2DLayer = new Colored2DLayer(1, 0.1);
 	private cellLayer: Textured2DLayer = new Textured2DLayer(1);
+	private blockiesLayer: BlockiesLayer = new BlockiesLayer(1);
 
 	constructor() {
 		this.store = writable({devicePixelRatio: 1, width: 0, height: 0});
@@ -42,6 +44,7 @@ export class WebGLRenderer implements Readable<RenderViewState> {
 		this.gridLayer.initialize(gl);
 		this.cellLayer.initialize(gl);
 		this.coloredLayer.initialize(gl);
+		this.blockiesLayer.initialize(gl);
 	}
 
 	render(time: number) {
@@ -67,5 +70,8 @@ export class WebGLRenderer implements Readable<RenderViewState> {
 
 		this.coloredLayer.use();
 		this.coloredLayer.render(this.cameraState, this.state);
+
+		this.blockiesLayer.use();
+		this.blockiesLayer.render(this.cameraState, this.state);
 	}
 }
