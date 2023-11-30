@@ -173,8 +173,10 @@ export async function startCommit() {
 					});
 					const balance = BigInt(balanceHex);
 
-					const valueNeeded = BigInt(maxFeePerGas) * revealGas;
-					value = valueNeeded > balance ? valueNeeded - balance : 0n;
+					const valueNeeded = maxFeePerGas * revealGas;
+					// we then double that value to ensure tx go through
+					const valueToProvide = valueNeeded * 2n;
+					value = valueToProvide > balance ? valueToProvide - balance : 0n;
 				}
 
 				const commitMetadata: CommitMetadata = {
