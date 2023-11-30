@@ -13,7 +13,7 @@
     "ethereum-indexer-browser": "^0.6.28",
     "hardhat": "^2.19.1",
     "hardhat-rocketh": "^1.0.3",
-    "ldenv": "^0.3.8",
+    "ldenv": "^0.3.9",
     "rocketh": "^0.7.3",
     "rocketh-deploy": "^1.0.4",
     "rocketh-deploy-proxy": "^1.0.4",
