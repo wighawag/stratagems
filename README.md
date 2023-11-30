@@ -163,6 +163,26 @@ Then you can deploy your contract
 pnpm contracts:deploy <network>
 ```
 
+And you can verify the contract
+
+- on etherscan:
+
+```bash
+pnpm contracts:verify <network> etherscan
+```
+
+- using sourcify:
+
+```bash
+pnpm contracts:verify <network> sourcify
+```
+
+for etherscan if the network is not supported by default (no endpoint), you can provide your own:
+
+```bash
+pnpm contracts:verify <network> etherscan --endpoint <api endpoint url>
+```
+
 ## 🙌🎉 How You Can Contribute
 
 If you're passionate about Autonomous Worlds and infinite games, or if you have your own ideas to bring to the table, we welcome your contributions!
