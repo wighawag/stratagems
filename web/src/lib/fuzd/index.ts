@@ -55,6 +55,7 @@ export function createClient(config: ClientConfig) {
 			data: `0x${string}`;
 			to: `0x${string}`;
 			time: number;
+			expiry?: number;
 		},
 		options?: {fakeEncrypt?: boolean},
 	): Promise<ScheduleInfo> {
@@ -100,6 +101,7 @@ export function createClient(config: ClientConfig) {
 					expectedTime: execution.time,
 					round,
 				},
+				expiry: execution.expiry,
 			},
 			type: 'time-locked',
 			payload,
