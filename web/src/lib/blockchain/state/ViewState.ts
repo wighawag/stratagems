@@ -28,6 +28,7 @@ export type StratagemsViewState = StratagemsState & {
 	owners: {[position: string]: `0x${string}`};
 	hasCommitmentToReveal?: {epoch: number; commit?: {hash: `0x${string}`; tx: StratagemsTransaction}};
 	hasCommitment?: boolean;
+	hasSomeCells: boolean;
 };
 
 function merge(
@@ -39,6 +40,8 @@ function merge(
 ): StratagemsViewState {
 	const copyState = createDraft(state);
 	// TODO use finishDraft ?
+
+	const hasSomeCells = Object.keys(copyState.cells).length > 0;
 
 	const stratagems = new StratagemsContract(copyState, 7);
 
@@ -74,6 +77,7 @@ function merge(
 		owners: {},
 		hasCommitmentToReveal: undefined,
 		hasCommitment,
+		hasSomeCells,
 	};
 	for (const cellID of Object.keys(copyState.cells)) {
 		const {x, y} = bigIntIDToXY(BigInt(cellID));
