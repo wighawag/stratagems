@@ -12,3 +12,6 @@
 - [ ] add public chat
 - [ ] add one-to-one chat
 - [ ] add local wallet
+
+- [ ] better error handling when fuzd shedule failed
+- [ ] issue with overriden commit showing black

@@ -163,7 +163,7 @@ export async function startCommit() {
 				const maxFeePerGas = estimate.maxFeePerGas * 2n;
 				const maxPriorityFeePerGas = estimate.maxPriorityFeePerGas;
 
-				const revealGas = 120000n * BigInt(moves.length); //TODO
+				const revealGas = 50000n + 300000n * BigInt(moves.length); //TODO
 				const remoteAccount = fuzd.remoteAccount;
 				let value = 0n;
 				if (remoteAccount !== zeroAddress) {
@@ -233,6 +233,7 @@ export async function startCommit() {
 						data,
 						to: contracts.Stratagems.address,
 						time: timeToBroadcastReveal,
+						expiry: 3600,
 						chainId: initialContractsInfos.chainId,
 						gas: revealGas,
 					},
