@@ -52,6 +52,8 @@
 	<meta name="apple-mobile-web-app-status-bar-style" content={appleStatusBarStyle} />
 	<meta name="apple-mobile-web-app-title" content={name} />
 
+	<meta name="version" content={version} />
+
 	{#if !dev}
 		<script>
 			(function () {
@@ -89,6 +91,7 @@
 		</script>
 
 		<script>
+			const version = document.querySelector('meta[name="version"]').content;
 			window.SENTRY_RELEASE = {
 				id: version,
 			};
