@@ -13,7 +13,7 @@
     "autoprefixer": "^10.4.16",
     "daisyui": "^4.4.12",
     "eip-1193": "^0.4.7",
-    "fuzd-executor": "^0.1.7",
+    "fuzd-executor": "^0.1.8",
     "fuzd-scheduler": "^0.1.9",
     "ipfs-gateway-emulator": "4.2.1-ipfs.2",
     "postcss": "^8.4.31",
