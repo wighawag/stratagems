@@ -8,11 +8,12 @@ import {epochState, type EpochState} from '$lib/blockchain/state/Epoch';
 import type {AccountState} from 'web3-connection';
 import {
 	localMoveToContractMove,
+	type CommitMetadata,
 	type OffchainState,
 	type StratagemsMetadata,
 	type StratagemsTransaction,
 } from '$lib/account/account-data';
-import type {OnChainActions} from '$lib/account/base';
+import type {OnChainAction, OnChainActions} from '$lib/account/base';
 import {createDraft, finishDraft} from 'immer';
 
 export type ViewCell = ContractCell & {
@@ -53,19 +54,40 @@ function merge(
 			stratagems.computeMove(account.address as `0x${string}`, epochState.epoch, localMoveToContractMove(move));
 		}
 	} else {
+		let lastCommitment: OnChainAction<CommitMetadata> | undefined;
 		for (const txHash of Object.keys(onchainActions)) {
 			const action = onchainActions[txHash as `0x${string}`];
-			if (action.tx.metadata) {
+			if (action.tx.metadata && action.status !== 'Failure') {
 				const metadata = action.tx.metadata;
 				if (metadata.type === 'commit') {
 					// TODO
 					// TODO || || !action.revealTx
 					if (metadata.epoch == epochState.epoch && epochState.isActionPhase) {
-						hasCommitment = true;
-						for (const move of metadata.localMoves) {
-							stratagems.computeMove(account.address as `0x${string}`, epochState.epoch, localMoveToContractMove(move));
+						// TODO what if no nonce ?
+
+						if (
+							!lastCommitment ||
+							(lastCommitment.tx.nonce &&
+								action.tx.nonce &&
+								Number(lastCommitment.tx.nonce) < Number(action.tx.nonce)) ||
+							(lastCommitment.tx.timestamp && action.tx.timestamp && lastCommitment.tx.timestamp < action.tx.timestamp)
+						) {
+							lastCommitment = action as OnChainAction<CommitMetadata>; // TODO why type ?
 						}
 					}
+				}
+			}
+		}
+
+		if (lastCommitment) {
+			hasCommitment = true;
+			const metadata = lastCommitment.tx.metadata;
+			if (!metadata) {
+				// TODO fix type
+				console.error(`no metadata, cannot reach here`);
+			} else {
+				for (const move of metadata.localMoves) {
+					stratagems.computeMove(account.address as `0x${string}`, epochState.epoch, localMoveToContractMove(move));
 				}
 			}
 		}
