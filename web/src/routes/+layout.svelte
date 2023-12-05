@@ -11,6 +11,7 @@
 	import ConnectButton from '$lib/web3/ConnectButton.svelte';
 	import WipNotice from '$lib/components/utilities/WipNotice.svelte';
 	import {initialContractsInfos, params} from '$lib/config';
+	import EraseNotice from '$lib/components/utilities/EraseNotice.svelte';
 
 	const host = canonicalURL.endsWith('/') ? canonicalURL : canonicalURL + '/';
 	const previewImage = host + 'preview.png';
@@ -147,3 +148,5 @@
 {#if !dev && !params['force'] && initialContractsInfos.chainId + '' !== '8453'}
 	<WipNotice />
 {/if}
+
+<EraseNotice />

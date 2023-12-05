@@ -2,7 +2,7 @@ import type {PendingTransaction, EIP1193TransactionWithMetadata} from 'ethereum-
 import {BaseAccountHandler, type OnChainAction, type OnChainActions, type RevealMetadata} from './base';
 import {mainnetClient, createClient} from '$lib/fuzd';
 import type {AccountInfo, SyncInfo} from './types';
-import {FUZD_URI} from '$lib/config';
+import {FUZD_URI, SYNC_DB_NAME} from '$lib/config';
 import {xyToBigIntID, type Color, type ContractMove} from 'stratagems-common';
 import {writable, type Readable, type Writable} from 'svelte/store';
 import {time} from '$lib/time';
@@ -86,7 +86,7 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 	public readonly offchainState: Readable<OffchainState>;
 
 	constructor() {
-		super('jolly-roger', defaultData, fromOnChainActionToPendingTransaction);
+		super(SYNC_DB_NAME, defaultData, fromOnChainActionToPendingTransaction);
 
 		this._offchainState = writable(this.$data.offchainState);
 		this.offchainState = {
