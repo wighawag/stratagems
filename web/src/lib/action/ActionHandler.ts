@@ -12,9 +12,12 @@ export class ActionHandler {
 			console.log('no account');
 			return; // TODO
 		}
+
 		const currentState = get(stratagemsView);
 		const currentOffchainState = accountData.$offchainState;
 		const cellID = xyToXYID(x, y);
+
+		const currentColor = currentOffchainState.currentColor || Number((BigInt(player) % 5n) + 1n);
 
 		console.log({x, y, cellID});
 
@@ -27,28 +30,15 @@ export class ActionHandler {
 			if (currentMove.color === Color.None) {
 				console.log(`remove cell at ${x}, ${y}, ${player}`);
 				accountData.removeMove(x, y);
-			} else {
-				const color = ((currentMove.color + 1) % 6) as Color; // 7 to put black
-				if (color == Color.None) {
-					accountData.removeMove(x, y);
-				} else {
-					console.log(`switch color ${color} cell at ${x}, ${y}, ${player}`);
-					accountData.addMove({x, y, color, player});
-				}
+			} else if (currentMove.color !== currentColor) {
+				accountData.addMove({x, y, color: currentColor, player});
 			}
 		} else {
-			if (
-				currentState.cells[cellID] &&
-				currentState.owners[cellID].toLowerCase() === account.$state.address?.toLowerCase() &&
-				currentState.viewCells[cellID].next.life === 7
-			) {
-				console.log(`remove cell at ${x}, ${y}, ${player}`);
-				accountData.addMove({x, y, color: Color.None, player});
-			} else if (currentState.cells[cellID] && currentState.viewCells[cellID].next.life !== 0) {
+			if (currentState.cells[cellID] && currentState.viewCells[cellID].next.life !== 0) {
 				throw new Error(`Cell already occupied`);
 			} else {
 				console.log(`add color at ${x}, ${y}, ${player}`);
-				accountData.addMove({x, y, color: 1, player});
+				accountData.addMove({x, y, color: currentColor, player});
 			}
 		}
 	}

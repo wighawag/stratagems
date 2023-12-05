@@ -5,6 +5,7 @@
 	import Epoch from '$lib/components/info/Epoch.svelte';
 	import WebGlCanvas from '$lib/render/WebGLCanvas.svelte';
 	import Flow from '$lib/ui/flows/Flow.svelte';
+	import FactionPicker from '$lib/components/stratagems/FactionPicker.svelte';
 </script>
 
 <WebGlCanvas state={stratagemsView} />
@@ -16,3 +17,5 @@
 <Flow />
 
 <Web3ConnectionUI />
+
+<FactionPicker />

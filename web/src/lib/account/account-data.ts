@@ -7,6 +7,7 @@ import {xyToBigIntID, type Color, type ContractMove} from 'stratagems-common';
 import {writable, type Readable, type Writable} from 'svelte/store';
 import {time} from '$lib/time';
 import type {ScheduleInfo} from 'fuzd-scheduler';
+import {account} from '$lib/web3';
 
 export type LocalMove = {
 	player: string;
@@ -48,6 +49,7 @@ export type OffchainState = {
 	epoch?: Epoch;
 	lastEpochAcknowledged: number;
 	moves?: LocalMoves;
+	currentColor?: number;
 };
 
 export type AccountData = {
@@ -75,6 +77,7 @@ function defaultData() {
 			timestamp: 0,
 			moves: undefined,
 			lastEpochAcknowledged: 0,
+			currentColor: undefined,
 		},
 	};
 }
@@ -299,5 +302,19 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		} else {
 			throw new Error(`Action is not of type "commit"`);
 		}
+	}
+
+	swapCurrentColor() {
+		// TODO use store ?
+		if (!account.$state.address) {
+			throw new Error(`no address`);
+		}
+		let currentColor = this.$data.offchainState.currentColor;
+		if (!currentColor) {
+			currentColor = Number((BigInt(account.$state.address) % 5n) + 1n);
+		}
+		this.$data.offchainState.currentColor = (currentColor % 5) + 1;
+		this._save();
+		this._offchainState.set(this.$data.offchainState);
 	}
 }
