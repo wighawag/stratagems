@@ -55,9 +55,9 @@
 
 	async function topupToken() {
 		return await contracts.execute(async ({contracts, account}) => {
-			const contract = contracts.TestTokens;
+			const contract = contracts.TestTokensDistributor;
 			// parseEther('0.01')
-			return contract.write.topup({account: account.address, value: 0n});
+			return contract.write.topup({account: account.address});
 		});
 	}
 </script>
