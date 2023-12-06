@@ -54,7 +54,8 @@ const localRPC =
 const defaultRPC = defaultRPCURL ? {chainId: contractsChainId, url: defaultRPCURL} : undefined;
 
 const SYNC_URI = params.sync || PUBLIC_SYNC_URI; //  'http://invalid.io'; // to emulate connection loss :)
-const SYNC_DB_NAME = 'stratagems-' + initialContractsInfos.contracts.Stratagems.address;
+const SYNC_DB_NAME =
+	'stratagems-' + initialContractsInfos.chainId + '-' + initialContractsInfos.contracts.Stratagems.address;
 
 function noEndSlash(str: string) {
 	if (str.endsWith('/')) {
