@@ -145,7 +145,7 @@
 <!-- </div> -->
 
 <!-- We remove the notice when force is specified or if on base network -->
-{#if !dev && !params['force'] && initialContractsInfos.chainId + '' !== '8453'}
+{#if !dev && !params['force'] && initialContractsInfos.chainId + '' !== '8453' && initialContractsInfos.name !== 'composablelabs'}
 	<WipNotice />
 {/if}
 
