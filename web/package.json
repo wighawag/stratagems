@@ -52,7 +52,7 @@
     "twgl.js": "^5.5.3",
     "viem": "^1.19.9",
     "web3-connection": "^0.1.12",
-    "web3-connection-viem": "^0.0.1"
+    "web3-connection-viem": "^0.0.2"
   },
   "scripts": {
     "prepare": "pwag static/icon.png src/web-config.json",

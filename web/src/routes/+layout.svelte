@@ -12,6 +12,7 @@
 	import WipNotice from '$lib/components/utilities/WipNotice.svelte';
 	import {initialContractsInfos, params} from '$lib/config';
 	import EraseNotice from '$lib/components/utilities/EraseNotice.svelte';
+	import ClaimTokenScreen from '$lib/components/claim/ClaimTokenScreen.svelte';
 
 	const host = canonicalURL.endsWith('/') ? canonicalURL : canonicalURL + '/';
 	const previewImage = host + 'preview.png';
@@ -147,6 +148,7 @@
 <!-- We remove the notice when force is specified or if on base network -->
 {#if !dev && !params['force'] && initialContractsInfos.chainId + '' !== '8453'}
 	<WipNotice />
+{:else}
+	<EraseNotice />
+	<ClaimTokenScreen name="Stratagems" />
 {/if}
-
-<EraseNotice />
