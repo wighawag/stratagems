@@ -5,7 +5,11 @@ import SolidityKit from 'solidity-kit/generated/artifacts';
 
 export default execute(
 	context,
-	async ({deploy, accounts, artifacts}) => {
+	async ({deploy, accounts, artifacts, network}) => {
+		const deterministic =
+			network.name === 'composablelabs'
+				? '0x000000000000000000000000000000000000636F6D706F7361626C656C616273' /* "composablelabs" in hex */
+				: true;
 		await deploy(
 			'Time',
 			{
@@ -13,7 +17,7 @@ export default execute(
 				artifact: SolidityKit.Time,
 				args: [accounts.timeOwner],
 			},
-			{deterministic: true},
+			{deterministic},
 		);
 	},
 	{tags: ['Time', 'Time_deploy']},

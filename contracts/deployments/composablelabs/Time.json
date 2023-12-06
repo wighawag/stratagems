@@ -1,0 +1,226 @@
+{
+  "address": "0x7aa235ff8d217dc9d3f4778c89912bc712d1811b",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "NotAuthorized",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newTime",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "delta",
+          "type": "uint256"
+        }
+      ],
+      "name": "TimeIncreased",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "delta",
+          "type": "uint256"
+        }
+      ],
+      "name": "increaseTime",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "timestamp",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IERC20",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "withdrawERC20",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "contractName": "Time",
+  "sourceName": "solc_0.8/debug/time/implementations/Time.sol",
+  "bytecode": "0x608060405234801561001057600080fd5b506040516107ae3803806107ae83398101604081905261002f916100b8565b806001600160a01b0381161561004a5761004a600082610051565b50506100e8565b807fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d610355806001600160a01b0316826001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a35050565b6000602082840312156100ca57600080fd5b81516001600160a01b03811681146100e157600080fd5b9392505050565b6106b7806100f76000396000f3fe608060405234801561001057600080fd5b50600436106100675760003560e01c80639456fbcc116100505780639456fbcc146100b3578063b80777ea146100c6578063f2fde38b146100dc57600080fd5b80633c9a2a1a1461006c5780638da5cb5b14610081575b600080fd5b61007f61007a36600461056b565b6100ef565b005b610089610247565b60405173ffffffffffffffffffffffffffffffffffffffff90911681526020015b60405180910390f35b61007f6100c13660046105a9565b610276565b6100ce61042d565b6040519081526020016100aa565b61007f6100ea3660046105e2565b610461565b7fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d61035473ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16146101a9576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152600e60248201527f4e4f545f415554484f52495a4544000000000000000000000000000000000000604482015260640160405180910390fd5b6000816101d47f112c413de07a110ce0a9ace0c01e41b5b59462770325b042f0dc72c337f55f2e5490565b6101de9190610606565b9050807f112c413de07a110ce0a9ace0c01e41b5b59462770325b042f0dc72c337f55f2e557f36e7cd7cbe0c64c4f819149d7127212cc2ebb56e948ae958ef18f6d1535871c961022c61042d565b60408051918252602082018590520160405180910390a15050565b60006102717fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d61035490565b905090565b7fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d61035473ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16146102fc576040517fea8e4eb500000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b6040517f70a0823100000000000000000000000000000000000000000000000000000000815230600482015273ffffffffffffffffffffffffffffffffffffffff83169063a9059cbb90839083906370a0823190602401602060405180830381865afa158015610370573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906103949190610646565b6040517fffffffff0000000000000000000000000000000000000000000000000000000060e085901b16815273ffffffffffffffffffffffffffffffffffffffff909216600483015260248201526044016020604051808303816000875af1158015610404573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610428919061065f565b505050565b60006104577f112c413de07a110ce0a9ace0c01e41b5b59462770325b042f0dc72c337f55f2e5490565b6102719042610606565b600061048b7fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d61035490565b90503373ffffffffffffffffffffffffffffffffffffffff8216146104dc576040517fea8e4eb500000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b6104e681836104ea565b5050565b807fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103558073ffffffffffffffffffffffffffffffffffffffff168273ffffffffffffffffffffffffffffffffffffffff167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a35050565b60006020828403121561057d57600080fd5b5035919050565b73ffffffffffffffffffffffffffffffffffffffff811681146105a657600080fd5b50565b600080604083850312156105bc57600080fd5b82356105c781610584565b915060208301356105d781610584565b809150509250929050565b6000602082840312156105f457600080fd5b81356105ff81610584565b9392505050565b80820180821115610640577f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b92915050565b60006020828403121561065857600080fd5b5051919050565b60006020828403121561067157600080fd5b815180151581146105ff57600080fdfea2646970667358221220699349f76833f0ac51075bfb7b26e9f49ac3c328a3f97fbd1032a117bc89b29164736f6c63430008140033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b50600436106100675760003560e01c80639456fbcc116100505780639456fbcc146100b3578063b80777ea146100c6578063f2fde38b146100dc57600080fd5b80633c9a2a1a1461006c5780638da5cb5b14610081575b600080fd5b61007f61007a36600461056b565b6100ef565b005b610089610247565b60405173ffffffffffffffffffffffffffffffffffffffff90911681526020015b60405180910390f35b61007f6100c13660046105a9565b610276565b6100ce61042d565b6040519081526020016100aa565b61007f6100ea3660046105e2565b610461565b7fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d61035473ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16146101a9576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152600e60248201527f4e4f545f415554484f52495a4544000000000000000000000000000000000000604482015260640160405180910390fd5b6000816101d47f112c413de07a110ce0a9ace0c01e41b5b59462770325b042f0dc72c337f55f2e5490565b6101de9190610606565b9050807f112c413de07a110ce0a9ace0c01e41b5b59462770325b042f0dc72c337f55f2e557f36e7cd7cbe0c64c4f819149d7127212cc2ebb56e948ae958ef18f6d1535871c961022c61042d565b60408051918252602082018590520160405180910390a15050565b60006102717fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d61035490565b905090565b7fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d61035473ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16146102fc576040517fea8e4eb500000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b6040517f70a0823100000000000000000000000000000000000000000000000000000000815230600482015273ffffffffffffffffffffffffffffffffffffffff83169063a9059cbb90839083906370a0823190602401602060405180830381865afa158015610370573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906103949190610646565b6040517fffffffff0000000000000000000000000000000000000000000000000000000060e085901b16815273ffffffffffffffffffffffffffffffffffffffff909216600483015260248201526044016020604051808303816000875af1158015610404573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610428919061065f565b505050565b60006104577f112c413de07a110ce0a9ace0c01e41b5b59462770325b042f0dc72c337f55f2e5490565b6102719042610606565b600061048b7fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d61035490565b90503373ffffffffffffffffffffffffffffffffffffffff8216146104dc576040517fea8e4eb500000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b6104e681836104ea565b5050565b807fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103558073ffffffffffffffffffffffffffffffffffffffff168273ffffffffffffffffffffffffffffffffffffffff167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a35050565b60006020828403121561057d57600080fd5b5035919050565b73ffffffffffffffffffffffffffffffffffffffff811681146105a657600080fd5b50565b600080604083850312156105bc57600080fd5b82356105c781610584565b915060208301356105d781610584565b809150509250929050565b6000602082840312156105f457600080fd5b81356105ff81610584565b9392505050565b80820180821115610640577f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b92915050565b60006020828403121561065857600080fd5b5051919050565b60006020828403121561067157600080fd5b815180151581146105ff57600080fdfea2646970667358221220699349f76833f0ac51075bfb7b26e9f49ac3c328a3f97fbd1032a117bc89b29164736f6c63430008140033",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "devdoc": {
+    "events": {
+      "OwnershipTransferred(address,address)": {
+        "params": {
+          "newOwner": "the new owner",
+          "previousOwner": "the previous owner"
+        }
+      }
+    },
+    "kind": "dev",
+    "methods": {
+      "owner()": {
+        "returns": {
+          "_0": "The address of the owner."
+        }
+      },
+      "transferOwnership(address)": {
+        "details": "Set newOwner to address(0) to renounce any ownership.",
+        "params": {
+          "newOwner": "The address of the new owner of the contract"
+        }
+      },
+      "withdrawERC20(address,address)": {
+        "params": {
+          "to": "address that will receive the tokens",
+          "token": "ERC20 contract address to withdraw"
+        }
+      }
+    },
+    "version": 1
+  },
+  "evm": {
+    "gasEstimates": {
+      "creation": {
+        "codeDepositCost": "343800",
+        "executionCost": "infinite",
+        "totalCost": "infinite"
+      },
+      "external": {
+        "increaseTime(uint256)": "infinite",
+        "owner()": "2351",
+        "timestamp()": "2426",
+        "transferOwnership(address)": "26171",
+        "withdrawERC20(address,address)": "infinite"
+      }
+    }
+  },
+  "metadata": "{\"compiler\":{\"version\":\"0.8.20+commit.a1b79de6\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"NotAuthorized\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"delta\",\"type\":\"uint256\"}],\"name\":\"TimeIncreased\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"delta\",\"type\":\"uint256\"}],\"name\":\"increaseTime\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timestamp\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contract IERC20\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"}],\"name\":\"withdrawERC20\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"events\":{\"OwnershipTransferred(address,address)\":{\"params\":{\"newOwner\":\"the new owner\",\"previousOwner\":\"the previous owner\"}}},\"kind\":\"dev\",\"methods\":{\"owner()\":{\"returns\":{\"_0\":\"The address of the owner.\"}},\"transferOwnership(address)\":{\"details\":\"Set newOwner to address(0) to renounce any ownership.\",\"params\":{\"newOwner\":\"The address of the new owner of the contract\"}},\"withdrawERC20(address,address)\":{\"params\":{\"to\":\"address that will receive the tokens\",\"token\":\"ERC20 contract address to withdraw\"}}},\"version\":1},\"userdoc\":{\"errors\":{\"NotAuthorized()\":[{\"notice\":\"Not authorized to perform this operation\"}]},\"events\":{\"OwnershipTransferred(address,address)\":{\"notice\":\"This emits when ownership of the contract changes.\"}},\"kind\":\"user\",\"methods\":{\"owner()\":{\"notice\":\"Get the address of the owner\"},\"transferOwnership(address)\":{\"notice\":\"Set the address of the new owner of the contract\"},\"withdrawERC20(address,address)\":{\"notice\":\"withdraw the total balance of a particular ERC20 token owned by this contract.\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"solc_0.8/debug/time/implementations/Time.sol\":\"Time\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":999999},\"remappings\":[]},\"sources\":{\"solc_0.8/ERC173/implementations/Owned.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"../interfaces/IERC173.sol\\\";\\nimport \\\"../interfaces/IWithdrawable.sol\\\";\\nimport \\\"../internal/UsingInternalOwner.sol\\\";\\nimport \\\"../../ERC20/interfaces/IERC20.sol\\\";\\n\\ncontract Owned is IERC173, IWithdrawable, UsingInternalOwner {\\n    constructor(address initialOwner) {\\n        if (initialOwner != address(0)) {\\n            _setOwner(address(0), initialOwner);\\n        }\\n    }\\n\\n    /// @inheritdoc IERC173\\n    function owner() external view returns (address) {\\n        return _getOwner();\\n    }\\n\\n    /// @inheritdoc IERC173\\n    function transferOwnership(address newOwner) external {\\n        address previousOwner = _getOwner();\\n        if (msg.sender != previousOwner) {\\n            revert NotAuthorized();\\n        }\\n        _setOwner(previousOwner, newOwner);\\n    }\\n\\n    /// @inheritdoc IWithdrawable\\n    function withdrawERC20(IERC20 token, address to) external {\\n        if (msg.sender != _getOwner()) {\\n            revert NotAuthorized();\\n        }\\n        token.transfer(to, token.balanceOf(address(this)));\\n    }\\n\\n    // ------------------------------------------------------------------------------------------------------------------\\n    // INTERNALS\\n    // ------------------------------------------------------------------------------------------------------------------\\n\\n    function _getOwner() internal view override returns (address ownerAddress) {\\n        // solhint-disable-next-line security/no-inline-assembly\\n        assembly {\\n            ownerAddress := sload(0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103)\\n        }\\n    }\\n\\n    function _setOwner(address previousOwner, address newOwner) internal {\\n        // solhint-disable-next-line security/no-inline-assembly\\n        assembly {\\n            sstore(0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103, newOwner)\\n        }\\n        emit OwnershipTransferred(previousOwner, newOwner);\\n    }\\n}\\n\",\"keccak256\":\"0x1d30757ad66a9143e169b203d23273fe7df6b4927fee810605febbfe3e0f413d\",\"license\":\"MIT\"},\"solc_0.8/ERC173/interfaces/IERC173.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"../../utils/GenericErrors.sol\\\";\\n\\ninterface IERC173 {\\n    /// @notice This emits when ownership of the contract changes.\\n    /// @param previousOwner the previous owner\\n    /// @param newOwner the new owner\\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\\n\\n    /// @notice Get the address of the owner\\n    /// @return The address of the owner.\\n    function owner() external view returns (address);\\n\\n    /// @notice Set the address of the new owner of the contract\\n    /// @dev Set newOwner to address(0) to renounce any ownership.\\n    /// @param newOwner The address of the new owner of the contract\\n    function transferOwnership(address newOwner) external;\\n}\\n\",\"keccak256\":\"0x4b298c7655514c191e1e4cc1032fc9cf30311d682a7fab1487d9ab75d1d65a23\",\"license\":\"MIT\"},\"solc_0.8/ERC173/interfaces/IWithdrawable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"../../ERC20/interfaces/IERC20.sol\\\";\\n\\ninterface IWithdrawable {\\n    /// @notice withdraw the total balance of a particular ERC20 token owned by this contract.\\n    /// @param token ERC20 contract address to withdraw\\n    /// @param to address that will receive the tokens\\n    function withdrawERC20(IERC20 token, address to) external;\\n}\\n\",\"keccak256\":\"0x3df792413ff1512fb3791ab6e37429223f5f4d681bf3637d0d2fbca387b13ff7\",\"license\":\"MIT\"},\"solc_0.8/ERC173/internal/UsingInternalOwner.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nabstract contract UsingInternalOwner {\\n    function _getOwner() internal view virtual returns (address);\\n}\\n\",\"keccak256\":\"0xf2667b88db078a7438baba699905eb32e7fa3f2678ec02532f0fac1ff1d3b8a2\",\"license\":\"MIT\"},\"solc_0.8/ERC20/interfaces/IERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"../interfaces/IERC20Errors.sol\\\";\\n\\ninterface IERC20 {\\n    /// @notice trigger when tokens are transferred, including zero value transfers.\\n    /// @param from the account the tokens are sent from\\n    /// @param to the account the tokens are sent to\\n    /// @param value number of tokens sent\\n    event Transfer(address indexed from, address indexed to, uint256 value);\\n\\n    /// @notice trigger on approval amount being set.\\n    ///   Note that Transfer events need to be considered to compute the current allowance.\\n    /// @param owner the account approving the `spender`\\n    /// @param spender the account allowed to spend\\n    /// @param value the amount granted\\n    event Approval(address indexed owner, address indexed spender, uint256 value);\\n\\n    /// @notice Returns the total token supply.\\n    function totalSupply() external view returns (uint256);\\n\\n    /// @notice Returns the number of decimals the token uses.\\n    function decimals() external view returns (uint8);\\n\\n    /// @notice Returns the symbol of the token.\\n    function symbol() external view returns (string memory);\\n\\n    /// @notice Returns the name of the token.\\n    function name() external view returns (string memory);\\n\\n    /// @notice Returns the account balance of another account with address `owner`.\\n    function balanceOf(address owner) external view returns (uint256);\\n\\n    /// @notice Transfers `amount` of tokens to address `to`.\\n    function transfer(address to, uint256 amount) external returns (bool);\\n\\n    /// @notice Returns the amount which `spender` is still allowed to withdraw from `owner`.\\n    function allowance(address owner, address spender) external view returns (uint256);\\n\\n    /// @notice Allows `spender` to withdraw from your account multiple times, up to `amount`.\\n    function approve(address spender, uint256 amount) external returns (bool);\\n\\n    /// @notice Transfers `amount` tokens from address `from` to address `to`.\\n    function transferFrom(\\n        address from,\\n        address to,\\n        uint256 amount\\n    ) external returns (bool);\\n}\\n\",\"keccak256\":\"0x15bb1e4e1340b29eefc06b8826fcf9e6455e25ba972709672da7d3788777133f\",\"license\":\"MIT\"},\"solc_0.8/ERC20/interfaces/IERC20Errors.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\n/// @notice The msg value do not match the expected value\\n/// @param provided msg.value amount provided\\n/// @param expected value expected\\nerror InvalidMsgValue(uint256 provided, uint256 expected);\\n/// @notice The total amount provided do not match the expected value\\n/// @param provided msg.value amount provided\\n/// @param expected value expected\\nerror InvalidTotalAmount(uint256 provided, uint256 expected);\\n/// @notice An invalid address is specified (for example: zero address)\\n/// @param addr invalid address\\nerror InvalidAddress(address addr);\\n/// @notice the amount requested exceed the allowance\\n/// @param currentAllowance the current allowance\\n/// @param expected amount expected\\nerror NotAuthorizedAllowance(uint256 currentAllowance, uint256 expected);\\n/// @notice the amount requested exceed the balance\\n/// @param currentBalance the current balance\\n/// @param expected amount expected\\nerror NotEnoughTokens(uint256 currentBalance, uint256 expected);\\n\",\"keccak256\":\"0xc8ab4cfee19338da32d2fc5473e1ee740bf608c59196ebd16de74294c4813ae9\",\"license\":\"MIT\"},\"solc_0.8/debug/time/implementations/Time.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"./UsingControlledTime.sol\\\";\\nimport \\\"../../..//ERC173/implementations/Owned.sol\\\";\\n\\ncontract Time is Owned, UsingControlledTime {\\n    constructor(address owner) Owned(owner) {}\\n}\\n\",\"keccak256\":\"0x015116b78e1d53d3264593939efcef230fb66b828d7362a6158ae5f4644f03bf\",\"license\":\"MIT\"},\"solc_0.8/debug/time/implementations/UsingControlledTime.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"../../../ERC173/internal/UsingInternalOwner.sol\\\";\\nimport \\\"../interfaces/ITime.sol\\\";\\n\\nabstract contract UsingControlledTime is UsingInternalOwner, ITime, ITimeSetter {\\n    function timestamp() public view override returns (uint256) {\\n        return block.timestamp + _delta();\\n    }\\n\\n    function increaseTime(uint256 delta) external override {\\n        require(msg.sender == _getOwner(), \\\"NOT_AUTHORIZED\\\");\\n        uint256 newDelta = _delta() + delta;\\n        assembly {\\n            sstore(0x112c413de07a110ce0a9ace0c01e41b5b59462770325b042f0dc72c337f55f2e, newDelta)\\n        }\\n        emit TimeIncreased(timestamp(), delta);\\n    }\\n\\n    function _delta() internal view returns (uint256 delta) {\\n        assembly {\\n            // keccak256(\\\"time\\\") - 1\\n            delta := sload(0x112c413de07a110ce0a9ace0c01e41b5b59462770325b042f0dc72c337f55f2e)\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0xc94b96fb0ae2f6839df39eaa128e98534153fb5bccf69e55321ff05e6af33eda\",\"license\":\"MIT\"},\"solc_0.8/debug/time/interfaces/ITime.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\ninterface ITime {\\n    function timestamp() external view returns (uint256);\\n}\\n\\ninterface ITimeSetter {\\n    event TimeIncreased(uint256 newTime, uint256 delta);\\n\\n    function increaseTime(uint256 delta) external;\\n}\\n\",\"keccak256\":\"0xeb0fa861febbb5f5956ea9f48a88c812671564d249ddd8c5c00740e922eb056d\",\"license\":\"MIT\"},\"solc_0.8/utils/GenericErrors.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\n/// @notice Not authorized to perform this operation\\nerror NotAuthorized();\\n\",\"keccak256\":\"0x333aa48943e66849a9350384e7ec2553b93e8a8a12b8ad300d3341f7c98b60fd\",\"license\":\"MIT\"}},\"version\":1}",
+  "storageLayout": {
+    "storage": [],
+    "types": null
+  },
+  "userdoc": {
+    "errors": {
+      "NotAuthorized()": [
+        {
+          "notice": "Not authorized to perform this operation"
+        }
+      ]
+    },
+    "events": {
+      "OwnershipTransferred(address,address)": {
+        "notice": "This emits when ownership of the contract changes."
+      }
+    },
+    "kind": "user",
+    "methods": {
+      "owner()": {
+        "notice": "Get the address of the owner"
+      },
+      "transferOwnership(address)": {
+        "notice": "Set the address of the new owner of the contract"
+      },
+      "withdrawERC20(address,address)": {
+        "notice": "withdraw the total balance of a particular ERC20 token owned by this contract."
+      }
+    },
+    "version": 1
+  },
+  "argsData": "0x00000000000000000000000061c461ecc993aadeb7e4b47e96d1b8cc37314b20",
+  "transaction": {
+    "hash": "0xaf56c187a057ff4d6297b17e73dbc4a5c8fead9cd0672feac2d19555e7fbc896",
+    "nonce": "0xeb",
+    "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
+  },
+  "receipt": {
+    "confirmations": 0,
+    "blockHash": "0xb1e1640af4dba2dee3510be02f585b7a32eaefc9099bbe54fe574d0f22d2e520",
+    "blockNumber": "0x49c06c",
+    "transactionIndex": "0x2a"
+  }
+}
