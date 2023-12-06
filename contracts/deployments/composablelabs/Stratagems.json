@@ -1978,6 +1978,17 @@
     }
   },
   "argsData": "0x00000000000000000000000050a6563fea457222f8cae49d37cd929a4125dfef00000000000000000000000061c461ecc993aadeb7e4b47e96d1b8cc37314b2000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000",
+  "transaction": {
+    "hash": "0xcffea2e131c4e35b971f46926a4a6dd386e20d76b1463ab9b4773daeaaab1076",
+    "nonce": "0xea",
+    "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
+  },
+  "receipt": {
+    "confirmations": 0,
+    "blockHash": "0x155ca2f91d612490edbe410c7b94da41fb1ea3a029ef2f68311d249f31dfc88b",
+    "blockNumber": "0x49c087",
+    "transactionIndex": "0x5"
+  },
   "linkedData": {
     "tokens": "0x2d1ecf0a44b19d23cfac37f1ce2399571ed4f7ba",
     "numTokensPerGems": "1000000000000000000n",
@@ -1986,23 +1997,12 @@
     "commitPhaseDuration": "82800n",
     "revealPhaseDuration": "3600n",
     "maxLife": 7,
-    "time": "0x52092c12759ac66d997d402c07d5449b3f2136f8",
+    "time": "0x7aa235ff8d217dc9d3f4778c89912bc712d1811b",
     "currency": {
       "symbol": "TOKEN",
       "name": "Tokens",
       "decimals": "18n"
     },
     "admin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
-  },
-  "transaction": {
-    "hash": "0xcffea2e131c4e35b971f46926a4a6dd386e20d76b1463ab9b4773daeaaab1076",
-    "nonce": "0xea",
-    "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
-  },
-  "receipt": {
-    "confirmations": 0,
-    "blockHash": "0x3b813479f1ab2cd38e136aee9a741dec2ee793b11121617a386d4d93e62cf140",
-    "blockNumber": "0x49c069",
-    "transactionIndex": "0x23"
   }
 }
