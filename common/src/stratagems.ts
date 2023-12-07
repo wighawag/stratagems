@@ -68,22 +68,22 @@ export class StratagemsContract {
 					effectiveDelta = 0;
 				}
 				if (effectiveDelta > 0) {
-					if (life < MAX_LIFE) {
-						const maxEpoch = MAX_LIFE - life + Math.floor(effectiveDelta - 1) / effectiveDelta;
-						if (epochDelta > maxEpoch) {
-							epochDelta = maxEpoch;
-						}
-
-						life += epochDelta * effectiveDelta;
-						if (life > MAX_LIFE) {
-							life = MAX_LIFE;
-						}
-						data.newLife = life;
-						data.epochUsed = lastUpdate + epochDelta;
-					} else {
-						data.newLife = life;
-						data.epochUsed = lastUpdate;
+					// if (life < MAX_LIFE) {
+					const maxEpoch = MAX_LIFE - life + Math.floor(effectiveDelta - 1) / effectiveDelta;
+					if (epochDelta > maxEpoch) {
+						epochDelta = maxEpoch;
 					}
+
+					life += epochDelta * effectiveDelta;
+					if (life > MAX_LIFE) {
+						life = MAX_LIFE;
+					}
+					data.newLife = life;
+					data.epochUsed = lastUpdate + epochDelta;
+					// } else {
+					// 	data.newLife = life;
+					// 	data.epochUsed = lastUpdate;
+					// }
 				} else if (effectiveDelta < 0) {
 					const numEpochBeforeDying = life + Math.floor(-effectiveDelta - 1) / -effectiveDelta;
 					if (epochDelta > numEpochBeforeDying) {
@@ -360,7 +360,7 @@ export class StratagemsContract {
 
 		// first we do some validity checks
 		if (move.color == Color.None) {
-			if (currentState.life != MAX_LIFE || this.ownerOf(move.position) != player) {
+			if (currentState.life != MAX_LIFE || this.ownerOf(move.position).toLowerCase() != player.toLowerCase()) {
 				// invalid move
 				// return (0, 0, NUM_TOKENS_PER_GEMS);
 				return;
@@ -393,6 +393,8 @@ export class StratagemsContract {
 			currentState.enemyMap = 0;
 			this.state.owners[move.position.toString()] = zeroAddress;
 			// tokensReturned = NUM_TOKENS_PER_GEMS;
+
+			console.log({color: currentState.color, currentState});
 		} else {
 			// tokensPlaced = NUM_TOKENS_PER_GEMS;
 
