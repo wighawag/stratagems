@@ -531,6 +531,45 @@ export class StratagemsContract {
 		return data;
 	}
 
+	poke(position: bigint, epoch: number) {
+		const currentState = this.getUpdatedCell(position, epoch);
+
+		// we might have distribution still to do
+		let distribution = currentState.distribution;
+		if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
+			// if we just died, currentState.lastEpochUpdate > 0
+			// we have to distribute to all
+			distribution = (currentState.enemyMap << 4) + this.countBits(currentState.enemyMap);
+
+			/// we are now dead for real
+			currentState.lastEpochUpdate = 0;
+		}
+
+		const {
+			numDue,
+			// ownersToPay
+		} = this.updateNeighbours(position, epoch, currentState.color, currentState.color, distribution);
+
+		// if (numDue > 0) {
+		//     _collectTransfer(
+		//         transferCollection,
+		//         TokenTransfer({to: payable(_ownerOf(position)), amount: numDue * NUM_TOKENS_PER_GEMS})
+		//     );
+		// }
+
+		// for (uint8 i = 0; i < 4; i++) {
+		//     if (ownersToPay[i] != address(0)) {
+		//         _collectTransfer(
+		//             transferCollection,
+		//             TokenTransfer({to: payable(ownersToPay[i]), amount: NUM_TOKENS_PER_GEMS})
+		//         );
+		//     }
+		// }
+
+		currentState.distribution = 0;
+		this.state.cells[position.toString()] = currentState;
+	}
+
 	isEnemyOrFriend(a: Color, b: Color) {
 		if (a != Color.None && b != Color.None) {
 			return a == b ? 1 : -1;

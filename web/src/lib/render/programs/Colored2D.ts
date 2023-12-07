@@ -154,20 +154,20 @@ export class Colored2DLayer {
 		// 	twgl.drawBufferInfo(GL, this.bufferInfo, GL.TRIANGLES);
 		// }
 
-		if (!state.hasSomeCells) {
-			const size = 0.2;
-			const a = -size / 2;
-			const b = size / 2;
-			const attributes = {
-				a_position: {numComponents: 2, data: [a, a, b, a, a, b, a, b, b, a, b, b]},
-			};
-			this.bufferInfo = twgl.createBufferInfoFromArrays(GL, attributes, this.bufferInfo);
+		// if (!state.hasSomeCells) {
+		const size = 0.2;
+		const a = -size / 2;
+		const b = size / 2;
+		const attributes = {
+			a_position: {numComponents: 2, data: [a, a, b, a, a, b, a, b, b, a, b, b]},
+		};
+		this.bufferInfo = twgl.createBufferInfoFromArrays(GL, attributes, this.bufferInfo);
 
-			twgl.setBuffersAndAttributes(GL, this.programInfo, this.bufferInfo);
-			uniforms.u_color = DOT_COLOR;
-			twgl.setUniforms(this.programInfo, uniforms);
+		twgl.setBuffersAndAttributes(GL, this.programInfo, this.bufferInfo);
+		uniforms.u_color = DOT_COLOR;
+		twgl.setUniforms(this.programInfo, uniforms);
 
-			twgl.drawBufferInfo(GL, this.bufferInfo, GL.TRIANGLES);
-		}
+		twgl.drawBufferInfo(GL, this.bufferInfo, GL.TRIANGLES);
+		// }
 	}
 }

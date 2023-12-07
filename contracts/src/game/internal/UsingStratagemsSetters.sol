@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import './UsingStratagemsState.sol';
-import '../interface/UsingStratagemsEvents.sol';
-import './UsingStratagemsUtils.sol';
-import '../../utils/PositionUtils.sol';
+import "./UsingStratagemsState.sol";
+import "../interface/UsingStratagemsEvents.sol";
+import "./UsingStratagemsUtils.sol";
+import "../../utils/PositionUtils.sol";
 
 abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagemsUtils {
 	using PositionUtils for uint64;
@@ -63,7 +63,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 			tokens.tokensReturned += returned;
 		}
 
-		logger.logTransfers(0, 'resolveMoves', transferCollection);
+		logger.logTransfers(0, "resolveMoves", transferCollection);
 
 		_multiTransfer(TOKENS, transferCollection);
 
@@ -127,7 +127,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
 		logger.logCell(
 			0,
-			string.concat('_computeMove at epoch ', Strings.toString(epoch)),
+			string.concat("_computeMove at epoch ", Strings.toString(epoch)),
 			move.position,
 			currentState,
 			address(uint160(_owners[move.position]))
@@ -205,7 +205,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
 		logger.logCell(
 			0,
-			string.concat('AFTER ', Strings.toString(epoch)),
+			string.concat("AFTER ", Strings.toString(epoch)),
 			move.position,
 			currentState,
 			address(uint160(_owners[move.position]))
@@ -244,13 +244,12 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 		newEnemyMap = newComputedEnemyMap;
 	}
 
-	function _poke(TokenTransferCollection memory transferCollection, uint64 position) internal {
-		(uint24 epoch, ) = _epoch();
+	function _poke(TokenTransferCollection memory transferCollection, uint64 position, uint24 epoch) internal {
 		Cell memory currentState = _getUpdatedCell(position, epoch);
 
 		logger.logCell(
 			0,
-			string.concat('_poke at epoch ', Strings.toString(epoch)),
+			string.concat("_poke at epoch ", Strings.toString(epoch)),
 			position,
 			currentState,
 			address(uint160(_owners[position]))
@@ -285,10 +284,18 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 			if (ownersToPay[i] != address(0)) {
 				_collectTransfer(
 					transferCollection,
-					TokenTransfer({to: payable(ownersToPay[i]), amount: NUM_TOKENS_PER_GEMS})
+					TokenTransfer({to: payable(ownersToPay[i]), amount: NUM_TOKENS_PER_GEMS / (distribution & 0x0f)})
 				);
 			}
 		}
+
+		logger.logCell(
+			0,
+			string.concat("AFTER poke (before zeroed distribution) at epoch ", Strings.toString(epoch)),
+			position,
+			currentState,
+			address(uint160(_owners[position]))
+		);
 
 		currentState.distribution = 0;
 		_cells[position] = currentState;
@@ -302,19 +309,21 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 		uint8 distribution
 	) internal returns (int8 newDelta, uint8 newenemyMap, uint8 numDue, address[4] memory ownersToPay) {
 		unchecked {
-			logger.logPosition('from', position);
+			logger.logPosition("from", position);
+			console.log("distribution %i %i", distribution >> 4, distribution & 0x0F);
 
 			int8 enemyOrFriend;
 			uint8 due;
 			{
 				uint64 upPosition = position.offset(0, -1);
-				logger.logPosition('upPosition', upPosition);
+				logger.logPosition("upPosition", upPosition);
 				(enemyOrFriend, due) = _updateCell(upPosition, epoch, 2, oldColor, newColor);
 				if (enemyOrFriend < 0) {
 					newenemyMap = newenemyMap | 1;
 				}
 				numDue += due;
-				if ((distribution >> 4) & 4 == 4) {
+				if ((distribution >> 4) & 1 == 1) {
+					console.log("upPosition %i", distribution);
 					// TODO?: if we decide to group owner in the cell struct, we should get the cell in memory in that function
 					ownersToPay[0] = _ownerOf(upPosition);
 				}
@@ -322,13 +331,14 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 			}
 			{
 				uint64 leftPosition = position.offset(-1, 0);
-				logger.logPosition('leftPosition', leftPosition);
+				logger.logPosition("leftPosition", leftPosition);
 				(enemyOrFriend, due) = _updateCell(leftPosition, epoch, 3, oldColor, newColor);
 				if (enemyOrFriend < 0) {
 					newenemyMap = newenemyMap | 2;
 				}
 				numDue += due;
-				if ((distribution >> 4) & 8 == 8) {
+				if ((distribution >> 4) & 2 == 2) {
+					console.log("leftPosition %i", distribution);
 					ownersToPay[1] = _ownerOf(leftPosition);
 				}
 				newDelta += enemyOrFriend;
@@ -336,26 +346,28 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
 			{
 				uint64 downPosition = position.offset(0, 1);
-				logger.logPosition('downPosition', downPosition);
+				logger.logPosition("downPosition", downPosition);
 				(enemyOrFriend, due) = _updateCell(downPosition, epoch, 0, oldColor, newColor);
 				if (enemyOrFriend < 0) {
 					newenemyMap = newenemyMap | 4;
 				}
 				numDue += due;
-				if ((distribution >> 4) & 1 == 1) {
+				if ((distribution >> 4) & 4 == 4) {
+					console.log("downPosition %i", distribution);
 					ownersToPay[2] = _ownerOf(downPosition);
 				}
 				newDelta += enemyOrFriend;
 			}
 			{
 				uint64 rightPosition = position.offset(1, 0);
-				logger.logPosition('rightPosition', rightPosition);
+				logger.logPosition("rightPosition", rightPosition);
 				(enemyOrFriend, due) = _updateCell(rightPosition, epoch, 1, oldColor, newColor);
 				if (enemyOrFriend < 0) {
 					newenemyMap = newenemyMap | 8;
 				}
 				numDue += due;
-				if ((distribution >> 4) & 2 == 2) {
+				if ((distribution >> 4) & 8 == 8) {
+					console.log("rightPosition %i", distribution);
 					ownersToPay[3] = _ownerOf(rightPosition);
 				}
 				newDelta += enemyOrFriend;
@@ -365,17 +377,22 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
 	/// @dev This update the cell in storage
 	function _updateCell(
-		uint64 position,
+		uint64 position, // position to update
 		uint24 epoch,
-		uint8 neighbourIndex,
-		Color oldColor,
-		Color newColor
+		uint8 neighbourIndex, // index from point of view of cell being updated
+		Color oldColor, // old Color of the neighbor
+		Color newColor // new color of the neighbor
 	) internal returns (int8 enemyOrFriend, uint8 due) {
 		Cell memory cell = _cells[position];
 
 		uint24 lastUpdate = cell.lastEpochUpdate;
 		Color color = cell.color;
 		if (color != Color.None) {
+			// if the color of the cell being update is not Nome
+			// we then check the neighbor new color
+			// if it same as the cell color, then we report the cell as friendly to the neighbor
+			// else it is an enemy
+			// note that _updateCell should only be called if oldColor != newColor
 			enemyOrFriend = color == newColor ? int8(1) : int8(-1);
 		}
 		if (lastUpdate >= 1 && color != Color.None) {
@@ -412,7 +429,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
 		logger.logCell(
 			0,
-			string.concat('_updateCellFromNeighbor  index', Strings.toString(neighbourIndex)),
+			string.concat("_updateCellFromNeighbor  index", Strings.toString(neighbourIndex)),
 			position,
 			cell,
 			address(uint160(_owners[position]))
@@ -453,7 +470,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
 		logger.logCell(
 			0,
-			string.concat('AFTER _updateCellFromNeighbor  index', Strings.toString(neighbourIndex)),
+			string.concat("AFTER _updateCellFromNeighbor  index", Strings.toString(neighbourIndex)),
 			position,
 			cell,
 			address(uint160(_owners[position]))

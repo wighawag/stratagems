@@ -14,6 +14,7 @@ import {
 	drawTent,
 	drawGem,
 	drawUnit,
+	drawFire,
 } from '../tiles';
 import {epoch} from '$lib/blockchain/state/Epoch';
 import {get} from 'svelte/store';
@@ -134,6 +135,7 @@ export class Textured2DLayer {
 
 		for (let cellPos of Object.keys(state.cells)) {
 			const cell = state.viewCells[cellPos];
+			const contractCell = state.cells[cellPos];
 			const [x, y] = cellPos.split(',').map((v) => parseInt(v));
 
 			drawCastle(attributes, this.size, tileSize, x, y, cell.next.color, 1);
@@ -142,7 +144,7 @@ export class Textured2DLayer {
 				drawHouse(attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
 			}
 
-			if (cell.next.life > 0) {
+			if (contractCell.life > 0) {
 				drawGem(attributes, this.size, tileSize, x, y, cell.next.color, 1);
 			}
 
@@ -156,6 +158,9 @@ export class Textured2DLayer {
 					const margin = 0.3 * tileSize;
 					drawHouseInFire(attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
 				}
+			} else if (contractCell.distribution != 0 || (cell.next.life == 0 && cell.next.life < contractCell.life)) {
+				drawGem(attributes, this.size, tileSize, x, y, cell.next.color, 1);
+				drawFire(attributes, tileSize * 2, x + this.size / 4, y + this.size / 4, 1);
 			}
 
 			if ((cell.next.enemyMap & 1) == 1) {

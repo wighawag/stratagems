@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import './UsingStratagemsTypes.sol';
+import "./UsingStratagemsTypes.sol";
 
 interface UsingStratagemsEvents is UsingStratagemsTypes {
 	/// @notice A player has commited to make a move and reveal it on the reveal phase
@@ -36,6 +36,16 @@ interface UsingStratagemsEvents is UsingStratagemsTypes {
 		bytes24 furtherMoves,
 		uint256 newReserveAmount
 	);
+
+	/// @notice poke cell and update it if needed
+	/// @param position cell to poke
+	/// @param epoch epoch number at which the poke take place
+	event SinglePoke(uint24 indexed epoch, uint64 position);
+
+	/// @notice poke multiple cells and update them if needed
+	/// @param positions cells to poke
+	/// @param epoch epoch number at which the poke take place
+	event MultiPoke(uint24 indexed epoch, uint64[] positions);
 
 	/// @notice Player have withdrawn token from the reserve
 	/// @param player account withdrawing the tokens

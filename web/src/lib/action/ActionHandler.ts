@@ -33,7 +33,7 @@ export class ActionHandler {
 		} else {
 			if (
 				currentState.cells[cellID] &&
-				currentState.owners[cellID].toLowerCase() === account.$state.address?.toLowerCase() &&
+				currentState.owners[cellID]?.toLowerCase() === account.$state.address?.toLowerCase() &&
 				currentState.viewCells[cellID].next.life === 7 // TODO MAX_LIFE
 			) {
 				console.log(`remove cell at ${x}, ${y}, ${player}`);

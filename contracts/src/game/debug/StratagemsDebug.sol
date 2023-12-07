@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import '../internal/UsingStratagemsSetters.sol';
-import './IStratagemsWithDebug.sol';
-import '../../utils/PositionUtils.sol';
+import "../internal/UsingStratagemsSetters.sol";
+import "./IStratagemsWithDebug.sol";
+import "../../utils/PositionUtils.sol";
 
 contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
 	using PositionUtils for uint64;
@@ -119,7 +119,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
 
 			logger.logCell(
 				0,
-				string.concat('forceSimpleCells at epoch ', Strings.toString(epoch)),
+				string.concat("forceSimpleCells at epoch ", Strings.toString(epoch)),
 				uint64(position),
 				updatedCell,
 				address(uint160(_owners[position]))
@@ -136,43 +136,43 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
 		return 0;
 	}
 
-	function _computeDelta(uint64 position, Color color) internal view returns (int8 delta, uint8 enemyMap) {
-		unchecked {
-			{
-				uint64 upPosition = position.offset(0, -1);
-				int8 enemyOrFriend = isEnemyOrFriend(color, _cells[upPosition].color);
-				if (enemyOrFriend < 0) {
-					enemyMap = enemyMap | 1;
-				}
-				delta += enemyOrFriend;
-			}
-			{
-				uint64 leftPosition = position.offset(-1, 0);
-				int8 enemyOrFriend = isEnemyOrFriend(color, _cells[leftPosition].color);
-				if (enemyOrFriend < 0) {
-					enemyMap = enemyMap | 1;
-				}
-				delta += enemyOrFriend;
-			}
+	// function _computeDelta(uint64 position, Color color) internal view returns (int8 delta, uint8 enemyMap) {
+	// 	unchecked {
+	// 		{
+	// 			uint64 upPosition = position.offset(0, -1);
+	// 			int8 enemyOrFriend = isEnemyOrFriend(color, _cells[upPosition].color);
+	// 			if (enemyOrFriend < 0) {
+	// 				enemyMap = enemyMap | 1;
+	// 			}
+	// 			delta += enemyOrFriend;
+	// 		}
+	// 		{
+	// 			uint64 leftPosition = position.offset(-1, 0);
+	// 			int8 enemyOrFriend = isEnemyOrFriend(color, _cells[leftPosition].color);
+	// 			if (enemyOrFriend < 0) {
+	// 				enemyMap = enemyMap | 1;
+	// 			}
+	// 			delta += enemyOrFriend;
+	// 		}
 
-			{
-				uint64 downPosition = position.offset(0, 1);
-				int8 enemyOrFriend = isEnemyOrFriend(color, _cells[downPosition].color);
-				if (enemyOrFriend < 0) {
-					enemyMap = enemyMap | 1;
-				}
-				delta += enemyOrFriend;
-			}
-			{
-				uint64 rightPosition = position.offset(1, 0);
-				int8 enemyOrFriend = isEnemyOrFriend(color, _cells[rightPosition].color);
-				if (enemyOrFriend < 0) {
-					enemyMap = enemyMap | 1;
-				}
-				delta += enemyOrFriend;
-			}
-		}
-	}
+	// 		{
+	// 			uint64 downPosition = position.offset(0, 1);
+	// 			int8 enemyOrFriend = isEnemyOrFriend(color, _cells[downPosition].color);
+	// 			if (enemyOrFriend < 0) {
+	// 				enemyMap = enemyMap | 1;
+	// 			}
+	// 			delta += enemyOrFriend;
+	// 		}
+	// 		{
+	// 			uint64 rightPosition = position.offset(1, 0);
+	// 			int8 enemyOrFriend = isEnemyOrFriend(color, _cells[rightPosition].color);
+	// 			if (enemyOrFriend < 0) {
+	// 				enemyMap = enemyMap | 1;
+	// 			}
+	// 			delta += enemyOrFriend;
+	// 		}
+	// 	}
+	// }
 
 	function _updateNeighbosrDelta(
 		uint64 center,
