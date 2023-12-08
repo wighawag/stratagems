@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import '../interface/IStratagems.sol';
-import '../internal/UsingStratagemsState.sol';
+import "../interface/IStratagems.sol";
+import "../internal/UsingStratagemsState.sol";
 
 contract StratagemsGetters is IStratagemsGetters, UsingStratagemsState {
 	constructor(Config memory config) UsingStratagemsState(config) {}
@@ -21,7 +21,8 @@ contract StratagemsGetters is IStratagemsGetters, UsingStratagemsState {
 				life: updatedCell.life,
 				delta: updatedCell.delta,
 				enemyMap: updatedCell.enemyMap,
-				distribution: updatedCell.distribution
+				distribution: updatedCell.distribution,
+				stake: updatedCell.stake
 			});
 	}
 
@@ -40,7 +41,8 @@ contract StratagemsGetters is IStratagemsGetters, UsingStratagemsState {
 				life: updatedCell.life,
 				delta: updatedCell.delta,
 				enemyMap: updatedCell.enemyMap,
-				distribution: updatedCell.distribution
+				distribution: updatedCell.distribution,
+				stake: updatedCell.stake
 			});
 		}
 	}
@@ -65,5 +67,4 @@ contract StratagemsGetters is IStratagemsGetters, UsingStratagemsState {
 		config.maxLife = MAX_LIFE;
 		config.numTokensPerGems = NUM_TOKENS_PER_GEMS;
 	}
-
 }
