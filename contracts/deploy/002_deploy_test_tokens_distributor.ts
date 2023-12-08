@@ -4,7 +4,7 @@ import {context} from './_context';
 
 export default execute(
 	context,
-	async ({deploy, execute, get, accounts, artifacts}) => {
+	async ({deploy, execute, get, accounts, artifacts, network}) => {
 		const {deployer} = accounts;
 
 		const TestTokens = await get('TestTokens'); // TODO: rocketh throw / getOrNull
@@ -13,17 +13,23 @@ export default execute(
 			throw new Error(`no TestTokens deployed`);
 		}
 
-		const TestTokensDistributor = await deploy('TestTokensDistributor', {
-			account: deployer,
-			artifact: artifacts.TestTokensInfiniteDistributor,
-			args: [TestTokens.address],
-		});
+		// TODO
+		if (network.name === 'localhost') {
+		}
 
-		await execute('TestTokens', {
-			functionName: 'authorizeMinters',
-			args: [[TestTokensDistributor.address], true],
-			account: deployer,
-		});
+		return;
+
+		// const TestTokensDistributor = await deploy('TestTokensDistributor', {
+		// 	account: deployer,
+		// 	artifact: artifacts.TestTokensInfiniteDistributor,
+		// 	args: [TestTokens.address],
+		// });
+
+		// await execute('TestTokens', {
+		// 	functionName: 'authorizeMinters',
+		// 	args: [[TestTokensDistributor.address], true],
+		// 	account: deployer,
+		// });
 	},
 	{tags: ['TestTokensDistributor', 'TestTokensDistributor_deploy'], dependencies: ['TestTokens_deploy']},
 );
