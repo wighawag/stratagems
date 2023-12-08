@@ -171,7 +171,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 			move,
 			epoch,
 			currentState.color,
-			distribution
+			distribution,
+			currentState.stake
 		);
 
 		emit MoveProcessed(move.position, player, currentState.color, move.color);
@@ -181,6 +182,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
 		if (currentState.color == Color.None) {
 			currentState.life = 0;
+			currentState.stake = 0;
 			currentState.lastEpochUpdate = 0;
 			currentState.delta = 0;
 			currentState.enemyMap = 0;
@@ -190,6 +192,19 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 			tokensPlaced = NUM_TOKENS_PER_GEMS;
 
 			currentState.enemyMap = newEnemyMap;
+
+			if (currentState.color == Color.Evil && currentState.life != 0) {
+				unchecked {
+					currentState.stake += 1;
+					if (currentState.stake == 0) {
+						// we cap it, losing stake there
+						// TODO reevaluate
+						currentState.stake = 255;
+					}
+				}
+			} else {
+				currentState.stake = 1;
+			}
 
 			currentState.delta = newDelta;
 			currentState.life = 1;
@@ -217,12 +232,13 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 		Move memory move,
 		uint24 epoch,
 		Color color,
-		uint8 distribution
+		uint8 distribution,
+		uint8 stake
 	) internal returns (int8 newDelta, uint8 newEnemyMap) {
 		(
 			int8 newComputedDelta,
 			uint8 newComputedEnemyMap,
-			uint8 numDue,
+			uint16 numDue,
 			address[4] memory ownersToPay
 		) = _updateNeighbours(move.position, epoch, color, move.color, distribution);
 
@@ -236,7 +252,10 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 			if (ownersToPay[i] != address(0)) {
 				_collectTransfer(
 					transferCollection,
-					TokenTransfer({to: payable(ownersToPay[i]), amount: (NUM_TOKENS_PER_GEMS / (distribution & 0x0f))})
+					TokenTransfer({
+						to: payable(ownersToPay[i]),
+						amount: stake * (NUM_TOKENS_PER_GEMS / (distribution & 0x0f))
+					})
 				);
 			}
 		}
@@ -266,7 +285,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 			currentState.lastEpochUpdate = 0;
 		}
 
-		(, , uint8 numDue, address[4] memory ownersToPay) = _updateNeighbours(
+		(, , uint16 numDue, address[4] memory ownersToPay) = _updateNeighbours(
 			position,
 			epoch,
 			currentState.color,
@@ -277,14 +296,17 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 		if (numDue > 0) {
 			_collectTransfer(
 				transferCollection,
-				TokenTransfer({to: payable(_ownerOf(position)), amount: numDue * NUM_TOKENS_PER_GEMS})
+				TokenTransfer({to: payable(_ownerOf(position)), amount: (numDue * NUM_TOKENS_PER_GEMS) / 12})
 			);
 		}
 		for (uint8 i = 0; i < 4; i++) {
 			if (ownersToPay[i] != address(0)) {
 				_collectTransfer(
 					transferCollection,
-					TokenTransfer({to: payable(ownersToPay[i]), amount: NUM_TOKENS_PER_GEMS / (distribution & 0x0f)})
+					TokenTransfer({
+						to: payable(ownersToPay[i]),
+						amount: currentState.stake * (NUM_TOKENS_PER_GEMS / (distribution & 0x0f))
+					})
 				);
 			}
 		}
@@ -307,13 +329,13 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 		Color oldColor,
 		Color newColor,
 		uint8 distribution
-	) internal returns (int8 newDelta, uint8 newenemyMap, uint8 numDue, address[4] memory ownersToPay) {
+	) internal returns (int8 newDelta, uint8 newenemyMap, uint16 numDue, address[4] memory ownersToPay) {
 		unchecked {
 			logger.logPosition("from", position);
 			console.log("distribution %i %i", distribution >> 4, distribution & 0x0F);
 
 			int8 enemyOrFriend;
-			uint8 due;
+			uint16 due;
 			{
 				uint64 upPosition = position.offset(0, -1);
 				logger.logPosition("upPosition", upPosition);
@@ -382,7 +404,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 		uint8 neighbourIndex, // index from point of view of cell being updated
 		Color oldColor, // old Color of the neighbor
 		Color newColor // new color of the neighbor
-	) internal returns (int8 enemyOrFriend, uint8 due) {
+	) internal returns (int8 enemyOrFriend, uint16 due) {
 		Cell memory cell = _cells[position];
 
 		uint24 lastUpdate = cell.lastEpochUpdate;
@@ -421,7 +443,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 		uint8 neighbourIndex, // the neighbor triggering the update and for which we return whether it should receive its due
 		Color oldColor, // old color of that neighbor
 		Color newColor // new color of that neighbor
-	) internal returns (uint8 due) {
+	) internal returns (uint16 due) {
 		if (cell.life > 0 && newLife == 0) {
 			// we just died, we establish the distributionMap and counts
 			cell.distribution = (cell.enemyMap << 4) + _countBits(cell.enemyMap);
@@ -436,7 +458,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 		);
 
 		if ((cell.distribution >> 4) & (2 ** neighbourIndex) == 2 ** neighbourIndex) {
-			due = 12 / (cell.distribution & 0x0f);
+			due = (cell.stake * 12) / (cell.distribution & 0x0f);
 			cell.distribution =
 				(uint8(uint256(cell.distribution >> 4) & (~(2 ** uint256(neighbourIndex)))) << 4) +
 				(cell.distribution & 0x0f);

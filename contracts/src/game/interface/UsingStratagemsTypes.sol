@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import 'solidity-kit/solc_0.8/ERC721/interfaces/IERC721.sol';
-import 'solidity-kit/solc_0.8/ERC165/interfaces/IERC165.sol';
-import 'solidity-kit/solc_0.8/ERC20/ERC2612/interfaces/IERC20WithIERC2612.sol';
-import 'solidity-kit/solc_0.8/debug/time/interfaces/ITime.sol';
+import "solidity-kit/solc_0.8/ERC721/interfaces/IERC721.sol";
+import "solidity-kit/solc_0.8/ERC165/interfaces/IERC165.sol";
+import "solidity-kit/solc_0.8/ERC20/ERC2612/interfaces/IERC20WithIERC2612.sol";
+import "solidity-kit/solc_0.8/debug/time/interfaces/ITime.sol";
 
 interface UsingStratagemsTypes {
 	// --------------------------------------------------------------------------------------------
@@ -59,6 +59,7 @@ interface UsingStratagemsTypes {
 		int8 delta;
 		uint8 enemyMap;
 		uint8 distribution;
+		uint8 stake; // for Evil, else always 1
 	}
 
 	// --------------------------------------------------------------------------------------------
@@ -72,6 +73,7 @@ interface UsingStratagemsTypes {
 		int8 delta;
 		uint8 enemyMap;
 		uint8 distribution; // this encode who is left to be given reward (4 left most bits) and the reard (4 most right bits)
+		uint8 stake; // for Evil, else always 1
 	}
 
 	struct Commitment {

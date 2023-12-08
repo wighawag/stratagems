@@ -6,11 +6,13 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-network-helpers": "^1.0.9",
     "@openzeppelin/contracts": "^4.9.3",
+    "@types/fs-extra": "^11.0.4",
     "as-soon": "^0.0.4",
     "chai-ethers": "^0.0.1",
     "eip-1193": "^0.4.7",
     "ethereum-contracts-test-suite": "^0.2.1",
     "ethereum-indexer-browser": "^0.6.28",
+    "fs-extra": "^11.2.0",
     "hardhat": "^2.19.1",
     "hardhat-rocketh": "^1.0.3",
     "ldenv": "^0.3.9",

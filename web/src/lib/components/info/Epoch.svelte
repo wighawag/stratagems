@@ -60,6 +60,10 @@
 			return contract.write.topup({account: account.address});
 		});
 	}
+
+	function any(t: any): any {
+		return t;
+	}
 </script>
 
 {#if !$time.synced}
@@ -112,9 +116,22 @@
 			{/if}
 		</div>
 	{:else if $balance.tokenBalance === 0n}
-		<div class="alert alert-warning absolute">
-			<TxExecutor btn="btn-sm" func={() => topupToken()}>Get Test token</TxExecutor>
-		</div>
+		{#if any(initialContractsInfos.contracts)['TestTokensDistributor']}
+			<div class="alert alert-warning absolute">
+				<TxExecutor btn="btn-sm" func={() => topupToken()}>Get Test token</TxExecutor>
+			</div>
+		{:else}
+			<div class="alert alert-warning absolute">
+				<p>
+					You do no not have any token to play <a
+						class="underline"
+						href="https://community.etherplay.io"
+						target="_blank"
+						rel="noreferer noopener">Ask on our Discord</a
+					>
+				</p>
+			</div>
+		{/if}
 	{:else}
 		<div class="alert alert-info absolute">
 			{#if $stratagemsView.hasCommitment}
