@@ -87,7 +87,7 @@ export class BlockiesLayer {
 		for (let cellPos of Object.keys(state.cells)) {
 			const cell = state.viewCells[cellPos];
 			const owner = state.owners[cellPos];
-			if (owner) {
+			if (owner && owner != '0x0000000000000000000000000000000000000000') {
 				const blockie = Blockie.get(owner);
 				const data = blockie.imageData;
 				const [x, y] = cellPos.split(',').map((v) => parseInt(v));
@@ -148,18 +148,36 @@ export class BlockiesLayer {
 						W: state.viewCells[`${x - 1},${y}`]?.currentPlayer || false,
 					};
 					const thickness = this.size / 50;
+
+					let startX = x;
+					let endX = x + this.size;
+					let startY = y;
+					let endY = y + this.size;
 					if (!neighbors.N) {
-						drawRect(attributes, x, y - thickness, x + this.size, y + thickness, [0, 1, 0]);
+						startY += thickness;
+					}
+					if (!neighbors.S) {
+						endY -= thickness;
+					}
+					if (!neighbors.W) {
+						startX += thickness;
+					}
+					if (!neighbors.E) {
+						endX -= thickness;
+					}
+
+					if (!neighbors.N) {
+						drawRect(attributes, startX, startY, endX, startY + thickness, [0, 1, 0]);
 					}
 
 					if (!neighbors.S) {
-						drawRect(attributes, x, y + this.size - thickness, x + this.size, y + this.size + thickness, [0, 1, 0]);
+						drawRect(attributes, startX, endY, endX, endY + thickness, [0, 1, 0]);
 					}
 					if (!neighbors.W) {
-						drawRect(attributes, x - thickness, y, x + thickness, y + this.size, [0, 1, 0]);
+						drawRect(attributes, startX, startY, startX + thickness, endY, [0, 1, 0]);
 					}
 					if (!neighbors.E) {
-						drawRect(attributes, x + this.size - thickness, y + this.size, x + this.size + thickness, y, [0, 1, 0]);
+						drawRect(attributes, endX, startY, endX + thickness, endY, [0, 1, 0]);
 					}
 				}
 			}

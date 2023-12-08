@@ -51,6 +51,7 @@ function merge(
 	let hasCommitment = false;
 	if (offchainState.moves !== undefined) {
 		for (const move of offchainState.moves) {
+			console.log(`color: ${move.color}`);
 			stratagems.computeMove(account.address as `0x${string}`, epochState.epoch, localMoveToContractMove(move));
 		}
 	} else {

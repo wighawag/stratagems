@@ -32,6 +32,16 @@ const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
 		// TODO only keep track of the connected player ?
 		delete state.commitments[account];
 	},
+	onSinglePoke(state, event) {
+		const stratagemsContract = new StratagemsContract(state, 7);
+		stratagemsContract.poke(event.args.position, event.args.epoch);
+	},
+	onMultiPoke(state, event) {
+		const stratagemsContract = new StratagemsContract(state, 7);
+		for (const position of event.args.positions) {
+			stratagemsContract.poke(position, event.args.epoch);
+		}
+	},
 	onCommitmentCancelled(state, event) {
 		const account = event.args.player.toLowerCase();
 		// TODO only keep track of the connected player ?

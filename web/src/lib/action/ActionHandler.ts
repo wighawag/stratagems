@@ -27,14 +27,18 @@ export class ActionHandler {
 		const currentMove = currentOffchainState.moves?.find((v) => v.x === x && v.y === y);
 		if (currentMove) {
 			accountData.removeMove(x, y);
-			if (currentMove.color === Color.None) {
-				console.log(`remove cell at ${x}, ${y}, ${player}`);
-				accountData.removeMove(x, y);
-			} else if (currentMove.color !== currentColor) {
+			if (currentMove.color !== currentColor) {
 				accountData.addMove({x, y, color: currentColor, player});
 			}
 		} else {
-			if (currentState.cells[cellID] && currentState.viewCells[cellID].next.life !== 0) {
+			if (
+				currentState.cells[cellID] &&
+				currentState.owners[cellID]?.toLowerCase() === account.$state.address?.toLowerCase() &&
+				currentState.viewCells[cellID].next.life === 7 // TODO MAX_LIFE
+			) {
+				console.log(`remove cell at ${x}, ${y}, ${player}`);
+				accountData.addMove({x, y, color: Color.None, player});
+			} else if (currentState.cells[cellID] && currentState.viewCells[cellID].next.life !== 0) {
 				throw new Error(`Cell already occupied`);
 			} else {
 				console.log(`add color at ${x}, ${y}, ${player}`);
