@@ -146,6 +146,11 @@ export class Textured2DLayer {
 
 			if (contractCell.life > 0) {
 				drawGem(attributes, this.size, tileSize, x, y, cell.next.color, 1);
+				if (contractCell.stake > 1) {
+					for (let i = 1; i < contractCell.stake; i++) {
+						drawGem(attributes, this.size, tileSize, x + 0.05 * i, y - 0.05 * i, cell.next.color, 1);
+					}
+				}
 			}
 
 			if (cell.future.life > cell.next.life) {

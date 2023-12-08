@@ -16,6 +16,7 @@ export type ContractCell = {
 	delta: number;
 	enemyMap: number;
 	distribution: number;
+	stake: number;
 };
 
 export type ContractFullCell = ContractCell & {
