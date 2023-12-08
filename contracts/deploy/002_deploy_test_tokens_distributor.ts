@@ -14,22 +14,19 @@ export default execute(
 		}
 
 		// TODO
-		if (network.name === 'localhost') {
+		if (network.name == 'localhost') {
+			const TestTokensDistributor = await deploy('TestTokensDistributor', {
+				account: deployer,
+				artifact: artifacts.TestTokensInfiniteDistributor,
+				args: [TestTokens.address],
+			});
+
+			await execute('TestTokens', {
+				functionName: 'authorizeMinters',
+				args: [[TestTokensDistributor.address], true],
+				account: deployer,
+			});
 		}
-
-		return;
-
-		// const TestTokensDistributor = await deploy('TestTokensDistributor', {
-		// 	account: deployer,
-		// 	artifact: artifacts.TestTokensInfiniteDistributor,
-		// 	args: [TestTokens.address],
-		// });
-
-		// await execute('TestTokens', {
-		// 	functionName: 'authorizeMinters',
-		// 	args: [[TestTokensDistributor.address], true],
-		// 	account: deployer,
-		// });
 	},
 	{tags: ['TestTokensDistributor', 'TestTokensDistributor_deploy'], dependencies: ['TestTokens_deploy']},
 );

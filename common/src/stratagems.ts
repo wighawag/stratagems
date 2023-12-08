@@ -119,6 +119,7 @@ export class StratagemsContract {
 			epochWhenTokenIsAdded: cell?.epochWhenTokenIsAdded || 0,
 			life: cell?.life || 0,
 			distribution: cell?.distribution || 0,
+			stake: cell?.stake || 0,
 		};
 	}
 
@@ -388,6 +389,7 @@ export class StratagemsContract {
 
 		if (currentState.color == Color.None) {
 			currentState.life = 0;
+			currentState.stake = 0;
 			currentState.lastEpochUpdate = 0;
 			currentState.delta = 0;
 			currentState.enemyMap = 0;
@@ -399,6 +401,17 @@ export class StratagemsContract {
 			// tokensPlaced = NUM_TOKENS_PER_GEMS;
 
 			currentState.enemyMap = newEnemyMap;
+
+			if (currentState.color == Color.Evil && currentState.life != 0) {
+				currentState.stake += 1;
+				if (currentState.stake > 255) {
+					// we cap it, losing stake there
+					// TODO reevaluate
+					currentState.stake = 255;
+				}
+			} else {
+				currentState.stake = 1;
+			}
 
 			currentState.delta = newDelta;
 			currentState.life = 1;
@@ -429,6 +442,7 @@ export class StratagemsContract {
 				delta: delta,
 				enemyMap: enemyMap,
 				distribution: 0,
+				stake: 1,
 			};
 			this.state.owners[simpleCell.position.toString()] = simpleCell.owner;
 			// console.log({
@@ -461,6 +475,7 @@ export class StratagemsContract {
 				delta: cell.delta,
 				enemyMap: cell.enemyMap,
 				distribution: 0,
+				stake: cell.stake,
 			};
 
 			this.state.cells[simpleCell.position.toString()] = newCell;
