@@ -13,7 +13,6 @@
 	import {initialContractsInfos, params} from '$lib/config';
 	import EraseNotice from '$lib/components/utilities/EraseNotice.svelte';
 	import ClaimTokenScreen from '$lib/components/claim/ClaimTokenScreen.svelte';
-	import ComeBackLater from '$lib/components/utilities/ComeBackLater.svelte';
 
 	const host = canonicalURL.endsWith('/') ? canonicalURL : canonicalURL + '/';
 	const previewImage = host + 'preview.png';
@@ -147,11 +146,9 @@
 <!-- </div> -->
 
 <!-- We remove the notice when force is specified or if on base network -->
-<!-- {#if !dev && !params['force'] && initialContractsInfos.chainId + '' !== '8453' && initialContractsInfos.name !== 'composablelabs'}
+{#if !dev && !params['force'] && initialContractsInfos.chainId + '' !== '8453' && initialContractsInfos.name !== 'composablelabs'}
 	<WipNotice />
 {:else}
 	<EraseNotice />
 	<ClaimTokenScreen name="Stratagems" />
-{/if} -->
-
-<ComeBackLater />
+{/if}

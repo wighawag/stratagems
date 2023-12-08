@@ -1,5 +1,5 @@
 {
-  "address": "0x07c6c4fb0a6fcadfc2f44b1655b442030c641b89",
+  "address": "0x108869b744f5f38a14114f8d91eebf88d032e3d8",
   "abi": [
     {
       "inputs": [],
@@ -228,6 +228,25 @@
       "inputs": [
         {
           "indexed": true,
+          "internalType": "uint24",
+          "name": "epoch",
+          "type": "uint24"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64[]",
+          "name": "positions",
+          "type": "uint64[]"
+        }
+      ],
+      "name": "MultiPoke",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
           "internalType": "address",
           "name": "player",
           "type": "address"
@@ -271,6 +290,25 @@
         }
       ],
       "name": "ReserveWithdrawn",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint24",
+          "name": "epoch",
+          "type": "uint24"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "position",
+          "type": "uint64"
+        }
+      ],
+      "name": "SinglePoke",
       "type": "event"
     },
     {
@@ -323,6 +361,11 @@
             {
               "internalType": "uint8",
               "name": "distribution",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "stake",
               "type": "uint8"
             }
           ],
@@ -384,6 +427,11 @@
             {
               "internalType": "uint8",
               "name": "distribution",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "stake",
               "type": "uint8"
             }
           ],
@@ -1459,6 +1507,11 @@
               "internalType": "uint8",
               "name": "distribution",
               "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "stake",
+              "type": "uint8"
             }
           ],
           "internalType": "struct UsingStratagemsTypes.Cell",
@@ -1684,6 +1737,12 @@
           "position": "cell at which the move take place"
         }
       },
+      "MultiPoke(uint24,uint64[])": {
+        "params": {
+          "epoch": "epoch number at which the poke take place",
+          "positions": "cells to poke"
+        }
+      },
       "ReserveDeposited(address,uint256,uint256)": {
         "params": {
           "amountDeposited": "the number of tokens deposited",
@@ -1696,6 +1755,12 @@
           "amountWithdrawn": "the number of tokens withdrawnn",
           "newAmount": "the number of tokens in reserver as a result",
           "player": "account withdrawing the tokens"
+        }
+      },
+      "SinglePoke(uint24,uint64)": {
+        "params": {
+          "epoch": "epoch number at which the poke take place",
+          "position": "cell to poke"
         }
       },
       "Approval(address,address,uint256)": {
@@ -1878,11 +1943,17 @@
       "MoveProcessed(uint64,address,uint8,uint8)": {
         "notice": "A move has been revealed."
       },
+      "MultiPoke(uint24,uint64[])": {
+        "notice": "poke multiple cells and update them if needed"
+      },
       "ReserveDeposited(address,uint256,uint256)": {
         "notice": "Player has deposited token in the reserve, allowing it to use that much in game"
       },
       "ReserveWithdrawn(address,uint256,uint256)": {
         "notice": "Player have withdrawn token from the reserve"
+      },
+      "SinglePoke(uint24,uint64)": {
+        "notice": "poke cell and update it if needed"
       },
       "Approval(address,address,uint256)": {
         "notice": "Triggered when a token is approved to be sent by another account  Note tat the approval get reset when a Transfer event for that same token is emitted."
@@ -1977,20 +2048,9 @@
       ]
     }
   },
-  "argsData": "0x00000000000000000000000050a6563fea457222f8cae49d37cd929a4125dfef00000000000000000000000061c461ecc993aadeb7e4b47e96d1b8cc37314b2000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000",
-  "transaction": {
-    "hash": "0xcffea2e131c4e35b971f46926a4a6dd386e20d76b1463ab9b4773daeaaab1076",
-    "nonce": "0xea",
-    "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
-  },
-  "receipt": {
-    "confirmations": 0,
-    "blockHash": "0x155ca2f91d612490edbe410c7b94da41fb1ea3a029ef2f68311d249f31dfc88b",
-    "blockNumber": "0x49c087",
-    "transactionIndex": "0x5"
-  },
+  "argsData": "0x000000000000000000000000c76b792602bb7e0a14179797842243cf492352e800000000000000000000000061c461ecc993aadeb7e4b47e96d1b8cc37314b2000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000",
   "linkedData": {
-    "tokens": "0x2d1ecf0a44b19d23cfac37f1ce2399571ed4f7ba",
+    "tokens": "0x434badea3943c5b3d86366fa03c77201b6770a75",
     "numTokensPerGems": "1000000000000000000n",
     "burnAddress": "0xDEADDEADDEADDEADDEADDEADDEADDEADDEADDEAD",
     "startTime": 0,
@@ -2004,5 +2064,16 @@
       "decimals": "18n"
     },
     "admin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
+  },
+  "transaction": {
+    "hash": "0xf85be2009c3a87632d9daaa9a0d359677d6a0032a6575cef858ab356d5e52b65",
+    "nonce": "0x105",
+    "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
+  },
+  "receipt": {
+    "confirmations": 0,
+    "blockHash": "0x7da505404465fa3de3e1b2d2ff9e4841313cc5d6140fd3851afd4506cb69fbcf",
+    "blockNumber": "0x49f1e2",
+    "transactionIndex": "0x33"
   }
 }
