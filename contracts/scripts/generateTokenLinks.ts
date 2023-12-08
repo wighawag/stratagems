@@ -22,20 +22,19 @@ async function main() {
 	const decimals = await TestTokensContract.read.decimals();
 
 	fs.ensureDirSync('keys');
-	const addresses: `0x${string}`[] = [];
-	const keys: `0x${string}`[] = [];
+	const accounts: {address: `0x${string}`; key: `0x${string}`}[] = [];
 	for (let i = 0; i < 100; i++) {
 		const key = generatePrivateKey();
 		const account = privateKeyToAccount(key);
-		addresses.push(account.address);
-		keys.push(key);
+		accounts.push({address: account.address, key});
 	}
 
 	fs.writeFileSync(
 		`keys/list.csv`,
-		keys.map((v) => `https://composablelabs.stratagems.world#tokenClaim=${v}`).join('\n'),
+		accounts.map((v) => `${v.address},https://composablelabs.stratagems.world#tokenClaim=${v.key}`).join('\n'),
 	);
 
+	const addresses = accounts.map((v) => v.address);
 	const tx = await TestTokensContract.write.distributeAlongWithETH(
 		[addresses, BigInt(addresses.length) * parseUnits('15', decimals)],
 		{account: env.accounts.tokensBeneficiary, value: parseEther('0.2') * BigInt(addresses.length)},
