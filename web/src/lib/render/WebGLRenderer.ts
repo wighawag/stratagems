@@ -49,10 +49,11 @@ export class WebGLRenderer implements Readable<RenderViewState> {
 
 	render(time: number) {
 		const GL = this.gl;
+		const devicePixelRatio = 1; // window.devicePixelRatio;
 
-		if (twgl.resizeCanvasToDisplaySize(this.canvas)) {
+		if (twgl.resizeCanvasToDisplaySize(this.canvas, devicePixelRatio)) {
 			this.store.set({
-				devicePixelRatio: window.devicePixelRatio,
+				devicePixelRatio,
 				width: this.canvas.width,
 				height: this.canvas.height,
 			});
