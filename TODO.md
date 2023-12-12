@@ -15,3 +15,21 @@
 
 - [ ] better error handling when fuzd shedule failed
 - [ ] issue with overriden commit showing black
+
+- [] chat
+  - [] public chat
+  - [] one-to-one messaging
+- [] indexing backend
+  - [] multi-contract-set support
+  - []
+- [] css revamp
+  - [] get rid of tailwind/daisy-ui
+  - [] slice-9 and pixel-art UI
+- [] improve UX
+  - [] show widthrawals
+  - [] ability to withdraw
+- [] make it easy to build games on top
+  - [] easy import of contracts
+  - [] easy import of indexer
+  - [] easy import of renderer
+  - [] combine indexers ?
