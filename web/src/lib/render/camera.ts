@@ -35,6 +35,15 @@ export class Camera extends BasicObjectStore<CameraState> {
 
 	// private static zoomLevels = [1000, 500, 200, 100, 50, 20, 10, 5, 4, 3, 2, 1, 0.5];
 
+	private _onmousedown: (e: MouseEvent) => void = this.onmousedown.bind(this);
+	private _onmousemove: (e: MouseEvent) => void = this.onmousemove.bind(this);
+	private _onmouseup: (e: MouseEvent) => void = this.onmouseup.bind(this);
+
+	private _ontouchstart: (e: TouchEvent) => void = this.ontouchstart.bind(this);
+	private _ontouchmove: (e: TouchEvent) => void = this.ontouchmove.bind(this);
+	private _ontouchend: (e: TouchEvent) => void = this.ontouchend.bind(this);
+
+	private _onwheel: (e: WheelEvent) => void = this.onwheel.bind(this);
 	constructor() {
 		super();
 	}
@@ -77,27 +86,15 @@ export class Camera extends BasicObjectStore<CameraState> {
 
 		this.unsubscribeFromRenderView = this.renderView.subscribe(this.onRenderViewUpdates.bind(this));
 
-		this.surface.onmousedown = (e) => {
-			this.onmousedown(e);
-		};
-		this.surface.onmouseup = (e) => {
-			this.onmouseup(e);
-		};
-		this.surface.onmousemove = (e) => {
-			this.onmousemove(e);
-		};
-		this.surface.ontouchstart = (e: TouchEvent) => {
-			this.ontouchstart(e);
-		};
-		this.surface.ontouchend = (e: TouchEvent) => {
-			this.ontouchend(e);
-		};
-		this.surface.ontouchmove = (e: TouchEvent) => {
-			this.ontouchmove(e);
-		};
-		this.surface.onwheel = (e) => {
-			this.onwheel(e);
-		};
+		this.surface.addEventListener('mousedown', this._onmousedown);
+		this.surface.addEventListener('mouseup', this._onmouseup);
+		this.surface.addEventListener('mousemove', this._onmousemove);
+
+		this.surface.addEventListener('touchstart', this._ontouchstart);
+		this.surface.addEventListener('touchend', this._ontouchend);
+		this.surface.addEventListener('touchmove', this._ontouchmove);
+
+		this.surface.addEventListener('wheel', this._onwheel);
 
 		// DEBUGGING
 		// document.onclick = (event) => {
@@ -117,13 +114,16 @@ export class Camera extends BasicObjectStore<CameraState> {
 		}
 
 		if (this.surface) {
-			this.surface.onmousedown = null;
-			this.surface.onmouseup = null;
-			this.surface.onmousemove = null;
-			this.surface.ontouchstart = undefined;
-			this.surface.ontouchend = undefined;
-			this.surface.ontouchmove = undefined;
-			this.surface.onwheel = null;
+			this.surface.removeEventListener('mousedown', this._onmousedown);
+			this.surface.removeEventListener('mouseup', this._onmouseup);
+			this.surface.removeEventListener('mousemove', this._onmousemove);
+
+			this.surface.removeEventListener('touchstart', this._ontouchstart);
+			this.surface.removeEventListener('touchend', this._ontouchend);
+			this.surface.removeEventListener('touchmove', this._ontouchmove);
+
+			this.surface.removeEventListener('wheel', this._onwheel);
+
 			this.surface = undefined;
 		}
 	}
@@ -317,7 +317,7 @@ export class Camera extends BasicObjectStore<CameraState> {
 		for (let i = 0; i < e.touches.length; i++) {
 			touches.push({identifier: e.touches[i].identifier});
 		}
-		// console.log(title, JSON.stringify(touches));
+		// console.log(_title, JSON.stringify(touches));
 	}
 
 	ontouchstart(e: TouchEvent): void {
