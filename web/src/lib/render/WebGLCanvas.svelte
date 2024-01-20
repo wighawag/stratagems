@@ -1,13 +1,12 @@
 <script lang="ts">
 	import {ActionHandler} from '$lib/action/ActionHandler';
 	import {onMount} from 'svelte';
-	import {Camera} from './camera';
+	import {camera} from './camera';
 	import {WebGLRenderer} from './WebGLRenderer';
 	import type {StratagemsView} from '$lib/blockchain/state/ViewState';
 	export let state: StratagemsView;
 
 	let renderer: WebGLRenderer = new WebGLRenderer();
-	let camera: Camera;
 	function render(time: number) {
 		renderer.render(time);
 		requestAnimationFrame(render);
@@ -25,7 +24,6 @@
 
 		renderer.initialize(canvas, gl);
 
-		camera = new Camera();
 		camera.start(canvas, renderer);
 		camera.subscribe((v) => renderer.updateView(v));
 

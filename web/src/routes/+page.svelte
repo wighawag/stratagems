@@ -6,9 +6,12 @@
 	import WebGlCanvas from '$lib/render/WebGLCanvas.svelte';
 	import Flow from '$lib/ui/flows/Flow.svelte';
 	import FactionPicker from '$lib/components/stratagems/FactionPicker.svelte';
+	// import CameraInfo from '$lib/components/debug/CameraInfo.svelte';
 </script>
 
 <WebGlCanvas state={stratagemsView} />
+
+<!-- <CameraInfo /> -->
 
 <Epoch></Epoch>
 
