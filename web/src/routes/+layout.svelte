@@ -1,18 +1,16 @@
 <script lang="ts">
-	import '../app.postcss';
-	import NavTabs from '$lib/components/daisyui/NavTabs.svelte';
+	import '../app.css';
 	import {dev, version} from '$app/environment';
 
 	import {name, description, themeColor, canonicalURL, appleStatusBarStyle, ENSName} from 'web-config';
 	import NewVersionNotification from '$lib/components/web/NewVersionNotification.svelte';
 	import NoInstallPrompt from '$lib/components/web/NoInstallPrompt.svelte';
 	import {url} from '$lib/utils/path';
-	import Install from '$lib/components/web/Install.svelte';
-	import ConnectButton from '$lib/web3/ConnectButton.svelte';
-	import WipNotice from '$lib/components/utilities/WipNotice.svelte';
 	import {initialContractsInfos, params} from '$lib/config';
+	import Header from '$lib/structure/Header.svelte';
 	import EraseNotice from '$lib/components/utilities/EraseNotice.svelte';
 	import ClaimTokenScreen from '$lib/components/claim/ClaimTokenScreen.svelte';
+	import WipNotice from '$lib/components/utilities/WipNotice.svelte';
 
 	const host = canonicalURL.endsWith('/') ? canonicalURL : canonicalURL + '/';
 	const previewImage = host + 'preview.png';
@@ -39,7 +37,7 @@
 	<!-- minimal -->
 	<!-- use SVG, if need PNG, adapt accordingly -->
 	<!-- TODO automatise -->
-	<link rel="icon" href={url('/pwa/favicon.png')} type="image/svg+xml" />
+	<link rel="icon" href={url('/pwa/favicon.png')} type="image/png" />
 	<link rel="icon" href={url('/pwa/favicon.ico')} sizes="any" /><!-- 32×32 -->
 	<link rel="apple-touch-icon" href={url('/pwa/apple-touch-icon.png')} /><!-- 180×180 -->
 	<link rel="manifest" href={url('/pwa/manifest.webmanifest')} />
@@ -111,20 +109,19 @@
 	{/if}
 </svelte:head>
 
-<div class="relative top-0 z-50 navbar bg-base-100 h-16 p-1 border-b-2 border-primary">
-	<div class="flex-1">
-		<NavTabs
-			pages={[
-				{pathname: '/', title: 'Play'},
-				{pathname: '/debug/', title: 'Debug'},
-				{pathname: '/about/', title: 'About'},
-			]}
-		/>
-	</div>
-	<div class="flex-none">
-		<ConnectButton />
-	</div>
+<div class="page">
+	<Header />
+
+	<slot />
 </div>
+
+<!-- We remove the notice when force is specified or if on base network -->
+{#if !dev && !params['force'] && initialContractsInfos.chainId + '' !== '8453'}
+	<WipNotice />
+{:else}
+	<EraseNotice />
+	<ClaimTokenScreen name="Stratagems" />
+{/if}
 
 <!-- Disable native prompt from browsers -->
 <NoInstallPrompt />
@@ -134,21 +131,22 @@
 <!-- Here is Notification for new version -->
 <NewVersionNotification src={url('/icon.png')} alt="Stratagems" />
 
-<slot />
+<style>
+	/* We wrap our app in this div */
+	/* So we can move the footer to the bottom (see margin-top:auto) */
+	/* This use flex flex-direction column to put each element vertically 
+		And use min-height to ensure all speace is taken */
+	/* This assumes html, body and any other anecsotr of .wrapper have height:100% */
+	.page {
+		display: flex;
+		flex-direction: column;
+		min-height: 100%;
+	}
 
-<!-- use -my-20 to ensure the navbar is considered when using min-h-screen to offset the footer (when content is too small)-->
-<!-- <div class="-my-20 flex flex-col min-h-screen justify-between"> -->
-<!--div to revert -my-20-->
-<!-- <div class="mt-20"> -->
-<!-- <slot /> -->
-<!-- </div> -->
-
-<!-- </div> -->
-
-<!-- We remove the notice when force is specified or if on base network -->
-{#if !dev && !params['force'] && initialContractsInfos.chainId + '' !== '8453'}
-	<WipNotice />
-{:else}
-	<EraseNotice />
-	<ClaimTokenScreen name="Stratagems" />
-{/if}
+	/* This target the inner Footer element thanks to rootClass */
+	/* Svelte has no way to parametrize non-global class due to its strong encapsulation
+	/* But with css we often need to alter child position from parents */
+	.page :global(.footer) {
+		margin-top: auto;
+	}
+</style>

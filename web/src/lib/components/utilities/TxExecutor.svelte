@@ -1,5 +1,4 @@
 <script lang="ts">
-	import {wait} from '$lib/utils/time';
 	import {createTxExecutor} from './txexecutor';
 
 	let className = '';

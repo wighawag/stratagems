@@ -1,6 +1,5 @@
 import {contracts, devProvider} from '$lib/web3';
 import {writable, type Readable} from 'svelte/store';
-
 export function initIncreaseContractTime(name: string) {
 	return async (numSeconds: number) => {
 		return contracts.execute(async ({contracts, account}) => {
@@ -41,11 +40,45 @@ export async function enableAnvilLogging() {
 		params: [true],
 	} as any);
 }
-
 export const increaseContractTime = initIncreaseContractTime('Stratagems');
 
 export function formatError(e: any): string {
 	const errorMessage =
 		e.data?.message || (e.data?.data ? JSON.stringify(e.data?.data) : e.message ? e.message : JSON.stringify(e)); //(e.toString ? e.toString() : ;
 	return errorMessage;
+}
+
+// TODO move in promise utitilies
+export type Execution<T> = {executing: boolean; error?: any; result?: T};
+export function createExecutor<T, F extends (...args: any[]) => Promise<T>>(
+	func: F,
+): Readable<Execution<T>> & {
+	execute: F;
+	acknowledgeError: () => void;
+} {
+	const executing = writable<Execution<T>>({executing: false});
+
+	const execute = ((...args: any[]) => {
+		executing.set({executing: true, error: undefined, result: undefined});
+		return func(...args)
+			.then((v) => {
+				try {
+					executing.set({executing: false, result: v});
+				} catch {}
+				return v;
+			})
+			.catch((err) => {
+				try {
+					executing.set({executing: false, error: err});
+				} catch {}
+				throw err;
+			});
+	}) as F;
+	return {
+		subscribe: executing.subscribe,
+		acknowledgeError() {
+			executing.set({executing: false, error: undefined, result: undefined});
+		},
+		execute,
+	};
 }

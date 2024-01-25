@@ -1,24 +1,32 @@
 import {init} from 'web3-connection';
-import {contractsInfos, defaultRPC, initialContractsInfos, blockTime, localRPC, env} from '$lib/config';
+import {contractsInfos, defaultRPC, initialContractsInfos, blockTime, localRPC, syncInfo} from '$lib/config';
 import {initTransactionProcessor} from 'ethereum-tx-observer';
 import {initViemContracts} from 'web3-connection-viem';
 import {logs} from 'named-logs';
 import {initBalance} from '$lib/blockchain/state/balance';
 import {time} from '$lib/time';
-import {hashMessage, stringToHex} from 'viem';
+import {stringToHex} from 'viem';
+import {get} from 'svelte/store';
 import {StratagemsAccountData} from '$lib/account/account-data';
 
 const logger = logs('stratagems');
 
-const syncInfo = env.PUBLIC_SYNC_URI
-	? {
-			uri: env.PUBLIC_SYNC_URI,
-	  }
-	: undefined;
-
 export const accountData = new StratagemsAccountData();
 
-// TODO we need to hook tx-observer with a provider and make it process tx
+// devNetwork is used for different purposes:
+//  - allow to detect Metamask cache issue
+//  - allow to perform raw call like eth_setNextTimestamp, etc...
+// But note that Stratagems is designed to work without external RPC
+// All other request will go through the user's wallet provider
+// This is of course configurable, see PUBLIC_ETH_NODE_URI and PUBLIC_ETH_NODE_URI_<network name>
+const devNetwork =
+	typeof window != 'undefined' && localRPC
+		? {
+				url: localRPC.url,
+				chainId: localRPC.chainId,
+				checkCacheIssues: true,
+			}
+		: undefined;
 
 const stores = init({
 	autoConnectUsingPrevious: true,
@@ -34,7 +42,7 @@ const stores = init({
 	},
 	observers: {
 		onTxSent(tx, hash) {
-			accountData.onTxSent(tx, hash as `0x{string}`); // TODO web3-connection 0x{string}
+			accountData.onTxSent(tx, hash as `0x${string}`); // TODO web3-connection 0x{string}
 		},
 	},
 	acccountData: {
@@ -129,15 +137,7 @@ const stores = init({
 			await accountData.unload();
 		},
 	},
-	devNetwork:
-		// does not connect through node, so only enable devNetwork when in the browser
-		typeof window != 'undefined' && localRPC
-			? {
-					url: localRPC.url,
-					chainId: localRPC.chainId,
-					checkCacheIssues: true,
-			  }
-			: undefined,
+	devNetwork,
 });
 
 export const txObserver = initTransactionProcessor({finality: 12}); // TODO config.finality
@@ -195,6 +195,8 @@ if (typeof window !== 'undefined') {
 	(window as any).pendingActions = pendingActions;
 
 	(window as any).accountData = accountData;
+	(window as any).txObserver = txObserver;
+	(window as any).get = get;
 }
 
 time.setTimeKeeperContract(initialContractsInfos.contracts.Time.address);

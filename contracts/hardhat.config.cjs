@@ -44,7 +44,7 @@ const config = {
 				hardhat: {
 					initialBaseFeePerGas: 0,
 					mining: {
-						auto: process.env['BLOCK_TIME'] ? true : false,
+						auto: true, // TODO
 						interval: process.env['BLOCK_TIME'] ? parseInt(process.env['BLOCK_TIME']) * 1000 : undefined,
 					},
 				},
