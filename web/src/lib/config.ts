@@ -1,7 +1,7 @@
 import {readable} from 'svelte/store';
 import {version} from '$app/environment';
 
-import {getParamsFromLocation, getHashParamsFromLocation} from '$lib/utils/url';
+import {getParamsFromLocation, getHashParamsFromLocation} from '$utils/url';
 import {
 	PUBLIC_ETH_NODE_URI_LOCALHOST,
 	PUBLIC_ETH_NODE_URI,

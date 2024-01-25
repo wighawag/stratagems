@@ -1,17 +1,16 @@
 import {get, writable} from 'svelte/store';
 import {currentFlow, type Flow, type Step} from '..';
-import {accountData, contracts} from '$lib/web3';
+import {accountData, contracts} from '$lib/blockchain/connection';
 import {initialContractsInfos} from '$lib/config';
 import {prepareCommitment, zeroBytes24, zeroBytes32} from 'stratagems-common';
 import {epoch, epochInfo} from '$lib/blockchain/state/Epoch';
-import {hexToVRS} from '$lib/utils/eth/signatures';
+import {hexToVRS} from '$utils/eth/signatures';
 import {encodeFunctionData, parseEther, zeroAddress} from 'viem';
-import {time} from '$lib/time';
-import {timeToText} from '$lib/utils/time';
+import {time} from '$lib/blockchain/time';
+import {timeToText} from '$utils/time';
 import {localMoveToContractMove, type CommitMetadata} from '$lib/account/account-data';
 import PermitComponent from './PermitComponent.svelte';
-import type {EIP1193ProviderWithoutEvents} from 'eip-1193';
-import {estimateGasPrice} from '$lib/utils/eth/gas';
+import {estimateGasPrice} from '$utils/eth/gas';
 
 export type CommitState = {
 	permit?: {

@@ -28,6 +28,7 @@ const config = {
 			'web-config': './src/web-config.json',
 			$data: './src/data',
 			$external: './src/external',
+			$utils: './src/utils',
 		},
 		serviceWorker: {
 			// we handle it ourselves here : src/service-worker-handler.ts

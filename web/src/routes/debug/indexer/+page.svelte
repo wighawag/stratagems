@@ -1,6 +1,6 @@
 <script lang="ts">
 	import {status, state, syncing} from '$lib/blockchain/state/State';
-	import RadialProgress from '$lib/components/progress/RadialProgress.svelte';
+	import RadialProgress from '$utils/components/progress/RadialProgress.svelte';
 	import DebugWrapper from '../DebugWrapper.svelte';
 
 	// import JSONTree from 'svelte-json-tree';

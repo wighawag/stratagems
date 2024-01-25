@@ -3,14 +3,14 @@
 	import {dev, version} from '$app/environment';
 
 	import {name, description, themeColor, canonicalURL, appleStatusBarStyle, ENSName} from 'web-config';
-	import NewVersionNotification from '$lib/components/web/NewVersionNotification.svelte';
-	import NoInstallPrompt from '$lib/components/web/NoInstallPrompt.svelte';
-	import {url} from '$lib/utils/path';
+	import NewVersionNotification from '$utils/components/web/NewVersionNotification.svelte';
+	import NoInstallPrompt from '$utils/components/web/NoInstallPrompt.svelte';
+	import {url} from '$utils/path';
 	import {initialContractsInfos, params} from '$lib/config';
-	import Header from '$lib/structure/Header.svelte';
-	import EraseNotice from '$lib/components/utilities/EraseNotice.svelte';
-	import ClaimTokenScreen from '$lib/components/claim/ClaimTokenScreen.svelte';
-	import WipNotice from '$lib/components/utilities/WipNotice.svelte';
+	import Header from '$lib/ui/structure/Header.svelte';
+	import EraseNotice from '$utils/components/utilities/EraseNotice.svelte';
+	import ClaimTokenScreen from '$utils/components/claim/ClaimTokenScreen.svelte';
+	import WipNotice from '$utils/components/utilities/WipNotice.svelte';
 
 	const host = canonicalURL.endsWith('/') ? canonicalURL : canonicalURL + '/';
 	const previewImage = host + 'preview.png';

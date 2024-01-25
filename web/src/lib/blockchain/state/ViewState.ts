@@ -1,9 +1,9 @@
-import {copy} from '$lib/utils/js';
+import {copy} from '$utils/js';
 import {xyToXYID, type ContractCell, bigIntIDToXY, StratagemsContract, type StratagemsState} from 'stratagems-common';
 import type {Data} from 'stratagems-indexer';
 import {derived} from 'svelte/store';
 import {state} from '$lib/blockchain/state/State';
-import {account, accountData} from '$lib/web3';
+import {account, accountData} from '$lib/blockchain/connection';
 import {epochState, type EpochState} from '$lib/blockchain/state/Epoch';
 import type {AccountState} from 'web3-connection';
 import {

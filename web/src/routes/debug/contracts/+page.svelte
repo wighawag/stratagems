@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {network} from '$lib/web3';
+	import {network} from '$lib/blockchain/connection';
 	import DebugWrapper from '../DebugWrapper.svelte';
 
 	$: contractList = $network.contracts

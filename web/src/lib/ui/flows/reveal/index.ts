@@ -1,6 +1,6 @@
-import {get, writable} from 'svelte/store';
+import {writable} from 'svelte/store';
 import {currentFlow, type Flow, type Step} from '..';
-import {accountData, contracts} from '$lib/web3';
+import {contracts} from '$lib/blockchain/connection';
 import {prepareCommitment, zeroBytes24} from 'stratagems-common';
 import {zeroAddress} from 'viem';
 import {localMoveToContractMove, type CommitMetadata} from '$lib/account/account-data';

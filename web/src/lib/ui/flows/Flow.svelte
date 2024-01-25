@@ -1,6 +1,6 @@
 <script lang="ts">
 	import {currentFlow} from '$lib/ui/flows';
-	import Modal from '$lib/components/modals/Modal.svelte';
+	import Modal from '$utils/components/modals/Modal.svelte';
 
 	$: state = $currentFlow?.state;
 	$: currentStepIndex = $currentFlow?.currentStepIndex;

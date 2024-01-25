@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {ActionHandler} from '$lib/action/ActionHandler';
+	import {ActionHandler} from '$lib/actions/ActionHandler';
 	import {onMount} from 'svelte';
 	import {camera} from './camera';
 	import {WebGLRenderer} from './WebGLRenderer';

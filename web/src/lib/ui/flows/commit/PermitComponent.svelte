@@ -32,7 +32,7 @@
 			: formatUnits(
 					$state.amountToAllow,
 					Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
-			  )
+				)
 		: '0';
 </script>
 

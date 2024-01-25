@@ -1,9 +1,9 @@
 <script lang="ts">
 	import DebugWrapper from '../DebugWrapper.svelte';
 	import {blockchainExplorer} from '$lib/config';
-	import {txObserver} from '$lib/web3';
+	import {txObserver} from '$lib/blockchain/connection';
 
-	// import {accountData} from '$lib/web3';
+	// import {accountData} from '$lib/blockchain/connection';
 	// const actions = accountData.onchainActions;
 	// $: transactions = Object.keys($actions).map((v) => ({hash: v, transaction: ($actions as any)[v]}));
 
@@ -164,9 +164,3 @@
 		</table>
 	</div>
 </DebugWrapper>
-
-<style>
-	ul {
-		margin-left: 1rem;
-	}
-</style>

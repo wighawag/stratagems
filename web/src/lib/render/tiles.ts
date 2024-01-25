@@ -1,5 +1,5 @@
-import sheetURL from '$lib/assets/sheet.png';
-import sheet from '$lib/assets/sheet.json';
+import sheetURL from '$data/assets/sheet.png';
+import sheet from '$data/assets/sheet.json';
 import {Color} from 'stratagems-common';
 
 export {sheetURL};

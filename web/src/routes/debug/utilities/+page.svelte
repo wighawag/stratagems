@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Executor from '$lib/components/utilities/Executor.svelte';
-	import {time} from '$lib/time';
-	import {increaseBlockTime, increaseContractTime} from '$lib/utils/debug';
+	import Executor from '$utils/components/utilities/Executor.svelte';
+	import {time} from '$lib/blockchain/time';
+	import {increaseBlockTime, increaseContractTime} from '$utils/debug';
 	import DebugWrapper from '../DebugWrapper.svelte';
 
 	$: date = new Date($time.timestamp * 1000);
@@ -26,7 +26,7 @@
 	<form>
 		<label for="hours" />
 		<input id="hours" type="number" bind:value={hours} />
-		<Executor func={increaseContractTime} args={hours * 3600}>Contract: Add {hours} hours</Executor>
+		<Executor func={increaseContractTime} args={[hours * 3600]}>Contract: Add {hours} hours</Executor>
 	</form>
 </DebugWrapper>
 

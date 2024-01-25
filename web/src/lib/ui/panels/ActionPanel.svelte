@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {balance, devProvider, account, accountData} from '$lib/web3';
+	import {balance, devProvider, account, accountData} from '$lib/blockchain/connection';
 	import {initialContractsInfos} from '$lib/config';
 	import {encodeFunctionData, formatEther, formatUnits} from 'viem';
 	import {startCommit} from '$lib/ui/flows/commit';
@@ -42,7 +42,7 @@
 		$offchainState.moves === undefined
 			? 0n
 			: BigInt($offchainState.moves.length) *
-			  BigInt(initialContractsInfos.contracts.Stratagems.linkedData.numTokensPerGems.slice(0, -1));
+				BigInt(initialContractsInfos.contracts.Stratagems.linkedData.numTokensPerGems.slice(0, -1));
 	$: costString = formatUnits(
 		cost,
 		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),

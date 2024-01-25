@@ -1,5 +1,5 @@
 // import {createStore} from '$lib/utils/stores/utils';
-import {time} from '$lib/time';
+import {time} from '$lib/blockchain/time';
 import {writable, type Readable, derived} from 'svelte/store';
 
 const ACTION_PERIOD = 23 * 3600;

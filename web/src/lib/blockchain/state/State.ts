@@ -1,11 +1,11 @@
 import {createProcessor} from 'stratagems-indexer';
 import {createIndexerState, keepStateOnIndexedDB} from 'ethereum-indexer-browser';
 import {initialContractsInfos} from '$lib/config';
-import {connection, network} from '$lib/web3';
+import {connection, network} from '$lib/blockchain/connection';
 import {browser} from '$app/environment';
 import type {EIP1193Provider} from 'eip-1193';
 import {logs} from 'named-logs';
-import {url} from '$lib/utils/path';
+import {url} from '$utils/path';
 
 const namedLogger = logs('state');
 

@@ -1,7 +1,4 @@
 <script lang="ts">
-	import CopyBlock from '$lib/components/utilities/CopyBlock.svelte';
-
-	import {name} from 'web-config';
 </script>
 
 <section>
@@ -14,8 +11,6 @@
 	</div>
 
 	<div class="actions">
-		<h1 class="use-it">Use it:</h1>
-		<CopyBlock text={`npx degit wighawag/jolly-roger your-app-folder`} />
 		<p class="more-info">
 			Find out more on
 			<a href="https://stratagems.world" target="_blank" rel="noreferrer">our website</a> or on
@@ -63,11 +58,6 @@
 	.actions {
 		padding-top: 0.75rem;
 		padding-bottom: 1rem;
-	}
-
-	.use-it {
-		margin: 1rem;
-		font-weight: 600;
 	}
 
 	.more-info {

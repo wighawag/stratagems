@@ -1,4 +1,4 @@
-import {BasicObjectStore} from '$lib/utils/stores/base';
+import {BasicObjectStore} from '$utils/stores/base';
 import type {Readable} from 'svelte/store';
 import type {RenderViewState} from './renderview';
 

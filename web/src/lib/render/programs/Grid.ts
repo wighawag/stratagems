@@ -1,4 +1,4 @@
-import {parseColorV4} from '$lib/webgl/color';
+import {parseColorV4} from '$utils/webgl/color';
 import * as twgl from 'twgl.js';
 import type {CameraState} from '../camera';
 

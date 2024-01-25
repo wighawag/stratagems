@@ -2,7 +2,7 @@
 	import type {CommitMetadata} from '$lib/account/account-data';
 	import {epoch, epochInfo} from '$lib/blockchain/state/Epoch';
 	import {stratagemsView} from '$lib/blockchain/state/ViewState';
-	import {contracts} from '$lib/web3';
+	import {contracts} from '$lib/blockchain/connection';
 	import {startAcknowledgFailedReveal, startReveal} from '../flows/reveal';
 	import {bnReplacer} from 'stratagems-common';
 

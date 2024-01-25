@@ -1,6 +1,6 @@
 <script lang="ts">
 	import {FUZD_URI, blockchainExplorer} from '$lib/config';
-	import {accountData} from '$lib/web3';
+	import {accountData} from '$lib/blockchain/connection';
 	const onchainActions = accountData.onchainActions;
 
 	$: onChainActionList = Object.keys($onchainActions)
