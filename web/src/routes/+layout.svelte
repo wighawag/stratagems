@@ -1,5 +1,5 @@
 <script lang="ts">
-	import '../app.css';
+	import '../css/index.css';
 	import {dev, version} from '$app/environment';
 
 	import {name, description, themeColor, canonicalURL, appleStatusBarStyle, ENSName} from 'web-config';

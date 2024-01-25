@@ -1,6 +1,6 @@
 import type {Logger} from 'named-logs';
 import {logs} from 'named-logs';
-import {serviceWorker} from '$lib/web/serviceWorker';
+import {serviceWorker} from './serviceWorker';
 import {base} from '$app/paths';
 import {dev} from '$app/environment';
 
