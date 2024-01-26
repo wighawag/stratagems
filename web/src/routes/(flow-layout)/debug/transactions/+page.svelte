@@ -14,6 +14,8 @@
 	}
 </script>
 
+<!-- TODO tailwind replacement -->
+
 <DebugWrapper>
 	<p slot="title">Transactions</p>
 	<div class="overflow-x-auto">

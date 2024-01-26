@@ -67,6 +67,8 @@
 	}
 </script>
 
+<!-- TODO tailwind replacement -->
+
 <div class="info">
 	{#if !$time.synced}
 		<div>

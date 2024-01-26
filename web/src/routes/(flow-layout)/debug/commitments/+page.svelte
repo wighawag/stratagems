@@ -15,6 +15,8 @@
 	}
 </script>
 
+<!-- TODO tailwind replacement -->
+
 <div class="overflow-x-auto">
 	<table class="table">
 		<!-- head -->

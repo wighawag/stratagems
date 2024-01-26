@@ -26,6 +26,8 @@
 	}
 </script>
 
+<!-- TODO tailwind replacement -->
+
 {#if $currentFlow && $currentStepIndex !== undefined && $state}
 	<Modal>
 		<ul class="steps mb-4 text-xs">

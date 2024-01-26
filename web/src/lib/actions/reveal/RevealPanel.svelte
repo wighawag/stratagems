@@ -39,6 +39,8 @@
 	}
 </script>
 
+<!-- TODO tailwind replacement -->
+
 <!--TODO config instead of hardcoded 3600-->
 {#if $stratagemsView.hasCommitmentToReveal && $epochInfo.timeLeftToReveal < 3600 - 5 * 60}
 	<div class="pointer-events-none select-none fixed top-0 h-full grid place-items-end w-full max-w-full">

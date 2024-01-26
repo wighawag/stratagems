@@ -5,6 +5,8 @@
 	$: upgraded = localCache.upgraded;
 </script>
 
+<!-- TODO tailwind replacement -->
+
 {#if $upgraded}
 	<Modal>
 		<h3 class="text-lg font-bold">A New Version of Stratagems require A Reset</h3>

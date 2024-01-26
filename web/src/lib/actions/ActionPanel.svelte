@@ -72,34 +72,29 @@
 
 {#if $epochInfo.isActionPhase}
 	{#if $offchainState.moves && $offchainState.moves.length > 0}
-		<div class="pointer-events-none select-none fixed top-0 h-full grid place-items-end w-full max-w-full">
-			<div class="flex flex-row-reverse sm:m-2 w-full">
-				<div class="card w-full sm:w-96 bg-base-content glass">
-					<div class="card-body">
-						<h2 class="card-title text-primary">Your Move:</h2>
-						<p class="text-secondary">
-							This moves will cost {costString}
-							{symbol}. You'll need to deposit {depositNeededString} extra
-							{symbol} because you have {currentReserveString} in reserve.
-							<span class={`${enough ? '' : 'text-red-300'}`}
-								>{`${enough ? ', ' : 'but '}`}you have {currentBalnceString}
-								{symbol}.</span
-							>
-						</p>
-						<!-- {`${currentReserve > 0 ? `+ ${currentReserveString} in reserve` : ''}`}. -->
-						<div class="mt-4 card-actions justify-end">
-							<button class="pointer-events-auto btn btn-neutral" on:click={clear}>Clear</button>
-							<!-- <button class={`pointer-events-auto btn btn-primary ${enough ? '' : 'btn-disabled'}`} on:click={commit}
+		<div>
+			<h2>Your Move:</h2>
+			<p>
+				This moves will cost {costString}
+				{symbol}. You'll need to deposit {depositNeededString} extra
+				{symbol} because you have {currentReserveString} in reserve.
+				<!-- TODO tailwind replacement -->
+				<span class={`${enough ? '' : 'text-red-300'}`}
+					>{`${enough ? ', ' : 'but '}`}you have {currentBalnceString}
+					{symbol}.</span
+				>
+			</p>
+			<!-- {`${currentReserve > 0 ? `+ ${currentReserveString} in reserve` : ''}`}. -->
+			<div>
+				<button on:click={clear}>Clear</button>
+				<!-- <button class={`pointer-events-auto btn btn-primary ${enough ? '' : 'btn-disabled'}`} on:click={commit}
 							>Commit</button
 						> -->
-							{#if enough}
-								<button class={`pointer-events-auto btn btn-primary`} on:click={startCommiting}>Commit</button>
-							{:else}
-								<!-- <button class={`pointer-events-auto btn btn-primary`} on:click={topup}>Topup</button> -->
-							{/if}
-						</div>
-					</div>
-				</div>
+				{#if enough}
+					<button class="primary" on:click={startCommiting}>Commit</button>
+				{:else}
+					<!-- <button class={`pointer-events-auto btn btn-primary`} on:click={topup}>Topup</button> -->
+				{/if}
 			</div>
 		</div>
 	{/if}

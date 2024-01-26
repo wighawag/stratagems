@@ -6,6 +6,8 @@
 	export let name: string;
 </script>
 
+<!-- TODO tailwind replacement -->
+
 {#if $tokenClaim.inUrl}
 	<div class="tokenClaim">
 		<div class="welcome">

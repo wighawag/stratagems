@@ -20,6 +20,8 @@
 	$: stateDisplayed = $state && addLengthToFields($state);
 </script>
 
+<!-- TODO tailwind replacement -->
+
 <DebugWrapper>
 	<p slot="title">Indexer State</p>
 

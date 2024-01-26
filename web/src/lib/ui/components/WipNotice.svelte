@@ -2,6 +2,8 @@
 	import Modal from '$utils/ui/modals/Modal.svelte';
 </script>
 
+<!-- TODO tailwind replacement -->
+
 <Modal>
 	<h3 class="text-lg font-bold">A new play-test is being worked on</h3>
 	<p class="py-4">Please come back later!</p>
