@@ -8,7 +8,7 @@
 	import Flow from '$lib/actions/flow/Flow.svelte';
 	import FactionPicker from '$lib/actions/FactionPicker.svelte';
 	import CameraInfo from '$utils/debug/CameraInfo.svelte';
-	import Header from '$lib/ui/Header.svelte';
+	import Header from '$lib/ui/header/Header.svelte';
 </script>
 
 <div class="fullscreen">
