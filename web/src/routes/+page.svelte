@@ -1,15 +1,34 @@
 <script lang="ts">
 	import {stratagemsView} from '$lib/state/ViewState';
 	import WebGlCanvas from '$lib/render/WebGLCanvas.svelte';
-	import GameUI from '$lib/ui/GameUI.svelte';
+
+	import Web3ConnectionUI from '$lib/blockchain/connection/Web3ConnectionUI.svelte';
+	import ActionPanel from '$lib/actions/ActionPanel.svelte';
+	import Epoch from '$lib/ui/components/Epoch.svelte';
+	import Flow from '$lib/actions/flow/Flow.svelte';
+	import FactionPicker from '$lib/actions/FactionPicker.svelte';
+	import CameraInfo from '$utils/debug/CameraInfo.svelte';
+	import Header from '$lib/ui/Header.svelte';
 </script>
 
 <div class="fullscreen">
 	<WebGlCanvas state={stratagemsView} />
 </div>
 
+<Header />
+
 <div class="fullscreen">
-	<GameUI />
+	<CameraInfo />
+
+	<Epoch></Epoch>
+
+	<ActionPanel />
+
+	<Flow />
+
+	<Web3ConnectionUI />
+
+	<FactionPicker />
 </div>
 
 <style>
