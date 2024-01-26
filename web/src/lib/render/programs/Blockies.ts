@@ -1,7 +1,7 @@
 import * as twgl from 'twgl.js';
 import * as m3 from '$utils/m3';
 import type {CameraState} from '../camera';
-import type {StratagemsViewState} from '$lib/blockchain/state/ViewState';
+import type {StratagemsViewState} from '$lib/state/ViewState';
 import {Blockie} from '$utils/eth/blockie';
 
 type Attributes = {positions: number[]; colors: number[]};

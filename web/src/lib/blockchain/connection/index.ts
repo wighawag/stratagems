@@ -3,7 +3,6 @@ import {contractsInfos, defaultRPC, initialContractsInfos, blockTime, localRPC, 
 import {initTransactionProcessor} from 'ethereum-tx-observer';
 import {initViemContracts} from 'web3-connection-viem';
 import {logs} from 'named-logs';
-import {initBalance} from '$lib/blockchain/state/balance';
 import {time} from '$lib/blockchain/time';
 import {stringToHex} from 'viem';
 import {get} from 'svelte/store';
@@ -179,15 +178,7 @@ export const {connection, network, account, pendingActions, execution, execute, 
 
 export const contracts = initViemContracts(execute);
 
-export const balance = initBalance({
-	token: initialContractsInfos.contracts.TestTokens.address,
-	connection,
-	account,
-	depositContract: initialContractsInfos.contracts.Stratagems.address,
-});
-
 if (typeof window !== 'undefined') {
-	(window as any).balance = balance;
 	(window as any).execution = execution;
 	(window as any).connection = connection;
 	(window as any).network = network;

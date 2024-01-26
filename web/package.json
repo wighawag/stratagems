@@ -31,6 +31,7 @@
     "@types/lodash-es": "^4.17.12",
     "ethereum-indexer-browser": "^0.6.28",
     "ethereum-tx-observer": "^0.0.3",
+    "focus-trap": "^7.5.4",
     "immer": "^10.0.3",
     "lodash-es": "^4.17.21",
     "lz-string": "^1.5.0",

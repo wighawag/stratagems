@@ -3,7 +3,7 @@
 	import {onMount} from 'svelte';
 	import {camera} from './camera';
 	import {WebGLRenderer} from './WebGLRenderer';
-	import type {StratagemsView} from '$lib/blockchain/state/ViewState';
+	import type {StratagemsView} from '$lib/state/ViewState';
 	export let state: StratagemsView;
 
 	let renderer: WebGLRenderer = new WebGLRenderer();
@@ -43,5 +43,5 @@
 {#if error}
 	{error}
 {:else}
-	<canvas id="canvas" style="width:100%; height: 100%; display: block; position: absolute; top: 0; left: 0;" />
+	<canvas id="canvas" style="width:100%; height: 100%; display: block; pointer-events: auto;" />
 {/if}

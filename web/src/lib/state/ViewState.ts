@@ -1,10 +1,9 @@
-import {copy} from '$utils/js';
 import {xyToXYID, type ContractCell, bigIntIDToXY, StratagemsContract, type StratagemsState} from 'stratagems-common';
 import type {Data} from 'stratagems-indexer';
 import {derived} from 'svelte/store';
-import {state} from '$lib/blockchain/state/State';
+import {state} from '$lib/state/State';
 import {account, accountData} from '$lib/blockchain/connection';
-import {epochState, type EpochState} from '$lib/blockchain/state/Epoch';
+import {epochState, type EpochState} from '$lib/state/Epoch';
 import type {AccountState} from 'web3-connection';
 import {
 	localMoveToContractMove,
@@ -14,7 +13,7 @@ import {
 	type StratagemsTransaction,
 } from '$lib/account/account-data';
 import type {OnChainAction, OnChainActions} from '$lib/account/base';
-import {createDraft, finishDraft} from 'immer';
+import {createDraft} from 'immer';
 
 export type ViewCell = ContractCell & {
 	localState?: 'pending' | 'planned';

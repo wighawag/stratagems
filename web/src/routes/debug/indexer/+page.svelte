@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {status, state, syncing} from '$lib/blockchain/state/State';
+	import {status, state, syncing} from '$lib/state/State';
 	import RadialProgress from '$utils/components/progress/RadialProgress.svelte';
 	import DebugWrapper from '../DebugWrapper.svelte';
 

@@ -1,9 +1,9 @@
 import {get, writable} from 'svelte/store';
-import {currentFlow, type Flow, type Step} from '..';
+import {currentFlow, type Flow, type Step} from '../flow';
 import {accountData, contracts} from '$lib/blockchain/connection';
 import {initialContractsInfos} from '$lib/config';
 import {prepareCommitment, zeroBytes24, zeroBytes32} from 'stratagems-common';
-import {epoch, epochInfo} from '$lib/blockchain/state/Epoch';
+import {epoch, epochInfo} from '$lib/state/Epoch';
 import {hexToVRS} from '$utils/eth/signatures';
 import {encodeFunctionData, parseEther, zeroAddress} from 'viem';
 import {time} from '$lib/blockchain/time';

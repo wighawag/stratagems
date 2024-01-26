@@ -5,7 +5,7 @@
 	import AlertWithSlot from '$utils/components/alert/AlertWithSlot.svelte';
 	import Alert from '$utils/components/alert/Alert.svelte';
 	import {url} from '$utils/path';
-	import {resetIndexer} from '$lib/blockchain/state/State';
+	import {resetIndexer} from '$lib/state/State';
 	import NeedAWallet from './NeedAWallet.svelte';
 
 	const builtin = connection.builtin;

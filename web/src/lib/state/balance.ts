@@ -1,8 +1,9 @@
-import {blockTime} from '$lib/config';
+import {blockTime, initialContractsInfos} from '$lib/config';
 import type {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {writable, type Readable} from 'svelte/store';
 import {zeroAddress, type Address, encodeFunctionData} from 'viem';
 import type {AccountState, ConnectionState} from 'web3-connection';
+import {connection, account} from '$lib/blockchain/connection';
 
 export type BalanceData = {
 	state: 'Idle' | 'Loaded';
@@ -146,3 +147,11 @@ export function initBalance({
 		subscribe: store.subscribe,
 	};
 }
+
+
+export const balance = initBalance({
+	token: initialContractsInfos.contracts.TestTokens.address,
+	connection,
+	account,
+	depositContract: initialContractsInfos.contracts.Stratagems.address,
+});

@@ -1,14 +1,15 @@
 <script lang="ts">
-	import {epochInfo} from '$lib/blockchain/state/Epoch';
+	import {epochInfo} from '$lib/state/Epoch';
 	import {FUZD_URI, contractsInfos, initialContractsInfos} from '$lib/config';
-	import {stratagemsView} from '$lib/blockchain/state/ViewState';
+	import {stratagemsView} from '$lib/state/ViewState';
 	import {time} from '$lib/blockchain/time';
 	import {increaseContractTime} from '$utils/debug';
 	import {timeToText} from '$utils/time';
-	import {account, balance, contracts} from '$lib/blockchain/connection';
+	import {account, contracts} from '$lib/blockchain/connection';
 	import {parseEther} from 'viem';
 	import Executor from '../utilities/Executor.svelte';
 	import TxExecutor from '../utilities/TxExecutor.svelte';
+	import {balance} from '$lib/state/balance';
 
 	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
 	async function nextPhase() {

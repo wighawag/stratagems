@@ -1,10 +1,11 @@
 <script lang="ts">
-	import {balance, devProvider, account, accountData} from '$lib/blockchain/connection';
+	import {devProvider, account, accountData} from '$lib/blockchain/connection';
 	import {initialContractsInfos} from '$lib/config';
-	import {encodeFunctionData, formatEther, formatUnits} from 'viem';
-	import {startCommit} from '$lib/ui/flows/commit';
-	import {epochInfo} from '$lib/blockchain/state/Epoch';
-	import RevealPanel from './RevealPanel.svelte';
+	import {encodeFunctionData, formatUnits} from 'viem';
+	import {startCommit} from '$lib/actions/commit';
+	import {epochInfo} from '$lib/state/Epoch';
+	import RevealPanel from './reveal/RevealPanel.svelte';
+	import {balance} from '$lib/state/balance';
 
 	const offchainState = accountData.offchainState;
 

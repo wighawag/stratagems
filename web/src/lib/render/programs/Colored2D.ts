@@ -3,7 +3,7 @@ import * as m3 from '$utils/m3';
 import {parseColorV4} from '$utils/webgl/color';
 import type {CameraState} from '../camera';
 import {COLORS_VEC4} from '../colors';
-import type {StratagemsViewState} from '$lib/blockchain/state/ViewState';
+import type {StratagemsViewState} from '$lib/state/ViewState';
 
 const DOT_COLOR = parseColorV4('ffffff');
 

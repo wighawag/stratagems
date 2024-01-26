@@ -1,4 +1,4 @@
-import {stratagemsView} from '$lib/blockchain/state/ViewState';
+import {stratagemsView} from '$lib/state/ViewState';
 import {account, accountData} from '$lib/blockchain/connection';
 
 import {xyToXYID, Color} from 'stratagems-common';

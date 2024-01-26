@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {currentFlow} from '$lib/ui/flows';
+	import {currentFlow} from './';
 	import Modal from '$utils/components/modals/Modal.svelte';
 
 	$: state = $currentFlow?.state;

@@ -3,7 +3,7 @@ import * as twgl from 'twgl.js';
 import type {CameraState} from './camera';
 import type {RenderViewState} from './renderview';
 import {GridLayer} from './programs/Grid';
-import type {StratagemsViewState} from '$lib/blockchain/state/ViewState';
+import type {StratagemsViewState} from '$lib/state/ViewState';
 import {Textured2DLayer} from './programs/Textured2D';
 import {Colored2DLayer} from './programs/Colored2D';
 import {BlockiesLayer} from './programs/Blockies';

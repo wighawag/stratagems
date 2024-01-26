@@ -1,5 +1,5 @@
 import {writable} from 'svelte/store';
-import {currentFlow, type Flow, type Step} from '..';
+import {currentFlow, type Flow, type Step} from '../flow';
 import {contracts} from '$lib/blockchain/connection';
 import {prepareCommitment, zeroBytes24} from 'stratagems-common';
 import {zeroAddress} from 'viem';
