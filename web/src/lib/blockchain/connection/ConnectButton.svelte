@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {connection, account, pendingActions, network, contracts} from '$lib/blockchain/connection';
+	import {connection, account, network, contracts} from './';
 	import ImgBlockie from '$utils/components/ethereum/ImgBlockie.svelte';
 	import {contractsInfos, initialContractsInfos} from '$lib/config';
 	import {getNetworkConfig} from '$lib/blockchain/networks';

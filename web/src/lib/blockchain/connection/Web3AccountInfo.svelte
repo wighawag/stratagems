@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Modal from '$utils/components/modals/Modal.svelte';
-	import type {account as Account} from '$lib/blockchain/connection';
+	import type {account as Account} from './';
 	import AccountSignIn from './AccountSignIn.svelte';
 	export let account: typeof Account;
 </script>

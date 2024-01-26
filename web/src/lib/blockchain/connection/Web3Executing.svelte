@@ -2,12 +2,7 @@
 	import {contractsInfos} from '$lib/config';
 	import {getNetworkConfig} from '$lib/blockchain/networks';
 	import Modal from '$utils/components/modals/Modal.svelte';
-	import type {
-		connection as Connection,
-		execution as Execution,
-		network as Network,
-		account as Account,
-	} from '$lib/blockchain/connection';
+	import type {connection as Connection, execution as Execution, network as Network, account as Account} from './';
 
 	export let connection: typeof Connection;
 	export let account: typeof Account;

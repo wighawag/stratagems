@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type {pendingActions as PendingActions} from '$lib/blockchain/connection';
+	import type {pendingActions as PendingActions} from './';
 	export let pendingActions: typeof PendingActions;
 	import Modal from '$utils/components/modals/Modal.svelte';
 	import {modalStore} from '$utils/components/modals/stores';

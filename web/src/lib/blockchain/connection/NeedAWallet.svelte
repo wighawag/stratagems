@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Modal from '$utils/components/modals/Modal.svelte';
 	import {url} from '$utils/path';
-	import {connection} from '$lib/blockchain/connection';
+	import {connection} from './';
 </script>
 
 <Modal onResponse={() => connection.cancel()}>

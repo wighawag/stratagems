@@ -1,6 +1,6 @@
 <script lang="ts">
 	import NavTabs from '$utils/components/navigation/NavTabs.svelte';
-	import Web3ConnectionUI from '$lib/ui/web3/Web3ConnectionUI.svelte';
+	import Web3ConnectionUI from '$lib/blockchain/connection/Web3ConnectionUI.svelte';
 </script>
 
 <div>

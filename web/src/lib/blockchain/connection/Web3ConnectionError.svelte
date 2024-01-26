@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type {connection as Connection, network as Network} from '$lib/blockchain/connection';
+	import type {connection as Connection, network as Network} from './';
 	export let network: typeof Network;
 	export let connection: typeof Connection;
 	import AlertWithSlot from '$utils/components/alert/AlertWithSlot.svelte';

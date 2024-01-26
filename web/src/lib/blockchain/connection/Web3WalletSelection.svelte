@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type {connection as Connection} from '$lib/blockchain/connection';
+	import type {connection as Connection} from './';
 	export let connection: typeof Connection;
 	import {url} from '$utils/path';
 	import Modal from '$utils/components/modals/Modal.svelte';

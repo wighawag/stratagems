@@ -1,5 +1,5 @@
 <script>
-	import ConnectButton from '$lib/ui/web3/ConnectButton.svelte';
+	import ConnectButton from '$lib/blockchain/connection/ConnectButton.svelte';
 </script>
 
 <main>

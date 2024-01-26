@@ -5,7 +5,7 @@
 		connection as Connection,
 		pendingActions as PendingActions,
 		account as Account,
-	} from '$lib/blockchain/connection';
+	} from './';
 	import Web3ConnectionError from './Web3ConnectionError.svelte';
 	import Web3PendingActions from './Web3PendingActions.svelte';
 	import Web3WalletSelection from './Web3WalletSelection.svelte';

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Web3ConnectionUI from '$lib/ui/web3/Web3ConnectionUI.svelte';
+	import Web3ConnectionUI from '$lib/blockchain/connection/Web3ConnectionUI.svelte';
 	import {stratagemsView} from '$lib/blockchain/state/ViewState';
 	import ActionPanel from '$lib/ui/panels/ActionPanel.svelte';
 	import Epoch from '$utils/components/info/Epoch.svelte';
