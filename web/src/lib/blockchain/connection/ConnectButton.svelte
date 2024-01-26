@@ -133,9 +133,9 @@
 			4px 6px 2px 0 rgba(0, 0, 0, 0.06);
 
 		background-color: var(--color-surface-800);
-
 		border: 16px solid var(--color-text-on-surface);
 		border-image: url(/border.png) 16 fill;
+		image-rendering: pixelated;
 	}
 
 	.menu button {

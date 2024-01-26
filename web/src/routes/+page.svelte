@@ -78,15 +78,19 @@
 		background-color: var(--color-surface-500);
 		border: 16px solid var(--color-text-on-surface);
 		border-image: url(/border.png) 16 repeat;
+		image-rendering: pixelated;
 	}
 
 	.faction-picker {
 		margin: 0.5rem;
+
+		background-color: var(--color-surface-500);
 		border: 16px solid var(--color-text-on-surface);
 		border-image: url(/border.png) 16 repeat;
+		image-rendering: pixelated;
+
 		width: fit-content;
 		padding: 0.25rem;
-		background-color: var(--color-surface-500);
 		width: fit-content;
 	}
 </style>

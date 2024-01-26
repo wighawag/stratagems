@@ -26,5 +26,6 @@
 
 		width: 100%;
 		max-width: 600px;
+		word-wrap: break-word;
 	}
 </style>

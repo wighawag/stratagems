@@ -1,5 +1,6 @@
 <script lang="ts">
 	import {createExecutor} from '$utils/debug';
+	import Banner from '$utils/ui/banners/Banner.svelte';
 
 	export let func: (...args: any[]) => Promise<any>;
 	export let args: any[] = [];
@@ -9,12 +10,16 @@
 
 <div>
 	{#if $execution.error}
-		{$execution.error}
-		<button class="error" on:click={() => execution.acknowledgeError()}>Ok</button>
-	{:else}
-		<button disabled={$execution.executing} class="success" on:click={() => execution.execute(...args)}><slot /></button
-		>
+		<Banner>
+			<p>{$execution.error}</p>
+			<button class="error" on:click={() => execution.acknowledgeError()}>Ok</button>
+		</Banner>
 	{/if}
+	<button
+		disabled={$execution.executing || $execution.error}
+		class="success"
+		on:click={() => execution.execute(...args)}><slot /></button
+	>
 </div>
 
 <style>
