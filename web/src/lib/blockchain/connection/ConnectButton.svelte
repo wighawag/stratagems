@@ -120,7 +120,10 @@
 	.menu {
 		position: absolute;
 		display: flex;
+		flex-direction: column;
 		justify-content: center;
+		gap: 0.25rem;
+		align-items: center;
 		right: 0;
 		list-style: none;
 		padding: 16px;
@@ -130,6 +133,9 @@
 			4px 6px 2px 0 rgba(0, 0, 0, 0.06);
 
 		background-color: var(--color-surface-800);
+
+		border: 16px solid var(--color-text-on-surface);
+		border-image: url(/border.png) 16 fill;
 	}
 
 	.menu button {

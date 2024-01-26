@@ -58,7 +58,7 @@
 	}
 
 	.epoch-info {
-		background-color: blue;
+		background-color: var(--color-surface-800);
 		box-shadow:
 			0 10px 15px -3px rgba(0, 0, 0, 0.1),
 			0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -75,9 +75,13 @@
 		right: 0;
 
 		background-color: var(--color-surface-500);
+		border: 16px solid var(--color-text-on-surface);
+		border-image: url(/border.png) 16 repeat;
 	}
 
 	.faction-picker {
+		border: 16px solid var(--color-text-on-surface);
+		border-image: url(/border.png) 16 repeat;
 		width: fit-content;
 		padding: 0.25rem;
 		background-color: var(--color-surface-500);

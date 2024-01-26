@@ -4,15 +4,16 @@
 
 /* Colors */
 :root {
-	--color-surface: 231.43 15%;
-	--color-surface-lightness: 18%;
-	--color-on-surface: 0 0%;
-	--color-on-surface-lightness: 100%;
+	--color-surface: 324.38 80%;
+	--color-surface-lightness: 7.84%;
+	--color-on-surface: 40 97.06%;
+	--color-on-surface-lightness: 73.33%;
 
 	--color-lighness-direction: -1;
 
-	--color-primary: 325.52 100%;
-	--color-primary-lightness: 74%;
+	/*nhsl(34.97, 69.59%, 57.45%) */
+	--color-primary: 115.23 54.32%;
+	--color-primary-lightness: 31.76%;
 	--color-on-primary: 0 0%;
 	--color-on-primary-lightness: 0%;
 
