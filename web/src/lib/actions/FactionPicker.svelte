@@ -32,9 +32,15 @@
 	}
 </script>
 
-<div class="fixed border top-48">
-	<p class="text-slate-900">Your Color</p>
+<div>
+	<p>Your Color</p>
 	<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
-	<img class="w-20" style="image-rendering: pixelated;" src={url(src)} alt="color" on:click={swapColor} />
+	<img style="image-rendering: pixelated;" src={url(src)} alt="color" on:click={swapColor} />
 </div>
+
+<style>
+	img {
+		pointer-events: auto;
+	}
+</style>

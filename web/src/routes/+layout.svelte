@@ -24,6 +24,19 @@
 <!-- then add the UI components -->
 <Banners />
 
-<VersionAndInstallNotfications />
+<div class="fullscreen">
+	<VersionAndInstallNotfications />
+</div>
 
 <Modals />
+
+<style>
+	.fullscreen {
+		pointer-events: none;
+		position: absolute;
+		top: 0;
+		left: 0;
+		height: 100%;
+		width: 100%;
+	}
+</style>

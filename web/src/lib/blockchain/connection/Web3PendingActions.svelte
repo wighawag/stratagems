@@ -5,27 +5,27 @@
 	import {genericModals, type GenericModalData} from '$utils/ui/modals/generic-modals';
 
 	function confirmPendingTransactionCancellation() {
-		() => {
-			// in case the tx is rejected while showing that confirmation modal
-			// we need to close it
-			const data: GenericModalData = {
-				onResponse: (yes: boolean) => {
-					unsubscribe();
-					if (yes) {
-						pendingActions.skip();
-					}
-					return true;
-				},
-				type: 'confirm',
-				message: 'Are you sure?',
-			};
-			const unsubscribe = pendingActions.subscribe((p) => {
-				if (p.list.length === 0) {
-					genericModals.close(data);
+		// in case the tx is rejected while showing that confirmation modal
+		// we need to close it
+		const data: GenericModalData = {
+			onResponse: (yes: boolean) => {
+				unsubscribe();
+				if (yes) {
+					pendingActions.skip();
+
+					console.log(pendingActions.$state);
 				}
-			});
-			genericModals.open(data);
+				return true;
+			},
+			type: 'confirm',
+			message: 'Are you sure?',
 		};
+		const unsubscribe = pendingActions.subscribe((p) => {
+			if (p.list.length === 0) {
+				genericModals.close(data);
+			}
+		});
+		genericModals.open(data);
 	}
 </script>
 
@@ -45,6 +45,8 @@
 			{/if}
 		</p>
 	</Modal>
+{:else}
+	<div style="position: absolute;">HEllo</div>
 {/if}
 
 <style>
