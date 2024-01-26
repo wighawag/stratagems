@@ -1,14 +1,12 @@
 <script lang="ts">
 	import '../css/index.css';
 	// import {dev} from '$app/environment';
-	// import NewVersionNotification from '$utils/components/web/NewVersionNotification.svelte';
 	// import NoInstallPrompt from '$utils/components/web/NoInstallPrompt.svelte';
 	// import {url} from '$utils/path';
 	// import {initialContractsInfos, params} from '$lib/config';
-	// import Header from '$lib/ui/structure/Header.svelte';
-	// import EraseNotice from '$utils/components/utilities/EraseNotice.svelte';
-	// import ClaimTokenScreen from '$utils/components/claim/ClaimTokenScreen.svelte';
-	// import WipNotice from '$utils/components/utilities/WipNotice.svelte';
+	import EraseNotice from '$lib/ui/components/EraseNotice.svelte';
+	import ClaimTokenScreen from '$lib/actions/claim/ClaimTokenScreen.svelte';
+	import WipNotice from '$lib/ui/components/WipNotice.svelte';
 	import Head from './Head.svelte';
 	import Banners from '$utils/ui/banners/Banners.svelte';
 	import VersionAndInstallNotfications from '$lib/ui/install/VersionAndInstallNotfications.svelte';
@@ -27,6 +25,14 @@
 
 <div class="fullscreen">
 	<VersionAndInstallNotfications src={url('/icon.png')} alt="Stratagems" />
+</div>
+
+<!-- <WipNotice /> -->
+
+<EraseNotice />
+
+<div class="fullscreen">
+	<ClaimTokenScreen name="Stratagems" />
 </div>
 
 <Modals />

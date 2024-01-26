@@ -34,15 +34,17 @@
 <svelte:window on:click={(e) => closeMenu()} />
 
 {#if $account.state === 'Disconnected' || $account.locked}
-	{#if $account.locked}
-		<button class="primary" disabled={$account.unlocking} on:click={() => account.unlock()}>unlock</button>
-	{:else}
-		<button
-			disabled={$connection.connecting}
-			class={`${$connection.initialised ? '' : 'invisible'} primary`}
-			on:click={() => connection.connect()}>{$connection.connecting ? 'Connecting' : 'Connect'}</button
-		>
-	{/if}
+	<div class="disconnected">
+		{#if $account.locked}
+			<button class="primary" disabled={$account.unlocking} on:click={() => account.unlock()}>unlock</button>
+		{:else}
+			<button
+				disabled={$connection.connecting}
+				class={`${$connection.initialised ? '' : 'invisible'} primary`}
+				on:click={() => connection.connect()}>{$connection.connecting ? 'Connecting' : 'Connect'}</button
+			>
+		{/if}
+	</div>
 {:else}
 	<div class="connected">
 		{#if $network.notSupported}
@@ -98,6 +100,13 @@
 	.connected {
 		text-align: right;
 		width: 5.5rem;
+		height: 3rem;
+	}
+
+	.disconnected {
+		display: flex;
+		place-items: center;
+		height: 3rem;
 	}
 
 	.dropdown {

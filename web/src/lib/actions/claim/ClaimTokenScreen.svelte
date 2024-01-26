@@ -7,14 +7,11 @@
 </script>
 
 {#if $tokenClaim.inUrl}
-	<div class="fixed inset-0 overflow-y-auto bg-base-100" style="z-index: 51">
-		<div class="relative bg-base-300 border-2 border-secondary top-1 mx-1">
-			<div class="max-w-screen-xl mx-auto py-3 px-3 sm:px-6 lg:px-8">
-				<div class="sm:text-center sm:px-16 text-secondary-content text-center">Welcome to {name}</div>
-				<div class="absolute inset-y-0 right-0 pt-1 pr-1 flex items-start sm:pt-1 sm:pr-2 sm:items-start" />
-			</div>
+	<div class="tokenClaim">
+		<div class="welcome">
+			Welcome to {name}
 		</div>
-		<div class="justify-center mt-10 text-center">
+		<div class="main">
 			{#if $tokenClaim.error}
 				<p class="m-5 text-error">{$tokenClaim.error}</p>
 				<button class="btn btn-warning" on:click={() => tokenClaim.acknowledgeError()}>ok</button>
@@ -87,3 +84,14 @@
 		</div>
 	</div>
 {/if}
+
+<style>
+	.tokenClaim {
+		pointer-events: auto;
+		width: 100%;
+		height: 100%;
+		background-color: black;
+	}
+	.welcome {
+	}
+</style>
