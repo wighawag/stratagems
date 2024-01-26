@@ -1,37 +1,37 @@
 <script lang="ts">
 	import type {pendingActions as PendingActions} from './';
 	export let pendingActions: typeof PendingActions;
-	import Modal from '$utils/components/modals/Modal.svelte';
-	import {modalStore} from '$utils/components/modals/stores';
-</script>
+	import Modal from '$utils/ui/modals/Modal.svelte';
+	import {genericModals, type GenericModalData} from '$utils/ui/modals/generic-modals';
 
-{#if $pendingActions.list.length > 0}
-	<Modal
-		onResponse={() => {
+	function confirmPendingTransactionCancellation() {
+		() => {
 			// in case the tx is rejected while showing that confirmation modal
 			// we need to close it
-			// TODO have modal id to ensure we close the right one
-			const unsubscribe = pendingActions.subscribe((p) => {
-				if (p.list.length === 0) {
-					modalStore.close();
-				}
-			});
-			modalStore.trigger({
-				response: (yes) => {
+			const data: GenericModalData = {
+				onResponse: (yes: boolean) => {
 					unsubscribe();
 					if (yes) {
 						pendingActions.skip();
 					}
 					return true;
 				},
-				content: {
-					type: 'confirm',
-					message: 'Are you sure?',
-				},
+				type: 'confirm',
+				message: 'Are you sure?',
+			};
+			const unsubscribe = pendingActions.subscribe((p) => {
+				if (p.list.length === 0) {
+					genericModals.close(data);
+				}
 			});
-		}}
-		cancelation={{button: true, clickOutside: false}}
-	>
+			genericModals.open(data);
+		};
+	}
+</script>
+
+{#if $pendingActions.list.length > 0}
+	<!-- TODO ? cancelation={{button: true, clickOutside: false}}-->
+	<Modal oncancel={confirmPendingTransactionCancellation}>
 		{#if $pendingActions.list[0].item.metadata && $pendingActions.list[0].item.metadata.title}
 			<h3 class="title">
 				{$pendingActions.list[0].item.metadata.title}

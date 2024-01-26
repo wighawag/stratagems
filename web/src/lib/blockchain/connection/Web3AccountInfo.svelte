@@ -1,18 +1,19 @@
 <script lang="ts">
-	import Modal from '$utils/components/modals/Modal.svelte';
+	import GenericModal from '$utils/ui/modals/GenericModal.svelte';
+	import Modal from '$utils/ui/modals/Modal.svelte';
 	import type {account as Account} from './';
 	import AccountSignIn from './AccountSignIn.svelte';
 	export let account: typeof Account;
 </script>
 
 {#if $account.unlocking}
-	<Modal
-		onResponse={() => {
+	<!-- TODO cancelation={{clickOutside: false, button: true}}-->
+	<GenericModal
+		oncancel={() => {
 			account.cancelUnlock();
 			return true;
 		}}
-		settings={{type: 'info', message: 'Please unlock'}}
-		cancelation={{clickOutside: false, button: true}}
+		modal={{type: 'info', message: 'Please unlock'}}
 	/>
 {/if}
 

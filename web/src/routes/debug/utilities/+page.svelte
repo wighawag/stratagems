@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Executor from '$utils/components/utilities/Executor.svelte';
+	import Executor from '$lib/ui/components/Executor.svelte';
 	import {time} from '$lib/blockchain/time';
 	import {increaseBlockTime, increaseContractTime} from '$utils/debug';
 	import DebugWrapper from '../DebugWrapper.svelte';

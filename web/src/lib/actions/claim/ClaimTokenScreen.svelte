@@ -1,7 +1,7 @@
 <script lang="ts">
 	import {initialContractsInfos} from '$lib/config';
 	import {account, connection, network} from '$lib/blockchain/connection';
-	import ImgBlockie from '../ethereum/ImgBlockie.svelte';
+	import ImgBlockie from '../../../utils/ethereum/ImgBlockie.svelte';
 	import tokenClaim from './tokenClaim';
 	export let name: string;
 </script>

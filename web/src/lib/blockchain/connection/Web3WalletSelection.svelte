@@ -2,7 +2,7 @@
 	import type {connection as Connection} from './';
 	export let connection: typeof Connection;
 	import {url} from '$utils/path';
-	import Modal from '$utils/components/modals/Modal.svelte';
+	import Modal from '$utils/ui/modals/Modal.svelte';
 
 	const builtin = connection.builtin;
 
@@ -41,7 +41,7 @@
 </script>
 
 {#if $connection.requireSelection}
-	<Modal onResponse={() => connection.cancel()}>
+	<Modal oncancel={() => connection.cancel()}>
 		<div class="title">
 			<p>How do you want to connect ?</p>
 		</div>

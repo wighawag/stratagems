@@ -1,5 +1,5 @@
 <script lang="ts">
-	import NavTabs from '$utils/components/navigation/NavTabs.svelte';
+	import NavTabs from '$utils/navigation/NavTabs.svelte';
 </script>
 
 <header>

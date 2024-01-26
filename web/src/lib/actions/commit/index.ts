@@ -4,13 +4,13 @@ import {accountData, contracts} from '$lib/blockchain/connection';
 import {initialContractsInfos} from '$lib/config';
 import {prepareCommitment, zeroBytes24, zeroBytes32} from 'stratagems-common';
 import {epoch, epochInfo} from '$lib/state/Epoch';
-import {hexToVRS} from '$utils/eth/signatures';
-import {encodeFunctionData, parseEther, zeroAddress} from 'viem';
+import {hexToVRS} from '$utils/ethereum/signatures';
+import {encodeFunctionData, zeroAddress} from 'viem';
 import {time} from '$lib/blockchain/time';
 import {timeToText} from '$utils/time';
 import {localMoveToContractMove, type CommitMetadata} from '$lib/account/account-data';
 import PermitComponent from './PermitComponent.svelte';
-import {estimateGasPrice} from '$utils/eth/gas';
+import {estimateGasPrice} from '$utils/ethereum/gas';
 
 export type CommitState = {
 	permit?: {

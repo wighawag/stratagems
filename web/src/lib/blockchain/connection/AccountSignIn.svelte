@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Modal from '$utils/components/modals/Modal.svelte';
+	import Modal from '$utils/ui/modals/Modal.svelte';
 	import {onMount} from 'svelte';
 	import type {account as Account} from './';
 	export let account: typeof Account;

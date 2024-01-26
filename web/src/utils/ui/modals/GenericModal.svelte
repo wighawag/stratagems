@@ -1,13 +1,15 @@
 <script lang="ts">
 	import Modal from './Modal.svelte';
-	import { genericModals, type GenericModalData } from './generic-modals.js';
+	import {genericModals, type GenericModalData} from './generic-modals.js';
+	import type {Cancellation} from './types';
 
+	export let oncancel: Cancellation | undefined = undefined;
 	export let modal: GenericModalData;
 	$: info = modal.type === 'info' ? modal : undefined;
 	$: confirm = modal.type === 'confirm' ? modal : undefined;
 </script>
 
-<Modal style="--width:300px;--height:200px;--background-color:purple;">
+<Modal {oncancel} style="--width:300px;--height:200px;--background-color:purple;">
 	{#if confirm}
 		{@const m = confirm}
 		<p>{confirm.title}</p>

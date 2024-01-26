@@ -4,7 +4,7 @@
 	export let style: string | undefined = undefined;
 	export let rootClass = '';
 
-	import {Blockie} from '$utils/eth/blockie';
+	import {Blockie} from '$utils/ethereum/blockie';
 
 	$: uri = Blockie.getURI(address, offset);
 </script>

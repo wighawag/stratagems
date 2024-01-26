@@ -1,8 +1,8 @@
 <script>
-	import Modal from '../modals/Modal.svelte';
+	import Modal from '$utils/ui/modals/Modal.svelte';
 </script>
 
-<Modal cancelation={{cancelable: false}}>
+<Modal>
 	<h3 class="text-lg font-bold">A new play-test is being worked on</h3>
 	<p class="py-4">Please come back later!</p>
 	<p class="py-4">

@@ -1,10 +1,10 @@
 <script lang="ts">
-	import Modal from '$utils/components/modals/Modal.svelte';
+	import Modal from '$utils/ui/modals/Modal.svelte';
 	import {url} from '$utils/path';
 	import {connection} from './';
 </script>
 
-<Modal onResponse={() => connection.cancel()}>
+<Modal oncancel={() => connection.cancel()}>
 	<div class="title">You need to a web3 wallet to continue</div>
 	<div class="download">
 		<a href="https://metamask.io/download.html" role="button" class="primary">

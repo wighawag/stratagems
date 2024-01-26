@@ -1,6 +1,6 @@
 <script lang="ts">
 	import {connection, account, network, contracts} from './';
-	import ImgBlockie from '$utils/components/ethereum/ImgBlockie.svelte';
+	import ImgBlockie from '$utils/ethereum/ImgBlockie.svelte';
 	import {contractsInfos, initialContractsInfos} from '$lib/config';
 	import {getNetworkConfig} from '$lib/blockchain/networks';
 	import {zeroAddress} from 'viem';

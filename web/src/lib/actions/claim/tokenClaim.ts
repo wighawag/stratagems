@@ -1,6 +1,6 @@
 import {hashParams} from '$lib/config';
 import {formatError} from '$utils/debug';
-import {estimateGasPrice} from '$utils/eth/gas';
+import {estimateGasPrice} from '$utils/ethereum/gas';
 import {rebuildLocationHash} from '$utils/url';
 import {account, connection, contracts, network} from '$lib/blockchain/connection';
 import {derived, writable} from 'svelte/store';

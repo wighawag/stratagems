@@ -7,8 +7,8 @@
 	import {timeToText} from '$utils/time';
 	import {account, contracts} from '$lib/blockchain/connection';
 	import {parseEther} from 'viem';
-	import Executor from '../utilities/Executor.svelte';
-	import TxExecutor from '../utilities/TxExecutor.svelte';
+	import Executor from './Executor.svelte';
+	import TxExecutor from './TxExecutor.svelte';
 	import {balance} from '$lib/state/balance';
 
 	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();

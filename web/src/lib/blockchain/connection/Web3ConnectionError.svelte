@@ -2,11 +2,11 @@
 	import type {connection as Connection, network as Network} from './';
 	export let network: typeof Network;
 	export let connection: typeof Connection;
-	import AlertWithSlot from '$utils/components/alert/AlertWithSlot.svelte';
-	import Alert from '$utils/components/alert/Alert.svelte';
 	import {url} from '$utils/path';
 	import {resetIndexer} from '$lib/state/State';
 	import NeedAWallet from './NeedAWallet.svelte';
+	import GenericBanner from '$utils/ui/banners/GenericBanner.svelte';
+	import Banner from '$utils/ui/banners/Banner.svelte';
 
 	const builtin = connection.builtin;
 
@@ -17,28 +17,34 @@
 	{#if $connection.error.id === 'NoBuiltinWallet'}
 		<NeedAWallet />
 	{:else}
-		<Alert data={$connection.error} onClose={connection.acknowledgeError} />
+		<GenericBanner
+			banner={{
+				title: $connection.error.title,
+				message: $connection.error.message,
+				ondismiss: connection.acknowledgeError,
+			}}
+		/>
 	{/if}
 {:else if $network.nonceCached === 'BlockOutOfRangeError' || $network.genesisNotMatching || $network.blocksCached}
-	<AlertWithSlot>
+	<Banner>
 		<p class="main-message">
 			{$builtin.vendor === 'Metamask' ? 'Block cache detected, Metamask  😭' : 'Block cache detected'}
 		</p>
 
 		<p class="message">You'll need to shutdown and reopen your browser</p>
 		<button tabindex="0" on:click={() => location.reload()}> Else Try Reload? </button>
-	</AlertWithSlot>
+	</Banner>
 {:else if $network.hasEncounteredBlocksCacheIssue}
-	<AlertWithSlot>
+	<Banner>
 		<p class="main-message">You seemed to have recovered from Block Cacke Issue</p>
 
 		<p class="message">You most likely need to clear any data dervided from the chain as it may be invalid.</p>
 		<button tabindex="0" on:click={() => resetIndexer().then(() => network.acknowledgeBlockCacheIssue())}>
 			Clear
 		</button>
-	</AlertWithSlot>
+	</Banner>
 {:else if $network.nonceCached === 'cache'}
-	<AlertWithSlot>
+	<Banner>
 		<p class="main-message">
 			{$builtin.vendor === 'Metamask'
 				? 'Nonce cache detected, Metamask need to have its accounts reset 😭'
@@ -65,7 +71,7 @@
 				</svg> &gt; Settings &gt; Advanced &gt; Clear Activity Tab Data
 			</p>
 		{/if}
-	</AlertWithSlot>
+	</Banner>
 {/if}
 
 <style>
