@@ -20,9 +20,12 @@ hide element so that only screen-reader can "see" them
 
 /* used for svg icon so they are by default the size of the font*/
 .font-icon {
-	min-height: 1rem;
-	min-width: 1rem;
+	fill: currentColor;
+	min-width: 1em;
+	width: 1em;
+	height: 1em;
 	display: inline-block;
+	vertical-align: bottom;
 }
 
 .invisible {

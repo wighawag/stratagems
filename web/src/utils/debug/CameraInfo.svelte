@@ -4,6 +4,6 @@
 
 {#if $camera}
 	<div class="alert alert-warning absolute">
-		World Pointer {$camera.pointerX}, {$camera.pointerY}
+		World {Math.floor($camera.pointerX)},{Math.floor($camera.pointerY)}
 	</div>
 {/if}

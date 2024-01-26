@@ -11,33 +11,75 @@
 	import Header from '$lib/ui/header/Header.svelte';
 </script>
 
-<div class="fullscreen">
+<div class="canvas">
 	<WebGlCanvas state={stratagemsView} />
 </div>
 
-<Header />
-
-<div class="fullscreen">
-	<CameraInfo />
-
-	<Epoch></Epoch>
-
-	<ActionPanel />
-
-	<Flow />
-
-	<Web3ConnectionUI />
-
-	<FactionPicker />
+<div style="position: absolute; width: 100%;">
+	<Header>
+		<div class="epoch-info">
+			<Epoch></Epoch>
+		</div>
+		<div class="faction-picker">
+			<FactionPicker />
+		</div>
+	</Header>
 </div>
 
+<div class="camera-info">
+	<CameraInfo />
+</div>
+
+<div class="action-panel">
+	<ActionPanel />
+</div>
+
+<Flow />
+
+<Web3ConnectionUI />
+
 <style>
-	.fullscreen {
+	.canvas {
 		pointer-events: none;
 		position: absolute;
 		top: 0;
 		left: 0;
 		height: 100%;
 		width: 100%;
+	}
+
+	.camera-info {
+		position: absolute;
+		top: 50%;
+		left: 0;
+		width: 6rem;
+		padding: 0.25rem;
+		background-color: var(--color-surface-500);
+	}
+
+	.epoch-info {
+		background-color: blue;
+		box-shadow:
+			0 10px 15px -3px rgba(0, 0, 0, 0.1),
+			0 4px 6px -2px rgba(0, 0, 0, 0.05);
+		padding: 1rem;
+
+		width: 100%;
+	}
+
+	.action-panel {
+		width: 300px;
+		max-width: 100%;
+		position: absolute;
+		bottom: 0;
+		right: 0;
+
+		background-color: var(--color-surface-500);
+	}
+
+	.faction-picker {
+		width: fit-content;
+		padding: 0.25rem;
+		background-color: var(--color-surface-500);
 	}
 </style>

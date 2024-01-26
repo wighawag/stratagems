@@ -45,8 +45,6 @@
 			{/if}
 		</p>
 	</Modal>
-{:else}
-	<div style="position: absolute;">HEllo</div>
 {/if}
 
 <style>

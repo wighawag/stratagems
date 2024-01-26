@@ -1,48 +1,30 @@
 <script lang="ts">
 	import {fly} from 'svelte/transition';
 
-	// import {serviceWorker} from './';
+	import {serviceWorker} from './serviceWorker';
 	import PromptCard from '$utils/ui/prompts/PromptCard.svelte';
 
-	// export let src: string;
-	// export let alt: string;
+	export let src: string;
+	export let alt: string;
 
-	// function skip() {
-	// 	$serviceWorker.updateAvailable = false;
-	// }
-
-	// function reload() {
-	// 	if ($serviceWorker.updateAvailable && $serviceWorker.registration) {
-	// 		if ($serviceWorker.registration.waiting) {
-	// 			$serviceWorker.registration.waiting.postMessage('skipWaiting');
-	// 		} else {
-	// 			console.error(`not waiting..., todo reload?`);
-	// 			// window.location.reload();
-	// 		}
-	// 		$serviceWorker.updateAvailable = false;
-	// 	}
-	// }
-
-	let src = '';
-	let alt = '';
-	function reload() {
-		open = false;
-	}
 	function skip() {
-		open = false;
+		$serviceWorker.updateAvailable = false;
 	}
 
-	let open = false;
+	function reload() {
+		if ($serviceWorker.updateAvailable && $serviceWorker.registration) {
+			if ($serviceWorker.registration.waiting) {
+				$serviceWorker.registration.waiting.postMessage('skipWaiting');
+			} else {
+				console.error(`not waiting..., todo reload?`);
+				// window.location.reload();
+			}
+			$serviceWorker.updateAvailable = false;
+		}
+	}
 </script>
 
-<!-- <svelte:window on:click={() => open = !open} /> -->
-
-<div style="position: fixed; top: 2rem; left:0;">
-	<button on:click={() => (open = !open)}>notif</button>
-</div>
-
-<!-- {#if $serviceWorker.updateAvailable && $serviceWorker.registration} -->
-{#if open}
+{#if $serviceWorker.updateAvailable && $serviceWorker.registration}
 	<!-- svelte-ignore a11y-click-events-have-key-events-->
 	<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->

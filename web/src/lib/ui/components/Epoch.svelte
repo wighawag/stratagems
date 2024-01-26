@@ -68,8 +68,8 @@
 </script>
 
 {#if !$time.synced}
-	<div class="alert alert-warning absolute">
-		<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"
+	<div>
+		<svg xmlns="http://www.w3.org/2000/svg" class="font-icon" fill="none" viewBox="0 0 24 24"
 			><path
 				stroke-linecap="round"
 				stroke-linejoin="round"
@@ -77,11 +77,11 @@
 				d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
 			/></svg
 		>
-		<p>Syncing ..., you might need to connect your wallet.</p>
+		<span>Syncing ..., you might need to connect your wallet.</span>
 	</div>
 {:else if $epochInfo.timeLeftToReveal > 0}
-	<div class="alert alert-warning absolute">
-		<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"
+	<div>
+		<svg xmlns="http://www.w3.org/2000/svg" class="font-icon" fill="none" viewBox="0 0 24 24"
 			><path
 				stroke-linecap="round"
 				stroke-linejoin="round"
@@ -89,9 +89,9 @@
 				d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
 			/></svg
 		>
-		<p>
+		<span>
 			Please wait while everyone reveal their moves... <svg
-				class="stroke-current shrink-0 h-6 w-6 inline"
+				class="font-icon"
 				xmlns="http://www.w3.org/2000/svg"
 				fill="none"
 				viewBox="0 0 24 24"
@@ -103,13 +103,13 @@
 					d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
 				/>
 			</svg>
-		</p>
-		<p>{timeToText($epochInfo.timeLeftToReveal)} left</p>
+		</span>
+		<span>{timeToText($epochInfo.timeLeftToReveal)} left</span>
 		{#if isAdmin}<Executor func={() => nextPhase()}>Skip To New Round</Executor>{/if}
 	</div>
 {:else if $balance.state === 'Loaded'}
 	{#if $balance.nativeBalance < parseEther('0.001')}
-		<div class="alert alert-warning absolute">
+		<div>
 			{#if isSepolia}
 				<a href="https://sepoliafaucet.com/" target="_blank" rel="noopener noreferrer ">Request test ETH</a>
 			{:else}
@@ -118,36 +118,36 @@
 		</div>
 	{:else if $balance.tokenBalance === 0n}
 		{#if any(initialContractsInfos.contracts)['TestTokensDistributor']}
-			<div class="alert alert-warning absolute">
+			<div>
 				<TxExecutor btn="btn-sm" func={() => topupToken()}>Get Test token</TxExecutor>
 			</div>
 		{:else}
-			<div class="alert alert-warning absolute">
-				<p>
+			<div>
+				<span>
 					You do no not have any token to play <a
 						class="underline"
 						href="https://community.etherplay.io"
 						target="_blank"
 						rel="noreferer noopener">Ask on our Discord</a
 					>
-				</p>
+				</span>
 			</div>
 		{/if}
 	{:else}
-		<div class="alert alert-info absolute">
+		<div>
 			{#if $stratagemsView.hasCommitment}
-				<p>Please wait until commit phase is over, or replace your moves</p>
+				<span>Please wait until commit phase is over, or replace your moves</span>
 			{:else}
-				<p>Please make your move.</p>
+				<span>Please make your move.</span>
 			{/if}
 
-			<p>{timeToText($epochInfo.timeLeftToCommit)} left</p>
+			<span>{timeToText($epochInfo.timeLeftToCommit)} left</span>
 
 			{#if isAdmin}<Executor func={() => nextPhase()}>Skip to Reveal Phase</Executor>{/if}
 		</div>
 	{/if}
 {:else}
-	<div class="alert alert-info absolute">please wait ...</div>
+	<div>please wait ...</div>
 {/if}
 <!-- 
 <div class="alert alert-info absolute top-32">

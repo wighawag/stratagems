@@ -13,6 +13,7 @@
 	import Banners from '$utils/ui/banners/Banners.svelte';
 	import VersionAndInstallNotfications from '$lib/ui/install/VersionAndInstallNotfications.svelte';
 	import Modals from '$utils/ui/modals/Modals.svelte';
+	import {url} from '$utils/path';
 </script>
 
 <!-- add head, meta, sentry and other debug utilties-->
@@ -25,7 +26,7 @@
 <Banners />
 
 <div class="fullscreen">
-	<VersionAndInstallNotfications />
+	<VersionAndInstallNotfications src={url('/icon.png')} alt="Stratagems" />
 </div>
 
 <Modals />
