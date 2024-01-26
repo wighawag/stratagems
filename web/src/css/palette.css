@@ -11,9 +11,8 @@
 
 	--color-lighness-direction: -1;
 
-	/*nhsl(34.97, 69.59%, 57.45%) */
-	--color-primary: 115.23 54.32%;
-	--color-primary-lightness: 31.76%;
+	--color-primary: 34.97 69.59%;
+	--color-primary-lightness: 57.45%;
 	--color-on-primary: 0 0%;
 	--color-on-primary-lightness: 0%;
 

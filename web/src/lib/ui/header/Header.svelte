@@ -14,9 +14,7 @@
 		</nav>
 		<ConnectButton></ConnectButton>
 	</div>
-	<div class="under">
-		<slot />
-	</div>
+	<slot />
 </header>
 
 <style>
@@ -26,6 +24,7 @@
 	}
 
 	.top {
+		pointer-events: auto;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;

@@ -29,7 +29,7 @@
 <!-- TODO tailwind replacement -->
 
 {#if $currentFlow && $currentStepIndex !== undefined && $state}
-	<Modal>
+	<Modal oncancel={() => cancel()}>
 		<ul class="steps mb-4 text-xs">
 			{#each $currentFlow.steps as step, index}
 				<li class={`step ${$currentStepIndex > index ? 'step-primary' : ''}`}>{step.title}</li>

@@ -15,7 +15,7 @@
 	<WebGlCanvas state={stratagemsView} />
 </div>
 
-<div style="position: absolute; width: 100%;">
+<div style="position: absolute; width: 100%; pointer-events: none;">
 	<Header>
 		<div class="epoch-info">
 			<Epoch></Epoch>
@@ -58,7 +58,7 @@
 	}
 
 	.epoch-info {
-		background-color: var(--color-surface-800);
+		background-color: hsl(217 70% 20%); /*var(--color-surface-800);*/
 		box-shadow:
 			0 10px 15px -3px rgba(0, 0, 0, 0.1),
 			0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -68,6 +68,7 @@
 	}
 
 	.action-panel {
+		margin: 0.5rem;
 		width: 300px;
 		max-width: 100%;
 		position: absolute;
@@ -80,10 +81,12 @@
 	}
 
 	.faction-picker {
+		margin: 0.5rem;
 		border: 16px solid var(--color-text-on-surface);
 		border-image: url(/border.png) 16 repeat;
 		width: fit-content;
 		padding: 0.25rem;
 		background-color: var(--color-surface-500);
+		width: fit-content;
 	}
 </style>
