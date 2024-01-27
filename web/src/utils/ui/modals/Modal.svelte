@@ -15,10 +15,25 @@
 
 <style>
 	.modal {
-		background-color: var(--color-surface-800);
+		/* background-color: var(--color-surface-800); */
+
 		border: 64px solid var(--color-text-on-surface);
-		border-image: url(/border.png) 16 fill;
+		border-image: url(/game-assets/ui/border.png) fill 16 repeat;
 		image-rendering: pixelated;
+
+		/* border: 32px solid var(--color-text-on-surface);
+		border-image: url(/game-assets/ui/wooden-frame.png) fill 7 repeat;
+		image-rendering: pixelated; */
+
+		/* border: 16px solid var(--color-text-on-surface);
+		border-image: url(/game-assets/ui/paper-frame.png) fill 4 repeat;
+		image-rendering: pixelated;
+		color: black; */
+
+		/* border: 42px solid var(--color-text-on-surface);
+		border-image: url(/game-assets/ui/wooden-frame-2.png) fill 7 repeat;
+		image-rendering: pixelated;
+		color: black; */
 
 		/* background-color: var(--color-surface-800, var(--background-color, red)); */
 		box-shadow:

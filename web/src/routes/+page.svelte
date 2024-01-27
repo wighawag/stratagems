@@ -77,7 +77,7 @@
 
 		background-color: var(--color-surface-500);
 		border: 16px solid var(--color-text-on-surface);
-		border-image: url(/border.png) 16 repeat;
+		border-image: url(/game-assets/ui/border.png) 16 repeat;
 		image-rendering: pixelated;
 	}
 
@@ -86,7 +86,7 @@
 
 		background-color: var(--color-surface-500);
 		border: 16px solid var(--color-text-on-surface);
-		border-image: url(/border.png) 16 repeat;
+		border-image: url(/game-assets/ui/border.png) 16 repeat;
 		image-rendering: pixelated;
 
 		width: fit-content;

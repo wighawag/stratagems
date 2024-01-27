@@ -134,7 +134,7 @@
 
 		background-color: var(--color-surface-800);
 		border: 16px solid var(--color-text-on-surface);
-		border-image: url(/border.png) 16 fill;
+		border-image: url(/game-assets/ui/border.png) 16 fill;
 		image-rendering: pixelated;
 	}
 

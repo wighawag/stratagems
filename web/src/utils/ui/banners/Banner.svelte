@@ -17,7 +17,7 @@
 	.banner {
 		background-color: var(--color-surface-800);
 		border: 32px solid var(--color-text-on-surface);
-		border-image: url(/border-red.png) 16 fill;
+		border-image: url(/game-assets/ui/border-red.png) 16 fill;
 
 		image-rendering: pixelated;
 		box-shadow:
