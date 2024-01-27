@@ -50,12 +50,13 @@ export function formatError(e: any): string {
 
 // TODO move in promise utitilies
 export type Execution<T> = {executing: boolean; error?: any; result?: T};
-export function createExecutor<T, F extends (...args: any[]) => Promise<T>>(
-	func: F,
-): Readable<Execution<T>> & {
+export type Executor<T, F> = Readable<Execution<T>> & {
 	execute: F;
 	acknowledgeError: () => void;
-} {
+};
+export function createExecutor<T, F extends (...args: any[]) => Promise<T>>(
+	func: F,
+): Executor<T, F> {
 	const executing = writable<Execution<T>>({executing: false});
 
 	const execute = ((...args: any[]) => {

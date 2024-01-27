@@ -15,7 +15,11 @@
 
 <style>
 	.banner {
-		background-color: var(--color-surface-800, var(--background-color, red));
+		background-color: var(--color-surface-800);
+		border: 32px solid var(--color-text-on-surface);
+		border-image: url(/border-red.png) 16 fill;
+
+		image-rendering: pixelated;
 		box-shadow:
 			0 10px 15px -3px rgba(0, 0, 0, 0.1),
 			0 4px 6px -2px rgba(0, 0, 0, 0.05);

@@ -1,21 +1,26 @@
 <script lang="ts">
-	import { fly } from 'svelte/transition';
+	import {fly} from 'svelte/transition';
 	import ModalContainer from './ModalContainer.svelte';
-	import { type Cancellation } from './types.js';
+	import {type Cancellation} from './types.js';
 
 	export let oncancel: Cancellation = undefined;
 	export let style: string | undefined = undefined;
 </script>
 
 <ModalContainer {oncancel}>
-	<div class="modal" transition:fly={{ y: '50vh' }} {style}>
+	<div class="modal" transition:fly={{y: '50vh'}} {style}>
 		<slot />
 	</div>
 </ModalContainer>
 
 <style>
 	.modal {
-		background-color: var(--color-surface-800, var(--background-color, red));
+		background-color: var(--color-surface-800);
+		border: 64px solid var(--color-text-on-surface);
+		border-image: url(/border.png) 16 fill;
+		image-rendering: pixelated;
+
+		/* background-color: var(--color-surface-800, var(--background-color, red)); */
 		box-shadow:
 			0 10px 15px -3px rgba(0, 0, 0, 0.1),
 			0 4px 6px -2px rgba(0, 0, 0, 0.05);
