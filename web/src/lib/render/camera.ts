@@ -1,4 +1,4 @@
-import {BasicObjectStore} from '$lib/utils/stores/base';
+import {BasicObjectStore} from '$utils/stores/base';
 import type {Readable} from 'svelte/store';
 import type {RenderViewState} from './renderview';
 
@@ -14,6 +14,8 @@ export type CameraState = {
 	renderHeight: number;
 	renderScale: number;
 	devicePixelRatio: number;
+	pointerX: number;
+	pointerY: number;
 };
 
 type RenderViewReadable = Readable<RenderViewState>;
@@ -56,7 +58,7 @@ export class Camera extends BasicObjectStore<CameraState> {
 		this.surface = surface;
 		this.renderView = renderView;
 
-		if (!this.$store) {
+		if (!this.$store || this.$store.width == 0) {
 			try {
 				const data = localStorage.getItem('_camera');
 				if (data) {
@@ -78,6 +80,8 @@ export class Camera extends BasicObjectStore<CameraState> {
 					renderHeight: 0,
 					renderScale: 0,
 					devicePixelRatio: 1,
+					pointerX: 0,
+					pointerY: 0,
 				});
 				this._setXYZoom(0, 0, 32);
 				// this._setXYZoom(0, 0, Camera.zoomLevels[this.zoomIndex]);
@@ -138,7 +142,7 @@ export class Camera extends BasicObjectStore<CameraState> {
 		this.$store.height = this.$store.renderHeight / scale;
 		this.$store.renderX = this.$store.renderWidth / 2 - this.$store.x * scale;
 		this.$store.renderY = this.$store.renderHeight / 2 - this.$store.y * scale;
-		super._set(this.$store);
+		this._set(this.$store);
 
 		(window as any).cameraState = this.$store;
 		try {
@@ -223,8 +227,6 @@ export class Camera extends BasicObjectStore<CameraState> {
 	}
 
 	onmousemove(e: TouchEvent | MouseEvent): void {
-		if (!this.isPanning) return;
-
 		// let movementX;
 		// let movementY;
 		// if (e.movementX) {
@@ -241,25 +243,42 @@ export class Camera extends BasicObjectStore<CameraState> {
 			eventY = e.touches[0].clientY;
 		}
 
-		// console.log({eventX, eventY});
-		const movementX = eventX - this.lastClientPos.x;
-		const movementY = eventY - this.lastClientPos.y;
-		// console.log(JSON.stringify({movementX, movementY, eMovementX: e.movementX, eMovementY: e.movementY}))
-		this.lastClientPos = {x: eventX, y: eventY};
+		const eventWorldCoords = this.screenToWorld(eventX, eventY);
+		this.$store.pointerX = eventWorldCoords.x;
+		this.$store.pointerY = eventWorldCoords.y;
 
-		// console.log('panning', movementX, movementY);
+		if (this.isPanning) {
+			// console.log({eventX, eventY});
+			const movementX = eventX - this.lastClientPos.x;
+			const movementY = eventY - this.lastClientPos.y;
+			// console.log(JSON.stringify({movementX, movementY, eMovementX: e.movementX, eMovementY: e.movementY}))
+			this.lastClientPos = {x: eventX, y: eventY};
 
-		const devicePixelRatio = this.$store.devicePixelRatio;
-		const scale = this.$store.zoom * devicePixelRatio;
-		this.$store.x -= (movementX * devicePixelRatio) / scale;
-		this.$store.y -= (movementY * devicePixelRatio) / scale;
+			// console.log('panning', movementX, movementY);
+
+			const devicePixelRatio = this.$store.devicePixelRatio;
+			const scale = this.$store.zoom * devicePixelRatio;
+			const xDiff = -(movementX * devicePixelRatio) / scale;
+			const yDiff = -(movementY * devicePixelRatio) / scale;
+			this.$store.x += xDiff;
+			this.$store.y += yDiff;
+
+			this.$store.pointerX -= xDiff;
+			this.$store.pointerY -= yDiff;
+		}
+
 		this._update();
 	}
 
 	navigate(x: number, y: number, zoom: number): void {
+		const xDiff = x - this.$store.x;
+		const yDiff = y - this.$store.y;
 		this.$store.x = x;
 		this.$store.y = y;
 		this.$store.zoom = zoom;
+
+		this.$store.pointerX -= xDiff;
+		this.$store.pointerY -= yDiff;
 		this._update();
 	}
 

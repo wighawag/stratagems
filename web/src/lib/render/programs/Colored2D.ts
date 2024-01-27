@@ -1,10 +1,9 @@
-import type {Data} from 'stratagems-indexer';
 import * as twgl from 'twgl.js';
-import * as m3 from '$lib/m3';
-import {parseColorV4} from '$lib/webgl/color';
+import * as m3 from '$utils/m3';
+import {parseColorV4} from '$utils/webgl/color';
 import type {CameraState} from '../camera';
 import {COLORS_VEC4} from '../colors';
-import type {StratagemsViewState} from '$lib/blockchain/state/ViewState';
+import type {StratagemsViewState} from '$lib/state/ViewState';
 
 const DOT_COLOR = parseColorV4('ffffff');
 

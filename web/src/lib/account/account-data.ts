@@ -1,13 +1,13 @@
 import type {PendingTransaction, EIP1193TransactionWithMetadata} from 'ethereum-tx-observer';
 import {BaseAccountHandler, type OnChainAction, type OnChainActions, type RevealMetadata} from './base';
-import {mainnetClient, createClient} from '$lib/fuzd';
+import {mainnetClient, createClient} from '$utils/fuzd';
 import type {AccountInfo, SyncInfo} from './types';
 import {FUZD_URI, SYNC_DB_NAME} from '$lib/config';
 import {xyToBigIntID, type Color, type ContractMove} from 'stratagems-common';
 import {writable, type Readable, type Writable} from 'svelte/store';
-import {time} from '$lib/time';
+import {time} from '$lib/blockchain/time';
 import type {ScheduleInfo} from 'fuzd-scheduler';
-import {account} from '$lib/web3';
+import {account} from '$lib/blockchain/connection';
 
 export type LocalMove = {
 	player: string;

@@ -1,13 +1,13 @@
-import localCache from '$lib/utils/localCache';
+import localCache from '$utils/localCache';
 import {writable} from 'svelte/store';
 import type {Readable, Writable} from 'svelte/store';
 import {xchacha20poly1305} from '@noble/ciphers/chacha';
 import {randomBytes} from '@noble/ciphers/webcrypto/utils';
 import {base64url} from '@scure/base';
-import {compressToUint8Array, decompressFromUint8Array} from '$lib/utils/data';
+import {compressToUint8Array, decompressFromUint8Array} from '$utils/data';
 import {privateKeyToAccount, type PrivateKeyAccount} from 'viem/accounts';
 import {hexToBytes} from 'viem';
-import {time} from '$lib/time';
+import {time} from '$lib/blockchain/time';
 
 import {logs} from 'named-logs';
 import type {AccountInfo, MergeFunction, SyncInfo} from './types';

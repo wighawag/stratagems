@@ -1,7 +1,7 @@
 import * as twgl from 'twgl.js';
-import * as m3 from '$lib/m3';
+import * as m3 from '$utils/m3';
 import type {CameraState} from '../camera';
-import type {StratagemsViewState} from '$lib/blockchain/state/ViewState';
+import type {StratagemsViewState} from '$lib/state/ViewState';
 import {
 	drawCastle,
 	drawCorners,
@@ -16,7 +16,7 @@ import {
 	drawUnit,
 	drawFire,
 } from '../tiles';
-import {epoch} from '$lib/blockchain/state/Epoch';
+import {epoch} from '$lib/state/Epoch';
 import {get} from 'svelte/store';
 
 const vertexShaderSource = `#version 300 es

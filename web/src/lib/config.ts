@@ -1,7 +1,7 @@
 import {readable} from 'svelte/store';
 import {version} from '$app/environment';
 
-import {getParamsFromLocation, getHashParamsFromLocation} from '$lib/utils/url';
+import {getParamsFromLocation, getHashParamsFromLocation} from '$utils/url';
 import {
 	PUBLIC_ETH_NODE_URI_LOCALHOST,
 	PUBLIC_ETH_NODE_URI,
@@ -11,10 +11,8 @@ import {
 	PUBLIC_FUZD_URI,
 } from '$env/static/public';
 
-import {env} from '$env/dynamic/public';
-
 import _contractsInfos from '$data/contracts';
-import {networks} from './blockchain/networks';
+import {networks} from '$lib/blockchain/networks';
 
 export type NetworkConfig = typeof _contractsInfos;
 
@@ -66,19 +64,15 @@ function noEndSlash(str: string) {
 
 const FUZD_URI = noEndSlash(params.fuzd || PUBLIC_FUZD_URI);
 
+const syncInfo = PUBLIC_SYNC_URI
+	? {
+			uri: PUBLIC_SYNC_URI,
+		}
+	: undefined;
+
 const blockchainExplorer = networks[initialContractsInfos.chainId].config.blockExplorerUrls[0];
 
-export {
-	defaultRPC,
-	isUsingLocalDevNetwork,
-	localRPC,
-	blockTime,
-	env,
-	SYNC_DB_NAME,
-	SYNC_URI,
-	FUZD_URI,
-	blockchainExplorer,
-};
+export {defaultRPC, isUsingLocalDevNetwork, localRPC, blockTime, SYNC_DB_NAME, syncInfo, FUZD_URI, blockchainExplorer};
 
 let _setContractsInfos: any;
 export const contractsInfos = readable<NetworkConfig>(_contractsInfos, (set) => {
@@ -97,15 +91,3 @@ if (import.meta.hot) {
 }
 
 console.log(`VERSION: ${version}`);
-
-if (typeof window != 'undefined') {
-	(window as any).env = env;
-	(window as any).staticEnv = {
-		PUBLIC_ETH_NODE_URI_LOCALHOST,
-		PUBLIC_ETH_NODE_URI,
-		PUBLIC_LOCALHOST_BLOCK_TIME,
-		PUBLIC_DEV_NODE_URI,
-		PUBLIC_SYNC_URI,
-		PUBLIC_FUZD_URI,
-	};
-}
