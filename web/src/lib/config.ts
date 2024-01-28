@@ -19,7 +19,7 @@ export type NetworkConfig = typeof _contractsInfos;
 
 export const initialContractsInfos = _contractsInfos;
 
-export const globalQueryParams = ['debug', 'log', 'ethnode', '_d_eruda', 'dev', 'ethnode', 'sync'];
+export const globalQueryParams = ['debug', 'log', 'ethnode', '_d_eruda', 'dev', 'ethnode', 'sync', "fuzd"];
 
 export const hashParams = getHashParamsFromLocation();
 export const {params} = getParamsFromLocation();
@@ -54,7 +54,7 @@ const localRPC =
 
 const defaultRPC = defaultRPCURL ? {chainId: contractsChainId, url: defaultRPCURL} : undefined;
 
-const SYNC_URI = params.sync || PUBLIC_SYNC_URI; //  'http://invalid.io'; // to emulate connection loss :)
+const SYNC_URI = params["sync"] || PUBLIC_SYNC_URI; //  'http://invalid.io'; // to emulate connection loss :)
 const SYNC_DB_NAME =
 	'stratagems-' + initialContractsInfos.chainId + '-' + initialContractsInfos.contracts.Stratagems.address;
 
@@ -65,7 +65,7 @@ function noEndSlash(str: string) {
 	return str;
 }
 
-const FUZD_URI = noEndSlash(params.fuzd || PUBLIC_FUZD_URI);
+const FUZD_URI = noEndSlash(params["fuzd"] || PUBLIC_FUZD_URI);
 
 const syncInfo = SYNC_URI
 	? {
