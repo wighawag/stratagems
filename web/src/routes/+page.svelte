@@ -11,11 +11,7 @@
 	import Header from '$lib/ui/header/Header.svelte';
 </script>
 
-<div class="canvas">
-	<WebGlCanvas state={stratagemsView} />
-</div>
-
-<div style="position: absolute; width: 100%; pointer-events: none;">
+<div style="position: absolute; z-index: 1; width: 100%; height: 100%; pointer-events: none;">
 	<Header>
 		<div class="epoch-info">
 			<Epoch></Epoch>
@@ -24,19 +20,23 @@
 			<FactionPicker />
 		</div>
 	</Header>
+
+	<div class="camera-info">
+		<CameraInfo />
+	</div>
+
+	<div class="action-panel">
+		<ActionPanel />
+	</div>
+
+	<Flow />
+
+	<Web3ConnectionUI />
 </div>
 
-<div class="camera-info">
-	<CameraInfo />
+<div class="canvas">
+	<WebGlCanvas state={stratagemsView} />
 </div>
-
-<div class="action-panel">
-	<ActionPanel />
-</div>
-
-<Flow />
-
-<Web3ConnectionUI />
 
 <style>
 	.canvas {
@@ -49,6 +49,7 @@
 	}
 
 	.camera-info {
+		pointer-events: auto;
 		position: absolute;
 		top: 50%;
 		left: 0;
@@ -58,6 +59,7 @@
 	}
 
 	.epoch-info {
+		pointer-events: auto;
 		background-color: hsl(217 70% 20%); /*var(--color-surface-800);*/
 		box-shadow:
 			0 10px 15px -3px rgba(0, 0, 0, 0.1),
@@ -68,6 +70,7 @@
 	}
 
 	.action-panel {
+		pointer-events: auto;
 		margin: 0.5rem;
 		width: 300px;
 		max-width: 100%;
@@ -82,6 +85,7 @@
 	}
 
 	.faction-picker {
+		pointer-events: auto;
 		margin: 0.5rem;
 
 		background-color: var(--color-surface-500);

@@ -9,12 +9,22 @@
 	let renderer: WebGLRenderer = new WebGLRenderer();
 	function render(time: number) {
 		renderer.render(time);
-		requestAnimationFrame(render);
+		animationFrameID = requestAnimationFrame(render);
 	}
+
+	let animationFrameID: number;
+	let unsubscribeFromCamera: () => void;
+	let unsubscribeFromState: () => void;
 
 	let error: string | undefined;
 	onMount(() => {
 		const canvas = document.querySelector('#canvas') as HTMLCanvasElement;
+
+		// prevent selection of text when start dragging on canvas
+		// TODO we should actually disable pointer events for all elements in the way
+		//   and reenable when dragging on canvas stop
+		canvas.onselectstart = () => false;
+
 		// const gl = canvas.getContext('webgl2', {alpha: false});
 		const gl = canvas.getContext('webgl2');
 		if (!gl) {
@@ -25,18 +35,25 @@
 		renderer.initialize(canvas, gl);
 
 		camera.start(canvas, renderer);
-		camera.subscribe((v) => renderer.updateView(v));
+		unsubscribeFromCamera = camera.subscribe((v) => renderer.updateView(v));
 
 		const actionHandler = new ActionHandler();
 		camera.onClick = (x, y) => {
 			actionHandler.onCell(Math.floor(x), Math.floor(y));
 		};
 
-		state.subscribe(($state) => {
+		unsubscribeFromState = state.subscribe(($state) => {
 			renderer.updateState($state);
 		});
 
-		requestAnimationFrame(render);
+		animationFrameID = requestAnimationFrame(render);
+
+		return () => {
+			camera.stop();
+			cancelAnimationFrame(animationFrameID);
+			unsubscribeFromCamera();
+			unsubscribeFromState();
+		};
 	});
 </script>
 
