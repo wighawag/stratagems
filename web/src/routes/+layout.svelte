@@ -26,36 +26,25 @@
 <Head />
 <!-- -->
 
-<slot />
+<div style="position: absolute; z-index: 1; width: 100%; height: 100%; pointer-events: none;">
+	<!-- then add the UI components -->
+	<Banners />
 
-<!-- then add the UI components -->
-<Banners />
-
-<div class="fullscreen">
 	<VersionAndInstallNotfications src={url('/icon.png')} alt="Stratagems" />
+
+	{#if showWIPNotice}
+		<WipNotice />
+	{/if}
+
+	<EraseNotice />
+
+	<div class="fullscreen">
+		<ClaimTokenScreen name="Stratagems" />
+	</div>
+
+	<Modals />
 </div>
 
-{#if showWIPNotice}
-	<WipNotice />
-{/if}
-
-<EraseNotice />
-
-<EraseNotice />
-
-<div class="fullscreen">
-	<ClaimTokenScreen name="Stratagems" />
+<div style="position: absolute; z-index: 0; width: 100%; height: 100%; pointer-events: none;">
+	<slot />
 </div>
-
-<Modals />
-
-<style>
-	.fullscreen {
-		pointer-events: none;
-		position: absolute;
-		top: 0;
-		left: 0;
-		height: 100%;
-		width: 100%;
-	}
-</style>
