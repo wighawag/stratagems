@@ -1,5 +1,6 @@
 import {readable} from 'svelte/store';
 import {version} from '$app/environment';
+import {dev as devEnvironment} from '$app/environment';
 
 import {getParamsFromLocation, getHashParamsFromLocation} from '$utils/url';
 import {
@@ -18,10 +19,12 @@ export type NetworkConfig = typeof _contractsInfos;
 
 export const initialContractsInfos = _contractsInfos;
 
-export const globalQueryParams = ['debug', 'log', 'ethnode', '_d_eruda'];
+export const globalQueryParams = ['debug', 'log', 'ethnode', '_d_eruda', 'dev', 'ethnode', 'sync'];
 
 export const hashParams = getHashParamsFromLocation();
 export const {params} = getParamsFromLocation();
+
+export const dev = "dev" in params ? params["dev"] === 'true' : devEnvironment;
 
 const contractsChainId = initialContractsInfos.chainId as string;
 let defaultRPCURL: string | undefined = params['ethnode'];
@@ -64,9 +67,9 @@ function noEndSlash(str: string) {
 
 const FUZD_URI = noEndSlash(params.fuzd || PUBLIC_FUZD_URI);
 
-const syncInfo = PUBLIC_SYNC_URI
+const syncInfo = SYNC_URI
 	? {
-			uri: PUBLIC_SYNC_URI,
+			uri: SYNC_URI,
 		}
 	: undefined;
 
