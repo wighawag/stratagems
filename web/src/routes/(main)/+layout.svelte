@@ -1,8 +1,4 @@
 <script lang="ts">
-	// import {dev} from '$app/environment';
-	// import NoInstallPrompt from '$utils/components/web/NoInstallPrompt.svelte';
-	// import {url} from '$utils/path';
-	// import {initialContractsInfos, params} from '$lib/config';
 	import EraseNotice from '$lib/ui/components/EraseNotice.svelte';
 	import ClaimTokenScreen from '$lib/actions/claim/ClaimTokenScreen.svelte';
 	import WipNotice from '$lib/ui/components/WipNotice.svelte';
@@ -11,8 +7,8 @@
 	import VersionAndInstallNotfications from '$lib/ui/install/VersionAndInstallNotfications.svelte';
 	import Modals from '$utils/ui/modals/Modals.svelte';
 	import {url} from '$utils/path';
-	import {dev} from '$app/environment';
-	import {initialContractsInfos, params} from '$lib/config';
+
+	import {dev, initialContractsInfos, params} from '$lib/config';
 
 	$: showWIPNotice =
 		!dev &&
