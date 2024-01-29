@@ -1,13 +1,11 @@
 <script lang="ts">
 	import {fly} from 'svelte/transition';
 	import BannerContainer from './BannerContainer.svelte';
-	import {type Dismiss} from './types.js';
 
-	export let ondismiss: Dismiss = undefined;
 	export let style: string | undefined = undefined;
 </script>
 
-<BannerContainer {ondismiss}>
+<BannerContainer>
 	<div class="banner" transition:fly={{y: '-100%'}} {style}>
 		<slot />
 	</div>

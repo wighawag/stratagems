@@ -3,7 +3,7 @@
 </script>
 
 {#if $camera}
-	<div class="alert alert-warning absolute">
+	<div>
 		World {Math.floor($camera.pointerX)},{Math.floor($camera.pointerY)}
 	</div>
 {/if}

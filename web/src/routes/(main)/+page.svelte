@@ -4,17 +4,18 @@
 
 	import Web3ConnectionUI from '$lib/blockchain/connection/Web3ConnectionUI.svelte';
 	import ActionPanel from '$lib/actions/ActionPanel.svelte';
-	import Epoch from '$lib/ui/components/Epoch.svelte';
+	import InfoBar from '$lib/ui/components/InfoBar.svelte';
 	import Flow from '$lib/actions/flow/Flow.svelte';
 	import FactionPicker from '$lib/actions/FactionPicker.svelte';
 	import CameraInfo from '$utils/debug/CameraInfo.svelte';
 	import Header from '$lib/ui/header/Header.svelte';
+	import CanvasOverlay from '$lib/ui/canvas/CanvasOverlay.svelte';
 </script>
 
 <div style="position: absolute; z-index: 1; width: 100%; height: 100%; pointer-events: none;">
 	<Header>
-		<div class="epoch-info">
-			<Epoch></Epoch>
+		<div class="info-bar">
+			<InfoBar></InfoBar>
 		</div>
 		<div class="faction-picker">
 			<FactionPicker />
@@ -24,6 +25,8 @@
 	<div class="camera-info">
 		<CameraInfo />
 	</div>
+
+	<CanvasOverlay />
 
 	<div class="action-panel">
 		<ActionPanel />
@@ -58,7 +61,7 @@
 		background-color: var(--color-surface-500);
 	}
 
-	.epoch-info {
+	.info-bar {
 		pointer-events: auto;
 		background-color: hsl(217 70% 20%); /*var(--color-surface-800);*/
 		box-shadow:

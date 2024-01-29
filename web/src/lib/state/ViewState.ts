@@ -11,6 +11,7 @@ import {
 	type OffchainState,
 	type StratagemsMetadata,
 	type StratagemsTransaction,
+	type LocalMove,
 } from '$lib/account/account-data';
 import type {OnChainAction, OnChainActions} from '$lib/account/base';
 import {createDraft} from 'immer';
@@ -31,6 +32,15 @@ export type StratagemsViewState = StratagemsState & {
 	hasSomeCells: boolean;
 };
 
+function isValidMove(move: LocalMove) {
+	if (move.x && move.y) {
+		return true;
+	}
+
+	// TODO more checks
+	return false;
+}
+
 function merge(
 	state: Data,
 	offchainState: OffchainState,
@@ -50,6 +60,9 @@ function merge(
 	let hasCommitment = false;
 	if (offchainState.moves !== undefined) {
 		for (const move of offchainState.moves) {
+			if (!isValidMove(move)) {
+				continue; // TODO delete
+			}
 			console.log(`color: ${move.color}`);
 			stratagems.computeMove(account.address as `0x${string}`, epochState.epoch, localMoveToContractMove(move));
 		}

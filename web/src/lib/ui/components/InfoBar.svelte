@@ -5,11 +5,12 @@
 	import {time} from '$lib/blockchain/time';
 	import {increaseContractTime} from '$utils/debug';
 	import {timeToText} from '$utils/time';
-	import {account, contracts} from '$lib/blockchain/connection';
+	import {account, contracts, network, switchToSupportedNetwork} from '$lib/blockchain/connection';
 	import {parseEther} from 'viem';
 	import Executor from './Executor.svelte';
 	import TxExecutor from './TxExecutor.svelte';
 	import {balance} from '$lib/state/balance';
+	import {contractNetwork} from '$lib/blockchain/networks';
 
 	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
 	async function nextPhase() {
@@ -69,49 +70,47 @@
 
 <!-- TODO tailwind replacement -->
 
+<symbol id="warning" viewBox="0 0 32 32">
+	<path
+		stroke-linecap="round"
+		stroke-linejoin="round"
+		stroke-width="2"
+		d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+	/>
+</symbol>
 <div class="info">
 	{#if !$time.synced}
-		<div>
-			<svg xmlns="http://www.w3.org/2000/svg" class="font-icon" fill="none" viewBox="0 0 24 24"
-				><path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-				/></svg
-			>
-			<span>Syncing ..., you might need to connect your wallet.</span>
-		</div>
-	{:else if $epochInfo.timeLeftToReveal > 0}
-		<div>
-			<svg xmlns="http://www.w3.org/2000/svg" class="font-icon" fill="none" viewBox="0 0 24 24"
-				><path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-				/></svg
-			>
-			<span>
-				Please wait while everyone reveal their moves... <svg
-					class="font-icon"
-					xmlns="http://www.w3.org/2000/svg"
-					fill="none"
-					viewBox="0 0 24 24"
+		{#if $network.notSupported}
+			<div><svg class="font-icon"><use xlink:href="#warning" /></svg> You are connected to the wrong network</div>
+			<div>
+				<button style="height: fit-content; padding: 0.25rem;" on:click={() => switchToSupportedNetwork()}
+					>{`Switch to ${$contractNetwork.name}`}</button
 				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-					/>
-				</svg>
-			</span>
-			<span>{timeToText($epochInfo.timeLeftToReveal)} left</span>
-		</div>
-		<div>
-			{#if isAdmin}<Executor func={() => nextPhase()}>Skip To New Round</Executor>{/if}
-		</div>
+			</div>
+		{:else}
+			<span
+				><svg class="font-icon"><use xlink:href="#warning" /></svg>Syncing ..., you might need to connect your wallet.</span
+			>
+		{/if}
+	{:else if $epochInfo.timeLeftToReveal > 0}
+		<span>
+			<svg xmlns="http://www.w3.org/2000/svg" class="font-icon" fill="none" viewBox="0 0 24 24"
+				><path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+				/></svg
+			>
+
+			Please wait while everyone reveal their moves...
+		</span>
+		<span>{timeToText($epochInfo.timeLeftToReveal)} left</span>
+		{#if isAdmin}
+			<div>
+				<Executor func={() => nextPhase()}>Skip To New Round</Executor>
+			</div>
+		{/if}
 	{:else if $balance.state === 'Loaded'}
 		{#if $balance.nativeBalance < parseEther('0.001')}
 			<div>
@@ -139,18 +138,18 @@
 				</div>
 			{/if}
 		{:else}
-			<div>
-				{#if $stratagemsView.hasCommitment}
-					<span>Please wait until commit phase is over, or replace your moves</span>
-				{:else}
-					<span>Please make your move.</span>
-				{/if}
+			{#if $stratagemsView.hasCommitment}
+				<span>Please wait until commit phase is over, or replace your moves</span>
+			{:else}
+				<span>Please make your move.</span>
+			{/if}
 
-				<span>{timeToText($epochInfo.timeLeftToCommit)} left</span>
-			</div>
-			<div>
-				{#if isAdmin}<Executor func={() => nextPhase()}>Skip to Reveal Phase</Executor>{/if}
-			</div>
+			<span>{timeToText($epochInfo.timeLeftToCommit)} left</span>
+			{#if isAdmin}
+				<div>
+					<Executor func={() => nextPhase()}>Skip to Reveal Phase</Executor>
+				</div>
+			{/if}
 		{/if}
 	{:else}
 		<div>please wait ...</div>
@@ -171,6 +170,7 @@
 		display: flex;
 		align-items: center;
 		flex-direction: row;
+		gap: 0.6rem;
 		justify-content: space-between;
 		width: 100%;
 	}

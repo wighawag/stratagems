@@ -38,7 +38,13 @@ library logger {
         UsingStratagemsTypes.Cell memory cell,
         address owner
     ) internal view {
-        string memory indent = ii == 0 ? "" : ii == 1 ? "    " : ii == 2 ? "        " : "            ";
+        string memory indent = ii == 0
+            ? ""
+            : ii == 1
+                ? "    "
+                : ii == 2
+                    ? "        "
+                    : "            ";
         // string memory indent = '';
         console.log("%s%s", indent, title);
         (int32 x, int32 y) = id.toXY();
@@ -61,7 +67,13 @@ library logger {
         string memory title,
         UsingStratagemsTypes.TokenTransferCollection memory transferCollection
     ) internal pure {
-        string memory indent = ii == 0 ? "" : ii == 1 ? "    " : ii == 2 ? "        " : "            ";
+        string memory indent = ii == 0
+            ? ""
+            : ii == 1
+                ? "    "
+                : ii == 2
+                    ? "        "
+                    : "            ";
         // string memory indent = '';
         console.log("%s%s", indent, title);
         console.log("%s-------------------------------------------------------------", indent);
@@ -151,7 +163,7 @@ abstract contract UsingStratagemsState is
                         life = MAX_LIFE;
                     }
                     newLife = life;
-                    epochUsed = lastUpdate + uint24(epochDelta);
+                    epochUsed = epoch;
                     // } else {
                     // 	newLife = life;
                     // 	epochUsed = lastUpdate;
