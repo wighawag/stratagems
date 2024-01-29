@@ -69,7 +69,7 @@ export class StratagemsContract {
 				}
 				if (effectiveDelta > 0) {
 					// if (life < MAX_LIFE) {
-					const maxEpoch = MAX_LIFE - life + Math.floor(effectiveDelta - 1) / effectiveDelta;
+					const maxEpoch = MAX_LIFE - life + Math.floor((effectiveDelta - 1) / effectiveDelta);
 					if (epochDelta > maxEpoch) {
 						epochDelta = maxEpoch;
 					}
@@ -79,13 +79,13 @@ export class StratagemsContract {
 						life = MAX_LIFE;
 					}
 					data.newLife = life;
-					data.epochUsed = lastUpdate + epochDelta;
+					data.epochUsed = epoch;
 					// } else {
 					// 	data.newLife = life;
 					// 	data.epochUsed = lastUpdate;
 					// }
 				} else if (effectiveDelta < 0) {
-					const numEpochBeforeDying = life + Math.floor(-effectiveDelta - 1) / -effectiveDelta;
+					const numEpochBeforeDying = life + Math.floor((-effectiveDelta - 1) / -effectiveDelta);
 					if (epochDelta > numEpochBeforeDying) {
 						epochDelta = numEpochBeforeDying;
 					}

@@ -5,7 +5,7 @@ import {xyToXYID, Color} from 'stratagems-common';
 import {get} from 'svelte/store';
 
 export class ActionHandler {
-	onCell(x: number, y: number) {
+	onCellClicked(x: number, y: number) {
 		console.log(x, y);
 		const player = account.$state.address;
 		if (!player) {

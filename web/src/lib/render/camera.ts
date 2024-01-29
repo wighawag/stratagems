@@ -162,6 +162,10 @@ export class Camera extends BasicObjectStore<CameraState> {
 	}
 
 	worldToScreen(x: number, y: number): {x: number; y: number} {
+		if (!this.$store) {
+			// TODO store should always be set to something
+			return {x: 0, y: 0};
+		}
 		const devicePixelRatio = this.$store.devicePixelRatio;
 		const scale = this.$store.zoom * devicePixelRatio;
 		return {

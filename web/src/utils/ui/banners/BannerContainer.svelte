@@ -33,20 +33,19 @@
 
 <script lang="ts">
 	import {onMount} from 'svelte';
-	import type {BannerOnStack, Dismiss} from './types.js';
-
-	export let ondismiss: Dismiss;
+	import type {BannerOnStack} from './types.js';
 
 	let element: HTMLElement;
 	let banner: BannerOnStack;
 	onMount(() => {
-		banner = {element, ondismiss};
+		console.log('add banner', banner);
+		banner = {element};
 		bannerStack.add(banner);
+		// return () => {
+		// 	console.log('remove banner', banner);
+		// 	bannerStack.remove(banner);
+		// };
 	});
-
-	function onDestroy() {
-		bannerStack.remove(banner);
-	}
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -56,7 +55,7 @@
 
 <style>
 	.banner-container {
-		pointer-events: initial;
+		pointer-events: auto;
 		display: flex;
 		place-content: center;
 	}

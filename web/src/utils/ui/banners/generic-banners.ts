@@ -3,6 +3,7 @@ import type { Dismiss } from './types.js';
 
 export type GenericBannerData = {
 	title?: string;
+	button?: string;
 	message: string;
 	ondismiss: Dismiss;
 };

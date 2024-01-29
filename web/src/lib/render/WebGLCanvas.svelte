@@ -39,7 +39,7 @@
 
 		const actionHandler = new ActionHandler();
 		camera.onClick = (x, y) => {
-			actionHandler.onCell(Math.floor(x), Math.floor(y));
+			actionHandler.onCellClicked(Math.floor(x), Math.floor(y));
 		};
 
 		unsubscribeFromState = state.subscribe(($state) => {
@@ -60,5 +60,9 @@
 {#if error}
 	{error}
 {:else}
-	<canvas id="canvas" style="width:100%; height: 100%; display: block; pointer-events: auto;" />
+	<canvas id="canvas" style="position: absolute; width:100%; height: 100%; display: block; pointer-events: auto;" />
+	<div
+		id="canvas-overlay"
+		style="position: absolute;width:100%; height: 100%;pointer-events: none; overflow: hidden;"
+	></div>
 {/if}

@@ -11,13 +11,7 @@ import {
 	PUBLIC_SYNC_URI,
 	PUBLIC_FUZD_URI,
 } from '$env/static/public';
-
-import _contractsInfos from '$data/contracts';
-import {networks} from '$lib/blockchain/networks';
-
-export type NetworkConfig = typeof _contractsInfos;
-
-export const initialContractsInfos = _contractsInfos;
+import { initialContractsInfos, networks, type NetworkConfig, contractsInfos } from './blockchain/networks';
 
 export const globalQueryParams = ['debug', 'log', 'ethnode', '_d_eruda', 'dev', 'ethnode', 'sync', "fuzd"];
 
@@ -75,22 +69,7 @@ const syncInfo = SYNC_URI
 
 const blockchainExplorer = networks[initialContractsInfos.chainId].config.blockExplorerUrls[0];
 
-export {defaultRPC, isUsingLocalDevNetwork, localRPC, blockTime, SYNC_DB_NAME, syncInfo, FUZD_URI, blockchainExplorer};
+export {initialContractsInfos, contractsInfos, defaultRPC, isUsingLocalDevNetwork, localRPC, blockTime, SYNC_DB_NAME, syncInfo, FUZD_URI, blockchainExplorer};
 
-let _setContractsInfos: any;
-export const contractsInfos = readable<NetworkConfig>(_contractsInfos, (set) => {
-	_setContractsInfos = set;
-});
-
-export function _asNewModule(set: any) {
-	_setContractsInfos = set;
-}
-
-if (import.meta.hot) {
-	import.meta.hot.accept((newModule) => {
-		newModule?._asNewModule(_setContractsInfos);
-		_setContractsInfos(newModule?.initialContractsInfos);
-	});
-}
 
 console.log(`VERSION: ${version}`);

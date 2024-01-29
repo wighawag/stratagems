@@ -7,6 +7,7 @@ import {time} from '$lib/blockchain/time';
 import {stringToHex} from 'viem';
 import {get} from 'svelte/store';
 import {StratagemsAccountData} from '$lib/account/account-data';
+import { contractNetwork } from '../networks';
 
 const logger = logs('stratagems');
 
@@ -178,6 +179,13 @@ export const {connection, network, account, pendingActions, execution, execute, 
 
 export const contracts = initViemContracts(execute);
 
+
+export function switchToSupportedNetwork() {
+	const n = get(contractNetwork);
+	network.switchTo(n.chainId, n.config)
+}
+
+
 if (typeof window !== 'undefined') {
 	(window as any).execution = execution;
 	(window as any).connection = connection;
@@ -191,3 +199,4 @@ if (typeof window !== 'undefined') {
 }
 
 time.setTimeKeeperContract(initialContractsInfos.contracts.Time.address);
+

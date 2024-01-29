@@ -1,7 +1,8 @@
 <script lang="ts">
-	import type {connection as Connection, network as Network} from './';
+	import {switchToSupportedNetwork, type connection as Connection, type network as Network} from './';
 	export let network: typeof Network;
 	export let connection: typeof Connection;
+	import {contractNetwork} from '$lib/blockchain/networks';
 	import {url} from '$utils/path';
 	import {resetIndexer} from '$lib/state/State';
 	import NeedAWallet from './NeedAWallet.svelte';
@@ -11,19 +12,36 @@
 	const builtin = connection.builtin;
 
 	$: console.log($connection.error);
+
+	function aknowledgeErrorAndSwitchNetwork() {
+		connection.acknowledgeError();
+		switchToSupportedNetwork();
+	}
 </script>
 
 {#if $connection.error}
 	{#if $connection.error.id === 'NoBuiltinWallet'}
 		<NeedAWallet />
 	{:else}
-		<GenericBanner
-			banner={{
-				title: $connection.error.title,
-				message: $connection.error.message,
-				ondismiss: connection.acknowledgeError,
-			}}
-		/>
+		<!-- -->
+		{#if $network.notSupported}
+			<GenericBanner
+				banner={{
+					title: 'Network not supported',
+					message: $connection.error.message,
+					button: `switch to ${$contractNetwork.name}`,
+					ondismiss: aknowledgeErrorAndSwitchNetwork,
+				}}
+			/>
+		{:else}
+			<GenericBanner
+				banner={{
+					title: $connection.error.title,
+					message: $connection.error.message,
+					ondismiss: connection.acknowledgeError,
+				}}
+			/>
+		{/if}
 	{/if}
 {:else if $network.nonceCached === 'BlockOutOfRangeError' || $network.genesisNotMatching || $network.blocksCached}
 	<Banner>

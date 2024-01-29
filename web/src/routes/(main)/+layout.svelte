@@ -22,7 +22,12 @@
 <!-- -->
 
 <div style="position: absolute; z-index: 1; width: 100%; height: 100%; pointer-events: none;">
-	<!-- then add the UI components -->
+	<div class="fullscreen">
+		<ClaimTokenScreen name="Stratagems" />
+	</div>
+
+	<Modals />
+
 	<Banners />
 
 	<VersionAndInstallNotfications src={url('/icon.png')} alt="Stratagems" />
@@ -32,12 +37,6 @@
 	{/if}
 
 	<EraseNotice />
-
-	<div class="fullscreen">
-		<ClaimTokenScreen name="Stratagems" />
-	</div>
-
-	<Modals />
 </div>
 
 <div style="position: absolute; z-index: 0; width: 100%; height: 100%; pointer-events: none;">
