@@ -58,7 +58,7 @@ a[role='button'] {
 
 button:disabled,
 a[role='button']:disabled {
-	background-color: gray;;
+	background-color: gray !important;
 }
 /* ------------------------------------------------- */
 

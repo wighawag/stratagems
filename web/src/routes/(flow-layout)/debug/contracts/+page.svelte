@@ -1,22 +1,19 @@
 <script lang="ts">
 	import {network} from '$lib/blockchain/connection';
-	import DebugWrapper from '../DebugWrapper.svelte';
 
 	$: contractList = $network.contracts
 		? Object.keys($network.contracts).map((v) => ({name: v, contract: ($network.contracts as any)[v]}))
 		: undefined;
 </script>
 
-<DebugWrapper>
-	<p slot="title">Contracts</p>
-	{#if contractList}
-		<ul>
-			{#each contractList as contract}
-				<li>{contract.name}: {contract.contract.address}</li>
-			{/each}
-		</ul>
-	{/if}
-</DebugWrapper>
+<p>Contracts</p>
+{#if contractList}
+	<ul>
+		{#each contractList as contract}
+			<li>{contract.name}: {contract.contract.address}</li>
+		{/each}
+	</ul>
+{/if}
 
 <style>
 	ul {

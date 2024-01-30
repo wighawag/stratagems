@@ -19,19 +19,19 @@
 </script>
 
 <Modal>
-	<h3 class="title">Welcome to Jolly-Roger</h3>
+	<h3 class="title">Welcome to Stratagems</h3>
 	<p class="message">
-		In order to continue and get a safe place to save data, you'll need to sign a message. Be carefull and only sign
-		this message on trusted frontend.
+		In order to continue and ensure a safe place to save your data, you'll need to sign a message. Be carefull and only
+		sign this message on trusted frontend.
 	</p>
 	<div class="form-control">
 		<label>
-			<span class="label-text">Do not ask again (trust computer)</span>
 			<input type="checkbox" bind:checked={doNotAskAgainSignature} class="checkbox" />
+			<span class="label-text">Do not ask again (trust computer)</span>
 		</label>
 		<label>
-			<span class="label-text">Sync across devices (encrypted)</span>
 			<input type="checkbox" bind:checked={remoteSyncEnabled} class="checkbox" />
+			<span class="label-text">Sync across devices (encrypted)</span>
 		</label>
 	</div>
 	<div class="actions">
@@ -51,6 +51,13 @@
 	.message {
 		padding-top: 1rem;
 		padding-bottom: 1rem;
+	}
+
+	.form-control {
+		display: flex;
+		align-items: start;
+		flex-direction: column;
+		margin-bottom: 1rem;
 	}
 
 	label {

@@ -57,7 +57,7 @@
 
 	async function topupToken() {
 		return await contracts.execute(async ({contracts, account}) => {
-			const contract = contracts.TestTokensDistributor;
+			const contract = (contracts as any).TestTokensDistributor;
 			// parseEther('0.01')
 			return contract.write.topup({account: account.address});
 		});
@@ -150,6 +150,18 @@
 					<Executor func={() => nextPhase()}>Skip to Reveal Phase</Executor>
 				</div>
 			{/if}
+		{/if}
+	{:else if $account.state === 'Disconnected'}
+		{#if $account.locked}
+			<div>You need to unlock your account.</div>
+			<!-- <div>
+				<button>Unlock</button>
+			</div> -->
+		{:else}
+			<div>You need to connect your wallet.</div>
+			<!-- <div>
+				<button>Connect</button>
+			</div> -->
 		{/if}
 	{:else}
 		<div>please wait ...</div>

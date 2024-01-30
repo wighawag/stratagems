@@ -20,7 +20,7 @@
 {#if $account.loadingStep}
 	{#if $account.loadingStep.id == 'SIGNING'}
 		<Modal>
-			<h3 class="title">Welcome to Jolly-Roger</h3>
+			<h3 class="title">Welcome to Stratagems</h3>
 			<p class="message">Sign the message to access to your data.</p>
 			<div class="modal-action">
 				<button on:click={() => account.rejectLoadingStep()} class="error">Cancel</button>

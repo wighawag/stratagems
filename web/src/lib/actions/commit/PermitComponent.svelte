@@ -36,10 +36,24 @@
 		: '0';
 </script>
 
-<p class="py-4">allow the spending of {formatedValue} {symbol}.</p>
+<div class="form">
+	<p>allow the spending of {formatedValue} {symbol}.</p>
+	<div class="value">
+		<input id="all" type="checkbox" on:change={setAmount} value={false} />
+		<label for="all">allow all {symbol}</label>
+	</div>
+</div>
 
-<!-- <div class="modal-action"> -->
-<!-- if there is a button, it will close the modal -->
-<input id="all" type="checkbox" on:change={setAmount} value={false} />
-<label for="all">allow all {symbol}</label>
-<!-- </div> -->
+<style>
+	.form {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		margin-bottom: 1rem;
+		align-items: center;
+	}
+	.value {
+		display: flex;
+		gap: 1rem;
+	}
+</style>

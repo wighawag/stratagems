@@ -72,27 +72,22 @@
 
 {#if $epochInfo.isActionPhase}
 	{#if $offchainState.moves && $offchainState.moves.length > 0}
-		<div>
-			<h2>Your Move:</h2>
-			<p>
+		<div class="panel">
+			<h2 class="title">Your Move:</h2>
+			<p class="message">
 				This moves will cost {costString}
 				{symbol}. You'll need to deposit {depositNeededString} extra
 				{symbol} because you have {currentReserveString} in reserve.
-				<!-- TODO tailwind replacement -->
-				<span class={`${enough ? '' : 'text-red-300'}`}
+				<span class={`${enough ? '' : 'not-enough'}`}
 					>{`${enough ? ', ' : 'but '}`}you have {currentBalnceString}
 					{symbol}.</span
 				>
 			</p>
-			<!-- {`${currentReserve > 0 ? `+ ${currentReserveString} in reserve` : ''}`}. -->
-			<div>
+			<div class="actions">
 				<button on:click={clear}>Clear</button>
-				<!-- <button class={`pointer-events-auto btn btn-primary ${enough ? '' : 'btn-disabled'}`} on:click={commit}
-							>Commit</button
-						> -->
-				{#if enough}
-					<button class="primary" on:click={startCommiting}>Commit</button>
-				{:else}
+
+				<button class="primary" disabled={!enough} on:click={startCommiting}>Commit</button>
+				{#if !enough}
 					<!-- <button class={`pointer-events-auto btn btn-primary`} on:click={topup}>Topup</button> -->
 				{/if}
 			</div>
@@ -101,3 +96,15 @@
 {/if}
 
 <RevealPanel />
+
+<style>
+	.panel {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+	.actions {
+		display: flex;
+		justify-content: space-between;
+	}
+</style>

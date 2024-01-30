@@ -12,7 +12,9 @@
 <Modal {oncancel} style="--width:300px;--height:200px;--background-color:purple;">
 	{#if confirm}
 		{@const m = confirm}
-		<p>{confirm.title}</p>
+		{#if m.title}
+			<p>{confirm.title}</p>
+		{/if}
 		<p>{confirm.message}</p>
 		<button
 			on:click={() => {
@@ -27,7 +29,9 @@
 			}}>confirm</button
 		>
 	{:else if info}
-		<p>{info.title}</p>
+		{#if info.title}
+			<p>{info.title}</p>
+		{/if}
 		<p>{info.message}</p>
 	{:else}
 		Unknown modal type: {modal.type}
