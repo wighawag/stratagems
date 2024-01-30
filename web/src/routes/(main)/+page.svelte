@@ -80,11 +80,6 @@
 		position: absolute;
 		bottom: 0;
 		right: 0;
-
-		background-color: var(--color-surface-500);
-		border: 16px solid var(--color-text-on-surface);
-		border-image: url(/game-assets/ui/border.png) 16 repeat;
-		image-rendering: pixelated;
 	}
 
 	.faction-picker {
