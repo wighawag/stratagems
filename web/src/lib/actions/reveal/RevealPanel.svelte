@@ -5,6 +5,7 @@
 	import {contracts} from '$lib/blockchain/connection';
 	import {startAcknowledgFailedReveal, startReveal} from './';
 	import {bnReplacer} from 'stratagems-common';
+	import {initialContractsInfos} from '$lib/config';
 
 	// const onchainActions = accountData.onchainActions;
 
@@ -37,31 +38,49 @@
 			});
 		}
 	}
-</script>
 
-<!-- TODO tailwind replacement -->
+	$: commitmentToReveal =
+		$stratagemsView.hasCommitmentToReveal?.commit?.tx.metadata?.type === 'commit'
+			? $stratagemsView.hasCommitmentToReveal.commit.tx.metadata
+			: undefined;
+
+	const symbol = initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol;
+</script>
 
 <!--TODO config instead of hardcoded 3600-->
 {#if $stratagemsView.hasCommitmentToReveal && $epochInfo.timeLeftToReveal < 3600 - 5 * 60}
-	<div class="pointer-events-none select-none fixed top-0 h-full grid place-items-end w-full max-w-full">
-		<div class="flex flex-row-reverse sm:m-2 w-full">
-			<div class="card w-full sm:w-96 bg-base-content glass">
-				<div class="card-body">
-					<h2 class="card-title text-primary">Your Move:</h2>
-					<p class="text-secondary">
-						{#if $stratagemsView.hasCommitmentToReveal.commit}
-							{JSON.stringify($stratagemsView.hasCommitmentToReveal, bnReplacer)}
-						{:else}
-							no commit tx found
-						{/if}
-					</p>
+	<div class="panel">
+		<h2 class="title">Your Move Need to be Revealed</h2>
+		<p class="description">
+			{#if $stratagemsView.hasCommitmentToReveal.commit}
+				{commitmentToReveal?.localMoves.length}
+				{symbol} at stake
+				<!-- {JSON.stringify($stratagemsView.hasCommitmentToReveal, bnReplacer)} -->
+			{:else}
+				no commit tx found
+			{/if}
+		</p>
 
-					<!-- {`${currentReserve > 0 ? `+ ${currentReserveString} in reserve` : ''}`}. -->
-					<div class="mt-4 card-actions justify-end">
-						<button class={`pointer-events-auto btn btn-primary`} on:click={startRevealing}>Reveal</button>
-					</div>
-				</div>
-			</div>
+		<!-- {`${currentReserve > 0 ? `+ ${currentReserveString} in reserve` : ''}`}. -->
+		<div class="actions">
+			<button class={`pointer-events-auto btn btn-primary`} on:click={startRevealing}>Reveal</button>
 		</div>
 	</div>
 {/if}
+
+<style>
+	.panel {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+
+		background-color: var(--color-surface-500);
+		border: 16px solid var(--color-text-on-surface);
+		border-image: url(/game-assets/ui/border.png) 16 repeat;
+		image-rendering: pixelated;
+	}
+	.actions {
+		display: flex;
+		justify-content: space-between;
+	}
+</style>

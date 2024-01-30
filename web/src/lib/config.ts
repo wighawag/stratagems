@@ -59,7 +59,7 @@ function noEndSlash(str: string) {
 	return str;
 }
 
-const FUZD_URI = noEndSlash(params["fuzd"] || PUBLIC_FUZD_URI);
+const FUZD_URI = noEndSlash(params["fuzd"] ? params["fuzd"] == "false" ? '' : params["fuzd"] : PUBLIC_FUZD_URI);
 
 const syncInfo = SYNC_URI
 	? {
