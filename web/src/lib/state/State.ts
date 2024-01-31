@@ -6,6 +6,7 @@ import {browser} from '$app/environment';
 import type {EIP1193Provider} from 'eip-1193';
 import {logs} from 'named-logs';
 import {url} from '$utils/path';
+import { derived } from 'svelte/store';
 
 const namedLogger = logs('state');
 

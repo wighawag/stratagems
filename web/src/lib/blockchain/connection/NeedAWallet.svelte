@@ -4,7 +4,12 @@
 	import {connection} from './';
 </script>
 
-<Modal oncancel={() => connection.cancel()}>
+<Modal
+	oncancel={() => {
+		connection.acknowledgeError();
+		connection.cancel();
+	}}
+>
 	<div class="title">You need to a web3 wallet to continue</div>
 	<div class="download">
 		<a href="https://metamask.io/download.html" role="button" class="primary">

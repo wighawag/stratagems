@@ -1,16 +1,18 @@
 <script lang="ts">
 	import {epochInfo} from '$lib/state/Epoch';
-	import {FUZD_URI, contractsInfos, initialContractsInfos} from '$lib/config';
+	import {FUZD_URI, contractsInfos, defaultRPC, initialContractsInfos} from '$lib/config';
 	import {stratagemsView} from '$lib/state/ViewState';
 	import {time} from '$lib/blockchain/time';
 	import {increaseContractTime} from '$utils/debug';
 	import {timeToText} from '$utils/time';
-	import {account, contracts, network, switchToSupportedNetwork} from '$lib/blockchain/connection';
+	import {account, connection, contracts, network, switchToSupportedNetwork} from '$lib/blockchain/connection';
 	import {parseEther} from 'viem';
 	import Executor from './Executor.svelte';
 	import TxExecutor from './TxExecutor.svelte';
 	import {balance} from '$lib/state/balance';
 	import {contractNetwork} from '$lib/blockchain/networks';
+	import {status} from '$lib/state/State';
+	import SyncingInfo from './SyncingInfo.svelte';
 
 	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
 	async function nextPhase() {
@@ -68,8 +70,6 @@
 	}
 </script>
 
-<!-- TODO tailwind replacement -->
-
 <symbol id="warning" viewBox="0 0 32 32">
 	<path
 		stroke-linecap="round"
@@ -79,19 +79,26 @@
 	/>
 </symbol>
 <div class="info">
-	{#if !$time.synced}
-		{#if $network.notSupported}
-			<div><svg class="font-icon"><use xlink:href="#warning" /></svg> You are connected to the wrong network</div>
-			<div>
-				<button style="height: fit-content; padding: 0.25rem;" on:click={() => switchToSupportedNetwork()}
-					>{`Switch to ${$contractNetwork.name}`}</button
-				>
-			</div>
-		{:else}
-			<span
-				><svg class="font-icon"><use xlink:href="#warning" /></svg>Syncing ..., you might need to connect your wallet.</span
+	{#if $network.notSupported}
+		<div><svg class="font-icon"><use xlink:href="#warning" /></svg> You are connected to the wrong network</div>
+		<div>
+			<button style="height: fit-content; padding: 0.25rem;" on:click={() => switchToSupportedNetwork()}
+				>{`Switch to ${$contractNetwork.name}`}</button
 			>
+		</div>
+	{:else if $connection.state !== 'Connected'}
+		{#if defaultRPC}
+			<div>You are not connected.</div>
+		{:else}
+			<div>
+				Stratagems is a fully local game and requires a wallet to even read the latest game state. Please Connect to a
+				web3 wallet.
+			</div>
 		{/if}
+	{:else if $status.state !== 'IndexingLatest'}
+		<SyncingInfo />
+	{:else if !$time.synced}
+		<span><svg class="font-icon"><use xlink:href="#warning" /></svg>Syncing Time, Please wait... </span>
 	{:else if $epochInfo.timeLeftToReveal > 0}
 		<span>
 			<svg xmlns="http://www.w3.org/2000/svg" class="font-icon" fill="none" viewBox="0 0 24 24"
@@ -153,18 +160,23 @@
 		{/if}
 	{:else if $account.state === 'Disconnected'}
 		{#if $account.locked}
-			<div>You need to unlock your account.</div>
+			<div>Welcome back! Unlock your account.</div>
 			<!-- <div>
 				<button>Unlock</button>
 			</div> -->
 		{:else}
-			<div>You need to connect your wallet.</div>
+			<div>Connect your wallet to play!</div>
 			<!-- <div>
 				<button>Connect</button>
 			</div> -->
 		{/if}
-	{:else}
-		<div>please wait ...</div>
+	{:else if $network.notSupported}
+		<div><svg class="font-icon"><use xlink:href="#warning" /></svg> You are connected to the wrong network</div>
+		<div>
+			<button style="height: fit-content; padding: 0.25rem;" on:click={() => switchToSupportedNetwork()}
+				>{`Switch to ${$contractNetwork.name}`}</button
+			>
+		</div>
 	{/if}
 </div>
 
