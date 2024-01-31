@@ -94,6 +94,4 @@
 		height: 100%;
 		background-color: black;
 	}
-	.welcome {
-	}
 </style>

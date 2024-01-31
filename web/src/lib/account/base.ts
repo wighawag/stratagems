@@ -77,7 +77,7 @@ export abstract class BaseAccountHandler<
 	off(f: OnPendingTransaction): void {
 		this.emitter.off(f);
 	}
-	onTxSent(tx: EIP1193TransactionWithMetadata<any>, hash: `0x${string}`): void {
+	onTxSent(tx: EIP1193TransactionWithMetadata, hash: `0x${string}`): void {
 		this._addAction(tx, hash, 'Broadcasted');
 		this._save();
 	}

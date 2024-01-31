@@ -2,6 +2,5 @@
 	import Header from '$lib/ui/header/Header.svelte';
 </script>
 
-<Header />
-
+<Header></Header>
 <slot />

@@ -1,37 +1,18 @@
 <script lang="ts">
-	import {connection, account, network, contracts} from './';
+	import {connection, account, network} from './';
 	import ImgBlockie from '$utils/ethereum/ImgBlockie.svelte';
-	import {contractsInfos, initialContractsInfos} from '$lib/config';
+	import {contractsInfos} from '$lib/config';
 	import {getNetworkConfig} from '$lib/blockchain/networks';
-	import {zeroAddress} from 'viem';
-
-	let tokenAllowanceUsed = (initialContractsInfos.contracts.Stratagems.linkedData.tokens as string) !== zeroAddress;
-
-	function clearAllowance() {
-		contracts.execute(async ({contracts, account}) => {
-			await contracts.TestTokens.write.approve([contracts.Stratagems.address, 0n], {account: account.address});
-		});
-	}
-
-	let open = false;
-
-	function disconnect() {
-		open = false;
-		connection.disconnect();
-	}
+	import {menu} from '$lib/ui/menu/menu';
 
 	function switchMenu(e: Event) {
-		open = !open;
+		menu.update((v) => ({
+			open: !v.open,
+		}));
 		e.stopPropagation();
 		e.preventDefault();
 	}
-
-	function closeMenu() {
-		open = false;
-	}
 </script>
-
-<svelte:window on:click={(e) => closeMenu()} />
 
 {#if $account.state === 'Disconnected' || $account.locked}
 	<div class="disconnected">
@@ -69,30 +50,11 @@
 				/>
 			</svg>
 		{/if}
-		<div class="dropdown">
-			<!-- TODO -->
-			<!-- {#if $pendingActions.list.length > 0}
-			<span style="--tw-translate-x: 10;" class="indicator-item badge badge-secondary" />
-		{/if} -->
-			<button class="blockie-button" on:click={(e) => switchMenu(e)}>
-				<div class="blockie-wrapper">
-					<ImgBlockie rootClass="blockie" address={$account.address || ''} />
-				</div>
-			</button>
-			{#if open}
-				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
-				<ul tabindex="0" class="menu">
-					<li>
-						<button class="error" on:click={() => disconnect()}>disconnect</button>
-					</li>
-					{#if tokenAllowanceUsed}
-						<li>
-							<button tabindex="0" class="error" on:click={() => clearAllowance()}>clear allowance</button>
-						</li>
-					{/if}
-				</ul>
-			{/if}
-		</div>
+		<button class="blockie-button" on:click={(e) => switchMenu(e)}>
+			<div class="blockie-wrapper">
+				<ImgBlockie rootClass="blockie" address={$account.address || ''} />
+			</div>
+		</button>
 	</div>
 {/if}
 
@@ -116,30 +78,6 @@
 	.font-icon {
 		width: 2rem;
 		height: 2rem;
-	}
-	.menu {
-		position: absolute;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		gap: 0.25rem;
-		align-items: center;
-		right: 0;
-		list-style: none;
-		padding: 16px;
-		border-radius: 16px;
-		box-shadow:
-			4px 6px 3px 0 rgb a(1, 0, 0, 0.1),
-			4px 6px 2px 0 rgba(0, 0, 0, 0.06);
-
-		background-color: var(--color-surface-800);
-		border: 16px solid var(--color-text-on-surface);
-		border-image: url(/game-assets/ui/border.png) 16 fill;
-		image-rendering: pixelated;
-	}
-
-	.menu button {
-		display: inline-block;
 	}
 
 	.blockie-button {

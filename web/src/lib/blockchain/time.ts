@@ -19,15 +19,22 @@ async function getTime() {
 				const parsedTimestamp = parseInt(rawTimestamp.slice(2), 16);
 				timestamp = await connection.$state.provider?.syncTime(parsedTimestamp);
 				lastFetchLocalTime = performance.now();
+				synced = true;
 			} else {
 				const block = await devProvider.request({
 					method: 'eth_getBlockByNumber',
 					params: ['latest', false],
 				});
-				timestamp = await connection.$state.provider?.syncTime(block);
-				lastFetchLocalTime = performance.now();
+				if (block) {
+					timestamp = await connection.$state.provider?.syncTime(block);
+					lastFetchLocalTime = performance.now();
+					synced = true;
+				} else {
+					synced = false;
+					timestamp = Math.floor(Date.now() / 1000);
+					lastFetchLocalTime = performance.now();		
+				}
 			}
-			synced = true;
 		} else {
 			synced = false;
 			timestamp = Math.floor(Date.now() / 1000);

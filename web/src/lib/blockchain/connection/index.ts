@@ -34,6 +34,7 @@ const stores = init({
 	parameters: {
 		blockTime: blockTime || 5,
 		finality: 12, // TODO
+		timeout: 2,
 	},
 	defaultRPC,
 	networks: initialContractsInfos,
@@ -42,7 +43,8 @@ const stores = init({
 	},
 	observers: {
 		onTxSent(tx, hash) {
-			accountData.onTxSent(tx, hash as `0x${string}`); // TODO web3-connection 0x{string}
+			// TODO tx type
+			accountData.onTxSent(tx as any, hash as `0x${string}`); // TODO web3-connection 0x{string}
 		},
 	},
 	acccountData: {

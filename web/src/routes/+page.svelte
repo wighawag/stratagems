@@ -1,15 +1,12 @@
 <script lang="ts">
 	import {stratagemsView} from '$lib/state/ViewState';
 	import WebGlCanvas from '$lib/render/WebGLCanvas.svelte';
-
-	import Web3ConnectionUI from '$lib/blockchain/connection/Web3ConnectionUI.svelte';
 	import ActionPanel from '$lib/actions/ActionPanel.svelte';
 	import InfoBar from '$lib/ui/components/InfoBar.svelte';
-	import Flow from '$lib/actions/flow/Flow.svelte';
 	import FactionPicker from '$lib/actions/FactionPicker.svelte';
 	import CameraInfo from '$utils/debug/CameraInfo.svelte';
-	import Header from '$lib/ui/header/Header.svelte';
 	import CanvasOverlay from '$lib/ui/canvas/CanvasOverlay.svelte';
+	import Header from '$lib/ui/header/Header.svelte';
 </script>
 
 <div style="position: absolute; z-index: 1; width: 100%; height: 100%; pointer-events: none;">
@@ -31,10 +28,6 @@
 	<div class="action-panel">
 		<ActionPanel />
 	</div>
-
-	<Flow />
-
-	<Web3ConnectionUI />
 </div>
 
 <div class="canvas">

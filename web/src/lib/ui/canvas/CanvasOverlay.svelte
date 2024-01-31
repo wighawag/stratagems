@@ -2,6 +2,7 @@
 	import {dev} from '$lib/config';
 	import {camera} from '$lib/render/camera';
 	import {stratagemsView} from '$lib/state/ViewState';
+	import {JsonView} from '@zerodevx/svelte-json-view';
 	import {xyToXYID} from 'stratagems-common';
 
 	import {portal} from 'svelte-portal';
@@ -21,10 +22,10 @@
 	<div class="cell-info" use:portal={'#canvas-overlay'} hidden style={`transform: translate(${pos.x}px, ${pos.y}px);`}>
 		Land {Math.floor(pointer.x)},{Math.floor(pointer.y)}
 		<p>
-			{JSON.stringify(cell)}
+			<JsonView json={cell} depth={1} />
 		</p>
 		<p>
-			{JSON.stringify(viewCell)}
+			<JsonView json={viewCell} depth={1} />
 		</p>
 	</div>
 {/if}

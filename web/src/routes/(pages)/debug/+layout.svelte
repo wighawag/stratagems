@@ -1,6 +1,6 @@
 <script lang="ts">
+	import Header from '$lib/ui/header/Header.svelte';
 	import NavTabs from '$utils/navigation/NavTabs.svelte';
-	import Web3ConnectionUI from '$lib/blockchain/connection/Web3ConnectionUI.svelte';
 </script>
 
 <div>
@@ -15,5 +15,3 @@
 </div>
 
 <slot />
-
-<Web3ConnectionUI />
