@@ -37,7 +37,7 @@
 </script>
 
 <div class="form">
-	<p>allow the spending of {formatedValue} {symbol}.</p>
+	<p>You'll be asked to allow the spending of {formatedValue} {symbol}.</p>
 	<div class="value">
 		<input id="all" type="checkbox" on:change={setAmount} value={false} />
 		<label for="all">allow all {symbol}</label>

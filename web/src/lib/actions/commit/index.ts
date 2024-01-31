@@ -44,7 +44,7 @@ export async function startCommit() {
 		const steps: Step<CommitState>[] = [];
 		if (amountToAllow > 0n) {
 			const permitStep = {
-				title: 'permit',
+				title: 'First: Allow Token Spending',
 				action: 'allow',
 				description: `allow the spending of tokens`,
 				component: PermitComponent,
@@ -103,9 +103,9 @@ export async function startCommit() {
 			steps.push(permitStep);
 		}
 		const txStep = {
-			title: 'transaction',
+			title: 'Perform the Commit Transaction',
 			action: 'OK',
-			description: `commit your moves`,
+			description: `This Transaction will Commit Your Moves. You can cancel (or Replace it with new Moves) before the Resolution Phase Start.`,
 			// component: PermitComponent,
 			execute: async (state: CommitState) => {
 				let txHash: `0x${string}`;

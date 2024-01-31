@@ -28,13 +28,22 @@
 
 {#if $currentFlow && $currentStepIndex !== undefined && $state}
 	<Modal oncancel={() => cancel()}>
-		<ul class="steps">
-			{#each $currentFlow.steps as step, index}
-				<li class={`step ${$currentStepIndex >= index ? 'step-primary' : ''}`}>{step.title}</li>
-			{/each}
-		</ul>
+		<!-- {#if $currentFlow.steps.length === 1}
+			<div class="title">
+				{$currentFlow.steps[0].title}
+			</div>
+		{:else}
+			<ul class="steps">
+				{#each $currentFlow.steps as step, index}
+					<li class={`step ${$currentStepIndex >= index ? 'step-primary' : ''}`}>{step.title}</li>
+				{/each}
+			</ul>
+		{/if} -->
 
 		{#if currentStep}
+			<div class="title">
+				{currentStep.title}
+			</div>
 			{#if currentStep.component}
 				<svelte:component this={currentStep.component} {state} />
 			{:else}
@@ -103,7 +112,7 @@
 	.title {
 		font-weight: bold;
 		font-size: clamp(1rem, 4vw, 1.25rem);
-		margin-bottom: 0.5rem;
+		margin-bottom: 2rem;
 	}
 
 	.description {

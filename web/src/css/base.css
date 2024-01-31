@@ -50,7 +50,8 @@ a[role='button'] {
 	font-weight: 600;
 	text-decoration-line: none;
 
-	height: 2rem;
+	height: fit-content;
+	padding: 0.5rem;
 	min-height: 2rem;
 	padding-inline: 0.75rem;
 	font-size: 0.875rem;
