@@ -5,7 +5,7 @@
   "type": "module",
   "devDependencies": {
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
-    "@openzeppelin/contracts": "^5.0.1",
+    "@openzeppelin/contracts": "^4.9.3",
     "@types/fs-extra": "^11.0.4",
     "as-soon": "^0.0.4",
     "chai-ethers": "^0.0.1",

@@ -26,7 +26,7 @@ type Emitter<T> = {
 
 export abstract class BaseAccountHandler<
 	T extends {onchainActions: OnChainActions<Metadata>},
-	Metadata extends Record<string, unknown>,
+	Metadata extends Record<string, unknown> | undefined,
 > implements AccountHandler<T, Metadata>
 {
 	private emitter: Emitter<{name: 'newTx'; txs: PendingTransaction[]} | {name: 'clear'}>;

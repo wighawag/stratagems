@@ -17,6 +17,11 @@ export type LocalMove = {
 };
 
 export type LocalMoves = LocalMove[];
+export type OffchainMoves = {
+	epoch: number;
+	list: LocalMoves;
+}
+
 
 export function localMoveToContractMove(localMove: LocalMove): ContractMove {
 	return {
@@ -33,7 +38,7 @@ export type CommitMetadata = {
 	fuzd: boolean | 'pendingTx'; // TODO
 };
 
-export type StratagemsMetadata = {
+export type StratagemsMetadata = undefined | {
 	epoch: {
 		hash: `0x${string}`;
 		number: number;
@@ -48,7 +53,7 @@ export type OffchainState = {
 	timestamp: number;
 	epoch?: Epoch;
 	lastEpochAcknowledged: number;
-	moves?: LocalMoves;
+	moves?: OffchainMoves;
 	currentColor?: number;
 };
 
@@ -126,6 +131,8 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		return result;
 	}
 
+	
+
 	_merge(
 		localData?: AccountData | undefined,
 		remoteData?: AccountData | undefined,
@@ -144,6 +151,13 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		if (!remoteData || !remoteData.onchainActions || !remoteData.offchainState) {
 			remoteData = defaultData();
 		}
+
+		if ((remoteData.offchainState as any).moves?.length) {
+			remoteData.offchainState = defaultData().offchainState;
+		}
+
+		_filterOutOldActions(remoteData.onchainActions);
+		
 
 		for (const key of Object.keys(newData.onchainActions)) {
 			const txHash = key as `0x${string}`;
@@ -170,6 +184,10 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 				newData.onchainActions[txHash] = remoteData.onchainActions[txHash];
 				newDataOnRemote = true;
 			}
+		}
+
+		if (_filterOutOldActions(newData.onchainActions)) {
+			newDataOnLocal = true;
 		}
 
 		if (remoteData.offchainState.timestamp > newData.offchainState.timestamp) {
@@ -217,24 +235,36 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		};
 	}
 
-	resetOffchainState(alsoSave: boolean = true) {
+	// resetOffchainState(alsoSave: boolean = true) {
+	// 	this.$data.offchainState.moves = undefined;
+	// 	this.$data.offchainState.timestamp = time.now;
+
+	// 	this.$data.offchainState.epoch = undefined;
+	// 	if (alsoSave) {
+	// 		this._save();
+	// 	}
+	// 	this._offchainState.set(this.$data.offchainState);
+	// }
+
+	resetOffchainMoves(alsoSave: boolean = true) {
 		this.$data.offchainState.moves = undefined;
 		this.$data.offchainState.timestamp = time.now;
-
-		this.$data.offchainState.epoch = undefined;
 		if (alsoSave) {
 			this._save();
 		}
 		this._offchainState.set(this.$data.offchainState);
 	}
 
-	addMove(move: LocalMove) {
-		const existingMove = this.$data.offchainState.moves?.find((v) => v.x === move.x && v.y === move.y);
+	addMove(move: LocalMove, epoch: number) {
+		if (this.$data.offchainState.moves?.epoch != epoch) {
+			this.$data.offchainState.moves = {list: [], epoch};
+		}
+		const existingMove = this.$data.offchainState.moves?.list.find((v) => v.x === move.x && v.y === move.y);
 		if (!existingMove) {
 			if (!this.$data.offchainState.moves) {
-				this.$data.offchainState.moves = [];
+				this.$data.offchainState.moves = {list: [], epoch};
 			}
-			this.$data.offchainState.moves.push(move);
+			this.$data.offchainState.moves.list.push(move);
 			this.$data.offchainState.timestamp = time.now;
 		} else {
 			existingMove.color = move.color;
@@ -242,22 +272,20 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 
 		this._save();
 		this._offchainState.set(this.$data.offchainState);
-		console.log(this.$data.offchainState.moves?.length);
 	}
 
 	removeMove(x: number, y: number) {
 		if (this.$data.offchainState.moves) {
-			for (let i = 0; i < this.$data.offchainState.moves.length; i++) {
-				const move = this.$data.offchainState.moves[i];
+			for (let i = 0; i < this.$data.offchainState.moves.list.length; i++) {
+				const move = this.$data.offchainState.moves.list[i];
 				if (move.x === x && move.y === y) {
-					this.$data.offchainState.moves.splice(i, 1);
+					this.$data.offchainState.moves.list.splice(i, 1);
 					i--;
 				}
 			}
 			this.$data.offchainState.timestamp = time.now;
 			this._save();
 			this._offchainState.set(this.$data.offchainState);
-			console.log(this.$data.offchainState.moves?.length);
 		}
 	}
 
@@ -317,4 +345,70 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		this._save();
 		this._offchainState.set(this.$data.offchainState);
 	}
+}
+
+
+function _filterOutOldActions(actions: OnChainActions<StratagemsMetadata>): boolean {
+	let changes = false;
+	const keys = Object.keys(actions);
+	let lastCommitAction: OnChainAction<CommitMetadata> | undefined;
+	for (const key of keys) {
+		const txHash = key as `0x${string}`;
+		const action = actions[txHash];
+		if (action.tx.metadata?.type === 'commit') {
+			const commitAction = action as OnChainAction<CommitMetadata>;
+			if (!lastCommitAction) {
+				lastCommitAction = commitAction;
+			} else if (lastCommitAction.tx.metadata.epoch < commitAction.tx.metadata.epoch) {
+				lastCommitAction = commitAction;
+			}
+			
+		}
+	}
+	
+	for (const key of keys) {
+		const txHash = key as `0x${string}`;
+		const action = actions[txHash];
+		if (!action.tx.metadata) {
+			if (action.final) {
+				if (action.status == 'Success') {
+					delete actions[txHash];
+					changes = true;
+				} else if (!action.tx.timestamp || time.now - action.tx.timestamp > 7 * 24 * 3600) {
+					delete actions[txHash];
+					changes = true;
+				}
+			}
+		} else {
+			switch(action.tx.metadata.type) {
+				case 'commit':
+					const commitMetadata= action.tx.metadata;
+					// if (action.status == 'Success') {
+					if (lastCommitAction && lastCommitAction.tx.metadata.epoch > commitMetadata.epoch) {
+						delete actions[txHash];	
+						changes = true;
+					}
+					// } else if (!action.tx.timestamp || time.now - action.tx.timestamp > 7 * 24 * 3600) {
+					// 	delete actions[txHash];
+					// }	
+					break;
+				case 'reveal':
+					const revealMetadata = action.tx.metadata;
+					if (action.status == 'Success') {
+						const commitTx = revealMetadata.commitTx;
+						delete actions[commitTx];
+						delete actions[txHash];
+						changes = true;
+					} else if (!action.tx.timestamp || time.now - action.tx.timestamp > 7 * 24 * 3600) {
+						const commitTx = revealMetadata.commitTx;
+						delete actions[commitTx];
+						delete actions[txHash];
+						changes = true;
+					}
+					break;
+			}
+		}
+
+	}
+	return changes;
 }

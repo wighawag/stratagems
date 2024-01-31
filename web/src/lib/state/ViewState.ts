@@ -59,13 +59,16 @@ function merge(
 
 	let hasCommitment = false;
 	if (offchainState.moves !== undefined) {
-		for (const move of offchainState.moves) {
-			if (!isValidMove(move)) {
-				continue; // TODO delete
+		if (offchainState.moves.epoch === epochState.epoch && epochState.isActionPhase) {
+			for (const move of offchainState.moves.list) {
+				if (!isValidMove(move)) {
+					continue; // TODO delete
+				}
+				console.log(`color: ${move.color}`);
+				stratagems.computeMove(account.address as `0x${string}`, epochState.epoch, localMoveToContractMove(move));
 			}
-			console.log(`color: ${move.color}`);
-			stratagems.computeMove(account.address as `0x${string}`, epochState.epoch, localMoveToContractMove(move));
 		}
+		
 	} else {
 		let lastCommitment: OnChainAction<CommitMetadata> | undefined;
 		for (const txHash of Object.keys(onchainActions)) {

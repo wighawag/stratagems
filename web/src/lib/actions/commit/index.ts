@@ -26,7 +26,7 @@ export type CommitFlow = Flow<CommitState>;
 
 export async function startCommit() {
 	await contracts.execute(async ({contracts, account, connection}) => {
-		const localMoves = accountData.$offchainState.moves;
+		const localMoves = accountData.$offchainState.moves?.list;
 		if (!localMoves) {
 			throw new Error(`no local moves`);
 		}
@@ -90,10 +90,10 @@ export async function startCommit() {
 							deadline: 0,
 						},
 					};
-					const signature = await connection.provider.request({
+					const signature = (await connection.provider.request({
 						method: 'eth_signTypedData_v4',
 						params: [account.address, JSON.stringify(permit)],
-					});
+					})) as `0x${string}`;
 					state.permit = {signature, amount: amountToAllow, nonce};
 
 					return state;
@@ -193,7 +193,7 @@ export async function startCommit() {
 						value,
 					});
 				}
-				accountData.resetOffchainState();
+				accountData.resetOffchainMoves();
 
 				const timeToBroadcastReveal = time.now + get(epochInfo).timeLeftToCommit;
 				const data = encodeFunctionData({

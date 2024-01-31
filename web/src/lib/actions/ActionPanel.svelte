@@ -11,7 +11,7 @@
 
 	function clear(e: MouseEvent) {
 		e.preventDefault();
-		accountData.resetOffchainState();
+		accountData.resetOffchainMoves();
 	}
 
 	async function startCommiting(e: MouseEvent) {
@@ -42,7 +42,7 @@
 	$: cost =
 		$offchainState.moves === undefined
 			? 0n
-			: BigInt($offchainState.moves.length) *
+			: BigInt($offchainState.moves.list.length) *
 				BigInt(initialContractsInfos.contracts.Stratagems.linkedData.numTokensPerGems.slice(0, -1));
 	$: costString = formatUnits(
 		cost,
@@ -71,7 +71,7 @@
 </script>
 
 {#if $epochInfo.isActionPhase}
-	{#if $offchainState.moves && $offchainState.moves.length > 0}
+	{#if $offchainState.moves && $offchainState.moves.list.length > 0}
 		<div class="panel">
 			<h2 class="title">Your Move:</h2>
 			<p class="message">

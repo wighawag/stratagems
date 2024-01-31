@@ -3,6 +3,7 @@ import {account, accountData} from '$lib/blockchain/connection';
 
 import {xyToXYID, Color} from 'stratagems-common';
 import {get} from 'svelte/store';
+import { epochState } from '$lib/state/Epoch';
 
 export class ActionHandler {
 	onCellClicked(x: number, y: number) {
@@ -15,6 +16,7 @@ export class ActionHandler {
 
 		const currentState = get(stratagemsView);
 		const currentOffchainState = get(accountData.offchainState);
+		const $epochState = get(epochState);
 		const cellID = xyToXYID(x, y);
 
 		const currentColor = currentOffchainState.currentColor || Number((BigInt(player) % 5n) + 1n);
@@ -24,11 +26,14 @@ export class ActionHandler {
 		console.log(currentState.cells[cellID]);
 		console.log(currentState.owners[cellID]);
 
-		const currentMove = currentOffchainState.moves?.find((v) => v.x === x && v.y === y);
+		if (currentOffchainState.moves?.epoch != $epochState.epoch) {
+			accountData.resetOffchainMoves();
+		}
+		const currentMove = currentOffchainState.moves?.list.find((v) => v.x === x && v.y === y);
 		if (currentMove) {
 			accountData.removeMove(x, y);
 			if (currentMove.color !== currentColor) {
-				accountData.addMove({x, y, color: currentColor, player});
+				accountData.addMove({x, y, color: currentColor, player}, $epochState.epoch);
 			}
 		} else {
 			if (
@@ -37,12 +42,12 @@ export class ActionHandler {
 				currentState.viewCells[cellID].next.life === 7 // TODO MAX_LIFE
 			) {
 				console.log(`remove cell at ${x}, ${y}, ${player}`);
-				accountData.addMove({x, y, color: Color.None, player});
+				accountData.addMove({x, y, color: Color.None, player}, $epochState.epoch);
 			} else if (currentState.cells[cellID] && currentState.cells[cellID].life !== 0) {
 				throw new Error(`Cell already occupied`);
 			} else {
 				console.log(`add color at ${x}, ${y}, ${player}`);
-				accountData.addMove({x, y, color: currentColor, player});
+				accountData.addMove({x, y, color: currentColor, player}, $epochState.epoch);
 			}
 		}
 	}

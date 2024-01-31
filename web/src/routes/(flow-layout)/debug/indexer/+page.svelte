@@ -1,6 +1,7 @@
 <script lang="ts">
 	import {status, state, syncing} from '$lib/state/State';
 	import RadialProgress from '$utils/progress/RadialProgress.svelte';
+	import {JsonView} from '@zerodevx/svelte-json-view';
 
 	// import JSONTree from 'svelte-json-tree';
 
@@ -19,37 +20,20 @@
 	$: stateDisplayed = $state && addLengthToFields($state);
 </script>
 
-<!-- TODO tailwind replacement -->
-
 <p>Indexer State</p>
 
-<RadialProgress value={$syncing.lastSync?.syncPercentage || 0} />
+<RadialProgress value={$syncing.lastSync?.syncPercentage || 0} style="margin-bottom:1rem;" />
 
-<p>status: {$status.state}</p>
-<p>catchingUp: {$syncing.catchingUp}</p>
-<p>autoIndexing: {$syncing.autoIndexing}</p>
-<p>fetchingLogs: {$syncing.fetchingLogs}</p>
-<p>processingFetchedLogs: {$syncing.processingFetchedLogs}</p>
+<div>Syncing</div>
 
-{#if $syncing.numRequests !== undefined}
-	<p>requests sent: {$syncing.numRequests}</p>
-{/if}
-<p>
-	block processed: {$syncing.lastSync?.numBlocksProcessedSoFar?.toLocaleString() || 0}
-</p>
+<JsonView json={$syncing} depth={0} />
 
-<p>
-	latestBlock: {$syncing.lastSync?.latestBlock || 0}
-</p>
-
-<div class="mt-4 text-center w-full">State</div>
+<div>State</div>
 
 {#if $state}
-	<code class="m-2 block bg-base-300">
-		{JSON.stringify(stateDisplayed, (key, value) => (typeof value === 'bigint' ? value.toString() : value), 2)}
-	</code>
+	<JsonView json={stateDisplayed} depth={0} />
 {:else}
-	{JSON.stringify($syncing)}
+	<JsonView json={$syncing} />
 {/if}
 
 <style>
