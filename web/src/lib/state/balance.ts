@@ -9,6 +9,7 @@ export type BalanceData = {
 	state: 'Idle' | 'Loaded';
 	fetching: boolean;
 	tokenBalance: bigint;
+	tokenAllowance: bigint;
 	nativeBalance: bigint;
 	reserve: bigint;
 	account?: Address;
@@ -25,7 +26,7 @@ export function initBalance({
 	account: Readable<AccountState<Address>>;
 	depositContract?: Address;
 }) {
-	const $state: BalanceData = {state: 'Idle', fetching: false, tokenBalance: 0n, nativeBalance: 0n, reserve: 0n};
+	const $state: BalanceData = {state: 'Idle', fetching: false, tokenBalance: 0n, tokenAllowance: 0n, nativeBalance: 0n, reserve: 0n};
 
 	let cancelAccountSubscription: (() => void) | undefined = undefined;
 	let cancelConnectionSubscription: (() => void) | undefined = undefined;
@@ -76,6 +77,7 @@ export function initBalance({
 				const nativeBalance = await provider.request({method: 'eth_getBalance', params: [account]});
 
 				let tokenBalance: string;
+				let tokenAllowance: string = "0";
 				if (token === zeroAddress) {
 					tokenBalance = nativeBalance; // TODO do not do this ? or rename tokenBalance to gameBalance or something ?
 				} else {
@@ -94,12 +96,29 @@ export function initBalance({
 							},
 						],
 					});
+					tokenAllowance = await provider.request({
+						method: 'eth_call',
+						params: [
+							{
+								to: token,
+								data: encodeFunctionData({
+									abi: [
+										{type: 'function', name: 'allowance', inputs: [{type: 'address'},{type: 'address'}], outputs: [{type: 'uint56'}]},
+									],
+									args: [account, depositContract],
+									functionName: 'allowance',
+								}),
+							},
+						],
+					});
+					console.log({tokenAllowance, account, depositContract})
 				}
 
 				if ($state.account !== account) {
 					return;
 				}
 				$state.tokenBalance = BigInt(tokenBalance);
+				$state.tokenAllowance = BigInt(tokenAllowance);
 				$state.nativeBalance = BigInt(nativeBalance);
 				$state.reserve = BigInt(reserve);
 				$state.state = 'Loaded';

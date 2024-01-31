@@ -1,13 +1,27 @@
 <script lang="ts">
 	import {account, connection, contracts, network} from '$lib/blockchain/connection';
-	import {initialContractsInfos} from '$lib/config';
-	import {zeroAddress} from 'viem';
 	import {menu} from './menu';
 	import {fly} from 'svelte/transition';
 	import {Power} from 'lucide-svelte';
 	import ImgBlockie from '$utils/ethereum/ImgBlockie.svelte';
+	import {balance} from '$lib/state/balance';
+	import {formatUnits} from 'viem';
+	import {initialContractsInfos} from '$lib/config';
 
-	let tokenAllowanceUsed = (initialContractsInfos.contracts.Stratagems.linkedData.tokens as string) !== zeroAddress;
+	$: tokenAllowanceUsed = $balance.tokenAllowance > 0n;
+
+	const symbol = initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol;
+	$: currentReserve = $balance.reserve;
+	$: currentReserveString = formatUnits(
+		currentReserve,
+		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
+	);
+
+	$: currentBalance = $balance.tokenBalance;
+	$: currentBalnceString = formatUnits(
+		currentBalance,
+		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
+	);
 
 	function clearAllowance() {
 		contracts.execute(async ({contracts, account}) => {
@@ -61,10 +75,27 @@
 					</button>
 				</div>
 
-				Actions
-				<hr />
+				<div class="category">
+					<div>Tokens</div>
+					<hr />
+					<div class="info-line">
+						<div>Balance:</div>
+						<div>{currentBalnceString} {symbol}</div>
+					</div>
+					<div class="info-line">
+						<div>+ Reserve:</div>
+						<div>{currentReserveString} {symbol}</div>
+					</div>
+				</div>
+
 				{#if tokenAllowanceUsed}
-					<button tabindex="0" class="error" on:click={() => clearAllowance()}>clear allowance</button>
+					<div class="category">
+						<span>Actions</span>
+						<hr />
+						{#if tokenAllowanceUsed}
+							<button tabindex="0" class="error" on:click={() => clearAllowance()}>clear allowance</button>
+						{/if}
+					</div>
 				{/if}
 			{:else}
 				<div class="disconnected">
@@ -82,6 +113,19 @@
 {/if}
 
 <style>
+	.category {
+		width: 100%;
+		margin-bottom: 3rem;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+	}
+	.info-line {
+		display: flex;
+		width: 100%;
+		justify-content: space-between;
+	}
 	.account {
 		margin-bottom: 1rem;
 	}
