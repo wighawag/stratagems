@@ -84,6 +84,7 @@
 	}
 
 	.blockie-button {
+		background-color: inherit;
 		width: 3rem;
 		height: 3rem;
 		display: inline-flex;
