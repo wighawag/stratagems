@@ -12,6 +12,9 @@
 		e.stopPropagation();
 		e.preventDefault();
 	}
+
+	$: connecting =
+		$connection.connecting || $account.fetching || $network.loading || $account.isLoadingData != undefined;
 </script>
 
 {#if $account.state === 'Disconnected' || $account.locked}
@@ -20,9 +23,9 @@
 			<button class="primary" disabled={$account.unlocking} on:click={() => account.unlock()}>unlock</button>
 		{:else}
 			<button
-				disabled={$connection.connecting}
+				disabled={connecting}
 				class={`${$connection.initialised ? '' : 'invisible'} primary`}
-				on:click={() => connection.connect()}>{$connection.connecting ? 'Connecting' : 'Connect'}</button
+				on:click={() => connection.connect()}>{connecting ? 'Connecting' : 'Connect'}</button
 			>
 		{/if}
 	</div>

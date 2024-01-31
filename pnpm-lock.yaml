@@ -276,6 +276,9 @@ importers:
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
+      lucide-svelte:
+        specifier: ^0.320.0
+        version: 0.320.0(svelte@4.2.9)
       lz-string:
         specifier: ^1.5.0
         version: 1.5.0
@@ -7201,6 +7204,14 @@ packages:
   /ltgt@2.2.1:
     resolution: {integrity: sha512-AI2r85+4MquTw9ZYqabu4nMwy9Oftlfa/e/52t9IjtfG+mGBbTNdAoZ3RQKLHR6r0wQnwZnPIEh/Ya6XTWAKNA==}
     dev: true
+
+  /lucide-svelte@0.320.0(svelte@4.2.9):
+    resolution: {integrity: sha512-Xycr1wFIPIEsFMvY6TkVKdzzA2XMdqO4BEy2upvCGmoRUwJQgKrPFW3D5vI7VcN8hy91trZ1levO9pHpu3vlVw==}
+    peerDependencies:
+      svelte: '>=3 <5'
+    dependencies:
+      svelte: 4.2.9
+    dev: false
 
   /lws-basic-auth@2.0.0:
     resolution: {integrity: sha512-zzyoGFLQPuKaQJvHMLmmSyfT6lIvocwcDXllTVW5brD0t0YgHYopILkzja+x+MIlJX/YhNKniaTSasujniYVjw==}

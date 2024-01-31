@@ -61,6 +61,11 @@ button:disabled,
 a[role='button']:disabled {
 	background-color: gray !important;
 }
+
+button.icon{
+	background: inherit;
+	color: inherit;
+}
 /* ------------------------------------------------- */
 
 /* smooth scrolling */
