@@ -11,6 +11,7 @@
 	$: tokenAllowanceUsed = $balance.tokenAllowance > 0n;
 
 	const symbol = initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol;
+	const name = initialContractsInfos.contracts.Stratagems.linkedData.currency.name;
 	$: currentReserve = $balance.reserve;
 	$: currentReserveString = formatUnits(
 		currentReserve,
@@ -22,6 +23,15 @@
 		currentBalance,
 		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
 	);
+
+	$: allowance = $balance.tokenAllowance;
+	$: allowanceString =
+		allowance == 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffn
+			? 'Infinite'
+			: formatUnits(
+					allowance,
+					Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
+				);
 
 	function clearAllowance() {
 		contracts.execute(async ({contracts, account}) => {
@@ -76,7 +86,7 @@
 				</div>
 
 				<div class="category">
-					<div>Tokens</div>
+					<div>{name}</div>
 					<hr />
 					<div class="info-line">
 						<div>Balance:</div>
@@ -85,6 +95,10 @@
 					<div class="info-line">
 						<div>+ Reserve:</div>
 						<div>{currentReserveString} {symbol}</div>
+					</div>
+					<div class="info-line allowance">
+						<div>&nbsp;&nbsp; Allowance</div>
+						<div>{allowanceString}</div>
 					</div>
 				</div>
 
@@ -113,6 +127,9 @@
 {/if}
 
 <style>
+	.allowance {
+		color: var(--color-primary-600);
+	}
 	.category {
 		width: 100%;
 		margin-bottom: 3rem;
