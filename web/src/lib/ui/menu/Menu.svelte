@@ -45,28 +45,13 @@
 		connection.disconnect();
 	}
 
-	function clickOutside(event: MouseEvent) {
-		event.stopPropagation();
-		event.preventDefault();
-		$menu.open = false;
-	}
-
-	function prevent(event: MouseEvent) {
-		event.stopPropagation();
-		event.preventDefault();
-	}
-
 	$: connecting =
 		$connection.connecting || $account.fetching || $network.loading || $account.isLoadingData != undefined;
 </script>
 
 {#if $menu.open}
-	<!-- svelte-ignore a11y-no-static-element-interactions -->
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<ModalContainer oncancel={() => ($menu.open = false)}>
-		<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
-		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-		<div tabindex="0" class="menu" transition:fly={{x: '100%'}} on:click={prevent}>
+		<div class="menu" transition:fly={{x: '100%'}}>
 			{#if $account.state === 'Connected' && !$account.locked}
 				<div class="connected">
 					<div class="account">
