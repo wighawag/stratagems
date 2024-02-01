@@ -33,28 +33,54 @@
 </script>
 
 <div class="container">
-	<p>Your Color</p>
-	<p class="help">(click to swap)</p>
-	<button on:click={swapColor}><img src={url(src)} alt="color" /></button>
+	<div class="content">
+		<p class="title">Your Color</p>
+		<p class="help">(click to swap)</p>
+		<button on:click={swapColor}><img src={url(src)} alt="color" /></button>
+	</div>
 </div>
 
 <style>
+	.title {
+		display: none;
+	}
 	.help {
+		display: none;
 		font-size: small;
 	}
 	.container {
+		background-color: var(--color-surface-500);
+		border: 16px solid var(--color-text-on-surface);
+		border-image: url(/game-assets/ui/border.png) 16 repeat;
+		image-rendering: pixelated;
+	}
+	.content {
+		margin: -16px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 0.25rem;
 	}
 	img {
-		width: 5rem;
+		width: 3rem;
 		pointer-events: auto;
 		image-rendering: pixelated;
 	}
 
 	button {
 		background-color: inherit;
+	}
+
+	@media (min-width: 640px) {
+		.title,
+		.help {
+			display: block;
+		}
+		.content {
+			margin: 0;
+		}
+		img {
+			width: 5rem;
+		}
 	}
 </style>

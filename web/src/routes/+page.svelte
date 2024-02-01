@@ -4,7 +4,6 @@
 	import ActionPanel from '$lib/actions/ActionPanel.svelte';
 	import InfoBar from '$lib/ui/components/InfoBar.svelte';
 	import FactionPicker from '$lib/actions/FactionPicker.svelte';
-	import CameraInfo from '$utils/debug/CameraInfo.svelte';
 	import CanvasOverlay from '$lib/ui/canvas/CanvasOverlay.svelte';
 	import Header from '$lib/ui/header/Header.svelte';
 </script>
@@ -18,11 +17,6 @@
 			<FactionPicker />
 		</div>
 	</Header>
-
-	<div class="camera-info">
-		<CameraInfo />
-	</div>
-
 	<CanvasOverlay />
 
 	<div class="action-panel">
@@ -42,16 +36,6 @@
 		left: 0;
 		height: 100%;
 		width: 100%;
-	}
-
-	.camera-info {
-		pointer-events: auto;
-		position: absolute;
-		top: 50%;
-		left: 0;
-		width: 6rem;
-		padding: 0.25rem;
-		background-color: var(--color-surface-500);
 	}
 
 	.info-bar {
@@ -79,13 +63,6 @@
 		pointer-events: auto;
 		margin: 0.5rem;
 
-		background-color: var(--color-surface-500);
-		border: 16px solid var(--color-text-on-surface);
-		border-image: url(/game-assets/ui/border.png) 16 repeat;
-		image-rendering: pixelated;
-
-		width: fit-content;
-		padding: 0.25rem;
 		width: fit-content;
 	}
 </style>
