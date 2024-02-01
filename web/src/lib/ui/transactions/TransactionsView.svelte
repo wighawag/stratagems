@@ -7,6 +7,7 @@
 	import {addSortBy} from 'svelte-headless-table/plugins';
 	import TransactionInfo from './TransactionInfo.svelte';
 	import TransactionDetailsButton from './TransactionDetailsButton.svelte';
+	import TransactionDetails from './TransactionDetails.svelte';
 
 	// import {accountData} from '$lib/blockchain/connection';
 	// const actions = accountData.onchainActions;
@@ -88,6 +89,8 @@
 		</div>
 	</ModalContainer>
 {/if}
+
+<TransactionDetails />
 
 <style>
 	table {

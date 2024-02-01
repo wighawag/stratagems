@@ -17,6 +17,8 @@
 	.modal {
 		/* background-color: var(--color-surface-800); */
 
+		overflow: hidden;
+
 		border: 64px solid var(--color-text-on-surface);
 		border-image: url(/game-assets/ui/border.png) fill 16 repeat;
 		image-rendering: pixelated;
