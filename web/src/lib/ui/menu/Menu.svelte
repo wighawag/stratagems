@@ -8,6 +8,7 @@
 	import {formatUnits} from 'viem';
 	import {initialContractsInfos} from '$lib/config';
 	import {tooltip} from '$utils/ui/tooltip';
+	import ModalContainer from '$utils/ui/modals/ModalContainer.svelte';
 
 	$: tokenAllowanceUsed = $balance.tokenAllowance > 0n;
 
@@ -62,7 +63,7 @@
 {#if $menu.open}
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
-	<div class="menu-wrapper" on:click={clickOutside}>
+	<ModalContainer oncancel={() => ($menu.open = false)}>
 		<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 		<div tabindex="0" class="menu" transition:fly={{x: '100%'}} on:click={prevent}>
@@ -136,7 +137,7 @@
 				</div>
 			{/if}
 		</div>
-	</div>
+	</ModalContainer>
 {/if}
 
 <style>
@@ -174,14 +175,6 @@
 		width: 100%;
 		margin-bottom: 0.5rem;
 		border: 1px solid var(--color-primary-500);
-	}
-	.menu-wrapper {
-		pointer-events: auto;
-		position: absolute;
-		top: 0;
-		left: 0;
-		height: 100%;
-		width: 100%;
 	}
 	.menu {
 		width: 100%;
