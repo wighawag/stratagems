@@ -43,6 +43,7 @@
     "remote-account": "^0.0.5",
     "stratagems-common": "workspace:*",
     "stratagems-indexer": "workspace:*",
+    "svelte-headless-table": "^0.18.1",
     "svelte-portal": "^2.2.1",
     "theme-change": "^2.5.0",
     "tippy.js": "^6.3.7",

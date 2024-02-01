@@ -1,16 +1,20 @@
 <script lang="ts">
 	import {account, connection, contracts, network} from '$lib/blockchain/connection';
 	import {menu} from './menu';
+	import {transactionsView} from '$lib/ui/transactions/transactionsView';
+	import {admin} from '$lib/ui/admin/admin';
 	import {fly} from 'svelte/transition';
 	import {HelpCircle, Power} from 'lucide-svelte';
 	import ImgBlockie from '$utils/ethereum/ImgBlockie.svelte';
 	import {balance} from '$lib/state/balance';
 	import {formatUnits} from '$utils/ui/text';
-	import {initialContractsInfos} from '$lib/config';
+	import {contractsInfos, initialContractsInfos} from '$lib/config';
 	import {tooltip} from '$utils/ui/tooltip';
 	import ModalContainer from '$utils/ui/modals/ModalContainer.svelte';
 
 	$: tokenAllowanceUsed = $balance.tokenAllowance > 0n;
+
+	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
 
 	const symbol = initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol;
 	const name = initialContractsInfos.contracts.Stratagems.linkedData.currency.name;
@@ -105,15 +109,18 @@
 					{/if}
 				</div>
 
-				{#if tokenAllowanceUsed}
-					<div class="category">
-						<span>Actions</span>
-						<hr />
-						{#if tokenAllowanceUsed}
-							<button tabindex="0" class="error" on:click={() => clearAllowance()}>clear allowance</button>
-						{/if}
-					</div>
-				{/if}
+				<div class="category">
+					<hr />
+					{#if tokenAllowanceUsed}
+						<button class="error" on:click={() => clearAllowance()}>Clear Allowance</button>
+					{/if}
+
+					<button class="error" on:click={() => ($transactionsView.open = true)}>See Transactions</button>
+
+					{#if isAdmin}
+						<button class="error" on:click={() => ($admin.open = true)}>Admin</button>
+					{/if}
+				</div>
 			{:else}
 				<div class="disconnected">
 					{#if $account.locked}
@@ -140,6 +147,9 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 0.5rem;
+	}
+	.category button {
+		width: 100%;
 	}
 	.info-line {
 		display: flex;

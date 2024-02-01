@@ -13,6 +13,8 @@
 	import {dev, initialContractsInfos, params} from '$lib/config';
 	import Head from './Head.svelte';
 	import Menu from '$lib/ui/menu/Menu.svelte';
+	import TransactionsView from '$lib/ui/transactions/TransactionsView.svelte';
+	import Admin from '$lib/ui/admin/Admin.svelte';
 
 	$: showWIPNotice =
 		!dev &&
@@ -31,6 +33,10 @@
 	</div>
 
 	<Menu />
+
+	<TransactionsView />
+
+	<Admin />
 
 	<Modals />
 
