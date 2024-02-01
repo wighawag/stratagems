@@ -35,9 +35,7 @@
 <div class="container">
 	<p>Your Color</p>
 	<p class="help">(click to swap)</p>
-	<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
-	<img src={url(src)} alt="color" on:click={swapColor} />
+	<button on:click={swapColor}><img src={url(src)} alt="color" /></button>
 </div>
 
 <style>
@@ -54,5 +52,9 @@
 		width: 5rem;
 		pointer-events: auto;
 		image-rendering: pixelated;
+	}
+
+	button {
+		background-color: inherit;
 	}
 </style>
