@@ -75,30 +75,34 @@
 				<div class="category">
 					<div>{name}</div>
 					<hr />
-					<div class="info-line">
-						<div>Balance:</div>
-						<div>{currentBalnceString} {symbol}</div>
-					</div>
-					<div class="info-line">
-						<div>
-							+ Reserve <span
-								use:tooltip
-								title="Token in Reserve are used to ensure players reveal their moves. You can remove them from reserve after you reveal your commit or cancel it before the reveal phase."
-								><HelpCircle /></span
-							> :
+					{#if $balance.state === 'Idle' && $balance.fetching}
+						<div class="info-line">Fetching Balance...</div>
+					{:else}
+						<div class="info-line">
+							<div>Balance:</div>
+							<div>{currentBalnceString} {symbol}</div>
 						</div>
-						<div>{currentReserveString} {symbol}</div>
-					</div>
-					<div class="info-line allowance">
-						<div>
-							&nbsp;&nbsp; Allowance <span
-								use:tooltip
-								title="Allowance is used so you do not need to keep being asked to allow the game contract to use your token when creating new island."
-								><HelpCircle /></span
-							>
+						<div class="info-line">
+							<div>
+								+ Reserve <span
+									use:tooltip
+									title="Token in Reserve are used to ensure players reveal their moves. You can remove them from reserve after you reveal your commit or cancel it before the reveal phase."
+									><HelpCircle /></span
+								> :
+							</div>
+							<div>{currentReserveString} {symbol}</div>
 						</div>
-						<div>{allowanceString}</div>
-					</div>
+						<div class="info-line allowance">
+							<div>
+								&nbsp;&nbsp; Allowance <span
+									use:tooltip
+									title="Allowance is used so you do not need to keep being asked to allow the game contract to use your token when creating new island."
+									><HelpCircle /></span
+								>
+							</div>
+							<div>{allowanceString}</div>
+						</div>
+					{/if}
 				</div>
 
 				{#if tokenAllowanceUsed}

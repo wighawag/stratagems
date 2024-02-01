@@ -141,6 +141,10 @@ export function initBalance({
 			if ($state.account !== $account.address) {
 				$state.account = $account.address;
 				$state.state = 'Idle';
+				$state.nativeBalance = 0n;
+				$state.tokenBalance = 0n;
+				$state.tokenAllowance = 0n;
+				$state.reserve = 0n;
 				store.set($state);
 				if ($account.address) {
 					fetchBalance($account.address);
