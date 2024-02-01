@@ -2,11 +2,12 @@
 	import {account, connection, contracts, network} from '$lib/blockchain/connection';
 	import {menu} from './menu';
 	import {fly} from 'svelte/transition';
-	import {Power} from 'lucide-svelte';
+	import {HelpCircle, Power} from 'lucide-svelte';
 	import ImgBlockie from '$utils/ethereum/ImgBlockie.svelte';
 	import {balance} from '$lib/state/balance';
 	import {formatUnits} from 'viem';
 	import {initialContractsInfos} from '$lib/config';
+	import {tooltip} from '$utils/ui/tooltip';
 
 	$: tokenAllowanceUsed = $balance.tokenAllowance > 0n;
 
@@ -93,11 +94,23 @@
 						<div>{currentBalnceString} {symbol}</div>
 					</div>
 					<div class="info-line">
-						<div>+ Reserve:</div>
+						<div>
+							+ Reserve <span
+								use:tooltip
+								title="Token in Reserve are used to ensure players reveal their moves. You can remove them from reserve after you reveal your commit or cancel it before the reveal phase."
+								><HelpCircle /></span
+							> :
+						</div>
 						<div>{currentReserveString} {symbol}</div>
 					</div>
 					<div class="info-line allowance">
-						<div>&nbsp;&nbsp; Allowance</div>
+						<div>
+							&nbsp;&nbsp; Allowance <span
+								use:tooltip
+								title="Allowance is used so you do not need to keep being asked to allow the game contract to use your token when creating new island."
+								><HelpCircle /></span
+							>
+						</div>
 						<div>{allowanceString}</div>
 					</div>
 				</div>
@@ -202,5 +215,10 @@
 
 	.menu button {
 		display: inline-block;
+	}
+
+	.icon :global(.lucide) {
+		height: 1.5rem;
+		width: 1.5rem;
 	}
 </style>

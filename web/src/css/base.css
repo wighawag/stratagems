@@ -75,3 +75,12 @@ button.icon{
 		scroll-behavior: smooth;
 	}
 }
+
+
+.lucide {
+	min-width: 1em;
+	width: 1em;
+	height: 1em;
+	display: inline;
+	vertical-align: baseline;
+}

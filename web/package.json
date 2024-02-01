@@ -45,6 +45,7 @@
     "stratagems-indexer": "workspace:*",
     "svelte-portal": "^2.2.1",
     "theme-change": "^2.5.0",
+    "tippy.js": "^6.3.7",
     "tlock-js": "0.6.1",
     "twgl.js": "^5.5.3",
     "viem": "^2.7.1",
