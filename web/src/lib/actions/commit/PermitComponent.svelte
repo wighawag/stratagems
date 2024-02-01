@@ -2,7 +2,7 @@
 	import type {Writable} from 'svelte/store';
 	import type {CommitState} from '.';
 	import {onMount} from 'svelte';
-	import {formatUnits} from 'viem';
+	import {formatUnits} from '$utils/ui/text';
 	import {initialContractsInfos} from '$lib/config';
 
 	// TODO this does not work for some reason

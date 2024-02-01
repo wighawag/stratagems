@@ -1,10 +1,9 @@
 <script lang="ts">
 	import type {CommitMetadata} from '$lib/account/account-data';
-	import {epoch, epochInfo} from '$lib/state/Epoch';
+	import {epoch} from '$lib/state/Epoch';
 	import {stratagemsView} from '$lib/state/ViewState';
 	import {contracts} from '$lib/blockchain/connection';
 	import {startAcknowledgFailedReveal, startReveal} from './';
-	import {bnReplacer} from 'stratagems-common';
 	import {initialContractsInfos} from '$lib/config';
 
 	// const onchainActions = accountData.onchainActions;
@@ -20,6 +19,10 @@
 		}
 		if ($stratagemsView.hasCommitmentToReveal.commit) {
 			if ($stratagemsView.hasCommitmentToReveal.commit.tx.metadata?.epoch !== $epoch) {
+				console.log({
+					commitment: $stratagemsView.hasCommitmentToReveal.commit.tx.metadata?.epoch,
+					current: $epoch,
+				});
 				startAcknowledgFailedReveal(
 					$stratagemsView.hasCommitmentToReveal.commit.hash,
 					$stratagemsView.hasCommitmentToReveal.commit.tx.metadata as CommitMetadata,
@@ -44,29 +47,38 @@
 			? $stratagemsView.hasCommitmentToReveal.commit.tx.metadata
 			: undefined;
 
+	$: expired = commitmentToReveal ? commitmentToReveal.epoch < $epoch : undefined;
+
 	const symbol = initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol;
 </script>
 
-<!--TODO config instead of hardcoded 3600-->
-{#if $stratagemsView.hasCommitmentToReveal && $epochInfo.timeLeftToReveal < 3600 - 5 * 60}
-	<div class="panel">
+<div class="panel">
+	{#if expired}
+		<h2 class="title">Your Move have not been resolved.</h2>
+		<p class="description">
+			{#if $stratagemsView.hasCommitmentToReveal?.commit}
+				You lost {commitmentToReveal?.localMoves.length}
+				{symbol}
+			{/if}
+		</p>
+	{:else}
 		<h2 class="title">Your Move Need to be Revealed</h2>
 		<p class="description">
-			{#if $stratagemsView.hasCommitmentToReveal.commit}
+			{#if $stratagemsView.hasCommitmentToReveal?.commit}
 				{commitmentToReveal?.localMoves.length}
 				{symbol} at stake
-				<!-- {JSON.stringify($stratagemsView.hasCommitmentToReveal, bnReplacer)} -->
 			{:else}
 				no commit tx found
 			{/if}
 		</p>
+	{/if}
 
-		<!-- {`${currentReserve > 0 ? `+ ${currentReserveString} in reserve` : ''}`}. -->
-		<div class="actions">
-			<button class={`pointer-events-auto btn btn-primary`} on:click={startRevealing}>Reveal</button>
-		</div>
+	<div class="actions">
+		<button class={`pointer-events-auto btn btn-primary`} on:click={startRevealing}
+			>{#if expired}Acknowledge{:else}Reveal{/if}</button
+		>
 	</div>
-{/if}
+</div>
 
 <style>
 	.panel {

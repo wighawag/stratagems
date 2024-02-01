@@ -5,7 +5,7 @@
 	import {HelpCircle, Power} from 'lucide-svelte';
 	import ImgBlockie from '$utils/ethereum/ImgBlockie.svelte';
 	import {balance} from '$lib/state/balance';
-	import {formatUnits} from 'viem';
+	import {formatUnits} from '$utils/ui/text';
 	import {initialContractsInfos} from '$lib/config';
 	import {tooltip} from '$utils/ui/tooltip';
 	import ModalContainer from '$utils/ui/modals/ModalContainer.svelte';
