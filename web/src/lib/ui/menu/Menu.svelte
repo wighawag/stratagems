@@ -12,6 +12,8 @@
 	import {tooltip} from '$utils/ui/tooltip';
 	import ModalContainer from '$utils/ui/modals/ModalContainer.svelte';
 
+	import {startTour} from '$lib/ui/tour/drive';
+
 	$: tokenAllowanceUsed = $balance.tokenAllowance > 0n;
 
 	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
@@ -51,6 +53,10 @@
 
 	$: connecting =
 		$connection.connecting || $account.fetching || $network.loading || $account.isLoadingData != undefined;
+
+	function computeShortAddress(address: string): string {
+		return address.slice(0, 6) + '...' + address.slice(-4);
+	}
 </script>
 
 {#if $menu.open}
@@ -58,13 +64,8 @@
 		<div class="menu" transition:fly={{x: '100%'}}>
 			{#if $account.state === 'Connected' && !$account.locked}
 				<div class="connected">
-					<div class="account">
-						<ImgBlockie
-							address={$account.address}
-							style="object-fit: cover;height: 2rem;width: 2rem;display: inline;transform:translateY(25%);"
-						/>
-						<span>{$account.address.slice(0, 6)}...</span>
-					</div>
+					<ImgBlockie address={$account.address} style="object-fit: cover;height: 2rem;width: 2rem;display: inline;" />
+					<span class="address">{computeShortAddress($account.address)}</span>
 					<button
 						on:click={() => {
 							$menu.open = false;
@@ -120,6 +121,14 @@
 					{#if isAdmin}
 						<button class="error" on:click={() => ($admin.open = true)}>Admin</button>
 					{/if}
+
+					<button
+						class="error"
+						on:click={() => {
+							$menu.open = false;
+							startTour();
+						}}>Start Tour</button
+					>
 				</div>
 			{:else}
 				<div class="disconnected">
@@ -156,13 +165,18 @@
 		width: 100%;
 		justify-content: space-between;
 	}
-	.account {
-		margin-bottom: 1rem;
-	}
 	.connected {
 		width: 100%;
 		display: flex;
-		justify-content: space-between;
+		margin-bottom: 1rem;
+		gap: 0.5rem;
+		align-items: center;
+	}
+	.address {
+		max-width: calc(100% - 0px);
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		overflow: hidden;
 	}
 	.disconnected {
 		width: 100%;
@@ -209,8 +223,11 @@
 		display: inline-block;
 	}
 
+	.icon {
+		margin-left: auto;
+	}
 	.icon :global(.lucide) {
-		height: 1.5rem;
-		width: 1.5rem;
+		min-height: 1.5rem;
+		min-width: 1.5rem;
 	}
 </style>

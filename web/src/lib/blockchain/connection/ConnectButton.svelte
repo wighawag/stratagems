@@ -53,7 +53,7 @@
 				/>
 			</svg>
 		{/if}
-		<button class="blockie-button" on:click={(e) => switchMenu(e)}>
+		<button id="account-button" class="blockie-button" on:click={(e) => switchMenu(e)}>
 			<div class="blockie-wrapper">
 				<ImgBlockie rootClass="blockie" address={$account.address || ''} />
 			</div>
