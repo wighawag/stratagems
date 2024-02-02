@@ -29,6 +29,7 @@
 	.top {
 		pointer-events: auto;
 		display: flex;
+		gap: 1rem;
 		justify-content: space-between;
 		align-items: center;
 		padding: 8px;
