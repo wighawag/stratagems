@@ -15,6 +15,7 @@
 	import Menu from '$lib/ui/menu/Menu.svelte';
 	import TransactionsView from '$lib/ui/transactions/TransactionsView.svelte';
 	import Admin from '$lib/ui/admin/Admin.svelte';
+	import CommitmentsView from '$lib/ui/commitments/CommitmentsView.svelte';
 
 	$: showWIPNotice =
 		!dev &&
@@ -35,6 +36,8 @@
 	<Menu />
 
 	<TransactionsView />
+
+	<CommitmentsView />
 
 	<Admin />
 

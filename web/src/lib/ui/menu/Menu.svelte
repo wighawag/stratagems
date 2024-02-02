@@ -2,6 +2,7 @@
 	import {account, connection, contracts, network} from '$lib/blockchain/connection';
 	import {menu} from './menu';
 	import {transactionsView} from '$lib/ui/transactions/transactionsView';
+	import {commitmentsView} from '$lib/ui/commitments/commitmentsView';
 	import {admin} from '$lib/ui/admin/admin';
 	import {fly} from 'svelte/transition';
 	import {HelpCircle, Power} from 'lucide-svelte';
@@ -117,6 +118,8 @@
 					{/if}
 
 					<button class="error" on:click={() => ($transactionsView.open = true)}>See Transactions</button>
+
+					<button class="error" on:click={() => ($commitmentsView.open = true)}>See Commitments</button>
 
 					{#if isAdmin}
 						<button class="error" on:click={() => ($admin.open = true)}>Admin</button>

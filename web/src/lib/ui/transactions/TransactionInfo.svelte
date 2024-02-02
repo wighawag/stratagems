@@ -1,8 +1,8 @@
 <script lang="ts">
 	import {blockchainExplorer} from '$lib/config';
-	import type {PendingTransaction} from 'ethereum-tx-observer';
+	import type {PendingTransactionInclusion} from 'ethereum-tx-observer';
 
-	export let tx: PendingTransaction;
+	export let tx: {hash: `0x${string}`; inclusion: PendingTransactionInclusion};
 
 	function computeShortHash(hash: `0x${string}`) {
 		return hash.slice(0, 8) + '...';
