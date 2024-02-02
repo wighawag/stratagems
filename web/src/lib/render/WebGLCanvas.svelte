@@ -60,9 +60,9 @@
 {#if error}
 	{error}
 {:else}
-	<canvas id="canvas" style="position: absolute; width:100%; height: 100%; display: block; pointer-events: auto;" />
+	<canvas id="canvas" style="position: absolute; width:100%; height: 100%; pointer-events: auto;" />
 	<div
 		id="canvas-overlay"
-		style="position: absolute;width:100%; height: 100%;pointer-events: none; overflow: hidden;"
+		style="position: absolute;width:100%; height: 100%; pointer-events: none; overflow: hidden;"
 	></div>
 {/if}

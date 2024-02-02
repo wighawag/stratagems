@@ -1,6 +1,5 @@
 <script lang="ts">
 	import {transactionDetailsView} from './transactionsView';
-	import Modal from '$utils/ui/modals/Modal.svelte';
 	import {JsonView} from '@zerodevx/svelte-json-view';
 	import ModalContainer from '$utils/ui/modals/ModalContainer.svelte';
 	import {fly} from 'svelte/transition';
