@@ -62,7 +62,7 @@ a[role='button']:disabled {
 	background-color: gray !important;
 }
 
-button.icon{
+button.icon {
 	background: inherit;
 	color: inherit;
 }
@@ -76,11 +76,23 @@ button.icon{
 	}
 }
 
-
 .lucide {
 	min-width: 1em;
 	width: 1em;
 	height: 1em;
 	display: inline;
 	vertical-align: baseline;
+}
+
+@keyframes blink {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+
+:root {
+	--jsonBracketHoverBackground: var(--color-primary-500);
 }

@@ -4,10 +4,11 @@
 	import {type Cancellation} from './types.js';
 
 	export let oncancel: Cancellation = undefined;
+	export let onclosed: Cancellation = undefined;
 	export let style: string | undefined = undefined;
 </script>
 
-<ModalContainer {oncancel}>
+<ModalContainer {oncancel} {onclosed}>
 	<div class="modal" transition:fly={{y: '50vh'}} {style}>
 		<slot />
 	</div>

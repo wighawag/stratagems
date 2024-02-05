@@ -4,6 +4,7 @@
 	import {contractsInfos} from '$lib/config';
 	import {getNetworkConfig} from '$lib/blockchain/networks';
 	import {menu} from '$lib/ui/menu/menu';
+	import {tour} from '$lib/ui/tour/drive';
 
 	function switchMenu(e: Event) {
 		menu.update((v) => ({
@@ -53,7 +54,7 @@
 				/>
 			</svg>
 		{/if}
-		<button id="account-button" class="blockie-button" on:click={(e) => switchMenu(e)}>
+		<button disabled={$tour.running} id="account-button" class="blockie-button" on:click={(e) => switchMenu(e)}>
 			<div class="blockie-wrapper">
 				<ImgBlockie rootClass="blockie" address={$account.address || ''} />
 			</div>

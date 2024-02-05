@@ -39,6 +39,7 @@
 	import {fade} from 'svelte/transition';
 
 	export let oncancel: Cancellation;
+	export let onclosed: Cancellation | undefined = undefined;
 
 	let element: HTMLElement;
 	let modal: ModalOnStack;
@@ -92,6 +93,12 @@
 		}
 	}
 
+	function onOutroEnd() {
+		if (onclosed) {
+			onclosed();
+		}
+	}
+
 	function onBackdropInteraction(event: MouseEvent | TouchEvent): void {
 		if (!(event.target instanceof Element)) {
 			return;
@@ -114,6 +121,7 @@
 		on:touchstart={onBackdropInteraction}
 		transition:fade
 		on:outrostart={onOutroStart}
+		on:outroend={onOutroEnd}
 	></div>
 
 	<slot />

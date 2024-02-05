@@ -9,7 +9,7 @@
 	$: confirm = modal.type === 'confirm' ? modal : undefined;
 </script>
 
-<Modal {oncancel} style="--width:300px;--height:200px;--background-color:purple;">
+<Modal {oncancel} style="--width:300px;--height:300px;--background-color:purple;">
 	{#if confirm}
 		{@const m = confirm}
 		{#if m.title}

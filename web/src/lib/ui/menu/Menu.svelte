@@ -6,12 +6,13 @@
 	import {indexerView} from '$lib/ui/indexer/indexerView';
 	import {viewStateView} from '$lib/ui/viewstate/viewStateView';
 	import {admin} from '$lib/ui/admin/admin';
+	import {debug} from '$lib/ui/debug/debug';
 	import {fly} from 'svelte/transition';
 	import {HelpCircle, Power} from 'lucide-svelte';
 	import ImgBlockie from '$utils/ethereum/ImgBlockie.svelte';
 	import {balance} from '$lib/state/balance';
 	import {formatUnits} from '$utils/ui/text';
-	import {contractsInfos, initialContractsInfos} from '$lib/config';
+	import {contractsInfos, dev, initialContractsInfos} from '$lib/config';
 	import {tooltip} from '$utils/ui/tooltip';
 	import ModalContainer from '$utils/ui/modals/ModalContainer.svelte';
 
@@ -126,6 +127,10 @@
 					<button class="error" on:click={() => ($indexerView.open = true)}>See Indexer State</button>
 
 					<button class="error" on:click={() => ($viewStateView.open = true)}>See View State</button>
+
+					{#if dev}
+						<button class="error" on:click={() => ($debug.open = true)}>Debug</button>
+					{/if}
 
 					{#if isAdmin}
 						<button class="error" on:click={() => ($admin.open = true)}>Admin</button>

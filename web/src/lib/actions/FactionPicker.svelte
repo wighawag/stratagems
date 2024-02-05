@@ -32,13 +32,15 @@
 	}
 </script>
 
-<div class="container">
-	<div class="content" id="faction-picker">
-		<p class="title">Your Color</p>
-		<p class="help">(click to swap)</p>
-		<button on:click={swapColor}><img src={url(src)} alt="color" /></button>
+{#if $account.state === 'Connected'}
+	<div class="container">
+		<div class="content" id="faction-picker">
+			<p class="title">Your Color</p>
+			<p class="help">(click to swap)</p>
+			<button on:click={swapColor}><img src={url(src)} alt="color" /></button>
+		</div>
 	</div>
-</div>
+{/if}
 
 <style>
 	.title {

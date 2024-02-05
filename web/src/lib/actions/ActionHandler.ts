@@ -4,9 +4,13 @@ import {account, accountData} from '$lib/blockchain/connection';
 import {xyToXYID, Color} from 'stratagems-common';
 import {get} from 'svelte/store';
 import {epochState} from '$lib/state/Epoch';
+import {tour} from '$lib/ui/tour/drive';
 
 export class ActionHandler {
 	onCellClicked(x: number, y: number) {
+		if (get(tour).running) {
+			return;
+		}
 		console.log(x, y);
 		const player = account.$state.address;
 		if (!player) {

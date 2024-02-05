@@ -57,6 +57,13 @@ export type StratagemsTransaction = EIP1193TransactionWithMetadata<StratagemsMet
 
 export type Epoch = {number: number};
 
+export enum TUTORIAL_STEP {
+	'WELCOME' = 0,
+}
+export function hasCompletedTutorial(progression: number, step: TUTORIAL_STEP): boolean {
+	return (progression & Math.pow(2, step)) == Math.pow(2, step);
+}
+
 export type OffchainState = {
 	version: number;
 	lastEpochAcknowledged: number;
@@ -302,6 +309,15 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		this._offchainState.set(this.$data.offchainState);
 	}
 
+	resetOffchainProgression(alsoSave: boolean = true) {
+		this.$data.offchainState.tutorial = {progression: 0, timestamp: time.now};
+
+		if (alsoSave) {
+			this._save();
+		}
+		this._offchainState.set(this.$data.offchainState);
+	}
+
 	addMove(move: LocalMove, epoch: number) {
 		const timestamp = time.now;
 		if (this.$data.offchainState.moves?.epoch != epoch) {
@@ -405,6 +421,18 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		this.$data.offchainState.currentColor.timestamp = timestamp;
 		this._save();
 		this._offchainState.set(this.$data.offchainState);
+	}
+
+	markTutorialAsComplete(step: TUTORIAL_STEP) {
+		// TODO ensure timestamp synced ?
+		const timestamp = time.now;
+
+		if (!hasCompletedTutorial(this.$data.offchainState.tutorial.progression, step)) {
+			this.$data.offchainState.tutorial.timestamp = timestamp;
+			this.$data.offchainState.tutorial.progression |= Math.pow(2, step);
+			this._save();
+			this._offchainState.set(this.$data.offchainState);
+		}
 	}
 }
 

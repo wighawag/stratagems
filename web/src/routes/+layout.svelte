@@ -20,6 +20,7 @@
 	import ViewStateView from '$lib/ui/viewstate/ViewStateView.svelte';
 	import Welcome from '$lib/ui/tutorial/Welcome.svelte';
 	import SplashScreen from '$lib/ui/loading/SplashScreen.svelte';
+	import Debug from '$lib/ui/debug/Debug.svelte';
 
 	$: showWIPNotice =
 		!dev &&
@@ -33,9 +34,7 @@
 <!-- -->
 
 <div style="position: absolute; z-index: 2; width: 100%; height: 100%; pointer-events: none;overflow: hidden;">
-	<div class="fullscreen">
-		<ClaimTokenScreen name="Stratagems" />
-	</div>
+	<ClaimTokenScreen name="Stratagems" />
 
 	<Menu />
 
@@ -50,6 +49,8 @@
 	<Welcome />
 
 	<Admin />
+
+	<Debug />
 
 	<Modals />
 

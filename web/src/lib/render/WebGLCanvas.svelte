@@ -18,7 +18,7 @@
 
 	let error: string | undefined;
 	onMount(() => {
-		const canvas = document.querySelector('#canvas') as HTMLCanvasElement;
+		const canvas = document.querySelector('#world-map') as HTMLCanvasElement;
 
 		// prevent selection of text when start dragging on canvas
 		// TODO we should actually disable pointer events for all elements in the way
@@ -61,7 +61,7 @@
 	{error}
 {:else}
 	<canvas
-		id="canvas"
+		id="world-map"
 		style="background-color: #038AAB; position: absolute; width:100%; height: 100%; pointer-events: auto;"
 	/>
 	<div
