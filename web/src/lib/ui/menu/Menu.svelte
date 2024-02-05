@@ -3,6 +3,7 @@
 	import {menu} from './menu';
 	import {transactionsView} from '$lib/ui/transactions/transactionsView';
 	import {commitmentsView} from '$lib/ui/commitments/commitmentsView';
+	import {indexerView} from '$lib/ui/indexer/indexerView';
 	import {admin} from '$lib/ui/admin/admin';
 	import {fly} from 'svelte/transition';
 	import {HelpCircle, Power} from 'lucide-svelte';
@@ -120,6 +121,8 @@
 					<button class="error" on:click={() => ($transactionsView.open = true)}>See Transactions</button>
 
 					<button class="error" on:click={() => ($commitmentsView.open = true)}>See Commitments</button>
+
+					<button class="error" on:click={() => ($indexerView.open = true)}>See Indexer State</button>
 
 					{#if isAdmin}
 						<button class="error" on:click={() => ($admin.open = true)}>Admin</button>
