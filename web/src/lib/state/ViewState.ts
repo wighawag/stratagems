@@ -33,7 +33,7 @@ export type StratagemsViewState = StratagemsState & {
 };
 
 function isValidMove(move: LocalMove) {
-	if (move.x && move.y) {
+	if (move.x != undefined && move.y != undefined) {
 		return true;
 	}
 
@@ -62,13 +62,13 @@ function merge(
 		if (offchainState.moves.epoch === epochState.epoch && epochState.isActionPhase) {
 			for (const move of offchainState.moves.list) {
 				if (!isValidMove(move)) {
+					console.error(`INVALID MOVE`, move);
 					continue; // TODO delete
 				}
 				console.log(`color: ${move.color}`);
 				stratagems.computeMove(account.address as `0x${string}`, epochState.epoch, localMoveToContractMove(move));
 			}
 		}
-		
 	} else {
 		let lastCommitment: OnChainAction<CommitMetadata> | undefined;
 		for (const txHash of Object.keys(onchainActions)) {

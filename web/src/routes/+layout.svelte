@@ -17,6 +17,7 @@
 	import Admin from '$lib/ui/admin/Admin.svelte';
 	import CommitmentsView from '$lib/ui/commitments/CommitmentsView.svelte';
 	import IndexerView from '$lib/ui/indexer/IndexerView.svelte';
+	import ViewStateView from '$lib/ui/viewstate/ViewStateView.svelte';
 
 	$: showWIPNotice =
 		!dev &&
@@ -41,6 +42,8 @@
 	<CommitmentsView />
 
 	<IndexerView />
+
+	<ViewStateView />
 
 	<Admin />
 
