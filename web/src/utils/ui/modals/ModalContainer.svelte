@@ -97,6 +97,8 @@
 			return;
 		}
 		if (event.target.classList.contains('overlay')) {
+			event.stopImmediatePropagation();
+			event.preventDefault();
 			if (modal.oncancel) {
 				return modal.oncancel();
 			}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import {page} from '$app/stores';
+	import {route} from '$utils/path';
 </script>
 
 <!-- TODO inject some script tag in the generated build/404.html -->
@@ -13,6 +14,10 @@
 	<div class="wrapper">
 		<p class="text">
 			Could not find the page {$page.params.notfound || ''}
+		</p>
+
+		<p>
+			<a role="button" href={route('/')}>Back To the World map</a>
 		</p>
 	</div>
 </section>

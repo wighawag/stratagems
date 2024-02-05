@@ -62,7 +62,7 @@
 {:else}
 	<canvas
 		id="canvas"
-		style="background-color: white; position: absolute; width:100%; height: 100%; pointer-events: auto;"
+		style="background-color: #038AAB; position: absolute; width:100%; height: 100%; pointer-events: auto;"
 	/>
 	<div
 		id="canvas-overlay"

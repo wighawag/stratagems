@@ -50,4 +50,8 @@ a[role='button'].error:visited {
 	color: var(--color-text-on-error-500);
 }
 
+:root {
+	accent-color: var(--color-primary-500);
+}
+
 /* ------------------------------------------------- */
