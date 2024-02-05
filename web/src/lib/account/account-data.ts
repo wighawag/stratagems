@@ -17,11 +17,17 @@ export type LocalMove = {
 };
 
 export type LocalMoves = LocalMove[];
-export type OffchainMoves = {
-	epoch: number;
-	list: LocalMoves;
-}
-
+export type OffchainMoves =
+	| {
+			timestamp: number;
+			list: [];
+			epoch: undefined;
+	  }
+	| {
+			epoch: number;
+			timestamp: number;
+			list: LocalMoves;
+	  };
 
 export function localMoveToContractMove(localMove: LocalMove): ContractMove {
 	return {
@@ -38,23 +44,31 @@ export type CommitMetadata = {
 	fuzd: boolean | 'pendingTx'; // TODO
 };
 
-export type StratagemsMetadata = undefined | {
-	epoch: {
-		hash: `0x${string}`;
-		number: number;
-	};
-} & (CommitMetadata | RevealMetadata);
+export type StratagemsMetadata =
+	| undefined
+	| ({
+			epoch: {
+				hash: `0x${string}`;
+				number: number;
+			};
+	  } & (CommitMetadata | RevealMetadata));
 
 export type StratagemsTransaction = EIP1193TransactionWithMetadata<StratagemsMetadata>;
 
 export type Epoch = {number: number};
 
 export type OffchainState = {
-	timestamp: number;
-	epoch?: Epoch;
+	version: number;
 	lastEpochAcknowledged: number;
-	moves?: OffchainMoves;
-	currentColor?: number;
+	moves: OffchainMoves;
+	currentColor: {
+		timestamp: number;
+		color?: number;
+	};
+	tutorial: {
+		timestamp: number;
+		progression: number;
+	};
 };
 
 export type AccountData = {
@@ -79,10 +93,14 @@ function defaultData() {
 	return {
 		onchainActions: {},
 		offchainState: {
-			timestamp: 0,
-			moves: undefined,
+			version: 1,
+			moves: {epoch: 0, timestamp: 0, list: []},
 			lastEpochAcknowledged: 0,
-			currentColor: undefined,
+			currentColor: {timestamp: 0},
+			tutorial: {
+				timestamp: 0,
+				progression: 0,
+			},
 		},
 	};
 }
@@ -131,8 +149,6 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		return result;
 	}
 
-	
-
 	_merge(
 		localData?: AccountData | undefined,
 		remoteData?: AccountData | undefined,
@@ -152,12 +168,15 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 			remoteData = defaultData();
 		}
 
-		if ((remoteData.offchainState as any).moves?.length) {
+		if (
+			remoteData.offchainState.version === undefined ||
+			remoteData.offchainState.version < newData.offchainState.version
+		) {
 			remoteData.offchainState = defaultData().offchainState;
+			newDataOnLocal = true;
 		}
 
 		_filterOutOldActions(remoteData.onchainActions);
-		
 
 		for (const key of Object.keys(newData.onchainActions)) {
 			const txHash = key as `0x${string}`;
@@ -190,12 +209,40 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 			newDataOnLocal = true;
 		}
 
-		if (remoteData.offchainState.timestamp > newData.offchainState.timestamp) {
-			console.log(`fresher remote offchainState data`);
-			newData.offchainState = remoteData.offchainState;
+		if (
+			remoteData.offchainState.lastEpochAcknowledged &&
+			remoteData.offchainState.lastEpochAcknowledged > newData.offchainState.lastEpochAcknowledged
+		) {
+			newData.offchainState.lastEpochAcknowledged = remoteData.offchainState.lastEpochAcknowledged;
 			newDataOnRemote = true;
-		} else if (newData.offchainState.timestamp > remoteData.offchainState.timestamp) {
-			console.log(`fresher local offchainState data`);
+		} else if (
+			newData.offchainState.lastEpochAcknowledged &&
+			newData.offchainState.lastEpochAcknowledged > remoteData.offchainState.lastEpochAcknowledged
+		) {
+			newDataOnLocal = true;
+		}
+
+		if (remoteData.offchainState.moves.timestamp > newData.offchainState.moves.timestamp) {
+			newData.offchainState.moves = remoteData.offchainState.moves;
+			newDataOnRemote = true;
+		} else if (newData.offchainState.moves.timestamp > remoteData.offchainState.moves.timestamp) {
+			remoteData.offchainState.moves = newData.offchainState.moves;
+			newDataOnLocal = true;
+		}
+
+		if (remoteData.offchainState.currentColor.timestamp > newData.offchainState.currentColor.timestamp) {
+			newData.offchainState.currentColor = remoteData.offchainState.currentColor;
+			newDataOnRemote = true;
+		} else if (newData.offchainState.currentColor.timestamp > remoteData.offchainState.currentColor.timestamp) {
+			remoteData.offchainState.currentColor = newData.offchainState.currentColor;
+			newDataOnLocal = true;
+		}
+
+		if (remoteData.offchainState.tutorial.timestamp > newData.offchainState.tutorial.timestamp) {
+			newData.offchainState.tutorial = remoteData.offchainState.tutorial;
+			newDataOnRemote = true;
+		} else if (newData.offchainState.tutorial.timestamp > remoteData.offchainState.tutorial.timestamp) {
+			remoteData.offchainState.tutorial = newData.offchainState.tutorial;
 			newDataOnLocal = true;
 		}
 
@@ -247,8 +294,8 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 	// }
 
 	resetOffchainMoves(alsoSave: boolean = true) {
-		this.$data.offchainState.moves = undefined;
-		this.$data.offchainState.timestamp = time.now;
+		this.$data.offchainState.moves = {list: [], timestamp: time.now, epoch: undefined};
+
 		if (alsoSave) {
 			this._save();
 		}
@@ -256,18 +303,22 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 	}
 
 	addMove(move: LocalMove, epoch: number) {
+		const timestamp = time.now;
 		if (this.$data.offchainState.moves?.epoch != epoch) {
-			this.$data.offchainState.moves = {list: [], epoch};
-		}
-		const existingMove = this.$data.offchainState.moves?.list.find((v) => v.x === move.x && v.y === move.y);
-		if (!existingMove) {
-			if (!this.$data.offchainState.moves) {
-				this.$data.offchainState.moves = {list: [], epoch};
-			}
-			this.$data.offchainState.moves.list.push(move);
-			this.$data.offchainState.timestamp = time.now;
+			this.$data.offchainState.moves = {list: [move], timestamp, epoch};
 		} else {
-			existingMove.color = move.color;
+			const existingMove = this.$data.offchainState.moves?.list.find((v) => v.x === move.x && v.y === move.y);
+			if (!existingMove) {
+				if (this.$data.offchainState.moves.list.length === 0) {
+					this.$data.offchainState.moves = {list: [move], epoch, timestamp};
+				} else {
+					this.$data.offchainState.moves.timestamp = timestamp;
+					this.$data.offchainState.moves.epoch = epoch;
+					this.$data.offchainState.moves.list.push(move);
+				}
+			} else {
+				existingMove.color = move.color;
+			}
 		}
 
 		this._save();
@@ -275,6 +326,7 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 	}
 
 	removeMove(x: number, y: number) {
+		const timestamp = time.now;
 		if (this.$data.offchainState.moves) {
 			for (let i = 0; i < this.$data.offchainState.moves.list.length; i++) {
 				const move = this.$data.offchainState.moves.list[i];
@@ -283,7 +335,13 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 					i--;
 				}
 			}
-			this.$data.offchainState.timestamp = time.now;
+			if (this.$data.offchainState.moves.list.length === 0) {
+				this.$data.offchainState.moves.timestamp = timestamp;
+				this.$data.offchainState.moves.epoch = undefined;
+			} else {
+				this.$data.offchainState.moves.timestamp = timestamp;
+			}
+
 			this._save();
 			this._offchainState.set(this.$data.offchainState);
 		}
@@ -299,7 +357,6 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 
 	acknowledgeEpoch(epochNumber: number) {
 		this.$data.offchainState.lastEpochAcknowledged = epochNumber;
-		this.$data.offchainState.timestamp = time.now;
 		this._save();
 		this._offchainState.set(this.$data.offchainState);
 	}
@@ -333,20 +390,23 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 	}
 
 	swapCurrentColor() {
+		// TODO ensure timestamp synced ?
+		const timestamp = time.now;
+
 		// TODO use store ?
 		if (!account.$state.address) {
 			throw new Error(`no address`);
 		}
-		let currentColor = this.$data.offchainState.currentColor;
+		let currentColor = this.$data.offchainState.currentColor.color;
 		if (!currentColor) {
 			currentColor = Number((BigInt(account.$state.address) % 5n) + 1n);
 		}
-		this.$data.offchainState.currentColor = (currentColor % 5) + 1;
+		this.$data.offchainState.currentColor.color = (currentColor % 5) + 1;
+		this.$data.offchainState.currentColor.timestamp = timestamp;
 		this._save();
 		this._offchainState.set(this.$data.offchainState);
 	}
 }
-
 
 function _filterOutOldActions(actions: OnChainActions<StratagemsMetadata>): boolean {
 	let changes = false;
@@ -362,10 +422,9 @@ function _filterOutOldActions(actions: OnChainActions<StratagemsMetadata>): bool
 			} else if (lastCommitAction.tx.metadata.epoch < commitAction.tx.metadata.epoch) {
 				lastCommitAction = commitAction;
 			}
-			
 		}
 	}
-	
+
 	for (const key of keys) {
 		const txHash = key as `0x${string}`;
 		const action = actions[txHash];
@@ -380,17 +439,17 @@ function _filterOutOldActions(actions: OnChainActions<StratagemsMetadata>): bool
 				}
 			}
 		} else {
-			switch(action.tx.metadata.type) {
+			switch (action.tx.metadata.type) {
 				case 'commit':
-					const commitMetadata= action.tx.metadata;
+					const commitMetadata = action.tx.metadata;
 					// if (action.status == 'Success') {
 					if (lastCommitAction && lastCommitAction.tx.metadata.epoch > commitMetadata.epoch) {
-						delete actions[txHash];	
+						delete actions[txHash];
 						changes = true;
 					}
 					// } else if (!action.tx.timestamp || time.now - action.tx.timestamp > 7 * 24 * 3600) {
 					// 	delete actions[txHash];
-					// }	
+					// }
 					break;
 				case 'reveal':
 					const revealMetadata = action.tx.metadata;
@@ -408,7 +467,6 @@ function _filterOutOldActions(actions: OnChainActions<StratagemsMetadata>): bool
 					break;
 			}
 		}
-
 	}
 	return changes;
 }

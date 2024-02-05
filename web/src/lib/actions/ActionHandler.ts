@@ -3,7 +3,7 @@ import {account, accountData} from '$lib/blockchain/connection';
 
 import {xyToXYID, Color} from 'stratagems-common';
 import {get} from 'svelte/store';
-import { epochState } from '$lib/state/Epoch';
+import {epochState} from '$lib/state/Epoch';
 
 export class ActionHandler {
 	onCellClicked(x: number, y: number) {
@@ -19,7 +19,7 @@ export class ActionHandler {
 		const $epochState = get(epochState);
 		const cellID = xyToXYID(x, y);
 
-		const currentColor = currentOffchainState.currentColor || Number((BigInt(player) % 5n) + 1n);
+		const currentColor = currentOffchainState.currentColor.color || Number((BigInt(player) % 5n) + 1n);
 
 		console.log({x, y, cellID});
 

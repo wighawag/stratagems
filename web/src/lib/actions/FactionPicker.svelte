@@ -4,7 +4,7 @@
 
 	$: offchainState = accountData.offchainState;
 
-	$: color = $offchainState.currentColor || Number($account.address ? (BigInt($account.address) % 5n) + 1n : 1n);
+	$: color = $offchainState.currentColor.color || Number($account.address ? (BigInt($account.address) % 5n) + 1n : 1n);
 
 	let src = '/game-assets/blue.png';
 	$: {

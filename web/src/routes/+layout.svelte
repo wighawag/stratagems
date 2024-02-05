@@ -18,6 +18,8 @@
 	import CommitmentsView from '$lib/ui/commitments/CommitmentsView.svelte';
 	import IndexerView from '$lib/ui/indexer/IndexerView.svelte';
 	import ViewStateView from '$lib/ui/viewstate/ViewStateView.svelte';
+	import Welcome from '$lib/ui/tutorial/Welcome.svelte';
+	import SplashScreen from '$lib/ui/loading/SplashScreen.svelte';
 
 	$: showWIPNotice =
 		!dev &&
@@ -45,6 +47,8 @@
 
 	<ViewStateView />
 
+	<Welcome />
+
 	<Admin />
 
 	<Modals />
@@ -62,6 +66,8 @@
 	<Web3ConnectionUI />
 
 	<Flow />
+
+	<SplashScreen />
 </div>
 
 <slot />
