@@ -26,7 +26,7 @@ class SplashStore extends BaseStore<{stage: number}> {
 				() => {
 					this.set({stage: MAX_STAGE});
 				},
-				this.visited ? 2000 : 3000,
+				this.visited ? 2000 : 2000,
 			);
 		}
 	}
@@ -40,7 +40,7 @@ class SplashStore extends BaseStore<{stage: number}> {
 	}
 
 	gameLogoReady() {
-		this.visited ? this._loaded(1000) : this._loaded(2000);
+		this.visited ? this._loaded(1000) : this._loaded(1000);
 	}
 
 	etherplayLogoReady() {
@@ -70,7 +70,7 @@ class SplashStore extends BaseStore<{stage: number}> {
 		}
 
 		if (this.$store.stage === MAX_STAGE) {
-			// lcache.setItem('__stratagems_visited', 'true');
+			lcache.setItem('__stratagems_visited', 'true');
 		}
 	}
 }
