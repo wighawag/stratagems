@@ -3,12 +3,32 @@
 	import {JsonView} from '@zerodevx/svelte-json-view';
 	import ModalContainer from '$utils/ui/modals/ModalContainer.svelte';
 	import {fly} from 'svelte/transition';
+	// import {account, connection} from '$lib/blockchain/connection';
+
+	// export async function force() {
+	// 	if (connection.$state.provider && account.$state.address) {
+	// 		const nonce = await connection.$state.provider.request({
+	// 			method: 'eth_getTransactionCount',
+	// 			params: [account.$state.address, 'latest'],
+	// 		});
+	// 		console.log({nonce: Number(nonce)});
+	// 		await connection.$state.provider.request({
+	// 			method: 'eth_sendTransaction',
+	// 			params: [{...$transactionDetailsView.tx, nonce}],
+	// 		});
+	// 	} else {
+	// 		//TODO
+	// 	}
+	// }
 </script>
 
 {#if $transactionDetailsView.tx}
 	<ModalContainer oncancel={() => ($transactionDetailsView.tx = undefined)}>
 		<div class="container" transition:fly={{y: '100%'}}>
 			<JsonView json={$transactionDetailsView.tx} depth={0} />
+			<!-- <div>
+				<button on:click={() => force()}>force</button>
+			</div> -->
 		</div>
 	</ModalContainer>
 {/if}

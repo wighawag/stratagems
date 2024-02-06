@@ -101,10 +101,16 @@ const _time = writable({timestamp, synced}, (set) => {
 					set({timestamp, synced});
 				}
 			}
+			if (timer) {
+				timer = setTimeout(fetchTime, 3000);
+			}
 		} catch (err) {
+			if (timeout == undefined) {
+				return;
+			}
+			clearTimeout(timeout);
 			console.error(`getTime error`, err);
-		} finally {
-			if (timeout && timer) {
+			if (timer) {
 				timer = setTimeout(fetchTime, 3000);
 			}
 		}
