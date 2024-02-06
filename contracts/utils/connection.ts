@@ -29,7 +29,7 @@ export async function getConnection(): Promise<Connection> {
 	const provider = hre.network.provider as EIP1193ProviderWithoutEvents;
 
 	const chainIdAsHex = await provider.request({method: 'eth_chainId'});
-	const chainIdAsNumber = parseInt(chainIdAsHex.slice(2), 16);
+	const chainIdAsNumber = Number(chainIdAsHex);
 	const chain = defineChain({
 		id: chainIdAsNumber,
 		name: hre.network.name,

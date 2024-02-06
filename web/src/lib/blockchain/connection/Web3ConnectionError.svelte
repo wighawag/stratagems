@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {switchToSupportedNetwork, type connection as Connection, type network as Network} from './';
+	import {switchToSupportedNetwork, type connection as Connection, type network as Network, account} from './';
 	export let network: typeof Network;
 	export let connection: typeof Connection;
 	import {contractNetwork} from '$lib/blockchain/networks';
@@ -13,6 +13,11 @@
 
 	$: console.log($connection.error);
 
+	function aknowledgeErrorAndConnect() {
+		connection.acknowledgeError();
+		connection.connect();
+	}
+
 	function aknowledgeErrorAndSwitchNetwork() {
 		connection.acknowledgeError();
 		switchToSupportedNetwork();
@@ -24,7 +29,16 @@
 		<NeedAWallet />
 	{:else}
 		<!-- -->
-		{#if $network.notSupported}
+		{#if $account.state !== 'Connected'}
+			<GenericBanner
+				banner={{
+					title: 'Not Connected',
+					message: $connection.error.message,
+					button: `Connect`,
+					ondismiss: aknowledgeErrorAndConnect,
+				}}
+			/>
+		{:else if $network.notSupported}
 			<GenericBanner
 				banner={{
 					title: 'Network not supported',

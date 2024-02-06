@@ -16,8 +16,13 @@ async function getTime() {
 					method: 'eth_call',
 					params: [{data: '0xb80777ea', to: contract}],
 				});
-				const parsedTimestamp = parseInt(rawTimestamp.slice(2), 16);
-				timestamp = await connection.$state.provider?.syncTime(parsedTimestamp);
+				timestamp = Number(rawTimestamp);
+				try {
+					await connection.$state.provider?.syncBlock(); // TODO in web3-connection
+				} catch (err) {
+					console.error(`syncBlock error`, err);
+				}
+
 				lastFetchLocalTime = performance.now();
 				synced = true;
 			} else {
@@ -26,13 +31,18 @@ async function getTime() {
 					params: ['latest', false],
 				});
 				if (block) {
-					timestamp = await connection.$state.provider?.syncTime(block);
+					timestamp = Number(block.timestamp);
+					try {
+						await connection.$state.provider?.syncBlock(); // TODO in web3-connection
+					} catch (err) {
+						console.error(`syncBlock error`, err);
+					}
 					lastFetchLocalTime = performance.now();
 					synced = true;
 				} else {
 					synced = false;
 					timestamp = Math.floor(Date.now() / 1000);
-					lastFetchLocalTime = performance.now();		
+					lastFetchLocalTime = performance.now();
 				}
 			}
 		} else {
@@ -47,11 +57,16 @@ async function getTime() {
 					method: 'eth_call',
 					params: [{data: '0xb80777ea', to: contract}],
 				});
-				timestamp = parseInt(rawTimestamp.slice(2), 16);
+				timestamp = Number(rawTimestamp);
 				lastFetchLocalTime = performance.now();
 			} else {
 				timestamp = connection.$state.provider.currentTime();
 				lastFetchLocalTime = performance.now();
+			}
+			try {
+				await connection.$state.provider?.syncBlock(); // TODO in web3-connection
+			} catch (err) {
+				console.error(`syncBlock error`, err);
 			}
 			synced = true;
 		} else {
@@ -64,29 +79,41 @@ async function getTime() {
 }
 
 const _time = writable({timestamp, synced}, (set) => {
-	let timeout: NodeJS.Timeout | undefined;
+	let timer: NodeJS.Timeout | undefined;
 
 	async function fetchTime() {
 		const lastTimestamp = timestamp;
 		const lastSynced = synced;
+		let timeout: NodeJS.Timeout | undefined;
 		try {
+			timeout = setTimeout(() => {
+				console.error(`getTime timed out!`);
+				timeout = undefined;
+				timer = setTimeout(fetchTime, 3000);
+			}, 3000);
 			const timestamp = await getTime();
+			if (timeout == undefined) {
+				return;
+			}
+			clearTimeout(timeout);
 			if (timestamp && !isNaN(timestamp)) {
 				if (lastTimestamp != timestamp || lastSynced != synced) {
 					set({timestamp, synced});
 				}
 			}
+		} catch (err) {
+			console.error(`getTime error`, err);
 		} finally {
-			if (timeout) {
-				timeout = setTimeout(fetchTime, 3000);
+			if (timeout && timer) {
+				timer = setTimeout(fetchTime, 3000);
 			}
 		}
 	}
 
-	timeout = setTimeout(fetchTime, 3000);
+	timer = setTimeout(fetchTime, 3000);
 	return () => {
-		clearTimeout(timeout);
-		timeout = undefined;
+		clearTimeout(timer);
+		timer = undefined;
 	};
 });
 

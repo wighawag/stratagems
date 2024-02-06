@@ -20,7 +20,7 @@ export async function increaseBlockTime(numSeconds: number) {
 	if (!block) {
 		throw new Error(`no block can be fetched`);
 	}
-	const old_timestamp = parseInt(block.timestamp.slice(2), 16);
+	const old_timestamp = Number(block.timestamp);
 	await devProvider.request({
 		method: 'evm_setNextBlockTimestamp',
 		params: [`0x` + BigInt(old_timestamp + numSeconds).toString(16)],
@@ -54,9 +54,7 @@ export type Executor<T, F> = Readable<Execution<T>> & {
 	execute: F;
 	acknowledgeError: () => void;
 };
-export function createExecutor<T, F extends (...args: any[]) => Promise<T>>(
-	func: F,
-): Executor<T, F> {
+export function createExecutor<T, F extends (...args: any[]) => Promise<T>>(func: F): Executor<T, F> {
 	const executing = writable<Execution<T>>({executing: false});
 
 	const execute = ((...args: any[]) => {
