@@ -1,7 +1,7 @@
 import {blockTime, initialContractsInfos} from '$lib/config';
 import type {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {writable, type Readable} from 'svelte/store';
-import {zeroAddress, type Address, encodeFunctionData} from 'viem';
+import {zeroAddress, type Address, encodeFunctionData, parseEther} from 'viem';
 import type {AccountState, ConnectionState} from 'web3-connection';
 import {connection, account} from '$lib/blockchain/connection';
 
@@ -192,3 +192,5 @@ export const balance = initBalance({
 	account,
 	depositContract: initialContractsInfos.contracts.Stratagems.address,
 });
+
+export const MINIMUM_REQUIRED_ETH_BALANCE = parseEther('0.001');

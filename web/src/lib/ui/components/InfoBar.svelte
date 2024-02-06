@@ -9,7 +9,7 @@
 	import {parseEther} from 'viem';
 	import Executor from './Executor.svelte';
 	import TxExecutor from './TxExecutor.svelte';
-	import {balance} from '$lib/state/balance';
+	import {MINIMUM_REQUIRED_ETH_BALANCE, balance} from '$lib/state/balance';
 	import {contractNetwork} from '$lib/blockchain/networks';
 	import {status} from '$lib/state/State';
 	import SyncingInfo from './SyncingInfo.svelte';
@@ -119,7 +119,7 @@
 			</div>
 		{/if}
 	{:else if $balance.state === 'Loaded'}
-		{#if $balance.nativeBalance < parseEther('0.001')}
+		{#if $balance.nativeBalance < MINIMUM_REQUIRED_ETH_BALANCE}
 			<div>
 				{#if isSepolia}
 					<a href="https://sepoliafaucet.com/" target="_blank" rel="noopener noreferrer ">Request test ETH</a>

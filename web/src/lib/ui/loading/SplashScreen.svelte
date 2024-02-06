@@ -15,7 +15,7 @@
 	<div class="overlay stratagems" out:fade on:click={() => splash.nextStage()}>
 		<div class="content">
 			<img src="./title.png" alt="Stratagems title" on:load={() => splash.gameLogoReady()} />
-			<p class="description">The Genesis of a New World.</p>
+			<p class="description">World Building</p>
 		</div>
 	</div>
 {/if}

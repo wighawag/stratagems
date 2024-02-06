@@ -38,7 +38,7 @@
 	import {createFocusTrap, type FocusTargetOrFalse, type FocusTrap} from 'focus-trap';
 	import {fade} from 'svelte/transition';
 
-	export let oncancel: Cancellation;
+	export let oncancel: Cancellation | undefined = undefined;
 	export let onclosed: Cancellation | undefined = undefined;
 
 	let element: HTMLElement;

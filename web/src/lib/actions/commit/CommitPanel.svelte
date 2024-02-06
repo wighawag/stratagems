@@ -3,7 +3,7 @@
 	import {initialContractsInfos} from '$lib/config';
 	import {encodeFunctionData} from 'viem';
 	import {startCommit} from '$lib/actions/commit';
-	import {balance} from '$lib/state/balance';
+	import {MINIMUM_REQUIRED_ETH_BALANCE, balance} from '$lib/state/balance';
 	import {formatUnits} from '$utils/ui/text';
 
 	const decimals = Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1));
@@ -47,6 +47,8 @@
 
 	$: enough = currentBalance + currentReserve >= cost; // TODO + gascost for ETH
 
+	$: enoughETH = $balance.nativeBalance >= MINIMUM_REQUIRED_ETH_BALANCE;
+
 	function clear(e: MouseEvent) {
 		e.preventDefault();
 		accountData.resetOffchainMoves();
@@ -66,17 +68,18 @@
 		{symbol}. You'll need to deposit {depositNeededString} extra
 		{symbol} because you have {currentReserveString} in reserve.
 		<span class={`${enough ? '' : 'not-enough'}`}
-			>{`${enough ? ', ' : 'but '}`}you have {currentBalnceString}
-			{symbol}.</span
+			>{`${enough ? ', you' : 'but you only'}`} have {currentBalnceString}
+			{symbol} in your wallet.</span
 		>
 	</p>
+	{#if $balance.nativeBalance < MINIMUM_REQUIRED_ETH_BALANCE}
+		<p style="color: red;">You need more ETH to transact on this chain.</p>
+	{/if}
+
 	<div class="actions">
 		<button on:click={clear}>Clear</button>
 
-		<button class="primary" disabled={!enough} on:click={startCommiting}>Commit</button>
-		{#if !enough}
-			<!-- <button class={`pointer-events-auto btn btn-primary`} on:click={topup}>Topup</button> -->
-		{/if}
+		<button class="primary" disabled={!enough || !enoughETH} on:click={startCommiting}>Commit</button>
 	</div>
 </div>
 
@@ -94,5 +97,9 @@
 	.actions {
 		display: flex;
 		justify-content: space-between;
+	}
+
+	.not-enough {
+		color: red;
 	}
 </style>
