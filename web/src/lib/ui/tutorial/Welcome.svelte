@@ -1,5 +1,5 @@
 <script>
-	import {account, accountData, connection} from '$lib/blockchain/connection';
+	import {account, accountData, connection, network} from '$lib/blockchain/connection';
 	import Modal from '$utils/ui/modals/Modal.svelte';
 	import {JsonView} from '@zerodevx/svelte-json-view';
 	// import Typewriter from '$utils/ui/text/Typewriter.svelte';
@@ -30,7 +30,7 @@
 	}
 </script>
 
-{#if !$tokenClaim.inUrl}
+{#if !$tokenClaim.inUrl && !$network.notSupported}
 	{#if !tourInProgress && $account.state === 'Connected' && !$account.isLoadingData && !hasCompletedTutorial($offchainState.tutorial.progression, TUTORIAL_STEP.WELCOME)}
 		<Modal {onclosed}>
 			<div class="content">
