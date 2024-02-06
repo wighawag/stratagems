@@ -147,24 +147,12 @@ export class BlockiesLayer {
 						S: state.viewCells[`${x},${y + 1}`]?.currentPlayer || false,
 						W: state.viewCells[`${x - 1},${y}`]?.currentPlayer || false,
 					};
-					const thickness = this.size / 50;
+					const thickness = this.size / Math.min(cameraState.zoom / 2, 50);
 
-					let startX = x;
-					let endX = x + this.size;
-					let startY = y;
-					let endY = y + this.size;
-					if (!neighbors.N) {
-						startY += thickness;
-					}
-					if (!neighbors.S) {
-						endY -= thickness;
-					}
-					if (!neighbors.W) {
-						startX += thickness;
-					}
-					if (!neighbors.E) {
-						endX -= thickness;
-					}
+					let startX = x - thickness / 2;
+					let endX = x + this.size - thickness / 2;
+					let startY = y - thickness / 2;
+					let endY = y + this.size - thickness / 2;
 
 					if (!neighbors.N) {
 						drawRect(attributes, startX, startY, endX, startY + thickness, [0, 1, 0]);
