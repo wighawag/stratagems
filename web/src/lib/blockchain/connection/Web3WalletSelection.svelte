@@ -10,10 +10,8 @@
 		(connection.options.filter((v) => v === 'builtin').length > 0 || connection.options.length === 0) &&
 		!$builtin.available;
 
-	$: builtinChoices = $builtin.walletsAnnounced.length > 1 ? $builtin.walletsAnnounced : [];
-
 	$: options = connection.options
-		.filter((v) => v !== 'builtin' || ($builtin.available && !builtinChoices))
+		.filter((v) => v !== 'builtin' || ($builtin.available && !$builtin.ethereumAnnounced))
 		.map((v) => {
 			return {
 				img: ((v) => {
@@ -59,16 +57,18 @@ permalink-->
 				/>
 			{/each}
 
-			{#each builtinChoices as builtinChoice}
-				<!-- TODO handle a11y-->
-				<!-- svelte-ignore a11y-click-events-have-key-events a11y-no-noninteractive-element-interactions
+			{#if $builtin.walletsAnnounced}
+				{#each $builtin.walletsAnnounced as builtinChoice}
+					<!-- TODO handle a11y-->
+					<!-- svelte-ignore a11y-click-events-have-key-events a11y-no-noninteractive-element-interactions
 permalink-->
-				<img
-					alt={`Login with ${builtinChoice.info?.name}`}
-					src={builtinChoice.info?.icon}
-					on:click={() => connection.select(`builtin:${builtinChoice.info.name}`)}
-				/>
-			{/each}
+					<img
+						alt={`Login with ${builtinChoice.info?.name}`}
+						src={builtinChoice.info?.icon}
+						on:click={() => connection.select(`builtin:${builtinChoice.info.name}`)}
+					/>
+				{/each}
+			{/if}
 		</div>
 		{#if builtinNeedInstalation}
 			<div class="title">OR</div>

@@ -30,7 +30,7 @@
 	}
 </script>
 
-{#if !$tokenClaim.inUrl && !$network.notSupported}
+{#if !$tokenClaim.inUrl && !$network.notSupported && !$account.locked}
 	{#if !tourInProgress && $account.state === 'Connected' && !$account.isLoadingData && !hasCompletedTutorial($offchainState.tutorial.progression, TUTORIAL_STEP.WELCOME)}
 		<Modal {onclosed}>
 			<div class="content">

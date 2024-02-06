@@ -26,7 +26,14 @@ export function initBalance({
 	account: Readable<AccountState<Address>>;
 	depositContract?: Address;
 }) {
-	const $state: BalanceData = {state: 'Idle', fetching: false, tokenBalance: 0n, tokenAllowance: 0n, nativeBalance: 0n, reserve: 0n};
+	const $state: BalanceData = {
+		state: 'Idle',
+		fetching: false,
+		tokenBalance: 0n,
+		tokenAllowance: 0n,
+		nativeBalance: 0n,
+		reserve: 0n,
+	};
 
 	let cancelAccountSubscription: (() => void) | undefined = undefined;
 	let cancelConnectionSubscription: (() => void) | undefined = undefined;
@@ -71,13 +78,14 @@ export function initBalance({
 									functionName: 'getTokensInReserve',
 								}),
 							},
+							'latest',
 						],
 					});
 				}
-				const nativeBalance = await provider.request({method: 'eth_getBalance', params: [account]});
+				const nativeBalance = await provider.request({method: 'eth_getBalance', params: [account, 'latest']});
 
 				let tokenBalance: string;
-				let tokenAllowance: string = "0";
+				let tokenAllowance: string = '0';
 				if (token === zeroAddress) {
 					tokenBalance = nativeBalance; // TODO do not do this ? or rename tokenBalance to gameBalance or something ?
 				} else {
@@ -94,6 +102,7 @@ export function initBalance({
 									functionName: 'balanceOf',
 								}),
 							},
+							'latest',
 						],
 					});
 					tokenAllowance = await provider.request({
@@ -103,15 +112,21 @@ export function initBalance({
 								to: token,
 								data: encodeFunctionData({
 									abi: [
-										{type: 'function', name: 'allowance', inputs: [{type: 'address'},{type: 'address'}], outputs: [{type: 'uint56'}]},
+										{
+											type: 'function',
+											name: 'allowance',
+											inputs: [{type: 'address'}, {type: 'address'}],
+											outputs: [{type: 'uint56'}],
+										},
 									],
 									args: [account, depositContract],
 									functionName: 'allowance',
 								}),
 							},
+							'latest',
 						],
 					});
-					console.log({tokenAllowance, account, depositContract})
+					console.log({tokenAllowance, account, depositContract});
 				}
 
 				if ($state.account !== account) {
@@ -170,7 +185,6 @@ export function initBalance({
 		subscribe: store.subscribe,
 	};
 }
-
 
 export const balance = initBalance({
 	token: initialContractsInfos.contracts.TestTokens.address,

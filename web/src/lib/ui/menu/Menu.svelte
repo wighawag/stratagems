@@ -144,15 +144,36 @@
 						}}>Start Tour</button
 					>
 				</div>
-			{:else}
-				<div class="disconnected">
-					{#if $account.locked}
-						<button class="primary" disabled={$account.unlocking} on:click={() => account.unlock()}>unlock</button>
+			{:else if $account.locked}
+				<div class="connected">
+					{#if $account.address}
+						<ImgBlockie
+							address={$account.address}
+							style="object-fit: cover;height: 2rem;width: 2rem;display: inline;"
+						/>
+						<span class="address">{computeShortAddress($account.address)}</span>
 					{:else}
-						<button disabled={connecting} class="primary" on:click={() => connection.connect()}
-							>{connecting ? 'Connecting' : 'Connect Your Wallet'}</button
-						>
+						<span>?</span>
+						<span>...</span>
 					{/if}
+
+					<button
+						on:click={() => {
+							$menu.open = false;
+							disconnect();
+						}}
+						class="icon"
+					>
+						<Power></Power>
+					</button>
+				</div>
+				<div class="category">
+					<button class="primary" disabled={$account.unlocking} on:click={() => account.unlock()}>unlock</button>
+				</div>
+			{:else}<div class="disconnected">
+					<button disabled={connecting} class="primary" on:click={() => connection.connect()}
+						>{connecting ? 'Connecting' : 'Connect Your Wallet'}</button
+					>
 				</div>
 			{/if}
 		</div>
