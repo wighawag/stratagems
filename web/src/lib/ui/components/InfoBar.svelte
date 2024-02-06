@@ -15,6 +15,9 @@
 	import SyncingInfo from './SyncingInfo.svelte';
 
 	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
+
+	$: timeLeftForNextPhase = $epochInfo.timeLeftToReveal > 0 ? $epochInfo.timeLeftToReveal : $epochInfo.timeLeftToCommit;
+
 	async function nextPhase() {
 		const isActionPhase = $epochInfo.isActionPhase;
 		if (!isActionPhase) {
@@ -89,6 +92,9 @@
 	{:else if $connection.state !== 'Connected'}
 		{#if defaultRPC}
 			<div>You are not connected.</div>
+			{#if $time.synced}
+				<span>{timeToText(timeLeftForNextPhase)} left</span>
+			{/if}
 		{:else}
 			<div>
 				Stratagems is a fully local game and requires a wallet to even read the latest game state. Please Connect to a
@@ -98,7 +104,8 @@
 	{:else if $status.state !== 'IndexingLatest'}
 		<SyncingInfo />
 	{:else if !$time.synced}
-		<span><svg class="font-icon"><use xlink:href="#warning" /></svg>Syncing Time, Please wait... </span>
+		<span>Syncing Time, Please wait... </span>
+		<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
 	{:else if $epochInfo.timeLeftToReveal > 0}
 		<span>
 			<svg xmlns="http://www.w3.org/2000/svg" class="font-icon" fill="none" viewBox="0 0 24 24"
@@ -112,7 +119,7 @@
 
 			Please wait while everyone reveal their moves...
 		</span>
-		<span>{timeToText($epochInfo.timeLeftToReveal)} left</span>
+		<span>{timeToText(timeLeftForNextPhase)} left</span>
 		{#if isAdmin}
 			<div>
 				<Executor func={() => nextPhase()}>Skip To New Round</Executor>
@@ -120,13 +127,19 @@
 		{/if}
 	{:else if $balance.state === 'Loaded'}
 		{#if $balance.nativeBalance < MINIMUM_REQUIRED_ETH_BALANCE}
-			<div>
-				{#if isSepolia}
+			<div class="warning">
+				<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
+				<!-- {#if isSepolia}
 					<a href="https://sepoliafaucet.com/" target="_blank" rel="noopener noreferrer ">Request test ETH</a>
-				{:else}
-					You have not enough ETH. Please topup your wallet and come back to get some test tokens to play.
-				{/if}
+				{:else} -->
+				You have not enough ETH to pay for gas
+				<!-- {/if} -->
 			</div>
+			{#if $time.synced}
+				<span>{timeToText(timeLeftForNextPhase)} left</span>
+			{:else}
+				<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
+			{/if}
 		{:else if $balance.tokenBalance === 0n}
 			{#if any(initialContractsInfos.contracts)['TestTokensDistributor']}
 				<div>
@@ -135,14 +148,18 @@
 			{:else}
 				<div>
 					<span>
-						You do no not have any token to play <a
-							class="underline"
-							href="https://community.etherplay.io"
-							target="_blank"
-							rel="noreferer noopener">Ask on our Discord</a
+						<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
+						You do no not have any token to play
+						<a class="underline" href="https://community.etherplay.io" target="_blank" rel="noreferer noopener"
+							>Ask on our Discord</a
 						>
 					</span>
 				</div>
+			{/if}
+			{#if $time.synced}
+				<span>{timeToText(timeLeftForNextPhase)} left</span>
+			{:else}
+				<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
 			{/if}
 		{:else}
 			{#if $stratagemsView.hasCommitment}
@@ -151,7 +168,11 @@
 				<span>Please make your move.</span>
 			{/if}
 
-			<span>{timeToText($epochInfo.timeLeftToCommit)} left</span>
+			{#if $time.synced}
+				<span>{timeToText(timeLeftForNextPhase)} left</span>
+			{:else}
+				<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
+			{/if}
 			{#if isAdmin}
 				<div>
 					<Executor func={() => nextPhase()}>Skip to Reveal Phase</Executor>
@@ -169,6 +190,11 @@
 			<!-- <div>
 				<button>Connect</button>
 			</div> -->
+		{/if}
+		{#if $time.synced}
+			<span>{timeToText(timeLeftForNextPhase)} left</span>
+		{:else}
+			<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
 		{/if}
 	{:else if $network.notSupported}
 		<div><svg class="font-icon"><use xlink:href="#warning" /></svg> You are connected to the wrong network</div>
@@ -197,5 +223,9 @@
 		gap: 0.6rem;
 		justify-content: space-between;
 		width: 100%;
+	}
+
+	.warning {
+		color: orange;
 	}
 </style>
