@@ -58,16 +58,14 @@ function merge(
 	// console.log({epoch: epochState.epoch, isActionPhase: epochState.isActionPhase});
 
 	let hasCommitment = false;
-	if (offchainState.moves !== undefined) {
-		if (offchainState.moves.epoch === epochState.epoch && epochState.isActionPhase) {
-			for (const move of offchainState.moves.list) {
-				if (!isValidMove(move)) {
-					console.error(`INVALID MOVE`, move);
-					continue; // TODO delete
-				}
-				console.log(`color: ${move.color}`);
-				stratagems.computeMove(account.address as `0x${string}`, epochState.epoch, localMoveToContractMove(move));
+	if (offchainState.moves !== undefined && offchainState.moves.epoch === epochState.epoch && epochState.isActionPhase) {
+		for (const move of offchainState.moves.list) {
+			if (!isValidMove(move)) {
+				console.error(`INVALID MOVE`, move);
+				continue; // TODO delete
 			}
+			console.log(`color: ${move.color}`);
+			stratagems.computeMove(account.address as `0x${string}`, epochState.epoch, localMoveToContractMove(move));
 		}
 	} else {
 		let lastCommitment: OnChainAction<CommitMetadata> | undefined;
