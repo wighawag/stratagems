@@ -1,7 +1,7 @@
 import type {MergedAbis, JSProcessor, EventWithArgs} from 'ethereum-indexer-js-processor';
 import {fromJSProcessor} from 'ethereum-indexer-js-processor';
 import contractsInfo from './contracts';
-import {ContractCell, StratagemsContract} from 'stratagems-common';
+import {Color, ContractCell, StratagemsContract} from 'stratagems-common';
 
 export type Data = {
 	cells: {
@@ -13,6 +13,14 @@ export type Data = {
 	commitments: {
 		[address: string]: {epoch: number; hash: `0x${string}`};
 	};
+	events: {
+		epoch: number;
+		cells: {
+			[position: string]: {
+				players: {color: Color; address: string}[];
+			};
+		};
+	}[];
 };
 
 type ContractsABI = MergedAbis<typeof contractsInfo.contracts>;
@@ -21,14 +29,38 @@ const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
 	// version is automatically populated via version.cjs to let the browser knows to reindex on changes
 	version: '__VERSION_HASH__',
 	construct(): Data {
-		return {cells: {}, owners: {}, commitments: {}};
+		return {cells: {}, owners: {}, commitments: {}, events: []};
 	},
 	onCommitmentRevealed(state, event) {
+		const epoch = event.args.epoch;
 		const account = event.args.player.toLowerCase();
 		const stratagemsContract = new StratagemsContract(state, 7);
 		for (const move of event.args.moves) {
 			stratagemsContract.computeMove(event.args.player, event.args.epoch, move);
+
+			let epochEvents = state.events.find((v) => v.epoch === event.args.epoch);
+			if (!epochEvents) {
+				epochEvents = {
+					epoch,
+					cells: {},
+				};
+				state.events.unshift(epochEvents);
+				if (state.events.length > 7) {
+					state.events.pop();
+				}
+				let cell = epochEvents.cells[move.position.toString()];
+				if (!cell) {
+					epochEvents.cells[move.position.toString()] = cell = {
+						players: [],
+					};
+				}
+				cell.players.push({
+					color: move.color,
+					address: account,
+				});
+			}
 		}
+
 		// TODO only keep track of the connected player ?
 		delete state.commitments[account];
 	},

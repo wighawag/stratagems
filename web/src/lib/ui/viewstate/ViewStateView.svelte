@@ -32,16 +32,19 @@
 	.container {
 		width: 100%;
 		top: 2rem;
+		right: 0;
+		height: calc(100% - 2rem);
+		overflow: auto;
+
 		pointer-events: auto;
 		cursor: default;
 		position: absolute;
-		height: 100%;
+
 		display: flex;
 		flex-direction: column;
 		justify-content: start;
 		gap: 0.25rem;
-		right: 0;
-		list-style: none;
+
 		padding: 16px;
 		border-radius: 16px;
 
@@ -49,6 +52,5 @@
 		border: 16px solid var(--color-text-on-surface);
 		border-image: url(/game-assets/ui/border.png) 16 fill;
 		image-rendering: pixelated;
-		overflow: auto;
 	}
 </style>
