@@ -7,6 +7,7 @@ import {
 	countBits,
 	xyToBigIntID,
 	IDToXY,
+	Color,
 } from 'stratagems-common';
 import type {Data} from 'stratagems-indexer';
 import {derived} from 'svelte/store';
@@ -33,7 +34,7 @@ export type ViewCell = ContractCell & {
 
 export type ViewCellData = {next: ViewCell; future: ViewCell; currentPlayer: boolean};
 
-export type GemsToWithdraw = {position: bigint; amount: bigint};
+export type GemsToWithdraw = {position: bigint; amount: bigint; from: bigint; color: Color};
 
 export type StratagemsViewState = StratagemsState & {
 	viewCells: {
@@ -64,6 +65,7 @@ function merge(
 	epochState: EpochState,
 	account: AccountState<`0x${string}`>,
 ): StratagemsViewState {
+	const stratagemsUnchanged = new StratagemsContract(state, 7);
 	const copyState = createDraft(state);
 	// TODO use finishDraft ?
 
@@ -180,59 +182,71 @@ function merge(
 		}
 
 		for (const cellPos of Object.keys(viewState.cells)) {
-			const cell = viewState.viewCells[cellPos];
-			const contractCell = viewState.cells[cellPos];
-			if (contractCell.distribution >> 4 > 0 || (cell.next.life == 0 && cell.next.life < contractCell.life)) {
+			const pos = IDToXY(cellPos);
+			const position = xyToBigIntID(pos.x, pos.y);
+			const contractCell = state.cells[position.toString()];
+			const cellNext = stratagemsUnchanged.getUpdatedCell(position, epochState.epoch);
+			if (
+				contractCell &&
+				(contractCell.distribution >> 4 > 0 || (cellNext.life == 0 && cellNext.life < contractCell.life))
+			) {
 				const distribution =
 					contractCell.distribution || (contractCell.enemyMap << 4) + countBits(contractCell.enemyMap);
 				const map = distribution >> 4;
 				const num = distribution & 0x0f;
 				if (num > 0) {
 					console.log({num});
-					const pos = IDToXY(cellPos);
 					if ((map & 1) == 1) {
-						const northPos = xyToXYID(pos.x, pos.y - 1);
-						const neighbor = viewState.cells[northPos];
-						const owner = viewState.owners[northPos].toLowerCase();
+						const northPos = xyToBigIntID(pos.x, pos.y - 1);
+						const neighbor = state.cells[northPos.toString()];
+						const owner = state.owners[northPos.toString()]?.toLowerCase();
 						if (owner === addr && neighbor && neighbor.color !== contractCell.color) {
 							viewState.tokensToCollect.push({
 								amount: parseUnits('1', decimals) / BigInt(num),
-								position: xyToBigIntID(pos.x, pos.y - 1),
+								position: northPos,
+								from: position,
+								color: contractCell.color,
 							});
 						}
 					}
 
 					if ((map & 2) == 2) {
-						const westPos = xyToXYID(pos.x - 1, pos.y);
-						const neighbor = viewState.cells[westPos];
-						const owner = viewState.owners[westPos].toLowerCase();
+						const westPos = xyToBigIntID(pos.x - 1, pos.y);
+						const neighbor = state.cells[westPos.toString()];
+						const owner = state.owners[westPos.toString()]?.toLowerCase();
 						if (owner === addr && neighbor && neighbor.color !== contractCell.color) {
 							viewState.tokensToCollect.push({
 								amount: parseUnits('1', decimals) / BigInt(num),
-								position: xyToBigIntID(pos.x - 1, pos.y),
+								position: westPos,
+								from: position,
+								color: contractCell.color,
 							});
 						}
 					}
 
 					if ((map & 4) == 4) {
-						const southPos = xyToXYID(pos.x, pos.y + 1);
-						const neighbor = viewState.cells[southPos];
-						const owner = viewState.owners[southPos].toLowerCase();
+						const southPos = xyToBigIntID(pos.x, pos.y + 1);
+						const neighbor = state.cells[southPos.toString()];
+						const owner = state.owners[southPos.toString()]?.toLowerCase();
 						if (owner === addr && neighbor && neighbor.color !== contractCell.color) {
 							viewState.tokensToCollect.push({
 								amount: parseUnits('1', decimals) / BigInt(num),
-								position: xyToBigIntID(pos.x, pos.y + 1),
+								position: southPos,
+								from: position,
+								color: contractCell.color,
 							});
 						}
 					}
 					if ((map & 8) == 8) {
-						const eastPos = xyToXYID(pos.x + 1, pos.y);
-						const neighbor = viewState.cells[eastPos];
-						const owner = viewState.owners[eastPos].toLowerCase();
+						const eastPos = xyToBigIntID(pos.x + 1, pos.y);
+						const neighbor = state.cells[eastPos.toString()];
+						const owner = state.owners[eastPos.toString()]?.toLowerCase();
 						if (owner === addr && neighbor && neighbor.color !== contractCell.color) {
 							viewState.tokensToCollect.push({
 								amount: parseUnits('1', decimals) / BigInt(num),
-								position: xyToBigIntID(pos.x + 1, pos.y),
+								position: eastPos,
+								from: position,
+								color: contractCell.color,
 							});
 						}
 					}

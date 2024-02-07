@@ -3,6 +3,7 @@ import * as m3 from '$utils/m3';
 import type {CameraState} from '../camera';
 import type {StratagemsViewState} from '$lib/state/ViewState';
 import {Blockie} from '$utils/ethereum/blockie';
+import {Color, bigIntIDToXYID} from 'stratagems-common';
 
 type Attributes = {positions: number[]; colors: number[]};
 
@@ -37,6 +38,21 @@ function drawRect(attributes: Attributes, x1: number, y1: number, x2: number, y2
 	for (let i = 0; i < 6; i++) {
 		attributes.colors.push(...color);
 	}
+}
+
+function drawEmptyRect(
+	attributes: Attributes,
+	x1: number,
+	y1: number,
+	x2: number,
+	y2: number,
+	color: number[],
+	thichness: number,
+) {
+	drawRect(attributes, x1 - thichness / 2, y1 - thichness / 2, x2 + thichness / 2, y1 + thichness / 2, color);
+	drawRect(attributes, x2 - thichness / 2, y1 - thichness / 2, x2 + thichness / 2, y2 + thichness / 2, color);
+	drawRect(attributes, x2 + thichness / 2, y2 + thichness / 2, x1 - thichness / 2, y2 - thichness / 2, color);
+	drawRect(attributes, x1 - thichness / 2, y2 - thichness / 2, x1 + thichness / 2, y1 + thichness / 2, color);
 }
 
 export class BlockiesLayer {
@@ -170,6 +186,42 @@ export class BlockiesLayer {
 				}
 			}
 		}
+
+		for (const withdrawal of state.tokensToCollect) {
+			const thickness = this.size / Math.min(cameraState.zoom / 2, 50);
+			const fromPos = bigIntIDToXYID(withdrawal.from);
+			const toPos = bigIntIDToXYID(withdrawal.position);
+			const [fromX, fromY] = fromPos.split(',').map((v) => parseInt(v));
+			const [toX, toY] = toPos.split(',').map((v) => parseInt(v));
+
+			const x1 = fromX + this.size / 2;
+			const y1 = fromY + this.size / 2;
+			let x2 = toX + this.size / 2 + thickness;
+			let y2 = toY + this.size / 2 + thickness;
+
+			// const slope = (y2 - y1) / (x2 - x1);
+			x2 = x2 - (x2 - x1) / 5;
+			y2 = y2 - (y2 - y1) / 5;
+
+			drawEmptyRect(
+				attributes,
+				toX + this.size / 2 - this.size / 4,
+				toY + this.size / 2 - this.size / 4,
+				toX + this.size / 2 + this.size / 4,
+				toY + this.size / 2 + this.size / 4,
+				[0, 1, 1],
+				thickness,
+			);
+
+			let color = [0, 1, 1];
+
+			// TODO colors ?
+			// if (withdrawal.color === Color.Red) {
+			// 	color = [1, 0, 0];
+			// }
+			drawRect(attributes, x1, y1, x2, y2, color);
+		}
+
 		// we update the buffer with the new arrays
 		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_position, attributes.positions);
 		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_color, attributes.colors);

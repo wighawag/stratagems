@@ -18,6 +18,7 @@ import {
 } from '../tiles';
 import {epoch} from '$lib/state/Epoch';
 import {get} from 'svelte/store';
+import {bigIntIDToXYID} from 'stratagems-common';
 
 const vertexShaderSource = `#version 300 es
 
@@ -144,7 +145,7 @@ export class Textured2DLayer {
 				drawHouse(attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
 			}
 
-			if (contractCell.life > 0) {
+			if (cell.next.life > 0) {
 				drawGem(attributes, this.size, tileSize, x, y, cell.next.color, 1);
 				if (contractCell.stake > 1) {
 					for (let i = 1; i < contractCell.stake; i++) {
@@ -163,9 +164,6 @@ export class Textured2DLayer {
 					const margin = 0.3 * tileSize;
 					drawHouseInFire(attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
 				}
-			} else if (contractCell.distribution >> 4 > 0 || (cell.next.life == 0 && cell.next.life < contractCell.life)) {
-				drawGem(attributes, this.size, tileSize, x, y, cell.next.color, 1);
-				drawFire(attributes, tileSize * 2, x + this.size / 4, y + this.size / 4, 1);
 			}
 
 			if ((cell.next.enemyMap & 1) == 1) {
