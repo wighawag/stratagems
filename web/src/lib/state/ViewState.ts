@@ -1,4 +1,13 @@
-import {xyToXYID, type ContractCell, bigIntIDToXY, StratagemsContract, type StratagemsState} from 'stratagems-common';
+import {
+	xyToXYID,
+	type ContractCell,
+	bigIntIDToXY,
+	StratagemsContract,
+	type StratagemsState,
+	countBits,
+	xyToBigIntID,
+	IDToXY,
+} from 'stratagems-common';
 import type {Data} from 'stratagems-indexer';
 import {derived} from 'svelte/store';
 import {state} from '$lib/state/State';
@@ -15,12 +24,16 @@ import {
 } from '$lib/account/account-data';
 import type {OnChainAction, OnChainActions} from '$lib/account/base';
 import {createDraft} from 'immer';
+import {parseEther, parseUnits} from 'viem';
+import {initialContractsInfos} from '$lib/config';
 
 export type ViewCell = ContractCell & {
 	localState?: 'pending' | 'planned';
 };
 
 export type ViewCellData = {next: ViewCell; future: ViewCell; currentPlayer: boolean};
+
+export type GemsToWithdraw = {position: bigint; amount: bigint};
 
 export type StratagemsViewState = StratagemsState & {
 	viewCells: {
@@ -30,6 +43,7 @@ export type StratagemsViewState = StratagemsState & {
 	hasCommitmentToReveal?: {epoch: number; commit?: {hash: `0x${string}`; tx: StratagemsTransaction}};
 	hasCommitment?: boolean;
 	hasSomeCells: boolean;
+	tokensToCollect: GemsToWithdraw[];
 };
 
 function isValidMove(move: LocalMove) {
@@ -40,6 +54,8 @@ function isValidMove(move: LocalMove) {
 	// TODO more checks
 	return false;
 }
+
+const decimals = Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1));
 
 function merge(
 	state: Data,
@@ -114,6 +130,7 @@ function merge(
 		hasCommitmentToReveal: undefined,
 		hasCommitment,
 		hasSomeCells,
+		tokensToCollect: [],
 	};
 	for (const cellID of Object.keys(copyState.cells)) {
 		const {x, y} = bigIntIDToXY(BigInt(cellID));
@@ -142,6 +159,7 @@ function merge(
 	}
 
 	if (account.address) {
+		const addr = account.address.toLowerCase();
 		const commitment = state.commitments[account.address.toLowerCase()];
 		if (commitment && (!epochState.isActionPhase || commitment.epoch < epochState.epoch)) {
 			viewState.hasCommitmentToReveal = {epoch: commitment.epoch};
@@ -155,6 +173,67 @@ function merge(
 								epoch: commitment.epoch,
 								commit: {hash: txHash as `0x${string}`, tx: action.tx},
 							};
+						}
+					}
+				}
+			}
+		}
+
+		for (const cellPos of Object.keys(viewState.cells)) {
+			const cell = viewState.viewCells[cellPos];
+			const contractCell = viewState.cells[cellPos];
+			if (contractCell.distribution >> 4 > 0 || (cell.next.life == 0 && cell.next.life < contractCell.life)) {
+				const distribution =
+					contractCell.distribution || (contractCell.enemyMap << 4) + countBits(contractCell.enemyMap);
+				const map = distribution >> 4;
+				const num = distribution & 0x0f;
+				if (num > 0) {
+					console.log({num});
+					const pos = IDToXY(cellPos);
+					if ((map & 1) == 1) {
+						const northPos = xyToXYID(pos.x, pos.y - 1);
+						const neighbor = viewState.cells[northPos];
+						const owner = viewState.owners[northPos].toLowerCase();
+						if (owner === addr && neighbor && neighbor.color !== contractCell.color) {
+							viewState.tokensToCollect.push({
+								amount: parseUnits('1', decimals) / BigInt(num),
+								position: xyToBigIntID(pos.x, pos.y - 1),
+							});
+						}
+					}
+
+					if ((map & 2) == 2) {
+						const westPos = xyToXYID(pos.x - 1, pos.y);
+						const neighbor = viewState.cells[westPos];
+						const owner = viewState.owners[westPos].toLowerCase();
+						if (owner === addr && neighbor && neighbor.color !== contractCell.color) {
+							viewState.tokensToCollect.push({
+								amount: parseUnits('1', decimals) / BigInt(num),
+								position: xyToBigIntID(pos.x - 1, pos.y),
+							});
+						}
+					}
+
+					if ((map & 4) == 4) {
+						const southPos = xyToXYID(pos.x, pos.y + 1);
+						const neighbor = viewState.cells[southPos];
+						const owner = viewState.owners[southPos].toLowerCase();
+						if (owner === addr && neighbor && neighbor.color !== contractCell.color) {
+							viewState.tokensToCollect.push({
+								amount: parseUnits('1', decimals) / BigInt(num),
+								position: xyToBigIntID(pos.x, pos.y + 1),
+							});
+						}
+					}
+					if ((map & 8) == 8) {
+						const eastPos = xyToXYID(pos.x + 1, pos.y);
+						const neighbor = viewState.cells[eastPos];
+						const owner = viewState.owners[eastPos].toLowerCase();
+						if (owner === addr && neighbor && neighbor.color !== contractCell.color) {
+							viewState.tokensToCollect.push({
+								amount: parseUnits('1', decimals) / BigInt(num),
+								position: xyToBigIntID(pos.x + 1, pos.y),
+							});
 						}
 					}
 				}

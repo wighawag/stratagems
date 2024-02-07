@@ -6,6 +6,7 @@
 	import FactionPicker from '$lib/actions/FactionPicker.svelte';
 	import CanvasOverlay from '$lib/ui/canvas/CanvasOverlay.svelte';
 	import Header from '$lib/ui/header/Header.svelte';
+	import TokenToCollect from '$lib/ui/winnings/TokenToCollect.svelte';
 </script>
 
 <div style="position: absolute; z-index: 1; width: 100%; height: 100%; pointer-events: none;">
@@ -21,6 +22,10 @@
 
 	<div class="action-panel">
 		<ActionPanel />
+	</div>
+
+	<div class="claim-panel">
+		<TokenToCollect />
 	</div>
 </div>
 
@@ -64,5 +69,15 @@
 		margin: 0.5rem;
 
 		width: fit-content;
+	}
+
+	.claim-panel {
+		pointer-events: auto;
+		margin: 0.5rem;
+		width: 300px;
+		max-width: 100%;
+		position: absolute;
+		top: 1rem;
+		right: 0;
 	}
 </style>

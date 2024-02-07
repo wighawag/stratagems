@@ -7,6 +7,15 @@ export function bigIntIDToXYID(position: bigint): string {
 	return '' + x + ',' + y;
 }
 
+export function countBits(n: number): number {
+	let count = 0;
+	while (n != 0) {
+		n = n & (n - 1);
+		count++;
+	}
+	return count;
+}
+
 // using 64 bits room id
 // const leftMostBit = BigInt('0x8000000000000000');
 // const bn32 = BigInt('0x10000000000000000');
@@ -33,6 +42,11 @@ export function bigIntIDToBigintXY(position: bigint): CellBigIntXYPosition {
 
 export function xyToXYID(x: number, y: number) {
 	return '' + x + ',' + y;
+}
+
+export function IDToXY(id: string) {
+	const [x, y] = id.split(',').map(Number);
+	return {x, y};
 }
 
 export function xyToBigIntID(x: number, y: number): bigint {
@@ -159,7 +173,7 @@ export class StratagemsContract {
 		let due = 0;
 		if (cell.life > 0 && newLife == 0) {
 			// we just died, we establish the distributionMap and counts
-			cell.distribution = (cell.enemyMap << 4) + this.countBits(cell.enemyMap);
+			cell.distribution = (cell.enemyMap << 4) + countBits(cell.enemyMap);
 		}
 
 		if (((cell.distribution >> 4) & (2 ** neighbourIndex)) == 2 ** neighbourIndex) {
@@ -294,15 +308,6 @@ export class StratagemsContract {
 		return data;
 	}
 
-	countBits(n: number): number {
-		let count = 0;
-		while (n != 0) {
-			n = n & (n - 1);
-			count++;
-		}
-		return count;
-	}
-
 	propagate(move: ContractMove, epoch: number, color: Color, distribution: number) {
 		const data = {
 			newDelta: 0,
@@ -351,7 +356,7 @@ export class StratagemsContract {
 		if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
 			// if we just died, currentState.lastEpochUpdate > 0
 			// we have to distribute to all
-			distribution = (currentState.enemyMap << 4) + this.countBits(currentState.enemyMap);
+			distribution = (currentState.enemyMap << 4) + countBits(currentState.enemyMap);
 
 			/// we are now dead for real
 			currentState.lastEpochUpdate = 0;
@@ -554,7 +559,7 @@ export class StratagemsContract {
 		if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
 			// if we just died, currentState.lastEpochUpdate > 0
 			// we have to distribute to all
-			distribution = (currentState.enemyMap << 4) + this.countBits(currentState.enemyMap);
+			distribution = (currentState.enemyMap << 4) + countBits(currentState.enemyMap);
 
 			/// we are now dead for real
 			currentState.lastEpochUpdate = 0;

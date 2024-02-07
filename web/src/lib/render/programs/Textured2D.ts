@@ -163,7 +163,7 @@ export class Textured2DLayer {
 					const margin = 0.3 * tileSize;
 					drawHouseInFire(attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
 				}
-			} else if (contractCell.distribution != 0 || (cell.next.life == 0 && cell.next.life < contractCell.life)) {
+			} else if (contractCell.distribution >> 4 > 0 || (cell.next.life == 0 && cell.next.life < contractCell.life)) {
 				drawGem(attributes, this.size, tileSize, x, y, cell.next.color, 1);
 				drawFire(attributes, tileSize * 2, x + this.size / 4, y + this.size / 4, 1);
 			}

@@ -1,7 +1,7 @@
 import type {MergedAbis, JSProcessor, EventWithArgs} from 'ethereum-indexer-js-processor';
 import {fromJSProcessor} from 'ethereum-indexer-js-processor';
 import contractsInfo from './contracts';
-import {Color, ContractCell, StratagemsContract} from 'stratagems-common';
+import {Color, ContractCell, StratagemsContract, bigIntIDToXY} from 'stratagems-common';
 
 export type CellPlacements = {
 	players: {color: Color; address: string}[];
@@ -77,6 +77,7 @@ const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
 	onMultiPoke(state, event) {
 		const stratagemsContract = new StratagemsContract(state, 7);
 		for (const position of event.args.positions) {
+			// console.log({position: position, pos: bigIntIDToXY(position)});
 			stratagemsContract.poke(position, event.args.epoch);
 		}
 	},
