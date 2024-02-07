@@ -21,6 +21,7 @@
 	import Welcome from '$lib/ui/tutorial/Welcome.svelte';
 	import SplashScreen from '$lib/ui/loading/SplashScreen.svelte';
 	import Debug from '$lib/ui/debug/Debug.svelte';
+	import EventsView from '$lib/ui/events/EventsView.svelte';
 
 	$: showWIPNotice =
 		!dev &&
@@ -37,6 +38,8 @@
 	<ClaimTokenScreen name="Stratagems" />
 
 	<Menu />
+
+	<EventsView />
 
 	<TransactionsView />
 

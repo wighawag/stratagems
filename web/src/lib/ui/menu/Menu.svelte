@@ -1,6 +1,7 @@
 <script lang="ts">
 	import {account, connection, contracts, network} from '$lib/blockchain/connection';
 	import {menu} from './menu';
+	import {eventsView} from '$lib/ui/events/eventsView';
 	import {transactionsView} from '$lib/ui/transactions/transactionsView';
 	import {commitmentsView} from '$lib/ui/commitments/commitmentsView';
 	import {indexerView} from '$lib/ui/indexer/indexerView';
@@ -119,6 +120,8 @@
 					{#if tokenAllowanceUsed}
 						<button class="error" on:click={() => clearAllowance()}>Clear Allowance</button>
 					{/if}
+
+					<button class="error" on:click={() => ($eventsView.open = true)}>See Events</button>
 
 					<button class="error" on:click={() => ($transactionsView.open = true)}>See Transactions</button>
 
