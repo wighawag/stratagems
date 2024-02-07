@@ -45,32 +45,27 @@
 {#if !$tokenClaim.inUrl && !$network.notSupported && !$account.locked}
 	{#if welcomeConnected || welcomeDisconnected}
 		<WelcomeContainer {onclosed}>
-			<h1>Welcome to Stratagems!</h1>
+			<h1>Welcome!</h1>
 			<p>
-				where players ascend to the divine realm as actual gods, shaping the world island by island. Here, the currency
-				of power is not mere gold or silver, but {initialContractsInfos.contracts.Stratagems.linkedData.currency
-					.symbol}, deposited by players as they decide which factions will reign over each land. Prepare to immerse
-				yourself in a realm where alliances are forged, battles are waged, and fortunes are won or lost with every
-				strategic move.
+				Stratagems is a permission-less and persistent game (a.k.a an "Autonomous World") where you play the role of a
+				god that use any of the 5 different faction to create island on an endless sea.
 			</p>
 			<p>
-				At its core, Stratagems is a social game of coordination set in an infinite world, where the fate of each land
-				is determined by the factions that inhabit it. Every day, players stake {initialContractsInfos.contracts
-					.Stratagems.linkedData.currency.symbol} to claim ownership of lands, eagerly awaiting the outcomes of their decisions.
-				But in this dynamic landscape, knowledge is power, and those who can anticipate the moves of others gain a significant
-				advantage.
+				To do so you deposit {initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol} with the hope to get
+				more from other player.
 			</p>
 			<p>
-				Yet, the game doesn't end with territorial conquest. Stratagems is a living world, shaped by the actions of its
-				players, with the potential for new mechanics to be introduced, offering infinite possibilities to its
-				inhabitants. Will you rise to become a legendary deity, shaping the destiny of this ever-evolving world? The
-				choice is yours, and the adventure awaits. Welcome to Stratagems.
+				You can read about the specific rule in our <a
+					href="https://stratagems.world/"
+					target="_blank"
+					rel="noreferer noopener">docs</a
+				>.
 			</p>
 
 			<hr />
 
 			{#if welcomeConnected}
-				<p>Let's have a look at how you can play the game. Follow our tour or skip it.</p>
+				<p>We setup a little tour of our interface. Follow it or skip it.</p>
 			{:else if welcomeDisconnected}
 				{#if defaultRPC}
 					<p>

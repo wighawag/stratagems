@@ -1,6 +1,7 @@
 import 'driver.js/dist/driver.css';
 import {driver} from 'driver.js';
 import {writable} from 'svelte/store';
+import {initialContractsInfos} from '$lib/config';
 
 const _tour = writable({running: false});
 export const tour = {
@@ -10,6 +11,7 @@ export const tour = {
 export function startTour(callback?: () => void) {
 	let interval: NodeJS.Timeout | undefined;
 	const driverObj = driver({
+		popoverClass: 'driverjs-theme',
 		// showProgress: true,
 		animate: false,
 		allowClose: false,
@@ -20,7 +22,7 @@ export function startTour(callback?: () => void) {
 				popover: {
 					title: 'Your Current Faction',
 					description:
-						'This will be the faction used when you click on the map to create islamd. Click on it to switch factions',
+						'You create Island by tapping on the world map. Doing so establsih the current selected faction on it. To change the current faction, simply click on this icon',
 				},
 			},
 			{
@@ -36,15 +38,14 @@ export function startTour(callback?: () => void) {
 				popover: {
 					title: 'The Info bar',
 					description:
-						'This bar will tell you about your current situation and how much time is left for the next phase.',
+						'Stratagems is a "phase-based" game conssting of a 23h "Commit" phase where you make your moves (place new islands) and a 1h "Reveal" phase that execiute every player action simultaneously. This bar will tell you about your current situation and how much time is left for the next phase.',
 				},
 			},
 			{
 				element: '#world-map',
 				popover: {
 					title: 'The world Map',
-					description:
-						'This is where the game takes place and where you can create island and capture the tokens from other islands.',
+					description: `This is the world map and where the game take place. When the tour is over and the commit phase is on, you can place as any islands as you own ${initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol}. This will popup the "Commit Panel" where you can deposit the token and wait for the next phase.`,
 				},
 			},
 			//   { element: '#action-panel', popover: { title: 'Title', description: 'Description' } },

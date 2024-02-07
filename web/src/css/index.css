@@ -6,4 +6,6 @@
 
 @import './base.css'; /* set some base style for elements*/
 
+@import './driver.js.css'; /* style for driver.js */
+
 @import './globals.css'; /* classes to use across components */
