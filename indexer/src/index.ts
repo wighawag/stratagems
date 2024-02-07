@@ -38,31 +38,33 @@ const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
 	onCommitmentRevealed(state, event) {
 		const epoch = event.args.epoch;
 		const account = event.args.player.toLowerCase();
+
+		let epochEvents = state.placements.find((v) => v.epoch === event.args.epoch);
+		if (!epochEvents) {
+			epochEvents = {
+				epoch,
+				cells: {},
+			};
+		}
+		state.placements.unshift(epochEvents);
+		if (state.placements.length > 7) {
+			state.placements.pop();
+		}
+
 		const stratagemsContract = new StratagemsContract(state, 7);
 		for (const move of event.args.moves) {
 			stratagemsContract.computeMove(event.args.player, event.args.epoch, move);
 
-			let epochEvents = state.placements.find((v) => v.epoch === event.args.epoch);
-			if (!epochEvents) {
-				epochEvents = {
-					epoch,
-					cells: {},
+			let cell = epochEvents.cells[move.position.toString()];
+			if (!cell) {
+				epochEvents.cells[move.position.toString()] = cell = {
+					players: [],
 				};
-				state.placements.unshift(epochEvents);
-				if (state.placements.length > 7) {
-					state.placements.pop();
-				}
-				let cell = epochEvents.cells[move.position.toString()];
-				if (!cell) {
-					epochEvents.cells[move.position.toString()] = cell = {
-						players: [],
-					};
-				}
-				cell.players.push({
-					color: move.color,
-					address: account,
-				});
 			}
+			cell.players.push({
+				color: move.color,
+				address: account,
+			});
 		}
 
 		// TODO only keep track of the connected player ?

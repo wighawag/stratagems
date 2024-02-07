@@ -47,7 +47,7 @@ export class ActionHandler {
 			) {
 				console.log(`remove cell at ${x}, ${y}, ${player}`);
 				accountData.addMove({x, y, color: Color.None, player}, $epochState.epoch);
-			} else if (currentState.cells[cellID] && currentState.cells[cellID].life !== 0) {
+			} else if (currentState.cells[cellID] && currentState.viewCells[cellID].next.life !== 0) {
 				throw new Error(`Cell already occupied`);
 			} else {
 				console.log(`add color at ${x}, ${y}, ${player}`);
