@@ -1,6 +1,6 @@
 import {createProcessor} from 'stratagems-indexer';
 import {createIndexerState, keepStateOnIndexedDB, type IndexedStateLocation} from 'ethereum-indexer-browser';
-import {initialContractsInfos} from '$lib/config';
+import {initialContractsInfos, remoteIndexedState} from '$lib/config';
 import {connection, network} from '$lib/blockchain/connection';
 import {browser} from '$app/environment';
 import type {EIP1193Provider} from 'eip-1193';
@@ -15,10 +15,11 @@ const embededIndexedState = {prefix: url(`/indexed-states/${initialContractsInfo
 
 const indexedStateLocations: IndexedStateLocation[] = [embededIndexedState];
 
-// let remoteIndexedState = `https://snapshots.stratagems.world/indexed-state-composablelabs.json`;
-// indexedStateLocations.unshift({
-// 	url: remoteIndexedState,
-// });
+if (remoteIndexedState) {
+	indexedStateLocations.unshift({
+		prefix: remoteIndexedState,
+	});
+}
 
 /**
  * We setup the indexer and make it process the event continuously once connected to the right chain

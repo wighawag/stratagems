@@ -10,15 +10,26 @@ import {
 	PUBLIC_DEV_NODE_URI,
 	PUBLIC_SYNC_URI,
 	PUBLIC_FUZD_URI,
+	PUBLIC_SNAPSHOT_URI,
 } from '$env/static/public';
-import { initialContractsInfos, networks, type NetworkConfig, contractsInfos } from './blockchain/networks';
+import {initialContractsInfos, networks, type NetworkConfig, contractsInfos} from './blockchain/networks';
 
-export const globalQueryParams = ['debug', 'log', 'ethnode', '_d_eruda', 'dev', 'ethnode', 'sync', "fuzd"];
+export const globalQueryParams = ['debug', 'log', 'ethnode', '_d_eruda', 'dev', 'ethnode', 'sync', 'fuzd', 'snapshot'];
 
 export const hashParams = getHashParamsFromLocation();
 export const {params} = getParamsFromLocation();
 
-export const dev = "dev" in params ? params["dev"] === 'true' : devEnvironment;
+export const dev = 'dev' in params ? params['dev'] === 'true' : devEnvironment;
+
+function noEndSlash(str: string) {
+	if (str.endsWith('/')) {
+		return str.slice(0, -1);
+	}
+	return str;
+}
+
+const snapshotURI = params['snapshot'] || PUBLIC_SNAPSHOT_URI;
+export const remoteIndexedState = snapshotURI ? `${noEndSlash(snapshotURI)}/${initialContractsInfos.name}/` : undefined;
 
 const contractsChainId = initialContractsInfos.chainId as string;
 let defaultRPCURL: string | undefined = params['ethnode'];
@@ -48,18 +59,11 @@ const localRPC =
 
 const defaultRPC = defaultRPCURL ? {chainId: contractsChainId, url: defaultRPCURL} : undefined;
 
-const SYNC_URI = params["sync"] || PUBLIC_SYNC_URI; //  'http://invalid.io'; // to emulate connection loss :)
+const SYNC_URI = params['sync'] || PUBLIC_SYNC_URI; //  'http://invalid.io'; // to emulate connection loss :)
 const SYNC_DB_NAME =
 	'stratagems-' + initialContractsInfos.chainId + '-' + initialContractsInfos.contracts.Stratagems.address;
 
-function noEndSlash(str: string) {
-	if (str.endsWith('/')) {
-		return str.slice(0, -1);
-	}
-	return str;
-}
-
-const FUZD_URI = noEndSlash(params["fuzd"] ? params["fuzd"] == "false" ? '' : params["fuzd"] : PUBLIC_FUZD_URI);
+const FUZD_URI = noEndSlash(params['fuzd'] ? (params['fuzd'] == 'false' ? '' : params['fuzd']) : PUBLIC_FUZD_URI);
 
 const syncInfo = SYNC_URI
 	? {
@@ -69,7 +73,17 @@ const syncInfo = SYNC_URI
 
 const blockchainExplorer = networks[initialContractsInfos.chainId].config.blockExplorerUrls[0];
 
-export {initialContractsInfos, contractsInfos, defaultRPC, isUsingLocalDevNetwork, localRPC, blockTime, SYNC_DB_NAME, syncInfo, FUZD_URI, blockchainExplorer};
-
+export {
+	initialContractsInfos,
+	contractsInfos,
+	defaultRPC,
+	isUsingLocalDevNetwork,
+	localRPC,
+	blockTime,
+	SYNC_DB_NAME,
+	syncInfo,
+	FUZD_URI,
+	blockchainExplorer,
+};
 
 console.log(`VERSION: ${version}`);
