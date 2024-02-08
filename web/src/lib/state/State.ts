@@ -1,18 +1,25 @@
 import {createProcessor} from 'stratagems-indexer';
-import {createIndexerState, keepStateOnIndexedDB} from 'ethereum-indexer-browser';
+import {createIndexerState, keepStateOnIndexedDB, type IndexedStateLocation} from 'ethereum-indexer-browser';
 import {initialContractsInfos} from '$lib/config';
 import {connection, network} from '$lib/blockchain/connection';
 import {browser} from '$app/environment';
 import type {EIP1193Provider} from 'eip-1193';
 import {logs} from 'named-logs';
 import {url} from '$utils/path';
-import { derived } from 'svelte/store';
 
 const namedLogger = logs('state');
 
 export const processor = createProcessor();
 
-const remoteIndexedState = url(`/indexed-state-${initialContractsInfos.name}.json`);
+const embededIndexedState = {prefix: url(`/indexed-states/${initialContractsInfos.name}/`)};
+
+const indexedStateLocations: IndexedStateLocation[] = [embededIndexedState];
+
+// let remoteIndexedState = `https://snapshots.stratagems.world/indexed-state-composablelabs.json`;
+// indexedStateLocations.unshift({
+// 	url: remoteIndexedState,
+// });
+
 /**
  * We setup the indexer and make it process the event continuously once connected to the right chain
  */
@@ -29,7 +36,7 @@ export const {
 } = createIndexerState(processor, {
 	trackNumRequests: true,
 	// logRequests: true,
-	keepState: keepStateOnIndexedDB('stratagems', remoteIndexedState) as any, // TODO types
+	keepState: keepStateOnIndexedDB('stratagems', indexedStateLocations) as any, // TODO types
 });
 
 async function indexIfNotIndexing() {

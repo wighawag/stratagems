@@ -401,7 +401,7 @@ export class StratagemsContract {
 			this.state.owners[move.position.toString()] = zeroAddress;
 			// tokensReturned = NUM_TOKENS_PER_GEMS;
 
-			console.log({color: currentState.color, currentState});
+			// console.log({color: currentState.color, currentState});
 		} else {
 			// tokensPlaced = NUM_TOKENS_PER_GEMS;
 

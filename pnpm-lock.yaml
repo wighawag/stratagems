@@ -78,8 +78,8 @@ importers:
         specifier: ^0.2.1
         version: 0.2.1
       ethereum-indexer-browser:
-        specifier: ^0.6.29
-        version: 0.6.29(typescript@5.3.3)
+        specifier: ^0.7.0
+        version: 0.7.0(typescript@5.3.3)
       fs-extra:
         specifier: ^11.2.0
         version: 11.2.0
@@ -154,7 +154,7 @@ importers:
         version: 2.7.1(typescript@5.3.3)
       viem-chai-matchers:
         specifier: ^0.0.4
-        version: 0.0.4(@types/chai-as-promised@7.1.8)(chai-as-promised@7.1.1)(chai@4.4.1)(viem@2.7.1)
+        version: 0.0.4(@types/chai-as-promised@7.1.8)(chai-as-promised@7.1.1)(chai@5.0.3)(viem@2.7.1)
       vitest:
         specifier: ^1.2.2
         version: 1.2.2
@@ -189,11 +189,11 @@ importers:
   helper-services/remote-indexer:
     devDependencies:
       ethereum-indexer-cli:
-        specifier: ^0.6.25
-        version: 0.6.25(typescript@5.3.3)
+        specifier: ^0.6.27
+        version: 0.6.27(typescript@5.3.3)
       ethereum-indexer-server:
-        specifier: ^0.6.28
-        version: 0.6.28(typescript@5.3.3)
+        specifier: ^0.6.29
+        version: 0.6.29(typescript@5.3.3)
       stratagems-indexer:
         specifier: workspace:*
         version: link:../../indexer
@@ -220,11 +220,11 @@ importers:
         version: link:../common
     devDependencies:
       ethereum-indexer-cli:
-        specifier: ^0.6.25
-        version: 0.6.25(typescript@5.3.3)
+        specifier: ^0.6.27
+        version: 0.6.27(typescript@5.3.3)
       ethereum-indexer-server:
-        specifier: ^0.6.28
-        version: 0.6.28(typescript@5.3.3)
+        specifier: ^0.6.29
+        version: 0.6.29(typescript@5.3.3)
       ldenv:
         specifier: ^0.3.9
         version: 0.3.9
@@ -265,8 +265,8 @@ importers:
         specifier: ^1.3.1
         version: 1.3.1
       ethereum-indexer-browser:
-        specifier: ^0.6.29
-        version: 0.6.29(typescript@5.3.3)
+        specifier: ^0.7.0
+        version: 0.7.0(typescript@5.3.3)
       ethereum-tx-observer:
         specifier: ^0.0.5
         version: 0.0.5
@@ -3626,6 +3626,11 @@ packages:
     resolution: {integrity: sha512-jgsaNduz+ndvGyFt3uSuWqvy4lCnIJiovtouQN5JZHOKCS2QuhEdbcQHFhVksz2N2U9hXJo8odG7ETyWlEeuDw==}
     dev: true
 
+  /assertion-error@2.0.1:
+    resolution: {integrity: sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==}
+    engines: {node: '>=12'}
+    dev: true
+
   /async@1.5.2:
     resolution: {integrity: sha512-nSVgobk4rv61R9PUSDtYt7mPVB2olxNR5RWJcAsH676/ef11bUZwvu7+RGYrYauVdDPcO519v68wRhXQtxsV9w==}
     dev: true
@@ -4006,12 +4011,12 @@ packages:
     engines: {node: '>=6'}
     dev: true
 
-  /chai-as-promised@7.1.1(chai@4.4.1):
+  /chai-as-promised@7.1.1(chai@5.0.3):
     resolution: {integrity: sha512-azL6xMoi+uxu6z4rhWQ1jbdUhOMhis2PvscD/xjLqNMkv3BPPp2JyyuTHOrf9BOosGpNQ11v6BKv/g57RXbiaA==}
     peerDependencies:
       chai: '>= 2.1.2 < 5'
     dependencies:
-      chai: 4.4.1
+      chai: 5.0.3
       check-error: 1.0.3
     dev: true
 
@@ -4051,6 +4056,17 @@ packages:
       type-detect: 4.0.8
     dev: true
 
+  /chai@5.0.3:
+    resolution: {integrity: sha512-wKGCtYv2kVY5WEjKqQ3fSIZWtTFveZCtzinhTZbx3/trVkxefiwovhpU9kRVCwxvKKCEjTWXPdM1/T7zPoDgow==}
+    engines: {node: '>=12'}
+    dependencies:
+      assertion-error: 2.0.1
+      check-error: 2.0.0
+      deep-eql: 5.0.1
+      loupe: 3.1.0
+      pathval: 2.0.0
+    dev: true
+
   /chalk@2.4.2:
     resolution: {integrity: sha512-Mti+f9lpJNcwF4tWV8/OrTTtF1gZi+f8FqlyAdouralcFWFQWF2+NgCHShjkCb+IFBLq9buZwE1xckQU4peSuQ==}
     engines: {node: '>=4'}
@@ -4081,6 +4097,11 @@ packages:
     resolution: {integrity: sha512-iKEoDYaRmd1mxM90a2OEfWhjsjPpYPuQ+lMYsoxB126+t8fw7ySEO48nmDg5COTjxDI65/Y2OWpeEHk3ZOe8zg==}
     dependencies:
       get-func-name: 2.0.2
+    dev: true
+
+  /check-error@2.0.0:
+    resolution: {integrity: sha512-tjLAOBHKVxtPoHe/SA7kNOMvhCRdCJ3vETdeY0RuAc9popf+hyaSV6ZEg9hr4cpWF7jmo/JSWEnLDrnijS9Tog==}
+    engines: {node: '>= 16'}
     dev: true
 
   /chokidar@3.5.3:
@@ -4550,6 +4571,11 @@ packages:
     engines: {node: '>=6'}
     dependencies:
       type-detect: 4.0.8
+    dev: true
+
+  /deep-eql@5.0.1:
+    resolution: {integrity: sha512-nwQCf6ne2gez3o1MxWifqkciwt0zhl0LO1/UwVu4uMBuPmflWM4oQ70XMqHqnBJA+nhzncaqL9HVL6KkHJ28lw==}
+    engines: {node: '>=6'}
     dev: true
 
   /deep-equal@1.0.1:
@@ -5138,10 +5164,11 @@ packages:
       '@scure/bip39': 1.2.2
     dev: true
 
-  /ethereum-indexer-browser@0.6.29(typescript@5.3.3):
-    resolution: {integrity: sha512-eVc9bABLhWMwpeAVqWeQ7XphzsfE9RV+4ZBXwYIILsuGjCakSroIY0fGT6HvTLGZhRf+KW5ywYmU6at4lj93Pg==}
+  /ethereum-indexer-browser@0.7.0(typescript@5.3.3):
+    resolution: {integrity: sha512-SL/wJAWzdBbkxJtE1q6EyjbOSWOTgPxpWCETndq5lCwNRb/9XIv7v4VaVozjx+0CcftQsUPdPXDk4ClY8gXyCw==}
     dependencies:
       ethereum-indexer: 0.6.19(typescript@5.3.3)
+      ethereum-indexer-utils: 0.6.12
       idb-keyval: 6.2.1
       named-logs: 0.2.2
       sveltore: 0.0.2
@@ -5152,14 +5179,14 @@ packages:
       - utf-8-validate
       - zod
 
-  /ethereum-indexer-cli@0.6.25(typescript@5.3.3):
-    resolution: {integrity: sha512-Xq+4kgAC1g6/SwowWMC1yME3WJB8gd72o5xpPpJDnAwJ+WvLXUFSgofiSzZ9WY6BBF/YHmoBAvYyP5gE0yQiIw==}
+  /ethereum-indexer-cli@0.6.27(typescript@5.3.3):
+    resolution: {integrity: sha512-0WLcIv+uee3d9R85A+OESa3GA52ddnr/xIbMe8PWfe2Od9TUGM667xYelsohNy0TPrwvd6MhAKU3bkyvLxnY4g==}
     hasBin: true
     dependencies:
       commander: 11.1.0
       eip-1193-jsonrpc-provider: 0.3.0
       ethereum-indexer: 0.6.19(typescript@5.3.3)
-      ethereum-indexer-utils: 0.6.11
+      ethereum-indexer-utils: 0.6.12
       ldenv: 0.3.9
       named-logs: 0.2.2
       named-logs-console: 0.3.0
@@ -5215,8 +5242,8 @@ packages:
       - zod
     dev: false
 
-  /ethereum-indexer-server@0.6.28(typescript@5.3.3):
-    resolution: {integrity: sha512-cD8xx/WF1yyeepDVMZ7UBYppOCDtXXkyufU6BEePUiT80v0cBC1ZjUDnPOaXmW1V7FpG4TBLUA2QpPKMdq8BIw==}
+  /ethereum-indexer-server@0.6.29(typescript@5.3.3):
+    resolution: {integrity: sha512-5Q7SpOvgLYanWYj+IBSuBu32ZAdBfdTgNTy4sH67PSclF9nCtWNd+5Px3Q+DOTJHDM2OiHaH6p2YEtUcNn3d8Q==}
     hasBin: true
     dependencies:
       '@ethersproject/bignumber': 5.7.0
@@ -5225,7 +5252,7 @@ packages:
       ethereum-indexer: 0.6.19(typescript@5.3.3)
       ethereum-indexer-db-utils: 0.6.19(typescript@5.3.3)
       ethereum-indexer-fs-cache: 0.6.19(typescript@5.3.3)
-      ethereum-indexer-utils: 0.6.11
+      ethereum-indexer-utils: 0.6.12
       figlet: 1.7.0
       koa: 2.15.0
       koa-bodyparser: 4.4.1
@@ -5246,11 +5273,10 @@ packages:
       - zod
     dev: true
 
-  /ethereum-indexer-utils@0.6.11:
-    resolution: {integrity: sha512-Q8MAkw3H/GtmqOgovY5JCG0CYtK/iMJ2stu56hZ3jXRQIfpB1eYV5qc9lemd/VT6WhpQZLL2xKtncXTpf+nE3g==}
+  /ethereum-indexer-utils@0.6.12:
+    resolution: {integrity: sha512-IkKVeid3sWgopq+aeCBv/FZW2uhrqv4eDDQGl0zWooPHzie/67T3xfrptm0CYo1/HPYAF7MOSWxg39pEeKIPDw==}
     dependencies:
       named-logs: 0.2.2
-    dev: true
 
   /ethereum-indexer@0.6.19(typescript@5.3.3):
     resolution: {integrity: sha512-kr0XQ4s+m5q4gdPnlhKiP5PMqQF8nPSNRGjsyq8WY7YLLqgsqiySWZWQ7MmRLlv/Nwx/6mtQQF6xPI81AeO2Iw==}
@@ -7197,6 +7223,12 @@ packages:
       get-func-name: 2.0.2
     dev: true
 
+  /loupe@3.1.0:
+    resolution: {integrity: sha512-qKl+FrLXUhFuHUoDJG7f8P8gEMHq9NFS0c6ghXG1J0rldmZFQZoNVv/vyirE9qwCIhWZDsvEFd1sbFu3GvRQFg==}
+    dependencies:
+      get-func-name: 2.0.2
+    dev: true
+
   /lru-cache@10.1.0:
     resolution: {integrity: sha512-/1clY/ui8CzjKFyjdvwPWJUYKiFVXG2I2cY0ssG7h4+hwk+XOIX7ZSG9Q7TW8TW3Kp3BUSqgFWBLgL4PJ+Blag==}
     engines: {node: 14 || >=16.14}
@@ -8184,6 +8216,11 @@ packages:
 
   /pathval@1.1.1:
     resolution: {integrity: sha512-Dp6zGqpTdETdR63lehJYPeIOqpiNBNtc7BpWSLrOje7UaIsE5aY92r/AunQA7rsXvet3lrJ3JnZX29UPTKXyKQ==}
+    dev: true
+
+  /pathval@2.0.0:
+    resolution: {integrity: sha512-vE7JKRyES09KiunauX7nd2Q9/L7lhok4smP9RZTDeD4MVs72Dp2qNFVz39Nz5a0FVEW0BJR6C0DYrq6unoziZA==}
+    engines: {node: '>= 14.16'}
     dev: true
 
   /pbkdf2@3.1.2:
@@ -10381,7 +10418,7 @@ packages:
       extsprintf: 1.3.0
     dev: true
 
-  /viem-chai-matchers@0.0.4(@types/chai-as-promised@7.1.8)(chai-as-promised@7.1.1)(chai@4.4.1)(viem@2.7.1):
+  /viem-chai-matchers@0.0.4(@types/chai-as-promised@7.1.8)(chai-as-promised@7.1.1)(chai@5.0.3)(viem@2.7.1):
     resolution: {integrity: sha512-JYE00wEMv22UdXG16xWfTgItgPgljbQ8OvpxVuM7DlfTsd4D021/005lNIsgnEq1fuFNvtNIw3Ji7fQ5xnilDQ==}
     peerDependencies:
       '@types/chai-as-promised': ^7.1.8
@@ -10390,8 +10427,8 @@ packages:
       viem: ^2.1.1
     dependencies:
       '@types/chai-as-promised': 7.1.8
-      chai: 4.4.1
-      chai-as-promised: 7.1.1(chai@4.4.1)
+      chai: 5.0.3
+      chai-as-promised: 7.1.1(chai@5.0.3)
       viem: 2.7.1(typescript@5.3.3)
     dev: true
 

@@ -195,7 +195,6 @@ function merge(
 				const map = distribution >> 4;
 				const num = distribution & 0x0f;
 				if (num > 0) {
-					console.log({num});
 					if ((map & 1) == 1) {
 						const northPos = xyToBigIntID(pos.x, pos.y - 1);
 						const neighbor = state.cells[northPos.toString()];

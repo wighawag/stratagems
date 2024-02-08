@@ -34,7 +34,7 @@
     "contracts:execute": "pnpm --filter ./contracts execute",
     "contracts:docs": "ldenv -d localhost pnpm run --filter ./contracts docgen @@MODE -o ../docs/contracts",
     "indexer:build": "ldenv pnpm run contracts:export @@MODE ~~ pnpm run --filter ./common build ~~ pnpm run --filter ./indexer build ~~ @@",
-    "indexer:index": "ldenv pnpm run indexer:build @@MODE ~~ pnpm --filter ./indexer index-to-file -n @@ETH_NODE_URI_:MODE,ETH_NODE_URI@:''@: -d src/contracts.ts -f ../web/static/indexed-state-@@MODE@:.json ~~ @@",
+    "indexer:index": "ldenv pnpm run indexer:build @@MODE ~~ pnpm --filter ./indexer index-to-file -n @@ETH_NODE_URI_:MODE,ETH_NODE_URI@:''@: -d src/contracts.ts -f ../web/static/indexed-states/@@MODE ~~ @@",
     "fuzd:dev": "pnpm --filter ./helper-services/fuzd dev",
     "sync:dev": "pnpm --filter ./helper-services/secp256k1-db dev",
     "---------------------- DOCS ----------------------": "",
