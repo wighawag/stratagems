@@ -13,7 +13,7 @@
 		<div class="background"></div>
 		<div class="wrapper">
 			<!-- <img src={url('./title.png')} alt="Stratagems title" /> -->
-			<img src={url('./icon.png')} alt="Stratagems logo" />
+			<img src={url('/icon.png')} alt="Stratagems logo" />
 			<div class="content">
 				<slot />
 			</div>
