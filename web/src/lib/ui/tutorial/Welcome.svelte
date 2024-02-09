@@ -107,9 +107,6 @@
 	p {
 		margin-top: 1rem;
 	}
-	.content {
-		font-size: larger;
-	}
 
 	.actions {
 		width: 100%;
