@@ -12,7 +12,7 @@ export function startTour(callback?: () => void) {
 	let interval: NodeJS.Timeout | undefined;
 	const driverObj = driver({
 		popoverClass: 'driverjs-theme',
-		// showProgress: true,
+		showProgress: true,
 		animate: false,
 		allowClose: false,
 		// disableActiveInteraction: true,
