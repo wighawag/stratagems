@@ -163,7 +163,7 @@ abstract contract UsingStratagemsState is
                         life = MAX_LIFE;
                     }
                     newLife = life;
-                    epochUsed = epoch;
+                    epochUsed = lastUpdate + uint24(epochDelta);
                     // } else {
                     // 	newLife = life;
                     // 	epochUsed = lastUpdate;
@@ -199,9 +199,9 @@ abstract contract UsingStratagemsState is
         uint8 life = updatedCell.life;
         // logger.logCell(0, 'before update', position, updatedCell, address(uint160(_owners[position])));
         if (lastUpdate >= 1 && life > 0) {
-            (uint8 newLife, uint24 epochUsed) = _computeNewLife(lastUpdate, updatedCell.enemyMap, delta, life, epoch);
+            (uint8 newLife, ) = _computeNewLife(lastUpdate, updatedCell.enemyMap, delta, life, epoch);
             updatedCell.life = newLife;
-            updatedCell.lastEpochUpdate = epochUsed; // TODO check if this is useful to cap it to epoch where it died
+            updatedCell.lastEpochUpdate = epoch; // TODO check if this is useful to cap it to epoch where it died
         }
     }
 

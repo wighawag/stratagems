@@ -29,7 +29,7 @@ async function setupStratagems(): Promise<Fixture> {
 					},
 				],
 			],
-			{account: setup.deployer}
+			{account: setup.deployer},
 		);
 		return {hash, tokenId: tokenID.toString()};
 	}

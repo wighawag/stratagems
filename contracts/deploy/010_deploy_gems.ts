@@ -16,8 +16,8 @@ export default execute(
 			},
 			{
 				owner: accounts.deployer,
-			}
+			},
 		);
 	},
-	{tags: ['Gems', 'Gems_deploy']}
+	{tags: ['Gems', 'Gems_deploy']},
 );
