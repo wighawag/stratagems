@@ -15,7 +15,7 @@ return updated cell (based on current epoch)
 
 *Signature*: getCell(uint256)
 
-function getCell(uint256 id) view returns ((address owner, uint24 lastEpochUpdate, uint24 epochWhenTokenIsAdded, uint8 color, uint8 life, int8 delta, uint8 enemyMap, uint8 distribution))
+function getCell(uint256 id) view returns ((address owner, uint24 lastEpochUpdate, uint24 epochWhenTokenIsAdded, uint8 color, uint8 life, int8 delta, uint8 enemyMap, uint8 distribution, uint8 stake))
 
 | Name | Description 
 | ---- | ----------- 
@@ -29,7 +29,7 @@ return the list of updated cells (based on current epoch) whose ids is given
 
 *Signature*: getCells(uint256[])
 
-function getCells(uint256[] ids) view returns ((address owner, uint24 lastEpochUpdate, uint24 epochWhenTokenIsAdded, uint8 color, uint8 life, int8 delta, uint8 enemyMap, uint8 distribution)[] cells)
+function getCells(uint256[] ids) view returns ((address owner, uint24 lastEpochUpdate, uint24 epochWhenTokenIsAdded, uint8 color, uint8 life, int8 delta, uint8 enemyMap, uint8 distribution, uint8 stake)[] cells)
 
 | Name | Description 
 | ---- | ----------- 
@@ -477,6 +477,17 @@ event MoveProcessed(uint64 indexed position, address indexed player, uint8 oldCo
 | oldColor | previous color of the cell
 | newColor | color that takes over
 
+### **MultiPoke**
+
+poke multiple cells and update them if needed
+
+event MultiPoke(uint24 indexed epoch, uint64[] positions)
+
+| Name | Description 
+| ---- | ----------- 
+| epoch | epoch number at which the poke take place
+| positions | cells to poke
+
 ### **ReserveDeposited**
 
 Player has deposited token in the reserve, allowing it to use that much in game
@@ -500,6 +511,17 @@ event ReserveWithdrawn(address indexed player, uint256 amountWithdrawn, uint256 
 | player | account withdrawing the tokens
 | amountWithdrawn | the number of tokens withdrawnn
 | newAmount | the number of tokens in reserver as a result
+
+### **SinglePoke**
+
+poke cell and update it if needed
+
+event SinglePoke(uint24 indexed epoch, uint64 position)
+
+| Name | Description 
+| ---- | ----------- 
+| epoch | epoch number at which the poke take place
+| position | cell to poke
 
 ### **Approval**
 
