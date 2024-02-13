@@ -25,6 +25,7 @@
 
 	$: showWIPNotice =
 		(initialContractsInfos as any).name === 'composablelabs' ||
+		(initialContractsInfos as any).name === 'base' ||
 		(!dev &&
 			!params['force'] &&
 			initialContractsInfos.chainId + '' !== '8453' &&
