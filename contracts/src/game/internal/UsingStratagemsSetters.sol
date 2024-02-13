@@ -123,7 +123,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         uint24 epoch,
         Move memory move
     ) internal returns (uint256 tokensPlaced, uint256 tokensBurnt, uint256 tokensReturned) {
-        Cell memory currentState = _getUpdatedCell(move.position, epoch);
+        (Cell memory currentState, bool justDied) = _getUpdatedCell(move.position, epoch);
 
         logger.logCell(
             0,
@@ -135,8 +135,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
         // we might have distribution still to do
         uint8 distribution = currentState.distribution;
-        if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
-            // if we just died, currentState.lastEpochUpdate > 0
+        if (justDied) {
+            // if we just died
             // we have to distribute to all
             distribution = (currentState.enemyMap << 4) + _countBits(currentState.enemyMap);
 
@@ -264,7 +264,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
     }
 
     function _poke(TokenTransferCollection memory transferCollection, uint64 position, uint24 epoch) internal {
-        Cell memory currentState = _getUpdatedCell(position, epoch);
+        (Cell memory currentState, bool justDied) = _getUpdatedCell(position, epoch);
 
         logger.logCell(
             0,
@@ -276,8 +276,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
         // we might have distribution still to do
         uint8 distribution = currentState.distribution;
-        if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
-            // if we just died, currentState.lastEpochUpdate > 0
+        if (justDied) {
+            // if we just died
             // we have to distribute to all
             distribution = (currentState.enemyMap << 4) + _countBits(currentState.enemyMap);
 
@@ -331,66 +331,90 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         uint8 distribution
     ) internal returns (int8 newDelta, uint8 newenemyMap, uint16 numDue, address[4] memory ownersToPay) {
         unchecked {
-            logger.logPosition("from", position);
-            console.log("distribution %i %i", distribution >> 4, distribution & 0x0F);
-
             int8 enemyOrFriend;
             uint16 due;
             {
                 uint64 upPosition = position.offset(0, -1);
-                logger.logPosition("upPosition", upPosition);
                 (enemyOrFriend, due) = _updateCell(upPosition, epoch, 2, oldColor, newColor);
                 if (enemyOrFriend < 0) {
                     newenemyMap = newenemyMap | 1;
                 }
                 numDue += due;
+
                 if ((distribution >> 4) & 1 == 1) {
-                    console.log("upPosition %i", distribution);
+                    logger.logPosition("from", position);
+                    logger.logPosition("to up", upPosition);
+                    console.log("distribute %i", distribution & 0x0F);
+
                     // TODO?: if we decide to group owner in the cell struct, we should get the cell in memory in that function
                     ownersToPay[0] = _ownerOf(upPosition);
+                }
+
+                if (due > 0) {
+                    logger.logPosition("due from up", upPosition);
+                    logger.logPosition("to", position);
+                    console.log("amount %i ", due);
                 }
                 newDelta += enemyOrFriend;
             }
             {
                 uint64 leftPosition = position.offset(-1, 0);
-                logger.logPosition("leftPosition", leftPosition);
                 (enemyOrFriend, due) = _updateCell(leftPosition, epoch, 3, oldColor, newColor);
                 if (enemyOrFriend < 0) {
                     newenemyMap = newenemyMap | 2;
                 }
                 numDue += due;
                 if ((distribution >> 4) & 2 == 2) {
-                    console.log("leftPosition %i", distribution);
+                    logger.logPosition("from", position);
+                    logger.logPosition("to left", leftPosition);
+                    console.log("distribute %i", distribution & 0x0F);
                     ownersToPay[1] = _ownerOf(leftPosition);
+                }
+                if (due > 0) {
+                    logger.logPosition("due from left", leftPosition);
+                    logger.logPosition("to", position);
+                    console.log("amount %i ", due);
                 }
                 newDelta += enemyOrFriend;
             }
 
             {
                 uint64 downPosition = position.offset(0, 1);
-                logger.logPosition("downPosition", downPosition);
                 (enemyOrFriend, due) = _updateCell(downPosition, epoch, 0, oldColor, newColor);
                 if (enemyOrFriend < 0) {
                     newenemyMap = newenemyMap | 4;
                 }
                 numDue += due;
                 if ((distribution >> 4) & 4 == 4) {
-                    console.log("downPosition %i", distribution);
+                    logger.logPosition("from", position);
+                    logger.logPosition("to down", downPosition);
+                    console.log("distribute %i", distribution & 0x0F);
                     ownersToPay[2] = _ownerOf(downPosition);
+                }
+                if (due > 0) {
+                    logger.logPosition("due from down", downPosition);
+                    logger.logPosition("to", position);
+                    console.log("amount %i ", due);
                 }
                 newDelta += enemyOrFriend;
             }
             {
                 uint64 rightPosition = position.offset(1, 0);
-                logger.logPosition("rightPosition", rightPosition);
                 (enemyOrFriend, due) = _updateCell(rightPosition, epoch, 1, oldColor, newColor);
                 if (enemyOrFriend < 0) {
                     newenemyMap = newenemyMap | 8;
                 }
                 numDue += due;
                 if ((distribution >> 4) & 8 == 8) {
-                    console.log("rightPosition %i", distribution);
+                    logger.logPosition("from", position);
+                    logger.logPosition("to right", rightPosition);
+                    console.log("distribute %i", distribution & 0x0F);
                     ownersToPay[3] = _ownerOf(rightPosition);
+                }
+                if (due > 0) {
+                    logger.logPosition("due from right", rightPosition);
+                    logger.logPosition("to", position);
+                    console.log("amount %i ", due);
                 }
                 newDelta += enemyOrFriend;
             }
@@ -421,14 +445,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             // we only consider cell with color that are not dead
             if (cell.life > 0 && lastUpdate < epoch) {
                 // of there is life to update we compute the new life
-                (uint8 newLife, uint24 epochUsed) = _computeNewLife(
-                    lastUpdate,
-                    cell.enemyMap,
-                    cell.delta,
-                    cell.life,
-                    epoch
-                );
-                due = _updateCellFromNeighbor(position, cell, newLife, epochUsed, neighbourIndex, oldColor, newColor);
+                (uint8 newLife, ) = _computeNewLife(lastUpdate, cell.enemyMap, cell.delta, cell.life, epoch);
+                due = _updateCellFromNeighbor(position, cell, newLife, epoch, neighbourIndex, oldColor, newColor);
             } else {
                 due = _updateCellFromNeighbor(position, cell, cell.life, epoch, neighbourIndex, oldColor, newColor);
             }
@@ -446,7 +464,9 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
     ) internal returns (uint16 due) {
         if (cell.life > 0 && newLife == 0) {
             // we just died, we establish the distributionMap and counts
+            logger.logPosition("new distribution", position);
             cell.distribution = (cell.enemyMap << 4) + _countBits(cell.enemyMap);
+            console.log("%i %i", cell.distribution >> 4, cell.distribution & 0x0F);
         }
 
         logger.logCell(

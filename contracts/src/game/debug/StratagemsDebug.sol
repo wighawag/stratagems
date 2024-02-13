@@ -97,7 +97,8 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
             }
             int256 potentialLife = int256(uint256(cell.life)) - effectiveDelta;
             if (potentialLife < 0) {
-                potentialLife = 0;
+                // potentialLife = 0;
+                revert("impossible configuration");
             }
             if (uint256(potentialLife) > MAX_LIFE) {
                 unchecked {

@@ -93,6 +93,9 @@ export class StratagemsContract {
 						life = MAX_LIFE;
 					}
 					data.newLife = life;
+
+					// we don not use the following: lastUpdate + epochDelta;
+					//   because no state change is foreseen with no life increase
 					data.epochUsed = epoch;
 					// } else {
 					// 	data.newLife = life;
@@ -109,13 +112,21 @@ export class StratagemsContract {
 					} else {
 						data.newLife = life - lifeLoss;
 					}
+
+					// since we need to track when the cell died, we upate lastUpdate only to
+					//   the corresponding epoch where life reached 0
 					data.epochUsed = lastUpdate + epochDelta;
 				} else {
 					data.newLife = life;
+
+					// we don not use the following: lastUpdate + epochDelta;
+					//   because no state change is foreseen with no life change
 					data.epochUsed = epoch;
 				}
 			} else {
 				data.newLife = life;
+
+				// no change, no need to update lastUpdate either ?
 				data.epochUsed = lastUpdate;
 			}
 		}
@@ -139,9 +150,10 @@ export class StratagemsContract {
 
 	getUpdatedCell(position: bigint, epoch: number) {
 		const updatedCell = this.getCellInMemory(position);
+		let justDied = false;
 
 		if (updatedCell.lastEpochUpdate >= 1 && updatedCell.life > 0) {
-			const {newLife, epochUsed} = this.computeNewLife(
+			const {newLife} = this.computeNewLife(
 				updatedCell.lastEpochUpdate,
 				updatedCell.enemyMap,
 				updatedCell.delta,
@@ -149,10 +161,11 @@ export class StratagemsContract {
 				epoch,
 			);
 			updatedCell.life = newLife;
-			updatedCell.lastEpochUpdate = epochUsed;
+			updatedCell.lastEpochUpdate = epoch;
+			justDied = newLife == 0;
 		}
 
-		return updatedCell;
+		return {updatedCell, justDied};
 	}
 
 	ownerOf(position: bigint) {
@@ -228,8 +241,8 @@ export class StratagemsContract {
 			// we only consider cell with color that are not dead
 			if (cell.life > 0 && lastUpdate < epoch) {
 				// of there is life to update we compute the new life
-				const {newLife, epochUsed} = this.computeNewLife(lastUpdate, cell.enemyMap, cell.delta, cell.life, epoch);
-				data.due = this.updateCellFromNeighbor(position, cell, newLife, epochUsed, neighbourIndex, oldColor, newColor);
+				const {newLife} = this.computeNewLife(lastUpdate, cell.enemyMap, cell.delta, cell.life, epoch);
+				data.due = this.updateCellFromNeighbor(position, cell, newLife, epoch, neighbourIndex, oldColor, newColor);
 			} else {
 				data.due = this.updateCellFromNeighbor(position, cell, cell.life, epoch, neighbourIndex, oldColor, newColor);
 			}
@@ -345,7 +358,7 @@ export class StratagemsContract {
 		const move = {...moveAsInput};
 		const MAX_LIFE = this.MAX_LIFE;
 
-		const currentState = this.getUpdatedCell(move.position, epoch);
+		const {updatedCell: currentState, justDied} = this.getUpdatedCell(move.position, epoch);
 
 		// const {x, y} = bigIntIDToXY(move.position);
 		// console.log(`COMPUTE_MOVE for ${x}, ${y}`, currentState);
@@ -353,8 +366,8 @@ export class StratagemsContract {
 
 		// we might have distribution still to do
 		let distribution = currentState.distribution;
-		if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
-			// if we just died, currentState.lastEpochUpdate > 0
+		if (justDied) {
+			// if we just died
 			// we have to distribute to all
 			distribution = (currentState.enemyMap << 4) + countBits(currentState.enemyMap);
 
@@ -552,12 +565,12 @@ export class StratagemsContract {
 	}
 
 	poke(position: bigint, epoch: number) {
-		const currentState = this.getUpdatedCell(position, epoch);
+		const {updatedCell: currentState, justDied} = this.getUpdatedCell(position, epoch);
 
 		// we might have distribution still to do
 		let distribution = currentState.distribution;
-		if (currentState.life == 0 && currentState.lastEpochUpdate != 0) {
-			// if we just died, currentState.lastEpochUpdate > 0
+		if (justDied) {
+			// if we just died
 			// we have to distribute to all
 			distribution = (currentState.enemyMap << 4) + countBits(currentState.enemyMap);
 

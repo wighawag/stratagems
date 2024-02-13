@@ -163,7 +163,10 @@ abstract contract UsingStratagemsState is
                         life = MAX_LIFE;
                     }
                     newLife = life;
-                    epochUsed = lastUpdate + uint24(epochDelta);
+
+                    // we don not use the following: lastUpdate + epochDelta;
+                    //   because no state change is foreseen with no life increase
+                    epochUsed = epoch;
                     // } else {
                     // 	newLife = life;
                     // 	epochUsed = lastUpdate;
@@ -179,19 +182,27 @@ abstract contract UsingStratagemsState is
                     } else {
                         newLife = life - lifeLoss;
                     }
+
+                    // since we need to track when the cell died, we upate lastUpdate only to
+                    //   the corresponding epoch where life reached 0
                     epochUsed = lastUpdate + uint24(epochDelta);
                 } else {
                     newLife = life;
+
+                    // we don not use the following: lastUpdate + epochDelta;
+                    //   because no state change is foreseen with no life change
                     epochUsed = epoch;
                 }
             } else {
                 newLife = life;
+
+                // no change, no need to update lastUpdate either ?
                 epochUsed = lastUpdate;
             }
         }
     }
 
-    function _getUpdatedCell(uint64 position, uint24 epoch) internal view returns (Cell memory updatedCell) {
+    function _getUpdatedCell(uint64 position, uint24 epoch) internal view returns (Cell memory updatedCell, bool justDied) {
         // load from state
         updatedCell = _cells[position];
         uint24 lastUpdate = updatedCell.lastEpochUpdate;
@@ -202,6 +213,7 @@ abstract contract UsingStratagemsState is
             (uint8 newLife, ) = _computeNewLife(lastUpdate, updatedCell.enemyMap, delta, life, epoch);
             updatedCell.life = newLife;
             updatedCell.lastEpochUpdate = epoch; // TODO check if this is useful to cap it to epoch where it died
+            justDied = newLife == 0;
         }
     }
 

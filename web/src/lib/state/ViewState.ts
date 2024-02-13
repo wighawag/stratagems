@@ -137,8 +137,8 @@ function merge(
 	for (const cellID of Object.keys(copyState.cells)) {
 		const {x, y} = bigIntIDToXY(BigInt(cellID));
 		const cell = copyState.cells[cellID];
-		const next = stratagems.getUpdatedCell(BigInt(cellID), epochState.epoch + 0);
-		const future = stratagems.getUpdatedCell(BigInt(cellID), epochState.epoch + 1);
+		const {updatedCell: next} = stratagems.getUpdatedCell(BigInt(cellID), epochState.epoch + 0);
+		const {updatedCell: future} = stratagems.getUpdatedCell(BigInt(cellID), epochState.epoch + 1);
 		// console.log({
 		// 	x,
 		// 	y,
@@ -185,7 +185,7 @@ function merge(
 			const pos = IDToXY(cellPos);
 			const position = xyToBigIntID(pos.x, pos.y);
 			const contractCell = state.cells[position.toString()];
-			const cellNext = stratagemsUnchanged.getUpdatedCell(position, epochState.epoch);
+			const {updatedCell: cellNext} = stratagemsUnchanged.getUpdatedCell(position, epochState.epoch);
 			if (
 				contractCell &&
 				(contractCell.distribution >> 4 > 0 || (cellNext.life == 0 && cellNext.life < contractCell.life))
