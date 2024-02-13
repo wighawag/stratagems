@@ -2,33 +2,30 @@
 	import Modal from '$utils/ui/modals/Modal.svelte';
 </script>
 
-<!-- TODO tailwind replacement -->
-
 <Modal>
-	<h3 class="text-lg font-bold">A new play-test is being worked on</h3>
-	<p class="py-4">Please come back later!</p>
-	<p class="py-4">
-		If you did not register for the play test you can do so <a
-			href="https://backdropbeta.com/stratagems"
-			target="_blank"
-			rel="noopener noreferer"
-			class="underline">here</a
-		>
-	</p>
-	<p class="py-4">
-		And we recommend you join our <a
-			href="https://community.etherplay.io"
-			target="_blank"
-			rel="noopener noreferer"
-			class="underline">Discord</a
-		> if you did not already
-	</p>
-	<div class="modal-action">
-		<a href="https://community.etherplay.io" target="_blank" rel="noopener noreferer" class="btn btn-info bg-purple-600"
-			>Discord</a
-		>
-		<a href="https://backdropbeta.com/stratagems" target="_blank" rel="noopener noreferer" class="btn btn-success"
-			>Playtest</a
-		>
+	<div class="wrapper">
+		<h3>A new play-test is being worked on</h3>
+		<p>
+			We recommend you join our <a href="https://community.etherplay.io" rel="noopener noreferer" class="underline"
+				>Discord</a
+			> if you did not already.
+		</p>
+		<div class="modal-actions">
+			<a role="button" href="https://community.etherplay.io" rel="noopener noreferer">Join Our Community</a>
+		</div>
 	</div>
 </Modal>
+
+<style>
+	.wrapper {
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		text-align: center;
+	}
+	.modal-actions {
+		display: flex;
+		justify-content: center;
+	}
+</style>

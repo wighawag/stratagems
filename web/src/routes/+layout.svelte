@@ -24,11 +24,11 @@
 	import EventsView from '$lib/ui/events/EventsView.svelte';
 
 	$: showWIPNotice =
-		!dev &&
-		!params['force'] &&
-		initialContractsInfos.chainId + '' !== '8453' &&
-		(initialContractsInfos as any).name !== 'composablelabs' &&
-		(initialContractsInfos as any).name !== 'redstone-holesky';
+		(initialContractsInfos as any).name === 'composablelabs' ||
+		(!dev &&
+			!params['force'] &&
+			initialContractsInfos.chainId + '' !== '8453' &&
+			(initialContractsInfos as any).name !== 'redstone-holesky');
 </script>
 
 <!-- add head, meta, sentry and other debug utilties-->
