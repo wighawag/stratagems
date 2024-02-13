@@ -63,7 +63,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             tokens.tokensReturned += returned;
         }
 
-        logger.logTransfers(0, "resolveMoves", transferCollection);
+        // logger.logTransfers(0, "resolveMoves", transferCollection);
 
         _multiTransfer(TOKENS, transferCollection);
 
@@ -125,13 +125,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
     ) internal returns (uint256 tokensPlaced, uint256 tokensBurnt, uint256 tokensReturned) {
         (Cell memory currentState, bool justDied) = _getUpdatedCell(move.position, epoch);
 
-        logger.logCell(
-            0,
-            string.concat("_computeMove at epoch ", Strings.toString(epoch)),
-            move.position,
-            currentState,
-            address(uint160(_owners[move.position]))
-        );
+        // logger.logCell(0, string.concat("_computeMove at epoch ", Strings.toString(epoch)), move.position, currentState, address(uint160(_owners[move.position])));
 
         // we might have distribution still to do
         uint8 distribution = currentState.distribution;
@@ -218,13 +212,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
         _cells[move.position] = currentState;
 
-        logger.logCell(
-            0,
-            string.concat("AFTER ", Strings.toString(epoch)),
-            move.position,
-            currentState,
-            address(uint160(_owners[move.position]))
-        );
+        // logger.logCell(0,string.concat("AFTER ", Strings.toString(epoch)),move.position,currentState,address(uint160(_owners[move.position])));
     }
 
     function _propagate(
@@ -266,13 +254,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
     function _poke(TokenTransferCollection memory transferCollection, uint64 position, uint24 epoch) internal {
         (Cell memory currentState, bool justDied) = _getUpdatedCell(position, epoch);
 
-        logger.logCell(
-            0,
-            string.concat("_poke at epoch ", Strings.toString(epoch)),
-            position,
-            currentState,
-            address(uint160(_owners[position]))
-        );
+        // logger.logCell(0,string.concat("_poke at epoch ", Strings.toString(epoch)),position,currentState,address(uint160(_owners[position])));
 
         // we might have distribution still to do
         uint8 distribution = currentState.distribution;
@@ -311,13 +293,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             }
         }
 
-        logger.logCell(
-            0,
-            string.concat("AFTER poke (before zeroed distribution) at epoch ", Strings.toString(epoch)),
-            position,
-            currentState,
-            address(uint160(_owners[position]))
-        );
+        // logger.logCell(0,string.concat("AFTER poke (before zeroed distribution) at epoch ", Strings.toString(epoch)),position,currentState,address(uint160(_owners[position])));
 
         currentState.distribution = 0;
         _cells[position] = currentState;
@@ -342,18 +318,18 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
                 numDue += due;
 
                 if ((distribution >> 4) & 1 == 1) {
-                    logger.logPosition("from", position);
-                    logger.logPosition("to up", upPosition);
-                    console.log("distribute %i", distribution & 0x0F);
+                    // logger.logPosition("from", position);
+                    // logger.logPosition("to up", upPosition);
+                    // console.log("distribute %i", distribution & 0x0F);
 
                     // TODO?: if we decide to group owner in the cell struct, we should get the cell in memory in that function
                     ownersToPay[0] = _ownerOf(upPosition);
                 }
 
                 if (due > 0) {
-                    logger.logPosition("due from up", upPosition);
-                    logger.logPosition("to", position);
-                    console.log("amount %i ", due);
+                    // logger.logPosition("due from up", upPosition);
+                    // logger.logPosition("to", position);
+                    // console.log("amount %i ", due);
                 }
                 newDelta += enemyOrFriend;
             }
@@ -365,15 +341,15 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
                 }
                 numDue += due;
                 if ((distribution >> 4) & 2 == 2) {
-                    logger.logPosition("from", position);
-                    logger.logPosition("to left", leftPosition);
-                    console.log("distribute %i", distribution & 0x0F);
+                    // logger.logPosition("from", position);
+                    // logger.logPosition("to left", leftPosition);
+                    // console.log("distribute %i", distribution & 0x0F);
                     ownersToPay[1] = _ownerOf(leftPosition);
                 }
                 if (due > 0) {
-                    logger.logPosition("due from left", leftPosition);
-                    logger.logPosition("to", position);
-                    console.log("amount %i ", due);
+                    // logger.logPosition("due from left", leftPosition);
+                    // logger.logPosition("to", position);
+                    // console.log("amount %i ", due);
                 }
                 newDelta += enemyOrFriend;
             }
@@ -386,15 +362,15 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
                 }
                 numDue += due;
                 if ((distribution >> 4) & 4 == 4) {
-                    logger.logPosition("from", position);
-                    logger.logPosition("to down", downPosition);
-                    console.log("distribute %i", distribution & 0x0F);
+                    // logger.logPosition("from", position);
+                    // logger.logPosition("to down", downPosition);
+                    // console.log("distribute %i", distribution & 0x0F);
                     ownersToPay[2] = _ownerOf(downPosition);
                 }
                 if (due > 0) {
-                    logger.logPosition("due from down", downPosition);
-                    logger.logPosition("to", position);
-                    console.log("amount %i ", due);
+                    // logger.logPosition("due from down", downPosition);
+                    // logger.logPosition("to", position);
+                    // console.log("amount %i ", due);
                 }
                 newDelta += enemyOrFriend;
             }
@@ -406,15 +382,15 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
                 }
                 numDue += due;
                 if ((distribution >> 4) & 8 == 8) {
-                    logger.logPosition("from", position);
-                    logger.logPosition("to right", rightPosition);
-                    console.log("distribute %i", distribution & 0x0F);
+                    // logger.logPosition("from", position);
+                    // logger.logPosition("to right", rightPosition);
+                    // console.log("distribute %i", distribution & 0x0F);
                     ownersToPay[3] = _ownerOf(rightPosition);
                 }
                 if (due > 0) {
-                    logger.logPosition("due from right", rightPosition);
-                    logger.logPosition("to", position);
-                    console.log("amount %i ", due);
+                    // logger.logPosition("due from right", rightPosition);
+                    // logger.logPosition("to", position);
+                    // console.log("amount %i ", due);
                 }
                 newDelta += enemyOrFriend;
             }
@@ -464,18 +440,12 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
     ) internal returns (uint16 due) {
         if (cell.life > 0 && newLife == 0) {
             // we just died, we establish the distributionMap and counts
-            logger.logPosition("new distribution", position);
+            // logger.logPosition("new distribution", position);
             cell.distribution = (cell.enemyMap << 4) + _countBits(cell.enemyMap);
-            console.log("%i %i", cell.distribution >> 4, cell.distribution & 0x0F);
+            // console.log("%i %i", cell.distribution >> 4, cell.distribution & 0x0F);
         }
 
-        logger.logCell(
-            0,
-            string.concat("_updateCellFromNeighbor  index", Strings.toString(neighbourIndex)),
-            position,
-            cell,
-            address(uint160(_owners[position]))
-        );
+        // logger.logCell(0,string.concat("_updateCellFromNeighbor  index", Strings.toString(neighbourIndex)),position,cell,address(uint160(_owners[position])));
 
         if ((cell.distribution >> 4) & (2 ** neighbourIndex) == 2 ** neighbourIndex) {
             due = (cell.stake * 12) / (cell.distribution & 0x0f);
@@ -510,13 +480,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         cell.lastEpochUpdate = epoch;
         cell.life = newLife;
 
-        logger.logCell(
-            0,
-            string.concat("AFTER _updateCellFromNeighbor  index", Strings.toString(neighbourIndex)),
-            position,
-            cell,
-            address(uint160(_owners[position]))
-        );
+        // logger.logCell(0,string.concat("AFTER _updateCellFromNeighbor  index", Strings.toString(neighbourIndex)),position,cell,address(uint160(_owners[position])));
 
         _cells[position] = cell;
     }

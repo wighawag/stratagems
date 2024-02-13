@@ -121,13 +121,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
             });
             _cells[position] = updatedCell;
 
-            logger.logCell(
-                0,
-                string.concat("forceSimpleCells at epoch ", Strings.toString(epoch)),
-                uint64(position),
-                updatedCell,
-                address(uint160(_owners[position]))
-            );
+            // logger.logCell(0, string.concat("forceSimpleCells at epoch ", Strings.toString(epoch)), uint64(position), updatedCell, address(uint160(_owners[position])));
         }
 
         emit ForceSimpleCells(epoch, cells);

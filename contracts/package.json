@@ -14,6 +14,7 @@
     "ethereum-indexer-browser": "^0.7.0",
     "fs-extra": "^11.2.0",
     "hardhat": "^2.19.5",
+    "hardhat-preprocessor": "^0.1.5",
     "hardhat-rocketh": "^1.0.4",
     "ldenv": "^0.3.9",
     "prettier": "^3.2.4",
