@@ -13,7 +13,7 @@ import {getConnection, fetchContract} from '../../utils/connection';
 import artifacts from '../../generated/artifacts';
 import {network} from 'hardhat';
 
-import {GameConfig} from '../../deploy/003_deploy_game';
+import {GameConfig} from '../../deploy/011_deploy_game';
 import {formatEther, parseEther} from 'viem';
 import {GridEnv, getGrid, performGridActions, withGrid} from './stratagems';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
@@ -91,7 +91,7 @@ export function fromStateToGrid(env: GridEnv, state: Data, epoch: number): Grid 
 
 	for (const positionString of Object.keys(state.cells)) {
 		const position = BigInt(positionString);
-		const cell = stratagemsContract.getUpdatedCell(position, epoch);
+		const {updatedCell: cell} = stratagemsContract.getUpdatedCell(position, epoch);
 
 		const {x, y} = bigIntIDToXY(position);
 		const ownerAddress = state.owners[positionString];
