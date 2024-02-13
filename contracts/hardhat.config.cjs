@@ -3,6 +3,7 @@ loadEnv();
 require('@nomicfoundation/hardhat-network-helpers');
 const {addForkConfiguration, addNetworksFromEnv} = require('hardhat-rocketh');
 require('vitest-solidity-coverage/hardhat');
+require('hardhat-preprocessor');
 
 const {task} = require('hardhat/config');
 // we override the node task to set up our block time interval
@@ -43,8 +44,9 @@ const config = {
 			addNetworksFromEnv({
 				hardhat: {
 					initialBaseFeePerGas: 0,
+					allowUnlimitedContractSize: true,
 					mining: {
-						auto: process.env['BLOCK_TIME'] ? true : false,
+						auto: true, // TODO
 						interval: process.env['BLOCK_TIME'] ? parseInt(process.env['BLOCK_TIME']) * 1000 : undefined,
 					},
 				},
@@ -60,6 +62,18 @@ const config = {
 	mocha: {
 		require: 'named-logs-console',
 	},
+	// preprocess: {
+	// 	eachLine: (hre) => ({
+	// 		transform: (line) => {
+	// 			if (hre.network.name === 'hardhat') {
+	// 				return line.replace('// console.log', 'console.log').replace('// logger.', 'logger.');
+	// 			} else {
+	// 				return line;
+	// 			}
+	// 		},
+	// 		settings: {comment: true},
+	// 	}),
+	// },
 };
 
 module.exports = config;

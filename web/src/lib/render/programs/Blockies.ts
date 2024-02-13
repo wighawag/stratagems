@@ -1,8 +1,9 @@
 import * as twgl from 'twgl.js';
-import * as m3 from '$lib/m3';
+import * as m3 from '$utils/m3';
 import type {CameraState} from '../camera';
-import type {StratagemsViewState} from '$lib/blockchain/state/ViewState';
-import {Blockie} from '$lib/utils/eth/blockie';
+import type {StratagemsViewState} from '$lib/state/ViewState';
+import {Blockie} from '$utils/ethereum/blockie';
+import {Color, bigIntIDToXYID} from 'stratagems-common';
 
 type Attributes = {positions: number[]; colors: number[]};
 
@@ -37,6 +38,21 @@ function drawRect(attributes: Attributes, x1: number, y1: number, x2: number, y2
 	for (let i = 0; i < 6; i++) {
 		attributes.colors.push(...color);
 	}
+}
+
+function drawEmptyRect(
+	attributes: Attributes,
+	x1: number,
+	y1: number,
+	x2: number,
+	y2: number,
+	color: number[],
+	thichness: number,
+) {
+	drawRect(attributes, x1 - thichness / 2, y1 - thichness / 2, x2 + thichness / 2, y1 + thichness / 2, color);
+	drawRect(attributes, x2 - thichness / 2, y1 - thichness / 2, x2 + thichness / 2, y2 + thichness / 2, color);
+	drawRect(attributes, x2 + thichness / 2, y2 + thichness / 2, x1 - thichness / 2, y2 - thichness / 2, color);
+	drawRect(attributes, x1 - thichness / 2, y2 - thichness / 2, x1 + thichness / 2, y1 + thichness / 2, color);
 }
 
 export class BlockiesLayer {
@@ -87,7 +103,7 @@ export class BlockiesLayer {
 		for (let cellPos of Object.keys(state.cells)) {
 			const cell = state.viewCells[cellPos];
 			const owner = state.owners[cellPos];
-			if (owner) {
+			if (owner && owner != '0x0000000000000000000000000000000000000000') {
 				const blockie = Blockie.get(owner);
 				const data = blockie.imageData;
 				const [x, y] = cellPos.split(',').map((v) => parseInt(v));
@@ -147,23 +163,65 @@ export class BlockiesLayer {
 						S: state.viewCells[`${x},${y + 1}`]?.currentPlayer || false,
 						W: state.viewCells[`${x - 1},${y}`]?.currentPlayer || false,
 					};
-					const thickness = this.size / 50;
+					const thickness = this.size / Math.min(cameraState.zoom / 2, 50);
+
+					let startX = x - thickness / 2;
+					let endX = x + this.size - thickness / 2;
+					let startY = y - thickness / 2;
+					let endY = y + this.size - thickness / 2;
+
 					if (!neighbors.N) {
-						drawRect(attributes, x, y - thickness, x + this.size, y + thickness, [0, 1, 0]);
+						drawRect(attributes, startX, startY, endX, startY + thickness, [0, 1, 0]);
 					}
 
 					if (!neighbors.S) {
-						drawRect(attributes, x, y + this.size - thickness, x + this.size, y + this.size + thickness, [0, 1, 0]);
+						drawRect(attributes, startX, endY, endX, endY + thickness, [0, 1, 0]);
 					}
 					if (!neighbors.W) {
-						drawRect(attributes, x - thickness, y, x + thickness, y + this.size, [0, 1, 0]);
+						drawRect(attributes, startX, startY, startX + thickness, endY, [0, 1, 0]);
 					}
 					if (!neighbors.E) {
-						drawRect(attributes, x + this.size - thickness, y + this.size, x + this.size + thickness, y, [0, 1, 0]);
+						drawRect(attributes, endX, startY, endX + thickness, endY, [0, 1, 0]);
 					}
 				}
 			}
 		}
+
+		for (const withdrawal of state.tokensToCollect) {
+			const thickness = this.size / Math.min(cameraState.zoom / 2, 50);
+			const fromPos = bigIntIDToXYID(withdrawal.from);
+			const toPos = bigIntIDToXYID(withdrawal.position);
+			const [fromX, fromY] = fromPos.split(',').map((v) => parseInt(v));
+			const [toX, toY] = toPos.split(',').map((v) => parseInt(v));
+
+			const x1 = fromX + this.size / 2;
+			const y1 = fromY + this.size / 2;
+			let x2 = toX + this.size / 2 + thickness;
+			let y2 = toY + this.size / 2 + thickness;
+
+			// const slope = (y2 - y1) / (x2 - x1);
+			x2 = x2 - (x2 - x1) / 5;
+			y2 = y2 - (y2 - y1) / 5;
+
+			drawEmptyRect(
+				attributes,
+				toX + this.size / 2 - this.size / 4,
+				toY + this.size / 2 - this.size / 4,
+				toX + this.size / 2 + this.size / 4,
+				toY + this.size / 2 + this.size / 4,
+				[0, 1, 1],
+				thickness,
+			);
+
+			let color = [0, 1, 1];
+
+			// TODO colors ?
+			// if (withdrawal.color === Color.Red) {
+			// 	color = [1, 0, 0];
+			// }
+			drawRect(attributes, x1, y1, x2, y2, color);
+		}
+
 		// we update the buffer with the new arrays
 		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_position, attributes.positions);
 		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_color, attributes.colors);

@@ -1,12 +1,13 @@
 import type {PendingTransaction, EIP1193TransactionWithMetadata} from 'ethereum-tx-observer';
 import {BaseAccountHandler, type OnChainAction, type OnChainActions, type RevealMetadata} from './base';
-import {mainnetClient, createClient} from '$lib/fuzd';
+import {mainnetClient, createClient} from '$utils/fuzd';
 import type {AccountInfo, SyncInfo} from './types';
-import {FUZD_URI} from '$lib/config';
+import {FUZD_URI, SYNC_DB_NAME} from '$lib/config';
 import {xyToBigIntID, type Color, type ContractMove} from 'stratagems-common';
 import {writable, type Readable, type Writable} from 'svelte/store';
-import {time} from '$lib/time';
+import {time} from '$lib/blockchain/time';
 import type {ScheduleInfo} from 'fuzd-scheduler';
+import {account} from '$lib/blockchain/connection';
 
 export type LocalMove = {
 	player: string;
@@ -16,6 +17,17 @@ export type LocalMove = {
 };
 
 export type LocalMoves = LocalMove[];
+export type OffchainMoves =
+	| {
+			timestamp: number;
+			list: [];
+			epoch: undefined;
+	  }
+	| {
+			epoch: number;
+			timestamp: number;
+			list: LocalMoves;
+	  };
 
 export function localMoveToContractMove(localMove: LocalMove): ContractMove {
 	return {
@@ -32,22 +44,38 @@ export type CommitMetadata = {
 	fuzd: boolean | 'pendingTx'; // TODO
 };
 
-export type StratagemsMetadata = {
-	epoch: {
-		hash: `0x${string}`;
-		number: number;
-	};
-} & (CommitMetadata | RevealMetadata);
+export type StratagemsMetadata =
+	| undefined
+	| ({
+			epoch: {
+				hash: `0x${string}`;
+				number: number;
+			};
+	  } & (CommitMetadata | RevealMetadata));
 
 export type StratagemsTransaction = EIP1193TransactionWithMetadata<StratagemsMetadata>;
 
 export type Epoch = {number: number};
 
+export enum TUTORIAL_STEP {
+	'WELCOME' = 0,
+}
+export function hasCompletedTutorial(progression: number, step: TUTORIAL_STEP): boolean {
+	return (progression & Math.pow(2, step)) == Math.pow(2, step);
+}
+
 export type OffchainState = {
-	timestamp: number;
-	epoch?: Epoch;
+	version: number;
 	lastEpochAcknowledged: number;
-	moves?: LocalMoves;
+	moves: OffchainMoves;
+	currentColor: {
+		timestamp: number;
+		color?: number;
+	};
+	tutorial: {
+		timestamp: number;
+		progression: number;
+	};
 };
 
 export type AccountData = {
@@ -72,9 +100,14 @@ function defaultData() {
 	return {
 		onchainActions: {},
 		offchainState: {
-			timestamp: 0,
-			moves: undefined,
+			version: 1,
+			moves: {epoch: 0, timestamp: 0, list: []},
 			lastEpochAcknowledged: 0,
+			currentColor: {timestamp: 0},
+			tutorial: {
+				timestamp: 0,
+				progression: 0,
+			},
 		},
 	};
 }
@@ -86,7 +119,7 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 	public readonly offchainState: Readable<OffchainState>;
 
 	constructor() {
-		super('jolly-roger', defaultData, fromOnChainActionToPendingTransaction);
+		super(SYNC_DB_NAME, defaultData, fromOnChainActionToPendingTransaction);
 
 		this._offchainState = writable(this.$data.offchainState);
 		this.offchainState = {
@@ -142,6 +175,16 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 			remoteData = defaultData();
 		}
 
+		if (
+			remoteData.offchainState.version === undefined ||
+			remoteData.offchainState.version < newData.offchainState.version
+		) {
+			remoteData.offchainState = defaultData().offchainState;
+			newDataOnLocal = true;
+		}
+
+		_filterOutOldActions(remoteData.onchainActions);
+
 		for (const key of Object.keys(newData.onchainActions)) {
 			const txHash = key as `0x${string}`;
 
@@ -169,12 +212,44 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 			}
 		}
 
-		if (remoteData.offchainState.timestamp > newData.offchainState.timestamp) {
-			console.log(`fresher remote offchainState data`);
-			newData.offchainState = remoteData.offchainState;
+		if (_filterOutOldActions(newData.onchainActions)) {
+			newDataOnLocal = true;
+		}
+
+		if (
+			remoteData.offchainState.lastEpochAcknowledged &&
+			remoteData.offchainState.lastEpochAcknowledged > newData.offchainState.lastEpochAcknowledged
+		) {
+			newData.offchainState.lastEpochAcknowledged = remoteData.offchainState.lastEpochAcknowledged;
 			newDataOnRemote = true;
-		} else if (newData.offchainState.timestamp > remoteData.offchainState.timestamp) {
-			console.log(`fresher local offchainState data`);
+		} else if (
+			newData.offchainState.lastEpochAcknowledged &&
+			newData.offchainState.lastEpochAcknowledged > remoteData.offchainState.lastEpochAcknowledged
+		) {
+			newDataOnLocal = true;
+		}
+
+		if (remoteData.offchainState.moves.timestamp > newData.offchainState.moves.timestamp) {
+			newData.offchainState.moves = remoteData.offchainState.moves;
+			newDataOnRemote = true;
+		} else if (newData.offchainState.moves.timestamp > remoteData.offchainState.moves.timestamp) {
+			remoteData.offchainState.moves = newData.offchainState.moves;
+			newDataOnLocal = true;
+		}
+
+		if (remoteData.offchainState.currentColor.timestamp > newData.offchainState.currentColor.timestamp) {
+			newData.offchainState.currentColor = remoteData.offchainState.currentColor;
+			newDataOnRemote = true;
+		} else if (newData.offchainState.currentColor.timestamp > remoteData.offchainState.currentColor.timestamp) {
+			remoteData.offchainState.currentColor = newData.offchainState.currentColor;
+			newDataOnLocal = true;
+		}
+
+		if (remoteData.offchainState.tutorial.timestamp > newData.offchainState.tutorial.timestamp) {
+			newData.offchainState.tutorial = remoteData.offchainState.tutorial;
+			newDataOnRemote = true;
+		} else if (newData.offchainState.tutorial.timestamp > remoteData.offchainState.tutorial.timestamp) {
+			remoteData.offchainState.tutorial = newData.offchainState.tutorial;
 			newDataOnLocal = true;
 		}
 
@@ -214,47 +289,77 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		};
 	}
 
-	resetOffchainState(alsoSave: boolean = true) {
-		this.$data.offchainState.moves = undefined;
-		this.$data.offchainState.timestamp = time.now;
+	// resetOffchainState(alsoSave: boolean = true) {
+	// 	this.$data.offchainState.moves = undefined;
+	// 	this.$data.offchainState.timestamp = time.now;
 
-		this.$data.offchainState.epoch = undefined;
+	// 	this.$data.offchainState.epoch = undefined;
+	// 	if (alsoSave) {
+	// 		this._save();
+	// 	}
+	// 	this._offchainState.set(this.$data.offchainState);
+	// }
+
+	resetOffchainMoves(alsoSave: boolean = true) {
+		this.$data.offchainState.moves = {list: [], timestamp: time.now, epoch: undefined};
+
 		if (alsoSave) {
 			this._save();
 		}
 		this._offchainState.set(this.$data.offchainState);
 	}
 
-	addMove(move: LocalMove) {
-		const existingMove = this.$data.offchainState.moves?.find((v) => v.x === move.x && v.y === move.y);
-		if (!existingMove) {
-			if (!this.$data.offchainState.moves) {
-				this.$data.offchainState.moves = [];
-			}
-			this.$data.offchainState.moves.push(move);
-			this.$data.offchainState.timestamp = time.now;
+	resetOffchainProgression(alsoSave: boolean = true) {
+		this.$data.offchainState.tutorial = {progression: 0, timestamp: time.now};
+
+		if (alsoSave) {
+			this._save();
+		}
+		this._offchainState.set(this.$data.offchainState);
+	}
+
+	addMove(move: LocalMove, epoch: number) {
+		const timestamp = time.now;
+		if (this.$data.offchainState.moves?.epoch != epoch) {
+			this.$data.offchainState.moves = {list: [move], timestamp, epoch};
 		} else {
-			existingMove.color = move.color;
+			const existingMove = this.$data.offchainState.moves?.list.find((v) => v.x === move.x && v.y === move.y);
+			if (!existingMove) {
+				if (this.$data.offchainState.moves.list.length === 0) {
+					this.$data.offchainState.moves = {list: [move], epoch, timestamp};
+				} else {
+					this.$data.offchainState.moves.timestamp = timestamp;
+					this.$data.offchainState.moves.epoch = epoch;
+					this.$data.offchainState.moves.list.push(move);
+				}
+			} else {
+				existingMove.color = move.color;
+			}
 		}
 
 		this._save();
 		this._offchainState.set(this.$data.offchainState);
-		console.log(this.$data.offchainState.moves?.length);
 	}
 
 	removeMove(x: number, y: number) {
+		const timestamp = time.now;
 		if (this.$data.offchainState.moves) {
-			for (let i = 0; i < this.$data.offchainState.moves.length; i++) {
-				const move = this.$data.offchainState.moves[i];
+			for (let i = 0; i < this.$data.offchainState.moves.list.length; i++) {
+				const move = this.$data.offchainState.moves.list[i];
 				if (move.x === x && move.y === y) {
-					this.$data.offchainState.moves.splice(i, 1);
+					this.$data.offchainState.moves.list.splice(i, 1);
 					i--;
 				}
 			}
-			this.$data.offchainState.timestamp = time.now;
+			if (this.$data.offchainState.moves.list.length === 0) {
+				this.$data.offchainState.moves.timestamp = timestamp;
+				this.$data.offchainState.moves.epoch = undefined;
+			} else {
+				this.$data.offchainState.moves.timestamp = timestamp;
+			}
+
 			this._save();
 			this._offchainState.set(this.$data.offchainState);
-			console.log(this.$data.offchainState.moves?.length);
 		}
 	}
 
@@ -268,7 +373,6 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 
 	acknowledgeEpoch(epochNumber: number) {
 		this.$data.offchainState.lastEpochAcknowledged = epochNumber;
-		this.$data.offchainState.timestamp = time.now;
 		this._save();
 		this._offchainState.set(this.$data.offchainState);
 	}
@@ -300,4 +404,97 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 			throw new Error(`Action is not of type "commit"`);
 		}
 	}
+
+	swapCurrentColor() {
+		// TODO ensure timestamp synced ?
+		const timestamp = time.now;
+
+		// TODO use store ?
+		if (!account.$state.address) {
+			throw new Error(`no address`);
+		}
+		let currentColor = this.$data.offchainState.currentColor.color;
+		if (!currentColor) {
+			currentColor = Number((BigInt(account.$state.address) % 5n) + 1n);
+		}
+		this.$data.offchainState.currentColor.color = (currentColor % 5) + 1;
+		this.$data.offchainState.currentColor.timestamp = timestamp;
+		this._save();
+		this._offchainState.set(this.$data.offchainState);
+	}
+
+	markTutorialAsComplete(step: TUTORIAL_STEP) {
+		// TODO ensure timestamp synced ?
+		const timestamp = time.now;
+
+		if (!hasCompletedTutorial(this.$data.offchainState.tutorial.progression, step)) {
+			this.$data.offchainState.tutorial.timestamp = timestamp;
+			this.$data.offchainState.tutorial.progression |= Math.pow(2, step);
+			this._save();
+			this._offchainState.set(this.$data.offchainState);
+		}
+	}
+}
+
+function _filterOutOldActions(actions: OnChainActions<StratagemsMetadata>): boolean {
+	let changes = false;
+	const keys = Object.keys(actions);
+	let lastCommitAction: OnChainAction<CommitMetadata> | undefined;
+	for (const key of keys) {
+		const txHash = key as `0x${string}`;
+		const action = actions[txHash];
+		if (action.tx.metadata?.type === 'commit') {
+			const commitAction = action as OnChainAction<CommitMetadata>;
+			if (!lastCommitAction) {
+				lastCommitAction = commitAction;
+			} else if (lastCommitAction.tx.metadata.epoch < commitAction.tx.metadata.epoch) {
+				lastCommitAction = commitAction;
+			}
+		}
+	}
+
+	for (const key of keys) {
+		const txHash = key as `0x${string}`;
+		const action = actions[txHash];
+		if (!action.tx.metadata) {
+			if (action.final) {
+				if (action.status == 'Success') {
+					delete actions[txHash];
+					changes = true;
+				} else if (!action.tx.timestamp || time.now - action.tx.timestamp > 7 * 24 * 3600) {
+					delete actions[txHash];
+					changes = true;
+				}
+			}
+		} else {
+			switch (action.tx.metadata.type) {
+				case 'commit':
+					const commitMetadata = action.tx.metadata;
+					// if (action.status == 'Success') {
+					if (lastCommitAction && lastCommitAction.tx.metadata.epoch > commitMetadata.epoch) {
+						delete actions[txHash];
+						changes = true;
+					}
+					// } else if (!action.tx.timestamp || time.now - action.tx.timestamp > 7 * 24 * 3600) {
+					// 	delete actions[txHash];
+					// }
+					break;
+				case 'reveal':
+					const revealMetadata = action.tx.metadata;
+					if (action.status == 'Success') {
+						const commitTx = revealMetadata.commitTx;
+						delete actions[commitTx];
+						delete actions[txHash];
+						changes = true;
+					} else if (!action.tx.timestamp || time.now - action.tx.timestamp > 7 * 24 * 3600) {
+						const commitTx = revealMetadata.commitTx;
+						delete actions[commitTx];
+						delete actions[txHash];
+						changes = true;
+					}
+					break;
+			}
+		}
+	}
+	return changes;
 }

@@ -1,7 +1,7 @@
 import * as twgl from 'twgl.js';
-import * as m3 from '$lib/m3';
+import * as m3 from '$utils/m3';
 import type {CameraState} from '../camera';
-import type {StratagemsViewState} from '$lib/blockchain/state/ViewState';
+import type {StratagemsViewState} from '$lib/state/ViewState';
 import {
 	drawCastle,
 	drawCorners,
@@ -14,9 +14,11 @@ import {
 	drawTent,
 	drawGem,
 	drawUnit,
+	drawFire,
 } from '../tiles';
-import {epoch} from '$lib/blockchain/state/Epoch';
+import {epoch} from '$lib/state/Epoch';
 import {get} from 'svelte/store';
+import {bigIntIDToXYID} from 'stratagems-common';
 
 const vertexShaderSource = `#version 300 es
 
@@ -134,6 +136,7 @@ export class Textured2DLayer {
 
 		for (let cellPos of Object.keys(state.cells)) {
 			const cell = state.viewCells[cellPos];
+			const contractCell = state.cells[cellPos];
 			const [x, y] = cellPos.split(',').map((v) => parseInt(v));
 
 			drawCastle(attributes, this.size, tileSize, x, y, cell.next.color, 1);
@@ -144,6 +147,11 @@ export class Textured2DLayer {
 
 			if (cell.next.life > 0) {
 				drawGem(attributes, this.size, tileSize, x, y, cell.next.color, 1);
+				if (contractCell.stake > 1) {
+					for (let i = 1; i < contractCell.stake; i++) {
+						drawGem(attributes, this.size, tileSize, x + 0.05 * i, y - 0.05 * i, cell.next.color, 1);
+					}
+				}
 			}
 
 			if (cell.future.life > cell.next.life) {

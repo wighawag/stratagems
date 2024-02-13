@@ -1,41 +1,41 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import '../interface/IStratagems.sol';
-import '../interface/UsingStratagemsTypes.sol';
+import "../interface/IStratagems.sol";
+import "../interface/UsingStratagemsTypes.sol";
 
 interface IStratagemsDebug is UsingStratagemsTypes {
-	error InvalidCellOverwrite();
-	error InvalidLifeConfiguration(uint256 life, int32 x, int32 y);
+    error InvalidCellOverwrite();
+    error InvalidLifeConfiguration(uint256 life, int32 x, int32 y);
 
-	event ForceCells(DebugCell[] cells);
-	event ForceSimpleCells(uint24 epoch, SimpleCell[] cells);
+    event ForceCells(DebugCell[] cells);
+    event ForceSimpleCells(uint24 epoch, SimpleCell[] cells);
 
-	function forceMoves(address player, Move[] memory moves) external;
+    function forceMoves(address player, Move[] memory moves) external;
 
-	struct DebugCell {
-		uint64 position;
-		address owner;
-		uint24 lastEpochUpdate;
-		uint24 epochWhenTokenIsAdded;
-		Color color;
-		uint8 life;
-		int8 delta;
-		uint8 enemyMap;
-	}
+    struct DebugCell {
+        uint64 position;
+        address owner;
+        uint24 lastEpochUpdate;
+        uint24 epochWhenTokenIsAdded;
+        Color color;
+        uint8 life;
+        int8 delta;
+        uint8 enemyMap;
+    }
 
-	function forceCells(DebugCell[] memory cells) external;
+    function forceCells(DebugCell[] memory cells) external;
 
-	struct SimpleCell {
-		uint64 position;
-		address owner;
-		Color color;
-		uint8 life;
-	}
+    struct SimpleCell {
+        uint64 position;
+        address owner;
+        Color color;
+        uint8 life;
+    }
 
-	function forceSimpleCells(SimpleCell[] memory cells) external;
+    function forceSimpleCells(SimpleCell[] memory cells) external;
 
-	function getRawCell(uint256 id) external view returns (Cell memory cell);
+    function getRawCell(uint256 id) external view returns (Cell memory cell);
 }
 
 interface IStratagemsWithDebug is IStratagems, IStratagemsDebug {}

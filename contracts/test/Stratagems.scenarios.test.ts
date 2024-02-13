@@ -11,6 +11,7 @@ import {
 	expectGridChangeAfterActions,
 	expectIndexedGridToMatch,
 	expectWallet,
+	pokeAll,
 	setupWallets,
 } from './utils/stratagems-test';
 
@@ -33,19 +34,25 @@ const scenarios = fs
 		};
 		const actions: string[] = [];
 		let expectedGrid = '';
+		let stage: 'before' | 'after' | 'after_poke' = 'before';
 		const walletsBefore: {[playerIndex: number]: number} = {};
 		const expectedWalletsAfter: {[playerIndex: number]: number} = {};
+		const expectedWalletsAfterPoke: {[playerIndex: number]: number} = {};
 		for (const line of lines) {
-			if (line.startsWith('$')) {
+			if (line === 'AFTER_POKE_ALL') {
+				stage = 'after_poke';
+			} else if (line.startsWith('$')) {
 				const [playerIndex, amount] = line
 					.slice(1)
 					.split(':')
 					.map((s) => s.trim())
 					.map((s) => parseFloat(s));
-				if (!expectedGrid) {
+				if (stage === 'before') {
 					walletsBefore[playerIndex] = amount;
-				} else {
+				} else if (stage === 'after') {
 					expectedWalletsAfter[playerIndex] = amount;
+				} else {
+					expectedWalletsAfterPoke[playerIndex] = amount;
 				}
 			} else if (line.startsWith('+')) {
 				state.gridConsumed = true;
@@ -63,6 +70,7 @@ const scenarios = fs
 					startGrid += line + `\n`;
 				} else if (state.timeForExpected) {
 					expectedGrid += line + `\n`;
+					stage = 'after';
 				} else if (typeof state.currentAction !== 'undefined') {
 					state.currentAction += line + `\n`;
 				}
@@ -75,17 +83,21 @@ const scenarios = fs
 			startGrid,
 			actions,
 			expectedGrid,
+			expectedWalletsAfterPoke,
 			expectedWallets: {},
 		};
 		return data;
 	});
 
 describe('Stratagems Scenarios', function () {
+	// it.each([scenarios[7]])(`$name`, async (data) => {
 	it.each(scenarios)(`$name`, async (data) => {
 		const setup = await loadFixture(deployStratagemsWithTestConfig);
 		await setupWallets(setup, data.walletsBefore);
 		await expectGridChangeAfterActions(setup, data.startGrid, data.actions, data.expectedGrid);
 		await expectWallet(setup, data.expectedWalletsAfter);
 		await expectIndexedGridToMatch(setup, data.expectedGrid, 3);
+		await pokeAll(setup, data.expectedGrid, 3);
+		await expectWallet(setup, data.expectedWalletsAfterPoke);
 	});
 });

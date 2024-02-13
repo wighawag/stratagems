@@ -1,5 +1,5 @@
-import sheetURL from '$lib/assets/sheet.png';
-import sheet from '$lib/assets/sheet.json';
+import sheetURL from '$data/assets/sheet.png';
+import sheet from '$data/assets/sheet.json';
 import {Color} from 'stratagems-common';
 
 export {sheetURL};
@@ -655,14 +655,17 @@ export function drawHouseInFire(
 	}
 	drawHouse(attributes, cellSize, tileSize, x, y, color, opacity, index);
 	const {dx, dy} = getXYFromIndex(cellSize, tileSize, index);
-	drawTile(
+	drawFire(
 		attributes,
+		tileSize,
 		x + cellSize / 2 - tileSize + dx,
 		y + cellSize / 2 - tileSize + dy - tileSize / 2,
-		fires[0],
-		tileSize,
 		opacity,
 	);
+}
+
+export function drawFire(attributes: Attributes, tileSize: number, x: number, y: number, opacity: number) {
+	drawTile(attributes, x, y, fires[0], tileSize, opacity);
 }
 
 export function drawTent(

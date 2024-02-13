@@ -14,7 +14,7 @@ import artifacts from '../../generated/artifacts';
 import {network} from 'hardhat';
 
 import {GameConfig} from '../../deploy/003_deploy_game';
-import {parseEther} from 'viem';
+import {formatEther, parseEther} from 'viem';
 import {GridEnv, getGrid, performGridActions, withGrid} from './stratagems';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 
@@ -138,6 +138,14 @@ export async function expectWallet(env: GridEnv, expectedWalletsAfter: {[playerI
 	for (const playerIndex of Object.keys(expectedWalletsAfter)) {
 		const player = env.otherAccounts[playerIndex];
 		const amount = await env.TestTokens.read.balanceOf([player]);
+		console.log({
+			player: playerIndex,
+			amount: formatEther(amount),
+		});
+	}
+	for (const playerIndex of Object.keys(expectedWalletsAfter)) {
+		const player = env.otherAccounts[playerIndex];
+		const amount = await env.TestTokens.read.balanceOf([player]);
 		const expectedAmount = parseEther(expectedWalletsAfter[playerIndex].toString());
 		expect(amount, `player ${playerIndex} (${player})`).to.equal(expectedAmount);
 	}
@@ -189,4 +197,22 @@ export async function deployStratagemsWithTestConfig() {
 	};
 	const result = await deployStratagems(override);
 	return result;
+}
+
+export async function pokeAll(env: GridEnv, resultGrid: string, epoch: number) {
+	const processor = createProcessor();
+	const {state, syncing, status, init, indexToLatest} = createIndexerState(processor);
+
+	// keep grid already
+	await init({
+		provider: env.provider,
+		source: {
+			chainId: '31337',
+			contracts: [{abi: env.Stratagems.abi as any, address: env.Stratagems.address}],
+		},
+	}).then((v) => indexToLatest());
+
+	const {accounts, walletClient, publicClient} = await getConnection();
+	const [deployer] = accounts;
+	await env.Stratagems.write.pokeMultiple([Object.keys(state.$state.cells).map((v) => BigInt(v))], {account: deployer});
 }

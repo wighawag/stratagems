@@ -1,7 +1,18 @@
 import type {MergedAbis, JSProcessor, EventWithArgs} from 'ethereum-indexer-js-processor';
 import {fromJSProcessor} from 'ethereum-indexer-js-processor';
 import contractsInfo from './contracts';
-import {ContractCell, StratagemsContract} from 'stratagems-common';
+import {Color, ContractCell, StratagemsContract, bigIntIDToXY} from 'stratagems-common';
+
+export type CellPlacements = {
+	players: {color: Color; address: string}[];
+};
+
+export type EpochPlacements = {
+	epoch: number;
+	cells: {
+		[position: string]: CellPlacements;
+	};
+};
 
 export type Data = {
 	cells: {
@@ -13,6 +24,7 @@ export type Data = {
 	commitments: {
 		[address: string]: {epoch: number; hash: `0x${string}`};
 	};
+	placements: EpochPlacements[];
 };
 
 type ContractsABI = MergedAbis<typeof contractsInfo.contracts>;
@@ -21,16 +33,53 @@ const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
 	// version is automatically populated via version.cjs to let the browser knows to reindex on changes
 	version: '__VERSION_HASH__',
 	construct(): Data {
-		return {cells: {}, owners: {}, commitments: {}};
+		return {cells: {}, owners: {}, commitments: {}, placements: []};
 	},
 	onCommitmentRevealed(state, event) {
+		const epoch = event.args.epoch;
 		const account = event.args.player.toLowerCase();
+
+		let epochEvents = state.placements.find((v) => v.epoch === event.args.epoch);
+		if (!epochEvents) {
+			epochEvents = {
+				epoch,
+				cells: {},
+			};
+		}
+		state.placements.unshift(epochEvents);
+		if (state.placements.length > 7) {
+			state.placements.pop();
+		}
+
 		const stratagemsContract = new StratagemsContract(state, 7);
 		for (const move of event.args.moves) {
 			stratagemsContract.computeMove(event.args.player, event.args.epoch, move);
+
+			let cell = epochEvents.cells[move.position.toString()];
+			if (!cell) {
+				epochEvents.cells[move.position.toString()] = cell = {
+					players: [],
+				};
+			}
+			cell.players.push({
+				color: move.color,
+				address: account,
+			});
 		}
+
 		// TODO only keep track of the connected player ?
 		delete state.commitments[account];
+	},
+	onSinglePoke(state, event) {
+		const stratagemsContract = new StratagemsContract(state, 7);
+		stratagemsContract.poke(event.args.position, event.args.epoch);
+	},
+	onMultiPoke(state, event) {
+		const stratagemsContract = new StratagemsContract(state, 7);
+		for (const position of event.args.positions) {
+			// console.log({position: position, pos: bigIntIDToXY(position)});
+			stratagemsContract.poke(position, event.args.epoch);
+		}
 	},
 	onCommitmentCancelled(state, event) {
 		const account = event.args.player.toLowerCase();

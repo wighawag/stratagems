@@ -1,4 +1,4 @@
-- [ ] show your lands (flags ?)
+- [x] show your lands (flags ?) => we use green lines around for now
 - [ ] display winnings (keep track of each cell to withdraw)
 - [ ] show your winnings as event
 - [ ] show your loss as event
@@ -6,7 +6,7 @@
 - [ ] show warning for x minutes left to commit (especially when advancing time in dev mode)
 - [ ] show warning for x minutes left to reveal
 - [ ] Fix the display of new island (with sand/grass)
-- [ ] Show player owning each Land
+- [x] Show player owning each Land => we use castle door for now
 - [ ] add account owner smart contract as NFT
 - [ ] show owner of the smart contract as owner of the Land ? maybe on details ?
 - [ ] add public chat
@@ -15,3 +15,32 @@
 
 - [ ] better error handling when fuzd shedule failed
 - [ ] issue with overriden commit showing black
+
+- [] chat
+  - [] public chat
+  - [] one-to-one messaging
+- [] indexing backend
+  - [] multi-contract-set support
+  - []
+- [] css revamp
+  - [] get rid of tailwind/daisy-ui
+  - [] slice-9 and pixel-art UI
+- [] improve UX
+  - [] show widthrawals
+  - [] ability to withdraw
+- [] make it easy to build games on top
+
+  - [] easy import of contracts
+  - [] easy import of indexer
+  - [] easy import of renderer
+  - [] combine indexers ?
+
+- [ ] time fix
+- [ ] isAdmin capabiltiy
+- [ ] better drop down menu => settings modal, etc...
+- [ ] refactor webgl layers
+  - [ ] base layer are about shader capabilties
+  - [ ] renderer layer make use of base layer but add domain specific function
+- [ ] on hover / or special view mode to click to get info about an island => show copiable info
+- [ ] zoom out show color for better clarity
+- [ ] zoom out show mode switch => color / player / life / dead / gaining / losing

@@ -115,5 +115,19 @@
 		},
 		"finality": 12,
 		"averageBblockTime": 5
+	},
+	"17001": {
+		"config": {
+			"rpcUrls": ["https://rpc.holesky.redstone.xyz"],
+			"blockExplorerUrls": ["https://explorer.holesky.redstone.xyz"],
+			"chainName": "Redstone Holesky",
+			"nativeCurrency": {
+				"name": "Ether",
+				"symbol": "ETH",
+				"decimals": 18
+			}
+		},
+		"finality": 12,
+		"averageBblockTime": 1
 	}
 }

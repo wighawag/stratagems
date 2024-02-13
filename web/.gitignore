@@ -22,7 +22,7 @@ static/pwa
 
 # generated from contracts
 src/data/contracts.ts
-static/indexed-state-*.json
+static/indexed-states/*
 
 # Sentry Auth Token
 .env.sentry-build-plugin

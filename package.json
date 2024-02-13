@@ -7,9 +7,9 @@
   "devDependencies": {
     "ask-env": "^0.0.1",
     "ldenv": "^0.3.9",
-    "prettier": "^3.1.0",
-    "syncpack": "^11.2.1",
-    "vitepress": "1.0.0-rc.31"
+    "prettier": "^3.2.4",
+    "syncpack": "^12.3.0",
+    "vitepress": "1.0.0-rc.40"
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
@@ -34,7 +34,9 @@
     "contracts:execute": "pnpm --filter ./contracts execute",
     "contracts:docs": "ldenv -d localhost pnpm run --filter ./contracts docgen @@MODE -o ../docs/contracts",
     "indexer:build": "ldenv pnpm run contracts:export @@MODE ~~ pnpm run --filter ./common build ~~ pnpm run --filter ./indexer build ~~ @@",
-    "indexer:index": "ldenv pnpm run indexer:build @@MODE ~~ pnpm --filter ./indexer index-to-file -n @@ETH_NODE_URI_:MODE,ETH_NODE_URI@:''@: -d src/contracts.ts -f ../web/static/indexed-state-@@MODE@:.json ~~ @@",
+    "indexer:index": "ldenv pnpm run indexer:build @@MODE ~~ pnpm --filter ./indexer index-to-file -n @@ETH_NODE_URI_:MODE,ETH_NODE_URI@:''@: -d src/contracts.ts -f ../web/static/indexed-states/@@MODE ~~ @@",
+    "fuzd:dev": "pnpm --filter ./helper-services/fuzd dev",
+    "sync:dev": "pnpm --filter ./helper-services/secp256k1-db dev",
     "---------------------- DOCS ----------------------": "",
     "docs:dev": "pnpm contracts:docs && vitepress dev docs",
     "docs:build": "pnpm contracts:docs && vitepress build docs",
@@ -58,7 +60,8 @@
     "---------------------- RUN FULL LOCAL SETUP ----------------------": "",
     "start:wezterm": "wezterm --config-file dev/wezterm.lua start $PWD",
     "stop": "zellij kill-session $npm_package_name",
-    "start": "rm helper-services/fuzd/contracts.json && zellij --layout dev/zellij.kdl a $npm_package_name || zellij --layout dev/zellij.kdl -s $npm_package_name"
+    "start": "rm -Rf helper-services/fuzd/.wrangler && rm helper-services/fuzd/contracts.json && zellij --layout dev/zellij.kdl a $npm_package_name || zellij --layout dev/zellij.kdl -s $npm_package_name",
+    "clean:start": "rm -Rf contracts/deployments/localhost && pnpm start"
   },
   "pnpm": {
     "patchedDependencies": {

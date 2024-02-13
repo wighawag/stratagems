@@ -1,4 +1,4 @@
-import {BasicObjectStore} from '$lib/utils/stores/base';
+import {BasicObjectStore} from '$utils/stores/base';
 import type {Readable} from 'svelte/store';
 import type {RenderViewState} from './renderview';
 
@@ -14,6 +14,8 @@ export type CameraState = {
 	renderHeight: number;
 	renderScale: number;
 	devicePixelRatio: number;
+	pointerX: number;
+	pointerY: number;
 };
 
 type RenderViewReadable = Readable<RenderViewState>;
@@ -35,6 +37,15 @@ export class Camera extends BasicObjectStore<CameraState> {
 
 	// private static zoomLevels = [1000, 500, 200, 100, 50, 20, 10, 5, 4, 3, 2, 1, 0.5];
 
+	private _onmousedown: (e: MouseEvent) => void = this.onmousedown.bind(this);
+	private _onmousemove: (e: MouseEvent) => void = this.onmousemove.bind(this);
+	private _onmouseup: (e: MouseEvent) => void = this.onmouseup.bind(this);
+
+	private _ontouchstart: (e: TouchEvent) => void = this.ontouchstart.bind(this);
+	private _ontouchmove: (e: TouchEvent) => void = this.ontouchmove.bind(this);
+	private _ontouchend: (e: TouchEvent) => void = this.ontouchend.bind(this);
+
+	private _onwheel: (e: WheelEvent) => void = this.onwheel.bind(this);
 	constructor() {
 		super();
 	}
@@ -47,7 +58,7 @@ export class Camera extends BasicObjectStore<CameraState> {
 		this.surface = surface;
 		this.renderView = renderView;
 
-		if (!this.$store) {
+		if (!this.$store || this.$store.width == 0) {
 			try {
 				const data = localStorage.getItem('_camera');
 				if (data) {
@@ -69,6 +80,8 @@ export class Camera extends BasicObjectStore<CameraState> {
 					renderHeight: 0,
 					renderScale: 0,
 					devicePixelRatio: 1,
+					pointerX: 0,
+					pointerY: 0,
 				});
 				this._setXYZoom(0, 0, 32);
 				// this._setXYZoom(0, 0, Camera.zoomLevels[this.zoomIndex]);
@@ -77,27 +90,15 @@ export class Camera extends BasicObjectStore<CameraState> {
 
 		this.unsubscribeFromRenderView = this.renderView.subscribe(this.onRenderViewUpdates.bind(this));
 
-		this.surface.onmousedown = (e) => {
-			this.onmousedown(e);
-		};
-		this.surface.onmouseup = (e) => {
-			this.onmouseup(e);
-		};
-		this.surface.onmousemove = (e) => {
-			this.onmousemove(e);
-		};
-		this.surface.ontouchstart = (e: TouchEvent) => {
-			this.ontouchstart(e);
-		};
-		this.surface.ontouchend = (e: TouchEvent) => {
-			this.ontouchend(e);
-		};
-		this.surface.ontouchmove = (e: TouchEvent) => {
-			this.ontouchmove(e);
-		};
-		this.surface.onwheel = (e) => {
-			this.onwheel(e);
-		};
+		this.surface.addEventListener('mousedown', this._onmousedown);
+		this.surface.addEventListener('mouseup', this._onmouseup);
+		this.surface.addEventListener('mousemove', this._onmousemove);
+
+		this.surface.addEventListener('touchstart', this._ontouchstart);
+		this.surface.addEventListener('touchend', this._ontouchend);
+		this.surface.addEventListener('touchmove', this._ontouchmove);
+
+		this.surface.addEventListener('wheel', this._onwheel);
 
 		// DEBUGGING
 		// document.onclick = (event) => {
@@ -117,13 +118,16 @@ export class Camera extends BasicObjectStore<CameraState> {
 		}
 
 		if (this.surface) {
-			this.surface.onmousedown = null;
-			this.surface.onmouseup = null;
-			this.surface.onmousemove = null;
-			this.surface.ontouchstart = undefined;
-			this.surface.ontouchend = undefined;
-			this.surface.ontouchmove = undefined;
-			this.surface.onwheel = null;
+			this.surface.removeEventListener('mousedown', this._onmousedown);
+			this.surface.removeEventListener('mouseup', this._onmouseup);
+			this.surface.removeEventListener('mousemove', this._onmousemove);
+
+			this.surface.removeEventListener('touchstart', this._ontouchstart);
+			this.surface.removeEventListener('touchend', this._ontouchend);
+			this.surface.removeEventListener('touchmove', this._ontouchmove);
+
+			this.surface.removeEventListener('wheel', this._onwheel);
+
 			this.surface = undefined;
 		}
 	}
@@ -138,7 +142,7 @@ export class Camera extends BasicObjectStore<CameraState> {
 		this.$store.height = this.$store.renderHeight / scale;
 		this.$store.renderX = this.$store.renderWidth / 2 - this.$store.x * scale;
 		this.$store.renderY = this.$store.renderHeight / 2 - this.$store.y * scale;
-		super._set(this.$store);
+		this._set(this.$store);
 
 		(window as any).cameraState = this.$store;
 		try {
@@ -158,6 +162,10 @@ export class Camera extends BasicObjectStore<CameraState> {
 	}
 
 	worldToScreen(x: number, y: number): {x: number; y: number} {
+		if (!this.$store) {
+			// TODO store should always be set to something
+			return {x: 0, y: 0};
+		}
 		const devicePixelRatio = this.$store.devicePixelRatio;
 		const scale = this.$store.zoom * devicePixelRatio;
 		return {
@@ -223,8 +231,6 @@ export class Camera extends BasicObjectStore<CameraState> {
 	}
 
 	onmousemove(e: TouchEvent | MouseEvent): void {
-		if (!this.isPanning) return;
-
 		// let movementX;
 		// let movementY;
 		// if (e.movementX) {
@@ -241,25 +247,42 @@ export class Camera extends BasicObjectStore<CameraState> {
 			eventY = e.touches[0].clientY;
 		}
 
-		// console.log({eventX, eventY});
-		const movementX = eventX - this.lastClientPos.x;
-		const movementY = eventY - this.lastClientPos.y;
-		// console.log(JSON.stringify({movementX, movementY, eMovementX: e.movementX, eMovementY: e.movementY}))
-		this.lastClientPos = {x: eventX, y: eventY};
+		const eventWorldCoords = this.screenToWorld(eventX, eventY);
+		this.$store.pointerX = eventWorldCoords.x;
+		this.$store.pointerY = eventWorldCoords.y;
 
-		// console.log('panning', movementX, movementY);
+		if (this.isPanning) {
+			// console.log({eventX, eventY});
+			const movementX = eventX - this.lastClientPos.x;
+			const movementY = eventY - this.lastClientPos.y;
+			// console.log(JSON.stringify({movementX, movementY, eMovementX: e.movementX, eMovementY: e.movementY}))
+			this.lastClientPos = {x: eventX, y: eventY};
 
-		const devicePixelRatio = this.$store.devicePixelRatio;
-		const scale = this.$store.zoom * devicePixelRatio;
-		this.$store.x -= (movementX * devicePixelRatio) / scale;
-		this.$store.y -= (movementY * devicePixelRatio) / scale;
+			// console.log('panning', movementX, movementY);
+
+			const devicePixelRatio = this.$store.devicePixelRatio;
+			const scale = this.$store.zoom * devicePixelRatio;
+			const xDiff = -(movementX * devicePixelRatio) / scale;
+			const yDiff = -(movementY * devicePixelRatio) / scale;
+			this.$store.x += xDiff;
+			this.$store.y += yDiff;
+
+			this.$store.pointerX -= xDiff;
+			this.$store.pointerY -= yDiff;
+		}
+
 		this._update();
 	}
 
 	navigate(x: number, y: number, zoom: number): void {
+		const xDiff = x - this.$store.x;
+		const yDiff = y - this.$store.y;
 		this.$store.x = x;
 		this.$store.y = y;
 		this.$store.zoom = zoom;
+
+		this.$store.pointerX -= xDiff;
+		this.$store.pointerY -= yDiff;
 		this._update();
 	}
 
@@ -317,7 +340,7 @@ export class Camera extends BasicObjectStore<CameraState> {
 		for (let i = 0; i < e.touches.length; i++) {
 			touches.push({identifier: e.touches[i].identifier});
 		}
-		// console.log(title, JSON.stringify(touches));
+		// console.log(_title, JSON.stringify(touches));
 	}
 
 	ontouchstart(e: TouchEvent): void {

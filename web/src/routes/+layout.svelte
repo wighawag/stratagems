@@ -1,149 +1,79 @@
 <script lang="ts">
-	import '../app.postcss';
-	import NavTabs from '$lib/components/daisyui/NavTabs.svelte';
-	import {dev, version} from '$app/environment';
+	import '../css/index.css';
+	import EraseNotice from '$lib/ui/components/EraseNotice.svelte';
+	import ClaimTokenScreen from '$lib/actions/claim/ClaimTokenScreen.svelte';
+	import WipNotice from '$lib/ui/components/WipNotice.svelte';
+	import Banners from '$utils/ui/banners/Banners.svelte';
+	import VersionAndInstallNotfications from '$lib/ui/install/VersionAndInstallNotfications.svelte';
+	import Modals from '$utils/ui/modals/Modals.svelte';
+	import {url} from '$utils/path';
+	import Web3ConnectionUI from '$lib/blockchain/connection/Web3ConnectionUI.svelte';
+	import Flow from '$lib/actions/flow/Flow.svelte';
 
-	import {name, description, themeColor, canonicalURL, appleStatusBarStyle, ENSName} from 'web-config';
-	import NewVersionNotification from '$lib/components/web/NewVersionNotification.svelte';
-	import NoInstallPrompt from '$lib/components/web/NoInstallPrompt.svelte';
-	import {url} from '$lib/utils/path';
-	import Install from '$lib/components/web/Install.svelte';
-	import ConnectButton from '$lib/web3/ConnectButton.svelte';
-	import WipNotice from '$lib/components/utilities/WipNotice.svelte';
-	import {initialContractsInfos, params} from '$lib/config';
+	import {dev, initialContractsInfos, params} from '$lib/config';
+	import Head from './Head.svelte';
+	import Menu from '$lib/ui/menu/Menu.svelte';
+	import TransactionsView from '$lib/ui/transactions/TransactionsView.svelte';
+	import Admin from '$lib/ui/admin/Admin.svelte';
+	import CommitmentsView from '$lib/ui/commitments/CommitmentsView.svelte';
+	import IndexerView from '$lib/ui/indexer/IndexerView.svelte';
+	import ViewStateView from '$lib/ui/viewstate/ViewStateView.svelte';
+	import Welcome from '$lib/ui/tutorial/Welcome.svelte';
+	import SplashScreen from '$lib/ui/loading/SplashScreen.svelte';
+	import Debug from '$lib/ui/debug/Debug.svelte';
+	import EventsView from '$lib/ui/events/EventsView.svelte';
 
-	const host = canonicalURL.endsWith('/') ? canonicalURL : canonicalURL + '/';
-	const previewImage = host + 'preview.png';
+	$: showWIPNotice =
+		(initialContractsInfos as any).name === 'composablelabs' ||
+		(!dev &&
+			!params['force'] &&
+			initialContractsInfos.chainId + '' !== '8453' &&
+			(initialContractsInfos as any).name !== 'redstone-holesky' &&
+			(initialContractsInfos as any).name !== 'sepolia');
 </script>
 
-<svelte:head>
-	<title>{name}</title>
-	<meta name="title" content={name} />
-	<meta name="description" content={description} />
-	{#if ENSName}<meta name="Dwebsite" content={ENSName} />
+<!-- add head, meta, sentry and other debug utilties-->
+<Head />
+<!-- -->
+
+<div style="position: absolute; z-index: 2; width: 100%; height: 100%; pointer-events: none;overflow: hidden;">
+	<ClaimTokenScreen name="Stratagems" />
+
+	<Menu />
+
+	<EventsView />
+
+	<TransactionsView />
+
+	<CommitmentsView />
+
+	<IndexerView />
+
+	<ViewStateView />
+
+	<Welcome />
+
+	<Admin />
+
+	<Debug />
+
+	<Modals />
+
+	<Banners />
+
+	<VersionAndInstallNotfications src={url('/icon.png')} alt="Stratagems" />
+
+	{#if showWIPNotice}
+		<WipNotice />
 	{/if}
 
-	<meta property="og:type" content="website" />
-	<meta property="og:url" content={host} />
-	<meta property="og:title" content={name} />
-	<meta property="og:description" content={description} />
-	<meta property="og:image" content={previewImage} />
-	<meta property="twitter:card" content="summary_large_image" />
-	<meta property="twitter:url" content={host} />
-	<meta property="twitter:title" content={name} />
-	<meta property="twitter:description" content={description} />
-	<meta property="twitter:image" content={previewImage} />
+	<EraseNotice />
 
-	<!-- minimal -->
-	<!-- use SVG, if need PNG, adapt accordingly -->
-	<!-- TODO automatise -->
-	<link rel="icon" href={url('/pwa/favicon.png')} type="image/svg+xml" />
-	<link rel="icon" href={url('/pwa/favicon.ico')} sizes="any" /><!-- 32×32 -->
-	<link rel="apple-touch-icon" href={url('/pwa/apple-touch-icon.png')} /><!-- 180×180 -->
-	<link rel="manifest" href={url('/pwa/manifest.webmanifest')} />
+	<Web3ConnectionUI />
 
-	<!-- extra info -->
-	<meta name="theme-color" content={themeColor} />
-	<meta name="mobile-web-app-capable" content="yes" />
-	<meta name="application-name" content={name} />
+	<Flow />
 
-	<!-- apple -->
-	<meta name="apple-mobile-web-app-capable" content="yes" />
-	<meta name="apple-mobile-web-app-status-bar-style" content={appleStatusBarStyle} />
-	<meta name="apple-mobile-web-app-title" content={name} />
-
-	<meta name="version" content={version} />
-
-	{#if !dev}
-		<script>
-			(function () {
-				let params = new URLSearchParams(window.location.search);
-				const eruda_options = params.get('_d_eruda');
-				if (eruda_options !== '' && !eruda_options && localStorage.getItem('active-eruda') != 'true') return;
-				const _ = '';
-				let add_plugins = '';
-				let load_plugins = '';
-				if (eruda_options.length > 0) {
-					for (const plugin of eruda_options.split(',')) {
-						let [package, v] = plugin.split(':');
-						v =
-							v ||
-							package
-								.split('-')
-								.map((split, i) => (i > 0 ? split[0].toUpperCase() + split.slice(1) : split))
-								.join('');
-						load_plugins += `document.write(\`<scr\${_}ipt src="//cdn.jsdelivr.net/npm/${package}"></scr\${_}ipt>\`);`;
-						add_plugins += `eruda.add(${v});`;
-					}
-				}
-
-				document.write(`
-					<scr${_}ipt>
-						const _ = '';
-						if (typeof eruda === "undefined") {
-							document.write(\`<scr\${_}ipt src="//cdn.jsdelivr.net/npm/eruda"></scr\${_}ipt>\`);
-						};
-						${load_plugins}
-						document.write(\`<scr\${_}ipt>eruda.init();${add_plugins}</scr\${_}ipt>\`);
-					</scr${_}ipt>
-				`);
-			})();
-		</script>
-
-		<script>
-			const version = document.querySelector('meta[name="version"]').content;
-			window.SENTRY_RELEASE = {
-				id: version,
-			};
-		</script>
-		<script src={url('/sentry.js')} crossorigin="anonymous"></script>
-		<script>
-			if (typeof Sentry !== 'undefined') {
-				Sentry.onLoad(function () {
-					Sentry.init({
-						tunnel: 'https://sentry-tunnel.rim.workers.dev/tunnel',
-					});
-				});
-			}
-		</script>
-	{/if}
-</svelte:head>
-
-<div class="relative top-0 z-50 navbar bg-base-100 h-16 p-1 border-b-2 border-primary">
-	<div class="flex-1">
-		<NavTabs
-			pages={[
-				{pathname: '/', title: 'Play'},
-				{pathname: '/debug/', title: 'Debug'},
-				{pathname: '/about/', title: 'About'},
-			]}
-		/>
-	</div>
-	<div class="flex-none">
-		<ConnectButton />
-	</div>
+	<SplashScreen />
 </div>
 
-<!-- Disable native prompt from browsers -->
-<NoInstallPrompt />
-<!-- You can also add your own Install Prompt: -->
-<!-- <Install src={url('/icon.svg')} alt="Stratagems" /> -->
-
-<!-- Here is Notification for new version -->
-<NewVersionNotification src={url('/icon.png')} alt="Stratagems" />
-
 <slot />
-
-<!-- use -my-20 to ensure the navbar is considered when using min-h-screen to offset the footer (when content is too small)-->
-<!-- <div class="-my-20 flex flex-col min-h-screen justify-between"> -->
-<!--div to revert -my-20-->
-<!-- <div class="mt-20"> -->
-<!-- <slot /> -->
-<!-- </div> -->
-
-<!-- </div> -->
-
-<!-- We remove the notice when force is specified or if on base network -->
-{#if !dev && !params['force'] && initialContractsInfos.chainId + '' !== '8453'}
-	<WipNotice />
-{/if}

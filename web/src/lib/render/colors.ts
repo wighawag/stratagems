@@ -1,4 +1,4 @@
-import {parseColorV4} from '$lib/webgl/color';
+import {parseColorV4} from '$utils/webgl/color';
 
 export const COLORS = [0x000000, 0x00a4dd, 0xff6e71, 0x27d17c, 0xd3d66d, 0x9660c8, 0x3d3d3d];
 

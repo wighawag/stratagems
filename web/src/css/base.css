@@ -1,0 +1,98 @@
+/* ------------------------------------------------- */
+/* BASIC STYLES */
+/* ------------------------------------------------- */
+:root {
+	background-color: var(--color-surface-500);
+	color: var(--color-text-on-surface);
+
+	font-family: 'Noto Sans', Verdana, sans-serif;
+}
+
+a {
+	color: var(--color-text-for-links);
+	text-decoration: underline;
+}
+a:visited {
+	color: var(--color-text-for-links);
+}
+a:hover {
+	/* font-weight: 900; */
+	text-decoration: initial;
+}
+/* ------------------------------------------------- */
+
+/* ------------------------------------------------- */
+/* buttons
+/* ------------------------------------------------- */
+button {
+	border: none;
+	font: inherit;
+	cursor: pointer;
+	pointer-events: auto;
+}
+
+button,
+a[role='button'] {
+	background: var(--color-text-for-links);
+	color: var(--color-surface-500);
+
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+
+	cursor: pointer;
+	-webkit-user-select: none;
+	user-select: none;
+
+	border-radius: 0.5rem;
+
+	line-height: 1em;
+	font-weight: 600;
+	text-decoration-line: none;
+
+	height: fit-content;
+	padding: 0.5rem;
+	min-height: 2rem;
+	padding-inline: 0.75rem;
+	font-size: 0.875rem;
+}
+
+button:disabled,
+a[role='button']:disabled {
+	background-color: gray !important;
+}
+
+button.icon {
+	background: inherit;
+	color: inherit;
+}
+/* ------------------------------------------------- */
+
+/* smooth scrolling */
+
+@media (prefers-reduced-motion: no-preference) {
+	html {
+		scroll-behavior: smooth;
+	}
+}
+
+.lucide {
+	min-width: 1em;
+	width: 1em;
+	height: 1em;
+	display: inline;
+	vertical-align: baseline;
+}
+
+@keyframes blink {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+
+:root {
+	--jsonBracketHoverBackground: var(--color-primary-500);
+}

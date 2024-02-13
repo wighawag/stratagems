@@ -26,7 +26,7 @@ type Emitter<T> = {
 
 export abstract class BaseAccountHandler<
 	T extends {onchainActions: OnChainActions<Metadata>},
-	Metadata extends Record<string, unknown>,
+	Metadata extends Record<string, unknown> | undefined,
 > implements AccountHandler<T, Metadata>
 {
 	private emitter: Emitter<{name: 'newTx'; txs: PendingTransaction[]} | {name: 'clear'}>;
@@ -77,7 +77,7 @@ export abstract class BaseAccountHandler<
 	off(f: OnPendingTransaction): void {
 		this.emitter.off(f);
 	}
-	onTxSent(tx: EIP1193TransactionWithMetadata<any>, hash: `0x${string}`): void {
+	onTxSent(tx: EIP1193TransactionWithMetadata, hash: `0x${string}`): void {
 		this._addAction(tx, hash, 'Broadcasted');
 		this._save();
 	}

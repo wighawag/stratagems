@@ -1,10 +1,9 @@
-import type {Data} from 'stratagems-indexer';
 import * as twgl from 'twgl.js';
-import * as m3 from '$lib/m3';
-import {parseColorV4} from '$lib/webgl/color';
+import * as m3 from '$utils/m3';
+import {parseColorV4} from '$utils/webgl/color';
 import type {CameraState} from '../camera';
 import {COLORS_VEC4} from '../colors';
-import type {StratagemsViewState} from '$lib/blockchain/state/ViewState';
+import type {StratagemsViewState} from '$lib/state/ViewState';
 
 const DOT_COLOR = parseColorV4('ffffff');
 
@@ -154,20 +153,20 @@ export class Colored2DLayer {
 		// 	twgl.drawBufferInfo(GL, this.bufferInfo, GL.TRIANGLES);
 		// }
 
-		if (!state.hasSomeCells) {
-			const size = 0.2;
-			const a = -size / 2;
-			const b = size / 2;
-			const attributes = {
-				a_position: {numComponents: 2, data: [a, a, b, a, a, b, a, b, b, a, b, b]},
-			};
-			this.bufferInfo = twgl.createBufferInfoFromArrays(GL, attributes, this.bufferInfo);
+		// if (!state.hasSomeCells) {
+		const size = 0.2;
+		const a = -size / 2;
+		const b = size / 2;
+		const attributes = {
+			a_position: {numComponents: 2, data: [a, a, b, a, a, b, a, b, b, a, b, b]},
+		};
+		this.bufferInfo = twgl.createBufferInfoFromArrays(GL, attributes, this.bufferInfo);
 
-			twgl.setBuffersAndAttributes(GL, this.programInfo, this.bufferInfo);
-			uniforms.u_color = DOT_COLOR;
-			twgl.setUniforms(this.programInfo, uniforms);
+		twgl.setBuffersAndAttributes(GL, this.programInfo, this.bufferInfo);
+		uniforms.u_color = DOT_COLOR;
+		twgl.setUniforms(this.programInfo, uniforms);
 
-			twgl.drawBufferInfo(GL, this.bufferInfo, GL.TRIANGLES);
-		}
+		twgl.drawBufferInfo(GL, this.bufferInfo, GL.TRIANGLES);
+		// }
 	}
 }
