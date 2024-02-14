@@ -1,6 +1,6 @@
 import {get, writable} from 'svelte/store';
 import {currentFlow, type Flow, type Step} from '../flow';
-import {accountData, contracts} from '$lib/blockchain/connection';
+import {accountData, contracts, network} from '$lib/blockchain/connection';
 import {FUZD_URI, initialContractsInfos} from '$lib/config';
 import {prepareCommitment, zeroBytes24, zeroBytes32} from 'stratagems-common';
 import {epoch, epochInfo} from '$lib/state/Epoch';
@@ -110,6 +110,8 @@ export async function startCommit() {
 			execute: async (state: CommitState) => {
 				let txHash: `0x${string}`;
 
+				// TODO gather all data in prelimenary step
+				// so click to send tx becomes instant
 				const epochNumber = get(epoch); // TODO use from smart contract to ensure correct value
 
 				const localWallet = accountData.localWallet;
@@ -117,7 +119,10 @@ export async function startCommit() {
 					throw new Error(`no local wallet found`);
 				}
 
-				const secretSig = await localWallet.signMessage({message: `Commit:${epochNumber}`});
+				// TODO check for chain and contract existence
+				const secretSig = await localWallet.signMessage({
+					message: `Commit:${network.$state.chainId}:${network.$state.contracts?.Stratagems.address}:${epochNumber}`,
+				});
 				const secret = keccak256(secretSig);
 				const {hash, moves} = prepareCommitment(localMoves.map(localMoveToContractMove), secret);
 
