@@ -85,8 +85,8 @@ importers:
         specifier: ^0.1.5
         version: 0.1.5(hardhat@2.20.0)
       hardhat-rocketh:
-        specifier: ^2.0.1
-        version: 2.0.1(rocketh@0.8.1)
+        specifier: ^2.0.2
+        version: 2.0.2(rocketh@0.8.2)
       ldenv:
         specifier: ^0.3.9
         version: 0.3.9
@@ -98,28 +98,28 @@ importers:
         version: 1.3.1(prettier@3.2.5)
       rocketh:
         specifier: ^0.8.1
-        version: 0.8.1(typescript@5.3.3)
+        version: 0.8.2(typescript@5.3.3)
       rocketh-deploy:
-        specifier: ^2.0.1
-        version: 2.0.1(rocketh@0.8.1)(typescript@5.3.3)
+        specifier: ^2.0.2
+        version: 2.0.2(rocketh@0.8.2)(typescript@5.3.3)
       rocketh-deploy-proxy:
-        specifier: ^2.0.1
-        version: 2.0.1(rocketh@0.8.1)(typescript@5.3.3)
+        specifier: ^2.0.2
+        version: 2.0.2(rocketh@0.8.2)(typescript@5.3.3)
       rocketh-deploy-router:
-        specifier: ^2.0.1
-        version: 2.0.1(rocketh@0.8.1)(typescript@5.3.3)
+        specifier: ^2.0.2
+        version: 2.0.2(rocketh@0.8.2)(typescript@5.3.3)
       rocketh-doc:
-        specifier: ^2.0.1
-        version: 2.0.1(rocketh@0.8.1)
+        specifier: ^2.0.2
+        version: 2.0.2(rocketh@0.8.2)
       rocketh-export:
-        specifier: ^2.0.1
-        version: 2.0.1(rocketh@0.8.1)
+        specifier: ^2.0.2
+        version: 2.0.2(rocketh@0.8.2)
       rocketh-signer:
-        specifier: ^2.0.1
-        version: 2.0.1(rocketh@0.8.1)
+        specifier: ^2.0.2
+        version: 2.0.2(rocketh@0.8.2)
       rocketh-verifier:
-        specifier: ^0.8.1
-        version: 0.8.1(typescript@5.3.3)
+        specifier: ^0.8.2
+        version: 0.8.2(typescript@5.3.3)
       rollup-plugin-node-builtins:
         specifier: ^2.1.2
         version: 2.1.2
@@ -6159,12 +6159,12 @@ packages:
       murmur-128: 0.2.1
     dev: true
 
-  /hardhat-rocketh@2.0.1(rocketh@0.8.1):
-    resolution: {integrity: sha512-O+pH9DcOWeMv5E3WJoa2m8IDbT8MmYPma7DMlgNVe8zEb4fruAzzoHpdnpA0PagnraONF5UwZ1IgUlcDo1uNJQ==}
+  /hardhat-rocketh@2.0.2(rocketh@0.8.2):
+    resolution: {integrity: sha512-p1JPV6RFTETwuCdAcEFoBF+c8FG90E4m7euA04O/kFCFAyJGM+4gCPHYO9IWg7qrpDiDq9AnUeFRaDBiLgQkmQ==}
     peerDependencies:
-      rocketh: 0.8.1
+      rocketh: 0.8.2
     dependencies:
-      rocketh: 0.8.1(typescript@5.3.3)
+      rocketh: 0.8.2(typescript@5.3.3)
     dev: true
 
   /hardhat@2.20.0(typescript@5.3.3):
@@ -9053,14 +9053,14 @@ packages:
       bn.js: 5.2.1
     dev: true
 
-  /rocketh-deploy-proxy@2.0.1(rocketh@0.8.1)(typescript@5.3.3):
-    resolution: {integrity: sha512-wo/x1AnLMUv5dDLUfNcSVIXl9mAyUpG0pR/3q4S6OddE6Fsl4fW0RntJbUM+WQqvRpxzGtVF9K9xIfccr71INQ==}
+  /rocketh-deploy-proxy@2.0.2(rocketh@0.8.2)(typescript@5.3.3):
+    resolution: {integrity: sha512-1iGWKsDAw60ZuCLl51HTCLiDAx3+FSPYjh4dJd2i9hY5e7U+CuT+5a0yme0ACKYFHcuk5bTZPjLm9f7JXf/7FA==}
     peerDependencies:
-      rocketh: 0.8.1
+      rocketh: 0.8.2
     dependencies:
       named-logs: 0.2.2
-      rocketh: 0.8.1(typescript@5.3.3)
-      rocketh-deploy: 2.0.1(rocketh@0.8.1)(typescript@5.3.3)
+      rocketh: 0.8.2(typescript@5.3.3)
+      rocketh-deploy: 2.0.2(rocketh@0.8.2)(typescript@5.3.3)
       solidity-proxy: 0.2.4
       viem: 2.7.9(typescript@5.3.3)
     transitivePeerDependencies:
@@ -9070,15 +9070,15 @@ packages:
       - zod
     dev: true
 
-  /rocketh-deploy-router@2.0.1(rocketh@0.8.1)(typescript@5.3.3):
-    resolution: {integrity: sha512-9o6zCUC9WeafOvnPqdIhqjT4L0VXcEZHjrW1q2KHhP/NioJdoaJ8r5BXICMKjd0idfvj9v+p1h1sjTEeSyukuA==}
+  /rocketh-deploy-router@2.0.2(rocketh@0.8.2)(typescript@5.3.3):
+    resolution: {integrity: sha512-YrQ5Fx8lyXzKfUc+S+HJMMXeKc+/JCwkDzZPdG++dlsK/5cZ2OIL9ipBIUIfRBy0ZLBj28uLpFBpkBMH93WXiw==}
     peerDependencies:
-      rocketh: 0.8.1
+      rocketh: 0.8.2
     dependencies:
       ethers: 6.11.0
       named-logs: 0.2.2
-      rocketh: 0.8.1(typescript@5.3.3)
-      rocketh-deploy: 2.0.1(rocketh@0.8.1)(typescript@5.3.3)
+      rocketh: 0.8.2(typescript@5.3.3)
+      rocketh-deploy: 2.0.2(rocketh@0.8.2)(typescript@5.3.3)
       solidity-proxy: 0.2.4
       viem: 2.7.9(typescript@5.3.3)
     transitivePeerDependencies:
@@ -9088,13 +9088,13 @@ packages:
       - zod
     dev: true
 
-  /rocketh-deploy@2.0.1(rocketh@0.8.1)(typescript@5.3.3):
-    resolution: {integrity: sha512-+X2uSLJ1xUnblK9KrAubhSWtnb1EGwjhT9gFZslxlUG2RHuWmVZPYXnDEPvkFnWexkmi3Hqn+g06E3ZjOLV3lg==}
+  /rocketh-deploy@2.0.2(rocketh@0.8.2)(typescript@5.3.3):
+    resolution: {integrity: sha512-7mjYHP3RJweXwjCfC8X+C54sFlpifLASfVqtreXhVe+HkVWcrcGQ+8MQ54WvFCv2Rm0kPc8BYF3iWXp3Aey0Ag==}
     peerDependencies:
-      rocketh: 0.8.1
+      rocketh: 0.8.2
     dependencies:
       named-logs: 0.2.2
-      rocketh: 0.8.1(typescript@5.3.3)
+      rocketh: 0.8.2(typescript@5.3.3)
       viem: 2.7.9(typescript@5.3.3)
     transitivePeerDependencies:
       - bufferutil
@@ -9103,44 +9103,44 @@ packages:
       - zod
     dev: true
 
-  /rocketh-doc@2.0.1(rocketh@0.8.1):
-    resolution: {integrity: sha512-+qqwWZ1T/gJkMuhYwS3iBc9xxHHUpVzz5FVKDlF6D8twGsI7c8e20VPBY93CX+aJUsbciNidRjDi36ZZh5MFbQ==}
+  /rocketh-doc@2.0.2(rocketh@0.8.2):
+    resolution: {integrity: sha512-uHbozndrXD+2LL+lid4kTuN8fE8wsRV4JIwGXsZUUJp3qNKVeYolsHKrWpHPdWZSM2wSdIGSiHGuGavyQlYYMQ==}
     hasBin: true
     peerDependencies:
-      rocketh: 0.8.1
+      rocketh: 0.8.2
     dependencies:
       commander: 12.0.0
       ethers: 6.11.0
       fs-extra: 11.2.0
       handlebars: 4.7.8
-      rocketh: 0.8.1(typescript@5.3.3)
+      rocketh: 0.8.2(typescript@5.3.3)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
     dev: true
 
-  /rocketh-export@2.0.1(rocketh@0.8.1):
-    resolution: {integrity: sha512-JY+XpPqeSYJvg/pB1GW833ViRGSiTmtuSVQ4jfIldYWk4f4Zal7fL4ROSqU0o1WEMP38ivPjlg1VA4PnhSQo1w==}
+  /rocketh-export@2.0.2(rocketh@0.8.2):
+    resolution: {integrity: sha512-/QSHi6K5tdGuxOVEnbLiKhO+JXBDbIwxfeVlYm6PAOHu06AJaC7fXxFxu8a933kG7fhZcJIWD9Ri2ZAfNs/pzw==}
     hasBin: true
     peerDependencies:
-      rocketh: 0.8.1
+      rocketh: 0.8.2
     dependencies:
       chalk: 5.3.0
       commander: 12.0.0
       fs-extra: 11.2.0
-      rocketh: 0.8.1(typescript@5.3.3)
+      rocketh: 0.8.2(typescript@5.3.3)
     dev: true
 
-  /rocketh-signer@2.0.1(rocketh@0.8.1):
-    resolution: {integrity: sha512-LwPJT8p1Rkbyz3+M99RuyuLHNLitF32HYeMvGzuFlSvV/PCqjT2KWJXqx8Qz/+kS/ngPbIkqR98GP8l5s80q6Q==}
+  /rocketh-signer@2.0.2(rocketh@0.8.2):
+    resolution: {integrity: sha512-Gnm0GKeLrEjJknTX9eAbhI3xgY23yapmAtc1I1Y3EOaAYcY0unF0dF0L7qKH6uMFwT7xcfv+vR5R4XOackUq6A==}
     peerDependencies:
-      rocketh: 0.8.1
+      rocketh: 0.8.2
     dependencies:
-      rocketh: 0.8.1(typescript@5.3.3)
+      rocketh: 0.8.2(typescript@5.3.3)
     dev: true
 
-  /rocketh-verifier@0.8.1(typescript@5.3.3):
-    resolution: {integrity: sha512-yV0C1wmi2Wn5EdE9qtAsOiCzX/vl+BA8ub7UG45Taeov8kgaef8xKZV3AzaXdjQGN7uWz1YmzgFQXS8IdRXUOg==}
+  /rocketh-verifier@0.8.2(typescript@5.3.3):
+    resolution: {integrity: sha512-OAEz6WfoHgyYv+WVAte5xiO2lzt2n4HJ2/tjpRI+hg0QwPfQ3dB0sYBe77fjLUIywDetRSxyzprmgfao651OsA==}
     hasBin: true
     dependencies:
       chalk: 5.3.0
@@ -9148,7 +9148,7 @@ packages:
       fs-extra: 11.2.0
       ldenv: 0.3.9
       qs: 6.11.2
-      rocketh: 0.8.1(typescript@5.3.3)
+      rocketh: 0.8.2(typescript@5.3.3)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -9157,8 +9157,8 @@ packages:
       - zod
     dev: true
 
-  /rocketh@0.8.1(typescript@5.3.3):
-    resolution: {integrity: sha512-nPY/L34OYPJDZ+/B2jJeRqRKQbA5bWbuX8p2+Grilg+SZStXxmKi0vW4J6ZdNTcIiE24/F9E1SL52p3ssACEeg==}
+  /rocketh@0.8.2(typescript@5.3.3):
+    resolution: {integrity: sha512-1lkeVnrGLada1dsGBQhsVyBCYc2JboecujbzL+RyWt4PWGV2CrXEgMSBsPMswBKPvYOBGjrGD9gSKwwjnTI4kQ==}
     hasBin: true
     dependencies:
       commander: 12.0.0
