@@ -98,7 +98,7 @@ const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
 	},
 	onReserveDeposited(state, event) {},
 	onReserveWithdrawn(state, event) {},
-	onTimeIncreased(state, event) {},
+	// onTimeIncreased(state, event) {},
 
 	// --------------------------
 

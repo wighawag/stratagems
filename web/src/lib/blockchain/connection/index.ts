@@ -1,4 +1,4 @@
-import {init} from 'web3-connection';
+import {init, type GenericContractsInfos} from 'web3-connection';
 import {contractsInfos, defaultRPC, initialContractsInfos, blockTime, localRPC, syncInfo} from '$lib/config';
 import {initTransactionProcessor} from 'ethereum-tx-observer';
 import {initViemContracts} from 'web3-connection-viem';
@@ -7,7 +7,7 @@ import {time} from '$lib/blockchain/time';
 import {stringToHex} from 'viem';
 import {get} from 'svelte/store';
 import {StratagemsAccountData} from '$lib/account/account-data';
-import { contractNetwork } from '../networks';
+import {contractNetwork} from '../networks';
 
 const logger = logs('stratagems');
 
@@ -181,12 +181,10 @@ export const {connection, network, account, pendingActions, execution, execute, 
 
 export const contracts = initViemContracts(execute);
 
-
 export function switchToSupportedNetwork() {
 	const n = get(contractNetwork);
-	network.switchTo(n.chainId, n.config)
+	network.switchTo(n.chainId, n.config);
 }
-
 
 if (typeof window !== 'undefined') {
 	(window as any).execution = execution;
@@ -200,5 +198,5 @@ if (typeof window !== 'undefined') {
 	(window as any).get = get;
 }
 
-time.setTimeKeeperContract(initialContractsInfos.contracts.Time.address);
-
+const genericContracts = initialContractsInfos.contracts as GenericContractsInfos;
+if (genericContracts.Time) time.setTimeKeeperContract(genericContracts.Time.address);

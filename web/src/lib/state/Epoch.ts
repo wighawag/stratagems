@@ -1,14 +1,17 @@
 // import {createStore} from '$lib/utils/stores/utils';
 import {time} from '$lib/blockchain/time';
-import {writable, type Readable, derived} from 'svelte/store';
-
-const ACTION_PERIOD = 23 * 3600;
-const TOTAL = 24 * 3600;
+import {contractsInfos} from '$lib/config';
+import {writable, type Readable, derived, get} from 'svelte/store';
 
 export function computeEpoch(time: number) {
+	const currentContractsInfos = get(contractsInfos);
 	// reuse same variable name
-	const COMMIT_PHASE_DURATION = ACTION_PERIOD;
-	const REVEAL_PHASE_DURATION = TOTAL - ACTION_PERIOD;
+	const COMMIT_PHASE_DURATION = Number(
+		currentContractsInfos.contracts.Stratagems.linkedData.commitPhaseDuration.slice(0, -1),
+	);
+	const REVEAL_PHASE_DURATION = Number(
+		currentContractsInfos.contracts.Stratagems.linkedData.revealPhaseDuration.slice(0, -1),
+	);
 	const START_TIME = 0;
 	// --------------------
 	// From Solidity

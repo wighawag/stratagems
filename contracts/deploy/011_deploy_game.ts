@@ -5,6 +5,7 @@ import {context} from './_context';
 import {fetchContract} from '../utils/connection';
 import {days, hours, minutes} from '../utils/time';
 import {zeroAddress} from 'viem';
+import {getConfig} from './.config';
 
 export type GameConfig = {
 	tokens: `0x${string}`;
@@ -18,11 +19,10 @@ export type GameConfig = {
 
 export default execute(
 	context,
-	async (
-		{deployViaProxy, deployments, accounts, artifacts, network, deployViaRouter},
-		configOverride?: Partial<GameConfig>,
-	) => {
+	async (env, configOverride?: Partial<GameConfig>) => {
+		const {deployViaProxy, deployments, accounts, artifacts, network, deployViaRouter} = env;
 		const {deployer} = accounts;
+		const deployConfig = getConfig(env);
 
 		const startTime = 0; // BigInt(Math.floor(Date.now() / 1000)); // startTime: nextSunday(),
 
@@ -46,7 +46,7 @@ export default execute(
 
 		let time: `0x${string}` = zeroAddress;
 		const timeContract = await deployments['Time'];
-		if (timeContract && !network.tags['mainnet']) {
+		if (timeContract && deployConfig.useTimeContract) {
 			time = timeContract.address;
 		}
 
