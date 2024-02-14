@@ -1,7 +1,13 @@
 import {testnetClient, timelockEncrypt, roundTime, roundAt, timelockDecrypt, Buffer, HttpChainClient} from 'tlock-js';
 (globalThis as any).Buffer = Buffer;
 
-import type {ScheduleInfo, ScheduledExecution, TimeBasedTiming, RoundBasedTiming} from 'fuzd-scheduler';
+import type {
+	ScheduleInfo,
+	ScheduledExecution,
+	TimeBasedTiming,
+	RoundBasedTiming,
+	DecryptedPayload,
+} from 'fuzd-scheduler';
 import type {BroadcastSchedule, TransactionSubmission} from 'fuzd-executor';
 import {privateKeyToAccount} from 'viem/accounts';
 import {deriveRemoteAddress} from 'remote-account';
@@ -13,18 +19,6 @@ export type ClientConfig = {
 	schedulerEndPoint: string | ((id: string, execution: string, signature: `0x${string}`) => Promise<ScheduleInfo>);
 	privateKey: `0x${string}`;
 };
-
-// TODO share with decrypter
-export type DecryptedPayload<TransactionDataType> =
-	| {
-			type: 'time-locked';
-			payload: string;
-			timing: RoundBasedTiming;
-	  }
-	| {
-			type: 'clear';
-			transaction: TransactionDataType;
-	  };
 
 export function createClient(config: ClientConfig) {
 	if (typeof config.schedulerEndPoint !== 'string') {
@@ -71,18 +65,20 @@ export function createClient(config: ClientConfig) {
 
 		const payloadJSON: DecryptedPayload<TransactionSubmission> = {
 			type: 'clear',
-			transaction: {
-				type: '0x2',
-				chainId,
-				gas: ('0x' + execution.gas.toString(16)) as `0x${string}`,
-				broadcastSchedule: execution.broadcastSchedule.map((v) => ({
-					duration: ('0x' + v.duration.toString(16)) as `0x${string}`,
-					maxFeePerGas: ('0x' + v.maxFeePerGas.toString(16)) as `0x${string}`,
-					maxPriorityFeePerGas: ('0x' + v.maxPriorityFeePerGas.toString(16)) as `0x${string}`,
-				})) as BroadcastSchedule,
-				data: execution.data,
-				to: execution.to,
-			},
+			transactions: [
+				{
+					type: '0x2',
+					chainId,
+					gas: ('0x' + execution.gas.toString(16)) as `0x${string}`,
+					broadcastSchedule: execution.broadcastSchedule.map((v) => ({
+						duration: ('0x' + v.duration.toString(16)) as `0x${string}`,
+						maxFeePerGas: ('0x' + v.maxFeePerGas.toString(16)) as `0x${string}`,
+						maxPriorityFeePerGas: ('0x' + v.maxPriorityFeePerGas.toString(16)) as `0x${string}`,
+					})) as BroadcastSchedule,
+					data: execution.data,
+					to: execution.to,
+				},
+			],
 		};
 		const payloadAsJSONString = JSON.stringify(payloadJSON);
 
