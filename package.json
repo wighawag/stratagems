@@ -62,10 +62,5 @@
     "stop": "zellij kill-session $npm_package_name",
     "start": "rm -Rf helper-services/fuzd/.wrangler && rm helper-services/fuzd/contracts.json && zellij --layout dev/zellij.kdl a $npm_package_name || zellij --layout dev/zellij.kdl -s $npm_package_name",
     "clean:start": "rm -Rf contracts/deployments/localhost && pnpm start"
-  },
-  "pnpm": {
-    "patchedDependencies": {
-      "tlock-js@0.6.1": "patches/tlock-js@0.6.1.patch"
-    }
   }
 }

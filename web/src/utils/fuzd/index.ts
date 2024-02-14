@@ -1,4 +1,4 @@
-import {testnetClient, timelockEncrypt, roundTime, roundAt, timelockDecrypt, Buffer, HttpChainClient} from 'tlock-js';
+import {timelockEncrypt, roundTime, roundAt, timelockDecrypt, Buffer, HttpChainClient} from 'tlock-js';
 (globalThis as any).Buffer = Buffer;
 
 import type {
