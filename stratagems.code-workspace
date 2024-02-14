@@ -41,6 +41,7 @@
 		"prettier.documentSelectors": ["**/*.sol", "**/*.ts", "**/*.svelte"],
 		"solidity.formatter": "prettier",
 		"npm.exclude": "**/lib/**",
+		"svelte.enable-ts-plugin": true, // https://github.com/sveltejs/language-tools/issues/1556#issuecomment-1180561091
 	},
 	"extensions": {
 		"recommendations": ["svelte.svelte-vscode", "esbenp.prettier-vscode", "NomicFoundation.hardhat-solidity"],
