@@ -50,26 +50,35 @@ export default execute(
 			time = timeContract.address;
 		}
 
+		// TODO support more complex period to support a special weekend commit period ?
+		let revealPhaseDuration = BigInt(hours(1));
+		let commitPhaseDuration = BigInt(days(1)) - revealPhaseDuration;
+
+		if (network.name === 'fast') {
+			revealPhaseDuration = BigInt(minutes(3));
+			commitPhaseDuration = BigInt(minutes(8)) - revealPhaseDuration;
+		}
+
 		const config = {
 			tokens: TestTokens.address,
 			numTokensPerGems,
 			burnAddress: `0xDEADDEADDEADDEADDEADDEADDEADDEADDEADDEAD`, //zeroAddress,
 
 			startTime,
-			commitPhaseDuration: BigInt(days(1)) - BigInt(hours(1)), // BigInt(minutes(5)), // TODO support more complex period to support a special weekend commit period
-			revealPhaseDuration: BigInt(hours(1)),
+			revealPhaseDuration,
+			commitPhaseDuration,
 			maxLife: 7, // 7 is a good number, because with 4 enemy neighbors, it take 2 turns to die, with 3 it takes 3, with 2 it takes 4, with 1 it takes 7
 			time,
 			...configOverride,
 		};
 
 		const routes = [
-			{name: 'Getters', artifact: artifacts.StratagemsGetters, args: [config]},
-			{name: 'Setters', artifact: artifacts.StratagemsSetters, args: [config]},
-			{name: 'ERC721', artifact: artifacts.StratagemsERC721 as any, args: [config]},
+			{name: 'Getters', artifact: artifacts.StratagemsGetters, args: [config], account: deployer},
+			{name: 'Setters', artifact: artifacts.StratagemsSetters, args: [config], account: deployer},
+			{name: 'ERC721', artifact: artifacts.StratagemsERC721 as any, args: [config], account: deployer},
 		];
 		if (!network.tags['mainnet']) {
-			routes.push({name: 'Debug', artifact: artifacts.StratagemsDebug as any, args: [config]});
+			routes.push({name: 'Debug', artifact: artifacts.StratagemsDebug as any, args: [config], account: deployer});
 		}
 
 		await deployViaProxy(
