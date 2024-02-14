@@ -77,8 +77,8 @@
 					</p>
 				{:else}
 					<p>
-						Stratagems is a fully local game and requires a wallet to even read the latest game state. Please Connect to
-						a web3 wallet.
+						Stratagems is a fully local client and we do not run any blockchain node for it. As such, it requires a
+						wallet to even read the latest game state. Please Connect to a web3 wallet.
 					</p>
 				{/if}
 			{/if}
