@@ -8,6 +8,8 @@ import {writable, type Readable, type Writable} from 'svelte/store';
 import {time} from '$lib/blockchain/time';
 import type {ScheduleInfo} from 'fuzd-scheduler';
 import {account} from '$lib/blockchain/connection';
+import type {PrivateKeyAccount} from 'viem';
+import {privateKeyToAccount} from 'viem/accounts';
 
 export type LocalMove = {
 	player: string;
@@ -114,6 +116,7 @@ function defaultData() {
 
 export class StratagemsAccountData extends BaseAccountHandler<AccountData, StratagemsMetadata> {
 	fuzdClient: ReturnType<typeof createClient> | undefined;
+	localWallet: PrivateKeyAccount | undefined;
 
 	private _offchainState: Writable<OffchainState>;
 	public readonly offchainState: Readable<OffchainState>;
@@ -141,6 +144,9 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 				privateKey: info.localKey,
 				schedulerEndPoint: FUZD_URI,
 			});
+		}
+		if (info.localKey) {
+			this.localWallet = privateKeyToAccount(info.localKey);
 		}
 		const result = await super.load(info, syncInfo);
 		this._offchainState.set(this.$data.offchainState);

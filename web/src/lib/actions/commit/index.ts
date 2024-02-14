@@ -5,7 +5,7 @@ import {FUZD_URI, initialContractsInfos} from '$lib/config';
 import {prepareCommitment, zeroBytes24, zeroBytes32} from 'stratagems-common';
 import {epoch, epochInfo} from '$lib/state/Epoch';
 import {hexToVRS} from '$utils/ethereum/signatures';
-import {encodeFunctionData, zeroAddress} from 'viem';
+import {encodeFunctionData, keccak256, zeroAddress} from 'viem';
 import {time} from '$lib/blockchain/time';
 import {timeToText} from '$utils/time';
 import {localMoveToContractMove, type CommitMetadata} from '$lib/account/account-data';
@@ -109,11 +109,28 @@ export async function startCommit() {
 			// component: PermitComponent,
 			execute: async (state: CommitState) => {
 				let txHash: `0x${string}`;
-				// TODO random secret, actually not random, just based on secret private key + epoch
-				const secret = '0x0000000000000000000000000000000000000000000000000000000000000000';
+
+				const epochNumber = get(epoch); // TODO use from smart contract to ensure correct value
+
+				const localWallet = accountData.localWallet;
+				if (!localWallet) {
+					throw new Error(`no local wallet found`);
+				}
+
+				const secretSig = await localWallet.signMessage({message: `Commit:${epochNumber}`});
+				const secret = keccak256(secretSig);
 				const {hash, moves} = prepareCommitment(localMoves.map(localMoveToContractMove), secret);
 
-				let fuzdData: {value: bigint, remoteAccount: `0x${string}`, fuzd: Awaited<ReturnType<typeof accountData.getFuzd>>, revealGas: bigint, maxFeePerGas: bigint, maxPriorityFeePerGas: bigint} | undefined;
+				let fuzdData:
+					| {
+							value: bigint;
+							remoteAccount: `0x${string}`;
+							fuzd: Awaited<ReturnType<typeof accountData.getFuzd>>;
+							revealGas: bigint;
+							maxFeePerGas: bigint;
+							maxPriorityFeePerGas: bigint;
+					  }
+					| undefined;
 				if (FUZD_URI) {
 					const fuzd = await accountData.getFuzd();
 
@@ -140,23 +157,23 @@ export async function startCommit() {
 						const valueToProvide = valueNeeded * 2n;
 						value = valueToProvide > balance ? valueToProvide - balance : 0n;
 					}
-	
+
 					fuzdData = {
 						fuzd,
 						maxFeePerGas,
 						maxPriorityFeePerGas,
 						revealGas,
 						value,
-						remoteAccount
-					}
+						remoteAccount,
+					};
 				}
 
 				const remoteAccount = fuzdData?.remoteAccount || zeroAddress;
 				const value = fuzdData?.value || 0n;
-				
+
 				const commitMetadata: CommitMetadata = {
 					type: 'commit',
-					epoch: get(epoch), // TODO use from smart contract to ensure correct value
+					epoch: epochNumber,
 					localMoves,
 					secret,
 					fuzd: 'pendingTx',
@@ -207,7 +224,13 @@ export async function startCommit() {
 					const scheduleInfo = await fuzdData.fuzd.scheduleExecution(
 						{
 							slot: `epoch_${commitMetadata.epoch}`,
-							broadcastSchedule: [{duration: 3600, maxFeePerGas: fuzdData.maxFeePerGas, maxPriorityFeePerGas: fuzdData.maxPriorityFeePerGas}],
+							broadcastSchedule: [
+								{
+									duration: 3600,
+									maxFeePerGas: fuzdData.maxFeePerGas,
+									maxPriorityFeePerGas: fuzdData.maxPriorityFeePerGas,
+								},
+							],
 							data,
 							to: contracts.Stratagems.address,
 							time: timeToBroadcastReveal,
@@ -218,13 +241,12 @@ export async function startCommit() {
 						// TODO remove, for now, we basically encrypt with a current drand round, so decryption still need to operate but we can speed up the reveal time
 						{fakeEncrypt: true},
 					);
-	
+
 					console.log(`will be executed in ${timeToText(scheduleInfo.checkinTime - time.now)}`);
-	
+
 					accountData.recordFUZD(txHash, scheduleInfo);
-	
 				}
-				
+
 				return state;
 			},
 		};
