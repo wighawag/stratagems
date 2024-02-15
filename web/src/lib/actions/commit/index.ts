@@ -247,6 +247,8 @@ export async function startCommit() {
 						{fakeEncrypt: time.hasTimeContract},
 					);
 
+					console.log({fakeEncrypt: time.hasTimeContract});
+
 					console.log(`will be executed in ${timeToText(scheduleInfo.checkinTime - time.now)}`);
 
 					accountData.recordFUZD(txHash, scheduleInfo);
