@@ -139,6 +139,9 @@ export const time = {
 	setTimeKeeperContract(contractAddress: `0x${string}`) {
 		contract = contractAddress;
 	},
+	get hasTimeContract() {
+		return !!contract;
+	},
 };
 
 if (typeof window !== 'undefined') {

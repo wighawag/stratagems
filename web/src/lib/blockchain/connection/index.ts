@@ -199,4 +199,6 @@ if (typeof window !== 'undefined') {
 }
 
 const genericContracts = initialContractsInfos.contracts as GenericContractsInfos;
-if (genericContracts.Time) time.setTimeKeeperContract(genericContracts.Time.address);
+if (genericContracts.Time) {
+	time.setTimeKeeperContract(genericContracts.Time.address);
+}

@@ -243,8 +243,7 @@ export async function startCommit() {
 							chainId: initialContractsInfos.chainId,
 							gas: fuzdData.revealGas,
 						},
-						// TODO remove, for now, we basically encrypt with a current drand round, so decryption still need to operate but we can speed up the reveal time
-						{fakeEncrypt: true},
+						{fakeEncrypt: time.hasTimeContract},
 					);
 
 					console.log(`will be executed in ${timeToText(scheduleInfo.checkinTime - time.now)}`);
