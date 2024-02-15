@@ -4,9 +4,10 @@ import {Deployment, loadEnvironment} from 'rocketh';
 import {context} from '../deploy/_context';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {fetchContract} from '../utils/connection';
-import {parseEther, parseUnits} from 'viem';
+import {formatEther, parseEther, parseUnits} from 'viem';
 import hre from 'hardhat';
 import fs from 'fs-extra';
+import prompts from 'prompts';
 
 async function main() {
 	const env = await loadEnvironment(
@@ -30,15 +31,24 @@ async function main() {
 	}
 
 	fs.writeFileSync(
-		`keys/list.csv`,
-		accounts.map((v) => `${v.address},https://composablelabs.stratagems.world#tokenClaim=${v.key}`).join('\n'),
+		`.keys/${env.network.name}-list.csv`,
+		accounts.map((v) => `${v.address},https://${env.network.name}.stratagems.world#tokenClaim=${v.key}`).join('\n'),
 	);
 
 	const addresses = accounts.map((v) => v.address);
-	const tx = await TestTokensContract.write.distributeAlongWithETH(
-		[addresses, BigInt(addresses.length) * parseUnits('15', decimals)],
-		{account: env.accounts.tokensBeneficiary, value: parseEther('0.2') * BigInt(addresses.length)},
-	);
-	console.log(tx);
+	const value = parseEther('0.2') * BigInt(addresses.length);
+
+	const prompt = await prompts({
+		type: 'confirm',
+		name: 'proceed',
+		message: `proceed to send ${formatEther(value)} ETH`,
+	});
+	if (prompt.proceed) {
+		const tx = await TestTokensContract.write.distributeAlongWithETH(
+			[addresses, BigInt(addresses.length) * parseUnits('15', decimals)],
+			{account: env.accounts.tokensBeneficiary, value},
+		);
+		console.log(tx);
+	}
 }
 main();
