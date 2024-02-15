@@ -11,6 +11,7 @@ import {timeToText} from '$utils/time';
 import {localMoveToContractMove, type CommitMetadata} from '$lib/account/account-data';
 import PermitComponent from './PermitComponent.svelte';
 import {estimateGasPrice} from '$utils/ethereum/gas';
+import {gameConfig} from '$lib/blockchain/networks';
 
 export type CommitState = {
 	permit?: {
@@ -147,7 +148,7 @@ export async function startCommit() {
 					const maxFeePerGas = estimate.maxFeePerGas * 2n;
 					const maxPriorityFeePerGas = estimate.maxPriorityFeePerGas;
 
-					const revealGas = 50000n + 300000n * BigInt(moves.length); //TODO
+					const revealGas = 50000n + 300000n * BigInt(moves.length); //TODO compute worst case case
 					const remoteAccount = fuzd.remoteAccount;
 					let value = 0n;
 					if (remoteAccount !== zeroAddress) {
@@ -231,7 +232,7 @@ export async function startCommit() {
 							slot: `epoch_${commitMetadata.epoch}`,
 							broadcastSchedule: [
 								{
-									duration: 3600,
+									duration: gameConfig.$current.revealPhaseDuration,
 									maxFeePerGas: fuzdData.maxFeePerGas,
 									maxPriorityFeePerGas: fuzdData.maxPriorityFeePerGas,
 								},
@@ -239,7 +240,7 @@ export async function startCommit() {
 							data,
 							to: contracts.Stratagems.address,
 							time: timeToBroadcastReveal,
-							expiry: 3600,
+							expiry: gameConfig.$current.revealPhaseDuration,
 							chainId: initialContractsInfos.chainId,
 							gas: fuzdData.revealGas,
 						},
