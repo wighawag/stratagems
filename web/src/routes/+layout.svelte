@@ -30,6 +30,7 @@
 			!params['force'] &&
 			initialContractsInfos.chainId + '' !== '8453' &&
 			(initialContractsInfos as any).name !== 'redstone-holesky' &&
+			(initialContractsInfos as any).name !== 'fast' &&
 			(initialContractsInfos as any).name !== 'sepolia');
 </script>
 
