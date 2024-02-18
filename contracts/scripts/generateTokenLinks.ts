@@ -9,6 +9,9 @@ import hre from 'hardhat';
 import fs from 'fs-extra';
 import prompts from 'prompts';
 
+const args = process.argv.slice(2);
+const num = args[0] || 100;
+
 async function main() {
 	const env = await loadEnvironment(
 		{
@@ -24,7 +27,7 @@ async function main() {
 
 	fs.ensureDirSync('keys');
 	const accounts: {address: `0x${string}`; key: `0x${string}`}[] = [];
-	for (let i = 0; i < 100; i++) {
+	for (let i = 0; i < num; i++) {
 		const key = generatePrivateKey();
 		const account = privateKeyToAccount(key);
 		accounts.push({address: account.address, key});

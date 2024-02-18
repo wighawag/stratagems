@@ -129,5 +129,33 @@
 		},
 		"finality": 12,
 		"averageBblockTime": 1
+	},
+	"28122024": {
+		"config": {
+			"rpcUrls": ["https://rpcv2-testnet.ancient8.gg"],
+			"blockExplorerUrls": ["https://scanv2-testnet.ancient8.gg"],
+			"chainName": "Ancient8 Testnet",
+			"nativeCurrency": {
+				"name": "Ether",
+				"symbol": "ETH",
+				"decimals": 18
+			}
+		},
+		"finality": 12,
+		"averageBblockTime": 1
+	},
+	"168587773": {
+		"config": {
+			"rpcUrls": ["https://sepolia.blast.io"],
+			"blockExplorerUrls": ["https://testnet.blastscan.io"],
+			"chainName": "Blast Testnet",
+			"nativeCurrency": {
+				"name": "Ether",
+				"symbol": "ETH",
+				"decimals": 18
+			}
+		},
+		"finality": 12,
+		"averageBblockTime": 1
 	}
 }
