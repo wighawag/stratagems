@@ -3,7 +3,6 @@ import {generatePrivateKey, privateKeyToAccount} from 'viem/accounts';
 import {Deployment, loadEnvironment} from 'rocketh';
 import {context} from '../deploy/_context';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
-import {fetchContract} from '../utils/connection';
 import {formatEther, parseEther, parseUnits} from 'viem';
 import hre from 'hardhat';
 import fs from 'fs-extra';
@@ -22,9 +21,8 @@ async function main() {
 		context,
 	);
 
-	const TestTokens = env.deployments.TestTokens as Deployment<typeof context.artifacts.TestTokens.abi>;
-	const TestTokensContract = await fetchContract(TestTokens);
-	const decimals = await TestTokensContract.read.decimals();
+	const TestTokens = env.get<typeof context.artifacts.TestTokens.abi>('TestTokens');
+	const decimals = await env.read(TestTokens, {functionName: 'decimals'});
 
 	fs.ensureDirSync('keys');
 	const accounts: {address: `0x${string}`; key: `0x${string}`}[] = [];

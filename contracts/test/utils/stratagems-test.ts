@@ -138,10 +138,10 @@ export async function expectWallet(env: GridEnv, expectedWalletsAfter: {[playerI
 	for (const playerIndex of Object.keys(expectedWalletsAfter)) {
 		const player = env.otherAccounts[playerIndex];
 		const amount = await env.TestTokens.read.balanceOf([player]);
-		console.log({
-			player: playerIndex,
-			amount: formatEther(amount),
-		});
+		// console.log({
+		// 	player: playerIndex,
+		// 	amount: formatEther(amount),
+		// });
 	}
 	for (const playerIndex of Object.keys(expectedWalletsAfter)) {
 		const player = env.otherAccounts[playerIndex];

@@ -2,7 +2,6 @@ import {execute} from 'rocketh';
 import 'rocketh-deploy';
 import {context} from './_context';
 import {parseEther} from 'viem';
-import {fetchContract} from '../utils/connection';
 
 export default execute(
 	context,

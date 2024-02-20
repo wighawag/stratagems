@@ -4,7 +4,7 @@ import 'rocketh-deploy-router';
 import {context} from './_context';
 import {fetchContract} from '../utils/connection';
 import {days, hours, minutes} from '../utils/time';
-import {zeroAddress} from 'viem';
+import {checksumAddress, zeroAddress} from 'viem';
 import {getConfig} from './.config';
 
 export type GameConfig = {
@@ -62,7 +62,7 @@ export default execute(
 		const config = {
 			tokens: TestTokens.address,
 			numTokensPerGems,
-			burnAddress: `0xDEADDEADDEADDEADDEADDEADDEADDEADDEADDEAD`, //zeroAddress,
+			burnAddress: checksumAddress(`0xDEADDEADDEADDEADDEADDEADDEADDEADDEADDEAD`), //zeroAddress,
 
 			startTime,
 			revealPhaseDuration,
