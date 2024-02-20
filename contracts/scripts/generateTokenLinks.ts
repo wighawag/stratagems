@@ -8,9 +8,10 @@ import {formatEther, parseEther, parseUnits} from 'viem';
 import hre from 'hardhat';
 import fs from 'fs-extra';
 import prompts from 'prompts';
+import 'rocketh-deploy';
 
 const args = process.argv.slice(2);
-const num = args[0] || 100;
+const num = (args[0] && parseInt(args[0])) || 100;
 
 async function main() {
 	const env = await loadEnvironment(
@@ -47,10 +48,12 @@ async function main() {
 		message: `proceed to send ${formatEther(value)} ETH`,
 	});
 	if (prompt.proceed) {
-		const tx = await TestTokensContract.write.distributeAlongWithETH(
-			[addresses, BigInt(addresses.length) * parseUnits('15', decimals)],
-			{account: env.accounts.tokensBeneficiary, value},
-		);
+		const tx = await env.execute(TestTokens, {
+			account: env.accounts.tokensBeneficiary,
+			value,
+			functionName: 'distributeAlongWithETH',
+			args: [addresses, BigInt(addresses.length) * parseUnits('15', decimals)],
+		});
 		console.log(tx);
 	}
 }
