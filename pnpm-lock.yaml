@@ -55,8 +55,8 @@ importers:
         specifier: ^1.0.10
         version: 1.0.10(hardhat@2.20.1)
       '@openzeppelin/contracts':
-        specifier: ^4.9.3
-        version: 4.9.5
+        specifier: ^5.0.1
+        version: 5.0.1
       '@types/fs-extra':
         specifier: ^11.0.4
         version: 11.0.4
@@ -85,8 +85,8 @@ importers:
         specifier: ^0.1.5
         version: 0.1.5(hardhat@2.20.1)
       hardhat-rocketh:
-        specifier: ^3.0.0
-        version: 3.0.0(rocketh@0.9.0)
+        specifier: ^3.0.2
+        version: 3.0.2(rocketh@0.9.2)
       ldenv:
         specifier: ^0.3.9
         version: 0.3.9
@@ -100,29 +100,29 @@ importers:
         specifier: ^2.4.2
         version: 2.4.2
       rocketh:
-        specifier: ^0.9.0
-        version: 0.9.0(typescript@5.3.3)
+        specifier: ^0.9.2
+        version: 0.9.2(typescript@5.3.3)
       rocketh-deploy:
-        specifier: ^3.0.1
-        version: 3.0.1(rocketh@0.9.0)(typescript@5.3.3)
+        specifier: ^3.0.3
+        version: 3.0.3(rocketh@0.9.2)(typescript@5.3.3)
       rocketh-deploy-proxy:
-        specifier: ^3.0.2
-        version: 3.0.2(rocketh@0.9.0)(typescript@5.3.3)
+        specifier: ^3.0.5
+        version: 3.0.5(rocketh@0.9.2)(typescript@5.3.3)
       rocketh-deploy-router:
-        specifier: ^3.0.1
-        version: 3.0.1(rocketh@0.9.0)(typescript@5.3.3)
+        specifier: ^3.0.4
+        version: 3.0.4(rocketh@0.9.2)(typescript@5.3.3)
       rocketh-doc:
-        specifier: ^3.0.0
-        version: 3.0.0(rocketh@0.9.0)
+        specifier: ^3.0.2
+        version: 3.0.2(rocketh@0.9.2)
       rocketh-export:
-        specifier: ^3.0.0
-        version: 3.0.0(rocketh@0.9.0)
+        specifier: ^3.0.2
+        version: 3.0.2(rocketh@0.9.2)
       rocketh-signer:
-        specifier: ^3.0.0
-        version: 3.0.0(rocketh@0.9.0)
+        specifier: ^3.0.2
+        version: 3.0.2(rocketh@0.9.2)
       rocketh-verifier:
-        specifier: ^0.8.3
-        version: 0.8.3(typescript@5.3.3)
+        specifier: ^0.8.5
+        version: 0.8.5(typescript@5.3.3)
       rollup-plugin-node-builtins:
         specifier: ^2.1.2
         version: 2.1.2
@@ -133,11 +133,11 @@ importers:
         specifier: ^0.8.7
         version: 0.8.7(hardhat@2.20.1)
       solidity-kit:
-        specifier: ^0.3.13
-        version: 0.3.13
+        specifier: ^0.4.0
+        version: 0.4.0
       solidity-proxy:
-        specifier: ^0.2.4
-        version: 0.2.4
+        specifier: ^0.4.0
+        version: 0.4.0
       stratagems-common:
         specifier: workspace:*
         version: link:../common
@@ -155,13 +155,13 @@ importers:
         version: 2.7.11(typescript@5.3.3)
       viem-chai-matchers:
         specifier: ^0.0.4
-        version: 0.0.4(@types/chai-as-promised@7.1.8)(chai-as-promised@7.1.1)(chai@4.4.1)(viem@2.7.11)
+        version: 0.0.4(@types/chai-as-promised@7.1.8)(chai-as-promised@7.1.1)(chai@5.1.0)(viem@2.7.11)
       vitest:
-        specifier: ^1.3.0
-        version: 1.3.0
+        specifier: ^1.3.1
+        version: 1.3.1
       vitest-solidity-coverage:
-        specifier: ^0.1.5
-        version: 0.1.5(hardhat@2.20.1)(solidity-coverage@0.8.7)(vitest@1.3.0)
+        specifier: 0.1.12
+        version: 0.1.12(hardhat@2.20.1)(solidity-coverage@0.8.7)(vitest@1.3.1)
 
   helper-services/fuzd:
     devDependencies:
@@ -184,8 +184,8 @@ importers:
         specifier: ^7.2.0
         version: 7.2.0
       wrangler:
-        specifier: ^3.28.3
-        version: 3.28.3
+        specifier: ^3.28.4
+        version: 3.28.4
 
   helper-services/remote-indexer:
     devDependencies:
@@ -205,8 +205,8 @@ importers:
         specifier: ^0.0.1
         version: 0.0.1
       wrangler:
-        specifier: ^3.28.3
-        version: 3.28.3
+        specifier: ^3.28.4
+        version: 3.28.4
 
   indexer:
     dependencies:
@@ -281,8 +281,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       lucide-svelte:
-        specifier: ^0.334.0
-        version: 0.334.0(svelte@4.2.11)
+        specifier: ^0.335.0
+        version: 0.335.0(svelte@4.2.11)
       lz-string:
         specifier: ^1.5.0
         version: 1.5.0
@@ -2249,8 +2249,8 @@ packages:
       '@nomicfoundation/solidity-analyzer-win32-x64-msvc': 0.1.1
     dev: true
 
-  /@openzeppelin/contracts@4.9.5:
-    resolution: {integrity: sha512-ZK+W5mVhRppff9BE6YdR8CC52C8zAvsVAiWhEtQ5+oNxFE6h1WdeWo+FJSF8KKvtxxVYZ7MTP/5KoVpAU3aSWg==}
+  /@openzeppelin/contracts@5.0.1:
+    resolution: {integrity: sha512-yQJaT5HDp9hYOOp4jTYxMsR02gdFZFXhewX5HW9Jo4fsqSVqqyIO/xTHdWDaKX5a3pv1txmf076Lziz+sO7L1w==}
     dev: true
 
   /@parcel/watcher-android-arm64@2.4.0:
@@ -3198,38 +3198,38 @@ packages:
       vue: 3.4.19
     dev: true
 
-  /@vitest/expect@1.3.0:
-    resolution: {integrity: sha512-7bWt0vBTZj08B+Ikv70AnLRicohYwFgzNjFqo9SxxqHHxSlUJGSXmCRORhOnRMisiUryKMdvsi1n27Bc6jL9DQ==}
+  /@vitest/expect@1.3.1:
+    resolution: {integrity: sha512-xofQFwIzfdmLLlHa6ag0dPV8YsnKOCP1KdAeVVh34vSjN2dcUiXYCD9htu/9eM7t8Xln4v03U9HLxLpPlsXdZw==}
     dependencies:
-      '@vitest/spy': 1.3.0
-      '@vitest/utils': 1.3.0
+      '@vitest/spy': 1.3.1
+      '@vitest/utils': 1.3.1
       chai: 4.4.1
     dev: true
 
-  /@vitest/runner@1.3.0:
-    resolution: {integrity: sha512-1Jb15Vo/Oy7mwZ5bXi7zbgszsdIBNjc4IqP8Jpr/8RdBC4nF1CTzIAn2dxYvpF1nGSseeL39lfLQ2uvs5u1Y9A==}
+  /@vitest/runner@1.3.1:
+    resolution: {integrity: sha512-5FzF9c3jG/z5bgCnjr8j9LNq/9OxV2uEBAITOXfoe3rdZJTdO7jzThth7FXv/6b+kdY65tpRQB7WaKhNZwX+Kg==}
     dependencies:
-      '@vitest/utils': 1.3.0
+      '@vitest/utils': 1.3.1
       p-limit: 5.0.0
       pathe: 1.1.2
     dev: true
 
-  /@vitest/snapshot@1.3.0:
-    resolution: {integrity: sha512-swmktcviVVPYx9U4SEQXLV6AEY51Y6bZ14jA2yo6TgMxQ3h+ZYiO0YhAHGJNp0ohCFbPAis1R9kK0cvN6lDPQA==}
+  /@vitest/snapshot@1.3.1:
+    resolution: {integrity: sha512-EF++BZbt6RZmOlE3SuTPu/NfwBF6q4ABS37HHXzs2LUVPBLx2QoY/K0fKpRChSo8eLiuxcbCVfqKgx/dplCDuQ==}
     dependencies:
       magic-string: 0.30.7
       pathe: 1.1.2
       pretty-format: 29.7.0
     dev: true
 
-  /@vitest/spy@1.3.0:
-    resolution: {integrity: sha512-AkCU0ThZunMvblDpPKgjIi025UxR8V7MZ/g/EwmAGpjIujLVV2X6rGYGmxE2D4FJbAy0/ijdROHMWa2M/6JVMw==}
+  /@vitest/spy@1.3.1:
+    resolution: {integrity: sha512-xAcW+S099ylC9VLU7eZfdT9myV67Nor9w9zhf0mGCYJSO+zM2839tOeROTdikOi/8Qeusffvxb/MyBSOja1Uig==}
     dependencies:
       tinyspy: 2.2.1
     dev: true
 
-  /@vitest/utils@1.3.0:
-    resolution: {integrity: sha512-/LibEY/fkaXQufi4GDlQZhikQsPO2entBKtfuyIpr1jV4DpaeasqkeHjhdOhU24vSHshcSuEyVlWdzvv2XmYCw==}
+  /@vitest/utils@1.3.1:
+    resolution: {integrity: sha512-d3Waie/299qqRyHTm2DjADeTaNdNSVsnwHPWrs20JMpjh6eiVq7ggggweO8rc4arhf6rRkWuHKwvxGvejUXZZQ==}
     dependencies:
       diff-sequences: 29.6.3
       estree-walker: 3.0.3
@@ -3757,6 +3757,11 @@ packages:
     resolution: {integrity: sha512-jgsaNduz+ndvGyFt3uSuWqvy4lCnIJiovtouQN5JZHOKCS2QuhEdbcQHFhVksz2N2U9hXJo8odG7ETyWlEeuDw==}
     dev: true
 
+  /assertion-error@2.0.1:
+    resolution: {integrity: sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==}
+    engines: {node: '>=12'}
+    dev: true
+
   /async@1.5.2:
     resolution: {integrity: sha512-nSVgobk4rv61R9PUSDtYt7mPVB2olxNR5RWJcAsH676/ef11bUZwvu7+RGYrYauVdDPcO519v68wRhXQtxsV9w==}
     dev: true
@@ -4134,12 +4139,12 @@ packages:
     resolution: {integrity: sha512-4tYFyifaFfGacoiObjJegolkwSU4xQNGbVgUiNYVUxbQ2x2lUsFvY4hVgVzGiIe6WLOPqycWXA40l+PWsxthUw==}
     dev: true
 
-  /chai-as-promised@7.1.1(chai@4.4.1):
+  /chai-as-promised@7.1.1(chai@5.1.0):
     resolution: {integrity: sha512-azL6xMoi+uxu6z4rhWQ1jbdUhOMhis2PvscD/xjLqNMkv3BPPp2JyyuTHOrf9BOosGpNQ11v6BKv/g57RXbiaA==}
     peerDependencies:
       chai: '>= 2.1.2 < 5'
     dependencies:
-      chai: 4.4.1
+      chai: 5.1.0
       check-error: 1.0.3
     dev: true
 
@@ -4179,6 +4184,17 @@ packages:
       type-detect: 4.0.8
     dev: true
 
+  /chai@5.1.0:
+    resolution: {integrity: sha512-kDZ7MZyM6Q1DhR9jy7dalKohXQ2yrlXkk59CR52aRKxJrobmlBNqnFQxX9xOX8w+4mz8SYlKJa/7D7ddltFXCw==}
+    engines: {node: '>=12'}
+    dependencies:
+      assertion-error: 2.0.1
+      check-error: 2.0.0
+      deep-eql: 5.0.1
+      loupe: 3.1.0
+      pathval: 2.0.0
+    dev: true
+
   /chalk@2.4.2:
     resolution: {integrity: sha512-Mti+f9lpJNcwF4tWV8/OrTTtF1gZi+f8FqlyAdouralcFWFQWF2+NgCHShjkCb+IFBLq9buZwE1xckQU4peSuQ==}
     engines: {node: '>=4'}
@@ -4208,6 +4224,11 @@ packages:
     resolution: {integrity: sha512-iKEoDYaRmd1mxM90a2OEfWhjsjPpYPuQ+lMYsoxB126+t8fw7ySEO48nmDg5COTjxDI65/Y2OWpeEHk3ZOe8zg==}
     dependencies:
       get-func-name: 2.0.2
+    dev: true
+
+  /check-error@2.0.0:
+    resolution: {integrity: sha512-tjLAOBHKVxtPoHe/SA7kNOMvhCRdCJ3vETdeY0RuAc9popf+hyaSV6ZEg9hr4cpWF7jmo/JSWEnLDrnijS9Tog==}
+    engines: {node: '>= 16'}
     dev: true
 
   /chokidar@3.5.3:
@@ -4680,6 +4701,11 @@ packages:
     engines: {node: '>=6'}
     dependencies:
       type-detect: 4.0.8
+    dev: true
+
+  /deep-eql@5.0.1:
+    resolution: {integrity: sha512-nwQCf6ne2gez3o1MxWifqkciwt0zhl0LO1/UwVu4uMBuPmflWM4oQ70XMqHqnBJA+nhzncaqL9HVL6KkHJ28lw==}
+    engines: {node: '>=6'}
     dev: true
 
   /deep-equal@1.0.1:
@@ -6135,12 +6161,12 @@ packages:
       murmur-128: 0.2.1
     dev: true
 
-  /hardhat-rocketh@3.0.0(rocketh@0.9.0):
-    resolution: {integrity: sha512-1q2bgW/QMXsmgor+4HG/e8aLb7veDfTcAp8WfE5iKWt7N4lW7KOSWGxLFGorQZQFXjUjrZlzN581u4UxNjYPkQ==}
+  /hardhat-rocketh@3.0.2(rocketh@0.9.2):
+    resolution: {integrity: sha512-64RlVIkqJSxBcBmraMJM0368PpRCQJ6pOkly6qhqfwRSv+kATorVAmpIc3lBgtf3bnT5skPNySUKqTX3frsGtw==}
     peerDependencies:
-      rocketh: 0.9.0
+      rocketh: 0.9.2
     dependencies:
-      rocketh: 0.9.0(typescript@5.3.3)
+      rocketh: 0.9.2(typescript@5.3.3)
     dev: true
 
   /hardhat@2.20.1(typescript@5.3.3):
@@ -7352,6 +7378,12 @@ packages:
       get-func-name: 2.0.2
     dev: true
 
+  /loupe@3.1.0:
+    resolution: {integrity: sha512-qKl+FrLXUhFuHUoDJG7f8P8gEMHq9NFS0c6ghXG1J0rldmZFQZoNVv/vyirE9qwCIhWZDsvEFd1sbFu3GvRQFg==}
+    dependencies:
+      get-func-name: 2.0.2
+    dev: true
+
   /lru-cache@10.1.0:
     resolution: {integrity: sha512-/1clY/ui8CzjKFyjdvwPWJUYKiFVXG2I2cY0ssG7h4+hwk+XOIX7ZSG9Q7TW8TW3Kp3BUSqgFWBLgL4PJ+Blag==}
     engines: {node: 14 || >=16.14}
@@ -7381,8 +7413,8 @@ packages:
     resolution: {integrity: sha512-AI2r85+4MquTw9ZYqabu4nMwy9Oftlfa/e/52t9IjtfG+mGBbTNdAoZ3RQKLHR6r0wQnwZnPIEh/Ya6XTWAKNA==}
     dev: true
 
-  /lucide-svelte@0.334.0(svelte@4.2.11):
-    resolution: {integrity: sha512-wY5pI3uhT3PrmMLSL37Pv5xb4jXyZez3TEHFyd/5Rlyw3lZrLcdM4iVVLuwzQg7XmJco/S8LJNVaAuJ0iX7WqA==}
+  /lucide-svelte@0.335.0(svelte@4.2.11):
+    resolution: {integrity: sha512-paZUqH0Ei2LH9wC8UjEb5tVIiTWYa8J1tu0yHPrD0pSmtD98+MbPKUMQotFOh7t+2NS72PFQ0OJBrtzJcIwTpg==}
     peerDependencies:
       svelte: ^3 || ^4 || ^5.0.0-next.42
     dependencies:
@@ -8327,6 +8359,11 @@ packages:
     resolution: {integrity: sha512-Dp6zGqpTdETdR63lehJYPeIOqpiNBNtc7BpWSLrOje7UaIsE5aY92r/AunQA7rsXvet3lrJ3JnZX29UPTKXyKQ==}
     dev: true
 
+  /pathval@2.0.0:
+    resolution: {integrity: sha512-vE7JKRyES09KiunauX7nd2Q9/L7lhok4smP9RZTDeD4MVs72Dp2qNFVz39Nz5a0FVEW0BJR6C0DYrq6unoziZA==}
+    engines: {node: '>= 14.16'}
+    dev: true
+
   /pbkdf2@3.1.2:
     resolution: {integrity: sha512-iuh7L6jA7JEGu2WxDwtQP1ddOpaJNC4KlDEFfdQajSGgGPNi4OyDc2R7QnbY2bR9QjBVGwgvTdNJZoE7RaxUMA==}
     engines: {node: '>=0.12'}
@@ -9013,15 +9050,15 @@ packages:
       bn.js: 5.2.1
     dev: true
 
-  /rocketh-deploy-proxy@3.0.2(rocketh@0.9.0)(typescript@5.3.3):
-    resolution: {integrity: sha512-Xg/rqhXSLrNrsARSmi1SoPWAHMb+Wt8SmgaLRYxX0oj/16KAJrkpG9Y+/g6fFud/BoTxnqXLSUZv4L1tGGZbyQ==}
+  /rocketh-deploy-proxy@3.0.5(rocketh@0.9.2)(typescript@5.3.3):
+    resolution: {integrity: sha512-uzCy5z+0glyoZqGQiQ30JQ1dj0dWOg1P5Txjewzyt2pgzFUQrLEJrrwqfpIc5VeOEZlwP07zha76Y84Wh6JxbA==}
     peerDependencies:
-      rocketh: 0.9.0
+      rocketh: 0.9.2
     dependencies:
       named-logs: 0.2.2
-      rocketh: 0.9.0(typescript@5.3.3)
-      rocketh-deploy: 3.0.1(rocketh@0.9.0)(typescript@5.3.3)
-      solidity-proxy: 0.2.4
+      rocketh: 0.9.2(typescript@5.3.3)
+      rocketh-deploy: 3.0.3(rocketh@0.9.2)(typescript@5.3.3)
+      solidity-proxy: 0.4.0
       viem: 2.7.11(typescript@5.3.3)
     transitivePeerDependencies:
       - bufferutil
@@ -9030,16 +9067,16 @@ packages:
       - zod
     dev: true
 
-  /rocketh-deploy-router@3.0.1(rocketh@0.9.0)(typescript@5.3.3):
-    resolution: {integrity: sha512-/EFTLlZkF+NFhhI4mRj1XKs0WmK8d5xhFa6ztNFbuAHp8gx9vSompyUjgUlgt3rMdRHKOnFBa9VQdHxpqmvytw==}
+  /rocketh-deploy-router@3.0.4(rocketh@0.9.2)(typescript@5.3.3):
+    resolution: {integrity: sha512-YMPEVa9UXC8ri6JvurOhgH68tocdzi9PsSYroRuTUDiks325pNvnXKqTvTukHxgj4LhTzqgU2EGXJ2GL2V0YVw==}
     peerDependencies:
-      rocketh: 0.9.0
+      rocketh: 0.9.2
     dependencies:
       ethers: 6.11.1
       named-logs: 0.2.2
-      rocketh: 0.9.0(typescript@5.3.3)
-      rocketh-deploy: 3.0.1(rocketh@0.9.0)(typescript@5.3.3)
-      solidity-proxy: 0.2.4
+      rocketh: 0.9.2(typescript@5.3.3)
+      rocketh-deploy: 3.0.3(rocketh@0.9.2)(typescript@5.3.3)
+      solidity-proxy: 0.4.0
       viem: 2.7.11(typescript@5.3.3)
     transitivePeerDependencies:
       - bufferutil
@@ -9048,13 +9085,13 @@ packages:
       - zod
     dev: true
 
-  /rocketh-deploy@3.0.1(rocketh@0.9.0)(typescript@5.3.3):
-    resolution: {integrity: sha512-h6WZye7YfjmIoy+/w+Nqu8oKj8bZ0yBgmRfLpA3fhCe1BTFKgOGofugsrk8Tnk2scfVwUtkSDNBXwirWVd3gBw==}
+  /rocketh-deploy@3.0.3(rocketh@0.9.2)(typescript@5.3.3):
+    resolution: {integrity: sha512-Dk47MqQ9sn34C/RbSQrCfhX9nSEoQNdX1Bhv5M8aIHI7qmgK1V8T0NE/U92S1/hoOIGbFkncScV64PrQ/touQA==}
     peerDependencies:
-      rocketh: 0.9.0
+      rocketh: 0.9.2
     dependencies:
       named-logs: 0.2.2
-      rocketh: 0.9.0(typescript@5.3.3)
+      rocketh: 0.9.2(typescript@5.3.3)
       viem: 2.7.11(typescript@5.3.3)
     transitivePeerDependencies:
       - bufferutil
@@ -9063,44 +9100,44 @@ packages:
       - zod
     dev: true
 
-  /rocketh-doc@3.0.0(rocketh@0.9.0):
-    resolution: {integrity: sha512-xjC8Jj67N3FEvk8ACCSIBaOFO/DTC+depQ+YMwH4rT/t7JprbGNVD5+hcMK6mfrFWPoGS4dp+AZ918/fediOLA==}
+  /rocketh-doc@3.0.2(rocketh@0.9.2):
+    resolution: {integrity: sha512-LiF2dTGmpuiZmXClAM7WhIGd3mYNwIxozYY3Sn8ZwSevIKO116qwVe73acwHy4/XIm+cITEff3iS7dObvg8Mlg==}
     hasBin: true
     peerDependencies:
-      rocketh: 0.9.0
+      rocketh: 0.9.2
     dependencies:
       commander: 12.0.0
       ethers: 6.11.1
       fs-extra: 11.2.0
       handlebars: 4.7.8
-      rocketh: 0.9.0(typescript@5.3.3)
+      rocketh: 0.9.2(typescript@5.3.3)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
     dev: true
 
-  /rocketh-export@3.0.0(rocketh@0.9.0):
-    resolution: {integrity: sha512-c5tYTdKeweI+apcqRpKoNxOm1HQGL5yTKJ1xBGoX2xHuSXPGAHtooflAV8JM6jdQFV0B/gzgb8w6RQAfOY7yKw==}
+  /rocketh-export@3.0.2(rocketh@0.9.2):
+    resolution: {integrity: sha512-7KquJ6KlCHg//Af4+BJHO0PJ8QofAqxpRGvz2ipb696xYK31GeB+gUx6ubvW8sdpX9NHsLE5nY3puVrKmP8JGA==}
     hasBin: true
     peerDependencies:
-      rocketh: 0.9.0
+      rocketh: 0.9.2
     dependencies:
       chalk: 5.3.0
       commander: 12.0.0
       fs-extra: 11.2.0
-      rocketh: 0.9.0(typescript@5.3.3)
+      rocketh: 0.9.2(typescript@5.3.3)
     dev: true
 
-  /rocketh-signer@3.0.0(rocketh@0.9.0):
-    resolution: {integrity: sha512-G61b3xwkPGcMgwFCdIHA6tLIyQSaLsPAUJ1fCTyEppM8tLMQ/YB7AmFrPGxm0d6z3QyHWc+B7lR5qxwqpKhXoQ==}
+  /rocketh-signer@3.0.2(rocketh@0.9.2):
+    resolution: {integrity: sha512-5xq0J83TQnK5YEcTjXW6qutzmM8Md5DVANiaZzOa1OweZKLST5ZL5BeB6hYVsA0jre3Wyh6FyzaLDLpsuKkU+A==}
     peerDependencies:
-      rocketh: 0.9.0
+      rocketh: 0.9.2
     dependencies:
-      rocketh: 0.9.0(typescript@5.3.3)
+      rocketh: 0.9.2(typescript@5.3.3)
     dev: true
 
-  /rocketh-verifier@0.8.3(typescript@5.3.3):
-    resolution: {integrity: sha512-VynHh24eIIksS8l5Rk5XEoiAp8S9JouYH+COKPsGSrPQwIaWTf0HLk3a+ELGTjg0wr3qPZKy1DYoVh9PRi/16A==}
+  /rocketh-verifier@0.8.5(typescript@5.3.3):
+    resolution: {integrity: sha512-ijdzp4L5kFIVNdkbxWdFWuemtISWgEVNl2xVI2bsvUG79mCb20MHfXX9rSj71WGJErDSnc3s1VM6PjDcv9dIfg==}
     hasBin: true
     dependencies:
       chalk: 5.3.0
@@ -9108,7 +9145,7 @@ packages:
       fs-extra: 11.2.0
       ldenv: 0.3.9
       qs: 6.11.2
-      rocketh: 0.9.0(typescript@5.3.3)
+      rocketh: 0.9.2(typescript@5.3.3)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -9117,14 +9154,15 @@ packages:
       - zod
     dev: true
 
-  /rocketh@0.9.0(typescript@5.3.3):
-    resolution: {integrity: sha512-72zX+hBOXcNaCX+wrjikP71BwqQZuxFOVRteKklnG4LNPJu56vAbbFlpRmiP0y1zOtsKunLrxQ1TiLZHDpmB3w==}
+  /rocketh@0.9.2(typescript@5.3.3):
+    resolution: {integrity: sha512-kFCsHrtrzFsPNepzASctA9/1dpHAUsVF4gZcjlzRSo0uDziWlwZQigjj8eRq2/Ugbchf4tNsPLh16z8JB4Z8Eg==}
     hasBin: true
     dependencies:
       commander: 12.0.0
       eip-1193-jsonrpc-provider: 0.3.0
       esbuild: 0.20.1
       esbuild-register: 3.5.0(esbuild@0.20.1)
+      ethers: 6.11.1
       figlet: 1.7.0
       ldenv: 0.3.9
       named-logs: 0.2.2
@@ -9566,12 +9604,12 @@ packages:
       web3-utils: 1.10.4
     dev: true
 
-  /solidity-kit@0.3.13:
-    resolution: {integrity: sha512-40S033ZIcF0Ijc/BqvJXdPOSwTOzrgU5jgV7Rf+dhfu1Qnka4Ywry2fc0M3jmvnn6CGjqPXBc00KCCDdPumXQg==}
+  /solidity-kit@0.4.0:
+    resolution: {integrity: sha512-kIHCD8qEVZb6wWGuA78Yusg6542Sox9Qf9xZCZH5D+27rEL4XOqnJksOGoOyHRkHh8aM1DlLm+FSzPSFm/4R5Q==}
     dev: true
 
-  /solidity-proxy@0.2.4:
-    resolution: {integrity: sha512-wmCC66rfTFqnZd3RjNlSt2cSRanIVAAhiSWup7bIfRGZL4j7P4joHUEAZRixkOABrA0kOt6HlCFfPnNz/9Z91w==}
+  /solidity-proxy@0.4.0:
+    resolution: {integrity: sha512-0lpQ6nAIb4DOkbVWEfPVKTS//6KoDBulAzQ2xoCO08Ya5IaatmgcT6DOoLBv330COd32Nb+nvAA0wJfUpvKOLg==}
     dev: true
 
   /sorcery@0.11.0:
@@ -10548,7 +10586,7 @@ packages:
       extsprintf: 1.3.0
     dev: true
 
-  /viem-chai-matchers@0.0.4(@types/chai-as-promised@7.1.8)(chai-as-promised@7.1.1)(chai@4.4.1)(viem@2.7.11):
+  /viem-chai-matchers@0.0.4(@types/chai-as-promised@7.1.8)(chai-as-promised@7.1.1)(chai@5.1.0)(viem@2.7.11):
     resolution: {integrity: sha512-JYE00wEMv22UdXG16xWfTgItgPgljbQ8OvpxVuM7DlfTsd4D021/005lNIsgnEq1fuFNvtNIw3Ji7fQ5xnilDQ==}
     peerDependencies:
       '@types/chai-as-promised': ^7.1.8
@@ -10557,8 +10595,8 @@ packages:
       viem: ^2.1.1
     dependencies:
       '@types/chai-as-promised': 7.1.8
-      chai: 4.4.1
-      chai-as-promised: 7.1.1(chai@4.4.1)
+      chai: 5.1.0
+      chai-as-promised: 7.1.1(chai@5.1.0)
       viem: 2.7.11(typescript@5.3.3)
     dev: true
 
@@ -10625,8 +10663,8 @@ packages:
       - utf-8-validate
       - zod
 
-  /vite-node@1.3.0:
-    resolution: {integrity: sha512-D/oiDVBw75XMnjAXne/4feCkCEwcbr2SU1bjAhCcfI5Bq3VoOHji8/wCPAfUkDIeohJ5nSZ39fNxM3dNZ6OBOA==}
+  /vite-node@1.3.1:
+    resolution: {integrity: sha512-azbRrqRxlWTJEVbzInZCTchx0X69M/XPTCz4H+TLvlTcR/xH/3hkRqhOakT41fMJCMzXTu4UvegkZiEoJAWvng==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
     dependencies:
@@ -10747,27 +10785,27 @@ packages:
       - universal-cookie
     dev: true
 
-  /vitest-solidity-coverage@0.1.5(hardhat@2.20.1)(solidity-coverage@0.8.7)(vitest@1.3.0):
-    resolution: {integrity: sha512-NoCmrvssdRohRufXk7274IE22EFkdU6AShA5/28jlbKOIeFb1KecdzDG/r6IV72I+oZNG5du+8B7nWDv5+Jkgw==}
+  /vitest-solidity-coverage@0.1.12(hardhat@2.20.1)(solidity-coverage@0.8.7)(vitest@1.3.1):
+    resolution: {integrity: sha512-pxeTiq3RsKqVR3IlFi/gx6YpTsMvsIJ3BpyckrLVvyTEDjsRPStuDHb1z2N2UsRLeTucvy64LjMr2dE8oeijzg==}
     peerDependencies:
-      hardhat: ^2.19.4
-      solidity-coverage: ^0.8.5
-      vitest: ^1.2.0
+      hardhat: ^2.20.1
+      solidity-coverage: ^0.8.7
+      vitest: ^1.3.1
     dependencies:
       hardhat: 2.20.1(typescript@5.3.3)
       solidity-coverage: 0.8.7(hardhat@2.20.1)
-      vitest: 1.3.0
+      vitest: 1.3.1
     dev: true
 
-  /vitest@1.3.0:
-    resolution: {integrity: sha512-V9qb276J1jjSx9xb75T2VoYXdO1UKi+qfflY7V7w93jzX7oA/+RtYE6TcifxksxsZvygSSMwu2Uw6di7yqDMwg==}
+  /vitest@1.3.1:
+    resolution: {integrity: sha512-/1QJqXs8YbCrfv/GPQ05wAZf2eakUPLPa18vkJAKE7RXOKfVHqMZZ1WlTjiwl6Gcn65M5vpNUB6EFLnEdRdEXQ==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
     peerDependencies:
       '@edge-runtime/vm': '*'
       '@types/node': ^18.0.0 || >=20.0.0
-      '@vitest/browser': 1.3.0
-      '@vitest/ui': 1.3.0
+      '@vitest/browser': 1.3.1
+      '@vitest/ui': 1.3.1
       happy-dom: '*'
       jsdom: '*'
     peerDependenciesMeta:
@@ -10784,11 +10822,11 @@ packages:
       jsdom:
         optional: true
     dependencies:
-      '@vitest/expect': 1.3.0
-      '@vitest/runner': 1.3.0
-      '@vitest/snapshot': 1.3.0
-      '@vitest/spy': 1.3.0
-      '@vitest/utils': 1.3.0
+      '@vitest/expect': 1.3.1
+      '@vitest/runner': 1.3.1
+      '@vitest/snapshot': 1.3.1
+      '@vitest/spy': 1.3.1
+      '@vitest/utils': 1.3.1
       acorn-walk: 8.3.2
       chai: 4.4.1
       debug: 4.3.4(supports-color@8.1.1)
@@ -10802,7 +10840,7 @@ packages:
       tinybench: 2.6.0
       tinypool: 0.8.2
       vite: 5.1.3
-      vite-node: 1.3.0
+      vite-node: 1.3.1
       why-is-node-running: 2.2.2
     transitivePeerDependencies:
       - less
@@ -11002,8 +11040,8 @@ packages:
     resolution: {integrity: sha512-ILEIE97kDZvF9Wb9f6h5aXK4swSlKGUcOEGiIYb2OOu/IrDU9iwj0fD//SsA6E5ibwJxpEvhullJY4Sl4GcpAw==}
     dev: true
 
-  /wrangler@3.28.3:
-    resolution: {integrity: sha512-pLuvWA5W8FhjI/a7Mr5F491KOqNMYzyWVN7dmwr+52sPv2BFrfN1v6btmhHYotSblCH8yfs5DmuxwdKuVPMw9w==}
+  /wrangler@3.28.4:
+    resolution: {integrity: sha512-LDwW4KhplRhIEfQaZry8AMZIOTpkYZXLWjg1MDSC3a12BXSY37pXACmFxbZeg2TzcOi30j+KqwLfv15vCavIyA==}
     engines: {node: '>=16.17.0'}
     hasBin: true
     peerDependencies:

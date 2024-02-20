@@ -23,7 +23,7 @@ export default execute(
 					artifact: SolidityKit.Time,
 					args: [accounts.timeOwner],
 				},
-				{deterministic},
+				{deterministic, skipIfAlreadyDeployed: true},
 			);
 		}
 	},

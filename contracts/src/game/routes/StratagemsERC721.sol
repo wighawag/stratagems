@@ -2,12 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "../internal/UsingStratagemsSetters.sol";
-import "solidity-kit/solc_0.8/ERC721/interfaces/IERC721.sol";
-import "solidity-kit/solc_0.8/ERC721/interfaces/IERC721Metadata.sol";
-import "solidity-kit/solc_0.8/ERC721/interfaces/IERC721WithBlocknumber.sol";
-import "solidity-kit/solc_0.8/ERC721/interfaces/IERC721Receiver.sol";
-import "solidity-kit/solc_0.8/ERC721/implementations/ImplementingERC721Internal.sol";
-import "solidity-kit/solc_0.8/openzeppelin/contracts/utils/Address.sol";
+import "solidity-kit/solc_0_8/ERC721/interfaces/IERC721.sol";
+import "solidity-kit/solc_0_8/ERC721/interfaces/IERC721Metadata.sol";
+import "solidity-kit/solc_0_8/ERC721/interfaces/IERC721WithBlocknumber.sol";
+import "solidity-kit/solc_0_8/ERC721/interfaces/IERC721Receiver.sol";
+import "solidity-kit/solc_0_8/ERC721/implementations/ImplementingERC721Internal.sol";
+import "solidity-kit/solc_0_8/openzeppelin/contracts/utils/Address.sol";
 
 contract StratagemsERC721 is
     IERC721,
@@ -30,7 +30,7 @@ contract StratagemsERC721 is
     // /// @inheritdoc IERC721
     /// @notice balanceOf is not implemented, keeping track of this add gas and we did not consider that worth it
     function balanceOf(address) external pure override returns (uint256) {
-        revert("NOT_IMPLEMENTED");
+        revert NotImplemented();
         // if (owner == address(0)) {
         // 	revert InvalidAddress(owner);
         // }

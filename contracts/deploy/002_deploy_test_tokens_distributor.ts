@@ -7,11 +7,7 @@ export default execute(
 	async ({deploy, execute, get, accounts, artifacts, network}) => {
 		const {deployer} = accounts;
 
-		const TestTokens = await get('TestTokens'); // TODO: rocketh throw / getOrNull
-
-		if (!TestTokens) {
-			throw new Error(`no TestTokens deployed`);
-		}
+		const TestTokens = await get<typeof artifacts.TestTokens.abi>('TestTokens');
 
 		// TODO
 		if (network.name == 'localhost') {
@@ -21,7 +17,7 @@ export default execute(
 				args: [TestTokens.address],
 			});
 
-			await execute('TestTokens', {
+			await execute(TestTokens, {
 				functionName: 'authorizeMinters',
 				args: [[TestTokensDistributor.address], true],
 				account: deployer,

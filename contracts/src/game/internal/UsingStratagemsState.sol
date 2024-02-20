@@ -9,7 +9,7 @@ import "../../utils/PositionUtils.sol";
 
 // TODO use hardhat-preprocessor
 import "hardhat/console.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
+import "../../utils/StringUtils.sol";
 
 library logger {
     using PositionUtils for uint64;
@@ -28,7 +28,7 @@ library logger {
 
     function logPosition(string memory title, uint64 pos) internal view {
         (int32 x, int32 y) = pos.toXY();
-        console.log("%s: (%s,%s)", title, Strings.toString(x), Strings.toString(y));
+        console.log("%s: (%s,%s)", title, StringUtils.toString(x), StringUtils.toString(y));
     }
 
     function logCell(
@@ -49,7 +49,7 @@ library logger {
         console.log("%s%s", indent, title);
         (int32 x, int32 y) = id.toXY();
         console.log("%s-------------------------------------------------------------", indent);
-        console.log("%scell (%s,%s)", indent, Strings.toString(x), Strings.toString(y));
+        console.log("%scell (%s,%s)", indent, StringUtils.toString(x), StringUtils.toString(y));
         console.log("%s-------------------------------------------------------------", indent);
         console.log("%s - lastEpochUpdate:  %s", indent, cell.lastEpochUpdate);
         console.log("%s - epochWhenTokenIsAdded:  %s", indent, cell.epochWhenTokenIsAdded);
@@ -57,7 +57,7 @@ library logger {
         console.log("%s - life:  %s", indent, cell.life);
         console.log("%s - distribution:  %s", indent, cell.distribution);
         console.log("%s - owner:  %s", indent, owner);
-        console.log("%s - delta: %s", indent, Strings.toString(cell.delta));
+        console.log("%s - delta: %s", indent, StringUtils.toString(cell.delta));
         console.log("%s - enemyMap:  %s", indent, cell.enemyMap);
         console.log("%s-------------------------------------------------------------", indent);
     }
@@ -82,7 +82,7 @@ library logger {
                 "%stransfer (%s,%s)",
                 indent,
                 transferCollection.transfers[i].to,
-                Strings.toString(transferCollection.transfers[i].amount)
+                StringUtils.toString(transferCollection.transfers[i].amount)
             );
         }
         console.log("%s-------------------------------------------------------------", indent);
@@ -109,6 +109,8 @@ abstract contract UsingStratagemsState is
     uint256 internal immutable NUM_TOKENS_PER_GEMS;
     /// @notice the address to send the token to when burning
     address payable internal immutable BURN_ADDRESS;
+    /// @notice the generator that will be called whenever a player stake state change
+    IOnStakeChange internal immutable GENERATOR;
 
     /// @notice the number of moves a hash represent, after that players make use of furtherMoves
     uint8 internal constant MAX_NUM_MOVES_PER_HASH = 32;
@@ -123,6 +125,7 @@ abstract contract UsingStratagemsState is
         REVEAL_PHASE_DURATION = config.revealPhaseDuration;
         MAX_LIFE = config.maxLife;
         NUM_TOKENS_PER_GEMS = config.numTokensPerGems;
+        GENERATOR = config.generator;
     }
 
     function _epoch() internal view virtual returns (uint24 epoch, bool commiting) {
@@ -147,10 +150,7 @@ abstract contract UsingStratagemsState is
         if (lastUpdate >= 1 && life > 0) {
             uint256 epochDelta = epoch - lastUpdate;
             if (epochDelta > 0) {
-                int8 effectiveDelta = delta != 0 ? delta : -1;
-                if (effectiveDelta < 0 && enemyMap == 0) {
-                    effectiveDelta = 0;
-                }
+                int8 effectiveDelta = _effectiveDelta(delta, enemyMap);
                 if (effectiveDelta > 0) {
                     // if (life < MAX_LIFE) {
                     uint8 maxEpoch = ((MAX_LIFE - life) + uint8(effectiveDelta) - 1) / uint8(effectiveDelta);
@@ -202,7 +202,17 @@ abstract contract UsingStratagemsState is
         }
     }
 
-    function _getUpdatedCell(uint64 position, uint24 epoch) internal view returns (Cell memory updatedCell, bool justDied) {
+    function _effectiveDelta(int8 delta, uint8 enemyMap) internal pure returns (int8 effectiveDelta) {
+        effectiveDelta = delta != 0 ? delta : -1;
+        if (effectiveDelta < 0 && enemyMap == 0) {
+            effectiveDelta = 0;
+        }
+    }
+
+    function _getUpdatedCell(
+        uint64 position,
+        uint24 epoch
+    ) internal view returns (Cell memory updatedCell, bool justDied) {
         // load from state
         updatedCell = _cells[position];
         uint24 lastUpdate = updatedCell.lastEpochUpdate;

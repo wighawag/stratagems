@@ -65,8 +65,6 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
         // logger.logTransfers(0, "resolveMoves", transferCollection);
 
-        _multiTransfer(TOKENS, transferCollection);
-
         newReserveAmount = _tokensInReserve[player];
 
         // Note: even if funds can comes from outside the reserve, we still check it
@@ -79,21 +77,21 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             _tokensInReserve[player] = newReserveAmount;
         } else {
             if (tokens.tokensPlaced != 0) {
-                // TODO use TransferCollection too here
                 TOKENS.transferFrom(tokenGiver, address(this), tokens.tokensPlaced);
             }
             if (tokens.tokensBurnt != 0) {
-                // TODO use TransferCollection too here
                 TOKENS.transferFrom(tokenGiver, BURN_ADDRESS, tokens.tokensBurnt);
             }
         }
+
         // option to return in reserve ?
-        // TODO use TransferCollection too here
         if (tokens.tokensReturned != 0) {
             // console.log("tokensReturned");
             // console.log(tokens.tokensReturned);
-            TOKENS.transfer(player, tokens.tokensReturned);
+            _collectTransfer(transferCollection, TokenTransfer({to: payable(player), amount: tokens.tokensReturned}));
         }
+
+        _multiTransfer(TOKENS, transferCollection);
     }
 
     function _countBits(uint8 n) internal pure returns (uint8 count) {
@@ -110,13 +108,15 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
     // TODO revisit this
     // we could also refund the part
     // so if there is 3 green 2 blue and 1 red, then green win and the cell become green
-    // player we put blue or red get refunded their respective gems
-    // the players we put green get refunded 2/3 so that the cell still contains only 1
+    // player who put blue or red get refunded their respective gems
+    // the players who put green get refunded 2/3 so that the cell still contains only 1
     // if there was 3 green and 3 blue and 1 red then the cell becomes black
     // every player get refunded 6/7 so that the black cell only has 1
-    // note that the issue with green winning above is that winnings need to be distributed to all 3 players we put green
+    // note that the issue with green winning above is that winnings need to be distributed to all 3 players who put green
     // and since the number is technically unbounded, we have to use a splitter contract where player withdraw their winnings
     // this add UX complexity and some cost for withdrawals
+    // it also remove the ability to transfer the cell unless agreement and implementation for this
+    // So the conclusion is to make it black in all cases and keep the amount
     function _computeMove(
         TokenTransferCollection memory transferCollection,
         address player,
@@ -182,8 +182,19 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             currentState.enemyMap = 0;
             _owners[move.position] = 0;
             tokensReturned = NUM_TOKENS_PER_GEMS;
+            GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
         } else {
             tokensPlaced = NUM_TOKENS_PER_GEMS;
+
+            {
+                int8 oldEffectiveDelta = _effectiveDelta(currentState.delta, currentState.enemyMap);
+                int8 newEffectiveDelta = _effectiveDelta(newDelta, newEnemyMap);
+                if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
+                    GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
+                } else if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
+                    GENERATOR.add(player, NUM_TOKENS_PER_GEMS);
+                }
+            }
 
             currentState.enemyMap = newEnemyMap;
 
@@ -193,6 +204,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
                     if (currentState.stake == 0) {
                         // we cap it, losing stake there
                         // TODO reevaluate
+                        // send it to special address ?
                         currentState.stake = 255;
                     }
                 }
@@ -454,6 +466,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
                 (cell.distribution & 0x0f);
         }
 
+        int8 oldEffectiveDelta = _effectiveDelta(cell.delta, cell.enemyMap);
+
         if (oldColor != newColor) {
             if (newColor == Color.None) {
                 if (cell.color == oldColor) {
@@ -483,5 +497,12 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         // logger.logCell(0,string.concat("AFTER _updateCellFromNeighbor  index", Strings.toString(neighbourIndex)),position,cell,address(uint160(_owners[position])));
 
         _cells[position] = cell;
+
+        int8 newEffectiveDelta = _effectiveDelta(cell.delta, cell.enemyMap);
+        if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
+            GENERATOR.remove(_ownerOf(position), NUM_TOKENS_PER_GEMS);
+        } else if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
+            GENERATOR.add(_ownerOf(position), NUM_TOKENS_PER_GEMS);
+        }
     }
 }

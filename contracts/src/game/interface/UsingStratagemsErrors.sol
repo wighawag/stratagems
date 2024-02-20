@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-interface UsingStratagemsErrors {
+import "./UsingStratagemsTypes.sol";
+
+interface UsingStratagemsErrors is UsingStratagemsTypes {
     /// @notice Game has not started yet, can't perform any action
     error GameNotStarted();
 
@@ -42,4 +44,9 @@ interface UsingStratagemsErrors {
     /// @notice Player have to reveal if they can
     /// Stratagems will prevent them from acknowledging missed reveal if there is still time to reveal.
     error CanStillReveal();
+
+    /// @notice The cell configuration is invalid
+    /// This can happen win debug mode where admin can setup cell bypassing moves rules
+    /// For example when setting up neighborood configuration that would require a cell to have negative life
+    error ImpossibleConfiguration();
 }

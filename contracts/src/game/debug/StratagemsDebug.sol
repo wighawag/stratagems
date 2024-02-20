@@ -42,7 +42,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
         }
         for (uint256 i = 0; i < cells.length; i++) {
             DebugCell memory debugCell = cells[i];
-            _cells[debugCell.position] = Cell({
+            Cell memory cell = Cell({
                 lastEpochUpdate: debugCell.lastEpochUpdate,
                 epochWhenTokenIsAdded: debugCell.epochWhenTokenIsAdded,
                 color: debugCell.color,
@@ -52,6 +52,11 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                 distribution: 0, // TODO let debug distribution ?
                 stake: 1
             });
+            if (_effectiveDelta(cell.delta, cell.enemyMap) > 0) {
+                GENERATOR.add(debugCell.owner, NUM_TOKENS_PER_GEMS);
+            }
+
+            _cells[debugCell.position] = cell;
             _owners[debugCell.position] = uint256(uint160(debugCell.owner));
         }
         emit ForceCells(cells);
@@ -72,7 +77,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
 
             (int8 delta, uint8 enemyMap) = _updateNeighbosrDelta(simpleCell.position, simpleCell.color, epoch);
 
-            _cells[simpleCell.position] = Cell({
+            Cell memory cell = Cell({
                 lastEpochUpdate: epoch,
                 epochWhenTokenIsAdded: epoch,
                 color: simpleCell.color,
@@ -82,6 +87,10 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                 distribution: 0,
                 stake: 1
             });
+            _cells[simpleCell.position] = cell;
+            if (_effectiveDelta(cell.delta, cell.enemyMap) > 0) {
+                GENERATOR.add(simpleCell.owner, NUM_TOKENS_PER_GEMS);
+            }
             _owners[simpleCell.position] = uint256(uint160(simpleCell.owner));
         }
 
@@ -91,14 +100,11 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
 
             // we act as if the token were added in previous epochs
             // this is so it does not affect the reveal phase
-            int8 effectiveDelta = cell.delta != 0 ? cell.delta : -1;
-            if (effectiveDelta < 0 && cell.enemyMap == 0) {
-                effectiveDelta = 0;
-            }
+            int8 effectiveDelta = _effectiveDelta(cell.delta, cell.enemyMap);
             int256 potentialLife = int256(uint256(cell.life)) - effectiveDelta;
             if (potentialLife < 0) {
                 // potentialLife = 0;
-                revert("impossible configuration");
+                revert ImpossibleConfiguration();
             }
             if (uint256(potentialLife) > MAX_LIFE) {
                 unchecked {
@@ -119,7 +125,12 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                 distribution: 0, // TODO let debug distribution ?
                 stake: 1
             });
+
             _cells[position] = updatedCell;
+
+            if (_effectiveDelta(updatedCell.delta, updatedCell.enemyMap) > 0) {
+                GENERATOR.add(address(uint160(_owners[position])), NUM_TOKENS_PER_GEMS);
+            }
 
             // logger.logCell(0, string.concat("forceSimpleCells at epoch ", Strings.toString(epoch)), uint64(position), updatedCell, address(uint160(_owners[position])));
         }

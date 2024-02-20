@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import "solidity-kit/solc_0.8/ERC721/interfaces/IERC721.sol";
-import "solidity-kit/solc_0.8/ERC165/interfaces/IERC165.sol";
-import "solidity-kit/solc_0.8/ERC20/ERC2612/interfaces/IERC20WithIERC2612.sol";
-import "solidity-kit/solc_0.8/debug/time/interfaces/ITime.sol";
+import "solidity-kit/solc_0_8/ERC721/interfaces/IERC721.sol";
+import "solidity-kit/solc_0_8/ERC165/interfaces/IERC165.sol";
+import "solidity-kit/solc_0_8/ERC20/ERC2612/interfaces/IERC20WithIERC2612.sol";
+import "solidity-kit/solc_0_8/debug/time/interfaces/ITime.sol";
+import "../../token/interface/IOnStakeChange.sol";
 
 interface UsingStratagemsTypes {
     // --------------------------------------------------------------------------------------------
@@ -47,6 +48,7 @@ interface UsingStratagemsTypes {
         uint8 maxLife;
         uint256 numTokensPerGems;
         ITime time;
+        IOnStakeChange generator;
     }
 
     /// @notice Cell struct representing the current state of a cell

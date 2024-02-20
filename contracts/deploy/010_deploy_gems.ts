@@ -5,19 +5,13 @@ import {parseEther} from 'viem';
 
 export default execute(
 	context,
-	async ({deployViaProxy, accounts, artifacts}) => {
+	async ({deploy, accounts, artifacts}) => {
 		const {deployer, tokensBeneficiary} = accounts;
-		await deployViaProxy(
-			'Gems',
-			{
-				account: deployer,
-				artifact: artifacts.Gems,
-				args: [tokensBeneficiary, parseEther('1000000000')], // 18 decimal like ether
-			},
-			{
-				owner: accounts.deployer,
-			},
-		);
+		await deploy('Gems', {
+			account: deployer,
+			artifact: artifacts.Gems,
+			args: [deployer, tokensBeneficiary, parseEther('1000')], // 18 decimal like ether
+		});
 	},
 	{tags: ['Gems', 'Gems_deploy']},
 );

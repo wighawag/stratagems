@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import "solidity-kit/solc_0.8/ERC20/implementations/ERC20Base.sol";
-import "solidity-kit/solc_0.8/ERC20/ERC2612/implementations/UsingPermitWithDynamicChainID.sol";
-import "solidity-kit/solc_0.8/ERC20/ERC2612/implementations/UsingPermitWithDynamicChainID.sol";
+import "solidity-kit/solc_0_8/ERC20/implementations/ERC20Base.sol";
+import "solidity-kit/solc_0_8/ERC20/ERC2612/implementations/UsingPermitWithDynamicChainID.sol";
+import "solidity-kit/solc_0_8/ERC20/ERC2612/implementations/UsingPermitWithDynamicChainID.sol";
 
 contract TestTokens is ERC20Base, UsingPermitWithDynamicChainID {
     error NotAuthorized();
