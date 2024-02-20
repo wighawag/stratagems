@@ -1,4 +1,4 @@
 .dev.vars
 !.default
 .wrangler
-node_modules
+/node_modules

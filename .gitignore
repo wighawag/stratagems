@@ -2,6 +2,6 @@
 .env*.local
 
 # node modules
-node_modules/
+/node_modules/
 
 .dev.vars
