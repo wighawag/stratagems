@@ -1,5 +1,5 @@
-/node_modules/*
-!/node_modules/solidity-kit
+/node_modules
+
 .vscode/*
 !*.default
 *.local
