@@ -59,9 +59,6 @@ const config = {
 		templates: 'docs_templates',
 		pages: 'files',
 	},
-	mocha: {
-		require: 'named-logs-console',
-	},
 	// preprocess: {
 	// 	eachLine: (hre) => ({
 	// 		transform: (line) => {

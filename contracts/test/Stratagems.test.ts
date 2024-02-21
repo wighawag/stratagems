@@ -1,5 +1,4 @@
 import {expect, describe, it} from 'vitest';
-import './utils/viem-matchers';
 
 import {parseGrid, renderGrid, toContractSimpleCell, xyToBigIntID} from 'stratagems-common';
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';

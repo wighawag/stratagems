@@ -1,5 +1,4 @@
 import {expect, describe, it} from 'vitest';
-import './utils/viem-matchers';
 import fs from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';

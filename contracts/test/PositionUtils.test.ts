@@ -1,5 +1,4 @@
 import {expect, describe, it} from 'vitest';
-import './utils/viem-matchers';
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {getConnection, fetchContract} from '../utils/connection';
 import artifacts from '../generated/artifacts';

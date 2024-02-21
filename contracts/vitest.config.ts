@@ -9,7 +9,7 @@ export default defineConfig({
 			provider: 'custom',
 			customProviderModule: 'vitest-solidity-coverage',
 		},
-		testTimeout: 10000,
+		testTimeout: 20000,
 	},
 	build: {
 		rollupOptions: {

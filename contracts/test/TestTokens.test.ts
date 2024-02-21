@@ -1,5 +1,4 @@
 import {expect, describe, it} from 'vitest';
-import './utils/viem-matchers';
 
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {Deployment, loadAndExecuteDeployments} from 'rocketh';

@@ -1,5 +1,4 @@
 import {expect} from 'vitest';
-import './viem-matchers';
 import solidityKitArtifacts from 'solidity-kit/generated/artifacts';
 
 import {parseGrid, renderGrid, Grid, Cell, bigIntIDToXY, StratagemsContract, xyToBigIntID} from 'stratagems-common';
