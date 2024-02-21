@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "solidity-kit/solc_0_8/ERC20/implementations/ERC20Base.sol";
 import "solidity-kit/solc_0_8/ERC20/ERC2612/implementations/UsingPermitWithDynamicChainID.sol";
 import "solidity-kit/solc_0_8/ERC173/implementations/Owned.sol";
+import "solidity-kit/solc_0_8/utils/UsingGenericErrors.sol";
 import "./interface/IReward.sol";
 
 /// @title Gems Tokens
@@ -40,7 +41,7 @@ contract Gems is Owned, ERC20Base, UsingPermitWithDynamicChainID, IReward {
 
     modifier onlyGenerators() {
         if (!generators[msg.sender]) {
-            revert NotAuthorized();
+            revert UsingGenericErrors.NotAuthorized();
         }
         _;
     }

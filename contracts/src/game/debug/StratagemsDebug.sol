@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "../internal/UsingStratagemsSetters.sol";
 import "./IStratagemsWithDebug.sol";
 import "../../utils/PositionUtils.sol";
+import "solidity-kit/solc_0_8/utils/UsingGenericErrors.sol";
 
 contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
     using PositionUtils for uint64;
@@ -23,7 +24,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
 
     function forceMoves(address player, Move[] memory moves) external {
         if (msg.sender != _getOwner()) {
-            revert NotAuthorized();
+            revert UsingGenericErrors.NotAuthorized();
         }
         (uint24 epoch, bool commiting) = _epoch();
         if (commiting) {
@@ -38,10 +39,17 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
 
     function forceCells(DebugCell[] memory cells) external {
         if (msg.sender != _getOwner()) {
-            revert NotAuthorized();
+            revert UsingGenericErrors.NotAuthorized();
         }
         for (uint256 i = 0; i < cells.length; i++) {
             DebugCell memory debugCell = cells[i];
+            if (debugCell.life == 0) {
+                unchecked {
+                    int32 x = int32(int256(uint256(debugCell.position) & 0xFFFFFFFF));
+                    int32 y = int32(int256(uint256(debugCell.position) >> 32));
+                    revert InvalidLifeConfiguration(uint256(0), x, y);
+                }
+            }
             Cell memory cell = Cell({
                 lastEpochUpdate: debugCell.lastEpochUpdate,
                 epochWhenTokenIsAdded: debugCell.epochWhenTokenIsAdded,
@@ -55,7 +63,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
             if (_effectiveDelta(cell.delta, cell.enemyMap) > 0) {
                 GENERATOR.add(debugCell.owner, NUM_TOKENS_PER_GEMS);
             }
-
+            emit Transfer(_ownerOf(debugCell.position), debugCell.owner, debugCell.position);
             _cells[debugCell.position] = cell;
             _owners[debugCell.position] = uint256(uint160(debugCell.owner));
         }
@@ -64,7 +72,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
 
     function forceSimpleCells(SimpleCell[] memory cells) external {
         if (msg.sender != _getOwner()) {
-            revert NotAuthorized();
+            revert UsingGenericErrors.NotAuthorized();
         }
         (uint24 epoch, ) = _epoch();
 
@@ -91,6 +99,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
             if (_effectiveDelta(cell.delta, cell.enemyMap) > 0) {
                 GENERATOR.add(simpleCell.owner, NUM_TOKENS_PER_GEMS);
             }
+            emit Transfer(_ownerOf(simpleCell.position), simpleCell.owner, simpleCell.position);
             _owners[simpleCell.position] = uint256(uint160(simpleCell.owner));
         }
 

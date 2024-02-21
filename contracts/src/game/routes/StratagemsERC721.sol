@@ -3,18 +3,21 @@ pragma solidity ^0.8.0;
 
 import "../internal/UsingStratagemsSetters.sol";
 import "solidity-kit/solc_0_8/ERC721/interfaces/IERC721.sol";
+import "solidity-kit/solc_0_8/ERC721/interfaces/UsingERC721Errors.sol";
 import "solidity-kit/solc_0_8/ERC721/interfaces/IERC721Metadata.sol";
 import "solidity-kit/solc_0_8/ERC721/interfaces/IERC721WithBlocknumber.sol";
 import "solidity-kit/solc_0_8/ERC721/interfaces/IERC721Receiver.sol";
 import "solidity-kit/solc_0_8/ERC721/implementations/ImplementingERC721Internal.sol";
 import "solidity-kit/solc_0_8/openzeppelin/contracts/utils/Address.sol";
+import "solidity-kit/solc_0_8/utils/UsingGenericErrors.sol";
 
 contract StratagemsERC721 is
     IERC721,
     IERC721Metadata,
     IERC721WithBlocknumber,
     UsingStratagemsSetters,
-    ImplementingERC721Internal
+    ImplementingERC721Internal,
+    UsingERC721Errors
 {
     using Openzeppelin_Address for address;
 
@@ -30,7 +33,7 @@ contract StratagemsERC721 is
     // /// @inheritdoc IERC721
     /// @notice balanceOf is not implemented, keeping track of this add gas and we did not consider that worth it
     function balanceOf(address) external pure override returns (uint256) {
-        revert NotImplemented();
+        revert UsingGenericErrors.NotImplemented();
         // if (owner == address(0)) {
         // 	revert InvalidAddress(owner);
         // }
@@ -125,7 +128,7 @@ contract StratagemsERC721 is
 
         if (msg.sender != from) {
             if (!(operatorEnabled && _operators[tokenID] == msg.sender) && !isApprovedForAll(from, msg.sender)) {
-                revert NotAuthorized();
+                revert UsingGenericErrors.NotAuthorized();
             }
         }
         _safeTransferFrom(from, to, tokenID, (nonce >> 24) != 0, data);
@@ -150,7 +153,7 @@ contract StratagemsERC721 is
         }
         if (msg.sender != from) {
             if (!(operatorEnabled && _operators[tokenID] == msg.sender) && !isApprovedForAll(from, msg.sender)) {
-                revert NotAuthorized();
+                revert UsingGenericErrors.NotAuthorized();
             }
         }
         _transferFrom(from, to, tokenID, (nonce >> 24) != 0);
@@ -163,7 +166,7 @@ contract StratagemsERC721 is
             revert NonExistentToken(tokenID);
         }
         if (msg.sender != owner && !isApprovedForAll(owner, msg.sender)) {
-            revert NotAuthorized();
+            revert UsingGenericErrors.NotAuthorized();
         }
         _approveFor(owner, nonce, operator, tokenID);
     }

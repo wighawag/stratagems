@@ -5,8 +5,9 @@ import "./UsingStratagemsState.sol";
 import "../interface/UsingStratagemsEvents.sol";
 import "./UsingStratagemsUtils.sol";
 import "../../utils/PositionUtils.sol";
+import "solidity-kit/solc_0_8/ERC721/interfaces/UsingERC721Events.sol";
 
-abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagemsUtils {
+abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagemsUtils, UsingERC721Events {
     using PositionUtils for uint64;
 
     constructor(Config memory config) UsingStratagemsState(config) {}
@@ -180,6 +181,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             currentState.lastEpochUpdate = 0;
             currentState.delta = 0;
             currentState.enemyMap = 0;
+            emit Transfer(_ownerOf(move.position), address(0), move.position);
             _owners[move.position] = 0;
             tokensReturned = NUM_TOKENS_PER_GEMS;
             GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
@@ -215,9 +217,14 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             currentState.delta = newDelta;
             currentState.life = 1;
             currentState.lastEpochUpdate = epoch;
+            address oldOwner = _ownerOf(move.position);
             if (currentState.color == Color.Evil) {
-                _owners[move.position] = uint256(uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF));
+                if (oldOwner != 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF) {
+                    emit Transfer(address(0), 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, move.position);
+                    _owners[move.position] = uint256(uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF));
+                }
             } else {
+                emit Transfer(address(0), player, move.position);
                 _owners[move.position] = uint256(uint160(player));
             }
         }

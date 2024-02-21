@@ -22,6 +22,6 @@ async function setupGems(): Promise<Fixture> {
 
 const tests = erc20.generateTests({EIP717: true}, setupGems);
 
-describe.skip('Gems as ERC20', function () {
+describe('Gems as ERC20', function () {
 	runtests(tests, {describe, it});
 });

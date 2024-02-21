@@ -42,8 +42,8 @@ async function setupStratagems(): Promise<Fixture> {
 	};
 }
 
-const tests = erc721.generateTests(setupStratagems);
+const tests = erc721.generateTests({skipBalanceTests: true}, setupStratagems);
 
-describe.skip('Stratagems as ERC721', function () {
+describe('Stratagems as ERC721', function () {
 	runtests(tests, {describe, it});
 });

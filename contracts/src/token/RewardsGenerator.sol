@@ -5,7 +5,7 @@ import "solidity-kit/solc_0_8/ERC20/interfaces/IERC20.sol";
 import "./interface/IOnStakeChange.sol";
 import "./interface/IReward.sol";
 import "solidity-proxy/solc_0_8/ERC1967/Proxied.sol";
-import "solidity-kit/solc_0_8/utils/GenericErrors.sol";
+import "solidity-kit/solc_0_8/utils/UsingGenericErrors.sol";
 
 contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
     uint256 internal constant PRECISION = 1e24;
@@ -159,17 +159,17 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
 
     /// @inheritdoc IERC20
     function transfer(address, uint256) external pure returns (bool) {
-        revert NonTransferable();
+        revert UsingGenericErrors.NonTransferable();
     }
 
     /// @inheritdoc IERC20
     function approve(address, uint256) external pure returns (bool) {
-        revert NonTransferable();
+        revert UsingGenericErrors.NonTransferable();
     }
 
     /// @inheritdoc IERC20
     function transferFrom(address, address, uint256) external pure returns (bool) {
-        revert NonTransferable();
+        revert UsingGenericErrors.NonTransferable();
     }
 
     // ---------------------------------------------------------------------------------------------------------------
@@ -326,7 +326,7 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
 
     modifier onlyGames() {
         if (_games[msg.sender] == 0) {
-            revert NotAuthorized();
+            revert UsingGenericErrors.NotAuthorized();
         }
         _;
     }
