@@ -11,7 +11,7 @@ contract StratagemsGetters is IStratagemsGetters, UsingStratagemsState {
     function getCell(uint256 id) external view returns (FullCell memory) {
         (uint24 epoch, ) = _epoch();
         // console.log('epoch %s', epoch);
-        (Cell memory updatedCell,) = _getUpdatedCell(uint64(id), epoch);
+        (Cell memory updatedCell, ) = _getUpdatedCell(uint64(id), epoch);
         return
             FullCell({
                 owner: _ownerOf(id),
@@ -32,7 +32,7 @@ contract StratagemsGetters is IStratagemsGetters, UsingStratagemsState {
         uint256 numCells = ids.length;
         cells = new FullCell[](numCells);
         for (uint256 i = 0; i < numCells; i++) {
-            (Cell memory updatedCell,) = _getUpdatedCell(uint64(ids[i]), epoch);
+            (Cell memory updatedCell, ) = _getUpdatedCell(uint64(ids[i]), epoch);
             cells[i] = FullCell({
                 owner: _ownerOf(ids[i]),
                 lastEpochUpdate: updatedCell.lastEpochUpdate,

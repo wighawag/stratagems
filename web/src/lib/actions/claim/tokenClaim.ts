@@ -7,7 +7,7 @@ import {derived, writable} from 'svelte/store';
 import {formatEther} from 'viem';
 import {privateKeyToAccount, type Account} from 'viem/accounts';
 import {viemify} from 'web3-connection-viem';
-import { getBalance, getTransactionCount, waitForTransactionReceipt } from 'viem/actions';
+import {getBalance, getTransactionCount, waitForTransactionReceipt} from 'viem/actions';
 
 type TokenClaim = {
 	inUrl: boolean;

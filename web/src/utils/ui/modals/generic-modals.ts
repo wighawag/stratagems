@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import {writable} from 'svelte/store';
 
 export type InfoModalData = {
 	type: 'info';
@@ -33,5 +33,5 @@ export let genericModals = {
 			v.push(data);
 			return v;
 		});
-	}
+	},
 };

@@ -32,3 +32,5 @@ static/indexed-state-*.json
 package.json
 pnpm-lock.yaml
 static/
+
+*.json

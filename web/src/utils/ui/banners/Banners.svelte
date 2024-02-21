@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { bannerStack } from './BannerContainer.svelte';
-	import { genericBanners } from './generic-banners.js';
+	import {onMount} from 'svelte';
+	import {bannerStack} from './BannerContainer.svelte';
+	import {genericBanners} from './generic-banners.js';
 	import GenericBanner from './GenericBanner.svelte';
 
 	let bannersContainer: HTMLDivElement;

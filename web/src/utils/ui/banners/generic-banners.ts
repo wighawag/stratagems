@@ -1,5 +1,5 @@
-import { writable } from 'svelte/store';
-import type { Dismiss } from './types.js';
+import {writable} from 'svelte/store';
+import type {Dismiss} from './types.js';
 
 export type GenericBannerData = {
 	title?: string;
@@ -26,5 +26,5 @@ export let genericBanners = {
 			v.push(data);
 			return v;
 		});
-	}
+	},
 };

@@ -39,6 +39,7 @@
 			"editor.defaultFormatter": "esbenp.prettier-vscode",
 		},
 		"prettier.documentSelectors": ["**/*.sol", "**/*.ts", "**/*.svelte"],
+		"prettier.configPath": "./.prettierrc",
 		"solidity.formatter": "prettier",
 		"npm.exclude": "**/lib/**",
 		"svelte.enable-ts-plugin": true, // https://github.com/sveltejs/language-tools/issues/1556#issuecomment-1180561091

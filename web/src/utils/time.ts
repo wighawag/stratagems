@@ -6,8 +6,6 @@ export function wait(numSeconds: number): Promise<void> {
 	});
 }
 
-
 export function timeToText(timeInSec: number, options?: Options): string {
 	return prettyMilliseconds(Math.floor(timeInSec) * 1000, options);
 }
-

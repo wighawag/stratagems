@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { modalStack } from './ModalContainer.svelte';
-	import { genericModals } from './generic-modals.js';
+	import {onMount} from 'svelte';
+	import {modalStack} from './ModalContainer.svelte';
+	import {genericModals} from './generic-modals.js';
 	import GenericModal from './GenericModal.svelte';
 
 	let modalsContainer: HTMLDivElement;
