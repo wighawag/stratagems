@@ -4,10 +4,10 @@
 	import {admin} from './admin';
 
 	import Executor from '$lib/ui/components/Executor.svelte';
-	import {time} from '$lib/blockchain/time';
+	import {every3Seconds} from '$lib/blockchain/time';
 	import {increaseBlockTime, increaseContractTime} from '$utils/debug';
 
-	$: date = new Date($time.timestamp * 1000);
+	$: date = new Date($every3Seconds.timestamp * 1000);
 
 	let hours = 1;
 </script>

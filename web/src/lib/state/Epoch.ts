@@ -1,5 +1,5 @@
 // import {createStore} from '$lib/utils/stores/utils';
-import {time} from '$lib/blockchain/time';
+import {every3Seconds} from '$lib/blockchain/time';
 import {contractsInfos} from '$lib/config';
 import {writable, type Readable, derived, get} from 'svelte/store';
 
@@ -36,10 +36,14 @@ export type EpochState = {
 };
 
 export function initEpoch(time: Readable<number>) {
+	let lastEpoch = 0;
 	const epoch = writable(0, (set) =>
 		time.subscribe((v) => {
 			const epoch = computeEpoch(v).epoch;
-			set(epoch);
+			if (lastEpoch != epoch) {
+				lastEpoch = epoch;
+				set(epoch);
+			}
 		}),
 	);
 
@@ -80,7 +84,7 @@ export function initEpoch(time: Readable<number>) {
 	};
 }
 
-export const {epoch, epochState, epochInfo} = initEpoch(derived(time, (v) => v.timestamp));
+export const {epoch, epochState, epochInfo} = initEpoch(derived(every3Seconds, (v) => v.timestamp));
 
 if (typeof window !== 'undefined') {
 	(window as any).epoch = epoch;

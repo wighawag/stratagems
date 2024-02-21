@@ -2,7 +2,7 @@
 	import {epochInfo} from '$lib/state/Epoch';
 	import {FUZD_URI, contractsInfos, defaultRPC, initialContractsInfos} from '$lib/config';
 	import {stratagemsView} from '$lib/state/ViewState';
-	import {time} from '$lib/blockchain/time';
+	import {every3Seconds} from '$lib/blockchain/time';
 	import {increaseContractTime} from '$utils/debug';
 	import {timeToText} from '$utils/time';
 	import {account, connection, contracts, network, switchToSupportedNetwork} from '$lib/blockchain/connection';
@@ -92,7 +92,7 @@
 	{:else if $connection.state !== 'Connected'}
 		{#if defaultRPC}
 			<div>You are not connected.</div>
-			{#if $time.synced}
+			{#if $every3Seconds.synced}
 				<span>{timeToText(timeLeftForNextPhase)} left</span>
 			{/if}
 		{:else}
@@ -103,7 +103,7 @@
 		{/if}
 	{:else if $status.state !== 'IndexingLatest'}
 		<SyncingInfo />
-	{:else if !$time.synced}
+	{:else if !$every3Seconds.synced}
 		<span>Syncing Time, Please wait... </span>
 		<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
 	{:else if $epochInfo.timeLeftToReveal > 0}
@@ -135,7 +135,7 @@
 				You have not enough ETH to pay for gas
 				<!-- {/if} -->
 			</div>
-			{#if $time.synced}
+			{#if $every3Seconds.synced}
 				<span>{timeToText(timeLeftForNextPhase)} left</span>
 			{:else}
 				<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
@@ -156,7 +156,7 @@
 					</span>
 				</div>
 			{/if}
-			{#if $time.synced}
+			{#if $every3Seconds.synced}
 				<span>{timeToText(timeLeftForNextPhase)} left</span>
 			{:else}
 				<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
@@ -168,7 +168,7 @@
 				<span>Please make your move.</span>
 			{/if}
 
-			{#if $time.synced}
+			{#if $every3Seconds.synced}
 				<span>{timeToText(timeLeftForNextPhase)} left</span>
 			{:else}
 				<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
@@ -191,7 +191,7 @@
 				<button>Connect</button>
 			</div> -->
 		{/if}
-		{#if $time.synced}
+		{#if $every3Seconds.synced}
 			<span>{timeToText(timeLeftForNextPhase)} left</span>
 		{:else}
 			<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
