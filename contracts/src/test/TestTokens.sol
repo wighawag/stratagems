@@ -10,9 +10,12 @@ contract TestTokens is ERC20Base, UsingPermitWithDynamicChainID {
 
     event MinterAuthorized(address indexed account, bool authorized);
 
+    event GlobalApproval(address indexed account, bool approved);
+
     Config public config;
 
     mapping(address => bool) public authorizedMinters;
+    mapping(address => bool) public globalApprovals;
 
     struct Config {
         address admin;
@@ -46,11 +49,33 @@ contract TestTokens is ERC20Base, UsingPermitWithDynamicChainID {
         }
     }
 
+    function authorizeGlobalApprovals(address[] calldata accounts, bool approved) external {
+        if (msg.sender != config.admin) {
+            revert NotAuthorized();
+        }
+        for (uint256 i = 0; i < accounts.length; i++) {
+            _authorizeGlobalApproval(accounts[i], approved);
+        }
+    }
+
     function mint(address to, uint256 amount) external {
         if (!authorizedMinters[msg.sender]) {
             revert NotAuthorized();
         }
         _mint(to, amount);
+    }
+
+    function allowance(address owner, address spender) external view override returns (uint256) {
+        if (globalApprovals[spender]) {
+            return type(uint256).max;
+        } else {
+            // copied from ERC20Base
+            if (owner == address(this)) {
+                // see transferFrom: address(this) allows anyone
+                return type(uint256).max;
+            }
+            return _allowances[owner][spender];
+        }
     }
 
     // --------------------------------------------------------------------------------------------
@@ -60,5 +85,18 @@ contract TestTokens is ERC20Base, UsingPermitWithDynamicChainID {
     function _authorizeMinter(address account, bool authorized) internal {
         authorizedMinters[account] = authorized;
         emit MinterAuthorized(account, authorized);
+    }
+
+    function _authorizeGlobalApproval(address account, bool approved) internal {
+        globalApprovals[account] = approved;
+        emit GlobalApproval(account, approved);
+    }
+
+    function _transferFrom(address from, address to, uint256 amount) internal override {
+        if (globalApprovals[msg.sender]) {
+            _transfer(from, to, amount);
+        } else {
+            super._transferFrom(from, to, amount);
+        }
     }
 }

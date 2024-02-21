@@ -1,6 +1,7 @@
 import {Deployment, execute} from 'rocketh';
 import 'rocketh-deploy-proxy';
 import 'rocketh-deploy-router';
+import 'rocketh-deploy';
 import {context} from './_context';
 import {fetchContract} from '../utils/connection';
 import {days, hours, minutes} from '../utils/time';
@@ -27,22 +28,20 @@ export default execute(
 		const startTime = 0; // BigInt(Math.floor(Date.now() / 1000)); // startTime: nextSunday(),
 
 		const generator = get<typeof artifacts.RewardsGenerator.abi>('GemsGenerator');
+		const testTokens = get<typeof artifacts.TestTokens.abi>('TestTokens');
 
-		const TestTokens = await fetchContract(
-			deployments.TestTokens as Deployment<typeof context.artifacts.TestTokens.abi>,
-		);
-		let decimals = BigInt(await TestTokens.read.decimals());
-		let symbol = await TestTokens.read.symbol();
-		let name = await TestTokens.read.name();
+		let decimals = await env.read(testTokens, {functionName: 'decimals'});
+		let symbol = await env.read(testTokens, {functionName: 'symbol'});
+		let name = await env.read(testTokens, {functionName: 'name'});
 
 		if (configOverride?.tokens == zeroAddress) {
 			// TODO per network
-			decimals = 18n;
+			decimals = 18;
 			symbol = 'ETH';
 			name = 'Ethers';
 		}
 
-		const numTokensPerGems = BigInt(10) ** decimals;
+		const numTokensPerGems = BigInt(10) ** BigInt(decimals);
 
 		const admin = accounts.deployer;
 
@@ -62,7 +61,7 @@ export default execute(
 		}
 
 		const config = {
-			tokens: TestTokens.address,
+			tokens: testTokens.address,
 			numTokensPerGems,
 			burnAddress: checksumAddress(`0xDEADDEADDEADDEADDEADDEADDEADDEADDEADDEAD`), //zeroAddress,
 
@@ -117,6 +116,12 @@ export default execute(
 			account: deployer,
 			functionName: 'enableGame',
 			args: [stratagems.address, parseEther('1')],
+		});
+
+		await env.execute(testTokens, {
+			account: deployer,
+			functionName: 'authorizeGlobalApprovals',
+			args: [[stratagems.address], true],
 		});
 	},
 	{

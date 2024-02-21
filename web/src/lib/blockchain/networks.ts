@@ -82,7 +82,7 @@ function transformGameConfig(data: typeof initialContractsInfos.contracts.Strata
 		currency: {
 			symbol: data.currency.symbol,
 			name: data.currency.name,
-			decimals: Number(data.currency.decimals.slice(0, -1)),
+			decimals: Number(data.currency.decimals),
 		},
 	};
 	return newValue;

@@ -2,7 +2,7 @@
 export function formatUnits(value: bigint, decimals: number | string, significantDecimals = 2) {
 	if (typeof decimals === 'string') {
 		if (decimals.endsWith('n')) {
-			decimals = Number(decimals.slice(0, -1));
+			decimals = Number(decimals);
 		} else {
 			decimals = Number(decimals);
 		}

@@ -31,7 +31,7 @@
     "rollup-plugin-node-builtins": "^2.1.2",
     "set-defaults": "^0.0.2",
     "solidity-coverage": "^0.8.7",
-    "solidity-kit": "^0.4.0",
+    "solidity-kit": "^0.4.1",
     "solidity-proxy": "^0.4.0",
     "stratagems-common": "workspace:*",
     "stratagems-indexer": "workspace:*",

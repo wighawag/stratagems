@@ -4,7 +4,7 @@
 	import {stratagemsView} from '$lib/state/ViewState';
 	import {formatUnits} from '$utils/ui/text';
 
-	const decimals = Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1));
+	const decimals = Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals);
 	$: total = $stratagemsView.tokensToCollect.reduce((p, c) => p + c.amount, 0n);
 
 	async function claim() {

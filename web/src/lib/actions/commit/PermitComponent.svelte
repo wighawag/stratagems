@@ -31,7 +31,7 @@
 			? 'all'
 			: formatUnits(
 					$state.amountToAllow,
-					Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
+					Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals),
 				)
 		: '0';
 </script>

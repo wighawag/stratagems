@@ -7,24 +7,28 @@
 	}>) {
 		list: ModalOnStack[] = [];
 		currentTrap: FocusTrap | undefined;
-		present: boolean = false;
+		present: number = 0;
 		add(modal: ModalOnStack) {
-			this.present = true;
+			this.present++;
+			console.log({add: this.present});
 			this.list.push(modal);
 			this.dispatchEvent(new CustomEvent('added', {detail: modal}));
 		}
-		remove(modal: ModalOnStack) {
+		remove(modal: ModalOnStack, skipPresentRemoval = false) {
 			const i = this.list.indexOf(modal);
 			if (i >= 0) {
 				this.list.splice(i, 1);
+				if (!skipPresentRemoval) {
+					this.present--;
+					console.log({remove: this.present});
+				}
+				this.dispatchEvent(new CustomEvent('removed', {detail: modal}));
 			}
-			this.dispatchEvent(new CustomEvent('removed', {detail: modal}));
 		}
 
 		onOutroEnd(modal: ModalOnStack) {
-			if (this.list.length === 0) {
-				this.present = false;
-			}
+			this.present--;
+			console.log({onOutroEnd: this.present});
 		}
 
 		cancel() {
@@ -72,10 +76,12 @@
 
 		modal = {element, trigger, oncancel};
 		modalStack.add(modal);
+
+		return () => modalStack.remove(modal);
 	});
 
 	function onOutroStart() {
-		modalStack.remove(modal);
+		modalStack.remove(modal, true);
 		const currentTrap = modalStack.currentTrap;
 		if (currentTrap) {
 			try {

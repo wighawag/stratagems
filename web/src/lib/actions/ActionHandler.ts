@@ -10,7 +10,7 @@ import {modalStack} from '$utils/ui/modals/ModalContainer.svelte';
 
 export class ActionHandler {
 	onCellClicked(x: number, y: number) {
-		if (modalStack.present) {
+		if (modalStack.present > 0) {
 			return;
 		}
 		if (get(tour).running) {

@@ -6,7 +6,7 @@
 	import {MINIMUM_REQUIRED_ETH_BALANCE, balance} from '$lib/state/balance';
 	import {formatUnits} from '$utils/ui/text';
 
-	const decimals = Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1));
+	const decimals = Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals);
 
 	const offchainState = accountData.offchainState;
 

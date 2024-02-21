@@ -56,7 +56,7 @@ function isValidMove(move: LocalMove) {
 	return false;
 }
 
-const decimals = Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1));
+const decimals = Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals);
 
 function merge(
 	state: Data,

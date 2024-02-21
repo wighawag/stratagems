@@ -28,23 +28,20 @@
 	$: currentReserve = $balance.reserve;
 	$: currentReserveString = formatUnits(
 		currentReserve,
-		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
+		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals),
 	);
 
 	$: currentBalance = $balance.tokenBalance;
 	$: currentBalnceString = formatUnits(
 		currentBalance,
-		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
+		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals),
 	);
 
 	$: allowance = $balance.tokenAllowance;
 	$: allowanceString =
 		allowance == 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffn
 			? 'Infinite'
-			: formatUnits(
-					allowance,
-					Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals.slice(0, -1)),
-				);
+			: formatUnits(allowance, Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals));
 
 	function clearAllowance() {
 		contracts.execute(async ({contracts, account}) => {
