@@ -121,7 +121,7 @@ const _every3Seconds = writable({timestamp, synced}, (set, update) => {
 			const delta = local - lastFetchLocalTime;
 
 			update((v) => {
-				const newT = Math.floor(v.timestamp + delta / 1000);
+				const newT = Math.floor(timestamp + delta / 1000);
 				v.timestamp = newT;
 				return v;
 			});
@@ -149,10 +149,12 @@ const _everySeconds = writable({timestamp, synced}, (set, update) => {
 		const delta = local - lastFetchLocalTime;
 
 		update((v) => {
-			const newT = Math.floor(v.timestamp + delta / 1000);
-			if (newT != v.timestamp || v.synced != synced) {
+			const newT = Math.floor(timestamp + delta / 1000);
+			if (v.synced != synced || newT > v.timestamp) {
 				v.timestamp = newT;
 				v.synced = synced;
+			} else {
+				v.timestamp += 1;
 			}
 			return v;
 		});
@@ -193,4 +195,5 @@ export const time = {
 
 if (typeof window !== 'undefined') {
 	(window as any).every3Seconds = every3Seconds;
+	(window as any).everySeconds = everySeconds;
 }

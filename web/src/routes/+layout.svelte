@@ -22,6 +22,7 @@
 	import SplashScreen from '$lib/ui/loading/SplashScreen.svelte';
 	import Debug from '$lib/ui/debug/Debug.svelte';
 	import EventsView from '$lib/ui/events/EventsView.svelte';
+	import RevealPhaseInformation from '$lib/ui/information/RevealPhaseInformation.svelte';
 
 	$: showWIPNotice =
 		(initialContractsInfos as any).name === 'composablelabs' ||
@@ -58,6 +59,8 @@
 	<Admin />
 
 	<Debug />
+
+	<RevealPhaseInformation />
 
 	<Modals />
 

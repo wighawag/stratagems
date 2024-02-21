@@ -5,6 +5,7 @@ import {xyToXYID, Color} from 'stratagems-common';
 import {get} from 'svelte/store';
 import {epochState} from '$lib/state/Epoch';
 import {tour} from '$lib/ui/tour/drive';
+import {info} from '$lib/ui/information/info';
 
 export class ActionHandler {
 	onCellClicked(x: number, y: number) {
@@ -21,6 +22,12 @@ export class ActionHandler {
 		const currentState = get(stratagemsView);
 		const currentOffchainState = get(accountData.offchainState);
 		const $epochState = get(epochState);
+
+		if (!$epochState.isActionPhase) {
+			info.setRevealPhase();
+			return;
+		}
+
 		const cellID = xyToXYID(x, y);
 
 		const currentColor = currentOffchainState.currentColor.color || Number((BigInt(player) % 5n) + 1n);
