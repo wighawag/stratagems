@@ -1,7 +1,7 @@
 import {defineConfig} from 'vitest/config';
 
 import builtins from 'rollup-plugin-node-builtins';
-const builtinsPlugin = builtins({crypto: true});
+const builtinsPlugin = {name: 'builtins', ...builtins({crypto: true})};
 
 export default defineConfig({
 	test: {

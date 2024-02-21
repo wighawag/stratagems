@@ -12,7 +12,7 @@ import {getConnection, fetchContract} from '../../utils/connection';
 import artifacts from '../../generated/artifacts';
 import {network} from 'hardhat';
 
-import {GameConfig} from '../../deploy/011_deploy_game';
+import type {GameConfig} from '../../deploy/020_deploy_game';
 import {formatEther, parseEther} from 'viem';
 import {GridEnv, getGrid, performGridActions, withGrid} from './stratagems';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
