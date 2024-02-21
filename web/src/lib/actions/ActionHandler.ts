@@ -6,9 +6,13 @@ import {get} from 'svelte/store';
 import {epochState} from '$lib/state/Epoch';
 import {tour} from '$lib/ui/tour/drive';
 import {info} from '$lib/ui/information/info';
+import {modalStack} from '$utils/ui/modals/ModalContainer.svelte';
 
 export class ActionHandler {
 	onCellClicked(x: number, y: number) {
+		if (modalStack.present) {
+			return;
+		}
 		if (get(tour).running) {
 			return;
 		}

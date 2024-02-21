@@ -32,6 +32,10 @@
 		margin-bottom: 1rem;
 	}
 
+	.description p {
+		margin-bottom: 0.4rem;
+	}
+
 	.actions {
 		text-align: center;
 	}

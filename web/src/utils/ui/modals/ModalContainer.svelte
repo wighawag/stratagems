@@ -7,7 +7,9 @@
 	}>) {
 		list: ModalOnStack[] = [];
 		currentTrap: FocusTrap | undefined;
+		present: boolean = false;
 		add(modal: ModalOnStack) {
+			this.present = true;
 			this.list.push(modal);
 			this.dispatchEvent(new CustomEvent('added', {detail: modal}));
 		}
@@ -17,6 +19,12 @@
 				this.list.splice(i, 1);
 			}
 			this.dispatchEvent(new CustomEvent('removed', {detail: modal}));
+		}
+
+		onOutroEnd(modal: ModalOnStack) {
+			if (this.list.length === 0) {
+				this.present = false;
+			}
 		}
 
 		cancel() {
@@ -94,21 +102,18 @@
 	}
 
 	function onOutroEnd() {
+		modalStack.onOutroEnd(modal);
 		if (onclosed) {
 			onclosed();
 		}
 	}
 
 	function onBackdropInteraction(event: MouseEvent | TouchEvent): void {
-		if (!(event.target instanceof Element)) {
-			return;
-		}
-		if (event.target.classList.contains('overlay')) {
-			event.stopImmediatePropagation();
-			event.preventDefault();
-			if (modal.oncancel) {
-				return modal.oncancel();
-			}
+		event.stopImmediatePropagation();
+		event.preventDefault();
+		event.stopPropagation();
+		if (modal.oncancel) {
+			return modal.oncancel();
 		}
 	}
 </script>
@@ -129,6 +134,7 @@
 
 <style>
 	.overlay {
+		pointer-events: initial;
 		position: absolute;
 		inset: 0;
 		width: 100%;
