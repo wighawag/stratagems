@@ -102,4 +102,14 @@ interface UsingStratagemsTypes {
         uint256 tokensBurnt;
         uint256 tokensReturned;
     }
+
+    struct DisplayData {
+        string x;
+        string y;
+        string life;
+        string delta;
+        string creationEpoch;
+        string factionName;
+        string factionColor;
+    }
 }

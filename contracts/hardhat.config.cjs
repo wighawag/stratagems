@@ -15,12 +15,13 @@ task('node').setAction(async (args, hre, runSuper) => {
 	return runSuper(args);
 });
 
-const defaultVersion = '0.8.20';
+const defaultVersion = '0.8.24';
 const defaultSettings = {
 	optimizer: {
 		enabled: true,
 		runs: 999999,
 	},
+	viaIR: true,
 	outputSelection: {
 		'*': {
 			'*': ['evm.methodIdentifiers'],

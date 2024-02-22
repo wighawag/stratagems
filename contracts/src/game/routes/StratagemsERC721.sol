@@ -76,16 +76,44 @@ contract StratagemsERC721 is
 
     /// @inheritdoc IERC721Metadata
     function name() external pure returns (string memory) {
-        return "GemCells";
+        return "Islands";
     }
 
     /// @inheritdoc IERC721Metadata
     function symbol() external pure returns (string memory) {
-        return "GEM_CELL";
+        return "ISLAND";
     }
 
     /// @inheritdoc IERC721Metadata
-    function tokenURI(uint256 tokenID) external view returns (string memory) {}
+    function tokenURI(uint256 tokenID) external view returns (string memory) {
+        (uint24 epoch, ) = _epoch();
+        (Cell memory cell, ) = _getUpdatedCell(uint64(tokenID), epoch);
+        (int32 x, int32 y) = PositionUtils.toXY(uint64(tokenID));
+
+        (string memory factionName, string memory factionColor) = _factionDisplay(cell.color);
+
+        DisplayData memory data = DisplayData({
+            x: StringUtils.toString(x),
+            y: StringUtils.toString(y),
+            life: StringUtils.toString(cell.life),
+            delta: StringUtils.toString(_effectiveDelta(cell.delta, cell.enemyMap)),
+            creationEpoch: StringUtils.toString(cell.epochWhenTokenIsAdded),
+            factionName: factionName,
+            factionColor: factionColor
+        });
+
+        string memory svgURI = _svgURI(data);
+        return
+            string.concat(
+                'data:application/json,{"name":"Island%20(',
+                data.x,
+                ",",
+                data.y,
+                ')","description":"A%20Piece%20Of%20Land%20In%20Stratagems,%20An%20Autonomous%20World%20Created%20By%20Players.","image":"',
+                svgURI,
+                '"}'
+            );
+    }
 
     /// @inheritdoc IERC721WithBlocknumber
     function ownerAndLastTransferBlockNumberOf(
@@ -283,5 +311,61 @@ contract StratagemsERC721 is
         owner = address(uint160(data));
         operatorEnabled = (data & OPERATOR_FLAG) == OPERATOR_FLAG;
         nonce = (data >> 160) & 0xFFFFFFFFFFFFFFFFFFFFFF;
+    }
+
+    function _svgURI(DisplayData memory data) internal pure returns (string memory) {
+        // data:image/svg+xml,<svg%2520viewBox='0%25200%252032%252016'%2520xmlns='http://www.w3.org/2000/svg'><text%2520x='50%'%2520y='50%'%2520dominant-baseline='middle'%2520text-anchor='middle'%2520style='fill:rgb(219,39,119);font-size:12px;
+        return
+            string.concat(
+                'data:image/svg+xml,<svg%2520xmlns="http://www.w3.org/2000/svg"%2520viewBox="0%25200%2520512%2520512"><title>Island%2520',
+                "(",
+                data.x,
+                ",",
+                data.y,
+                ')</title><rect%2520x="16"%2520y="16"%2520width="480"%2520height="480"%2520stroke="',
+                data.factionColor,
+                '"%2520stroke-width="3px"%2520fill="transparent"/><text%2520x="256"%2520y="256"%2520font-size="48px"%2520font-weight="bold"%2520fill="',
+                data.factionColor,
+                '"%2520dominant-baseline="middle"%2520text-anchor="middle"><tspan%2520x="256"%2520dy="-3.7em">Island</tspan><tspan%2520x="256"%2520dy="1em">(',
+                data.x,
+                ",",
+                data.y,
+                ')</tspan><tspan%2520x="256"%2520dy="2.2em">Faction:%2520',
+                data.factionName,
+                '</tspan><tspan%2520x="256"%2520dy="1em">Life:%2520',
+                data.life,
+                '</tspan><tspan%2520x="256"%2520dy="1em">Growth:%2520',
+                data.delta,
+                '</tspan><tspan%2520x="256"%2520dy="2.3em">Epoch%20',
+                data.creationEpoch,
+                "</tspan></text></svg>"
+            );
+    }
+
+    function _factionDisplay(
+        Color color
+    ) internal pure returns (string memory factionName, string memory factionColor) {
+        if (color == Color.None) {
+            factionName = "None";
+            factionColor = "gray";
+        } else if (color == Color.Blue) {
+            factionName = "Blue";
+            factionColor = "blue";
+        } else if (color == Color.Red) {
+            factionName = "Red";
+            factionColor = "red";
+        } else if (color == Color.Green) {
+            factionName = "Green";
+            factionColor = "green";
+        } else if (color == Color.Yellow) {
+            factionName = "Yellow";
+            factionColor = "yellow";
+        } else if (color == Color.Purple) {
+            factionName = "Purple";
+            factionColor = "purple";
+        } else if (color == Color.Evil) {
+            factionName = "Evil";
+            factionColor = "black";
+        }
     }
 }
