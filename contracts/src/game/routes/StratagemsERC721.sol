@@ -221,7 +221,7 @@ contract StratagemsERC721 is
         }
     }
 
-    function _transferFrom(address from, address to, uint256 tokenID, bool registered) internal virtual {
+    function _transferFrom(address from, address to, uint256 tokenID, bool /*registered */) internal virtual {
         // unchecked {
         // 	_balances[to]++;
         // 	if (registered) {

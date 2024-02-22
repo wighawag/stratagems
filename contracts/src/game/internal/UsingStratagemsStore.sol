@@ -7,6 +7,8 @@ contract UsingStratagemsStore is UsingStratagemsTypes {
     mapping(uint256 => Cell) internal _cells;
     mapping(uint256 => uint256) internal _owners; //owner + approval + ... erc721
 
+    Discovered _discovered;
+
     mapping(address => uint256) internal _tokensInReserve;
     mapping(address => Commitment) internal _commitments;
 

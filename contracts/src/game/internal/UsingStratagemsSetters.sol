@@ -234,6 +234,90 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         // logger.logCell(0,string.concat("AFTER ", Strings.toString(epoch)),move.position,currentState,address(uint160(_owners[move.position])));
     }
 
+    // this can work like in conquest as even though the world works in epoch
+    //  we do not mind if a player could use another play moves to go further
+    //  they would just need to ensure their reveal is in order
+    //  In practise though player would not need this as the discovery gap should be big enough
+    // But an alternative to tracking the 4 discovery point, would be to ask player to provide land position
+    //  for the 4 direction. THey could also provide only one position for all 4 if that is enough
+    // NOTE: would need to set initial discovery:
+    // `_discovered = Discovered({
+    //         minX: _initialSpaceExpansion,
+    //         maxX: _initialSpaceExpansion,
+    //         minY: _initialSpaceExpansion,
+    //         maxY: _initialSpaceExpansion
+    //     });
+    //     emit Initialized(
+    //         _initialSpaceExpansion,
+    //     );`
+    // // solhint-disable-next-line code-complexity
+    // function _setDiscoveryAfterStaking(uint256 location) internal returns (bool invalid) {
+    //     Discovered memory discovered = _discovered;
+    //     uint32 _expansionDelta = 12;
+
+    //     (int32 x32, int32 y32) = PositionUtils.toXY(uint64(location));
+    //     int256 x = (int40(x32));
+    //     int256 y = (int40(y32));
+
+    //     int40 UINT32_MAX = 0xffffffff;
+
+    //     bool changes = false;
+    //     if (x < 0) {
+    //         if (-x > int256(uint256(discovered.minX))) {
+    //             return false;
+    //         }
+    //         x = -x + int32(_expansionDelta);
+    //         if (x > UINT32_MAX) {
+    //             x = UINT32_MAX;
+    //         }
+    //         if (int256(uint256(discovered.minX)) < x) {
+    //             discovered.minX = uint32(uint256(x));
+    //             changes = true;
+    //         }
+    //     } else {
+    //         if (x > int256(uint256(discovered.maxX))) {
+    //             return false;
+    //         }
+    //         x = x + int32(_expansionDelta);
+    //         if (x > UINT32_MAX) {
+    //             x = UINT32_MAX;
+    //         }
+    //         if (discovered.maxX < uint32(uint256(x))) {
+    //             discovered.maxX = uint32(uint256(x));
+    //             changes = true;
+    //         }
+    //     }
+
+    //     if (y < 0) {
+    //         if (-y > int256(uint256(discovered.minY))) {
+    //             return false;
+    //         }
+    //         y = -y + int32(_expansionDelta);
+    //         if (y > UINT32_MAX) {
+    //             y = UINT32_MAX;
+    //         }
+    //         if (int256(uint256(discovered.minY)) < y) {
+    //             discovered.minY = uint32(uint256(y));
+    //             changes = true;
+    //         }
+    //     } else {
+    //         if (y > int256(uint256(discovered.maxY))) {
+    //             return false;
+    //         }
+    //         y = y + int32(_expansionDelta);
+    //         if (y > UINT32_MAX) {
+    //             y = UINT32_MAX;
+    //         }
+    //         if (int256(uint256(discovered.maxY)) < y) {
+    //             discovered.maxY = uint32(uint256(y));
+    //             changes = true;
+    //         }
+    //     }
+    //     if (changes) {
+    //         _discovered = discovered;
+    //     }
+    // }
+
     function _propagate(
         TokenTransferCollection memory transferCollection,
         Move memory move,

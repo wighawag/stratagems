@@ -67,6 +67,14 @@ interface UsingStratagemsTypes {
     // --------------------------------------------------------------------------------------------
     // STORAGE TYPES
     // --------------------------------------------------------------------------------------------
+
+    struct Discovered {
+        uint32 minX;
+        uint32 maxX;
+        uint32 minY;
+        uint32 maxY;
+    }
+
     struct Cell {
         uint24 lastEpochUpdate;
         uint24 epochWhenTokenIsAdded;
