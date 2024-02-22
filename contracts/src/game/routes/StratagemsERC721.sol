@@ -314,7 +314,6 @@ contract StratagemsERC721 is
     }
 
     function _svgURI(DisplayData memory data) internal pure returns (string memory) {
-        // data:image/svg+xml,<svg%2520viewBox='0%25200%252032%252016'%2520xmlns='http://www.w3.org/2000/svg'><text%2520x='50%'%2520y='50%'%2520dominant-baseline='middle'%2520text-anchor='middle'%2520style='fill:rgb(219,39,119);font-size:12px;
         return
             string.concat(
                 "data:image/svg+xml,<svg%2520xmlns='http://www.w3.org/2000/svg'%2520viewBox='0%25200%2520512%2520512'><title>Island%2520",
