@@ -1,14 +1,13 @@
 import {loadEnvironment} from 'rocketh';
 import {context} from '../deploy/_context';
-import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {parseUnits} from 'viem';
 import hre from 'hardhat';
 
 async function main() {
 	const env = await loadEnvironment(
 		{
-			provider: hre.network.provider as EIP1193ProviderWithoutEvents,
-			networkName: hre.network.name,
+			provider: hre.network.provider,
+			network: hre.network.name,
 		},
 		context,
 	);

@@ -2,7 +2,6 @@ import {generatePrivateKey, privateKeyToAccount} from 'viem/accounts';
 
 import {Deployment, loadEnvironment} from 'rocketh';
 import {context} from '../deploy/_context';
-import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {formatEther, parseEther, parseUnits} from 'viem';
 import hre from 'hardhat';
 import fs from 'fs-extra';
@@ -15,8 +14,8 @@ const num = (args[0] && parseInt(args[0])) || 100;
 async function main() {
 	const env = await loadEnvironment(
 		{
-			provider: hre.network.provider as EIP1193ProviderWithoutEvents,
-			networkName: hre.network.name,
+			provider: hre.network.provider,
+			network: hre.network.name,
 		},
 		context,
 	);

@@ -1,4 +1,8 @@
-import type {EIP1193ProviderWithoutEvents} from 'eip-1193';
+import {loadEnvironment} from 'rocketh';
+import {context} from '../deploy/_context';
+import {EIP1193ProviderWithoutEvents} from 'eip-1193';
+import {parseUnits} from 'viem';
+import hre from 'hardhat';
 
 function avg(arr: bigint[]) {
 	const sum = arr.reduce((a: bigint, v: bigint) => a + v);
@@ -40,3 +44,17 @@ export async function estimateGasPrice(provider: EIP1193ProviderWithoutEvents) {
 		fast: {maxFeePerGas: fast + baseFeePerGas, maxPriorityFeePerGas: fast},
 	};
 }
+
+async function main() {
+	const env = await loadEnvironment(
+		{
+			provider: hre.network.provider,
+			network: hre.network.name,
+		},
+		context,
+	);
+
+	const result = await estimateGasPrice(env.network.provider);
+	console.log(result);
+}
+main();
