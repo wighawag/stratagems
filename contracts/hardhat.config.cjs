@@ -9,9 +9,11 @@ const {task} = require('hardhat/config');
 // we override the node task to set up our block time interval
 // setting it up in the config below would also set it in tests and we do not want that
 task('node').setAction(async (args, hre, runSuper) => {
-	hre.config.networks.hardhat.mining.interval = process.env['BLOCK_TIME']
-		? parseInt(process.env['BLOCK_TIME']) * 1000
-		: undefined;
+	if (process.env['BLOCK_TIME']) {
+		hre.config.networks.hardhat.mining = hre.config.networks.hardhat.mining || {};
+		hre.config.networks.hardhat.mining.auto = true;
+		hre.config.networks.hardhat.mining.interval = parseInt(process.env['BLOCK_TIME']) * 1000;
+	}
 	return runSuper(args);
 });
 
@@ -46,10 +48,6 @@ const config = {
 				hardhat: {
 					initialBaseFeePerGas: 0,
 					allowUnlimitedContractSize: true,
-					mining: {
-						auto: true, // TODO
-						interval: process.env['BLOCK_TIME'] ? parseInt(process.env['BLOCK_TIME']) * 1000 : undefined,
-					},
 				},
 			}),
 		),

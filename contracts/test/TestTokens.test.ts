@@ -16,12 +16,12 @@ async function deployStratagems(config?: {
 	revealPeriod: bigint;
 	maxLife: number;
 }) {
-	const {accounts, walletClient, publicClient} = await getConnection();
+	const {accounts} = await getConnection();
 	const [deployer, tokensBeneficiary, ...otherAccounts] = accounts;
 
 	const {deployments} = await loadAndExecuteDeployments(
 		{
-			provider: network.provider as any,
+			provider: network.provider,
 		},
 		config,
 	);
@@ -54,7 +54,7 @@ describe('TestTokens', function () {
 	describe('Deployment', function () {
 		it('Should be already deployed', async function () {
 			const {deployments} = await loadAndExecuteDeployments({
-				provider: network.provider as any,
+				provider: network.provider,
 			});
 			const TestTokens = await fetchContract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
 			const decimals = await TestTokens.read.decimals();

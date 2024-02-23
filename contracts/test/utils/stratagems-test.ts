@@ -154,7 +154,7 @@ async function deployStratagems(override?: Partial<GameConfig>) {
 	const {accounts, walletClient, publicClient} = await getConnection();
 	const [deployer, tokensBeneficiary, ...otherAccounts] = accounts;
 
-	const provider = network.provider as EIP1193ProviderWithoutEvents;
+	const provider = network.provider;
 	const {deployments} = await loadAndExecuteDeployments(
 		{
 			provider,
