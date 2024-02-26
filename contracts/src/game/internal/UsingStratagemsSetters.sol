@@ -102,6 +102,55 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         }
     }
 
+    function _placeColor(
+        address player,
+        Cell memory currentState,
+        Move memory move,
+        uint24 epoch,
+        int8 newDelta,
+        uint8 newEnemyMap
+    ) internal {
+        {
+            int8 oldEffectiveDelta = _effectiveDelta(currentState.delta, currentState.enemyMap);
+            int8 newEffectiveDelta = _effectiveDelta(newDelta, newEnemyMap);
+            if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
+                GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
+            } else if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
+                GENERATOR.add(player, NUM_TOKENS_PER_GEMS);
+            }
+        }
+
+        currentState.enemyMap = newEnemyMap;
+
+        if (currentState.color == Color.Evil && currentState.life != 0) {
+            unchecked {
+                currentState.stake += 1;
+                if (currentState.stake == 0) {
+                    // we cap it, losing stake there
+                    // TODO reevaluate
+                    // send it to special address ?
+                    currentState.stake = 255;
+                }
+            }
+        } else {
+            currentState.stake = 1;
+        }
+
+        currentState.delta = newDelta;
+        currentState.life = 1;
+        currentState.lastEpochUpdate = epoch;
+        address oldOwner = _ownerOf(move.position);
+        if (currentState.color == Color.Evil) {
+            if (oldOwner != 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF) {
+                emit Transfer(address(0), 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, move.position);
+                _owners[move.position] = uint256(uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF));
+            }
+        } else {
+            emit Transfer(address(0), player, move.position);
+            _owners[move.position] = uint256(uint160(player));
+        }
+    }
+
     // Note on COLLISION
     // If one color was used more than other, we could consider the cell having N owner and N times the number of tokens
     // such cells would be a good target for others
@@ -188,45 +237,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         } else {
             tokensPlaced = NUM_TOKENS_PER_GEMS;
 
-            {
-                int8 oldEffectiveDelta = _effectiveDelta(currentState.delta, currentState.enemyMap);
-                int8 newEffectiveDelta = _effectiveDelta(newDelta, newEnemyMap);
-                if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
-                    GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
-                } else if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
-                    GENERATOR.add(player, NUM_TOKENS_PER_GEMS);
-                }
-            }
-
-            currentState.enemyMap = newEnemyMap;
-
-            if (currentState.color == Color.Evil && currentState.life != 0) {
-                unchecked {
-                    currentState.stake += 1;
-                    if (currentState.stake == 0) {
-                        // we cap it, losing stake there
-                        // TODO reevaluate
-                        // send it to special address ?
-                        currentState.stake = 255;
-                    }
-                }
-            } else {
-                currentState.stake = 1;
-            }
-
-            currentState.delta = newDelta;
-            currentState.life = 1;
-            currentState.lastEpochUpdate = epoch;
-            address oldOwner = _ownerOf(move.position);
-            if (currentState.color == Color.Evil) {
-                if (oldOwner != 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF) {
-                    emit Transfer(address(0), 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, move.position);
-                    _owners[move.position] = uint256(uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF));
-                }
-            } else {
-                emit Transfer(address(0), player, move.position);
-                _owners[move.position] = uint256(uint160(player));
-            }
+            _placeColor(player, currentState, move, epoch, newDelta, newEnemyMap);
         }
 
         _cells[move.position] = currentState;
