@@ -26,6 +26,7 @@ async function setupStratagems(): Promise<Fixture> {
 						owner: to as `0x${string}`,
 						color: 5,
 						life: 2,
+						stake: 1,
 					},
 				],
 			],
