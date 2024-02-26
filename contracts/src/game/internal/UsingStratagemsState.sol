@@ -203,9 +203,10 @@ abstract contract UsingStratagemsState is
     }
 
     function _effectiveDelta(int8 delta, uint8 enemyMap) internal pure returns (int8 effectiveDelta) {
-        effectiveDelta = delta != 0 ? delta : -1;
+        // effectiveDelta = delta != 0 ? delta : -1;
+        effectiveDelta = delta > 0 ? int8(1) : -1;
         if (effectiveDelta < 0 && enemyMap == 0) {
-            effectiveDelta = 0;
+            effectiveDelta = int8(1);
         }
     }
 
