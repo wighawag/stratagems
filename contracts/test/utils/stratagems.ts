@@ -44,7 +44,8 @@ export async function withGrid(env: GridEnv, gridString: string) {
 	// console.log(gridString);
 	// console.log(grid.cells);
 	// console.log(grid.cells.map(toContractSimpleCell(env.otherAccounts)));
-	const hash = await env.Stratagems.write.forceSimpleCells([grid.cells.map(toContractSimpleCell(env.otherAccounts))], {
+	const simpleCells = grid.cells.map(toContractSimpleCell(env.otherAccounts));
+	const hash = await env.Stratagems.write.forceSimpleCells([simpleCells], {
 		account: env.stratagemsAdmin,
 	});
 	// TODO wait for receipt so the test work on real networks
@@ -83,7 +84,8 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 		moves: ContractMove[];
 	}[] = [];
 	for (const playerIndex of Object.keys(groupedActions)) {
-		const player = env.otherAccounts[playerIndex];
+		const player = env.otherAccounts[parseInt(playerIndex) < 0 ? 0 : playerIndex];
+		// console.log({player});
 		const actions = groupedActions[playerIndex];
 		const moves = actions.map((action) => ({position: xyToBigIntID(action.x, action.y), color: action.color}));
 		const commitment = prepareCommitment(moves, randomSecret());
@@ -132,7 +134,8 @@ export async function getGrid(
 		}
 	}
 	const cellIds = listOfCoords.map(({x, y}) => xyToBigIntID(x, y));
-	const fullCells = (await env.Stratagems.read.getCells([cellIds])).map((value, index) => ({
+	const cellsFromContract = await env.Stratagems.read.getCells([cellIds]);
+	const fullCells = cellsFromContract.map((value, index) => ({
 		cell: value,
 		id: cellIds[index],
 	}));

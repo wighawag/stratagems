@@ -207,6 +207,7 @@ abstract contract UsingStratagemsState is
         effectiveDelta = delta > 0 ? int8(1) : -1;
         if (effectiveDelta < 0 && enemyMap == 0) {
             effectiveDelta = int8(1);
+            // effectiveDelta = int8(0);
         }
     }
 

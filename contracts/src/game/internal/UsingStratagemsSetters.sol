@@ -175,6 +175,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
     ) internal returns (uint256 tokensPlaced, uint256 tokensBurnt, uint256 tokensReturned) {
         (Cell memory currentState, bool justDied) = _getUpdatedCell(move.position, epoch);
 
+        // logger.logPosition("move", move.position);
         // logger.logCell(0, string.concat("_computeMove at epoch ", Strings.toString(epoch)), move.position, currentState, address(uint160(_owners[move.position])));
 
         // we might have distribution still to do
@@ -209,40 +210,53 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
                 return (0, 0, NUM_TOKENS_PER_GEMS);
             }
         }
-
-        (int8 newDelta, uint8 newEnemyMap) = _propagate(
-            transferCollection,
-            move,
-            epoch,
-            currentState.color,
-            distribution,
-            currentState.stake
-        );
-
         emit MoveProcessed(move.position, player, currentState.color, move.color);
-        currentState.color = move.color;
-        currentState.distribution = 0;
-        currentState.epochWhenTokenIsAdded = epoch; // used to prevent overwriting, even Color.None
 
-        if (currentState.color == Color.None) {
-            currentState.life = 0;
-            currentState.stake = 0;
-            currentState.lastEpochUpdate = 0;
-            currentState.delta = 0;
-            currentState.enemyMap = 0;
-            emit Transfer(_ownerOf(move.position), address(0), move.position);
-            _owners[move.position] = 0;
-            tokensReturned = NUM_TOKENS_PER_GEMS;
-            GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
-        } else {
-            tokensPlaced = NUM_TOKENS_PER_GEMS;
-
-            _placeColor(player, currentState, move, epoch, newDelta, newEnemyMap);
-        }
-
-        _cells[move.position] = currentState;
+        return _completeMove(transferCollection, player, epoch, move, currentState, distribution);
 
         // logger.logCell(0,string.concat("AFTER ", Strings.toString(epoch)),move.position,currentState,address(uint160(_owners[move.position])));
+    }
+
+    function _completeMove(
+        TokenTransferCollection memory transferCollection,
+        address player,
+        uint24 epoch,
+        Move memory move,
+        Cell memory currentState,
+        uint8 distribution
+    ) internal returns (uint256 tokensPlaced, uint256 tokensBurnt, uint256 tokensReturned) {
+        unchecked {
+            (int8 newDelta, uint8 newEnemyMap) = _propagate(
+                transferCollection,
+                move,
+                epoch,
+                currentState.color,
+                distribution,
+                currentState.stake
+            );
+
+            currentState.color = move.color;
+            currentState.distribution = 0;
+            currentState.epochWhenTokenIsAdded = epoch; // used to prevent overwriting, even Color.None
+
+            if (currentState.color == Color.None) {
+                currentState.life = 0;
+                currentState.stake = 0;
+                currentState.lastEpochUpdate = 0;
+                currentState.delta = 0;
+                currentState.enemyMap = 0;
+                emit Transfer(_ownerOf(move.position), address(0), move.position);
+                _owners[move.position] = 0;
+                tokensReturned = NUM_TOKENS_PER_GEMS;
+                GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
+            } else {
+                tokensPlaced = NUM_TOKENS_PER_GEMS;
+
+                _placeColor(player, currentState, move, epoch, newDelta, newEnemyMap);
+            }
+
+            _cells[move.position] = currentState;
+        }
     }
 
     // this can work like in conquest as even though the world works in epoch
@@ -413,102 +427,113 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         _cells[position] = currentState;
     }
 
+    struct CellUpdate {
+        int8 delta;
+        uint8 enemymap;
+        uint16 due;
+    }
+    function _updateUP(
+        address[4] memory ownersToPay,
+        CellUpdate memory cellUpdate,
+        uint64 position,
+        uint24 epoch,
+        uint8 distribution,
+        Color oldColor,
+        Color newColor
+    ) internal {
+        uint64 upPosition = position.offset(0, -1);
+        (int8 enemyOrFriend, uint16 due) = _updateCell(upPosition, epoch, 2, oldColor, newColor);
+        if (enemyOrFriend < 0) {
+            cellUpdate.enemymap = cellUpdate.enemymap | 1;
+        }
+        cellUpdate.due += due;
+        cellUpdate.delta += enemyOrFriend;
+
+        if ((distribution >> 4) & 1 == 1) {
+            ownersToPay[0] = _ownerOf(upPosition);
+        }
+    }
+    function _updateLEFT(
+        address[4] memory ownersToPay,
+        CellUpdate memory cellUpdate,
+        uint64 position,
+        uint24 epoch,
+        uint8 distribution,
+        Color oldColor,
+        Color newColor
+    ) internal {
+        uint64 leftPosition = position.offset(-1, 0);
+        (int8 enemyOrFriend, uint16 due) = _updateCell(leftPosition, epoch, 3, oldColor, newColor);
+        if (enemyOrFriend < 0) {
+            cellUpdate.enemymap = cellUpdate.enemymap | 2;
+        }
+        cellUpdate.due += due;
+        cellUpdate.delta += enemyOrFriend;
+
+        if ((distribution >> 4) & 2 == 2) {
+            ownersToPay[1] = _ownerOf(leftPosition);
+        }
+    }
+
+    function _updateDOWN(
+        address[4] memory ownersToPay,
+        CellUpdate memory cellUpdate,
+        uint64 position,
+        uint24 epoch,
+        uint8 distribution,
+        Color oldColor,
+        Color newColor
+    ) internal {
+        uint64 downPosition = position.offset(0, 1);
+        (int8 enemyOrFriend, uint16 due) = _updateCell(downPosition, epoch, 0, oldColor, newColor);
+        if (enemyOrFriend < 0) {
+            cellUpdate.enemymap = cellUpdate.enemymap | 4;
+        }
+        cellUpdate.due += due;
+        cellUpdate.delta += enemyOrFriend;
+
+        if ((distribution >> 4) & 4 == 4) {
+            ownersToPay[2] = _ownerOf(downPosition);
+        }
+    }
+
+    function _updateRIGHT(
+        address[4] memory ownersToPay,
+        CellUpdate memory cellUpdate,
+        uint64 position,
+        uint24 epoch,
+        uint8 distribution,
+        Color oldColor,
+        Color newColor
+    ) internal {
+        uint64 rightPosition = position.offset(1, 0);
+        (int8 enemyOrFriend, uint16 due) = _updateCell(rightPosition, epoch, 1, oldColor, newColor);
+        if (enemyOrFriend < 0) {
+            cellUpdate.enemymap = cellUpdate.enemymap | 8;
+        }
+        cellUpdate.due += due;
+        cellUpdate.delta += enemyOrFriend;
+
+        if ((distribution >> 4) & 8 == 8) {
+            ownersToPay[3] = _ownerOf(rightPosition);
+        }
+    }
+
     function _updateNeighbours(
         uint64 position,
         uint24 epoch,
         Color oldColor,
         Color newColor,
         uint8 distribution
-    ) internal returns (int8 newDelta, uint8 newenemyMap, uint16 numDue, address[4] memory ownersToPay) {
-        unchecked {
-            int8 enemyOrFriend;
-            uint16 due;
-            {
-                uint64 upPosition = position.offset(0, -1);
-                (enemyOrFriend, due) = _updateCell(upPosition, epoch, 2, oldColor, newColor);
-                if (enemyOrFriend < 0) {
-                    newenemyMap = newenemyMap | 1;
-                }
-                numDue += due;
-
-                if ((distribution >> 4) & 1 == 1) {
-                    // logger.logPosition("from", position);
-                    // logger.logPosition("to up", upPosition);
-                    // console.log("distribute %i", distribution & 0x0F);
-
-                    // TODO?: if we decide to group owner in the cell struct, we should get the cell in memory in that function
-                    ownersToPay[0] = _ownerOf(upPosition);
-                }
-
-                if (due > 0) {
-                    // logger.logPosition("due from up", upPosition);
-                    // logger.logPosition("to", position);
-                    // console.log("amount %i ", due);
-                }
-                newDelta += enemyOrFriend;
-            }
-            {
-                uint64 leftPosition = position.offset(-1, 0);
-                (enemyOrFriend, due) = _updateCell(leftPosition, epoch, 3, oldColor, newColor);
-                if (enemyOrFriend < 0) {
-                    newenemyMap = newenemyMap | 2;
-                }
-                numDue += due;
-                if ((distribution >> 4) & 2 == 2) {
-                    // logger.logPosition("from", position);
-                    // logger.logPosition("to left", leftPosition);
-                    // console.log("distribute %i", distribution & 0x0F);
-                    ownersToPay[1] = _ownerOf(leftPosition);
-                }
-                if (due > 0) {
-                    // logger.logPosition("due from left", leftPosition);
-                    // logger.logPosition("to", position);
-                    // console.log("amount %i ", due);
-                }
-                newDelta += enemyOrFriend;
-            }
-
-            {
-                uint64 downPosition = position.offset(0, 1);
-                (enemyOrFriend, due) = _updateCell(downPosition, epoch, 0, oldColor, newColor);
-                if (enemyOrFriend < 0) {
-                    newenemyMap = newenemyMap | 4;
-                }
-                numDue += due;
-                if ((distribution >> 4) & 4 == 4) {
-                    // logger.logPosition("from", position);
-                    // logger.logPosition("to down", downPosition);
-                    // console.log("distribute %i", distribution & 0x0F);
-                    ownersToPay[2] = _ownerOf(downPosition);
-                }
-                if (due > 0) {
-                    // logger.logPosition("due from down", downPosition);
-                    // logger.logPosition("to", position);
-                    // console.log("amount %i ", due);
-                }
-                newDelta += enemyOrFriend;
-            }
-            {
-                uint64 rightPosition = position.offset(1, 0);
-                (enemyOrFriend, due) = _updateCell(rightPosition, epoch, 1, oldColor, newColor);
-                if (enemyOrFriend < 0) {
-                    newenemyMap = newenemyMap | 8;
-                }
-                numDue += due;
-                if ((distribution >> 4) & 8 == 8) {
-                    // logger.logPosition("from", position);
-                    // logger.logPosition("to right", rightPosition);
-                    // console.log("distribute %i", distribution & 0x0F);
-                    ownersToPay[3] = _ownerOf(rightPosition);
-                }
-                if (due > 0) {
-                    // logger.logPosition("due from right", rightPosition);
-                    // logger.logPosition("to", position);
-                    // console.log("amount %i ", due);
-                }
-                newDelta += enemyOrFriend;
-            }
-        }
+    ) internal returns (int8 newDelta, uint8 newEnemyMap, uint16 numDue, address[4] memory ownersToPay) {
+        CellUpdate memory cellUpdate;
+        _updateUP(ownersToPay, cellUpdate, position, epoch, distribution, oldColor, newColor);
+        _updateLEFT(ownersToPay, cellUpdate, position, epoch, distribution, oldColor, newColor);
+        _updateDOWN(ownersToPay, cellUpdate, position, epoch, distribution, oldColor, newColor);
+        _updateRIGHT(ownersToPay, cellUpdate, position, epoch, distribution, oldColor, newColor);
+        newDelta = cellUpdate.delta;
+        newEnemyMap = cellUpdate.enemymap;
+        numDue = cellUpdate.due;
     }
 
     /// @dev This update the cell in storage
@@ -562,7 +587,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         // logger.logCell(0,string.concat("_updateCellFromNeighbor  index", Strings.toString(neighbourIndex)),position,cell,address(uint160(_owners[position])));
 
         if ((cell.distribution >> 4) & (2 ** neighbourIndex) == 2 ** neighbourIndex) {
-            due = (cell.stake * 12) / (cell.distribution & 0x0f);
+            due = (cell.stake * 12) / (cell.distribution & 0x0f); // TODO if stake too high we have a problem
+
             cell.distribution =
                 (uint8(uint256(cell.distribution >> 4) & (~(2 ** uint256(neighbourIndex)))) << 4) +
                 (cell.distribution & 0x0f);

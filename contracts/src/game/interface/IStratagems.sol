@@ -31,7 +31,7 @@ interface IStratagemsGetters is UsingStratagemsTypes, UsingStratagemsEvents {
     function getConfig() external view returns (Config memory config);
 }
 
-interface IStratagemsSetters is UsingStratagemsTypes, UsingStratagemsEvents {
+interface IStratagemsCommit is UsingStratagemsTypes, UsingStratagemsEvents {
     /// @notice called by players to add tokens to their reserve
     /// @param tokensAmountToAdd amount of tokens to add
     /// @param permit permit EIP2612, .value = zero if not needed
@@ -69,7 +69,9 @@ interface IStratagemsSetters is UsingStratagemsTypes, UsingStratagemsEvents {
     ///  you'll have your commitment failing.
     /// @param amount number of tokens to withdraw
     function withdrawFromReserve(uint256 amount) external;
+}
 
+interface IStratagemsReveal is UsingStratagemsTypes, UsingStratagemsEvents {
     /// @notice called by player to reveal their moves
     ///  this is where the core logic of the game takes place
     ///  This is where the game board evolves
@@ -109,7 +111,9 @@ interface IStratagemsSetters is UsingStratagemsTypes, UsingStratagemsEvents {
     /// this will burn all tokens in reserve
     /// If player has access to the secret, better call `acknowledgeMissedReveal`
     function acknowledgeMissedRevealByBurningAllReserve() external;
+}
 
+interface IStratagemsPoke is UsingStratagemsTypes, UsingStratagemsEvents {
     /// @notice poke a position, resolving its virtual state.
     //  If dead as a result, it will reward neighboor enemies colors
     /// @param position the cell position
@@ -120,4 +124,11 @@ interface IStratagemsSetters is UsingStratagemsTypes, UsingStratagemsEvents {
     function pokeMultiple(uint64[] calldata positions) external;
 }
 
-interface IStratagems is IStratagemsSetters, IStratagemsGetters, IERC721, IERC721Metadata {}
+interface IStratagems is
+    IStratagemsCommit,
+    IStratagemsReveal,
+    IStratagemsPoke,
+    IStratagemsGetters,
+    IERC721,
+    IERC721Metadata
+{}

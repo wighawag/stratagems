@@ -99,7 +99,7 @@ export function fromStateToGrid(env: GridEnv, state: Data, epoch: number): Grid 
 		if (accountIndex >= 0) {
 			owner = accountIndex;
 		} else if (ownerAddress.toLowerCase() == '0xffffffffffffffffffffffffffffffffffffffff') {
-			owner = -1;
+			owner = -cell.stake;
 		}
 		const gridCell = {
 			x,
@@ -111,6 +111,7 @@ export function fromStateToGrid(env: GridEnv, state: Data, epoch: number): Grid 
 			epochWhenTokenIsAdded: cell.epochWhenTokenIsAdded,
 			delta: cell.delta,
 			enemyMap: cell.enemyMap,
+			stake: cell.stake,
 		};
 		gridCells.push(gridCell);
 

@@ -22,20 +22,20 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
         }
     }
 
-    // function forceMoves(address player, Move[] memory moves) external {
-    //     if (msg.sender != _getOwner()) {
-    //         revert UsingGenericErrors.NotAuthorized();
-    //     }
-    //     (uint24 epoch, bool commiting) = _epoch();
-    //     if (commiting) {
-    //         epoch--;
-    //     }
+    function forceMoves(address player, Move[] memory moves) external {
+        if (msg.sender != _getOwner()) {
+            revert UsingGenericErrors.NotAuthorized();
+        }
+        (uint24 epoch, bool commiting) = _epoch();
+        if (commiting) {
+            epoch--;
+        }
 
-    //     uint256 numTokens = NUM_TOKENS_PER_GEMS * moves.length;
-    //     TOKENS.transferFrom(msg.sender, address(this), numTokens);
-    //     _tokensInReserve[player] += numTokens;
-    //     _resolveMoves(player, epoch, moves, msg.sender);
-    // }
+        uint256 numTokens = NUM_TOKENS_PER_GEMS * moves.length;
+        TOKENS.transferFrom(msg.sender, address(this), numTokens);
+        _tokensInReserve[player] += numTokens;
+        _resolveMoves(player, epoch, moves, msg.sender);
+    }
 
     // function forceCells(DebugCell[] memory cells) external {
     //     if (msg.sender != _getOwner()) {
@@ -93,14 +93,18 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                 delta: delta,
                 enemyMap: enemyMap,
                 distribution: 0,
-                stake: 1
+                stake: simpleCell.stake
             });
             _cells[simpleCell.position] = cell;
-            if (_effectiveDelta(cell.delta, cell.enemyMap) > 0) {
-                GENERATOR.add(simpleCell.owner, NUM_TOKENS_PER_GEMS);
+            address owner = simpleCell.owner;
+            if (simpleCell.color == Color.Evil) {
+                owner = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
             }
-            emit Transfer(_ownerOf(simpleCell.position), simpleCell.owner, simpleCell.position);
-            _owners[simpleCell.position] = uint256(uint160(simpleCell.owner));
+            if (_effectiveDelta(cell.delta, cell.enemyMap) > 0) {
+                GENERATOR.add(owner, NUM_TOKENS_PER_GEMS);
+            }
+            emit Transfer(_ownerOf(simpleCell.position), owner, simpleCell.position);
+            _owners[simpleCell.position] = uint256(uint160(owner));
         }
 
         for (uint256 i = 0; i < cells.length; i++) {
@@ -132,7 +136,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                 delta: cell.delta,
                 enemyMap: cell.enemyMap,
                 distribution: 0, // TODO let debug distribution ?
-                stake: 1
+                stake: cell.stake
             });
 
             _cells[position] = updatedCell;

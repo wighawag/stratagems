@@ -63,8 +63,10 @@ export class StratagemsContract {
 
 	_effectiveDelta(delta: number, enemyMap: number): number {
 		let effectiveDelta = delta > 0 ? 1 : -1;
+		// let effectiveDelta = delta != 0 ? delta : -1;
 		if (effectiveDelta < 0 && enemyMap == 0) {
 			effectiveDelta = 1;
+			// effectiveDelta = 0;
 		}
 		return effectiveDelta;
 	}
@@ -465,7 +467,7 @@ export class StratagemsContract {
 				delta: delta,
 				enemyMap: enemyMap,
 				distribution: 0,
-				stake: 1,
+				stake: simpleCell.stake,
 			};
 			this.state.owners[simpleCell.position.toString()] = simpleCell.owner;
 			// console.log({

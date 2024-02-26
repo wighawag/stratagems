@@ -104,7 +104,7 @@ const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
 
 	onForceSimpleCells(state, event) {
 		const stratagemsContract = new StratagemsContract(state, 7);
-		stratagemsContract.forceSimpleCells(event.args.epoch, event.args.cells);
+		stratagemsContract.forceSimpleCells(event.args.epoch, event.args.cells as any);
 	},
 };
 

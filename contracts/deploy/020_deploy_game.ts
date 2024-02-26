@@ -76,7 +76,9 @@ export default execute(
 
 		const routes = [
 			{name: 'Getters', artifact: artifacts.StratagemsGetters, args: [config], account: deployer},
-			{name: 'Setters', artifact: artifacts.StratagemsSetters, args: [config], account: deployer},
+			{name: 'Commit', artifact: artifacts.StratagemsCommit, args: [config], account: deployer},
+			{name: 'Reveal', artifact: artifacts.StratagemsReveal, args: [config], account: deployer},
+			{name: 'Poke', artifact: artifacts.StratagemsPoke, args: [config], account: deployer},
 			{name: 'ERC721', artifact: artifacts.StratagemsERC721 as any, args: [config], account: deployer},
 		];
 		if (!network.tags['mainnet']) {

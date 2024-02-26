@@ -13,6 +13,7 @@ export type Cell = {
 	epochWhenTokenIsAdded?: number;
 	delta?: number;
 	enemyMap?: number;
+	stake: number; // for Evil, else always 1
 };
 
 type TmpCell = Cell & {
@@ -40,6 +41,7 @@ export type ContractSimpleCell = {
 	owner: `0x${string}`;
 	color: number; // 0 | 1 | 2 | 3 | 4 | 5 | 6;
 	life: number;
+	stake: number;
 };
 
 function cellID(cell: {x: number; y: number}): string;
@@ -77,6 +79,7 @@ function emptyCell(x: number, y: number): Cell {
 		owner: undefined,
 		color: Color.None,
 		life: 0,
+		stake: 0,
 	};
 }
 
@@ -212,6 +215,11 @@ export function parseGrid(str: string, forcePlayer?: number): Grid {
 			if (playerAsString !== '') {
 				const ownerNumber = parseInt(playerAsString);
 				onlyCell.owner = ownerNumber;
+				if (ownerNumber < 0) {
+					onlyCell.stake = -ownerNumber;
+				} else {
+					onlyCell.stake = 1;
+				}
 			}
 			if (forcePlayer) {
 				onlyCell.owner = forcePlayer;
@@ -264,15 +272,19 @@ export function renderGrid(grid: Grid): string {
 					str += '-----';
 				} else {
 					// console.log({owner: cell?.owner});
-					if (cell?.owner) {
+					if (cell?.owner != undefined) {
 						if (r == 0) {
 							str += ' ';
 							str += colorCodeOf(cell.color);
 							str += cell.life.toString();
 							str += ' ';
 						} else {
-							if (typeof cell.owner !== 'undefined') {
-								str += ` ${cell.owner.toString().padStart(2, '0')} `;
+							if (cell.owner !== undefined) {
+								let ownerNumber = cell.owner;
+								if (cell.owner === 0) {
+									ownerNumber = -cell.stake;
+								}
+								str += ` ${ownerNumber.toString().padStart(2, '0')} `;
 							} else {
 								str += '    ';
 							}
@@ -293,8 +305,9 @@ export function toContractSimpleCell(accounts: `0x${string}`[]): (cell: Cell) =>
 	return (cell: Cell) => ({
 		color: cell.color,
 		life: cell.life,
-		owner: cell.owner ? accounts[cell.owner] : zeroAddress,
+		owner: cell.owner ? (cell.owner >= 0 ? accounts[cell.owner] : accounts[0]) : zeroAddress,
 		position: xyToBigIntID(cell.x, cell.y),
+		stake: cell.stake,
 	});
 }
 
@@ -321,8 +334,9 @@ export function fromContractFullCellToCell(
 					: accountIndex >= 0
 						? accountIndex
 						: cell.owner.toLowerCase() === '0xffffffffffffffffffffffffffffffffffffffff'
-							? -1
+							? -cell.stake
 							: undefined,
+			stake: cell.stake,
 		};
 
 		// console.log(`--------------`);
