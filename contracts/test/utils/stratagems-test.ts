@@ -39,11 +39,11 @@ export async function expectGridChangeAfterActions(
 	).to.equal(renderGrid(parseGrid(resultGrid)));
 }
 
-export async function setupWallets(env: GridEnv, walletsBefore: {[playerIndex: number]: number}) {
+export async function setupWallets(env: GridEnv, walletsBefore: {[playerIndex: number]: bigint}) {
 	for (const playerIndex of Object.keys(walletsBefore)) {
 		const player = env.otherAccounts[playerIndex];
 		const amount = await env.TestTokens.read.balanceOf([player]);
-		const expectedAmount = parseEther(walletsBefore[playerIndex].toString());
+		const expectedAmount = walletsBefore[playerIndex];
 		const amountToTransfer = expectedAmount - amount;
 		if (amountToTransfer > 0) {
 			await env.TestTokens.write.transfer([player, amountToTransfer], {
@@ -84,7 +84,6 @@ export function fromStateToGrid(env: GridEnv, state: Data, epoch: number): Grid 
 	// let minY = 0;
 	// let maxX = 0;
 	// let maxY = 0;
-
 	// console.log('FROM STATE TO GRID 3,1');
 	// console.log(state.cells[xyToBigIntID(3, 1).toString()]);
 
@@ -134,7 +133,7 @@ export function fromStateToGrid(env: GridEnv, state: Data, epoch: number): Grid 
 	};
 }
 
-export async function expectWallet(env: GridEnv, expectedWalletsAfter: {[playerIndex: number]: number}) {
+export async function expectWallet(env: GridEnv, expectedWalletsAfter: {[playerIndex: number]: bigint}) {
 	for (const playerIndex of Object.keys(expectedWalletsAfter)) {
 		const player = env.otherAccounts[playerIndex];
 		const amount = await env.TestTokens.read.balanceOf([player]);
@@ -146,7 +145,7 @@ export async function expectWallet(env: GridEnv, expectedWalletsAfter: {[playerI
 	for (const playerIndex of Object.keys(expectedWalletsAfter)) {
 		const player = env.otherAccounts[playerIndex];
 		const amount = await env.TestTokens.read.balanceOf([player]);
-		const expectedAmount = parseEther(expectedWalletsAfter[playerIndex].toString());
+		const expectedAmount = expectedWalletsAfter[playerIndex];
 		expect(amount, `player ${playerIndex} (${player})`).to.equal(expectedAmount);
 	}
 }

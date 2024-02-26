@@ -13,6 +13,7 @@ import {
 	pokeAll,
 	setupWallets,
 } from './utils/stratagems-test';
+import {parseEther} from 'viem';
 
 const scenarioFolder = path.join(__dirname, 'scenarios');
 const scenarios = fs
@@ -34,18 +35,19 @@ const scenarios = fs
 		const actions: string[] = [];
 		let expectedGrid = '';
 		let stage: 'before' | 'after' | 'after_poke' = 'before';
-		const walletsBefore: {[playerIndex: number]: number} = {};
-		const expectedWalletsAfter: {[playerIndex: number]: number} = {};
-		const expectedWalletsAfterPoke: {[playerIndex: number]: number} = {};
+		const walletsBefore: {[playerIndex: number]: bigint} = {};
+		const expectedWalletsAfter: {[playerIndex: number]: bigint} = {};
+		const expectedWalletsAfterPoke: {[playerIndex: number]: bigint} = {};
 		for (const line of lines) {
 			if (line === 'AFTER_POKE_ALL') {
 				stage = 'after_poke';
 			} else if (line.startsWith('$')) {
-				const [playerIndex, amount] = line
+				const [playerIndexStr, amountStr] = line
 					.slice(1)
 					.split(':')
-					.map((s) => s.trim())
-					.map((s) => parseFloat(s));
+					.map((s) => s.trim());
+				const playerIndex = Number(playerIndexStr);
+				const amount = parseEther(amountStr);
 				if (stage === 'before') {
 					walletsBefore[playerIndex] = amount;
 				} else if (stage === 'after') {
