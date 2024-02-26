@@ -61,6 +61,14 @@ export class StratagemsContract {
 		public MAX_LIFE: number,
 	) {}
 
+	_effectiveDelta(delta: number, enemyMap: number): number {
+		let effectiveDelta = delta != 0 ? delta : -1;
+		if (effectiveDelta < 0 && enemyMap == 0) {
+			effectiveDelta = 0;
+		}
+		return effectiveDelta;
+	}
+
 	computeNewLife(
 		lastUpdate: number,
 		enemyMap: number,
@@ -77,10 +85,7 @@ export class StratagemsContract {
 		if (lastUpdate >= 1 && life > 0) {
 			let epochDelta = epoch - lastUpdate;
 			if (epochDelta > 0) {
-				let effectiveDelta = delta != 0 ? delta : -1;
-				if (effectiveDelta < 0 && enemyMap == 0) {
-					effectiveDelta = 0;
-				}
+				const effectiveDelta = this._effectiveDelta(delta, enemyMap);
 				if (effectiveDelta > 0) {
 					// if (life < MAX_LIFE) {
 					const maxEpoch = MAX_LIFE - life + Math.floor((effectiveDelta - 1) / effectiveDelta);
@@ -475,10 +480,7 @@ export class StratagemsContract {
 
 			// we act as if the token were added in previous epochs
 			// this is so it does not affect the reveal phase
-			let effectiveDelta = cell.delta != 0 ? cell.delta : -1;
-			if (effectiveDelta < 0 && cell.enemyMap == 0) {
-				effectiveDelta = 0;
-			}
+			const effectiveDelta = this._effectiveDelta(cell.delta, cell.enemyMap);
 			let potentialLife = cell.life - effectiveDelta;
 			if (potentialLife < 0) {
 				potentialLife = 0;
