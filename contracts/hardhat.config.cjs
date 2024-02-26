@@ -46,8 +46,8 @@ const config = {
 			// this add network for each respective env var found (ETH_NODE_URI_<network>)
 			addNetworksFromEnv({
 				hardhat: {
-					initialBaseFeePerGas: 0,
-					allowUnlimitedContractSize: true,
+					initialBaseFeePerGas: process.env.HARDHAT_FORK ? 1 : 0,
+					allowUnlimitedContractSize: process.env.HARDHAT_FORK ? false : true,
 				},
 			}),
 		),

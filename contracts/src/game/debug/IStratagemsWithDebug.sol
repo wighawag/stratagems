@@ -11,7 +11,7 @@ interface IStratagemsDebug is UsingStratagemsTypes {
     event ForceCells(DebugCell[] cells);
     event ForceSimpleCells(uint24 epoch, SimpleCell[] cells);
 
-    function forceMoves(address player, Move[] memory moves) external;
+    // function forceMoves(address player, Move[] memory moves) external;
 
     struct DebugCell {
         uint64 position;
@@ -24,7 +24,7 @@ interface IStratagemsDebug is UsingStratagemsTypes {
         uint8 enemyMap;
     }
 
-    function forceCells(DebugCell[] memory cells) external;
+    // function forceCells(DebugCell[] memory cells) external;
 
     struct SimpleCell {
         uint64 position;
