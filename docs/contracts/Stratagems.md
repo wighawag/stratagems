@@ -57,7 +57,7 @@ return the config used to initialise the Game
 
 *Signature*: getConfig()
 
-function getConfig() view returns ((address tokens, address burnAddress, uint256 startTime, uint256 commitPhaseDuration, uint256 revealPhaseDuration, uint8 maxLife, uint256 numTokensPerGems, address time) config)
+function getConfig() view returns ((address tokens, address burnAddress, uint256 startTime, uint256 commitPhaseDuration, uint256 revealPhaseDuration, uint8 maxLife, uint256 numTokensPerGems, address time, address generator) config)
 
 ### **getTokensInReserve**
 
@@ -72,33 +72,6 @@ function getTokensInReserve(address account) view returns (uint256 amount)
 | Name | Description 
 | ---- | ----------- 
 | account | the address to retrived the amount in reserve of.
-
-### **acknowledgeMissedReveal**
-
-called by player if they missed the reveal phase and want to minimze the token loss.  By providing the moves, they will be slashed only the amount of token required to make the moves
-
-*sig hash*: `0x599a71c6`
-
-*Signature*: acknowledgeMissedReveal(address,bytes32,(uint64,uint8)[],bytes24)
-
-function acknowledgeMissedReveal(address player, bytes32 secret, (uint64 position, uint8 color)[] moves, bytes24 furtherMoves)
-
-| Name | Description 
-| ---- | ----------- 
-| player | the account who committed the move
-| secret | the secret used to make the commit
-| moves | the actual moves
-| furtherMoves | if moves cannot be contained in one tx, further moves are represented by a hash to reveal too
-
-### **acknowledgeMissedRevealByBurningAllReserve**
-
-should only be called as last resort this will burn all tokens in reserve If player has access to the secret, better call `acknowledgeMissedReveal`
-
-*sig hash*: `0x1fdd8a69`
-
-*Signature*: acknowledgeMissedRevealByBurningAllReserve()
-
-function acknowledgeMissedRevealByBurningAllReserve()
 
 ### **addToReserve**
 
@@ -157,19 +130,46 @@ function makeCommitmentWithExtraReserve(bytes24 commitmentHash, uint256 tokensAm
 | permit | permit EIP2612, value = zero if not needed
 | payee | address to send ETH to along the commitment. Can be used to pay for reveal
 
-### **pokeMultiple**
+### **withdrawFromReserve**
 
-poke and collect the tokens won across multiple cells
+called by players to withdraw tokens from the reserve  can only be called if no commitments are pending  Note that while you can withdraw after commiting, note that if you do not have enough tokens  you'll have your commitment failing.
 
-*sig hash*: `0x8b8fc3a1`
+*sig hash*: `0x0a8bcdb9`
 
-*Signature*: pokeMultiple(uint64[])
+*Signature*: withdrawFromReserve(uint256)
 
-function pokeMultiple(uint64[] positions)
+function withdrawFromReserve(uint256 amount)
 
 | Name | Description 
 | ---- | ----------- 
-| positions | cell positions to collect from
+| amount | number of tokens to withdraw
+
+### **acknowledgeMissedReveal**
+
+called by player if they missed the reveal phase and want to minimze the token loss.  By providing the moves, they will be slashed only the amount of token required to make the moves
+
+*sig hash*: `0x599a71c6`
+
+*Signature*: acknowledgeMissedReveal(address,bytes32,(uint64,uint8)[],bytes24)
+
+function acknowledgeMissedReveal(address player, bytes32 secret, (uint64 position, uint8 color)[] moves, bytes24 furtherMoves)
+
+| Name | Description 
+| ---- | ----------- 
+| player | the account who committed the move
+| secret | the secret used to make the commit
+| moves | the actual moves
+| furtherMoves | if moves cannot be contained in one tx, further moves are represented by a hash to reveal too
+
+### **acknowledgeMissedRevealByBurningAllReserve**
+
+should only be called as last resort this will burn all tokens in reserve If player has access to the secret, better call `acknowledgeMissedReveal`
+
+*sig hash*: `0x1fdd8a69`
+
+*Signature*: acknowledgeMissedRevealByBurningAllReserve()
+
+function acknowledgeMissedRevealByBurningAllReserve()
 
 ### **reveal**
 
@@ -190,19 +190,19 @@ function reveal(address player, bytes32 secret, (uint64 position, uint8 color)[]
 | useReserve | whether the tokens are taken from the reserve or from approvals.  This allow player to keep their reserve intact and use it on their next move.  Note that this require the Stratagems contract to have enough allowance.
 | payee | address to send ETH to along the reveal
 
-### **withdrawFromReserve**
+### **pokeMultiple**
 
-called by players to withdraw tokens from the reserve  can only be called if no commitments are pending  Note that while you can withdraw after commiting, note that if you do not have enough tokens  you'll have your commitment failing.
+poke and collect the tokens won across multiple cells
 
-*sig hash*: `0x0a8bcdb9`
+*sig hash*: `0x8b8fc3a1`
 
-*Signature*: withdrawFromReserve(uint256)
+*Signature*: pokeMultiple(uint64[])
 
-function withdrawFromReserve(uint256 amount)
+function pokeMultiple(uint64[] positions)
 
 | Name | Description 
 | ---- | ----------- 
-| amount | number of tokens to withdraw
+| positions | cell positions to collect from
 
 ### **approve**
 
@@ -583,6 +583,13 @@ Game has not started yet, can't perform any action
 
 error GameNotStarted()
 
+### **ImpossibleConfiguration**
+
+The cell configuration is invalid This can happen win debug mode where admin can setup cell bypassing moves rules For example when setting up neighborood configuration that would require a cell to have negative life
+
+
+error ImpossibleConfiguration()
+
 ### **InCommitmentPhase**
 
 When in Commit phase, player can make new commitment but they cannot reveal their move yet.
@@ -676,6 +683,13 @@ Not authorized to perform this operation
 
 
 error NotAuthorized()
+
+### **NotImplemented**
+
+function is not implemented
+
+
+error NotImplemented()
 
 ### **NotOwner**
 
