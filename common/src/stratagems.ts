@@ -432,7 +432,7 @@ export class StratagemsContract {
 			}
 
 			currentState.delta = newDelta;
-			currentState.life = 1;
+			currentState.life = 2;
 			currentState.lastEpochUpdate = epoch;
 			if (currentState.color == Color.Evil) {
 				this.state.owners[move.position.toString()] = '0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF';

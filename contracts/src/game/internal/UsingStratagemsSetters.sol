@@ -137,7 +137,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         }
 
         currentState.delta = newDelta;
-        currentState.life = 1;
+        currentState.life = 2;
         currentState.lastEpochUpdate = epoch;
         address oldOwner = _ownerOf(move.position);
         if (currentState.color == Color.Evil) {
