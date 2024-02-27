@@ -1,3 +1,8 @@
 - [ ] check deployment parameters for the chain in question: [](contracts/deploy/020_deploy_game.ts)
 - [x] `pnpm contracts:deploy:prepare <network>`
 - [ ] `pnpm contracts:deploy <network>`
+- [ ] Setup env variable in host (vercel, ....)
+- [ ] Setup domain name
+- [ ] push to a new branch named after the network
+- [ ] Setup fuzd for the network
+- [ ] Setup indexer cache for the network
