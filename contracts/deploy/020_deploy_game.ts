@@ -125,6 +125,19 @@ export default execute(
 			functionName: 'authorizeGlobalApprovals',
 			args: [[stratagems.address], true],
 		});
+
+		const addressesToAuthorize = Object.values(env.accounts).concat([stratagems.address]);
+		const anyNotAuthorized = await env.read(testTokens, {
+			functionName: 'anyNotAuthorized',
+			args: [addressesToAuthorize],
+		});
+		if (anyNotAuthorized) {
+			await env.execute(testTokens, {
+				account: deployer,
+				functionName: 'enableRequireAuthorization',
+				args: [addressesToAuthorize],
+			});
+		}
 	},
 	{
 		tags: ['Stratagems', 'Stratagems_deploy'],

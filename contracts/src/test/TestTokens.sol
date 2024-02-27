@@ -79,6 +79,48 @@ contract TestTokens is ERC20Base, UsingPermitWithDynamicChainID {
     }
 
     // --------------------------------------------------------------------------------------------
+    // PREVENT player to amass token on one address by claiming from multiple links
+    // --------------------------------------------------------------------------------------------
+
+    mapping(address => bool) public authorized;
+    bool public requireAuthorization;
+    mapping(address => bool) public touched;
+
+    function anyNotAuthorized(address[] memory accounts) external view returns (bool) {
+        for (uint256 i = 0; i < accounts.length; i++) {
+            if (!authorized[accounts[i]]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function authorize(address[] memory accounts, bool auth) public {
+        if (msg.sender != config.admin) {
+            revert NotAuthorized();
+        }
+        for (uint256 i = 0; i < accounts.length; i++) {
+            authorized[accounts[i]] = auth;
+        }
+    }
+
+    function enableRequireAuthorization(address[] calldata accounts) external {
+        if (msg.sender != config.admin) {
+            revert NotAuthorized();
+        }
+        setRequireAuthorization(true);
+        authorize(accounts, true);
+    }
+
+    function setRequireAuthorization(bool req) public {
+        if (msg.sender != config.admin) {
+            revert NotAuthorized();
+        }
+        requireAuthorization = req;
+    }
+    // --------------------------------------------------------------------------------------------
+
+    // --------------------------------------------------------------------------------------------
     // INTERNALS
     // --------------------------------------------------------------------------------------------
 
@@ -98,5 +140,11 @@ contract TestTokens is ERC20Base, UsingPermitWithDynamicChainID {
         } else {
             super._transferFrom(from, to, amount);
         }
+    }
+
+    function _transfer(address from, address to, uint256 amount) internal override {
+        require(!touched[to] || !requireAuthorization || authorized[from] || authorized[to], "NOT_AUTHORIZED_TRANSFER");
+        super._transfer(from, to, amount);
+        touched[to] = true;
     }
 }
