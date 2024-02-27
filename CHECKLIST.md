@@ -1,8 +1,12 @@
 - [x] check deployment parameters for the chain in question: [](contracts/deploy/020_deploy_game.ts)
 - [x] `pnpm contracts:deploy:prepare <network>`
 - [x] `pnpm contracts:deploy <network>`
+- [x] create a `.env.<network>` file with PUBLIC_FUZD_URI,PUBLIC_SYNC_URI,PUBLIC_DEV_NODE_URI
 - [x] Setup env variable in host (vercel, ....)
 - [x] Setup domain name
 - [x] push to a new branch named after the network
-- [ ] Setup fuzd for the network
+- Setup fuzd for the network
+  - [x] add in wrangler.toml a config for `<network>`
+  - [x] execute `pnpm wrangler deploy -e <network>`
+  - [x] attach a domain to the worker
 - [ ] Setup indexer cache for the network
