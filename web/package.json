@@ -15,7 +15,7 @@
     "ipfs-gateway-emulator": "4.2.1-ipfs.2",
     "prettier": "^3.2.5",
     "prettier-plugin-svelte": "^3.2.1",
-    "pwag": "0.2.0",
+    "pwag": "0.3.0",
     "svelte": "^4.2.11",
     "svelte-check": "^3.6.4",
     "tslib": "^2.6.2",
