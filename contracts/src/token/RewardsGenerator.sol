@@ -40,7 +40,7 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
 
     mapping(address => uint256) internal _games;
 
-    IReward public immutable reward;
+    IReward public immutable REWARD;
 
     struct Config {
         uint256 rewardRateMillionth;
@@ -50,7 +50,7 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
     bool internal _init;
 
     constructor(IReward rewardAddress, Config memory config, address[] memory initialGames) {
-        reward = rewardAddress;
+        REWARD = rewardAddress;
         REWARD_RATE_millionth = config.rewardRateMillionth;
         FIXED_REWARD_RATE_thousands_millionth = config.fixedRewardRateThousandsMillionth;
 
@@ -178,6 +178,9 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
 
     /// @notice claim the rewards earned so far in the shared pool
     function claimSharedPoolRewards(address to) external {
+        if (address(REWARD) == address(0)) {
+            revert UsingGenericErrors.NotAuthorized();
+        }
         address account = msg.sender;
         uint256 accountPointsSoFar = _sharedRateRewardPerAccount[account].points;
 
@@ -192,18 +195,21 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
 
         if (amount > 0) {
             _sharedRateRewardPerAccount[account].rewardsToWithdraw = 0;
-            reward.reward(to, amount);
+            REWARD.reward(to, amount);
         }
     }
 
     /// @notice claim the rewards earned so far using a fixed rate per point
     function claimFixedRewards(address to) external {
+        if (address(REWARD) == address(0)) {
+            revert UsingGenericErrors.NotAuthorized();
+        }
         address account = msg.sender;
         uint256 amount = earnedFromFixedRate(account);
         if (amount > 0) {
             _fixedRateRewardPerAccount[account].lastTime = uint40(block.timestamp);
             _fixedRateRewardPerAccount[account].toWithdraw = 0;
-            reward.reward(to, amount);
+            REWARD.reward(to, amount);
         }
     }
 

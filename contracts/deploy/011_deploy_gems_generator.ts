@@ -1,6 +1,7 @@
 import {execute} from 'rocketh';
 import 'rocketh-deploy-proxy';
 import {context} from './_context';
+import {zeroAddress} from 'viem';
 
 export default execute(
 	context,
@@ -14,7 +15,7 @@ export default execute(
 				account: deployer,
 				artifact: artifacts.RewardsGenerator,
 				args: [
-					Gems.address,
+					zeroAddress, // Gems.address,
 					{
 						rewardRateMillionth: 100n, // 100 for every million of second. or 8.64 / day
 						fixedRewardRateThousandsMillionth: 10n, // 10 for every  thousand million of seconds, or 0.000864 per day per stake or 315.36 / year / 1000 stake
