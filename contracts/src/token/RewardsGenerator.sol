@@ -38,7 +38,7 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
     }
     mapping(address => FixedRate) internal _fixedRateRewardPerAccount;
 
-    mapping(address => uint256) internal _games;
+    mapping(address => uint256) public games;
 
     IReward public immutable REWARD;
 
@@ -86,7 +86,7 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
     }
 
     function _enableGame(address game, uint256 weight) internal {
-        _games[game] = weight;
+        games[game] = weight;
         emit GameEnabled(game, weight, block.timestamp);
     }
 
@@ -350,7 +350,7 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
     // ---------------------------------------------------------------------------------------------------------------
 
     modifier onlyGames() {
-        if (_games[msg.sender] == 0) {
+        if (games[msg.sender] == 0) {
             revert UsingGenericErrors.NotAuthorized();
         }
         _;

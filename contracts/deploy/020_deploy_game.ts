@@ -95,6 +95,7 @@ export default execute(
 							...(args as any),
 						},
 						routes,
+						[artifacts.UsingStratagemsDebugEvents.abi],
 					) as Promise<Deployment<typeof artifacts.IStratagems.abi>>;
 				},
 				args: [config],
@@ -113,17 +114,32 @@ export default execute(
 			},
 		);
 
-		await env.execute(generator, {
-			account: deployer,
-			functionName: 'enableGame',
-			args: [stratagems.address, parseEther('1')],
+		const desiredWeight = parseEther('1');
+		const weight = await env.read(generator, {
+			functionName: 'games',
+			args: [stratagems.address],
 		});
 
-		await env.execute(testTokens, {
-			account: deployer,
-			functionName: 'authorizeGlobalApprovals',
-			args: [[stratagems.address], true],
+		if (weight != desiredWeight) {
+			await env.execute(generator, {
+				account: deployer,
+				functionName: 'enableGame',
+				args: [stratagems.address, desiredWeight],
+			});
+		}
+
+		const globalApproval = await env.read(testTokens, {
+			functionName: 'globalApprovals',
+			args: [stratagems.address],
 		});
+
+		if (!globalApproval) {
+			await env.execute(testTokens, {
+				account: deployer,
+				functionName: 'authorizeGlobalApprovals',
+				args: [[stratagems.address], true],
+			});
+		}
 
 		const addressesToAuthorize = Object.values(env.accounts).concat([stratagems.address]);
 		const anyNotAuthorized = await env.read(testTokens, {

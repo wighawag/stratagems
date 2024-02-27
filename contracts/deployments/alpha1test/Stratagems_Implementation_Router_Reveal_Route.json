@@ -1,5 +1,5 @@
 {
-  "address": "0xecc11f2c4c6c263122d9933ce88ef433032043b4",
+  "address": "0xefb2062c5c831c9d1f5217ac9ea741d5ad700457",
   "abi": [
     {
       "inputs": [
@@ -692,15 +692,15 @@
   "storageLayout": {
     "storage": [
       {
-        "astId": 14348,
+        "astId": 14363,
         "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
         "label": "_cells",
         "offset": 0,
         "slot": "0",
-        "type": "t_mapping(t_uint256,t_struct(Cell)11512_storage)"
+        "type": "t_mapping(t_uint256,t_struct(Cell)11527_storage)"
       },
       {
-        "astId": 14352,
+        "astId": 14367,
         "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
         "label": "_owners",
         "offset": 0,
@@ -708,15 +708,15 @@
         "type": "t_mapping(t_uint256,t_uint256)"
       },
       {
-        "astId": 14355,
+        "astId": 14370,
         "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
         "label": "_discovered",
         "offset": 0,
         "slot": "2",
-        "type": "t_struct(Discovered)11492_storage"
+        "type": "t_struct(Discovered)11507_storage"
       },
       {
-        "astId": 14359,
+        "astId": 14374,
         "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
         "label": "_tokensInReserve",
         "offset": 0,
@@ -724,15 +724,15 @@
         "type": "t_mapping(t_address,t_uint256)"
       },
       {
-        "astId": 14364,
+        "astId": 14379,
         "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
         "label": "_commitments",
         "offset": 0,
         "slot": "4",
-        "type": "t_mapping(t_address,t_struct(Commitment)11517_storage)"
+        "type": "t_mapping(t_address,t_struct(Commitment)11532_storage)"
       },
       {
-        "astId": 14370,
+        "astId": 14385,
         "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
         "label": "_operatorsForAll",
         "offset": 0,
@@ -740,7 +740,7 @@
         "type": "t_mapping(t_address,t_mapping(t_address,t_bool))"
       },
       {
-        "astId": 14374,
+        "astId": 14389,
         "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
         "label": "_operators",
         "offset": 0,
@@ -764,7 +764,7 @@
         "label": "bytes24",
         "numberOfBytes": "24"
       },
-      "t_enum(Color)11418": {
+      "t_enum(Color)11433": {
         "encoding": "inplace",
         "label": "enum UsingStratagemsTypes.Color",
         "numberOfBytes": "1"
@@ -788,12 +788,12 @@
         "numberOfBytes": "32",
         "value": "t_mapping(t_address,t_bool)"
       },
-      "t_mapping(t_address,t_struct(Commitment)11517_storage)": {
+      "t_mapping(t_address,t_struct(Commitment)11532_storage)": {
         "encoding": "mapping",
         "key": "t_address",
         "label": "mapping(address => struct UsingStratagemsTypes.Commitment)",
         "numberOfBytes": "32",
-        "value": "t_struct(Commitment)11517_storage"
+        "value": "t_struct(Commitment)11532_storage"
       },
       "t_mapping(t_address,t_uint256)": {
         "encoding": "mapping",
@@ -809,12 +809,12 @@
         "numberOfBytes": "32",
         "value": "t_address"
       },
-      "t_mapping(t_uint256,t_struct(Cell)11512_storage)": {
+      "t_mapping(t_uint256,t_struct(Cell)11527_storage)": {
         "encoding": "mapping",
         "key": "t_uint256",
         "label": "mapping(uint256 => struct UsingStratagemsTypes.Cell)",
         "numberOfBytes": "32",
-        "value": "t_struct(Cell)11512_storage"
+        "value": "t_struct(Cell)11527_storage"
       },
       "t_mapping(t_uint256,t_uint256)": {
         "encoding": "mapping",
@@ -823,12 +823,12 @@
         "numberOfBytes": "32",
         "value": "t_uint256"
       },
-      "t_struct(Cell)11512_storage": {
+      "t_struct(Cell)11527_storage": {
         "encoding": "inplace",
         "label": "struct UsingStratagemsTypes.Cell",
         "members": [
           {
-            "astId": 11494,
+            "astId": 11509,
             "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
             "label": "lastEpochUpdate",
             "offset": 0,
@@ -836,7 +836,7 @@
             "type": "t_uint24"
           },
           {
-            "astId": 11496,
+            "astId": 11511,
             "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
             "label": "epochWhenTokenIsAdded",
             "offset": 3,
@@ -844,7 +844,7 @@
             "type": "t_uint24"
           },
           {
-            "astId": 11498,
+            "astId": 11513,
             "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
             "label": "producingEpochs",
             "offset": 6,
@@ -852,15 +852,15 @@
             "type": "t_uint24"
           },
           {
-            "astId": 11501,
+            "astId": 11516,
             "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
             "label": "color",
             "offset": 9,
             "slot": "0",
-            "type": "t_enum(Color)11418"
+            "type": "t_enum(Color)11433"
           },
           {
-            "astId": 11503,
+            "astId": 11518,
             "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
             "label": "life",
             "offset": 10,
@@ -868,7 +868,7 @@
             "type": "t_uint8"
           },
           {
-            "astId": 11505,
+            "astId": 11520,
             "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
             "label": "delta",
             "offset": 11,
@@ -876,7 +876,7 @@
             "type": "t_int8"
           },
           {
-            "astId": 11507,
+            "astId": 11522,
             "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
             "label": "enemyMap",
             "offset": 12,
@@ -884,7 +884,7 @@
             "type": "t_uint8"
           },
           {
-            "astId": 11509,
+            "astId": 11524,
             "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
             "label": "distribution",
             "offset": 13,
@@ -892,7 +892,7 @@
             "type": "t_uint8"
           },
           {
-            "astId": 11511,
+            "astId": 11526,
             "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
             "label": "stake",
             "offset": 14,
@@ -902,12 +902,12 @@
         ],
         "numberOfBytes": "32"
       },
-      "t_struct(Commitment)11517_storage": {
+      "t_struct(Commitment)11532_storage": {
         "encoding": "inplace",
         "label": "struct UsingStratagemsTypes.Commitment",
         "members": [
           {
-            "astId": 11514,
+            "astId": 11529,
             "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
             "label": "hash",
             "offset": 0,
@@ -915,7 +915,7 @@
             "type": "t_bytes24"
           },
           {
-            "astId": 11516,
+            "astId": 11531,
             "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
             "label": "epoch",
             "offset": 24,
@@ -925,12 +925,12 @@
         ],
         "numberOfBytes": "32"
       },
-      "t_struct(Discovered)11492_storage": {
+      "t_struct(Discovered)11507_storage": {
         "encoding": "inplace",
         "label": "struct UsingStratagemsTypes.Discovered",
         "members": [
           {
-            "astId": 11485,
+            "astId": 11500,
             "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
             "label": "minX",
             "offset": 0,
@@ -938,7 +938,7 @@
             "type": "t_uint32"
           },
           {
-            "astId": 11487,
+            "astId": 11502,
             "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
             "label": "maxX",
             "offset": 4,
@@ -946,7 +946,7 @@
             "type": "t_uint32"
           },
           {
-            "astId": 11489,
+            "astId": 11504,
             "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
             "label": "minY",
             "offset": 8,
@@ -954,7 +954,7 @@
             "type": "t_uint32"
           },
           {
-            "astId": 11491,
+            "astId": 11506,
             "contract": "src/game/routes/StratagemsReveal.sol:StratagemsReveal",
             "label": "maxY",
             "offset": 12,
@@ -1098,14 +1098,13 @@
   },
   "argsData": "0x000000000000000000000000bee0c6c405847203de86492f7753b4d0a379c20f000000000000000000000000deaddeaddeaddeaddeaddeaddeaddeaddeaddead000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000143700000000000000000000000000000000000000000000000000000000000000e1000000000000000000000000000000000000000000000000000000000000000070000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000006de75a33cf63fea42ea8e5bafadaa1c80c246c6d000000000000000000000000e5c05697666a18bbb0f1f620237402413cf7e1a1",
   "transaction": {
-    "hash": "0x32774c9cca01f9612d6386ee9f7370731664623affe506eac4a211091f261374",
-    "nonce": "0xa",
+    "hash": "0xfcec885ef44f95e771c9385ec468a69f2e985c11713ec251b5bc06d01dc21901",
     "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
   },
   "receipt": {
     "confirmations": 0,
-    "blockHash": "0xab0ff13d15d7bf08fd5d6c46190bb2eb2f14166ee1e350f5acb1ebb7b106794d",
-    "blockNumber": "0x284a43",
+    "blockHash": "0x1fae58d2fbf49b7919c333923d6af6249eb59833458d46f0a528c885c870141a",
+    "blockNumber": "0x2854f1",
     "transactionIndex": "0x1"
   }
 }

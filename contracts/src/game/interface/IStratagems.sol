@@ -6,9 +6,8 @@ import "solidity-kit/solc_0_8/ERC721/interfaces/IERC721Metadata.sol";
 import "solidity-kit/solc_0_8/ERC165/interfaces/IERC165.sol";
 import "./UsingStratagemsTypes.sol";
 import "./UsingStratagemsEvents.sol";
-import "../debug/UsingStratagemsDebugEvents.sol";
 
-interface IStratagemsGetters is UsingStratagemsTypes, UsingStratagemsEvents, UsingStratagemsDebugEvents {
+interface IStratagemsGetters is UsingStratagemsTypes, UsingStratagemsEvents {
     /// @notice return updated cell (based on current epoch)
     /// @param id the cell id
     function getCell(uint256 id) external view returns (FullCell memory cell);
