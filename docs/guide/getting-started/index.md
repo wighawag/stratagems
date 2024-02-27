@@ -66,7 +66,9 @@ If on the other hand, there is 2 neighboring lands inhabited by different factio
 
 <img style="float: right; max-width: 40%;margin-left:1rem;margin-bottom:1rem;" src="/public/images/rules/two-next-next.png" >
 
-When A and reaches 0 life, the ETH deposited (represented by the gem atop the castle) will be given to the player controling the attacking lands. In that case since there is only 2 player with equal strength they will both get the deposit of each other and lose nothing overall. 
+When lands reach 0 life, the ETH deposited (represented by the gem atop the castle) will be given to the player controling the attacking neighboring lands. In the case shown on the rigjt, since there is only 2 players with equal strength they will both get the deposit of each other and lose nothing overall. 
+
+Note though that land that reaches 0 life its faction remains active and affect neighboring lands as before. Player can place land atop to change their faction if they wish.
 
 
 
