@@ -134,6 +134,9 @@
 				{:else} -->
 				You have not enough ETH to pay for gas
 				<!-- {/if} -->
+				<a class="underline" href="https://community.etherplay.io" target="_blank" rel="noreferer noopener"
+					>Ask on our Discord</a
+				>
 			</div>
 			{#if $every3Seconds.synced}
 				<span>{timeToText(timeLeftForNextPhase)} left</span>
