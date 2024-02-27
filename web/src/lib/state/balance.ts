@@ -193,4 +193,6 @@ export const balance = initBalance({
 	depositContract: initialContractsInfos.contracts.Stratagems.address,
 });
 
-export const MINIMUM_REQUIRED_ETH_BALANCE = parseEther('0.001');
+// TODO per chain
+// like other things
+export const MINIMUM_REQUIRED_ETH_BALANCE = parseEther('0.0002');
