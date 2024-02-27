@@ -131,7 +131,7 @@ async function claim() {
 		// we then double the maxFeePerGas to accomodate for spikes
 		const maxFeePerGas = fast.maxFeePerGas * 2n;
 		const maxPriorityFeePerGas = fast.maxPriorityFeePerGas;
-		const ethLeft = ethBalance - estimate * maxFeePerGas;
+		const ethLeft = ethBalance - estimate * 2n * maxFeePerGas; // we double the estimate
 		console.log({ethLeft: formatEther(ethLeft)});
 		let txHash;
 		try {
