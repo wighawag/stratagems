@@ -134,9 +134,10 @@ async function claim() {
 		const maxPriorityFeePerGasTmp = fast.maxPriorityFeePerGas === 0n ? 4n : fast.maxPriorityFeePerGas * 2n;
 		const maxPriorityFeePerGas = maxPriorityFeePerGasTmp > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTmp;
 
+		const isAncient8Networks =
+			(initialContractsInfos as any).chainId == '888888888' || (initialContractsInfos as any).chainId == '28122024';
 		// some issue with alpha1test in rgeard to gas
-		const ethLeft =
-			ethBalance - estimate * maxFeePerGas * ((initialContractsInfos.name as string) === 'alpha1test' ? 5n : 1n);
+		const ethLeft = ethBalance - estimate * maxFeePerGas - (isAncient8Networks ? (ethBalance * 5n) / 100n : 0n);
 		console.log({gasCostinETH: formatEther(estimate * maxFeePerGas)});
 		console.log({ethLeft: formatEther(ethLeft)});
 		console.log({total: formatEther(estimate * maxFeePerGas + ethLeft)});

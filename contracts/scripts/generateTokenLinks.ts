@@ -11,6 +11,12 @@ import 'rocketh-deploy';
 const args = process.argv.slice(2);
 const num = (args[0] && parseInt(args[0])) || 100;
 
+const valuePerChainId = {
+	'888888888': parseEther('0.001'),
+	default: parseEther('0.001'),
+	'28122024': parseEther('0.001'),
+};
+
 async function main() {
 	const env = await loadEnvironment(
 		{
@@ -37,7 +43,11 @@ async function main() {
 	);
 
 	const addresses = accounts.map((v) => v.address);
-	const value = parseEther('0.2') * BigInt(addresses.length);
+	let valuePerAccount = valuePerChainId[env.network.chain.id];
+	if (valuePerAccount) {
+		valuePerAccount = valuePerChainId['default'];
+	}
+	const value = valuePerAccount * BigInt(addresses.length);
 
 	const prompt = await prompts({
 		type: 'confirm',
