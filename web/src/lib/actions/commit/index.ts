@@ -10,7 +10,7 @@ import {time} from '$lib/blockchain/time';
 import {timeToText} from '$utils/time';
 import {localMoveToContractMove, type CommitMetadata} from '$lib/account/account-data';
 import PermitComponent from './PermitComponent.svelte';
-import {estimateGasPrice} from '$utils/ethereum/gas';
+import {getRoughGasPriceEstimate} from '$utils/ethereum/gas';
 import {gameConfig} from '$lib/blockchain/networks';
 
 export type CommitState = {
@@ -139,15 +139,35 @@ export async function startCommit() {
 					| undefined;
 				if (FUZD_URI) {
 					const fuzd = await accountData.getFuzd();
+					const isAncient8Networks =
+						(initialContractsInfos as any).chainId == '888888888' ||
+						(initialContractsInfos as any).chainId == '28122024';
+					// TODO investigate: some issue with alpha1test in regardrd to gas
 
 					// TODO if fuzd
-					const gasPriceEstimates = await estimateGasPrice(connection.provider);
+					const gasPriceEstimates = await getRoughGasPriceEstimate(connection.provider);
 					// we get the fast estimate
 					const estimate = gasPriceEstimates.fast;
-					// we then double the maxFeePerGas to accomodate for spikes
-					const maxFeePerGas = estimate.maxFeePerGas * 2n;
-					const maxPriorityFeePerGasTmp =
-						estimate.maxPriorityFeePerGas === 0n ? 10n : estimate.maxPriorityFeePerGas * 2n;
+
+					let maxFeePerGasToUse = estimate.maxFeePerGas;
+					let maxPriorityFeePerGasToUse = estimate.maxPriorityFeePerGas;
+					if (estimate.maxFeePerGas < gasPriceEstimates.gasPrice) {
+						maxFeePerGasToUse = gasPriceEstimates.gasPrice;
+						maxPriorityFeePerGasToUse = gasPriceEstimates.gasPrice;
+					}
+
+					// TODO per chain
+					const minimum = parseEther('1', 'gwei');
+					if (maxFeePerGasToUse < minimum) {
+						maxFeePerGasToUse = minimum;
+						// maxPriorityFeePerGasToUse = minimum;
+					}
+					// if (maxPriorityFeePerGasToUse < minimum) {
+					// 	maxPriorityFeePerGasToUse = minimum;
+					// }
+
+					const maxFeePerGas = maxFeePerGasToUse;
+					const maxPriorityFeePerGasTmp = maxPriorityFeePerGasToUse === 0n ? 10n : maxPriorityFeePerGasToUse * 2n;
 					const maxPriorityFeePerGas = maxPriorityFeePerGasTmp > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTmp;
 
 					const revealGas = 50000n + 300000n * BigInt(moves.length); //TODO compute worst case case

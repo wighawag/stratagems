@@ -1,6 +1,6 @@
 import {hashParams, initialContractsInfos} from '$lib/config';
 import {formatError} from '$utils/debug';
-import {estimateGasPrice} from '$utils/ethereum/gas';
+import {getRoughGasPriceEstimate} from '$utils/ethereum/gas';
 import {rebuildLocationHash} from '$utils/url';
 import {account, connection, contracts, network} from '$lib/blockchain/connection';
 import {derived, writable} from 'svelte/store';
@@ -125,7 +125,7 @@ async function claim() {
 		const estimate = basicEstimate * 2n; // we multiply by 2 the gas estimate to be sure
 		console.log({estimate, basicEstimate, nonce, tokenBalance, ethBalance});
 
-		const gasPriceEstimates = await estimateGasPrice(connection.provider);
+		const gasPriceEstimates = await getRoughGasPriceEstimate(connection.provider);
 		// we get the fast estimate
 		const fast = gasPriceEstimates.fast;
 		console.log(fast);
@@ -136,7 +136,7 @@ async function claim() {
 
 		const isAncient8Networks =
 			(initialContractsInfos as any).chainId == '888888888' || (initialContractsInfos as any).chainId == '28122024';
-		// some issue with alpha1test in rgeard to gas
+		// TODO investigate: some issue with alpha1test in regardrd to gas
 		const ethLeft = ethBalance - estimate * maxFeePerGas - (isAncient8Networks ? (ethBalance * 5n) / 100n : 0n);
 		console.log({gasCostinETH: formatEther(estimate * maxFeePerGas)});
 		console.log({ethLeft: formatEther(ethLeft)});

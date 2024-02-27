@@ -7,6 +7,7 @@ import hre from 'hardhat';
 import fs from 'fs-extra';
 import prompts from 'prompts';
 import 'rocketh-deploy';
+import {EIP1193GenericRequestProvider} from 'eip-1193';
 
 const args = process.argv.slice(2);
 const num = (args[0] && parseInt(args[0])) || 100;
@@ -20,7 +21,7 @@ const valuePerChainId = {
 async function main() {
 	const env = await loadEnvironment(
 		{
-			provider: hre.network.provider,
+			provider: hre.network.provider as EIP1193GenericRequestProvider,
 			network: hre.network.name,
 		},
 		context,

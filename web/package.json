@@ -9,7 +9,7 @@
     "@sveltejs/kit": "^2.5.0",
     "@sveltejs/vite-plugin-svelte": "^3.0.2",
     "abitype": "^1.0.0",
-    "eip-1193": "^0.4.7",
+    "eip-1193": "^0.5.0",
     "fuzd-executor": "^0.1.9",
     "fuzd-scheduler": "^0.2.2",
     "ipfs-gateway-emulator": "4.2.1-ipfs.2",
