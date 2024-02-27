@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="stratagems-rules.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="1.1794893"
+     inkscape:cx="540.06423"
+     inkscape:cy="434.93399"
+     inkscape:window-width="1920"
+     inkscape:window-height="1127"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="g34828"
+       transform="matrix(0.79105588,0,0,0.79409605,-4.5714135,-8.8224462)">
+      <image
+         width="116.50493"
+         height="113.22969"
+         preserveAspectRatio="none"
+         style="image-rendering:optimizeSpeed"
+         xlink:href="single.png"
+         id="image978"
+         x="4.699779"
+         y="13.848142" />
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#ff75ca;fill-opacity:1;stroke:none;stroke-width:0.264583"
+         x="24.24563"
+         y="29.934313"
+         id="text11698"><tspan
+           sodipodi:role="line"
+           id="tspan11696"
+           style="fill:#ff75ca;fill-opacity:1;stroke-width:0.264583"
+           x="24.24563"
+           y="29.934313">Start with 2 life</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#e8f13b;fill-opacity:1;stroke:none;stroke-width:0.264583"
+         x="25.523014"
+         y="118.88953"
+         id="text11698-6"><tspan
+           sodipodi:role="line"
+           id="tspan11696-7"
+           style="fill:#e8f13b;fill-opacity:1;stroke-width:0.264583"
+           x="25.523014"
+           y="118.88953"> on its own  + 1</tspan></text>
+      <rect
+         style="fill:none;stroke:#ff00ff;stroke-width:0.909;stroke-opacity:1"
+         id="rect12528"
+         width="10.889745"
+         height="9.6472149"
+         x="46.946609"
+         y="57.757385" />
+      <rect
+         style="fill:none;stroke:#ffff02;stroke-width:0.909;stroke-opacity:1"
+         id="rect12528-5"
+         width="10.889745"
+         height="9.6472149"
+         x="47.247341"
+         y="74.648857" />
+      <rect
+         style="fill:none;stroke:#ff00ff;stroke-width:0.909;stroke-opacity:1"
+         id="rect12528-3"
+         width="10.889745"
+         height="9.6472149"
+         x="63.49791"
+         y="57.906048" />
+      <path
+         style="fill:none;stroke:#fffd00;stroke-width:1.1452;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 52.653007,84.383726 c 7.267718,25.937934 7.267718,26.038774 7.267718,26.038774 z"
+         id="path28070" />
+      <path
+         style="fill:none;stroke:#ff00ff;stroke-width:0.665;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 48.528742,32.691149 c 4.179107,25.391226 4.000257,25.344662 4.000257,25.344662"
+         id="path28553" />
+      <path
+         style="fill:none;stroke:#ff00ff;stroke-width:0.686932;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 68.88396,33.716913 c 0.961811,24.05182 0.961811,24.05182 0.961811,24.05182"
+         id="path28555" />
+    </g>
+    <image
+       width="67.483917"
+       height="102.25402"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       xlink:href="neighboroud-01.png"
+       id="image34813"
+       x="99.223335"
+       y="1.8379925" />
+    <rect
+       style="fill:none;fill-opacity:1;stroke:#ffff00;stroke-width:1.965;stroke-miterlimit:4;stroke-dasharray:1.965,1.965;stroke-opacity:1;stroke-dashoffset:0"
+       id="rect34852"
+       width="67.590103"
+       height="62.693329"
+       x="99.117149"
+       y="41.398685" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:5.31884px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.132972"
+       x="108.69809"
+       y="71.219711"
+       id="text38488"><tspan
+         sodipodi:role="line"
+         id="tspan38486"
+         style="fill:#ffff00;fill-opacity:1;stroke:none;stroke-width:0.132972;stroke-opacity:1"
+         x="108.69809"
+         y="71.219711">Same color neighbor</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#ffff00;fill-opacity:1;stroke:none;stroke-width:0.132972;stroke-opacity:1"
+         x="108.69809"
+         y="77.868263"
+         id="tspan39396">protection + 1each</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="91.655388"
+       y="118.39307"
+       id="text56386"><tspan
+         sodipodi:role="line"
+         id="tspan56384"
+         style="stroke-width:0.264583"
+         x="91.655388"
+         y="118.39307">Diagonal do not count</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="170.57841"
+       y="14.757264"
+       id="text61190"><tspan
+         sodipodi:role="line"
+         id="tspan61188"
+         style="stroke-width:0.264583"
+         x="170.57841"
+         y="14.757264">No friendly neighbor</tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.264583"
+         x="170.57841"
+         y="27.986389"
+         id="tspan61192">protection: 0</tspan></text>
+  </g>
+</svg>
