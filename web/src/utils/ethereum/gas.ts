@@ -29,6 +29,8 @@ export async function estimateGasPrice(provider: EIP1193ProviderWithoutEvents) {
 		index += 1;
 	}
 
+	// TODO reuse rocketh one ?
+	// TODO for fast and average add some maxPriorityFeePerGas if zero
 	const slow = avg(blocksHistory.map((b) => b.priorityFeePerGas[0]));
 	const average = avg(blocksHistory.map((b) => b.priorityFeePerGas[1]));
 	const fast = avg(blocksHistory.map((b) => b.priorityFeePerGas[2]));

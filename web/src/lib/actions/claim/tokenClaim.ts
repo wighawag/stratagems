@@ -1,4 +1,4 @@
-import {hashParams} from '$lib/config';
+import {hashParams, initialContractsInfos} from '$lib/config';
 import {formatError} from '$utils/debug';
 import {estimateGasPrice} from '$utils/ethereum/gas';
 import {rebuildLocationHash} from '$utils/url';
@@ -100,7 +100,7 @@ async function claim() {
 		let ethBalance: bigint;
 		let tokenBalance: bigint;
 		let nonce: number;
-		let estimate: bigint;
+		let basicEstimate: bigint;
 		try {
 			ethBalance = await getBalance(client.public, claimWallet);
 			tokenBalance = await contracts.TestTokens.read.balanceOf([claimWallet.address]);
@@ -108,7 +108,7 @@ async function claim() {
 				// TODO
 			}
 			nonce = await getTransactionCount(client.public, {address: claimWallet.address, blockTag: 'latest'});
-			estimate = await contracts.TestTokens.estimateGas.transferAlongWithETH([account.address, tokenBalance], {
+			basicEstimate = await contracts.TestTokens.estimateGas.transferAlongWithETH([account.address, tokenBalance], {
 				account: claimWallet,
 				value: 1n,
 				nonce,
@@ -122,7 +122,8 @@ async function claim() {
 			throw e;
 		}
 
-		console.log({estimate, nonce, tokenBalance});
+		const estimate = basicEstimate * 2n; // we multiply by 2 the gas estimate to be sure
+		console.log({estimate, basicEstimate, nonce, tokenBalance, ethBalance});
 
 		const gasPriceEstimates = await estimateGasPrice(connection.provider);
 		// we get the fast estimate
@@ -130,10 +131,15 @@ async function claim() {
 		console.log(fast);
 		// we then double the maxFeePerGas to accomodate for spikes
 		const maxFeePerGas = fast.maxFeePerGas * 2n;
-		const maxPriorityFeePerGas =
-			fast.maxPriorityFeePerGas === 0n ? (maxFeePerGas > 4n ? 4n : maxFeePerGas) : fast.maxPriorityFeePerGas * 2n;
-		const ethLeft = ethBalance - estimate * 2n * maxFeePerGas; // we double the estimate
+		const maxPriorityFeePerGasTmp = fast.maxPriorityFeePerGas === 0n ? 4n : fast.maxPriorityFeePerGas * 2n;
+		const maxPriorityFeePerGas = maxPriorityFeePerGasTmp > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTmp;
+
+		// some issue with alpha1test in rgeard to gas
+		const ethLeft =
+			ethBalance - estimate * maxFeePerGas * ((initialContractsInfos.name as string) === 'alpha1test' ? 5n : 1n);
+		console.log({gasCostinETH: formatEther(estimate * maxFeePerGas)});
 		console.log({ethLeft: formatEther(ethLeft)});
+		console.log({total: formatEther(estimate * maxFeePerGas + ethLeft)});
 		let txHash;
 		try {
 			txHash = await contracts.TestTokens.write.transferAlongWithETH([account.address, tokenBalance], {
@@ -142,6 +148,7 @@ async function claim() {
 				maxFeePerGas,
 				maxPriorityFeePerGas,
 				account: claimWallet,
+				gas: estimate,
 			});
 			state.state = 'Claiming';
 			tokenClaimStore.set(state);
