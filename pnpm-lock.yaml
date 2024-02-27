@@ -17,6 +17,9 @@ importers:
       prettier:
         specifier: ^3.2.5
         version: 3.2.5
+      sharp:
+        specifier: ^0.33.2
+        version: 0.33.2
       syncpack:
         specifier: ^12.3.0
         version: 12.3.0
