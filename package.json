@@ -9,8 +9,19 @@
     "ldenv": "^0.3.9",
     "prettier": "^3.2.5",
     "syncpack": "^12.3.0",
-    "vitepress": "1.0.0-rc.44"
-  },
+    "vitepress": "1.0.0-rc.44",
+    "sharp": "^0.33.2"
+	},
+	"pnpm": {
+		"supportedArchitectures": {
+			"os": [
+				"linux"
+			],
+			"cpu": [
+				"x64"
+			]
+		}
+	},
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "---------------------- INSTALL ----------------------": "",
