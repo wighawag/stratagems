@@ -223,7 +223,7 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
     }
 
     /// @notice The amount of reward an account has accrued so far. Does not include already withdrawn rewards.
-    function earnedFromPoolRate(address account) external view returns (uint256) {
+    function earnedFromPoolRate(address account) public view returns (uint256) {
         return
             _computeRewardsEarned(
                 _sharedRateRewardPerAccount[account].totalRewardPerPointAccounted,
@@ -246,6 +246,25 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
         return extraFixed + _fixedRateRewardPerAccount[account].toWithdraw;
     }
 
+    /// @notice The amount of reward an account has accrued so far. Does not include already withdrawn rewards.
+    function earnedFromFixedRateMultipleAccounts(
+        address[] calldata accounts
+    ) external view returns (uint256[] memory result) {
+        result = new uint256[](accounts.length);
+        for (uint256 i = 0; i < accounts.length; i++) {
+            result[i] = earnedFromFixedRate(accounts[i]);
+        }
+    }
+
+    /// @notice The amount of reward an account has accrued so far. Does not include already withdrawn rewards.
+    function earnedFromPoolRateMultipleAccounts(
+        address[] calldata accounts
+    ) external view returns (uint256[] memory result) {
+        result = new uint256[](accounts.length);
+        for (uint256 i = 0; i < accounts.length; i++) {
+            result[i] = earnedFromPoolRate(accounts[i]);
+        }
+    }
     // ---------------------------------------------------------------------------------------------------------------
     // Internal
     // ---------------------------------------------------------------------------------------------------------------

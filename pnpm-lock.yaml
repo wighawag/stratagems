@@ -73,8 +73,8 @@ importers:
         specifier: ^0.4.7
         version: 0.4.7
       ethereum-contracts-test-suite:
-        specifier: ^0.2.3
-        version: 0.2.3
+        specifier: ^0.2.5
+        version: 0.2.5
       ethereum-indexer-browser:
         specifier: ^0.7.0
         version: 0.7.0(typescript@5.3.3)
@@ -5293,8 +5293,8 @@ packages:
       js-sha3: 0.8.0
     dev: true
 
-  /ethereum-contracts-test-suite@0.2.3:
-    resolution: {integrity: sha512-DTUE+og+fZhsMvFqaEMxP7odfdDolJX6xB0Rijir3WZWkZMgxhNFbEmPB5L4b6f7YsGRvII5d8pcJZUMXA6LrQ==}
+  /ethereum-contracts-test-suite@0.2.5:
+    resolution: {integrity: sha512-Ms4N4OLbhNprcIc4PZvA/7ap4WGrvM4ZdQwE6QF79dqsH3F8Y5vgk8hKkesOn5yRSTJU5jJLYbIQYj/n44JxRw==}
     dependencies:
       chai: 4.4.1
       chai-ethers: 0.0.1

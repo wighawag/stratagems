@@ -56,6 +56,7 @@ interface UsingStratagemsTypes {
         address owner;
         uint24 lastEpochUpdate;
         uint24 epochWhenTokenIsAdded;
+        uint24 producingEpochs;
         Color color;
         uint8 life;
         int8 delta;
@@ -78,6 +79,7 @@ interface UsingStratagemsTypes {
     struct Cell {
         uint24 lastEpochUpdate;
         uint24 epochWhenTokenIsAdded;
+        uint24 producingEpochs;
         Color color;
         uint8 life;
         int8 delta;

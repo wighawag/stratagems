@@ -1,0 +1,3 @@
+- [ ] check deployment parameters for the chain in question: [](contracts/deploy/020_deploy_game.ts)
+- [x] `pnpm contracts:deploy:prepare <network>`
+- [ ] `pnpm contracts:deploy <network>`

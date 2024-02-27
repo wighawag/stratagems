@@ -110,15 +110,20 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         int8 newDelta,
         uint8 newEnemyMap
     ) internal {
-        {
-            int8 oldEffectiveDelta = _effectiveDelta(currentState.delta, currentState.enemyMap);
-            int8 newEffectiveDelta = _effectiveDelta(newDelta, newEnemyMap);
-            if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
-                GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
-            } else if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
-                GENERATOR.add(player, NUM_TOKENS_PER_GEMS);
-            }
-        }
+        // WE do not need this as land cannot be placed on existing one
+        // {
+        //     // why do we need to do this on placeColor ?
+        //     int8 oldEffectiveDelta = _effectiveDelta(currentState.delta, currentState.enemyMap);
+        //     int8 newEffectiveDelta = _effectiveDelta(newDelta, newEnemyMap);
+        //     if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
+        //         GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
+        //     } else if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
+        //         GENERATOR.add(player, NUM_TOKENS_PER_GEMS);
+        //     }
+        //     if (oldEffectiveDelta > 0) {
+        //         currentState.producingEpochs += epoch - currentState.lastEpochUpdate;
+        //     }
+        // }
 
         currentState.enemyMap = newEnemyMap;
 
@@ -134,6 +139,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             }
         } else {
             currentState.stake = 1;
+            currentState.producingEpochs = 0;
         }
 
         currentState.delta = newDelta;
@@ -142,10 +148,15 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         address oldOwner = _ownerOf(move.position);
         if (currentState.color == Color.Evil) {
             if (oldOwner != 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF) {
-                emit Transfer(address(0), 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, move.position);
+                GENERATOR.remove(oldOwner, NUM_TOKENS_PER_GEMS);
+                emit Transfer(oldOwner, 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, move.position);
                 _owners[move.position] = uint256(uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF));
+                GENERATOR.add(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, NUM_TOKENS_PER_GEMS);
+            } else {
+                GENERATOR.add(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, NUM_TOKENS_PER_GEMS);
             }
         } else {
+            GENERATOR.add(player, NUM_TOKENS_PER_GEMS);
             emit Transfer(address(0), player, move.position);
             _owners[move.position] = uint256(uint160(player));
         }
@@ -204,7 +215,6 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         else if (currentState.epochWhenTokenIsAdded == epoch) {
             if (currentState.life != 0) {
                 move.color = Color.Evil;
-                // TODO Add further stake, or do we burn? or return?
             } else {
                 // invalid move, on top of a MAX, that become None ?
                 return (0, 0, NUM_TOKENS_PER_GEMS);
@@ -226,6 +236,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         uint8 distribution
     ) internal returns (uint256 tokensPlaced, uint256 tokensBurnt, uint256 tokensReturned) {
         unchecked {
+            // this is not so much newDelta than delta
             (int8 newDelta, uint8 newEnemyMap) = _propagate(
                 transferCollection,
                 move,
@@ -240,6 +251,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             currentState.epochWhenTokenIsAdded = epoch; // used to prevent overwriting, even Color.None
 
             if (currentState.color == Color.None) {
+                currentState.producingEpochs += epoch - currentState.lastEpochUpdate;
                 currentState.life = 0;
                 currentState.stake = 0;
                 currentState.lastEpochUpdate = 0;
@@ -442,7 +454,15 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         Color newColor
     ) internal {
         uint64 upPosition = position.offset(0, -1);
-        (int8 enemyOrFriend, uint16 due) = _updateCell(upPosition, epoch, 2, oldColor, newColor);
+        (int8 enemyOrFriend, uint16 due) = _updateCell(
+            CellUpdateData({
+                position: upPosition,
+                epoch: epoch,
+                neighbourIndex: 2,
+                oldColor: oldColor,
+                newColor: newColor
+            })
+        );
         if (enemyOrFriend < 0) {
             cellUpdate.enemymap = cellUpdate.enemymap | 1;
         }
@@ -463,7 +483,15 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         Color newColor
     ) internal {
         uint64 leftPosition = position.offset(-1, 0);
-        (int8 enemyOrFriend, uint16 due) = _updateCell(leftPosition, epoch, 3, oldColor, newColor);
+        (int8 enemyOrFriend, uint16 due) = _updateCell(
+            CellUpdateData({
+                position: leftPosition,
+                epoch: epoch,
+                neighbourIndex: 3,
+                oldColor: oldColor,
+                newColor: newColor
+            })
+        );
         if (enemyOrFriend < 0) {
             cellUpdate.enemymap = cellUpdate.enemymap | 2;
         }
@@ -485,7 +513,15 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         Color newColor
     ) internal {
         uint64 downPosition = position.offset(0, 1);
-        (int8 enemyOrFriend, uint16 due) = _updateCell(downPosition, epoch, 0, oldColor, newColor);
+        (int8 enemyOrFriend, uint16 due) = _updateCell(
+            CellUpdateData({
+                position: downPosition,
+                epoch: epoch,
+                neighbourIndex: 0,
+                oldColor: oldColor,
+                newColor: newColor
+            })
+        );
         if (enemyOrFriend < 0) {
             cellUpdate.enemymap = cellUpdate.enemymap | 4;
         }
@@ -507,7 +543,15 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         Color newColor
     ) internal {
         uint64 rightPosition = position.offset(1, 0);
-        (int8 enemyOrFriend, uint16 due) = _updateCell(rightPosition, epoch, 1, oldColor, newColor);
+        (int8 enemyOrFriend, uint16 due) = _updateCell(
+            CellUpdateData({
+                position: rightPosition,
+                epoch: epoch,
+                neighbourIndex: 1,
+                oldColor: oldColor,
+                newColor: newColor
+            })
+        );
         if (enemyOrFriend < 0) {
             cellUpdate.enemymap = cellUpdate.enemymap | 8;
         }
@@ -536,15 +580,16 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         numDue = cellUpdate.due;
     }
 
+    struct CellUpdateData {
+        uint64 position; // position to update
+        uint24 epoch;
+        uint8 neighbourIndex; // index from point of view of cell being updated
+        Color oldColor; // old Color of the neighbor
+        Color newColor; // new color of the neighbor
+    }
     /// @dev This update the cell in storage
-    function _updateCell(
-        uint64 position, // position to update
-        uint24 epoch,
-        uint8 neighbourIndex, // index from point of view of cell being updated
-        Color oldColor, // old Color of the neighbor
-        Color newColor // new color of the neighbor
-    ) internal returns (int8 enemyOrFriend, uint16 due) {
-        Cell memory cell = _cells[position];
+    function _updateCell(CellUpdateData memory data) internal returns (int8 enemyOrFriend, uint16 due) {
+        Cell memory cell = _cells[data.position];
 
         uint24 lastUpdate = cell.lastEpochUpdate;
         Color color = cell.color;
@@ -554,28 +599,24 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             // if it same as the cell color, then we report the cell as friendly to the neighbor
             // else it is an enemy
             // note that _updateCell should only be called if oldColor != newColor
-            enemyOrFriend = color == newColor ? int8(1) : int8(-1);
+            enemyOrFriend = color == data.newColor ? int8(1) : int8(-1);
         }
         if (lastUpdate >= 1 && color != Color.None) {
             // we only consider cell with color that are not dead
-            if (cell.life > 0 && lastUpdate < epoch) {
+            if (cell.life > 0 && lastUpdate < data.epoch) {
                 // of there is life to update we compute the new life
-                (uint8 newLife, ) = _computeNewLife(lastUpdate, cell.enemyMap, cell.delta, cell.life, epoch);
-                due = _updateCellFromNeighbor(position, cell, newLife, epoch, neighbourIndex, oldColor, newColor);
+                (uint8 newLife, ) = _computeNewLife(lastUpdate, cell.enemyMap, cell.delta, cell.life, data.epoch);
+                due = _updateCellFromNeighbor(data, cell, newLife);
             } else {
-                due = _updateCellFromNeighbor(position, cell, cell.life, epoch, neighbourIndex, oldColor, newColor);
+                due = _updateCellFromNeighbor(data, cell, cell.life);
             }
         }
     }
 
     function _updateCellFromNeighbor(
-        uint64 position, // position of the cell to be updated
+        CellUpdateData memory data,
         Cell memory cell, // cell to be updated
-        uint8 newLife, // new life value for the celll
-        uint24 epoch, // epoch at which the update occured (epochUsed TODO: confirm its use)
-        uint8 neighbourIndex, // the neighbor triggering the update and for which we return whether it should receive its due
-        Color oldColor, // old color of that neighbor
-        Color newColor // new color of that neighbor
+        uint8 newLife // new life value for the cell
     ) internal returns (uint16 due) {
         if (cell.life > 0 && newLife == 0) {
             // we just died, we establish the distributionMap and counts
@@ -586,16 +627,53 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
         // logger.logCell(0,string.concat("_updateCellFromNeighbor  index", Strings.toString(neighbourIndex)),position,cell,address(uint160(_owners[position])));
 
-        if ((cell.distribution >> 4) & (2 ** neighbourIndex) == 2 ** neighbourIndex) {
+        if ((cell.distribution >> 4) & (2 ** data.neighbourIndex) == 2 ** data.neighbourIndex) {
             due = (cell.stake * 12) / (cell.distribution & 0x0f); // TODO if stake too high we have a problem
 
             cell.distribution =
-                (uint8(uint256(cell.distribution >> 4) & (~(2 ** uint256(neighbourIndex)))) << 4) +
+                (uint8(uint256(cell.distribution >> 4) & (~(2 ** uint256(data.neighbourIndex)))) << 4) +
                 (cell.distribution & 0x0f);
         }
 
         int8 oldEffectiveDelta = _effectiveDelta(cell.delta, cell.enemyMap);
 
+        _handleColor(cell, data.neighbourIndex, data.oldColor, data.newColor);
+
+        _setCell(data.position, cell, newLife, data.epoch, oldEffectiveDelta);
+
+        // logger.logCell(0,string.concat("AFTER _updateCellFromNeighbor  index", Strings.toString(neighbourIndex)),position,cell,address(uint160(_owners[position])));
+
+        _cells[data.position] = cell;
+    }
+
+    function _setCell(
+        uint64 position, // position of the cell to be updated
+        Cell memory cell, // cell to be updated
+        uint8 newLife, // new life value for the celll
+        uint24 epoch, // epoch at which the update occured (epochUsed TODO: confirm its use)
+        int8 oldEffectiveDelta
+    ) internal {
+        int8 newEffectiveDelta = _effectiveDelta(cell.delta, cell.enemyMap);
+        if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
+            GENERATOR.remove(_ownerOf(position), NUM_TOKENS_PER_GEMS);
+        } else if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
+            GENERATOR.add(_ownerOf(position), NUM_TOKENS_PER_GEMS);
+        }
+
+        if (oldEffectiveDelta > 0) {
+            cell.producingEpochs += epoch - cell.lastEpochUpdate;
+        }
+
+        cell.lastEpochUpdate = epoch;
+        cell.life = newLife;
+    }
+
+    function _handleColor(
+        Cell memory cell, // cell to be updated
+        uint8 neighbourIndex, // the neighbor triggering the update and for which we return whether it should receive its due
+        Color oldColor, // old color of that neighbor
+        Color newColor // new color of that neighbor
+    ) internal pure {
         if (oldColor != newColor) {
             if (newColor == Color.None) {
                 if (cell.color == oldColor) {
@@ -617,20 +695,6 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
                 cell.delta -= 1;
                 cell.enemyMap = cell.enemyMap | uint8(1 << neighbourIndex);
             }
-        }
-
-        cell.lastEpochUpdate = epoch;
-        cell.life = newLife;
-
-        // logger.logCell(0,string.concat("AFTER _updateCellFromNeighbor  index", Strings.toString(neighbourIndex)),position,cell,address(uint160(_owners[position])));
-
-        _cells[position] = cell;
-
-        int8 newEffectiveDelta = _effectiveDelta(cell.delta, cell.enemyMap);
-        if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
-            GENERATOR.remove(_ownerOf(position), NUM_TOKENS_PER_GEMS);
-        } else if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
-            GENERATOR.add(_ownerOf(position), NUM_TOKENS_PER_GEMS);
         }
     }
 }

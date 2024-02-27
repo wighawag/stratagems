@@ -229,10 +229,16 @@ contract StratagemsERC721 is
         // 	}
         // }
 
-        // TODO register in the Gem Generator
+        revert UsingGenericErrors.NotImplemented();
 
         // We encode the blockNumber in the token nonce. We can then use it for count voting.
         _owners[tokenID] = (block.number << 184) | uint256(uint160(to));
+        Cell memory cell = _cells[uint64(tokenID)];
+        if (_effectiveDelta(cell.delta, cell.enemyMap) > 0) {
+            GENERATOR.remove(from, NUM_TOKENS_PER_GEMS);
+            GENERATOR.add(to, NUM_TOKENS_PER_GEMS);
+        }
+
         emit Transfer(from, to, tokenID);
     }
 

@@ -10,7 +10,7 @@
     "as-soon": "^0.0.8",
     "chai-ethers": "^0.0.1",
     "eip-1193": "^0.4.7",
-    "ethereum-contracts-test-suite": "^0.2.3",
+    "ethereum-contracts-test-suite": "^0.2.5",
     "ethereum-indexer-browser": "^0.7.0",
     "fs-extra": "^11.2.0",
     "hardhat": "^2.20.1",

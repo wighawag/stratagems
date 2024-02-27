@@ -88,6 +88,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
             Cell memory cell = Cell({
                 lastEpochUpdate: epoch,
                 epochWhenTokenIsAdded: epoch,
+                producingEpochs: 0, // THIS IS FALSE but we go with it
                 color: simpleCell.color,
                 life: simpleCell.life,
                 delta: delta,
@@ -131,6 +132,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
             Cell memory updatedCell = Cell({
                 lastEpochUpdate: epoch - 1,
                 epochWhenTokenIsAdded: epoch - 1,
+                producingEpochs: 0,
                 color: cell.color,
                 life: cell.life,
                 delta: cell.delta,
@@ -139,11 +141,10 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                 stake: cell.stake
             });
 
-            _cells[position] = updatedCell;
-
             if (_effectiveDelta(updatedCell.delta, updatedCell.enemyMap) > 0) {
-                GENERATOR.add(address(uint160(_owners[position])), NUM_TOKENS_PER_GEMS);
+                updatedCell.producingEpochs = 1;
             }
+            _cells[position] = updatedCell;
 
             // logger.logCell(0, string.concat("forceSimpleCells at epoch ", Strings.toString(epoch)), uint64(position), updatedCell, address(uint160(_owners[position])));
         }
@@ -211,7 +212,17 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                         enemyMap = enemyMap | 1;
                     }
                     delta += enemyOrFriend;
-                    _updateCellFromNeighbor(upPosition, cell, cell.life, epoch, 2, Color.None, color);
+                    _updateCellFromNeighbor(
+                        CellUpdateData({
+                            position: upPosition,
+                            epoch: epoch,
+                            neighbourIndex: 2,
+                            oldColor: Color.None,
+                            newColor: color
+                        }),
+                        cell,
+                        cell.life
+                    );
                 }
             }
             {
@@ -223,7 +234,17 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                         enemyMap = enemyMap | 2;
                     }
                     delta += enemyOrFriend;
-                    _updateCellFromNeighbor(leftPosition, cell, cell.life, epoch, 3, Color.None, color);
+                    _updateCellFromNeighbor(
+                        CellUpdateData({
+                            position: leftPosition,
+                            epoch: epoch,
+                            neighbourIndex: 3,
+                            oldColor: Color.None,
+                            newColor: color
+                        }),
+                        cell,
+                        cell.life
+                    );
                 }
             }
 
@@ -236,7 +257,17 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                         enemyMap = enemyMap | 4;
                     }
                     delta += enemyOrFriend;
-                    _updateCellFromNeighbor(downPosition, cell, cell.life, epoch, 0, Color.None, color);
+                    _updateCellFromNeighbor(
+                        CellUpdateData({
+                            position: downPosition,
+                            epoch: epoch,
+                            neighbourIndex: 0,
+                            oldColor: Color.None,
+                            newColor: color
+                        }),
+                        cell,
+                        cell.life
+                    );
                 }
             }
             {
@@ -248,7 +279,17 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                         enemyMap = enemyMap | 8;
                     }
                     delta += enemyOrFriend;
-                    _updateCellFromNeighbor(rightPosition, cell, cell.life, epoch, 1, Color.None, color);
+                    _updateCellFromNeighbor(
+                        CellUpdateData({
+                            position: rightPosition,
+                            epoch: epoch,
+                            neighbourIndex: 1,
+                            oldColor: Color.None,
+                            newColor: color
+                        }),
+                        cell,
+                        cell.life
+                    );
                 }
             }
         }
