@@ -3,7 +3,6 @@ import 'rocketh-deploy-proxy';
 import 'rocketh-deploy-router';
 import 'rocketh-deploy';
 import {context} from './_context';
-import {fetchContract} from '../utils/connection';
 import {days, hours, minutes} from '../utils/time';
 import {checksumAddress, parseEther, zeroAddress} from 'viem';
 import {getConfig} from './.config';
@@ -81,7 +80,7 @@ export default execute(
 			{name: 'Poke', artifact: artifacts.StratagemsPoke, args: [config], account: deployer},
 			{name: 'ERC721', artifact: artifacts.StratagemsERC721 as any, args: [config], account: deployer},
 		];
-		if (!network.tags['mainnet']) {
+		if (network.name === 'hardhat') {
 			routes.push({name: 'Debug', artifact: artifacts.StratagemsDebug as any, args: [config], account: deployer});
 		}
 
