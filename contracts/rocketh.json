@@ -1,0 +1,7 @@
+{
+	"networks": {
+		"alpha1": {
+			"tags": ["mainnet"]
+		}
+	}
+}
