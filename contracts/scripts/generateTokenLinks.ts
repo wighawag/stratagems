@@ -13,9 +13,9 @@ const args = process.argv.slice(2);
 const num = (args[0] && parseInt(args[0])) || 100;
 
 const valuePerChainId = {
-	'888888888': parseEther('0.001'),
+	'888888888': parseEther('0.003'),
 	default: parseEther('0.001'),
-	'28122024': parseEther('0.001'),
+	'28122024': parseEther('0.003'),
 };
 
 async function main() {

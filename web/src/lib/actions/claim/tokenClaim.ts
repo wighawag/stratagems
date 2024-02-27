@@ -4,7 +4,7 @@ import {getRoughGasPriceEstimate} from '$utils/ethereum/gas';
 import {rebuildLocationHash} from '$utils/url';
 import {account, connection, contracts, network} from '$lib/blockchain/connection';
 import {derived, writable} from 'svelte/store';
-import {formatEther} from 'viem';
+import {formatEther, parseEther} from 'viem';
 import {privateKeyToAccount, type Account} from 'viem/accounts';
 import {viemify} from 'web3-connection-viem';
 import {getBalance, getTransactionCount, waitForTransactionReceipt} from 'viem/actions';
@@ -128,10 +128,24 @@ async function claim() {
 		const gasPriceEstimates = await getRoughGasPriceEstimate(connection.provider);
 		// we get the fast estimate
 		const fast = gasPriceEstimates.fast;
+		let maxFeePerGasToUse = fast.maxFeePerGas;
+		let maxPriorityFeePerGasToUse = fast.maxPriorityFeePerGas;
+		if (fast.maxFeePerGas < gasPriceEstimates.gasPrice) {
+			maxFeePerGasToUse = gasPriceEstimates.gasPrice;
+			maxPriorityFeePerGasToUse = gasPriceEstimates.gasPrice;
+		}
+
+		// TODO per chain
+		const minimum = parseEther('1', 'gwei');
+		if (maxFeePerGasToUse < minimum) {
+			maxFeePerGasToUse = minimum;
+			// maxPriorityFeePerGasToUse = minimum;
+		}
+
 		console.log(fast);
 		// we then double the maxFeePerGas to accomodate for spikes
-		const maxFeePerGas = fast.maxFeePerGas * 2n;
-		const maxPriorityFeePerGasTmp = fast.maxPriorityFeePerGas === 0n ? 4n : fast.maxPriorityFeePerGas * 2n;
+		const maxFeePerGas = maxFeePerGasToUse;
+		const maxPriorityFeePerGasTmp = maxPriorityFeePerGasToUse === 0n ? 4n : maxPriorityFeePerGasToUse * 2n;
 		const maxPriorityFeePerGas = maxPriorityFeePerGasTmp > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTmp;
 
 		const isAncient8Networks =

@@ -147,11 +147,11 @@ export async function startCommit() {
 					// TODO if fuzd
 					const gasPriceEstimates = await getRoughGasPriceEstimate(connection.provider);
 					// we get the fast estimate
-					const estimate = gasPriceEstimates.fast;
+					const fast = gasPriceEstimates.fast;
 
-					let maxFeePerGasToUse = estimate.maxFeePerGas;
-					let maxPriorityFeePerGasToUse = estimate.maxPriorityFeePerGas;
-					if (estimate.maxFeePerGas < gasPriceEstimates.gasPrice) {
+					let maxFeePerGasToUse = fast.maxFeePerGas;
+					let maxPriorityFeePerGasToUse = fast.maxPriorityFeePerGas;
+					if (fast.maxFeePerGas < gasPriceEstimates.gasPrice) {
 						maxFeePerGasToUse = gasPriceEstimates.gasPrice;
 						maxPriorityFeePerGasToUse = gasPriceEstimates.gasPrice;
 					}
