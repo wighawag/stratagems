@@ -5,7 +5,7 @@ import {FUZD_URI, initialContractsInfos} from '$lib/config';
 import {prepareCommitment, zeroBytes24, zeroBytes32} from 'stratagems-common';
 import {epoch, epochInfo} from '$lib/state/Epoch';
 import {hexToVRS} from '$utils/ethereum/signatures';
-import {encodeFunctionData, keccak256, zeroAddress} from 'viem';
+import {encodeFunctionData, formatEther, keccak256, parseEther, zeroAddress} from 'viem';
 import {time} from '$lib/blockchain/time';
 import {timeToText} from '$utils/time';
 import {localMoveToContractMove, type CommitMetadata} from '$lib/account/account-data';
@@ -146,7 +146,9 @@ export async function startCommit() {
 					const estimate = gasPriceEstimates.fast;
 					// we then double the maxFeePerGas to accomodate for spikes
 					const maxFeePerGas = estimate.maxFeePerGas * 2n;
-					const maxPriorityFeePerGas = estimate.maxPriorityFeePerGas;
+					const maxPriorityFeePerGasTmp =
+						estimate.maxPriorityFeePerGas === 0n ? 10n : estimate.maxPriorityFeePerGas * 2n;
+					const maxPriorityFeePerGas = maxPriorityFeePerGasTmp > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTmp;
 
 					const revealGas = 50000n + 300000n * BigInt(moves.length); //TODO compute worst case case
 					const remoteAccount = fuzd.remoteAccount;
@@ -163,6 +165,8 @@ export async function startCommit() {
 						const valueToProvide = valueNeeded * 2n;
 						value = valueToProvide > balance ? valueToProvide - balance : 0n;
 					}
+
+					console.log({value: formatEther(value), rawValue: value});
 
 					fuzdData = {
 						fuzd,
