@@ -80,7 +80,7 @@ export default execute(
 			{name: 'Poke', artifact: artifacts.StratagemsPoke, args: [config], account: deployer},
 			{name: 'ERC721', artifact: artifacts.StratagemsERC721 as any, args: [config], account: deployer},
 		];
-		if (network.name === 'hardhat') {
+		if (network.name === 'hardhat' || network.name === 'memory') {
 			routes.push({name: 'Debug', artifact: artifacts.StratagemsDebug as any, args: [config], account: deployer});
 		}
 
