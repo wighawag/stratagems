@@ -4,10 +4,11 @@ import {getRoughGasPriceEstimate} from '$utils/ethereum/gas';
 import {rebuildLocationHash} from '$utils/url';
 import {account, connection, contracts, network} from '$lib/blockchain/connection';
 import {derived, writable} from 'svelte/store';
-import {formatEther, parseEther} from 'viem';
+import {decodeFunctionResult, encodeFunctionData, formatEther, parseEther} from 'viem';
 import {privateKeyToAccount, type Account} from 'viem/accounts';
 import {viemify} from 'web3-connection-viem';
-import {getBalance, getTransactionCount, waitForTransactionReceipt} from 'viem/actions';
+import {call, getBalance, getTransactionCount, waitForTransactionReceipt} from 'viem/actions';
+import type {Web3ConnectionProvider} from 'web3-connection';
 
 type TokenClaim = {
 	inUrl: boolean;
@@ -96,7 +97,20 @@ async function claim() {
 
 	const claimWallet = getClaimtWallet();
 
-	contracts.execute(async ({contracts, client, account, connection}) => {
+	contracts.execute(async ({contracts, client, account, connection, network}) => {
+		// if (connection.httpProvider) {
+		// 	console.log(`using http provider`);
+		// 	const httpViem = viemify({
+		// 		connection,
+		// 		network,
+		// 		account,
+		// 		providerOverride: connection.httpProvider as Web3ConnectionProvider,
+		// 	});
+		// 	contracts = httpViem.contracts as any;
+		// } else {
+		// 	console.log(`using wallet provider`);
+		// }
+
 		let ethBalance: bigint;
 		let tokenBalance: bigint;
 		let nonce: number;
@@ -134,6 +148,51 @@ async function claim() {
 		let maxFeePerGasToUse = fast.maxFeePerGas;
 		let maxPriorityFeePerGasToUse = fast.maxPriorityFeePerGas;
 
+		let extraFee = 0n;
+		// TODO if op
+		const gasOracleABI = [
+			{
+				inputs: [{internalType: 'bytes', name: '_data', type: 'bytes'}],
+				name: 'getL1Fee',
+				outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
+				stateMutability: 'view',
+				type: 'function',
+			},
+		];
+
+		const callData = encodeFunctionData({
+			abi: contracts.TestTokens.abi,
+			functionName: 'transferAlongWithETH',
+			args: [account.address, tokenBalance],
+		});
+
+		const functionName = 'getL1Fee';
+		const data = encodeFunctionData({
+			abi: gasOracleABI,
+			functionName,
+			args: [callData],
+		});
+		try {
+			const result = (await connection.provider.request({
+				method: 'eth_call',
+				params: [
+					{
+						to: '0x420000000000000000000000000000000000000F',
+						data,
+					},
+				],
+			})) as `0x${string}`;
+			extraFee = decodeFunctionResult({
+				abi: gasOracleABI,
+				functionName,
+				data: result,
+			}) as bigint;
+
+			extraFee *= 2n; // we multiply extraFee by 2 to ensure t goes through
+		} catch (err) {
+			console.error(err);
+		}
+
 		if (isAncient8Networks) {
 			// TODO investigate: some issue with alpha1test in regardrd to gas
 			if (maxPriorityFeePerGasToUse < gasPriceEstimates.gasPrice) {
@@ -157,13 +216,13 @@ async function claim() {
 		const maxPriorityFeePerGasTmp = maxPriorityFeePerGasToUse === 0n ? 4n : maxPriorityFeePerGasToUse * 2n;
 		const maxPriorityFeePerGas = maxPriorityFeePerGasTmp > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTmp;
 
-		// TODO investigate: some issue with alpha1test in regardrd to gas
-		const ethLeft = ethBalance - estimate * maxFeePerGas - (isAncient8Networks ? (ethBalance * 5n) / 100n : 0n);
+		const ethLeft = ethBalance - estimate * maxFeePerGas - extraFee;
 		console.log({gasCostinETH: formatEther(estimate * maxFeePerGas)});
 		console.log({ethLeft: formatEther(ethLeft)});
 		console.log({total: formatEther(estimate * maxFeePerGas + ethLeft)});
 		console.log({maxFeePerGas: formatEther(maxFeePerGas)});
 		console.log({maxPriorityFeePerGas: formatEther(maxPriorityFeePerGas)});
+		console.log({extraFee: formatEther(extraFee)});
 		let txHash;
 		try {
 			txHash = await contracts.TestTokens.write.transferAlongWithETH([account.address, tokenBalance], {

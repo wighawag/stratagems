@@ -326,8 +326,8 @@ importers:
         specifier: ^2.7.12
         version: 2.7.12(typescript@5.3.3)
       web3-connection:
-        specifier: ^0.1.31
-        version: 0.1.31(svelte@4.2.11)
+        specifier: ^0.1.36
+        version: 0.1.36(svelte@4.2.11)
       web3-connection-viem:
         specifier: ^0.1.4
         version: 0.1.4(viem@2.7.12)
@@ -10857,8 +10857,8 @@ packages:
       viem: 2.7.12(typescript@5.3.3)
     dev: false
 
-  /web3-connection@0.1.31(svelte@4.2.11):
-    resolution: {integrity: sha512-hIk84D0iOsxNHAC1AIhw7PTPLUYv7oLLxbnK2J2VuCbNg3aysm74i8bsG05zte8YWoNyfaJ+AS3nygJxH7myBw==}
+  /web3-connection@0.1.36(svelte@4.2.11):
+    resolution: {integrity: sha512-k7PrzP8YGaXNp69nJiya9vL9odyCAkZ3Z5M8qCZzBSDPtngHI5GPBXmtIcBScpAD1S5jw5mmkYyOBgTB6NRy0g==}
     peerDependencies:
       svelte: ^4.0.0
     dependencies:
