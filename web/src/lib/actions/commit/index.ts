@@ -186,7 +186,7 @@ export async function startCommit() {
 					const maxPriorityFeePerGasTmp = maxPriorityFeePerGasToUse === 0n ? 10n : maxPriorityFeePerGasToUse;
 					const maxPriorityFeePerGas = maxPriorityFeePerGasTmp > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTmp;
 
-					const revealGas = 100000n + 100000n * BigInt(moves.length); //TODO compute worst case case
+					const revealGas = 100000n + 200000n * BigInt(moves.length); //TODO compute worst case case
 					const remoteAccount = fuzd.remoteAccount;
 					let value = 0n;
 					if (remoteAccount !== zeroAddress) {
