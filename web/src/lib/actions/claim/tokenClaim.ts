@@ -122,7 +122,10 @@ async function claim() {
 			throw e;
 		}
 
-		const estimate = basicEstimate * 2n; // we multiply by 2 the gas estimate to be sure
+		const isAncient8Networks =
+			(initialContractsInfos as any).chainId == '888888888' || (initialContractsInfos as any).chainId == '28122024';
+
+		const estimate = basicEstimate + 10000n; // we add 10000n in case
 		console.log({estimate, basicEstimate, nonce, tokenBalance, ethBalance});
 
 		const gasPriceEstimates = await getRoughGasPriceEstimate(connection.provider);
@@ -130,17 +133,23 @@ async function claim() {
 		const fast = gasPriceEstimates.fast;
 		let maxFeePerGasToUse = fast.maxFeePerGas;
 		let maxPriorityFeePerGasToUse = fast.maxPriorityFeePerGas;
-		if (fast.maxFeePerGas < gasPriceEstimates.gasPrice) {
-			maxFeePerGasToUse = gasPriceEstimates.gasPrice;
-			maxPriorityFeePerGasToUse = gasPriceEstimates.gasPrice;
+
+		if (isAncient8Networks) {
+			// TODO investigate: some issue with alpha1test in regardrd to gas
+			if (maxPriorityFeePerGasToUse < gasPriceEstimates.gasPrice) {
+				maxPriorityFeePerGasToUse = gasPriceEstimates.gasPrice;
+				if (maxFeePerGasToUse < maxPriorityFeePerGasToUse) {
+					maxFeePerGasToUse = maxPriorityFeePerGasToUse;
+				}
+			}
 		}
 
-		// TODO per chain
-		const minimum = parseEther('1', 'gwei');
-		if (maxFeePerGasToUse < minimum) {
-			maxFeePerGasToUse = minimum;
-			// maxPriorityFeePerGasToUse = minimum;
-		}
+		// // TODO per chain
+		// const minimum = parseEther('1', 'gwei');
+		// if (maxFeePerGasToUse < minimum) {
+		// 	maxFeePerGasToUse = minimum;
+		// 	// maxPriorityFeePerGasToUse = minimum;
+		// }
 
 		console.log(fast);
 		// we then double the maxFeePerGas to accomodate for spikes
@@ -148,13 +157,13 @@ async function claim() {
 		const maxPriorityFeePerGasTmp = maxPriorityFeePerGasToUse === 0n ? 4n : maxPriorityFeePerGasToUse * 2n;
 		const maxPriorityFeePerGas = maxPriorityFeePerGasTmp > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTmp;
 
-		const isAncient8Networks =
-			(initialContractsInfos as any).chainId == '888888888' || (initialContractsInfos as any).chainId == '28122024';
 		// TODO investigate: some issue with alpha1test in regardrd to gas
 		const ethLeft = ethBalance - estimate * maxFeePerGas - (isAncient8Networks ? (ethBalance * 5n) / 100n : 0n);
 		console.log({gasCostinETH: formatEther(estimate * maxFeePerGas)});
 		console.log({ethLeft: formatEther(ethLeft)});
 		console.log({total: formatEther(estimate * maxFeePerGas + ethLeft)});
+		console.log({maxFeePerGas: formatEther(maxFeePerGas)});
+		console.log({maxPriorityFeePerGas: formatEther(maxPriorityFeePerGas)});
 		let txHash;
 		try {
 			txHash = await contracts.TestTokens.write.transferAlongWithETH([account.address, tokenBalance], {

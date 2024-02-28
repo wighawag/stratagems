@@ -329,8 +329,8 @@ importers:
         specifier: ^0.1.31
         version: 0.1.31(svelte@4.2.11)
       web3-connection-viem:
-        specifier: ^0.1.3
-        version: 0.1.3(viem@2.7.12)
+        specifier: ^0.1.4
+        version: 0.1.4(viem@2.7.12)
     devDependencies:
       '@sveltejs/adapter-static':
         specifier: ^3.0.0
@@ -10849,8 +10849,8 @@ packages:
       defaults: 1.0.4
     dev: true
 
-  /web3-connection-viem@0.1.3(viem@2.7.12):
-    resolution: {integrity: sha512-5T6toK0+nkMIhFMu0fqK3sck/s2Ifk6am33517pr7Ko3C3j0S5L793NxCxaKAJvX5kIVgZMBh049aQT0JVj2OA==}
+  /web3-connection-viem@0.1.4(viem@2.7.12):
+    resolution: {integrity: sha512-KyheURva5IUDSAQ3SVbyIfosSMa49SFgq+BEFDPnUcGM78+8mvf6VoJl8fZoU3R47Ibu2q09ybQZMAjhXI9UeQ==}
     peerDependencies:
       viem: ^2.1.1
     dependencies:

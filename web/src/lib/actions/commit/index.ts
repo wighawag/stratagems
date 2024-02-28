@@ -137,12 +137,14 @@ export async function startCommit() {
 							maxPriorityFeePerGas: bigint;
 					  }
 					| undefined;
+
+				let maxFeePerGasForNow: bigint | undefined;
+				let maxPriorityFeePerGasForNow: bigint | undefined;
 				if (FUZD_URI) {
 					const fuzd = await accountData.getFuzd();
 					const isAncient8Networks =
 						(initialContractsInfos as any).chainId == '888888888' ||
 						(initialContractsInfos as any).chainId == '28122024';
-					// TODO investigate: some issue with alpha1test in regardrd to gas
 
 					// TODO if fuzd
 					const gasPriceEstimates = await getRoughGasPriceEstimate(connection.provider);
@@ -151,26 +153,40 @@ export async function startCommit() {
 
 					let maxFeePerGasToUse = fast.maxFeePerGas;
 					let maxPriorityFeePerGasToUse = fast.maxPriorityFeePerGas;
-					if (fast.maxFeePerGas < gasPriceEstimates.gasPrice) {
-						maxFeePerGasToUse = gasPriceEstimates.gasPrice;
-						maxPriorityFeePerGasToUse = gasPriceEstimates.gasPrice;
+
+					if (isAncient8Networks) {
+						// TODO investigate: some issue with alpha1test in regardrd to gas
+						if (maxPriorityFeePerGasToUse < gasPriceEstimates.gasPrice) {
+							maxPriorityFeePerGasToUse = gasPriceEstimates.gasPrice;
+							if (maxFeePerGasToUse < maxPriorityFeePerGasToUse) {
+								maxFeePerGasToUse = maxPriorityFeePerGasToUse;
+							}
+						}
 					}
 
-					// TODO per chain
-					const minimum = parseEther('1', 'gwei');
-					if (maxFeePerGasToUse < minimum) {
-						maxFeePerGasToUse = minimum;
-						// maxPriorityFeePerGasToUse = minimum;
-					}
-					// if (maxPriorityFeePerGasToUse < minimum) {
+					console.log({
+						maxFeePerGasToUse: formatEther(maxFeePerGasToUse),
+						maxPriorityFeePerGasToUse: formatEther(maxPriorityFeePerGasToUse),
+						gasPrice: formatEther(gasPriceEstimates.gasPrice),
+						fastMaxFeePerGas: formatEther(fast.maxFeePerGas),
+						fastMaxPriorityFeePerGas: formatEther(fast.maxPriorityFeePerGas),
+					});
+
+					// // TODO per chain
+					// const minimum = parseEther('1', 'gwei');
+					// if (maxFeePerGasToUse < minimum) {
+					// 	maxFeePerGasToUse = minimum;
 					// 	maxPriorityFeePerGasToUse = minimum;
 					// }
+					// // if (maxPriorityFeePerGasToUse < minimum) {
+					// // 	maxPriorityFeePerGasToUse = minimum;
+					// // }
 
 					const maxFeePerGas = maxFeePerGasToUse;
-					const maxPriorityFeePerGasTmp = maxPriorityFeePerGasToUse === 0n ? 10n : maxPriorityFeePerGasToUse * 2n;
+					const maxPriorityFeePerGasTmp = maxPriorityFeePerGasToUse === 0n ? 10n : maxPriorityFeePerGasToUse;
 					const maxPriorityFeePerGas = maxPriorityFeePerGasTmp > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTmp;
 
-					const revealGas = 50000n + 300000n * BigInt(moves.length); //TODO compute worst case case
+					const revealGas = 100000n + 100000n * BigInt(moves.length); //TODO compute worst case case
 					const remoteAccount = fuzd.remoteAccount;
 					let value = 0n;
 					if (remoteAccount !== zeroAddress) {
@@ -186,7 +202,12 @@ export async function startCommit() {
 						value = valueToProvide > balance ? valueToProvide - balance : 0n;
 					}
 
-					console.log({value: formatEther(value), rawValue: value});
+					console.log({
+						value: formatEther(value),
+						rawValue: value,
+						maxFeePerGas: formatEther(maxFeePerGas),
+						maxPriorityFeePerGas: formatEther(maxPriorityFeePerGas),
+					});
 
 					fuzdData = {
 						fuzd,
@@ -196,6 +217,9 @@ export async function startCommit() {
 						value,
 						remoteAccount,
 					};
+
+					maxFeePerGasForNow = maxFeePerGas;
+					maxPriorityFeePerGasForNow = maxPriorityFeePerGas;
 				}
 
 				const remoteAccount = fuzdData?.remoteAccount || zeroAddress;
@@ -238,6 +262,8 @@ export async function startCommit() {
 					txHash = await contracts.Stratagems.write.makeCommitment([hash, remoteAccount], {
 						account: account.address,
 						value,
+						maxFeePerGas: maxFeePerGasForNow,
+						maxPriorityFeePerGas: maxPriorityFeePerGasForNow,
 					});
 				}
 				accountData.resetOffchainMoves();
