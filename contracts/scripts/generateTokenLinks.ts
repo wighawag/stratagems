@@ -38,14 +38,18 @@ async function main() {
 		accounts.push({address: account.address, key});
 	}
 
+	const content = fs.readFileSync(`.keys/${env.network.name}-list.csv`, 'utf-8');
+	const contentLines = content.split('\n');
 	fs.writeFileSync(
 		`.keys/${env.network.name}-list.csv`,
-		accounts.map((v) => `${v.address},https://${env.network.name}.stratagems.world#tokenClaim=${v.key}`).join('\n'),
+		contentLines
+			.concat(accounts.map((v) => `${v.address},https://${env.network.name}.stratagems.world#tokenClaim=${v.key}`))
+			.join('\n'),
 	);
 
 	const addresses = accounts.map((v) => v.address);
 	let valuePerAccount = valuePerChainId[env.network.chain.id];
-	if (valuePerAccount) {
+	if (!valuePerAccount) {
 		valuePerAccount = valuePerChainId['default'];
 	}
 	const value = valuePerAccount * BigInt(addresses.length);
