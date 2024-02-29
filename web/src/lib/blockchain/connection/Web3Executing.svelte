@@ -1,6 +1,6 @@
 <script lang="ts">
 	import {contractsInfos} from '$lib/config';
-	import {getNetworkConfig} from '$lib/blockchain/networks';
+	import {getWalletSwitchChainInfo} from '$lib/blockchain/networks';
 	import Modal from '$utils/ui/modals/Modal.svelte';
 	import type {connection as Connection, execution as Execution, network as Network, account as Account} from './';
 	import GenericModal from '$utils/ui/modals/GenericModal.svelte';
@@ -16,8 +16,7 @@
 		<Modal>
 			<h3 class="title">You are connected to unsupported network</h3>
 			<p class="message">
-				Proceed to switch to {getNetworkConfig($contractsInfos.chainId)?.chainName ||
-					`the network with chainID: ${$contractsInfos.chainId}`}.
+				Proceed to switch to {$contractsInfos.chainInfo.name || `the network with chainID: ${$contractsInfos.chainId}`}.
 			</p>
 			<div class="modal-action">
 				<button
@@ -27,7 +26,8 @@
 					class="error">Cancel</button
 				>
 				<button
-					on:click={() => network.switchTo($contractsInfos.chainId, getNetworkConfig($contractsInfos.chainId))}
+					on:click={() =>
+						network.switchTo($contractsInfos.chainId, getWalletSwitchChainInfo($contractsInfos.chainInfo))}
 					class="success">Switch</button
 				>
 			</div>

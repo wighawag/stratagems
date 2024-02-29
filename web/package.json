@@ -16,6 +16,7 @@
     "prettier": "^3.2.5",
     "prettier-plugin-svelte": "^3.2.1",
     "pwag": "0.3.0",
+    "rocketh-export": "^4.0.9",
     "svelte": "^4.2.11",
     "svelte-check": "^3.6.4",
     "tslib": "^2.6.2",
@@ -51,8 +52,8 @@
     "tlock-js": "0.7.0",
     "twgl.js": "^5.5.3",
     "viem": "^2.7.12",
-    "web3-connection": "^0.1.36",
-    "web3-connection-viem": "^0.1.4"
+    "web3-connection": "^0.1.39",
+    "web3-connection-viem": "^0.2.0"
   },
   "scripts": {
     "prepare": "pwag static/icon.png src/web-config.json",

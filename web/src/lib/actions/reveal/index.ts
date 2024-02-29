@@ -11,12 +11,17 @@ export type RevealState = {};
 export type RevealFlow = Flow<RevealState>;
 
 export async function startReveal(commitTx: `0x${string}`, data: CommitMetadata) {
-	await contracts.execute(async ({contracts, account, connection}) => {
+	await contracts.execute(async ({client, network: {contracts}, account, connection}) => {
 		const steps: Step<RevealState>[] = [];
+		const {Stratagems} = contracts;
 
 		const moves = data.localMoves.map(localMoveToContractMove);
 		const {hash} = prepareCommitment(moves, data.secret);
-		const currentCommitment = await contracts.Stratagems.read.getCommitment([account.address]);
+		const currentCommitment = await client.public.readContract({
+			...Stratagems,
+			functionName: 'getCommitment',
+			args: [account.address],
+		});
 
 		if (currentCommitment.hash != hash) {
 			return steps;
@@ -37,7 +42,11 @@ export async function startReveal(commitTx: `0x${string}`, data: CommitMetadata)
 				// Move[] calldata moves,
 				// bytes24 furtherMoves,
 				// bool useReserve
-				await contracts.Stratagems.write.reveal([account.address, data.secret, moves, zeroBytes24, true, zeroAddress]);
+				await client.wallet.writeContract({
+					...Stratagems,
+					functionName: 'reveal',
+					args: [account.address, data.secret, moves, zeroBytes24, true, zeroAddress],
+				});
 				return state;
 			},
 		};
@@ -54,12 +63,17 @@ export async function startReveal(commitTx: `0x${string}`, data: CommitMetadata)
 }
 
 export async function startAcknowledgFailedReveal(commitTx: `0x${string}`, data: CommitMetadata) {
-	await contracts.execute(async ({contracts, account, connection}) => {
+	await contracts.execute(async ({client, network: {contracts}, account, connection}) => {
+		const {Stratagems} = contracts;
 		const steps: Step<RevealState>[] = [];
 
 		const moves = data.localMoves.map(localMoveToContractMove);
 		const {hash} = prepareCommitment(moves, data.secret);
-		const currentCommitment = await contracts.Stratagems.read.getCommitment([account.address]);
+		const currentCommitment = await client.public.readContract({
+			...Stratagems,
+			functionName: 'getCommitment',
+			args: [account.address],
+		});
 
 		if (currentCommitment.hash != hash) {
 			return steps;
@@ -80,7 +94,11 @@ export async function startAcknowledgFailedReveal(commitTx: `0x${string}`, data:
 				// Move[] calldata moves,
 				// bytes24 furtherMoves,
 				// bool useReserve
-				await contracts.Stratagems.write.acknowledgeMissedReveal([account.address, data.secret, moves, zeroBytes24]);
+				await client.wallet.writeContract({
+					...Stratagems,
+					functionName: 'acknowledgeMissedReveal',
+					args: [account.address, data.secret, moves, zeroBytes24],
+				});
 				return state;
 			},
 		};

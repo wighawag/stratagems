@@ -35,9 +35,14 @@
 			}
 		} else {
 			// TODO use flow
-			await contracts.execute(async ({contracts, account}) => {
+			await contracts.execute(async ({client, network: {contracts}, account}) => {
+				const {Stratagems} = contracts;
 				console.log(account);
-				await contracts.Stratagems.write.acknowledgeMissedRevealByBurningAllReserve({account: account.address});
+				await client.wallet.writeContract({
+					...Stratagems,
+					functionName: 'acknowledgeMissedRevealByBurningAllReserve',
+					account: account.address,
+				});
 			});
 		}
 	}

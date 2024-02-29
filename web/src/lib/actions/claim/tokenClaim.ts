@@ -7,8 +7,7 @@ import {derived, writable} from 'svelte/store';
 import {decodeFunctionResult, encodeFunctionData, formatEther, parseEther} from 'viem';
 import {privateKeyToAccount, type Account} from 'viem/accounts';
 import {viemify} from 'web3-connection-viem';
-import {call, getBalance, getTransactionCount, waitForTransactionReceipt} from 'viem/actions';
-import type {Web3ConnectionProvider} from 'web3-connection';
+import {getBalance, getTransactionCount, waitForTransactionReceipt} from 'viem/actions';
 
 type TokenClaim = {
 	inUrl: boolean;
@@ -59,8 +58,12 @@ const tokenClaimStore = writable(state, (set) => {
 			return;
 		}
 
-		const TestTokens = $web3Connection.contracts.TestTokens;
-		const balance = await TestTokens.read.balanceOf([claimWallet.address]);
+		const TestTokens = $web3Connection.network.contracts.TestTokens;
+		const balance = await $web3Connection.client.public.readContract({
+			...TestTokens,
+			functionName: 'balanceOf',
+			args: [claimWallet.address],
+		});
 
 		if (balance === 0n) {
 			state.state = 'AlreadyClaimed';
@@ -97,135 +100,104 @@ async function claim() {
 
 	const claimWallet = getClaimtWallet();
 
-	contracts.execute(async ({contracts, client, account, connection, network}) => {
-		// if (connection.httpProvider) {
-		// 	console.log(`using http provider`);
-		// 	const httpViem = viemify({
-		// 		connection,
-		// 		network,
-		// 		account,
-		// 		providerOverride: connection.httpProvider as Web3ConnectionProvider,
-		// 	});
-		// 	contracts = httpViem.contracts as any;
-		// } else {
-		// 	console.log(`using wallet provider`);
-		// }
-
+	contracts.execute(async ({client, account, connection, network}) => {
+		const TestTokens = network.contracts.TestTokens;
+		// ----------------------------------------------------------------------------------------
+		// Fetch Balances and Nonce
+		// ----------------------------------------------------------------------------------------
 		let ethBalance: bigint;
 		let tokenBalance: bigint;
 		let nonce: number;
-		let basicEstimate: bigint;
 		try {
 			ethBalance = await getBalance(client.public, claimWallet);
-			tokenBalance = await contracts.TestTokens.read.balanceOf([claimWallet.address]);
+			tokenBalance = await client.public.readContract({
+				...TestTokens,
+				functionName: 'balanceOf',
+				args: [claimWallet.address],
+			});
 			if (tokenBalance == 0n) {
-				// TODO
+				throw new Error(`Already Claimed`);
 			}
 			nonce = await getTransactionCount(client.public, {address: claimWallet.address, blockTag: 'latest'});
-			basicEstimate = await contracts.TestTokens.estimateGas.transferAlongWithETH([account.address, tokenBalance], {
-				account: claimWallet,
-				value: 1n,
-				nonce,
-			});
-		} catch (e) {
-			console.log(`ERROR getting info`, e);
+		} catch (err) {
+			console.error(`ERROR getting claim info`, err);
+			state.error = formatError(err);
 			// TODO use previous state instead of 'Available'
-			state.error = formatError(e);
 			state.state = 'Available';
 			tokenClaimStore.set(state);
-			throw e;
+			throw err;
 		}
+		// ----------------------------------------------------------------------------------------
 
-		const isAncient8Networks =
-			(initialContractsInfos as any).chainId == '888888888' || (initialContractsInfos as any).chainId == '28122024';
-
-		const estimate = basicEstimate + 10000n; // we add 10000n in case
-		console.log({estimate, basicEstimate, nonce, tokenBalance, ethBalance});
-
-		const gasPriceEstimates = await getRoughGasPriceEstimate(connection.provider);
-		// we get the fast estimate
-		const fast = gasPriceEstimates.fast;
-		let maxFeePerGasToUse = fast.maxFeePerGas;
-		let maxPriorityFeePerGasToUse = fast.maxPriorityFeePerGas;
-
-		let extraFee = 0n;
-		// TODO if op
-		const gasOracleABI = [
-			{
-				inputs: [{internalType: 'bytes', name: '_data', type: 'bytes'}],
-				name: 'getL1Fee',
-				outputs: [{internalType: 'uint256', name: '', type: 'uint256'}],
-				stateMutability: 'view',
-				type: 'function',
-			},
-		];
-
-		const callData = encodeFunctionData({
-			abi: contracts.TestTokens.abi,
+		// ----------------------------------------------------------------------------------------
+		// Construct the Transaction Data with fake value = 1
+		// ----------------------------------------------------------------------------------------
+		const redeemTransactionData = {
+			...TestTokens,
 			functionName: 'transferAlongWithETH',
 			args: [account.address, tokenBalance],
-		});
+			account: claimWallet,
+			value: 1n,
+		} as const;
+		// ----------------------------------------------------------------------------------------
 
-		const functionName = 'getL1Fee';
-		const data = encodeFunctionData({
-			abi: gasOracleABI,
-			functionName,
-			args: [callData],
-		});
+		// ----------------------------------------------------------------------------------------
+		// Fetch the basic estimate
+		// ----------------------------------------------------------------------------------------
+		let basicEstimate: bigint;
 		try {
-			const result = (await connection.provider.request({
-				method: 'eth_call',
-				params: [
-					{
-						to: '0x420000000000000000000000000000000000000F',
-						data,
-					},
-				],
-			})) as `0x${string}`;
-			extraFee = decodeFunctionResult({
-				abi: gasOracleABI,
-				functionName,
-				data: result,
-			}) as bigint;
-
-			extraFee *= 2n; // we multiply extraFee by 2 to ensure t goes through
+			basicEstimate = await client.public.estimateContractGas(redeemTransactionData);
 		} catch (err) {
-			console.error(err);
+			console.error(`ERROR estimating call`, err);
+			state.error = formatError(err);
+			// TODO use previous state instead of 'Available'
+			state.state = 'Available';
+			tokenClaimStore.set(state);
+			throw err;
 		}
+		const estimate = basicEstimate + 10000n; // add a buffer
+		// ----------------------------------------------------------------------------------------
 
-		if (isAncient8Networks) {
-			// TODO investigate: some issue with alpha1test in regardrd to gas
-			if (maxPriorityFeePerGasToUse < gasPriceEstimates.gasPrice) {
-				maxPriorityFeePerGasToUse = gasPriceEstimates.gasPrice;
-				if (maxFeePerGasToUse < maxPriorityFeePerGasToUse) {
-					maxFeePerGasToUse = maxPriorityFeePerGasToUse;
-				}
+		// ----------------------------------------------------------------------------------------
+		// Gather the various fees and gas prices
+		// ----------------------------------------------------------------------------------------
+		let {maxFeePerGas, maxPriorityFeePerGas, gasPrice} = await client.public.estimateFeesPerGas({
+			type: 'eip1559',
+		});
+		let extraFee = 0n;
+		if (!maxFeePerGas) {
+			if (gasPrice) {
+				maxFeePerGas = gasPrice;
+				maxPriorityFeePerGas = gasPrice;
+			} else {
+				const errorMessage = `could not fetch gasPrice`;
+				console.error(errorMessage);
+				state.error = errorMessage;
+				// TODO use previous state instead of 'Available'
+				state.state = 'Available';
+				tokenClaimStore.set(state);
+				throw new Error(errorMessage);
+			}
+		} else {
+			if (!maxPriorityFeePerGas) {
+				maxPriorityFeePerGas = 1000000n;
 			}
 		}
+		if ('estimateContractL1Fee' in client.public) {
+			const l1Fee = await client.public.estimateContractL1Fee(redeemTransactionData);
+			// const l1BaseFee = await client.public.getL1BaseFee();
+			// const gasPlusFactorsForL1 = (l1Fee / l1BaseFee) + 1;
+			// const updatedL1Fee = gasPlusFactorsForL1 * highBaseFee;
 
-		// // TODO per chain
-		// const minimum = parseEther('1', 'gwei');
-		// if (maxFeePerGasToUse < minimum) {
-		// 	maxFeePerGasToUse = minimum;
-		// 	// maxPriorityFeePerGasToUse = minimum;
-		// }
-
-		console.log(fast);
-		// we then double the maxFeePerGas to accomodate for spikes
-		const maxFeePerGas = maxFeePerGasToUse;
-		const maxPriorityFeePerGasTmp = maxPriorityFeePerGasToUse === 0n ? 4n : maxPriorityFeePerGasToUse * 2n;
-		const maxPriorityFeePerGas = maxPriorityFeePerGasTmp > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTmp;
+			extraFee = l1Fee;
+		}
+		// ----------------------------------------------------------------------------------------
 
 		const ethLeft = ethBalance - estimate * maxFeePerGas - extraFee;
-		console.log({gasCostinETH: formatEther(estimate * maxFeePerGas)});
-		console.log({ethLeft: formatEther(ethLeft)});
-		console.log({total: formatEther(estimate * maxFeePerGas + ethLeft)});
-		console.log({maxFeePerGas: formatEther(maxFeePerGas)});
-		console.log({maxPriorityFeePerGas: formatEther(maxPriorityFeePerGas)});
-		console.log({extraFee: formatEther(extraFee)});
 		let txHash;
 		try {
-			txHash = await contracts.TestTokens.write.transferAlongWithETH([account.address, tokenBalance], {
+			txHash = await client.wallet.writeContract({
+				...redeemTransactionData,
 				value: ethLeft,
 				nonce,
 				maxFeePerGas,
@@ -233,6 +205,7 @@ async function claim() {
 				account: claimWallet,
 				gas: estimate,
 			});
+
 			state.state = 'Claiming';
 			tokenClaimStore.set(state);
 		} catch (e) {

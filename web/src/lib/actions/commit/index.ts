@@ -26,7 +26,8 @@ export type CommitState = {
 export type CommitFlow = Flow<CommitState>;
 
 export async function startCommit() {
-	await contracts.execute(async ({contracts, account, connection}) => {
+	await contracts.execute(async ({client, account, connection, network: {contracts}}) => {
+		const {Stratagems, TestTokens} = contracts;
 		const localMoves = accountData.$offchainState.moves?.list;
 		if (!localMoves) {
 			throw new Error(`no local moves`);
@@ -35,11 +36,19 @@ export async function startCommit() {
 		const tokenNeeded =
 			BigInt(initialContractsInfos.contracts.Stratagems.linkedData.numTokensPerGems.slice(0, -1)) * BigInt(numMoves);
 
-		const tokenInReserve = await contracts.Stratagems.read.getTokensInReserve([account.address]);
+		const tokenInReserve = await client.public.readContract({
+			...Stratagems,
+			functionName: 'getTokensInReserve',
+			args: [account.address],
+		});
 		// TODO extra token to put in reserver
 		const amountToAdd = tokenNeeded > tokenInReserve ? tokenNeeded - tokenInReserve : 0n;
 
-		const tokenApproved = await contracts.TestTokens.read.allowance([account.address, contracts.Stratagems.address]);
+		const tokenApproved = await client.public.readContract({
+			...TestTokens,
+			functionName: 'allowance',
+			args: [account.address, Stratagems.address],
+		});
 		const amountToAllow = amountToAdd > tokenApproved ? amountToAdd : 0n;
 
 		const steps: Step<CommitState>[] = [];
@@ -52,12 +61,19 @@ export async function startCommit() {
 				execute: async (state: CommitState) => {
 					const amountToAllow = state.amountToAllow || 0n; // should not be zero
 					const chainId = parseInt(initialContractsInfos.chainId);
-					const nonce = Number(await contracts.TestTokens.read.nonces([account.address]));
+
+					const nonce = Number(
+						await client.public.readContract({
+							...TestTokens,
+							functionName: 'nonces',
+							args: [account.address],
+						}),
+					);
 					const permit = {
 						domain: {
 							name: 'Tokens',
 							chainId,
-							verifyingContract: contracts.TestTokens.address,
+							verifyingContract: TestTokens.address,
 						},
 						types: {
 							EIP712Domain: [
@@ -85,7 +101,7 @@ export async function startCommit() {
 						primaryType: 'Permit',
 						message: {
 							owner: account.address,
-							spender: contracts.Stratagems.address,
+							spender: Stratagems.address,
 							value: amountToAllow.toString(),
 							nonce,
 							deadline: 0,
@@ -138,55 +154,61 @@ export async function startCommit() {
 					  }
 					| undefined;
 
-				let maxFeePerGasForNow: bigint | undefined;
-				let maxPriorityFeePerGasForNow: bigint | undefined;
+				// ----------------------------------------------------------------------------------------
+				// Gather the various fees and gas prices
+				// ----------------------------------------------------------------------------------------
+				let {maxFeePerGas, maxPriorityFeePerGas, gasPrice} = await client.public.estimateFeesPerGas({
+					type: 'eip1559',
+				});
+				let extraFee = 0n;
+				if (!maxFeePerGas) {
+					if (gasPrice) {
+						maxFeePerGas = gasPrice;
+						maxPriorityFeePerGas = gasPrice;
+					} else {
+						const errorMessage = `could not fetch gasPrice`;
+						throw new Error(errorMessage);
+					}
+				} else {
+					if (!maxPriorityFeePerGas) {
+						maxPriorityFeePerGas = 1000000n;
+					}
+				}
+
+				// ----------------------------------------------------------------------------------------
+
 				if (FUZD_URI) {
 					const fuzd = await accountData.getFuzd();
-					const isAncient8Networks =
-						(initialContractsInfos as any).chainId == '888888888' ||
-						(initialContractsInfos as any).chainId == '28122024';
+					const revealGas = 100000n + 200000n * BigInt(moves.length); //TODO compute worst case case
+					if ('estimateContractL1Fee' in client.public) {
+						// post fake data but same length to get an idea of the l1 fee
+						const l1Fee = await client.public.estimateContractL1Fee({
+							...Stratagems,
+							functionName: 'reveal',
+							args: [
+								account.address,
+								'0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF',
+								moves.map((v, i) => ({
+									position: BigInt(Math.random() * (Number.MAX_SAFE_INTEGER - 1) + 1),
+									color: Math.floor(Math.random() * 5) + 1,
+								})),
+								zeroBytes24,
+								true,
+								zeroAddress,
+							],
+							account: account.address,
+							gas: revealGas,
+							maxFeePerGas,
+							maxPriorityFeePerGas,
+						});
+						// TODO:
+						// const l1BaseFee = await client.public.getL1BaseFee();
+						// const gasPlusFactorsForL1 = (l1Fee / l1BaseFee) + 1;
+						// const updatedL1Fee = gasPlusFactorsForL1 * highBaseFee;
 
-					// TODO if fuzd
-					const gasPriceEstimates = await getRoughGasPriceEstimate(connection.provider);
-					// we get the fast estimate
-					const fast = gasPriceEstimates.fast;
-
-					let maxFeePerGasToUse = fast.maxFeePerGas;
-					let maxPriorityFeePerGasToUse = fast.maxPriorityFeePerGas;
-
-					if (isAncient8Networks) {
-						// TODO investigate: some issue with alpha1test in regardrd to gas
-						if (maxPriorityFeePerGasToUse < gasPriceEstimates.gasPrice) {
-							maxPriorityFeePerGasToUse = gasPriceEstimates.gasPrice;
-							if (maxFeePerGasToUse < maxPriorityFeePerGasToUse) {
-								maxFeePerGasToUse = maxPriorityFeePerGasToUse;
-							}
-						}
+						extraFee = l1Fee * 2n; // we multiply by 2 just in case
 					}
 
-					console.log({
-						maxFeePerGasToUse: formatEther(maxFeePerGasToUse),
-						maxPriorityFeePerGasToUse: formatEther(maxPriorityFeePerGasToUse),
-						gasPrice: formatEther(gasPriceEstimates.gasPrice),
-						fastMaxFeePerGas: formatEther(fast.maxFeePerGas),
-						fastMaxPriorityFeePerGas: formatEther(fast.maxPriorityFeePerGas),
-					});
-
-					// // TODO per chain
-					// const minimum = parseEther('1', 'gwei');
-					// if (maxFeePerGasToUse < minimum) {
-					// 	maxFeePerGasToUse = minimum;
-					// 	maxPriorityFeePerGasToUse = minimum;
-					// }
-					// // if (maxPriorityFeePerGasToUse < minimum) {
-					// // 	maxPriorityFeePerGasToUse = minimum;
-					// // }
-
-					const maxFeePerGas = maxFeePerGasToUse;
-					const maxPriorityFeePerGasTmp = maxPriorityFeePerGasToUse === 0n ? 10n : maxPriorityFeePerGasToUse;
-					const maxPriorityFeePerGas = maxPriorityFeePerGasTmp > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTmp;
-
-					const revealGas = 100000n + 200000n * BigInt(moves.length); //TODO compute worst case case
 					const remoteAccount = fuzd.remoteAccount;
 					let value = 0n;
 					if (remoteAccount !== zeroAddress) {
@@ -196,7 +218,7 @@ export async function startCommit() {
 						});
 						const balance = BigInt(balanceHex);
 
-						const valueNeeded = maxFeePerGas * revealGas;
+						const valueNeeded = maxFeePerGas * revealGas + extraFee;
 						// we then double that value to ensure tx go through
 						const valueToProvide = valueNeeded * 2n;
 						value = valueToProvide > balance ? valueToProvide - balance : 0n;
@@ -217,9 +239,6 @@ export async function startCommit() {
 						value,
 						remoteAccount,
 					};
-
-					maxFeePerGasForNow = maxFeePerGas;
-					maxPriorityFeePerGasForNow = maxPriorityFeePerGas;
 				}
 
 				const remoteAccount = fuzdData?.remoteAccount || zeroAddress;
@@ -251,19 +270,24 @@ export async function startCommit() {
 							s,
 						};
 					}
-					txHash = await contracts.Stratagems.write.makeCommitmentWithExtraReserve(
-						[hash, amountToAdd, permitStruct, remoteAccount],
-						{
-							account: account.address,
-							value,
-						},
-					);
-				} else {
-					txHash = await contracts.Stratagems.write.makeCommitment([hash, remoteAccount], {
+					txHash = await client.wallet.writeContract({
+						...Stratagems,
+						functionName: 'makeCommitmentWithExtraReserve',
+						args: [hash, amountToAdd, permitStruct, remoteAccount],
 						account: account.address,
 						value,
-						maxFeePerGas: maxFeePerGasForNow,
-						maxPriorityFeePerGas: maxPriorityFeePerGasForNow,
+						maxFeePerGas,
+						maxPriorityFeePerGas,
+					});
+				} else {
+					txHash = await client.wallet.writeContract({
+						...Stratagems,
+						functionName: 'makeCommitment',
+						args: [hash, remoteAccount],
+						account: account.address,
+						value,
+						maxFeePerGas,
+						maxPriorityFeePerGas,
 					});
 				}
 				accountData.resetOffchainMoves();

@@ -12,7 +12,7 @@ import {
 	PUBLIC_FUZD_URI,
 	PUBLIC_SNAPSHOT_URI,
 } from '$env/static/public';
-import {initialContractsInfos, networks, type NetworkConfig, contractsInfos} from './blockchain/networks';
+import {initialContractsInfos, contractsInfos} from './blockchain/networks';
 
 export const globalQueryParams = ['debug', 'log', 'ethnode', '_d_eruda', 'dev', 'ethnode', 'sync', 'fuzd', 'snapshot'];
 
@@ -71,7 +71,7 @@ const syncInfo = SYNC_URI
 		}
 	: undefined;
 
-const blockchainExplorer = networks[initialContractsInfos.chainId].config.blockExplorerUrls[0];
+const blockchainExplorer = initialContractsInfos.chainInfo.blockExplorers.default.url;
 
 export {
 	initialContractsInfos,

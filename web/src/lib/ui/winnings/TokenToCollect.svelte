@@ -8,10 +8,13 @@
 	$: total = $stratagemsView.tokensToCollect.reduce((p, c) => p + c.amount, 0n);
 
 	async function claim() {
-		await contracts.execute(async ({contracts, account, connection}) => {
+		await contracts.execute(async ({client, network: {contracts}, account, connection}) => {
 			const positions: bigint[] = $stratagemsView.tokensToCollect.map((v) => v.position);
 			// TODO metadata + tracking
-			const txHash = await contracts.Stratagems.write.pokeMultiple([positions], {
+			const txHash = await client.wallet.writeContract({
+				...contracts.Stratagems,
+				functionName: 'pokeMultiple',
+				args: [positions],
 				account: account.address,
 			});
 		});

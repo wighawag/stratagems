@@ -2,9 +2,14 @@ import {contracts, devProvider} from '$lib/blockchain/connection';
 import {writable, type Readable} from 'svelte/store';
 export function initIncreaseContractTime(name: string) {
 	return async (numSeconds: number) => {
-		return contracts.execute(async ({contracts, account}) => {
+		return contracts.execute(async ({client, network: {contracts}, account}) => {
 			const timeContract = contracts.Time;
-			return timeContract.write.increaseTime([BigInt(numSeconds)], {account: account.address});
+			return client.wallet.writeContract({
+				...timeContract,
+				functionName: 'increaseTime',
+				args: [BigInt(numSeconds)],
+				account: account.address,
+			});
 		});
 	};
 }

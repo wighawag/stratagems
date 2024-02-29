@@ -1,6 +1,6 @@
 import {derived, get, readable, type Readable} from 'svelte/store';
+import type {ChainInfo} from 'rocketh-export';
 
-import networks from '$data/networks.json';
 import _contractsInfos from '$data/contracts';
 
 export type NetworkConfig = typeof _contractsInfos;
@@ -23,11 +23,11 @@ if (import.meta.hot) {
 }
 
 export type NetworkWalletData = {
-	rpcUrls?: string[];
-	blockExplorerUrls?: string[];
-	chainName?: string;
-	iconUrls?: string[];
-	nativeCurrency?: {
+	readonly rpcUrls?: readonly string[];
+	readonly blockExplorerUrls?: readonly string[];
+	readonly chainName?: string;
+	readonly iconUrls?: readonly string[];
+	readonly nativeCurrency?: {
 		name: string;
 		symbol: string;
 		decimals: number;
@@ -39,19 +39,22 @@ export type NetworkData = {
 	averageBblockTime: number;
 };
 
-export function getNetworkConfig(chainId: string) {
-	const network = (networks as any)[chainId] as NetworkData | undefined;
-	return network?.config;
+export function getWalletSwitchChainInfo(chainInfo: ChainInfo): NetworkWalletData {
+	return {
+		rpcUrls: chainInfo.rpcUrls.default.http,
+		blockExplorerUrls: chainInfo.blockExplorers?.default.url ? [chainInfo.blockExplorers?.default.url] : undefined,
+		chainName: chainInfo.name,
+		nativeCurrency: chainInfo.nativeCurrency,
+	};
 }
 
-export {networks};
-
-export const initialNetworkConfig = getNetworkConfig(initialContractsInfos.chainId);
+export const initialNetworkConfig = getWalletSwitchChainInfo(initialContractsInfos.chainInfo);
 export const initialNetworkName = initialNetworkConfig?.chainName || `Chain with id: ${initialContractsInfos.chainId}`;
 
 export const contractNetwork = derived([contractsInfos], ([$contractsInfos]) => {
 	const chainId = $contractsInfos.chainId;
-	const config = getNetworkConfig(chainId);
+	const chainInfo = $contractsInfos.chainInfo;
+	const config = getWalletSwitchChainInfo(chainInfo);
 	return {
 		config,
 		name: config?.chainName || `Chain with id: ${chainId}`,

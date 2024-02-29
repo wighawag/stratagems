@@ -61,10 +61,10 @@
 	const isSepolia = (initialContractsInfos.chainId as any) === '11155111';
 
 	async function topupToken() {
-		return await contracts.execute(async ({contracts, account}) => {
+		return await contracts.execute(async ({client, network: {contracts}, account}) => {
 			const contract = (contracts as any).TestTokensDistributor;
 			// parseEther('0.01')
-			return contract.write.topup({account: account.address});
+			return client.wallet.writeContract({...contract, functionName: 'topup', account: account.address});
 		});
 	}
 

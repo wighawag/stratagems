@@ -44,8 +44,13 @@
 			: formatUnits(allowance, Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals));
 
 	function clearAllowance() {
-		contracts.execute(async ({contracts, account}) => {
-			await contracts.TestTokens.write.approve([contracts.Stratagems.address, 0n], {account: account.address});
+		contracts.execute(async ({client, network: {contracts}, account}) => {
+			await client.wallet.writeContract({
+				...contracts.TestTokens,
+				functionName: 'approve',
+				args: [contracts.Stratagems.address, 0n],
+				account: account.address,
+			});
 		});
 	}
 

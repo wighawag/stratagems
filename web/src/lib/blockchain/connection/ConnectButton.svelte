@@ -2,9 +2,9 @@
 	import {connection, account, network} from './';
 	import ImgBlockie from '$utils/ethereum/ImgBlockie.svelte';
 	import {contractsInfos} from '$lib/config';
-	import {getNetworkConfig} from '$lib/blockchain/networks';
 	import {menu} from '$lib/ui/menu/menu';
 	import {tour} from '$lib/ui/tour/drive';
+	import {getWalletSwitchChainInfo} from '$lib/blockchain/networks';
 
 	function switchMenu(e: Event) {
 		menu.update((v) => ({
@@ -39,7 +39,7 @@
 			<svg
 				role="button"
 				tabindex="0"
-				on:click={() => network.switchTo($contractsInfos.chainId, getNetworkConfig($contractsInfos.chainId))}
+				on:click={() => network.switchTo($contractsInfos.chainId, getWalletSwitchChainInfo($contractsInfos.chainInfo))}
 				xmlns="http://www.w3.org/2000/svg"
 				fill="none"
 				viewBox="0 0 24 24"
