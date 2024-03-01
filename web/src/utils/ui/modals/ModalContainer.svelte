@@ -21,14 +21,20 @@
 				if (!skipPresentRemoval) {
 					this.present--;
 					console.log({remove: this.present});
+				} else {
+					modal.outroTimeout = setTimeout(this.onOutroEnd.bind(this, modal), 500);
 				}
 				this.dispatchEvent(new CustomEvent('removed', {detail: modal}));
 			}
 		}
 
 		onOutroEnd(modal: ModalOnStack) {
-			this.present--;
-			console.log({onOutroEnd: this.present});
+			if (modal.outroTimeout) {
+				clearTimeout(modal.outroTimeout);
+				modal.outroTimeout = undefined;
+				this.present--;
+				console.log({onOutroEnd: this.present});
+			}
 		}
 
 		cancel() {
