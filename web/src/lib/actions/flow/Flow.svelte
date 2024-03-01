@@ -17,9 +17,26 @@
 
 	async function execute() {
 		if ($currentStepIndex != undefined && currentStep) {
-			const newState = await currentStep.execute($state);
+			const {newState, nextStep} = await currentStep.execute($state);
 			$state = newState;
-			$currentStepIndex++;
+			if (nextStep) {
+				$currentStepIndex = nextStep;
+			} else {
+				$currentStepIndex++;
+			}
+			if ($currentFlow) {
+				// TODO recursive
+				const newStep = $currentFlow.steps[$currentStepIndex];
+				if (!newStep.action) {
+					const {newState, nextStep} = await newStep.execute($currentFlow.state);
+					$state = newState;
+					if (nextStep) {
+						$currentStepIndex = nextStep;
+					} else {
+						$currentStepIndex++;
+					}
+				}
+			}
 		} else {
 			currentFlow.cancel();
 		}
@@ -38,14 +55,19 @@
 				<p class="description">{currentStep.description}</p>
 			{/if}
 		{/if}
-		<div class="actions">
-			{#if currentStep}
-				<button on:click={() => cancel()}>Back</button>
-			{:else}
-				<p>Steps completed</p>
-			{/if}
-			<button class="primary" on:click={() => execute()}>{action}</button>
-		</div>
+
+		{#if !currentStep || currentStep.action}
+			<div class="actions">
+				{#if currentStep}
+					<button on:click={() => cancel()}>Back</button>
+				{:else}
+					<p>Steps completed</p>
+				{/if}
+				<button class="primary" on:click={() => execute()}>{action}</button>
+			</div>
+		{:else}
+			<p>Please wait...</p>
+		{/if}
 	</Modal>
 {/if}
 
