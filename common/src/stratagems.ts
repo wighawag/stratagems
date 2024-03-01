@@ -1,6 +1,7 @@
 import {zeroAddress} from 'viem';
 import {ContractSimpleCell} from './grid';
 import {CellXYPosition, Color, ContractCell, ContractMove, StratagemsState} from './types';
+import {EVIL_OWNER_ADDRESS} from './constants';
 
 export function bigIntIDToXYID(position: bigint): string {
 	const {x, y} = bigIntIDToXY(position);
@@ -442,7 +443,7 @@ export class StratagemsContract {
 			currentState.life = 2;
 			currentState.lastEpochUpdate = epoch;
 			if (currentState.color == Color.Evil) {
-				this.state.owners[move.position.toString()] = '0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF';
+				this.state.owners[move.position.toString()] = EVIL_OWNER_ADDRESS;
 			} else {
 				this.state.owners[move.position.toString()] = player;
 			}

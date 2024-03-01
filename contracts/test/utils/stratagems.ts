@@ -22,6 +22,7 @@ import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 export type GridEnv = {
 	Stratagems: ContractWithViemClient<typeof artifacts.IStratagemsWithDebug.abi>;
 	TestTokens: ContractWithViemClient<typeof artifacts.TestTokens.abi>;
+	GemsGenerator: ContractWithViemClient<typeof artifacts.RewardsGenerator.abi>;
 	Time: ContractWithViemClient<typeof solidityKitArtifacts.Time.abi>;
 	otherAccounts: `0x${string}`[];
 	stratagemsAdmin: `0x${string}`;

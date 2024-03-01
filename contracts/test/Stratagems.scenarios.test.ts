@@ -6,6 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {
+	WalletBalance,
 	deployStratagemsWithTestConfig,
 	expectGridChangeAfterActions,
 	expectIndexedGridToMatch,
@@ -35,9 +36,9 @@ const scenarios = fs
 		const actions: string[] = [];
 		let expectedGrid = '';
 		let stage: 'before' | 'after' | 'after_poke' = 'before';
-		const walletsBefore: {[playerIndex: number]: bigint} = {};
-		const expectedWalletsAfter: {[playerIndex: number]: bigint} = {};
-		const expectedWalletsAfterPoke: {[playerIndex: number]: bigint} = {};
+		const walletsBefore: {[playerIndex: number]: WalletBalance} = {};
+		const expectedWalletsAfter: {[playerIndex: number]: WalletBalance} = {};
+		const expectedWalletsAfterPoke: {[playerIndex: number]: WalletBalance} = {};
 		for (const line of lines) {
 			if (line === 'AFTER_POKE_ALL') {
 				stage = 'after_poke';
@@ -46,14 +47,25 @@ const scenarios = fs
 					.slice(1)
 					.split(':')
 					.map((s) => s.trim());
+				const [stakingTokenAmountStr, pointsAmountStr] = amountStr.split(',').map((s) => s.trim());
 				const playerIndex = Number(playerIndexStr);
-				const amount = parseEther(amountStr);
+				const stakingTokenAmount = parseEther(stakingTokenAmountStr);
+				const pointsAmount = pointsAmountStr ? parseEther(pointsAmountStr) : undefined;
 				if (stage === 'before') {
-					walletsBefore[playerIndex] = amount;
+					walletsBefore[playerIndex] = {
+						stakingToken: stakingTokenAmount,
+						points: pointsAmount,
+					};
 				} else if (stage === 'after') {
-					expectedWalletsAfter[playerIndex] = amount;
+					expectedWalletsAfter[playerIndex] = {
+						stakingToken: stakingTokenAmount,
+						points: pointsAmount,
+					};
 				} else {
-					expectedWalletsAfterPoke[playerIndex] = amount;
+					expectedWalletsAfterPoke[playerIndex] = {
+						stakingToken: stakingTokenAmount,
+						points: pointsAmount,
+					};
 				}
 			} else if (line.startsWith('+')) {
 				state.gridConsumed = true;

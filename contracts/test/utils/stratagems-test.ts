@@ -1,7 +1,16 @@
 import {expect} from 'vitest';
 import solidityKitArtifacts from 'solidity-kit/generated/artifacts';
 
-import {parseGrid, renderGrid, Grid, Cell, bigIntIDToXY, StratagemsContract, xyToBigIntID} from 'stratagems-common';
+import {
+	parseGrid,
+	renderGrid,
+	Grid,
+	Cell,
+	bigIntIDToXY,
+	StratagemsContract,
+	xyToBigIntID,
+	EVIL_OWNER_ADDRESS,
+} from 'stratagems-common';
 import {Data, createProcessor} from 'stratagems-indexer';
 import {createIndexerState} from 'ethereum-indexer-browser';
 
@@ -15,7 +24,9 @@ import {network} from 'hardhat';
 import type {GameConfig} from '../../deploy/020_deploy_game';
 import {formatEther, parseEther} from 'viem';
 import {GridEnv, getGrid, performGridActions, withGrid} from './stratagems';
-import {EIP1193ProviderWithoutEvents} from 'eip-1193';
+import {EIP1193GenericRequestProvider, EIP1193ProviderWithoutEvents} from 'eip-1193';
+
+export type WalletBalance = {stakingToken: bigint; points?: bigint};
 
 export async function expectGridChange(setup: GridEnv, gridWithAction: string, resultGrid: string) {
 	await expect(
@@ -39,12 +50,12 @@ export async function expectGridChangeAfterActions(
 	).to.equal(renderGrid(parseGrid(resultGrid)));
 }
 
-export async function setupWallets(env: GridEnv, walletsBefore: {[playerIndex: number]: bigint}) {
+export async function setupWallets(env: GridEnv, walletsBefore: {[playerIndex: number]: WalletBalance}) {
 	for (const playerIndex of Object.keys(walletsBefore)) {
-		const player = env.otherAccounts[playerIndex];
+		const player = Number(playerIndex) >= 0 ? env.otherAccounts[playerIndex] : EVIL_OWNER_ADDRESS;
 		const amount = await env.TestTokens.read.balanceOf([player]);
-		const expectedAmount = walletsBefore[playerIndex];
-		const amountToTransfer = expectedAmount - amount;
+		const expectedAmount: WalletBalance = walletsBefore[playerIndex];
+		const amountToTransfer = expectedAmount.stakingToken - amount;
 		if (amountToTransfer > 0) {
 			await env.TestTokens.write.transfer([player, amountToTransfer], {
 				account: env.tokensBeneficiary,
@@ -97,7 +108,7 @@ export function fromStateToGrid(env: GridEnv, state: Data, epoch: number): Grid 
 		let owner: undefined | number = undefined;
 		if (accountIndex >= 0) {
 			owner = accountIndex;
-		} else if (ownerAddress.toLowerCase() == '0xffffffffffffffffffffffffffffffffffffffff') {
+		} else if (ownerAddress.toLowerCase() == EVIL_OWNER_ADDRESS.toLowerCase()) {
 			owner = -cell.stake;
 		}
 		const gridCell = {
@@ -133,9 +144,9 @@ export function fromStateToGrid(env: GridEnv, state: Data, epoch: number): Grid 
 	};
 }
 
-export async function expectWallet(env: GridEnv, expectedWalletsAfter: {[playerIndex: number]: bigint}) {
+export async function expectWallet(env: GridEnv, expectedWalletsAfter: {[playerIndex: number]: WalletBalance}) {
 	for (const playerIndex of Object.keys(expectedWalletsAfter)) {
-		const player = env.otherAccounts[playerIndex];
+		const player = Number(playerIndex) >= 0 ? env.otherAccounts[playerIndex] : EVIL_OWNER_ADDRESS;
 		const amount = await env.TestTokens.read.balanceOf([player]);
 		// console.log({
 		// 	player: playerIndex,
@@ -143,10 +154,15 @@ export async function expectWallet(env: GridEnv, expectedWalletsAfter: {[playerI
 		// });
 	}
 	for (const playerIndex of Object.keys(expectedWalletsAfter)) {
-		const player = env.otherAccounts[playerIndex];
-		const amount = await env.TestTokens.read.balanceOf([player]);
-		const expectedAmount = expectedWalletsAfter[playerIndex];
-		expect(amount, `player ${playerIndex} (${player})`).to.equal(expectedAmount);
+		const player = Number(playerIndex) >= 0 ? env.otherAccounts[playerIndex] : EVIL_OWNER_ADDRESS;
+		const stakingTokenAmount = await env.TestTokens.read.balanceOf([player]);
+
+		const expectedAmount: WalletBalance = expectedWalletsAfter[playerIndex];
+		expect(stakingTokenAmount, `player ${playerIndex} (${player}) staking token`).to.equal(expectedAmount.stakingToken);
+		if (expectedAmount.points) {
+			const pointsTokenAmount = await env.GemsGenerator.read.balanceOf([player]);
+			expect(pointsTokenAmount, `player ${playerIndex} (${player}) points`).to.equal(expectedAmount.points);
+		}
 	}
 }
 
@@ -154,7 +170,7 @@ async function deployStratagems(override?: Partial<GameConfig>) {
 	const {accounts, walletClient, publicClient} = await getConnection();
 	const [deployer, tokensBeneficiary, ...otherAccounts] = accounts;
 
-	const provider = network.provider;
+	const provider = network.provider as EIP1193GenericRequestProvider;
 	const {deployments} = await loadAndExecuteDeployments(
 		{
 			provider,
@@ -165,6 +181,9 @@ async function deployStratagems(override?: Partial<GameConfig>) {
 
 	const TestTokens = await fetchContract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
 	const Gems = await fetchContract(deployments['Gems'] as Deployment<typeof artifacts.Gems.abi>);
+	const GemsGenerator = await fetchContract(
+		deployments['GemsGenerator'] as Deployment<typeof artifacts.RewardsGenerator.abi>,
+	);
 	const Stratagems = await fetchContract(
 		deployments['Stratagems'] as Deployment<typeof artifacts.IStratagemsWithDebug.abi>,
 	);
@@ -186,6 +205,7 @@ async function deployStratagems(override?: Partial<GameConfig>) {
 		provider: provider as any,
 		Gems,
 		Time,
+		GemsGenerator,
 	};
 }
 

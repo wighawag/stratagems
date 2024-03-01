@@ -1,6 +1,7 @@
 import {zeroAddress} from 'viem';
 import {Color, ContractFullCell} from './types';
 import {bigIntIDToXY, xyToBigIntID} from './stratagems';
+import {EVIL_OWNER_ADDRESS} from './constants';
 
 export type Cell = {
 	x: number;
@@ -333,7 +334,7 @@ export function fromContractFullCellToCell(
 					? undefined
 					: accountIndex >= 0
 						? accountIndex
-						: cell.owner.toLowerCase() === '0xffffffffffffffffffffffffffffffffffffffff'
+						: cell.owner.toLowerCase() === EVIL_OWNER_ADDRESS.toLowerCase()
 							? -cell.stake
 							: undefined,
 			stake: cell.stake,
