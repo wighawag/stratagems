@@ -52,6 +52,9 @@ async function main() {
 	if (!valuePerAccount) {
 		valuePerAccount = valuePerChainId['default'];
 	}
+	const numTokensTMP = parseUnits('15', decimals);
+	const numTokensPerAccount = numTokensTMP + (numTokensTMP * 2n) / parseUnits('1', decimals);
+
 	const value = valuePerAccount * BigInt(addresses.length);
 
 	const prompt = await prompts({
@@ -64,7 +67,7 @@ async function main() {
 			account: env.accounts.tokensBeneficiary,
 			value,
 			functionName: 'distributeAlongWithETH',
-			args: [addresses, BigInt(addresses.length) * parseUnits('15', decimals)],
+			args: [addresses, BigInt(addresses.length) * numTokensPerAccount],
 		});
 		console.log(tx);
 	}
