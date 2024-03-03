@@ -25,7 +25,7 @@ export type CommitState = {
 	fuzdData?: {
 		value: bigint;
 		remoteAccount: `0x${string}`;
-		fuzd: Awaited<ReturnType<typeof accountData.getFuzd>>;
+		fuzd: Awaited<ReturnType<typeof accountData.getFUZD>>;
 		revealGas: bigint;
 		maxFeePerGas: bigint;
 		maxPriorityFeePerGas: bigint;
@@ -107,8 +107,8 @@ export async function startCommit() {
 
 				// ----------------------------------------------------------------------------------------
 
-				if (FUZD_URI) {
-					const fuzd = await accountData.getFuzd();
+				if (accountData.hasFUZD()) {
+					const fuzd = await accountData.getFUZD();
 					const revealGas = 100000n + 200000n * BigInt(localMoves.length); //TODO compute worst case case
 					if ('estimateContractL1Fee' in client.public) {
 						// post fake data but same length to get an idea of the l1 fee

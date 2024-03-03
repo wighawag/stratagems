@@ -266,7 +266,11 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		};
 	}
 
-	async getFuzd() {
+	hasFUZD() {
+		return !!this.fuzdClient;
+	}
+
+	async getFUZD() {
 		if (!this.fuzdClient) {
 			throw new Error(`no fuzd client setup`);
 		}
