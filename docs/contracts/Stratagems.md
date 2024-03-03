@@ -15,7 +15,7 @@ return updated cell (based on current epoch)
 
 *Signature*: getCell(uint256)
 
-function getCell(uint256 id) view returns ((address owner, uint24 lastEpochUpdate, uint24 epochWhenTokenIsAdded, uint8 color, uint8 life, int8 delta, uint8 enemyMap, uint8 distribution, uint8 stake))
+function getCell(uint256 id) view returns ((address owner, uint24 lastEpochUpdate, uint24 epochWhenTokenIsAdded, uint24 producingEpochs, uint8 color, uint8 life, int8 delta, uint8 enemyMap, uint8 distribution, uint8 stake))
 
 | Name | Description 
 | ---- | ----------- 
@@ -29,7 +29,7 @@ return the list of updated cells (based on current epoch) whose ids is given
 
 *Signature*: getCells(uint256[])
 
-function getCells(uint256[] ids) view returns ((address owner, uint24 lastEpochUpdate, uint24 epochWhenTokenIsAdded, uint8 color, uint8 life, int8 delta, uint8 enemyMap, uint8 distribution, uint8 stake)[] cells)
+function getCells(uint256[] ids) view returns ((address owner, uint24 lastEpochUpdate, uint24 epochWhenTokenIsAdded, uint24 producingEpochs, uint8 color, uint8 life, int8 delta, uint8 enemyMap, uint8 distribution, uint8 stake)[] cells)
 
 | Name | Description 
 | ---- | ----------- 

@@ -77,6 +77,16 @@ The amount of reward an account has accrued so far. Does not include already wit
 
 function earnedFromFixedRate(address account) view returns (uint256)
 
+### **earnedFromFixedRateMultipleAccounts**
+
+The amount of reward an account has accrued so far. Does not include already withdrawn rewards.
+
+*sig hash*: `0x7997f96d`
+
+*Signature*: earnedFromFixedRateMultipleAccounts(address[])
+
+function earnedFromFixedRateMultipleAccounts(address[] accounts) view returns (uint256[] result)
+
 ### **earnedFromPoolRate**
 
 The amount of reward an account has accrued so far. Does not include already withdrawn rewards.
@@ -86,6 +96,16 @@ The amount of reward an account has accrued so far. Does not include already wit
 *Signature*: earnedFromPoolRate(address)
 
 function earnedFromPoolRate(address account) view returns (uint256)
+
+### **earnedFromPoolRateMultipleAccounts**
+
+The amount of reward an account has accrued so far. Does not include already withdrawn rewards.
+
+*sig hash*: `0x59d431b3`
+
+*Signature*: earnedFromPoolRateMultipleAccounts(address[])
+
+function earnedFromPoolRateMultipleAccounts(address[] accounts) view returns (uint256[] result)
 
 ### **getTotalRewardPerPointWithPrecision24**
 
