@@ -18,9 +18,9 @@ hero:
     - theme: alt
       text: Contracts
       link: /contracts/Stratagems/
-    - theme: alt
-      text: Play Test
-      link: https://betallion.com/stratagems/join/tKbn9Mph
+    - theme: brand
+      text: Extend
+      link: /guide/extending-the-world/
 
 features:
   - title: Permission-less
