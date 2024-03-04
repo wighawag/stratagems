@@ -27,15 +27,28 @@ export default defineConfig({
 	title: 'Stratagems',
 	description: 'Stratagems an Autonomous World being created by players',
 	head: [
-		[
+    [
 			'script',
-			{
-				defer: '',
-				'data-domain': 'stratagems.world',
-				src: '/stats/js/script.js',
-				'data-api': '/stats/api/event',
-			},
+			{id: 'register-sw'},
+			`;(() => {
+        if (location.hostname === 'stratagems.world') {
+          const plausible_script = document.createElement('script');
+          plausible_script.setAttribute('data-domain','stratagems.world');
+          plausible_script.setAttribute('data-api','/stats/api/event');
+          plausible_script.setAttribute('src','/stats/js/script.js');
+          document.head.appendChild(plausible_script);
+        }
+        })()`,
 		],
+		// [
+		// 	'script',
+		// 	{
+		// 		defer: '',
+		// 		'data-domain': 'stratagems.world',
+		// 		src: '/stats/js/script.js',
+		// 		'data-api': '/stats/api/event',
+		// 	},
+		// ],
 		['link', {rel: 'icon', href: '/icon.png'}],
 		['meta', {name: 'theme-color', content: '#9F5FED'}],
 
