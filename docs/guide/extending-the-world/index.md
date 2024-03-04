@@ -1,4 +1,3 @@
-
 # Extending the world
 
 Stratagems is designed to be extended and has no bound on how this can be done. It does not follow traditional fixed API to hooks into. Rather it expose a set of output that can be used by other games which in turn expand the possibilities for players. We call this "Natural Composability" because like nature, it is present whether you want it or not, and no particular entity has control over it. We describe it in more details in our article ["Natural Composability"](https://etherplay.io/blog/natural-composability/).

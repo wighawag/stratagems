@@ -13,4 +13,12 @@ pnpm-lock.yaml
 package.json
 
 # ignore folders
-**/
+/common
+/contracts
+/indexer
+/web
+/helper-services
+
+/docs/contracts/
+/docs/.vitepress/*
+!/docs/.vitepress/config.mts
