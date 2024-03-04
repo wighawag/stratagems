@@ -2,7 +2,7 @@ import type {PendingTransaction, EIP1193TransactionWithMetadata} from 'ethereum-
 import {BaseAccountHandler, type OnChainAction, type OnChainActions, type RevealMetadata} from './base';
 import {mainnetClient, createClient} from '$utils/fuzd';
 import type {AccountInfo, SyncInfo} from './types';
-import {FUZD_URI, SYNC_DB_NAME} from '$lib/config';
+import {FUZD_URI, SYNC_DB_NAME, debugTools} from '$lib/config';
 import {xyToBigIntID, type Color, type ContractMove} from 'stratagems-common';
 import {writable, type Readable, type Writable} from 'svelte/store';
 import {time} from '$lib/blockchain/time';
@@ -425,6 +425,8 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 	}
 
 	swapCurrentColor() {
+		const colorRotation = debugTools ? 6 : 5;
+
 		// TODO ensure timestamp synced ?
 		const timestamp = time.now;
 
@@ -436,7 +438,7 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		if (!currentColor) {
 			currentColor = Number((BigInt(account.$state.address) % 5n) + 1n);
 		}
-		this.$data.offchainState.currentColor.color = (currentColor % 5) + 1;
+		this.$data.offchainState.currentColor.color = (currentColor % colorRotation) + 1;
 		this.$data.offchainState.currentColor.timestamp = timestamp;
 		this._save();
 		this._offchainState.set(this.$data.offchainState);

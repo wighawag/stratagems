@@ -14,12 +14,25 @@ import {
 } from '$env/static/public';
 import {initialContractsInfos, contractsInfos} from './blockchain/networks';
 
-export const globalQueryParams = ['debug', 'log', 'ethnode', '_d_eruda', 'dev', 'ethnode', 'sync', 'fuzd', 'snapshot'];
+export const globalQueryParams = [
+	'debug',
+	'log',
+	'ethnode',
+	'_d_eruda',
+	'dev',
+	'ethnode',
+	'sync',
+	'fuzd',
+	'snapshot',
+	'debugTools',
+];
 
 export const hashParams = getHashParamsFromLocation();
 export const {params} = getParamsFromLocation();
 
 export const dev = 'dev' in params ? params['dev'] === 'true' : devEnvironment;
+
+export const debugTools = 'debugTools' in params ? params['debugTools'] === 'true' : false;
 
 function noEndSlash(str: string) {
 	if (str.endsWith('/')) {

@@ -4,9 +4,9 @@
 	import ActionPanel from '$lib/actions/ActionPanel.svelte';
 	import InfoBar from '$lib/ui/components/InfoBar.svelte';
 	import FactionPicker from '$lib/actions/FactionPicker.svelte';
-	import CanvasOverlay from '$lib/ui/canvas/CanvasOverlay.svelte';
 	import Header from '$lib/ui/header/Header.svelte';
 	import TokenToCollect from '$lib/ui/winnings/TokenToCollect.svelte';
+	import LandMenu from '$lib/ui/landmenu/LandMenu.svelte';
 </script>
 
 <div style="position: absolute; z-index: 1; width: 100%; height: 100%; pointer-events: none;">
@@ -18,7 +18,7 @@
 			<FactionPicker />
 		</div>
 	</Header>
-	<CanvasOverlay />
+	<LandMenu />
 
 	<div class="action-panel">
 		<ActionPanel />

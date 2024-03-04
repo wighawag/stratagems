@@ -24,6 +24,9 @@
 			case 5:
 				src = '/game-assets/purple.png';
 				break;
+			case 6:
+				src = '/game-assets/black.png';
+				break;
 		}
 	}
 
