@@ -29,7 +29,7 @@ export default defineConfig({
 	head: [
     [
 			'script',
-			{id: 'register-sw'},
+			{id: 'plausible'},
 			`;(() => {
         if (location.hostname === 'stratagems.world') {
           const plausible_script = document.createElement('script');
