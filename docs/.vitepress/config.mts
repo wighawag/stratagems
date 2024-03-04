@@ -30,7 +30,8 @@ export default defineConfig({
       {
         defer: "",
         "data-domain": "stratagems.world",
-        src: "https://plausible.io/js/script.js"
+        src: "/stats/js/script.js",
+        "data-api": "/stats/api/event"
       }
     ],
     ['link', { rel: 'icon', href: '/icon.png' }],
