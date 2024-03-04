@@ -3,7 +3,7 @@ import {writable, type Readable} from 'svelte/store';
 export function initIncreaseContractTime(name: string) {
 	return async (numSeconds: number) => {
 		return contracts.execute(async ({client, network: {contracts}, account}) => {
-			const timeContract = contracts.Time;
+			const timeContract = (contracts as any).Time; // TODO artifacts info for optionally deployed contracts
 			return client.wallet.writeContract({
 				...timeContract,
 				functionName: 'increaseTime',

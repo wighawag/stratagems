@@ -23,6 +23,7 @@ export type CommitState = {
 	amountToAdd?: bigint;
 	amountToAllow?: bigint;
 	fuzdData?: {
+		slot: string;
 		value: bigint;
 		remoteAccount: `0x${string}`;
 		fuzd: Awaited<ReturnType<typeof accountData.getFUZD>>;
@@ -34,6 +35,7 @@ export type CommitState = {
 		maxFeePerGas: bigint;
 		maxPriorityFeePerGas: bigint;
 	};
+	epochNumber?: number;
 };
 
 export type CommitFlow = Flow<CommitState>;
@@ -55,6 +57,9 @@ export async function startCommit() {
 			title: 'Gathering Info',
 			description: `Gather the Necessary Information to Perform the Commit`,
 			execute: async (state: CommitState) => {
+				// so click to send tx becomes instant
+				const epochNumber = get(epoch); // TODO use from smart contract to ensure correct value
+
 				const tokenInReserve = await client.public.readContract({
 					...Stratagems,
 					functionName: 'getTokensInReserve',
@@ -162,6 +167,7 @@ export async function startCommit() {
 					});
 
 					state.fuzdData = {
+						slot: `epoch_${epochNumber}`,
 						fuzd,
 						maxFeePerGas,
 						maxPriorityFeePerGas,
@@ -171,6 +177,7 @@ export async function startCommit() {
 					};
 				}
 
+				state.epochNumber = epochNumber;
 				state.gasPrice = {
 					maxFeePerGas,
 					maxPriorityFeePerGas,
@@ -253,17 +260,17 @@ export async function startCommit() {
 			description: `This Transaction will Commit Your Moves. You can cancel (or Replace it with new Moves) before the Resolution Phase Start.`,
 			// component: PermitComponent,
 			execute: async (state: CommitState) => {
-				const {amountToAdd, permit, fuzdData, gasPrice} = state;
+				const {amountToAdd, permit, fuzdData, gasPrice, epochNumber} = state;
 
 				if (!gasPrice) {
 					throw new Error(`did not fetch gasPrice`);
 				}
 
-				let txHash: `0x${string}`;
+				if (!epochNumber) {
+					throw new Error(`did not record epochNumber`);
+				}
 
-				// TODO gather all data in prelimenary step
-				// so click to send tx becomes instant
-				const epochNumber = get(epoch); // TODO use from smart contract to ensure correct value
+				let txHash: `0x${string}`;
 
 				const localWallet = accountData.localWallet;
 				if (!localWallet) {
@@ -285,7 +292,12 @@ export async function startCommit() {
 					epoch: epochNumber,
 					localMoves,
 					secret,
-					fuzd: 'pendingTx',
+					autoReveal: fuzdData
+						? {
+								type: 'fuzd',
+								slot: fuzdData.slot,
+							}
+						: false,
 				};
 				connection.provider.setNextMetadata(commitMetadata);
 				if (amountToAdd && amountToAdd > 0n) {
@@ -339,7 +351,7 @@ export async function startCommit() {
 				if (fuzdData) {
 					const scheduleInfo = await fuzdData.fuzd.scheduleExecution(
 						{
-							slot: `epoch_${commitMetadata.epoch}`,
+							slot: fuzdData.slot,
 							broadcastSchedule: [
 								{
 									duration: gameConfig.$current.revealPhaseDuration,

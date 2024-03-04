@@ -43,7 +43,16 @@ export type CommitMetadata = {
 	epoch: number;
 	localMoves: LocalMoves;
 	secret: `0x${string}`;
-	fuzd: boolean | 'pendingTx'; // TODO
+	autoReveal:
+		| {
+				type: 'fuzd';
+				slot: string;
+		  }
+		| {
+				type: 'local';
+				account: `0x${string}`;
+		  }
+		| false;
 };
 
 export type StratagemsMetadata =

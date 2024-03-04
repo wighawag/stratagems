@@ -21,7 +21,7 @@
 		>
 	</div>
 	<div class="text-sm opacity-50">{commitment.action.revealTx.inclusion}</div>
-{:else if commitment.action.tx.metadata?.type === 'commit' && commitment.action.tx.metadata.fuzd}
+{:else if commitment.action.tx.metadata?.type === 'commit' && commitment.action.tx.metadata.autoReveal && commitment.action.tx.metadata.autoReveal.type === 'fuzd'}
 	{#if commitment.action.fuzd}
 		{#if commitment.action.fuzd.state === 'replaced'}
 			Replaced

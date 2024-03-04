@@ -47,7 +47,7 @@ export async function startReveal(commitTx: `0x${string}`, data: CommitMetadata)
 					functionName: 'reveal',
 					args: [account.address, data.secret, moves, zeroBytes24, true, zeroAddress],
 				});
-				return state;
+				return {newState: state};
 			},
 		};
 		steps.push(txStep);
@@ -99,7 +99,7 @@ export async function startAcknowledgFailedReveal(commitTx: `0x${string}`, data:
 					functionName: 'acknowledgeMissedReveal',
 					args: [account.address, data.secret, moves, zeroBytes24],
 				});
-				return state;
+				return {newState: state};
 			},
 		};
 		steps.push(txStep);
