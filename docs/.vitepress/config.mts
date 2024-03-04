@@ -25,6 +25,14 @@ export default defineConfig({
   title: "Stratagems",
   description: "Stratagems an Autonomous World being created by players",
   head: [
+    [
+      'script',
+      {
+        defer: "",
+        "data-domain": "stratagems.world",
+        src: "https://plausible.io/js/script.js"
+      }
+    ],
     ['link', { rel: 'icon', href: '/icon.png' }],
     ['meta', { name: 'theme-color', content: '#9F5FED' }],
     
