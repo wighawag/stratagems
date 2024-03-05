@@ -39,7 +39,7 @@
     "lodash-es": "^4.17.21",
     "lucide-svelte": "^0.335.0",
     "lz-string": "^1.5.0",
-    "missiv-client": "^0.0.6",
+    "missiv-client": "^0.0.7",
     "named-logs": "^0.2.2",
     "pretty-ms": "^9.0.0",
     "radiate": "^0.0.2",

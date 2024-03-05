@@ -305,8 +305,8 @@ importers:
         specifier: ^1.5.0
         version: 1.5.0
       missiv-client:
-        specifier: ^0.0.6
-        version: 0.0.6(svelte@4.2.11)
+        specifier: ^0.0.7
+        version: 0.0.7(svelte@4.2.11)
       named-logs:
         specifier: ^0.2.2
         version: 0.2.2
@@ -7808,8 +7808,8 @@ packages:
     resolution: {integrity: sha512-ihFnidEeU8iXzcVHy74dhkxh/dn8Dc08ERl0xwoMMGqp4+LvRSCgicb+zGqWthVokQKvCSxITlh3P08OzdTYCQ==}
     dev: true
 
-  /missiv-client@0.0.6(svelte@4.2.11):
-    resolution: {integrity: sha512-7Iq7W2KoUfQY4ZDFMUdXouvndubpjwa+SIyeXx7ab1yN9A6miwqzPmIT5e9hqaj558SMj5VG6+o6PI9SbK2isA==}
+  /missiv-client@0.0.7(svelte@4.2.11):
+    resolution: {integrity: sha512-H5BS4qSdNcBxToBAuplkEbTRA8HLjHThY11X+jZW4Kv9nQ4+S13WHNQOEgjxgkBpTAcuxPIZ/IiP2OsLBUPvvg==}
     peerDependencies:
       svelte: ^4.0.0
     dependencies:
