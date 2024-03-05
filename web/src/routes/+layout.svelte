@@ -23,6 +23,7 @@
 	import Debug from '$lib/ui/debug/Debug.svelte';
 	import EventsView from '$lib/ui/events/EventsView.svelte';
 	import RevealPhaseInformation from '$lib/ui/information/RevealPhaseInformation.svelte';
+	import Missiv from '$lib/ui/missiv/Missiv.svelte';
 
 	$: showWIPNotice =
 		(initialContractsInfos as any).name === 'composablelabs' ||
@@ -54,6 +55,8 @@
 	<IndexerView />
 
 	<ViewStateView />
+
+	<Missiv />
 
 	<Welcome />
 

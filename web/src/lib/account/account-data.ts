@@ -123,6 +123,10 @@ function defaultData() {
 	};
 }
 
+export type LocalAccountInfo = {
+	localKey?: `0x${string}`;
+};
+
 export class StratagemsAccountData extends BaseAccountHandler<AccountData, StratagemsMetadata> {
 	fuzdClient: ReturnType<typeof createClient> | undefined;
 	localWallet: PrivateKeyAccount | undefined;
@@ -130,12 +134,20 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 	private _offchainState: Writable<OffchainState>;
 	public readonly offchainState: Readable<OffchainState>;
 
+	private _info: Writable<LocalAccountInfo>;
+	public readonly info: Readable<LocalAccountInfo>;
+
 	constructor() {
 		super(SYNC_DB_NAME, defaultData, fromOnChainActionToPendingTransaction);
 
 		this._offchainState = writable(this.$data.offchainState);
 		this.offchainState = {
 			subscribe: this._offchainState.subscribe,
+		};
+
+		this._info = writable({});
+		this.info = {
+			subscribe: this._info.subscribe,
 		};
 	}
 
@@ -157,6 +169,9 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		if (info.localKey) {
 			this.localWallet = privateKeyToAccount(info.localKey);
 		}
+		this._info.set({
+			localKey: info.localKey,
+		});
 		const result = await super.load(info, syncInfo);
 		this._offchainState.set(this.$data.offchainState);
 
@@ -168,6 +183,9 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		const result = await super.unload();
 		// TODO make it an abstract notifyUnload
 		this._offchainState.set(this.$data.offchainState);
+		this._info.set({
+			localKey: undefined,
+		});
 		return result;
 	}
 

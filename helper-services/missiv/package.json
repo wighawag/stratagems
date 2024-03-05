@@ -1,0 +1,16 @@
+{
+    "name": "missiv-service",
+    "devDependencies": {
+        "missiv-server": "^0.0.6",
+        "ldenv": "^0.3.9",
+        "set-defaults": "^0.0.2",
+        "wait-on": "^7.2.0",
+        "wrangler": "^3.28.4"
+    },
+    "scripts": {
+        "prepare": "set-defaults .",
+        "dev:worker": "wrangler dev -c ./wrangler.toml --port 33333",
+        "dev": "pnpm run /^dev:.*/",
+        "wrangler": "wrangler"
+    }
+}
