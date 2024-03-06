@@ -10,7 +10,7 @@ import {hexToBytes} from 'viem';
 import {time} from '$lib/blockchain/time';
 
 import {logs} from 'named-logs';
-import type {AccountInfo, MergeFunction, SyncInfo} from './types';
+import type {AccountInfo, CleanFunction, MergeFunction, SyncInfo} from './types';
 const logger = logs('AccountDB');
 
 const LOCAL_STORAGE_PRIVATE_ACCOUNT = '_account';
@@ -44,6 +44,7 @@ export class AccountDB<T extends Record<string, unknown>> implements Readable<Sy
 		dbName: string,
 		protected accountInfo: AccountInfo,
 		protected merge: MergeFunction<T>,
+		protected clean: CleanFunction<T>,
 		syncInfo?: SyncInfo,
 	) {
 		if (accountInfo.localKey) {
@@ -187,7 +188,7 @@ export class AccountDB<T extends Record<string, unknown>> implements Readable<Sy
 				}
 			}
 			if (newDataOnLocal && this.state.data) {
-				this._postToRemote(this.state.data, counter);
+				this._postToRemote(this.clean(this.state.data), counter);
 			}
 			this.state.remoteFetchedAtLeastOnce = true;
 		}
@@ -209,7 +210,7 @@ export class AccountDB<T extends Record<string, unknown>> implements Readable<Sy
 			notified = true;
 		}
 		if (newDataOnLocal) {
-			await this._saveToLocalStorage(this.state.data);
+			await this._saveToLocalStorage(this.clean(this.state.data));
 		}
 		return notified;
 	}

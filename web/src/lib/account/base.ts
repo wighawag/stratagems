@@ -55,6 +55,8 @@ export abstract class BaseAccountHandler<
 
 	abstract _merge(localData?: T, remoteData?: T): {newData: T; newDataOnLocal: boolean; newDataOnRemote: boolean};
 
+	abstract _clean(data: T): T;
+
 	updateTx(pendingTransaction: PendingTransaction): void {
 		if (this._updateTx(pendingTransaction)) {
 			this._onchainActions.set(this.$data.onchainActions);
@@ -218,7 +220,7 @@ export abstract class BaseAccountHandler<
 	}
 
 	async _load(info: AccountInfo, syncInfo?: SyncInfo): Promise<T> {
-		this.accountDB = new AccountDB(this.dbName, info, this._merge, syncInfo);
+		this.accountDB = new AccountDB(this.dbName, info, this._merge, this._clean, syncInfo);
 
 		this.unsubscribeFromSync = this.accountDB.subscribe(this._onSync);
 		return (await this.accountDB.requestSync(true)) || this.emptyAccountData();

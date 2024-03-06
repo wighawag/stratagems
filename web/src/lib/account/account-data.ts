@@ -10,6 +10,7 @@ import type {ScheduleInfo} from 'fuzd-scheduler';
 import {account} from '$lib/blockchain/connection';
 import type {PrivateKeyAccount} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
+import {copy} from '$utils/js';
 
 export type LocalMove = {
 	player: string;
@@ -199,13 +200,12 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 
 		if (!newData) {
 			newData = defaultData();
-		} else {
-			newDataOnLocal = true;
 		}
 
 		// hmm check if valid
 		if (!remoteData || !remoteData.onchainActions || !remoteData.offchainState) {
 			remoteData = defaultData();
+			newDataOnLocal = true;
 		}
 
 		if (
@@ -224,6 +224,15 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 			const remoteAction = remoteData.onchainActions[txHash];
 			const localAction = newData.onchainActions[txHash];
 			if (remoteAction) {
+				if (localAction.final && !remoteAction.final) {
+					newDataOnLocal = true;
+				} else if (!localAction.final && remoteAction.final) {
+					newDataOnRemote = true;
+					localAction.final = remoteAction.final;
+					localAction.inclusion = remoteAction.inclusion;
+					localAction.status = remoteAction.status;
+				}
+
 				if (remoteAction.fuzd) {
 					if (remoteAction.fuzd.timestamp > (localAction.fuzd?.timestamp || 0)) {
 						localAction.fuzd = remoteAction.fuzd;
@@ -243,10 +252,6 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 				newData.onchainActions[txHash] = remoteData.onchainActions[txHash];
 				newDataOnRemote = true;
 			}
-		}
-
-		if (_filterOutOldActions(newData.onchainActions)) {
-			newDataOnLocal = true;
 		}
 
 		if (
@@ -291,6 +296,12 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 			newDataOnLocal,
 			newDataOnRemote,
 		};
+	}
+
+	_clean(data: AccountData): AccountData {
+		const cleanedData = copy(data);
+		_filterOutOldActions(cleanedData.onchainActions);
+		return cleanedData;
 	}
 
 	hasFUZD() {

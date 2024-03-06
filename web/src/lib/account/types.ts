@@ -15,6 +15,8 @@ export type MergeFunction<T> = (
 	remoteData?: T,
 ) => {newData: T; newDataOnLocal: boolean; newDataOnRemote: boolean};
 
+export type CleanFunction<T> = (data: T) => T;
+
 export type OnPendingTransaction = (
 	event:
 		| {
