@@ -1,34 +1,14 @@
 <script lang="ts">
 	import {url} from '$utils/path';
 	import {account, accountData} from '$lib/blockchain/connection';
+	import {getFactionIcon} from './utils/faction-icons';
+	import {getCurrentColor} from './utils/current-color';
 
 	$: offchainState = accountData.offchainState;
 
-	$: color = $offchainState.currentColor.color || Number($account.address ? (BigInt($account.address) % 5n) + 1n : 1n);
+	$: color = getCurrentColor($offchainState, $account.address);
 
-	let src = '/game-assets/blue.png';
-	$: {
-		switch (color) {
-			case 1:
-				src = '/game-assets/blue.png';
-				break;
-			case 2:
-				src = '/game-assets/red.png';
-				break;
-			case 3:
-				src = '/game-assets/green.png';
-				break;
-			case 4:
-				src = '/game-assets/yellow.png';
-				break;
-			case 5:
-				src = '/game-assets/purple.png';
-				break;
-			case 6:
-				src = '/game-assets/black.png';
-				break;
-		}
-	}
+	$: src = getFactionIcon(color);
 
 	function swapColor() {
 		accountData.swapCurrentColor();

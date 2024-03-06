@@ -11,6 +11,7 @@ import {
 	PUBLIC_SYNC_URI,
 	PUBLIC_FUZD_URI,
 	PUBLIC_SNAPSHOT_URI,
+	PUBLIC_MISSIV_URI,
 } from '$env/static/public';
 import {initialContractsInfos, contractsInfos} from './blockchain/networks';
 
@@ -78,6 +79,10 @@ const SYNC_DB_NAME =
 
 const FUZD_URI = noEndSlash(params['fuzd'] ? (params['fuzd'] == 'false' ? '' : params['fuzd']) : PUBLIC_FUZD_URI);
 
+const MISSIV_URI = noEndSlash(
+	params['missiv'] ? (params['missiv'] == 'false' ? '' : params['missiv']) : PUBLIC_MISSIV_URI,
+);
+
 const syncInfo = SYNC_URI
 	? {
 			uri: SYNC_URI,
@@ -96,6 +101,7 @@ export {
 	SYNC_DB_NAME,
 	syncInfo,
 	FUZD_URI,
+	MISSIV_URI,
 	blockchainExplorer,
 };
 

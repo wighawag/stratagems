@@ -1,8 +1,13 @@
-import type {Cell} from 'stratagems-common';
+import type {ViewCellData} from '$lib/state/ViewState';
 import {writable} from 'svelte/store';
 
-export type LandMenuState = {
-	cell: Cell | undefined;
-};
+export type LandMenuState =
+	| {
+			x: number;
+			y: number;
+			cell: ViewCellData;
+			owner: `0x${string}`;
+	  }
+	| undefined;
 
-export const landmenu = writable<LandMenuState>({cell: undefined});
+export const landmenu = writable<LandMenuState>(undefined);

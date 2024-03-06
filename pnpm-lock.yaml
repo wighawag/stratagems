@@ -306,7 +306,7 @@ importers:
         version: 1.5.0
       missiv-client:
         specifier: ^0.0.7
-        version: 0.0.7(svelte@4.2.11)
+        version: link:../../missiv/client
       named-logs:
         specifier: ^0.2.2
         version: 0.2.2
@@ -7807,16 +7807,6 @@ packages:
   /minisearch@6.3.0:
     resolution: {integrity: sha512-ihFnidEeU8iXzcVHy74dhkxh/dn8Dc08ERl0xwoMMGqp4+LvRSCgicb+zGqWthVokQKvCSxITlh3P08OzdTYCQ==}
     dev: true
-
-  /missiv-client@0.0.7(svelte@4.2.11):
-    resolution: {integrity: sha512-H5BS4qSdNcBxToBAuplkEbTRA8HLjHThY11X+jZW4Kv9nQ4+S13WHNQOEgjxgkBpTAcuxPIZ/IiP2OsLBUPvvg==}
-    peerDependencies:
-      svelte: ^4.0.0
-    dependencies:
-      '@noble/hashes': 1.3.3
-      '@noble/secp256k1': 2.0.0
-      svelte: 4.2.11
-    dev: false
 
   /missiv-server@0.0.6:
     resolution: {integrity: sha512-14f7cQoqrnCwuRuuX+9MT1woQsHjcGMbBSp6uNeHqm1nKQY02XPbULeDmsbCYCrPZV31ijasR8nOB9vqX1iGwA==}

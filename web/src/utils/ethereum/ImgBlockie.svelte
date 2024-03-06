@@ -9,7 +9,9 @@
 	$: uri = Blockie.getURI(address, offset);
 </script>
 
-<img class={rootClass} {style} src={uri} alt={address} />
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+<img class={rootClass} {style} src={uri} alt={address} on:click />
 
 <style>
 	img {

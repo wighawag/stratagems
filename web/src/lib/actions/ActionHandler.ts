@@ -1,12 +1,13 @@
-import {stratagemsView} from '$lib/state/ViewState';
+import {stratagemsView, type ViewCellData} from '$lib/state/ViewState';
 import {account, accountData} from '$lib/blockchain/connection';
 
-import {xyToXYID, Color} from 'stratagems-common';
+import {xyToXYID, Color, type ContractCell} from 'stratagems-common';
 import {get} from 'svelte/store';
 import {epochState} from '$lib/state/Epoch';
 import {tour} from '$lib/ui/tour/drive';
 import {info} from '$lib/ui/information/info';
 import {modalStack} from '$utils/ui/modals/ModalContainer.svelte';
+import {landmenu} from '$lib/ui/landmenu/landmenu';
 
 export class ActionHandler {
 	onCellClicked(x: number, y: number) {
@@ -16,7 +17,22 @@ export class ActionHandler {
 		if (get(tour).running) {
 			return;
 		}
-		console.log(x, y);
+
+		let oldMenu = get(landmenu);
+
+		if (oldMenu) {
+			landmenu.set(undefined);
+			return;
+		}
+		let menu:
+			| {
+					cell: ViewCellData;
+					x: number;
+					y: number;
+					owner: `0x${string}`;
+			  }
+			| undefined;
+
 		const player = account.$state.address;
 		if (!player) {
 			console.log('no account');
@@ -27,27 +43,25 @@ export class ActionHandler {
 		const currentOffchainState = get(accountData.offchainState);
 		const $epochState = get(epochState);
 
-		if (!$epochState.isActionPhase) {
-			info.setRevealPhase();
-			return;
-		}
-
 		const cellID = xyToXYID(x, y);
 
 		const currentColor = currentOffchainState.currentColor.color || Number((BigInt(player) % 5n) + 1n);
 
-		console.log({x, y, cellID});
-
-		console.log(currentState.cells[cellID]);
-		console.log(currentState.owners[cellID]);
-
-		if (currentOffchainState.moves?.epoch != $epochState.epoch) {
+		if (currentOffchainState.moves?.epoch && currentOffchainState.moves.epoch != $epochState.epoch) {
 			accountData.resetOffchainMoves();
 		}
 		const currentMove = currentOffchainState.moves?.list.find((v) => v.x === x && v.y === y);
 		if (currentMove) {
+			if (!$epochState.isActionPhase) {
+				info.setRevealPhase();
+				return;
+			}
 			accountData.removeMove(x, y);
 			if (currentMove.color !== Color.None && currentMove.color !== currentColor) {
+				if (!$epochState.isActionPhase) {
+					info.setRevealPhase();
+					return;
+				}
 				accountData.addMove({x, y, color: currentColor, player}, $epochState.epoch);
 			}
 		} else {
@@ -56,14 +70,43 @@ export class ActionHandler {
 				currentState.owners[cellID]?.toLowerCase() === account.$state.address?.toLowerCase() &&
 				currentState.viewCells[cellID].next.life === 7 // TODO MAX_LIFE
 			) {
-				console.log(`remove cell at ${x}, ${y}, ${player}`);
+				if (!$epochState.isActionPhase) {
+					info.setRevealPhase();
+					return;
+				}
 				accountData.addMove({x, y, color: Color.None, player}, $epochState.epoch);
-			} else if (currentState.cells[cellID] && currentState.viewCells[cellID].next.life !== 0) {
-				throw new Error(`Cell already occupied`);
+			} else if (
+				currentState.cells[cellID] &&
+				currentState.owners[cellID]?.toLowerCase() === account.$state.address?.toLowerCase() &&
+				currentState.viewCells[cellID].next.life === 0 // TODO MAX_LIFE
+			) {
+				if (!$epochState.isActionPhase) {
+					info.setRevealPhase();
+					return;
+				}
+				accountData.addMove({x, y, color: currentColor, player}, $epochState.epoch);
+			} else if (currentState.cells[cellID]) {
+				if (currentState.owners[cellID]?.toLowerCase() !== account.$state.address?.toLowerCase()) {
+					menu = {
+						x,
+						y,
+						cell: currentState.viewCells[cellID],
+						owner: currentState.owners[cellID],
+					};
+				}
 			} else {
-				console.log(`add color at ${x}, ${y}, ${player}`);
+				if (!$epochState.isActionPhase) {
+					info.setRevealPhase();
+					return;
+				}
 				accountData.addMove({x, y, color: currentColor, player}, $epochState.epoch);
 			}
+		}
+
+		if (menu) {
+			landmenu.set(menu);
+		} else {
+			landmenu.set(undefined);
 		}
 	}
 }

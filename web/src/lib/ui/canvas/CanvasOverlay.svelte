@@ -16,7 +16,7 @@
 </script>
 
 <div
-	class="cell-info"
+	class="overlay"
 	use:portal={'#canvas-overlay'}
 	hidden
 	style={`transform: translate(calc(${screenPos.x}px - 50%), calc(${screenPos.y}px - 50%));`}
@@ -25,7 +25,8 @@
 </div>
 
 <style>
-	.cell-info {
+	.overlay {
+		pointer-events: none;
 		position: absolute;
 		top: 0;
 		left: 0;

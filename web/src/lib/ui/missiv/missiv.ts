@@ -1,16 +1,21 @@
 import {setup} from 'missiv-client';
 import {account, accountData} from '$lib/blockchain/connection';
 import {derived, writable} from 'svelte/store';
+import {MISSIV_URI} from '$lib/config';
 
 export const openConversations = writable({
 	open: false,
 });
 
-export const conversations = setup({
-	endpoint: 'http://localhost:43002/api/conversations',
-	namespace: 'stratagems',
-	pollingInterval: 2000,
-});
+export const conversations = setup(
+	MISSIV_URI
+		? {
+				endpoint: MISSIV_URI,
+				namespace: 'stratagems',
+				pollingInterval: 2000,
+			}
+		: undefined,
+);
 
 const accountAndAccountData = derived([account, accountData.info], ([$account, $localInfo]) => {
 	return {
