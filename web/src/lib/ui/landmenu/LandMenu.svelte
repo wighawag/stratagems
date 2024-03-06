@@ -6,10 +6,10 @@
 	import {getCurrentColor} from '$lib/actions/utils/current-color';
 	import {account, accountData} from '$lib/blockchain/connection';
 	import {epochState} from '$lib/state/Epoch';
-	import {conversations} from '../missiv/missiv';
 	import {CircleOff} from 'lucide-svelte';
 	import {EVIL_OWNER_ADDRESS} from 'stratagems-common';
 	import {info} from '../information/info';
+	import {playerView} from '../missiv/playerView';
 
 	$: offchainState = accountData.offchainState;
 	$: player = $account.address;
@@ -40,7 +40,9 @@
 		if (!$landmenu) {
 			throw new Error(`no menu`);
 		}
-		conversations.openConversation($landmenu.owner);
+		playerView.set({
+			player: $landmenu.owner,
+		});
 		landmenu.set(undefined);
 	}
 </script>

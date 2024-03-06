@@ -29,7 +29,7 @@ accountAndAccountData.subscribe(({$account, $localInfo}) => {
 		$account.address && $localInfo.localKey
 			? {
 					address: $account.address,
-					delegatePrivateKey: $localInfo.localKey,
+					delegatePrivateKey: $localInfo.localKey.slice(2),
 				}
 			: undefined,
 	);
