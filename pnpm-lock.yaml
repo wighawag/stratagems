@@ -109,8 +109,8 @@ importers:
         specifier: ^4.0.10
         version: 4.0.10(rocketh@0.10.8)(typescript@5.3.3)
       rocketh-deploy-proxy:
-        specifier: ^4.0.11
-        version: 4.0.11(rocketh@0.10.8)(typescript@5.3.3)
+        specifier: ^4.0.12
+        version: link:../../rocketh/packages/rocketh-deploy-proxy
       rocketh-deploy-router:
         specifier: ^4.0.11
         version: 4.0.11(rocketh@0.10.8)(typescript@5.3.3)
@@ -193,8 +193,8 @@ importers:
         specifier: ^0.3.9
         version: 0.3.9
       missiv-server:
-        specifier: ^0.0.7
-        version: 0.0.7
+        specifier: ^0.0.9
+        version: 0.0.9
       set-defaults:
         specifier: ^0.0.2
         version: 0.0.2
@@ -306,7 +306,7 @@ importers:
         version: 1.5.0
       missiv-client:
         specifier: ^0.0.9
-        version: link:../../missiv/client
+        version: 0.0.11(svelte@4.2.11)
       named-logs:
         specifier: ^0.2.2
         version: 0.2.2
@@ -7822,14 +7822,24 @@ packages:
     resolution: {integrity: sha512-ihFnidEeU8iXzcVHy74dhkxh/dn8Dc08ERl0xwoMMGqp4+LvRSCgicb+zGqWthVokQKvCSxITlh3P08OzdTYCQ==}
     dev: true
 
-  /missiv-server@0.0.7:
-    resolution: {integrity: sha512-HFq6owkAKPFtujdb/RuJ/GJnVKEyGx73q8K6Fn9aJq1lxtmZxc3GBhlA2uc+lt60/c+Tnx9mzsUGVtXlsBrWCg==}
+  /missiv-client@0.0.11(svelte@4.2.11):
+    resolution: {integrity: sha512-RoXWdXmaBbYAxrVzv1yPNF+wT2E0+dfLzWUpgWT1zENek6WsxMucIl1NwyPi328nf3uLsVo2AcrmEE4Yng5ApA==}
+    peerDependencies:
+      svelte: ^4.0.0
+    dependencies:
+      '@noble/hashes': 1.3.3
+      '@noble/secp256k1': 2.0.0
+      svelte: 4.2.11
+    dev: false
+
+  /missiv-server@0.0.9:
+    resolution: {integrity: sha512-71vAMzdFonbYIj2eqlexU1LEQkkfD0H4/uJama+7Ikd+rhY3vffu72OKd4ljwLjNKka1sDw5dEvW7aU2u2Ymag==}
     dependencies:
       '@noble/ciphers': 0.5.1
       '@noble/curves': 1.3.0
       '@noble/hashes': 1.3.3
       '@noble/secp256k1': 2.0.0
-      missiv: 0.0.6
+      missiv: 0.0.8
       valibot: 0.28.1
       viem: 2.7.20(typescript@5.4.2)
     transitivePeerDependencies:
@@ -7839,8 +7849,8 @@ packages:
       - zod
     dev: true
 
-  /missiv@0.0.6:
-    resolution: {integrity: sha512-Bpui3H96tXJW/+IBIiBEKLmCY0BtwuoM2Di2xv7SDWhNGSD3NK5hHdDxg7WnMfE7lcEvsbWzJ6kskMIrn/PwZg==}
+  /missiv@0.0.8:
+    resolution: {integrity: sha512-PAW1JA/NUmDYf0kL+NJbS3LrgdGMm7f+goJbvm/56yFg3OEd8zlkWFP379J9rQSXY3LiouZBK+AF4WYr1OO1cw==}
     dependencies:
       valibot: 0.28.1
     dev: true
@@ -9041,23 +9051,6 @@ packages:
     hasBin: true
     dependencies:
       bn.js: 5.2.1
-    dev: true
-
-  /rocketh-deploy-proxy@4.0.11(rocketh@0.10.8)(typescript@5.3.3):
-    resolution: {integrity: sha512-N1PK+Jkf97/cFrcqyN4b0wODppjm+t0Dh/MLcgmC+cd03F1EUzBAUGhh0Di1MDHz0BmQHZJOtyizO1yH3oP9PQ==}
-    peerDependencies:
-      rocketh: 0.10.8
-    dependencies:
-      named-logs: 0.2.2
-      rocketh: 0.10.8(typescript@5.3.3)
-      rocketh-deploy: 4.0.10(rocketh@0.10.8)(typescript@5.3.3)
-      solidity-proxy: 0.4.0
-      viem: 2.7.12(typescript@5.3.3)
-    transitivePeerDependencies:
-      - bufferutil
-      - typescript
-      - utf-8-validate
-      - zod
     dev: true
 
   /rocketh-deploy-router@4.0.11(rocketh@0.10.8)(typescript@5.3.3):

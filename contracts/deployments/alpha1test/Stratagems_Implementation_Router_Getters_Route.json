@@ -1,5 +1,5 @@
 {
-  "address": "0x33a0d701f0619afb407963d6b7f9781dc40f9fcf",
+  "address": "0x16afa97b04617bcd914d74531624c169e7cebc7a",
   "abi": [
     {
       "inputs": [
@@ -755,15 +755,15 @@
   "storageLayout": {
     "storage": [
       {
-        "astId": 14348,
+        "astId": 13964,
         "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
         "label": "_cells",
         "offset": 0,
         "slot": "0",
-        "type": "t_mapping(t_uint256,t_struct(Cell)11512_storage)"
+        "type": "t_mapping(t_uint256,t_struct(Cell)11128_storage)"
       },
       {
-        "astId": 14352,
+        "astId": 13968,
         "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
         "label": "_owners",
         "offset": 0,
@@ -771,15 +771,15 @@
         "type": "t_mapping(t_uint256,t_uint256)"
       },
       {
-        "astId": 14355,
+        "astId": 13971,
         "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
         "label": "_discovered",
         "offset": 0,
         "slot": "2",
-        "type": "t_struct(Discovered)11492_storage"
+        "type": "t_struct(Discovered)11108_storage"
       },
       {
-        "astId": 14359,
+        "astId": 13975,
         "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
         "label": "_tokensInReserve",
         "offset": 0,
@@ -787,15 +787,15 @@
         "type": "t_mapping(t_address,t_uint256)"
       },
       {
-        "astId": 14364,
+        "astId": 13980,
         "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
         "label": "_commitments",
         "offset": 0,
         "slot": "4",
-        "type": "t_mapping(t_address,t_struct(Commitment)11517_storage)"
+        "type": "t_mapping(t_address,t_struct(Commitment)11133_storage)"
       },
       {
-        "astId": 14370,
+        "astId": 13986,
         "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
         "label": "_operatorsForAll",
         "offset": 0,
@@ -803,7 +803,7 @@
         "type": "t_mapping(t_address,t_mapping(t_address,t_bool))"
       },
       {
-        "astId": 14374,
+        "astId": 13990,
         "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
         "label": "_operators",
         "offset": 0,
@@ -827,7 +827,7 @@
         "label": "bytes24",
         "numberOfBytes": "24"
       },
-      "t_enum(Color)11418": {
+      "t_enum(Color)11034": {
         "encoding": "inplace",
         "label": "enum UsingStratagemsTypes.Color",
         "numberOfBytes": "1"
@@ -851,12 +851,12 @@
         "numberOfBytes": "32",
         "value": "t_mapping(t_address,t_bool)"
       },
-      "t_mapping(t_address,t_struct(Commitment)11517_storage)": {
+      "t_mapping(t_address,t_struct(Commitment)11133_storage)": {
         "encoding": "mapping",
         "key": "t_address",
         "label": "mapping(address => struct UsingStratagemsTypes.Commitment)",
         "numberOfBytes": "32",
-        "value": "t_struct(Commitment)11517_storage"
+        "value": "t_struct(Commitment)11133_storage"
       },
       "t_mapping(t_address,t_uint256)": {
         "encoding": "mapping",
@@ -872,12 +872,12 @@
         "numberOfBytes": "32",
         "value": "t_address"
       },
-      "t_mapping(t_uint256,t_struct(Cell)11512_storage)": {
+      "t_mapping(t_uint256,t_struct(Cell)11128_storage)": {
         "encoding": "mapping",
         "key": "t_uint256",
         "label": "mapping(uint256 => struct UsingStratagemsTypes.Cell)",
         "numberOfBytes": "32",
-        "value": "t_struct(Cell)11512_storage"
+        "value": "t_struct(Cell)11128_storage"
       },
       "t_mapping(t_uint256,t_uint256)": {
         "encoding": "mapping",
@@ -886,12 +886,12 @@
         "numberOfBytes": "32",
         "value": "t_uint256"
       },
-      "t_struct(Cell)11512_storage": {
+      "t_struct(Cell)11128_storage": {
         "encoding": "inplace",
         "label": "struct UsingStratagemsTypes.Cell",
         "members": [
           {
-            "astId": 11494,
+            "astId": 11110,
             "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
             "label": "lastEpochUpdate",
             "offset": 0,
@@ -899,7 +899,7 @@
             "type": "t_uint24"
           },
           {
-            "astId": 11496,
+            "astId": 11112,
             "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
             "label": "epochWhenTokenIsAdded",
             "offset": 3,
@@ -907,7 +907,7 @@
             "type": "t_uint24"
           },
           {
-            "astId": 11498,
+            "astId": 11114,
             "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
             "label": "producingEpochs",
             "offset": 6,
@@ -915,15 +915,15 @@
             "type": "t_uint24"
           },
           {
-            "astId": 11501,
+            "astId": 11117,
             "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
             "label": "color",
             "offset": 9,
             "slot": "0",
-            "type": "t_enum(Color)11418"
+            "type": "t_enum(Color)11034"
           },
           {
-            "astId": 11503,
+            "astId": 11119,
             "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
             "label": "life",
             "offset": 10,
@@ -931,7 +931,7 @@
             "type": "t_uint8"
           },
           {
-            "astId": 11505,
+            "astId": 11121,
             "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
             "label": "delta",
             "offset": 11,
@@ -939,7 +939,7 @@
             "type": "t_int8"
           },
           {
-            "astId": 11507,
+            "astId": 11123,
             "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
             "label": "enemyMap",
             "offset": 12,
@@ -947,7 +947,7 @@
             "type": "t_uint8"
           },
           {
-            "astId": 11509,
+            "astId": 11125,
             "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
             "label": "distribution",
             "offset": 13,
@@ -955,7 +955,7 @@
             "type": "t_uint8"
           },
           {
-            "astId": 11511,
+            "astId": 11127,
             "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
             "label": "stake",
             "offset": 14,
@@ -965,12 +965,12 @@
         ],
         "numberOfBytes": "32"
       },
-      "t_struct(Commitment)11517_storage": {
+      "t_struct(Commitment)11133_storage": {
         "encoding": "inplace",
         "label": "struct UsingStratagemsTypes.Commitment",
         "members": [
           {
-            "astId": 11514,
+            "astId": 11130,
             "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
             "label": "hash",
             "offset": 0,
@@ -978,7 +978,7 @@
             "type": "t_bytes24"
           },
           {
-            "astId": 11516,
+            "astId": 11132,
             "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
             "label": "epoch",
             "offset": 24,
@@ -988,12 +988,12 @@
         ],
         "numberOfBytes": "32"
       },
-      "t_struct(Discovered)11492_storage": {
+      "t_struct(Discovered)11108_storage": {
         "encoding": "inplace",
         "label": "struct UsingStratagemsTypes.Discovered",
         "members": [
           {
-            "astId": 11485,
+            "astId": 11101,
             "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
             "label": "minX",
             "offset": 0,
@@ -1001,7 +1001,7 @@
             "type": "t_uint32"
           },
           {
-            "astId": 11487,
+            "astId": 11103,
             "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
             "label": "maxX",
             "offset": 4,
@@ -1009,7 +1009,7 @@
             "type": "t_uint32"
           },
           {
-            "astId": 11489,
+            "astId": 11105,
             "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
             "label": "minY",
             "offset": 8,
@@ -1017,7 +1017,7 @@
             "type": "t_uint32"
           },
           {
-            "astId": 11491,
+            "astId": 11107,
             "contract": "src/game/routes/StratagemsGetters.sol:StratagemsGetters",
             "label": "maxY",
             "offset": 12,
@@ -1156,16 +1156,16 @@
     },
     "version": 1
   },
-  "argsData": "0x000000000000000000000000bee0c6c405847203de86492f7753b4d0a379c20f000000000000000000000000deaddeaddeaddeaddeaddeaddeaddeaddeaddead000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000143700000000000000000000000000000000000000000000000000000000000000e1000000000000000000000000000000000000000000000000000000000000000070000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000006de75a33cf63fea42ea8e5bafadaa1c80c246c6d000000000000000000000000e5c05697666a18bbb0f1f620237402413cf7e1a1",
+  "argsData": "0x000000000000000000000000bee0c6c405847203de86492f7753b4d0a379c20f000000000000000000000000deaddeaddeaddeaddeaddeaddeaddeaddeaddead000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000143700000000000000000000000000000000000000000000000000000000000000e1000000000000000000000000000000000000000000000000000000000000000070000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000006de75a33cf63fea42ea8e5bafadaa1c80c246c6d00000000000000000000000000466d78b4b5f9e85337f0d71bedbb5ffe33fa62",
   "transaction": {
-    "hash": "0xb27c8661f5b212fb03af334ff190b4da2007eaaaf1f33eb4cffc8894e3e53bef",
-    "nonce": "0x8",
+    "hash": "0x8f2e005401b1907d9c61b567b4bbceecade19fa7fe8dc8bef3731a5bd5de8128",
+    "nonce": "0x58",
     "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
   },
   "receipt": {
     "confirmations": 0,
-    "blockHash": "0xe32e8f5cfd2a478594eb5ae3807e6b071264e85aa4e187518a3ec09748380648",
-    "blockNumber": "0x284a3e",
+    "blockHash": "0xdfb96de41dbf039118c1ff22312b1c3fea48d1e736149dff04dba0f41658ab89",
+    "blockNumber": "0x2e5b0b",
     "transactionIndex": "0x1"
   }
 }
