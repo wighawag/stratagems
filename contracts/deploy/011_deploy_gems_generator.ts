@@ -17,7 +17,8 @@ export default execute(
 				args: [
 					zeroAddress, // Gems.address,
 					{
-						rewardRateMillionth: 100n, // 100 for every million of second. or 8.64 / day
+						rewardRateMillionth: 0n, // TODO 100n, // 100 for every million of second. or 8.64 / day
+						// in play test we add reward midway
 						fixedRewardRateThousandsMillionth: 10n, // 10 for every  thousand million of seconds, or 0.000864 per day per stake or 315.36 / year / 1000 stake
 					},
 					[],

@@ -11,7 +11,8 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
     uint256 internal constant PRECISION = 1e24;
     uint256 internal constant DECIMALS_18_MILLIONTH = 1000000000000; // 1 millionth of a token so that it matches with REWARD_RATE_millionth
 
-    uint256 internal immutable REWARD_RATE_millionth;
+    // TODO make it immutable, see preUpgrade
+    uint256 internal REWARD_RATE_millionth;
     uint256 internal immutable FIXED_REWARD_RATE_thousands_millionth;
 
     event GameEnabled(address indexed game, uint256 weight, uint256 timestamp);
@@ -51,11 +52,17 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
 
     constructor(IReward rewardAddress, Config memory config, address[] memory initialGames) {
         REWARD = rewardAddress;
-        REWARD_RATE_millionth = config.rewardRateMillionth;
+        // TODO : see preUpgrade
+        // REWARD_RATE_millionth = config.rewardRateMillionth;
         FIXED_REWARD_RATE_thousands_millionth = config.fixedRewardRateThousandsMillionth;
 
         _postUpgrade(rewardAddress, config, initialGames);
     }
+
+    // TODO for next one, for now we have a changeable REWARD_RATE_millionth
+    // function preUpgrade() external onlyProxyAdmin {
+    //     _updateGlobal();
+    // }
 
     function postUpgrade(
         IReward rewardAddress,
@@ -65,7 +72,13 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
         _postUpgrade(rewardAddress, config, initialGames);
     }
 
-    function _postUpgrade(IReward, Config memory, address[] memory initialGames) internal {
+    function _postUpgrade(IReward, Config memory config, address[] memory initialGames) internal {
+        ///////////////////////////////////////////////////////////////////////////////////////////
+        // TODO remove, see preUpgrade
+        _updateGlobal();
+        REWARD_RATE_millionth = config.rewardRateMillionth;
+        ///////////////////////////////////////////////////////////////////////////////////////////
+
         if (!_init) {
             for (uint256 i = 0; i < initialGames.length; i++) {
                 _enableGame(initialGames[i], 1000000000000000000);
