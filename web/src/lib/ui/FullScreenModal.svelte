@@ -2,15 +2,20 @@
 	import ModalContainer from '$utils/ui/modals/ModalContainer.svelte';
 	import type {Cancellation} from '$utils/ui/modals/types';
 	import {fly} from 'svelte/transition';
+	import {XCircle} from 'lucide-svelte';
 
-	export let oncancel: Cancellation | undefined = undefined;
-	export let onclosed: Cancellation | undefined = undefined;
+	export let oncancel: () => void;
+	export let onclosed: Cancellation = undefined;
 </script>
 
 <ModalContainer {oncancel} {onclosed}>
 	<div class="modal" transition:fly={{y: '50vh'}}>
 		<div class="background"></div>
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
+
 		<div class="wrapper">
+			<div class="close-button" on:click={() => oncancel()}><XCircle style="width: 2rem;height:2rem;" /></div>
 			<div class="content">
 				<slot />
 			</div>
@@ -52,6 +57,7 @@
 
 	.content {
 		overflow: auto;
+		height: 100%;
 	}
 
 	img {
@@ -63,5 +69,13 @@
 	.actions {
 		padding-top: 2rem;
 		margin-top: auto;
+	}
+
+	.close-button {
+		pointer-events: initial;
+		cursor: pointer;
+		position: absolute;
+		top: 3rem;
+		right: 3rem;
 	}
 </style>

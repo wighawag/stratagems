@@ -1,7 +1,7 @@
 import {blockTime, initialContractsInfos} from '$lib/config';
 import type {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {writable, type Readable} from 'svelte/store';
-import {zeroAddress, type Address, encodeFunctionData, parseEther} from 'viem';
+import {zeroAddress, type Address, encodeFunctionData, parseEther, decodeFunctionResult} from 'viem';
 import type {AccountState, ConnectionState} from 'web3-connection';
 import {connection, account} from '$lib/blockchain/connection';
 
@@ -11,6 +11,7 @@ export type BalanceData = {
 	tokenBalance: bigint;
 	tokenAllowance: bigint;
 	nativeBalance: bigint;
+	globalApprovalForGame: boolean;
 	reserve: bigint;
 	account?: Address;
 };
@@ -32,6 +33,7 @@ export function initBalance({
 		tokenBalance: 0n,
 		tokenAllowance: 0n,
 		nativeBalance: 0n,
+		globalApprovalForGame: false,
 		reserve: 0n,
 	};
 
@@ -86,6 +88,7 @@ export function initBalance({
 
 				let tokenBalance: string;
 				let tokenAllowance: string = '0';
+				let globalApprovalForGame = false;
 				if (token === zeroAddress) {
 					tokenBalance = nativeBalance; // TODO do not do this ? or rename tokenBalance to gameBalance or something ?
 				} else {
@@ -105,27 +108,62 @@ export function initBalance({
 							'latest',
 						],
 					});
-					tokenAllowance = await provider.request({
+
+					const globalApprovalsABI = [
+						{
+							type: 'function',
+							name: 'globalApprovals',
+							inputs: [{type: 'address'}],
+							outputs: [{type: 'bool'}],
+						},
+					] as const;
+					const response = await provider.request({
 						method: 'eth_call',
 						params: [
 							{
 								to: token,
 								data: encodeFunctionData({
-									abi: [
-										{
-											type: 'function',
-											name: 'allowance',
-											inputs: [{type: 'address'}, {type: 'address'}],
-											outputs: [{type: 'uint56'}],
-										},
-									],
-									args: [account, depositContract],
-									functionName: 'allowance',
+									abi: globalApprovalsABI,
+									args: [depositContract],
+									functionName: 'globalApprovals',
 								}),
 							},
 							'latest',
 						],
 					});
+
+					globalApprovalForGame = decodeFunctionResult({
+						abi: globalApprovalsABI,
+						functionName: 'globalApprovals',
+						data: response,
+					}) as boolean;
+
+					if (globalApprovalForGame) {
+						tokenAllowance = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF').toString();
+					} else {
+						tokenAllowance = await provider.request({
+							method: 'eth_call',
+							params: [
+								{
+									to: token,
+									data: encodeFunctionData({
+										abi: [
+											{
+												type: 'function',
+												name: 'allowance',
+												inputs: [{type: 'address'}, {type: 'address'}],
+												outputs: [{type: 'uint56'}],
+											},
+										],
+										args: [account, depositContract],
+										functionName: 'allowance',
+									}),
+								},
+								'latest',
+							],
+						});
+					}
+
 					console.log({tokenAllowance, account, depositContract});
 				}
 
@@ -135,6 +173,7 @@ export function initBalance({
 				$state.tokenBalance = BigInt(tokenBalance);
 				$state.tokenAllowance = BigInt(tokenAllowance);
 				$state.nativeBalance = BigInt(nativeBalance);
+				$state.globalApprovalForGame = globalApprovalForGame;
 				$state.reserve = BigInt(reserve);
 				$state.state = 'Loaded';
 				$state.fetching = false;

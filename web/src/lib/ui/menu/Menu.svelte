@@ -19,8 +19,9 @@
 
 	import {startTour} from '$lib/ui/tour/drive';
 	import {addTokenToWallet} from '$lib/blockchain/token';
+	import {openConversations} from '../missiv/missiv';
 
-	$: tokenAllowanceUsed = $balance.tokenAllowance > 0n;
+	$: tokenAllowanceUsed = $balance.tokenAllowance > 0n && !$balance.globalApprovalForGame;
 
 	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
 
@@ -119,7 +120,6 @@
 				</div>
 
 				<div class="category">
-					<hr />
 					{#if tokenAllowanceUsed}
 						<button class="error" on:click={() => clearAllowance()}>Clear Allowance</button>
 					{/if}
@@ -127,33 +127,50 @@
 					{#if debugTools}
 						<button class="error" on:click={() => addTokenToWallet()}>Show Tokens in Wallet</button>
 					{/if}
+				</div>
 
+				<div class="category">
+					<div>Messages</div>
+					<hr />
+					<button class="error" on:click={() => ($openConversations.open = true)}>See Messages</button>
+				</div>
+
+				<div class="category">
+					<div>Events</div>
+					<hr />
 					<button class="error" on:click={() => ($eventsView.open = true)}>See Events</button>
 
 					<button class="error" on:click={() => ($transactionsView.open = true)}>See Transactions</button>
 
 					<button class="error" on:click={() => ($commitmentsView.open = true)}>See Commitments</button>
-
-					<button class="error" on:click={() => ($indexerView.open = true)}>See Indexer State</button>
-
-					<button class="error" on:click={() => ($viewStateView.open = true)}>See View State</button>
-
-					{#if dev}
-						<button class="error" on:click={() => ($debug.open = true)}>Debug</button>
-					{/if}
-
-					{#if isAdmin}
-						<button class="error" on:click={() => ($admin.open = true)}>Admin</button>
-					{/if}
-
-					<button
-						class="error"
-						on:click={() => {
-							$menu.open = false;
-							startTour();
-						}}>Start Tour</button
-					>
 				</div>
+
+				{#if debugTools}
+					<div class="category">
+						<div>Debug</div>
+						<hr />
+
+						<button class="error" on:click={() => ($indexerView.open = true)}>See Indexer State</button>
+
+						<button class="error" on:click={() => ($viewStateView.open = true)}>See View State</button>
+
+						{#if dev}
+							<button class="error" on:click={() => ($debug.open = true)}>Debug</button>
+						{/if}
+
+						{#if isAdmin}
+							<button class="error" on:click={() => ($admin.open = true)}>Admin</button>
+						{/if}
+
+						<button
+							class="error"
+							on:click={() => {
+								$menu.open = false;
+								startTour();
+							}}>Start Tour</button
+						>
+					</div>
+				{/if}
 			{:else if $account.locked}
 				<div class="connected">
 					{#if $account.address}
@@ -196,7 +213,7 @@
 	}
 	.category {
 		width: 100%;
-		margin-bottom: 3rem;
+		margin-bottom: 1.5rem;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -240,7 +257,8 @@
 		pointer-events: auto;
 		cursor: default;
 		position: absolute;
-		height: 100%;
+		height: calc(100% - 2rem);
+		overflow: auto;
 		display: flex;
 		flex-direction: column;
 		justify-content: start;
