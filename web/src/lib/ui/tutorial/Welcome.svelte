@@ -8,6 +8,8 @@
 	import {justObserve} from './observe';
 	import tokenClaim from '$lib/actions/claim/tokenClaim';
 	import WelcomeContainer from './WelcomeContainer.svelte';
+	import MissivRegistration from '../missiv/MissivRegistration.svelte';
+	import {conversations} from '../missiv/missiv';
 
 	$: welcomeDisconnected =
 		!$justObserve &&
@@ -42,7 +44,9 @@
 	}
 </script>
 
-{#if !$tokenClaim.inUrl && !$network.notSupported && !$account.locked}
+{#if $connection.state === 'Connected' && $account.state === 'Connected' && $conversations.registered.state === 'ready' && $conversations.registered.confirmed == false}
+	<MissivRegistration />
+{:else if !$tokenClaim.inUrl && !$network.notSupported && !$account.locked}
 	{#if welcomeConnected || welcomeDisconnected}
 		<WelcomeContainer {onclosed}>
 			<h1>Welcome!</h1>

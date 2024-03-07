@@ -12,7 +12,6 @@ export const conversations = setup(
 		? {
 				endpoint: MISSIV_URI,
 				namespace: 'stratagems',
-				pollingInterval: 2000,
 			}
 		: undefined,
 );

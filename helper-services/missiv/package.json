@@ -1,8 +1,8 @@
 {
     "name": "missiv-service",
     "devDependencies": {
-        "missiv-server": "^0.0.6",
         "ldenv": "^0.3.9",
+        "missiv-server": "^0.0.7",
         "set-defaults": "^0.0.2",
         "wait-on": "^7.2.0",
         "wrangler": "^3.28.4"
