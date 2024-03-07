@@ -13,11 +13,12 @@
 	import ImgBlockie from '$utils/ethereum/ImgBlockie.svelte';
 	import {balance} from '$lib/state/balance';
 	import {formatUnits} from '$utils/ui/text';
-	import {contractsInfos, dev, initialContractsInfos} from '$lib/config';
+	import {contractsInfos, debugTools, dev, initialContractsInfos} from '$lib/config';
 	import {tooltip} from '$utils/ui/tooltip';
 	import ModalContainer from '$utils/ui/modals/ModalContainer.svelte';
 
 	import {startTour} from '$lib/ui/tour/drive';
+	import {addTokenToWallet} from '$lib/blockchain/token';
 
 	$: tokenAllowanceUsed = $balance.tokenAllowance > 0n;
 
@@ -121,6 +122,10 @@
 					<hr />
 					{#if tokenAllowanceUsed}
 						<button class="error" on:click={() => clearAllowance()}>Clear Allowance</button>
+					{/if}
+
+					{#if debugTools}
+						<button class="error" on:click={() => addTokenToWallet()}>Show Tokens in Wallet</button>
 					{/if}
 
 					<button class="error" on:click={() => ($eventsView.open = true)}>See Events</button>
