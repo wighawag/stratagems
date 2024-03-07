@@ -5,6 +5,8 @@
 	import {conversations} from './missiv';
 	import {getPublicKey, publicKeyAuthorizationMessage} from 'missiv-client';
 
+	let domainUsername: string = '';
+
 	async function registerWithSignature() {
 		await contracts.execute(async ({client}) => {
 			const user = $conversations.currentUser;
@@ -16,7 +18,7 @@
 				message: publicKeyAuthorizationMessage({address: user.address, publicKey}),
 			});
 
-			conversations.register(signature);
+			conversations.register(signature, {domainUsername});
 		});
 	}
 </script>
@@ -27,12 +29,19 @@
 		Before we let you explore the world of Stratagems, we ask you to register on the Missiv messaging system so you can
 		communicate with other players.
 	</p>
+
+	<label for="missiv-name">Give yourself a name:</label>
+	<input name="missiv-name" bind:value={domainUsername} type="text" maxlength="32" />
 	<div class="actions">
 		<button on:click={() => registerWithSignature()}>register</button>
-	</div>
-</Modal>
+	</div></Modal
+>
 
 <style>
+	input {
+		background-color: var(--color-surface-700);
+		margin-bottom: 1rem;
+	}
 	.title {
 		font-size: 1.125rem;
 		line-height: 1.75rem;

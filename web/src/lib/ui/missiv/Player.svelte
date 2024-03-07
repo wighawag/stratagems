@@ -9,7 +9,7 @@
 
 	let messageList: Element;
 
-	$: currentConversation = conversations.openConversation(address);
+	$: currentConversation = conversations.openConversation(address, true);
 
 	$: messages = $currentConversation.messages?.reverse() || [];
 
@@ -41,7 +41,7 @@
 	<div class="wrapper">
 		<ImgBlockie style="width:32px;height:32px;" {address} />
 		<br />
-		<h2>Messages with {address}</h2>
+		<h2>Messages with {$currentConversation.otherUser.name || address}</h2>
 		{#if $currentConversation.invalidUser}
 			Please switch back to User or close
 		{:else if $currentConversation.loading !== 'done'}

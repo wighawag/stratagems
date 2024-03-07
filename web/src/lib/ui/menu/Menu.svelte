@@ -21,6 +21,12 @@
 	import {addTokenToWallet} from '$lib/blockchain/token';
 	import {openConversations} from '../missiv/missiv';
 
+	import {conversations} from '$lib/ui/missiv/missiv';
+
+	$: conversationsView = $conversations.conversations;
+
+	$: messageNotif = $conversationsView ? $conversationsView.numUnread + $conversationsView.numUnaccepted : 0;
+
 	$: tokenAllowanceUsed = $balance.tokenAllowance > 0n && !$balance.globalApprovalForGame;
 
 	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
@@ -121,7 +127,7 @@
 
 				<div class="category">
 					{#if tokenAllowanceUsed}
-						<button class="error" on:click={() => clearAllowance()}>Clear Allowance</button>
+						<button on:click={() => clearAllowance()}>Clear Allowance</button>
 					{/if}
 
 					{#if debugTools}
@@ -132,17 +138,22 @@
 				<div class="category">
 					<div>Messages</div>
 					<hr />
-					<button class="error" on:click={() => ($openConversations.open = true)}>See Messages</button>
+					<div style="position:relative;width: 100%;">
+						{#if messageNotif > 0}
+							<span class="notification-badge">{messageNotif}</span>
+						{/if}
+						<button on:click={() => ($openConversations.open = true)}>See Messages</button>
+					</div>
 				</div>
 
 				<div class="category">
 					<div>Events</div>
 					<hr />
-					<button class="error" on:click={() => ($eventsView.open = true)}>See Events</button>
+					<button on:click={() => ($eventsView.open = true)}>See Events</button>
 
-					<button class="error" on:click={() => ($transactionsView.open = true)}>See Transactions</button>
+					<button on:click={() => ($transactionsView.open = true)}>See Transactions</button>
 
-					<button class="error" on:click={() => ($commitmentsView.open = true)}>See Commitments</button>
+					<button on:click={() => ($commitmentsView.open = true)}>See Commitments</button>
 				</div>
 
 				{#if debugTools}
@@ -292,5 +303,16 @@
 	.icon :global(.lucide) {
 		min-height: 1.5rem;
 		min-width: 1.5rem;
+	}
+
+	.notification-badge {
+		position: absolute;
+		top: -0.7rem;
+		right: -0.7rem;
+		background-color: red;
+		border-radius: 9999px;
+		padding-inline: 0.6rem;
+		padding-block: 0.2rem;
+		font-size: 1rem;
 	}
 </style>

@@ -5,6 +5,11 @@
 	import {menu} from '$lib/ui/menu/menu';
 	import {tour} from '$lib/ui/tour/drive';
 	import {getWalletSwitchChainInfo} from '$lib/blockchain/networks';
+	import {conversations} from '$lib/ui/missiv/missiv';
+
+	$: conversationsView = $conversations.conversations;
+
+	$: messageNotif = $conversationsView ? $conversationsView.numUnread + $conversationsView.numUnaccepted : 0;
 
 	function switchMenu(e: Event) {
 		menu.update((v) => ({
@@ -56,6 +61,9 @@
 		{/if}
 		<button disabled={$tour.running} id="account-button" class="blockie-button" on:click={(e) => switchMenu(e)}>
 			<div class="blockie-wrapper">
+				{#if messageNotif > 0}
+					<span class="notification-badge">{messageNotif}</span>
+				{/if}
 				<ImgBlockie rootClass="blockie" address={$account.address || ''} />
 			</div>
 		</button>
@@ -63,6 +71,14 @@
 {/if}
 
 <style>
+	.notification-badge {
+		position: absolute;
+		background-color: red;
+		border-radius: 9999px;
+		padding-inline: 0.3rem;
+		padding-block: 0.2rem;
+		font-size: 1.2rem;
+	}
 	.connected {
 		text-align: right;
 		width: 5.5rem;
