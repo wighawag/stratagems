@@ -1882,6 +1882,18 @@
     }
   },
   "argsData": "0x0000000000000000000000005b5cc9d309d0f29431f3bf8d5f49a74ca64010ea00000000000000000000000061c461ecc993aadeb7e4b47e96d1b8cc37314b2000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000",
+  "transaction": {
+    "hash": "0x4b03b4abcc3ab7ea2a71b4da38103f1d2e47aea0ee96ded0dde1f5f2a666819d",
+    "nonce": "0x5e",
+    "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
+  },
+  "receipt": {
+    "confirmations": 0,
+    "blockHash": "0x0b7d153b4728522db81ae5394dae4da9c6103badda02b3ad48d381f4c8f8826f",
+    "blockNumber": "0x2e5b18",
+    "transactionIndex": "0x1"
+  },
+  "updated": true,
   "linkedData": {
     "tokens": "0xbee0c6c405847203de86492f7753b4d0a379c20f",
     "numTokensPerGems": "1000000000000000000n",
@@ -1898,17 +1910,5 @@
       "decimals": 18
     },
     "admin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
-  },
-  "transaction": {
-    "hash": "0x4b03b4abcc3ab7ea2a71b4da38103f1d2e47aea0ee96ded0dde1f5f2a666819d",
-    "nonce": "0x5e",
-    "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
-  },
-  "receipt": {
-    "confirmations": 0,
-    "blockHash": "0x0b7d153b4728522db81ae5394dae4da9c6103badda02b3ad48d381f4c8f8826f",
-    "blockNumber": "0x2e5b18",
-    "transactionIndex": "0x1"
-  },
-  "updated": true
+  }
 }

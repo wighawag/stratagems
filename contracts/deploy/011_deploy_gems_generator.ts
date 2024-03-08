@@ -26,6 +26,7 @@ export default execute(
 			},
 			{
 				owner: accounts.deployer,
+				execute: 'postUpgrade',
 			},
 		);
 	},

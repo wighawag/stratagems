@@ -27,7 +27,7 @@
 			if ($currentFlow) {
 				// TODO recursive
 				const newStep = $currentFlow.steps[$currentStepIndex];
-				if (!newStep.action) {
+				if (newStep && !newStep.action) {
 					const {newState, nextStep} = await newStep.execute($currentFlow.state);
 					$state = newState;
 					if (nextStep) {
