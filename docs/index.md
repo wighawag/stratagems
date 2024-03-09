@@ -84,5 +84,15 @@ async function subscribe(e) {
 			And subscribe to our fresh newsletter:
     </h1>
 
-  <iframe src="https://paragraph.xyz/@etherplay/embed?minimal=true" width="480" height="45" style="border:1px solid #EEE; background:white; margin: 2rem" frameborder="0" scrolling="no"></iframe>
+  <form id="subscribeForm" action="https://paragraph.xyz/@etherplay/subscribe" method="GET">
+    <!-- TODO <label for="email" class="sr-only">Email address</label> -->
+    <input
+      id="email"
+      name="email"
+      type="email"
+      placeholder="Enter your email"
+						/>
+    <button id="submit" class="btn" type="submit">Subscribe</button>
+  </form>
+
 </div>
