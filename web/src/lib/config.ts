@@ -26,6 +26,7 @@ export const globalQueryParams = [
 	'fuzd',
 	'snapshot',
 	'debugTools',
+	'missiv',
 ];
 
 export const hashParams = getHashParamsFromLocation();

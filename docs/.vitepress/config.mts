@@ -1,4 +1,4 @@
-import {defineConfig} from 'vitepress';
+import {HeadConfig, defineConfig} from 'vitepress';
 import fs from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
@@ -111,4 +111,48 @@ export default defineConfig({
 	rewrites: {
 		'contracts/:pkg.md': 'contracts/:pkg/index.md',
 	},
+	transformHead: ({pageData}) => {
+
+		const host = "https://stratagems.world";
+
+		const head: HeadConfig[] = []
+
+		if (pageData.frontmatter.title) {
+			head.push(['title', {}, pageData.frontmatter.title]);
+			head.push(['meta', { name: 'og:title', content: pageData.frontmatter.title }])
+			head.push(['meta', { name: 'twitter:title', content: pageData.frontmatter.title }])
+		}
+		  
+		if (pageData.frontmatter.description) {
+			head.push(['meta', { name: 'description', content: pageData.frontmatter.description }])
+			head.push(['meta', { name: 'og:description', content: pageData.frontmatter.description }])
+			head.push(['meta', { name: 'twitter:description', content: pageData.frontmatter.description }])
+		}
+	  
+	  
+		if (pageData.frontmatter.image) {
+			head.push(['meta', { name: 'og:image', content: `${host}${pageData.frontmatter.image}` }])
+			head.push(['meta', { name: 'twitter:image', content: `${host}${pageData.frontmatter.image}` }])
+			head.push(['meta', { name: 'twitter:card', content: 'summary_large_image' }])
+		}
+		
+		const filepath = '/' + pageData.filePath;
+		const base = path.basename(filepath);
+		const dir = path.dirname(filepath);
+
+		let pathname;
+		if (base == 'index.md') {
+			if (dir === '.' || dir === '/') {
+				pathname = '/';
+			} else {
+				pathname = dir + '/';
+			}
+			
+		} else {
+			const baseWithoutExtension = path.basename(filepath, '.md');
+			pathname = dir + '/' + baseWithoutExtension + '/';
+		} 
+	
+		head.push(['link', { rel: '“canonical”', href: `${host}${pathname}` }]);
+	}
 });
