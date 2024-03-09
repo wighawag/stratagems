@@ -60,12 +60,6 @@
 		height: 100%;
 	}
 
-	img {
-		width: 100%;
-		max-width: 300px;
-		margin-inline: auto;
-	}
-
 	.actions {
 		padding-top: 2rem;
 		margin-top: auto;
