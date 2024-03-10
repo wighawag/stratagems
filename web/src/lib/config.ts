@@ -90,7 +90,7 @@ const syncInfo = SYNC_URI
 		}
 	: undefined;
 
-const blockchainExplorer = initialContractsInfos.chainInfo.blockExplorers.default.url;
+const blockchainExplorer = (initialContractsInfos.chainInfo as any).blockExplorers?.default.url;
 
 export {
 	initialContractsInfos,

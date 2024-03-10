@@ -109,8 +109,8 @@ importers:
         specifier: ^4.0.10
         version: 4.0.10(rocketh@0.10.8)(typescript@5.3.3)
       rocketh-deploy-proxy:
-        specifier: ^4.0.12
-        version: 4.0.12(rocketh@0.10.8)(typescript@5.3.3)
+        specifier: ^4.0.13
+        version: 4.0.13(rocketh@0.10.8)(typescript@5.3.3)
       rocketh-deploy-router:
         specifier: ^4.0.11
         version: 4.0.11(rocketh@0.10.8)(typescript@5.3.3)
@@ -9055,8 +9055,8 @@ packages:
       bn.js: 5.2.1
     dev: true
 
-  /rocketh-deploy-proxy@4.0.12(rocketh@0.10.8)(typescript@5.3.3):
-    resolution: {integrity: sha512-e9Ub0q1Pov8fFi4zge3lqQia6dyvBxH3IfLszwTqAttexAf5mAu+Sv2Tx5A2b8vCmUrLBxy1i2wE0f7d/bWQtg==}
+  /rocketh-deploy-proxy@4.0.13(rocketh@0.10.8)(typescript@5.3.3):
+    resolution: {integrity: sha512-CueoZ9PbPQEfrza9FHeiKBh8R2QKPdap2daw6ObgMta75gyivgvimXIuKObf/oKDgFYYeV8W5HjtFTioTymP/A==}
     peerDependencies:
       rocketh: 0.10.8
     dependencies:
