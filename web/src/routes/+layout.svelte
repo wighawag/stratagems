@@ -26,15 +26,13 @@
 	import Missiv from '$lib/ui/missiv/Missiv.svelte';
 
 	$: showWIPNotice =
-		(initialContractsInfos as any).name === 'composablelabs' ||
-		(initialContractsInfos as any).name === 'base' ||
-		(!dev &&
-			!params['force'] &&
-			initialContractsInfos.chainId + '' !== '8453' &&
-			(initialContractsInfos as any).name !== 'redstone-holesky' &&
-			(initialContractsInfos as any).name !== 'fast' &&
-			(initialContractsInfos as any).name !== 'sepolia' &&
-			(initialContractsInfos as any).name !== 'alpha1test');
+		!dev &&
+		!params['force'] &&
+		(initialContractsInfos as any).name !== 'composablelabs' &&
+		(initialContractsInfos as any).name !== 'redstone-holesky' &&
+		(initialContractsInfos as any).name !== 'fast' &&
+		(initialContractsInfos as any).name !== 'sepolia' &&
+		(initialContractsInfos as any).name !== 'alpha1test';
 </script>
 
 <!-- add head, meta, sentry and other debug utilties-->
