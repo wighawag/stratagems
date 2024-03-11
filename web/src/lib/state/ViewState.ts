@@ -45,6 +45,7 @@ export type StratagemsViewState = StratagemsState & {
 	hasCommitment?: boolean;
 	hasSomeCells: boolean;
 	tokensToCollect: GemsToWithdraw[];
+	rawState: Data;
 };
 
 function isValidMove(move: LocalMove) {
@@ -66,6 +67,7 @@ function merge(
 	account: AccountState<`0x${string}`>,
 ): StratagemsViewState {
 	const stratagemsUnchanged = new StratagemsContract(state, 7);
+	const rawState = state;
 	const copyState = createDraft(state);
 	// TODO use finishDraft ?
 
@@ -133,6 +135,7 @@ function merge(
 		hasCommitment,
 		hasSomeCells,
 		tokensToCollect: [],
+		rawState,
 	};
 	for (const cellID of Object.keys(copyState.cells)) {
 		const {x, y} = bigIntIDToXY(BigInt(cellID));

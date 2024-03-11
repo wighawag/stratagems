@@ -18,7 +18,7 @@ import {
 } from '../tiles';
 import {epoch} from '$lib/state/Epoch';
 import {get} from 'svelte/store';
-import {bigIntIDToXYID} from 'stratagems-common';
+import {bigIntIDToXYID, xyToBigIntID} from 'stratagems-common';
 
 const vertexShaderSource = `#version 300 es
 
@@ -116,6 +116,7 @@ export class Textured2DLayer {
 		for (let cellPos of Object.keys(state.cells)) {
 			const cell = state.viewCells[cellPos];
 			const [x, y] = cellPos.split(',').map((v) => parseInt(v));
+			const oldCell = state.rawState.cells[xyToBigIntID(x, y).toString()];
 			const neighbors = {
 				N: !!state.cells[`${x},${y - 1}`],
 				NE: !!state.cells[`${x + 1},${y - 1}`],
@@ -127,7 +128,10 @@ export class Textured2DLayer {
 				NW: !!state.cells[`${x - 1},${y - 1}`],
 			};
 			drawCorners(attributes, this.size, offset, neighbors, tileSize, x, y, 1);
-			if (cell.next.epochWhenTokenIsAdded >= get(epoch) /* TODO access to epcoh*/) {
+			if (
+				(oldCell && cell.next.color != oldCell?.color) ||
+				cell.next.epochWhenTokenIsAdded >= get(epoch) /* TODO access to epcoh*/
+			) {
 				drawSandCenter(attributes, this.size, offset, tileSize, numTiles, x, y, 1);
 			} else {
 				drawGrassCenter(attributes, this.size, offset, tileSize, numTiles, x, y, 1);
