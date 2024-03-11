@@ -411,7 +411,11 @@ export class StratagemsContract {
 
 		currentState.color = move.color;
 		currentState.distribution = 0;
-		currentState.epochWhenTokenIsAdded = epoch; // used to prevent overwriting, even Color.None
+		if (!(this.ownerOf(move.position).toLowerCase() == player.toLowerCase() && currentState.life > 0)) {
+			// we do not reset "epochWhenTokenIsAdded" when same player
+			// this prevent other player to place color while it replace color
+			currentState.epochWhenTokenIsAdded = epoch; // used to prevent overwriting, even Color.None
+		}
 
 		if (currentState.color == Color.None) {
 			currentState.life = 0;

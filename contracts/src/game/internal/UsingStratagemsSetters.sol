@@ -85,7 +85,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             }
         }
 
-        // option to return in reserve ?
+        // TODO option to return in reserve ?
         if (tokens.tokensReturned != 0) {
             // console.log("tokensReturned");
             // console.log(tokens.tokensReturned);
@@ -224,9 +224,12 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             if (currentState.life != 0) {
                 move.color = Color.Evil;
             } else {
-                // invalid move, on top of a MAX, that become None ?
-                return (0, 0, NUM_TOKENS_PER_GEMS);
+                if (currentState.life != MAX_LIFE || _ownerOf(move.position) != player) {
+                    // invalid move
+                    return (0, 0, NUM_TOKENS_PER_GEMS);
+                }
             }
+            // we keep currentState.epochWhenTokenIsAdded as we do not want to be overwritten by conflcit: black
         }
         emit MoveProcessed(move.position, player, currentState.color, move.color);
 
@@ -256,7 +259,11 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
             currentState.color = move.color;
             currentState.distribution = 0;
-            currentState.epochWhenTokenIsAdded = epoch; // used to prevent overwriting, even Color.None
+            if (!(_ownerOf(move.position) == player && currentState.life > 0)) {
+                // we do not reset "epochWhenTokenIsAdded" when same player
+                // this prevent other player to place color while it replace color
+                currentState.epochWhenTokenIsAdded = epoch; // used to prevent overwriting, even Color.None
+            }
 
             if (currentState.color == Color.None) {
                 currentState.producingEpochs += epoch - currentState.lastEpochUpdate;

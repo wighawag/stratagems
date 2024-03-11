@@ -74,7 +74,12 @@ export class ActionHandler {
 					info.setRevealPhase();
 					return;
 				}
-				accountData.addMove({x, y, color: Color.None, player}, $epochState.epoch);
+				menu = {
+					x,
+					y,
+					cell: currentState.viewCells[cellID],
+					owner: currentState.owners[cellID],
+				};
 			} else if (
 				currentState.cells[cellID] &&
 				currentState.owners[cellID]?.toLowerCase() === account.$state.address?.toLowerCase() &&
