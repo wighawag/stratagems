@@ -9,7 +9,7 @@
     },
     "scripts": {
         "prepare": "set-defaults .",
-        "dev:worker": "wrangler dev -c ./wrangler.toml --port 33333",
+        "dev:worker": "wrangler dev -c ./wrangler.toml --port 34003",
         "dev": "pnpm run /^dev:.*/",
         "wrangler": "wrangler"
     }

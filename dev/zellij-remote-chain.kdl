@@ -27,6 +27,9 @@ layout {
 			pane name="SYNC"  command="bash"  {
 				args "-c" "pnpm sync:dev; cd helper-services/secp256k1-db; ${SHELL-bash}"
 			}
+			pane name="MISSIV"  command="bash"  {
+				args "-c" "pnpm missiv:dev; cd helper-services/missiv; ${SHELL-bash}"
+			}
 		}
 	}
 

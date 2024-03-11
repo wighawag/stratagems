@@ -48,6 +48,7 @@
     "indexer:index": "ldenv pnpm run indexer:build @@MODE ~~ pnpm --filter ./indexer index-to-file -n @@ETH_NODE_URI_:MODE,ETH_NODE_URI@:''@: -d src/contracts.ts -f ../web/static/indexed-states/@@MODE ~~ @@",
     "fuzd:dev": "pnpm --filter ./helper-services/fuzd dev",
     "sync:dev": "pnpm --filter ./helper-services/secp256k1-db dev",
+    "missiv:dev": "pnpm --filter ./helper-services/missiv dev",
     "---------------------- DOCS ----------------------": "",
     "docs:dev": "pnpm contracts:docs && vitepress dev docs",
     "docs:build": "pnpm contracts:docs && vitepress build docs",
