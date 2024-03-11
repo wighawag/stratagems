@@ -2,6 +2,9 @@
 	"networks": {
 		"alpha1": {
 			"tags": ["mainnet"]
+		},
+		"base": {
+			"tags": ["mainnet"]
 		}
 	}
 }
