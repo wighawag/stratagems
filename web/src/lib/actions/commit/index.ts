@@ -36,6 +36,10 @@ export type CommitState = {
 		maxPriorityFeePerGas: bigint;
 	};
 	epochNumber?: number;
+	txHash?: `0x${string}`;
+	revealTxData?: `0x${string}`;
+	secret?: `0x${string}`;
+	timeToBroadcastReveal?: number;
 };
 
 export type CommitFlow = Flow<CommitState>;
@@ -282,6 +286,7 @@ export async function startCommit() {
 					message: `Commit:${network.$state.chainId}:${network.$state.contracts?.Stratagems.address}:${epochNumber}`,
 				});
 				const secret = keccak256(secretSig);
+				state.secret = secret;
 				const {hash, moves} = prepareCommitment(localMoves.map(localMoveToContractMove), secret);
 
 				const remoteAccount = fuzdData?.remoteAccount || zeroAddress;
@@ -338,6 +343,8 @@ export async function startCommit() {
 						maxPriorityFeePerGas: gasPrice.maxPriorityFeePerGas,
 					});
 				}
+				state.txHash = txHash;
+
 				accountData.resetOffchainMoves();
 
 				const timeToBroadcastReveal = time.now + get(epochInfo).timeLeftToCommit;
@@ -346,40 +353,112 @@ export async function startCommit() {
 					functionName: 'reveal',
 					args: [account.address, secret, moves, zeroBytes24, true, zeroAddress],
 				});
+				state.timeToBroadcastReveal = timeToBroadcastReveal;
+				state.revealTxData = data;
 				// await contracts.Stratagems.write.reveal([account.address, data.secret, moves, zeroBytes24, true, zeroAddress]);
 
+				let fuzdFailed = false;
 				if (fuzdData) {
-					const scheduleInfo = await fuzdData.fuzd.scheduleExecution(
-						{
-							slot: fuzdData.slot,
-							broadcastSchedule: [
-								{
-									duration: gameConfig.$current.revealPhaseDuration,
-									maxFeePerGas: fuzdData.maxFeePerGas,
-									maxPriorityFeePerGas: fuzdData.maxPriorityFeePerGas,
-								},
-							],
-							data,
-							to: contracts.Stratagems.address,
-							time: timeToBroadcastReveal,
-							expiry: gameConfig.$current.revealPhaseDuration,
-							chainId: initialContractsInfos.chainId,
-							gas: fuzdData.revealGas,
-						},
-						{fakeEncrypt: time.hasTimeContract},
-					);
+					try {
+						const scheduleInfo = await fuzdData.fuzd.scheduleExecution(
+							{
+								slot: fuzdData.slot,
+								broadcastSchedule: [
+									{
+										duration: gameConfig.$current.revealPhaseDuration,
+										maxFeePerGas: fuzdData.maxFeePerGas,
+										maxPriorityFeePerGas: fuzdData.maxPriorityFeePerGas,
+									},
+								],
+								data,
+								to: contracts.Stratagems.address,
+								time: timeToBroadcastReveal,
+								expiry: gameConfig.$current.revealPhaseDuration,
+								chainId: initialContractsInfos.chainId,
+								gas: fuzdData.revealGas,
+							},
+							{fakeEncrypt: time.hasTimeContract},
+						);
 
-					console.log({fakeEncrypt: time.hasTimeContract});
+						console.log({fakeEncrypt: time.hasTimeContract});
 
-					console.log(`will be executed in ${timeToText(scheduleInfo.checkinTime - time.now)}`);
+						console.log(`will be executed in ${timeToText(scheduleInfo.checkinTime - time.now)}`);
 
-					accountData.recordFUZD(txHash, scheduleInfo);
+						accountData.recordFUZD(txHash, scheduleInfo);
+					} catch {
+						fuzdFailed = true;
+					}
 				}
 
-				return {newState: state};
+				return {newState: state, nextStep: fuzdFailed ? 3 : 4};
 			},
 		};
 		steps.push(txStep);
+
+		const retryFUZDStep = {
+			title: 'Fuzd Fails',
+			action: 'OK',
+			description: `We could not schedule the execution for later reveal. Please try again. If this error persist, you ll need to revea your move manually during the reveal phase`,
+			// component: PermitComponent,
+			execute: async (state: CommitState) => {
+				const {fuzdData, epochNumber, revealTxData, txHash, secret, timeToBroadcastReveal} = state;
+				if (!txHash) {
+					throw new Error(`did not record txHash`);
+				}
+				if (!timeToBroadcastReveal) {
+					throw new Error(`did not record timeToBroadcastReveal`);
+				}
+				if (!revealTxData) {
+					throw new Error(`did not record revealTxData`);
+				}
+				if (!secret) {
+					throw new Error(`did not record secret`);
+				}
+				if (!epochNumber) {
+					throw new Error(`did not record epochNumber`);
+				}
+				const localWallet = accountData.localWallet;
+				if (!localWallet) {
+					throw new Error(`no local wallet found`);
+				}
+
+				let fuzdFailed = false;
+				if (fuzdData) {
+					try {
+						const scheduleInfo = await fuzdData.fuzd.scheduleExecution(
+							{
+								slot: fuzdData.slot,
+								broadcastSchedule: [
+									{
+										duration: gameConfig.$current.revealPhaseDuration,
+										maxFeePerGas: fuzdData.maxFeePerGas,
+										maxPriorityFeePerGas: fuzdData.maxPriorityFeePerGas,
+									},
+								],
+								data: revealTxData,
+								to: contracts.Stratagems.address,
+								time: timeToBroadcastReveal,
+								expiry: gameConfig.$current.revealPhaseDuration,
+								chainId: initialContractsInfos.chainId,
+								gas: fuzdData.revealGas,
+							},
+							{fakeEncrypt: time.hasTimeContract},
+						);
+
+						console.log({fakeEncrypt: time.hasTimeContract});
+
+						console.log(`will be executed in ${timeToText(scheduleInfo.checkinTime - time.now)}`);
+
+						accountData.recordFUZD(txHash, scheduleInfo);
+					} catch {
+						fuzdFailed = true;
+					}
+				}
+				return {newState: state, nextStep: fuzdFailed ? 3 : 4};
+			},
+		};
+
+		steps.push(retryFUZDStep);
 
 		const flow: CommitFlow = {
 			type: 'commit',

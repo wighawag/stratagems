@@ -113,7 +113,13 @@ export function createClient(config: ClientConfig) {
 					'content-type': 'application/json',
 				},
 			});
-			return response.json();
+			if (response.status === 200) {
+				return response.json();
+			} else {
+				const text = await response.text();
+				console.error(`failed to schedule execution via FUZD`, text);
+				throw new Error(`failed to schedule execution via FUZD`);
+			}
 		} else {
 			return config.schedulerEndPoint(signature, jsonAsString, signature);
 		}

@@ -15,6 +15,7 @@ const num = (args[0] && parseInt(args[0])) || 100;
 const valuePerChainId = {
 	'888888888': parseEther('0.003'),
 	default: parseEther('0.001'),
+	'8453': parseEther('0.003'),
 	'28122024': parseEther('0.003'),
 };
 
