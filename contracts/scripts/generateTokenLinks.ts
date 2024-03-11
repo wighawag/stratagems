@@ -38,8 +38,12 @@ async function main() {
 		accounts.push({address: account.address, key});
 	}
 
-	const content = fs.readFileSync(`.keys/${env.network.name}-list.csv`, 'utf-8');
-	const contentLines = content.split('\n');
+	let contentLines: string[] = [];
+	try {
+		const content = fs.readFileSync(`.keys/${env.network.name}-list.csv`, 'utf-8');
+		contentLines = content.split('\n');
+	} catch {}
+
 	fs.writeFileSync(
 		`.keys/${env.network.name}-list.csv`,
 		contentLines
