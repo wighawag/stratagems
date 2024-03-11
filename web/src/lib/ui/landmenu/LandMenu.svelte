@@ -92,6 +92,7 @@
 				{#if isPlayerLand}
 					<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
+					<!-- svelte-ignore a11y-no-static-element-interactions -->
 					<span on:click={() => withdrawLand()}><Trash2 style="width: 2em; height: 2em;color: red;" /></span>
 				{:else if $landmenu.owner == EVIL_OWNER_ADDRESS}
 					<CircleOff style="width: 2em; height: 2em;color: gray;" />
