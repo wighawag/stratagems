@@ -1,7 +1,7 @@
 <script lang="ts">
 	import {initialContractsInfos} from '$lib/config';
 	import Modal from '$utils/ui/modals/Modal.svelte';
-	$: date = (initialContractsInfos as any).name == 'base' ? 'Thursday 21st March' : undefined;
+	$: date = (initialContractsInfos as any).name == 'alpha1' ? 'Thursday 21st March' : undefined;
 </script>
 
 <Modal>

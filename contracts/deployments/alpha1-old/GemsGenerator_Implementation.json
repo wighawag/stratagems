@@ -1,0 +1,894 @@
+{
+  "address": "0xb12bab322d4c68682e0d26ce0f24aacf6840a686",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "contract IReward",
+          "name": "rewardAddress",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "rewardRateMillionth",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "fixedRewardRateThousandsMillionth",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct RewardsGenerator.Config",
+          "name": "config",
+          "type": "tuple"
+        },
+        {
+          "internalType": "address[]",
+          "name": "initialGames",
+          "type": "address[]"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "NonTransferable",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotAuthorized",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "spender",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Approval",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "game",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "weight",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "GameEnabled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Transfer",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "REWARD",
+      "outputs": [
+        {
+          "internalType": "contract IReward",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "add",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "allowance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "approve",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "balanceOf",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "claimFixedRewards",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "claimSharedPoolRewards",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "decimals",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "earnedFromFixedRate",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "accounts",
+          "type": "address[]"
+        }
+      ],
+      "name": "earnedFromFixedRateMultipleAccounts",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "result",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "earnedFromPoolRate",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "accounts",
+          "type": "address[]"
+        }
+      ],
+      "name": "earnedFromPoolRateMultipleAccounts",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "result",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "game",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "weight",
+          "type": "uint256"
+        }
+      ],
+      "name": "enableGame",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "games",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getTotalRewardPerPointWithPrecision24",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "move",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "name",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IReward",
+          "name": "rewardAddress",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "rewardRateMillionth",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "fixedRewardRateThousandsMillionth",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct RewardsGenerator.Config",
+          "name": "config",
+          "type": "tuple"
+        },
+        {
+          "internalType": "address[]",
+          "name": "initialGames",
+          "type": "address[]"
+        }
+      ],
+      "name": "postUpgrade",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "remove",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "symbol",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalSupply",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "transfer",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "transferFrom",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    }
+  ],
+  "contractName": "RewardsGenerator",
+  "sourceName": "src/token/RewardsGenerator.sol",
+  "bytecode": "0x604060e0815234620001d95762001a53803803806200001e81620001f4565b92833981019080820360808112620001d9578151916001600160a01b03908184168403620001d95785602093601f190112620001d95785516001600160401b039481880186811183821017620001de5788528483015182528783015192858301938452606081015190878211620001d957019680601f89011215620001d9578751968711620001de576005978760051b908780620000be818501620001f4565b809b81520192820101928311620001d9578701905b828210620001bf5750505060c052516080525160a05260ff60045416156200013c575b845161183890816200021b8239608051818181610a390152818161131001526115b7015260a05181611279015260c051818181610171015281816106ac0152610ca10152f35b60009260005b8151811015620001a257808385600193891b8501015116808752600386527f50b08f8489c009db3c1b3f160cc0dae1c0c6706774750c001e4c083f9483d5f389670de0b6b3a764000080828b205581519081524289820152a20162000142565b505050505050600160ff19600454161760045538808080620000f6565b81518781168103620001d9578152908701908701620000d3565b600080fd5b634e487b7160e01b600052604160045260246000fd5b6040519190601f01601f191682016001600160401b03811183821017620001de5760405256fe60806040908082526004918236101561001757600080fd5b600091823560e01c908163066112f914610c4e5750806306fdde0314610bdc578063095ea7b3146107ab57806316cf09f814610b1b57806318160ddd14610ade57806323b872dd14610aa4578063313ce56714610a6b57806348483382146109e857806359d431b31461099457806370a082311461092357806379131a19146108c25780637997f96d1461086957806395d89b41146107f3578063a8671f6a146107b0578063a9059cbb146107ab578063abe7f1ab14610754578063b061963c1461070a578063bb35783b146106d0578063cab34c0814610662578063cee2960b1461043d578063dd62ed3e146103d7578063f5d82b6b146103535763ff1e03e91461012257600080fd5b3461034f5760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f57610159610ddc565b9073ffffffffffffffffffffffffffffffffffffffff7f00000000000000000000000000000000000000000000000000000000000000001680156103275793839433855260016020526dffffffffffffffffffffffffffff908184872054166102536101f86101c661159d565b939050338a52600160205283888b20916cffffffffffffffffffffffffff97600189855460701c16940154169261147d565b933389526001602052868920921682907fffffffffff00000000000000000000000000ffffffffffffffffffffffffffff7affffffffffffffffffffffffff000000000000000000000000000083549260701b169116179055565b8261025c578680f35b6001017fffffffffffffffffffffffffffffffffffff00000000000000000000000000008154169055803b15610323576102e9948680948651978895869485937f21670f2200000000000000000000000000000000000000000000000000000000855284016020909392919373ffffffffffffffffffffffffffffffffffffffff60408201951681520152565b03925af190811561031a5750610303575b80808080808680f35b61030c90610fce565b6103175780386102fa565b80fd5b513d84823e3d90fd5b8580fd5b8482517fea8e4eb5000000000000000000000000000000000000000000000000000000008152fd5b5080fd5b5082346103d357817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc3601126103d35761038b610ddc565b91338452600360205280842054156103ad57836103aa602435856114be565b80f35b517fea8e4eb5000000000000000000000000000000000000000000000000000000008152fd5b8280fd5b50903461031757817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc3601126103175761040f610ddc565b5060243573ffffffffffffffffffffffffffffffffffffffff8116036104385760209151908152f35b600080fd5b5082346103d35760807ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc3601126103d35773ffffffffffffffffffffffffffffffffffffffff81358181160361065e57827fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdc36011261065e5782519067ffffffffffffffff82850181811184821017610630578552602435835260443560209384015260643590811161032357366023820112156103235780840135906105038261106e565b916105108751938461102d565b80835260248584019160051b8301019136831161062c57602401905b82821061061457505050610564827fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d610354163314611086565b60ff84541615610572578580f35b9091929394805b82518110156105dc578084610590600193866111d6565b511680600052600387527f50b08f8489c009db3c1b3f160cc0dae1c0c6706774750c001e4c083f9483d5f389670de0b6b3a76400008082600020558151908152428a820152a201610579565b50945050505060017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0082541617905581808080808580f35b8135858116810361043857815290850190850161052c565b8880fd5b6041857f4e487b71000000000000000000000000000000000000000000000000000000006000525260246000fd5b8380fd5b503461034f57817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f576020905173ffffffffffffffffffffffffffffffffffffffff7f0000000000000000000000000000000000000000000000000000000000000000168152f35b50913461034f576106e036610ec7565b92909194338552600360205280852054156103ad575050610705826103aa949561139b565b6114be565b503461034f5760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f5760209061074d610748610ddc565b6112b3565b9051908152f35b5082346103d357817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc3601126103d35761078c610ddc565b91338452600360205280842054156103ad57836103aa6024358561139b565b610e65565b503461034f5760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f5760209061074d6107ee610ddc565b61120a565b503461034f57817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f5780516108659161083182611011565b600582527f504f494e5400000000000000000000000000000000000000000000000000000060208301525191829182610dff565b0390f35b5090346103175761087936610f27565b61088281611127565b925b818110610898578451806108658682610f92565b806108b16107ee6108ac6001948688611176565b6111b5565b6108bb82876111d6565b5201610884565b503461034f5760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f578060209273ffffffffffffffffffffffffffffffffffffffff610913610ddc565b1681526003845220549051908152f35b503461034f5760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f576dffffffffffffffffffffffffffff8160209373ffffffffffffffffffffffffffffffffffffffff610983610ddc565b168152600185522054169051908152f35b509034610317576109a436610f27565b6109ad81611127565b925b8181106109c3578451806108658682610f92565b806109d76107486108ac6001948688611176565b6109e182876111d6565b52016109af565b503461034f57817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f5761074d602092546cffffffffffffffffffffffffff610a6164ffffffffff83167f00000000000000000000000000000000000000000000000000000000000000008460901c611359565b9160281c166110eb565b503461034f57817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f576020905160128152f35b5090346103175750610ab536610ec7565b505050517f9cbe2357000000000000000000000000000000000000000000000000000000008152fd5b503461034f57817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f576020915460901c9051908152f35b503461034f57807ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f577f50b08f8489c009db3c1b3f160cc0dae1c0c6706774750c001e4c083f9483d5f3610b73610ddc565b916024359273ffffffffffffffffffffffffffffffffffffffff90610bbc827fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d610354163314611086565b16928360005260036020528082600020558151908152426020820152a280f35b503461034f57817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f57805161086591610c1a82611011565b600682527f506f696e7473000000000000000000000000000000000000000000000000000060208301525191829182610dff565b849291503461065e5760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261065e57610c89610ddc565b9073ffffffffffffffffffffffffffffffffffffffff7f000000000000000000000000000000000000000000000000000000000000000016908115610db55750908491610cd53361120a565b9182610cdf578380f35b338452600260205284842080547fffffffffffffffffffffffffff000000000000000000000000000000000000001672ffffffffff00000000000000000000000000004260701b16179055813b1561065e5783610d8c968651978895869485937f21670f2200000000000000000000000000000000000000000000000000000000855284016020909392919373ffffffffffffffffffffffffffffffffffffffff60408201951681520152565b03925af190811561031a5750610da6575b80828180808380f35b610daf90610fce565b81610d9d565b807fea8e4eb500000000000000000000000000000000000000000000000000000000869252fd5b6004359073ffffffffffffffffffffffffffffffffffffffff8216820361043857565b60208082528251818301819052939260005b858110610e51575050507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0601f8460006040809697860101520116010190565b818101830151848201604001528201610e11565b346104385760407ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261043857610e9c610ddc565b5060046040517f9cbe2357000000000000000000000000000000000000000000000000000000008152fd5b7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc60609101126104385773ffffffffffffffffffffffffffffffffffffffff90600435828116810361043857916024359081168103610438579060443590565b9060207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc8301126104385760043567ffffffffffffffff9283821161043857806023830112156104385781600401359384116104385760248460051b83010111610438576024019190565b602090602060408183019282815285518094520193019160005b828110610fba575050505090565b835185529381019392810192600101610fac565b67ffffffffffffffff8111610fe257604052565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b6040810190811067ffffffffffffffff821117610fe257604052565b90601f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0910116810190811067ffffffffffffffff821117610fe257604052565b67ffffffffffffffff8111610fe25760051b60200190565b1561108d57565b60646040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152600e60248201527f4e4f545f415554484f52495a45440000000000000000000000000000000000006044820152fd5b919082018092116110f857565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b906111318261106e565b61113e604051918261102d565b8281527fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe061116c829461106e565b0190602036910137565b91908110156111865760051b0190565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052603260045260246000fd5b3573ffffffffffffffffffffffffffffffffffffffff811681036104385790565b80518210156111865760209160051b010190565b919082039182116110f857565b818102929181159184041417156110f857565b73ffffffffffffffffffffffffffffffffffffffff6112b0911660008181526002602052604061124764ffffffffff8284205460701c16426111ea565b918381526001602052633b9aca0061129e6112776dffffffffffffffffffffffffffff95868686205416906111f7565b7f0000000000000000000000000000000000000000000000000000000000000000906111f7565b049381526002602052205416906110eb565b90565b73ffffffffffffffffffffffffffffffffffffffff6112b09116806000526001602052604060002054906cffffffffffffffffffffffffff916dffffffffffffffffffffffffffff9261133860005482610a6164ffffffffff83167f00000000000000000000000000000000000000000000000000000000000000008460901c611359565b92600052600160205283600160406000200154169382169160701c1661147d565b919082156113935761136e61137392426111ea565b6111f7565b69d3c21bcecceda1000000908181029181830414901517156110f8570490565b505050600090565b8115611479577fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef602060009373ffffffffffffffffffffffffffffffffffffffff6113e58561163a565b959071ffffffffffffffffffffffffffffffffffff7fffffffffffffffffffffffffffff000000000000000000000000000000000000858a54930360901b1691161787551693848652600183526dffffffffffffffffffffffffffff82604088209203167fffffffffffffffffffffffffffffffffffff0000000000000000000000000000825416179055604051908152a3565b5050565b61148a90611490936111ea565b906111f7565b9064e8d4a51000918281029281840414901517156110f85769d3c21bcecceda10000006112b09204906110eb565b908015611479577fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef602060009273ffffffffffffffffffffffffffffffffffffffff6115098661163a565b969071ffffffffffffffffffffffffffffffffffff7fffffffffffffffffffffffffffff000000000000000000000000000000000000858954930160901b1691161786551694858552600183526dffffffffffffffffffffffffffff82604087209201167fffffffffffffffffffffffffffffffffffff0000000000000000000000000000825416179055604051908152a3565b6000548060901c9164ffffffffff916115f46115dc8483167f000000000000000000000000000000000000000000000000000000000000000087611359565b6cffffffffffffffffffffffffff8360281c166110eb565b924216907fffffffffffffffffffffffffffff00000000000000000000000000000000000071ffffffffffffffffffffffffff00000000008560281b1691161717600055565b9073ffffffffffffffffffffffffffffffffffffffff9161165961159d565b93909116600090808252600160205260016116ae611736604085209788546dffffffffffffffffffffffffffff93818386809416809d856cffffffffffffffffffffffffff9a8b920154169360701c1661147d565b169385875260016020526040872091600183017fffffffffffffffffffffffffffffffffffff00000000000000000000000000009687825416179055167fffffffffff00000000000000000000000000ffffffffffffffffffffffffffff7affffffffffffffffffffffffff000000000000000000000000000083549260701b169116179055565b600260205264ffffffffff93633b9aca006117616112778a61136e89604087205460701c16426111ea565b0493815260026020526117b96040822095421686907fffffffffffffffffffffffffff0000000000ffffffffffffffffffffffffffff72ffffffffff000000000000000000000000000083549260701b169116179055565b818554941682851601908282116117d557501691161790559190565b807f4e487b7100000000000000000000000000000000000000000000000000000000602492526011600452fdfea2646970667358221220450714bbcef08410c8177a5fbfa400d0b9f5e8c907fd2022711353a2bc76b6a464736f6c63430008180033",
+  "deployedBytecode": "0x60806040908082526004918236101561001757600080fd5b600091823560e01c908163066112f914610c4e5750806306fdde0314610bdc578063095ea7b3146107ab57806316cf09f814610b1b57806318160ddd14610ade57806323b872dd14610aa4578063313ce56714610a6b57806348483382146109e857806359d431b31461099457806370a082311461092357806379131a19146108c25780637997f96d1461086957806395d89b41146107f3578063a8671f6a146107b0578063a9059cbb146107ab578063abe7f1ab14610754578063b061963c1461070a578063bb35783b146106d0578063cab34c0814610662578063cee2960b1461043d578063dd62ed3e146103d7578063f5d82b6b146103535763ff1e03e91461012257600080fd5b3461034f5760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f57610159610ddc565b9073ffffffffffffffffffffffffffffffffffffffff7f00000000000000000000000000000000000000000000000000000000000000001680156103275793839433855260016020526dffffffffffffffffffffffffffff908184872054166102536101f86101c661159d565b939050338a52600160205283888b20916cffffffffffffffffffffffffff97600189855460701c16940154169261147d565b933389526001602052868920921682907fffffffffff00000000000000000000000000ffffffffffffffffffffffffffff7affffffffffffffffffffffffff000000000000000000000000000083549260701b169116179055565b8261025c578680f35b6001017fffffffffffffffffffffffffffffffffffff00000000000000000000000000008154169055803b15610323576102e9948680948651978895869485937f21670f2200000000000000000000000000000000000000000000000000000000855284016020909392919373ffffffffffffffffffffffffffffffffffffffff60408201951681520152565b03925af190811561031a5750610303575b80808080808680f35b61030c90610fce565b6103175780386102fa565b80fd5b513d84823e3d90fd5b8580fd5b8482517fea8e4eb5000000000000000000000000000000000000000000000000000000008152fd5b5080fd5b5082346103d357817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc3601126103d35761038b610ddc565b91338452600360205280842054156103ad57836103aa602435856114be565b80f35b517fea8e4eb5000000000000000000000000000000000000000000000000000000008152fd5b8280fd5b50903461031757817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc3601126103175761040f610ddc565b5060243573ffffffffffffffffffffffffffffffffffffffff8116036104385760209151908152f35b600080fd5b5082346103d35760807ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc3601126103d35773ffffffffffffffffffffffffffffffffffffffff81358181160361065e57827fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdc36011261065e5782519067ffffffffffffffff82850181811184821017610630578552602435835260443560209384015260643590811161032357366023820112156103235780840135906105038261106e565b916105108751938461102d565b80835260248584019160051b8301019136831161062c57602401905b82821061061457505050610564827fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d610354163314611086565b60ff84541615610572578580f35b9091929394805b82518110156105dc578084610590600193866111d6565b511680600052600387527f50b08f8489c009db3c1b3f160cc0dae1c0c6706774750c001e4c083f9483d5f389670de0b6b3a76400008082600020558151908152428a820152a201610579565b50945050505060017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0082541617905581808080808580f35b8135858116810361043857815290850190850161052c565b8880fd5b6041857f4e487b71000000000000000000000000000000000000000000000000000000006000525260246000fd5b8380fd5b503461034f57817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f576020905173ffffffffffffffffffffffffffffffffffffffff7f0000000000000000000000000000000000000000000000000000000000000000168152f35b50913461034f576106e036610ec7565b92909194338552600360205280852054156103ad575050610705826103aa949561139b565b6114be565b503461034f5760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f5760209061074d610748610ddc565b6112b3565b9051908152f35b5082346103d357817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc3601126103d35761078c610ddc565b91338452600360205280842054156103ad57836103aa6024358561139b565b610e65565b503461034f5760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f5760209061074d6107ee610ddc565b61120a565b503461034f57817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f5780516108659161083182611011565b600582527f504f494e5400000000000000000000000000000000000000000000000000000060208301525191829182610dff565b0390f35b5090346103175761087936610f27565b61088281611127565b925b818110610898578451806108658682610f92565b806108b16107ee6108ac6001948688611176565b6111b5565b6108bb82876111d6565b5201610884565b503461034f5760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f578060209273ffffffffffffffffffffffffffffffffffffffff610913610ddc565b1681526003845220549051908152f35b503461034f5760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f576dffffffffffffffffffffffffffff8160209373ffffffffffffffffffffffffffffffffffffffff610983610ddc565b168152600185522054169051908152f35b509034610317576109a436610f27565b6109ad81611127565b925b8181106109c3578451806108658682610f92565b806109d76107486108ac6001948688611176565b6109e182876111d6565b52016109af565b503461034f57817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f5761074d602092546cffffffffffffffffffffffffff610a6164ffffffffff83167f00000000000000000000000000000000000000000000000000000000000000008460901c611359565b9160281c166110eb565b503461034f57817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f576020905160128152f35b5090346103175750610ab536610ec7565b505050517f9cbe2357000000000000000000000000000000000000000000000000000000008152fd5b503461034f57817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f576020915460901c9051908152f35b503461034f57807ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f577f50b08f8489c009db3c1b3f160cc0dae1c0c6706774750c001e4c083f9483d5f3610b73610ddc565b916024359273ffffffffffffffffffffffffffffffffffffffff90610bbc827fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d610354163314611086565b16928360005260036020528082600020558151908152426020820152a280f35b503461034f57817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034f57805161086591610c1a82611011565b600682527f506f696e7473000000000000000000000000000000000000000000000000000060208301525191829182610dff565b849291503461065e5760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261065e57610c89610ddc565b9073ffffffffffffffffffffffffffffffffffffffff7f000000000000000000000000000000000000000000000000000000000000000016908115610db55750908491610cd53361120a565b9182610cdf578380f35b338452600260205284842080547fffffffffffffffffffffffffff000000000000000000000000000000000000001672ffffffffff00000000000000000000000000004260701b16179055813b1561065e5783610d8c968651978895869485937f21670f2200000000000000000000000000000000000000000000000000000000855284016020909392919373ffffffffffffffffffffffffffffffffffffffff60408201951681520152565b03925af190811561031a5750610da6575b80828180808380f35b610daf90610fce565b81610d9d565b807fea8e4eb500000000000000000000000000000000000000000000000000000000869252fd5b6004359073ffffffffffffffffffffffffffffffffffffffff8216820361043857565b60208082528251818301819052939260005b858110610e51575050507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0601f8460006040809697860101520116010190565b818101830151848201604001528201610e11565b346104385760407ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261043857610e9c610ddc565b5060046040517f9cbe2357000000000000000000000000000000000000000000000000000000008152fd5b7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc60609101126104385773ffffffffffffffffffffffffffffffffffffffff90600435828116810361043857916024359081168103610438579060443590565b9060207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc8301126104385760043567ffffffffffffffff9283821161043857806023830112156104385781600401359384116104385760248460051b83010111610438576024019190565b602090602060408183019282815285518094520193019160005b828110610fba575050505090565b835185529381019392810192600101610fac565b67ffffffffffffffff8111610fe257604052565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b6040810190811067ffffffffffffffff821117610fe257604052565b90601f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0910116810190811067ffffffffffffffff821117610fe257604052565b67ffffffffffffffff8111610fe25760051b60200190565b1561108d57565b60646040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152600e60248201527f4e4f545f415554484f52495a45440000000000000000000000000000000000006044820152fd5b919082018092116110f857565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b906111318261106e565b61113e604051918261102d565b8281527fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe061116c829461106e565b0190602036910137565b91908110156111865760051b0190565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052603260045260246000fd5b3573ffffffffffffffffffffffffffffffffffffffff811681036104385790565b80518210156111865760209160051b010190565b919082039182116110f857565b818102929181159184041417156110f857565b73ffffffffffffffffffffffffffffffffffffffff6112b0911660008181526002602052604061124764ffffffffff8284205460701c16426111ea565b918381526001602052633b9aca0061129e6112776dffffffffffffffffffffffffffff95868686205416906111f7565b7f0000000000000000000000000000000000000000000000000000000000000000906111f7565b049381526002602052205416906110eb565b90565b73ffffffffffffffffffffffffffffffffffffffff6112b09116806000526001602052604060002054906cffffffffffffffffffffffffff916dffffffffffffffffffffffffffff9261133860005482610a6164ffffffffff83167f00000000000000000000000000000000000000000000000000000000000000008460901c611359565b92600052600160205283600160406000200154169382169160701c1661147d565b919082156113935761136e61137392426111ea565b6111f7565b69d3c21bcecceda1000000908181029181830414901517156110f8570490565b505050600090565b8115611479577fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef602060009373ffffffffffffffffffffffffffffffffffffffff6113e58561163a565b959071ffffffffffffffffffffffffffffffffffff7fffffffffffffffffffffffffffff000000000000000000000000000000000000858a54930360901b1691161787551693848652600183526dffffffffffffffffffffffffffff82604088209203167fffffffffffffffffffffffffffffffffffff0000000000000000000000000000825416179055604051908152a3565b5050565b61148a90611490936111ea565b906111f7565b9064e8d4a51000918281029281840414901517156110f85769d3c21bcecceda10000006112b09204906110eb565b908015611479577fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef602060009273ffffffffffffffffffffffffffffffffffffffff6115098661163a565b969071ffffffffffffffffffffffffffffffffffff7fffffffffffffffffffffffffffff000000000000000000000000000000000000858954930160901b1691161786551694858552600183526dffffffffffffffffffffffffffff82604087209201167fffffffffffffffffffffffffffffffffffff0000000000000000000000000000825416179055604051908152a3565b6000548060901c9164ffffffffff916115f46115dc8483167f000000000000000000000000000000000000000000000000000000000000000087611359565b6cffffffffffffffffffffffffff8360281c166110eb565b924216907fffffffffffffffffffffffffffff00000000000000000000000000000000000071ffffffffffffffffffffffffff00000000008560281b1691161717600055565b9073ffffffffffffffffffffffffffffffffffffffff9161165961159d565b93909116600090808252600160205260016116ae611736604085209788546dffffffffffffffffffffffffffff93818386809416809d856cffffffffffffffffffffffffff9a8b920154169360701c1661147d565b169385875260016020526040872091600183017fffffffffffffffffffffffffffffffffffff00000000000000000000000000009687825416179055167fffffffffff00000000000000000000000000ffffffffffffffffffffffffffff7affffffffffffffffffffffffff000000000000000000000000000083549260701b169116179055565b600260205264ffffffffff93633b9aca006117616112778a61136e89604087205460701c16426111ea565b0493815260026020526117b96040822095421686907fffffffffffffffffffffffffff0000000000ffffffffffffffffffffffffffff72ffffffffff000000000000000000000000000083549260701b169116179055565b818554941682851601908282116117d557501691161790559190565b807f4e487b7100000000000000000000000000000000000000000000000000000000602492526011600452fdfea2646970667358221220450714bbcef08410c8177a5fbfa400d0b9f5e8c907fd2022711353a2bc76b6a464736f6c63430008180033",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "devdoc": {
+    "events": {
+      "Approval(address,address,uint256)": {
+        "params": {
+          "owner": "the account approving the `spender`",
+          "spender": "the account allowed to spend",
+          "value": "the amount granted"
+        }
+      },
+      "Transfer(address,address,uint256)": {
+        "params": {
+          "from": "the account the tokens are sent from",
+          "to": "the account the tokens are sent to",
+          "value": "number of tokens sent"
+        }
+      }
+    },
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "evm": {
+    "gasEstimates": {
+      "creation": {
+        "codeDepositCost": "1240000",
+        "executionCost": "infinite",
+        "totalCost": "infinite"
+      },
+      "external": {
+        "REWARD()": "infinite",
+        "add(address,uint256)": "infinite",
+        "allowance(address,address)": "709",
+        "approve(address,uint256)": "289",
+        "balanceOf(address)": "2606",
+        "claimFixedRewards(address)": "infinite",
+        "claimSharedPoolRewards(address)": "infinite",
+        "decimals()": "304",
+        "earnedFromFixedRate(address)": "infinite",
+        "earnedFromFixedRateMultipleAccounts(address[])": "infinite",
+        "earnedFromPoolRate(address)": "infinite",
+        "earnedFromPoolRateMultipleAccounts(address[])": "infinite",
+        "enableGame(address,uint256)": "26303",
+        "games(address)": "2622",
+        "getTotalRewardPerPointWithPrecision24()": "infinite",
+        "move(address,address,uint256)": "infinite",
+        "name()": "infinite",
+        "postUpgrade(address,(uint256,uint256),address[])": "infinite",
+        "remove(address,uint256)": "infinite",
+        "symbol()": "infinite",
+        "totalSupply()": "2369",
+        "transfer(address,uint256)": "553",
+        "transferFrom(address,address,uint256)": "403"
+      },
+      "internal": {
+        "_add(address,uint256)": "infinite",
+        "_computeExtraTotalRewardPerPointSinceLastTime(uint256,uint256,uint256)": "259",
+        "_computeRewardsEarned(uint256,uint256,uint256,uint256)": "304",
+        "_enableGame(address,uint256)": "infinite",
+        "_postUpgrade(contract IReward,struct RewardsGenerator.Config memory,address[] memory)": "infinite",
+        "_remove(address,uint256)": "infinite",
+        "_update(address)": "infinite",
+        "_updateAccount(address,uint256)": "infinite",
+        "_updateGlobal()": "infinite"
+      }
+    }
+  },
+  "metadata": "{\"compiler\":{\"version\":\"0.8.24+commit.e11b9ed9\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"contract IReward\",\"name\":\"rewardAddress\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"rewardRateMillionth\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"fixedRewardRateThousandsMillionth\",\"type\":\"uint256\"}],\"internalType\":\"struct RewardsGenerator.Config\",\"name\":\"config\",\"type\":\"tuple\"},{\"internalType\":\"address[]\",\"name\":\"initialGames\",\"type\":\"address[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"NonTransferable\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NotAuthorized\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"game\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"weight\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"GameEnabled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"REWARD\",\"outputs\":[{\"internalType\":\"contract IReward\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"add\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"}],\"name\":\"claimFixedRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"}],\"name\":\"claimSharedPoolRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"earnedFromFixedRate\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"accounts\",\"type\":\"address[]\"}],\"name\":\"earnedFromFixedRateMultipleAccounts\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"result\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"earnedFromPoolRate\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"accounts\",\"type\":\"address[]\"}],\"name\":\"earnedFromPoolRateMultipleAccounts\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"result\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"game\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"weight\",\"type\":\"uint256\"}],\"name\":\"enableGame\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"games\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getTotalRewardPerPointWithPrecision24\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"move\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contract IReward\",\"name\":\"rewardAddress\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"rewardRateMillionth\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"fixedRewardRateThousandsMillionth\",\"type\":\"uint256\"}],\"internalType\":\"struct RewardsGenerator.Config\",\"name\":\"config\",\"type\":\"tuple\"},{\"internalType\":\"address[]\",\"name\":\"initialGames\",\"type\":\"address[]\"}],\"name\":\"postUpgrade\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"remove\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"pure\",\"type\":\"function\"}],\"devdoc\":{\"events\":{\"Approval(address,address,uint256)\":{\"params\":{\"owner\":\"the account approving the `spender`\",\"spender\":\"the account allowed to spend\",\"value\":\"the amount granted\"}},\"Transfer(address,address,uint256)\":{\"params\":{\"from\":\"the account the tokens are sent from\",\"to\":\"the account the tokens are sent to\",\"value\":\"number of tokens sent\"}}},\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"errors\":{\"NonTransferable()\":[{\"notice\":\"Token cannot be transfered\"}],\"NotAuthorized()\":[{\"notice\":\"Not authorized to perform this operation\"}]},\"events\":{\"Approval(address,address,uint256)\":{\"notice\":\"trigger on approval amount being set.   Note that Transfer events need to be considered to compute the current allowance.\"},\"Transfer(address,address,uint256)\":{\"notice\":\"trigger when tokens are transferred, including zero value transfers.\"}},\"kind\":\"user\",\"methods\":{\"allowance(address,address)\":{\"notice\":\"Returns the amount which `spender` is still allowed to withdraw from `owner`.\"},\"approve(address,uint256)\":{\"notice\":\"Allows `spender` to withdraw from your account multiple times, up to `amount`.\"},\"balanceOf(address)\":{\"notice\":\"Returns the account balance of another account with address `owner`.\"},\"claimFixedRewards(address)\":{\"notice\":\"claim the rewards earned so far using a fixed rate per point\"},\"claimSharedPoolRewards(address)\":{\"notice\":\"claim the rewards earned so far in the shared pool\"},\"decimals()\":{\"notice\":\"Returns the number of decimals the token uses.\"},\"earnedFromFixedRate(address)\":{\"notice\":\"The amount of reward an account has accrued so far. Does not include already withdrawn rewards.\"},\"earnedFromFixedRateMultipleAccounts(address[])\":{\"notice\":\"The amount of reward an account has accrued so far. Does not include already withdrawn rewards.\"},\"earnedFromPoolRate(address)\":{\"notice\":\"The amount of reward an account has accrued so far. Does not include already withdrawn rewards.\"},\"earnedFromPoolRateMultipleAccounts(address[])\":{\"notice\":\"The amount of reward an account has accrued so far. Does not include already withdrawn rewards.\"},\"getTotalRewardPerPointWithPrecision24()\":{\"notice\":\"The amount of reward each point has earned so far\"},\"name()\":{\"notice\":\"Returns the name of the token.\"},\"symbol()\":{\"notice\":\"Returns the symbol of the token.\"},\"totalSupply()\":{\"notice\":\"Returns the total token supply.\"},\"transfer(address,uint256)\":{\"notice\":\"Transfers `amount` of tokens to address `to`.\"},\"transferFrom(address,address,uint256)\":{\"notice\":\"Transfers `amount` tokens from address `from` to address `to`.\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"src/token/RewardsGenerator.sol\":\"RewardsGenerator\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":999999},\"remappings\":[],\"viaIR\":true},\"sources\":{\"solidity-kit/solc_0_8/ERC20/interfaces/IERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport \\\"./UsingERC20Events.sol\\\";\\n\\ninterface IERC20 is UsingERC20Events {\\n    /// @notice Returns the total token supply.\\n    function totalSupply() external view returns (uint256);\\n\\n    /// @notice Returns the number of decimals the token uses.\\n    function decimals() external view returns (uint8);\\n\\n    /// @notice Returns the symbol of the token.\\n    function symbol() external view returns (string memory);\\n\\n    /// @notice Returns the name of the token.\\n    function name() external view returns (string memory);\\n\\n    /// @notice Returns the account balance of another account with address `owner`.\\n    function balanceOf(address owner) external view returns (uint256);\\n\\n    /// @notice Transfers `amount` of tokens to address `to`.\\n    function transfer(address to, uint256 amount) external returns (bool);\\n\\n    /// @notice Returns the amount which `spender` is still allowed to withdraw from `owner`.\\n    function allowance(address owner, address spender) external view returns (uint256);\\n\\n    /// @notice Allows `spender` to withdraw from your account multiple times, up to `amount`.\\n    function approve(address spender, uint256 amount) external returns (bool);\\n\\n    /// @notice Transfers `amount` tokens from address `from` to address `to`.\\n    function transferFrom(address from, address to, uint256 amount) external returns (bool);\\n}\\n\",\"keccak256\":\"0x3a6bcd5cf1d9e50fbe405f4c6c9c868e97ce2a84ae99fd7c1fb2d916c4d5debd\",\"license\":\"MIT\"},\"solidity-kit/solc_0_8/ERC20/interfaces/UsingERC20Events.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\ninterface UsingERC20Events {\\n    /// @notice trigger when tokens are transferred, including zero value transfers.\\n    /// @param from the account the tokens are sent from\\n    /// @param to the account the tokens are sent to\\n    /// @param value number of tokens sent\\n    event Transfer(address indexed from, address indexed to, uint256 value);\\n\\n    /// @notice trigger on approval amount being set.\\n    ///   Note that Transfer events need to be considered to compute the current allowance.\\n    /// @param owner the account approving the `spender`\\n    /// @param spender the account allowed to spend\\n    /// @param value the amount granted\\n    event Approval(address indexed owner, address indexed spender, uint256 value);\\n}\\n\",\"keccak256\":\"0x15eaa1de7fe9e02ba9e83f262b2b7f33a4bfe0f5a3ae2be4d616b6c4dce1c6fa\",\"license\":\"MIT\"},\"solidity-kit/solc_0_8/utils/UsingGenericErrors.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\ninterface UsingGenericErrors {\\n    /// @notice Not authorized to perform this operation\\n    error NotAuthorized();\\n\\n    /// @notice Token cannot be transfered\\n    error NonTransferable();\\n\\n    /// @notice function is not implemented\\n    error NotImplemented();\\n}\\n\",\"keccak256\":\"0x20c56b2d5fb3d35c86ba8325a342f4e7c21c8db3c5edf967f7ddd0c49f692e8f\",\"license\":\"MIT\"},\"solidity-proxy/solc_0_8/ERC1967/Proxied.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nabstract contract Proxied {\\n    /// @notice to be used by initialisation / postUpgrade function so that only the proxy's admin can execute them\\n    /// It also allows these functions to be called inside a contructor\\n    /// even if the contract is meant to be used without proxy\\n    modifier proxied() {\\n        address proxyAdminAddress = _proxyAdmin();\\n        // With hardhat-deploy proxies\\n        // the proxyAdminAddress is zero only for the implementation contract\\n        // if the implementation contract want to be used as a standalone/immutable contract\\n        // it simply has to execute the `proxied` function\\n        // This ensure the proxyAdminAddress is never zero post deployment\\n        // And allow you to keep the same code for both proxied contract and immutable contract\\n        if (proxyAdminAddress == address(0)) {\\n            // ensure can not be called twice when used outside of proxy : no admin\\n            // solhint-disable-next-line security/no-inline-assembly\\n            assembly {\\n                sstore(\\n                    0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103,\\n                    0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\\n                )\\n            }\\n        } else {\\n            require(msg.sender == proxyAdminAddress);\\n        }\\n        _;\\n    }\\n\\n    modifier onlyProxyAdmin() {\\n        require(msg.sender == _proxyAdmin(), \\\"NOT_AUTHORIZED\\\");\\n        _;\\n    }\\n\\n    function _proxyAdmin() internal view returns (address ownerAddress) {\\n        // solhint-disable-next-line security/no-inline-assembly\\n        assembly {\\n            ownerAddress := sload(0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103)\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0xaaceeafeeaf0d200ca3942d8bf14c1c4f787a77f79cc87c08bb668e65acdee29\",\"license\":\"MIT\"},\"src/token/RewardsGenerator.sol\":{\"content\":\"// SPDX-License-Identifier: AGPL-3.0\\npragma solidity ^0.8.0;\\n\\nimport \\\"solidity-kit/solc_0_8/ERC20/interfaces/IERC20.sol\\\";\\nimport \\\"./interface/IOnStakeChange.sol\\\";\\nimport \\\"./interface/IReward.sol\\\";\\nimport \\\"solidity-proxy/solc_0_8/ERC1967/Proxied.sol\\\";\\nimport \\\"solidity-kit/solc_0_8/utils/UsingGenericErrors.sol\\\";\\n\\ncontract RewardsGenerator is IERC20, IOnStakeChange, Proxied {\\n    uint256 internal constant PRECISION = 1e24;\\n    uint256 internal constant DECIMALS_18_MILLIONTH = 1000000000000; // 1 millionth of a token so that it matches with REWARD_RATE_millionth\\n\\n    uint256 internal immutable REWARD_RATE_millionth;\\n    uint256 internal immutable FIXED_REWARD_RATE_thousands_millionth;\\n\\n    event GameEnabled(address indexed game, uint256 weight, uint256 timestamp);\\n\\n    struct GlobalState {\\n        uint40 lastUpdateTime;\\n        uint104 totalRewardPerPointAtLastUpdate; // PRECISION = 1e24\\n        uint112 totalPoints;\\n    }\\n    GlobalState _global;\\n\\n    struct SharedRatePerAccount {\\n        uint112 points;\\n        uint104 totalRewardPerPointAccounted; // PRECISION = 1e24\\n        // we do not pack here as we want to keep precision\\n        uint112 rewardsToWithdraw;\\n    }\\n\\n    mapping(address => SharedRatePerAccount) _sharedRateRewardPerAccount;\\n\\n    struct FixedRate {\\n        uint112 toWithdraw;\\n        uint40 lastTime;\\n    }\\n    mapping(address => FixedRate) internal _fixedRateRewardPerAccount;\\n\\n    mapping(address => uint256) public games;\\n\\n    IReward public immutable REWARD;\\n\\n    struct Config {\\n        uint256 rewardRateMillionth;\\n        uint256 fixedRewardRateThousandsMillionth;\\n    }\\n\\n    bool internal _init;\\n\\n    constructor(IReward rewardAddress, Config memory config, address[] memory initialGames) {\\n        REWARD = rewardAddress;\\n        REWARD_RATE_millionth = config.rewardRateMillionth;\\n        FIXED_REWARD_RATE_thousands_millionth = config.fixedRewardRateThousandsMillionth;\\n\\n        _postUpgrade(rewardAddress, config, initialGames);\\n    }\\n\\n    function postUpgrade(\\n        IReward rewardAddress,\\n        Config memory config,\\n        address[] memory initialGames\\n    ) external onlyProxyAdmin {\\n        _postUpgrade(rewardAddress, config, initialGames);\\n    }\\n\\n    function _postUpgrade(IReward, Config memory, address[] memory initialGames) internal {\\n        if (!_init) {\\n            for (uint256 i = 0; i < initialGames.length; i++) {\\n                _enableGame(initialGames[i], 1000000000000000000);\\n            }\\n            _init = true;\\n        }\\n    }\\n\\n    string public constant symbol = \\\"POINT\\\";\\n\\n    /// @inheritdoc IERC20\\n    function name() public pure returns (string memory) {\\n        return \\\"Points\\\";\\n    }\\n\\n    function enableGame(address game, uint256 weight) external onlyProxyAdmin {\\n        _enableGame(game, weight);\\n    }\\n\\n    function _enableGame(address game, uint256 weight) internal {\\n        games[game] = weight;\\n        emit GameEnabled(game, weight, block.timestamp);\\n    }\\n\\n    /// @inheritdoc IOnStakeChange\\n    function add(address account, uint256 amount) external override onlyGames {\\n        _add(account, amount);\\n    }\\n\\n    function _add(address account, uint256 amount) internal {\\n        if (amount == 0) {\\n            return;\\n        }\\n\\n        (uint256 totalPointsSoFar, uint256 accountPointsSoFar) = _update(account);\\n\\n        unchecked {\\n            // update total points and the account's point, their reward will be counted on next interaction.\\n            _global.totalPoints = uint112(totalPointsSoFar + amount);\\n            _sharedRateRewardPerAccount[account].points = uint112(accountPointsSoFar + amount);\\n        }\\n        emit Transfer(address(0), account, amount);\\n    }\\n\\n    /// @inheritdoc IOnStakeChange\\n    function remove(address account, uint256 amount) external override onlyGames {\\n        _remove(account, amount);\\n    }\\n\\n    function _remove(address account, uint256 amount) internal {\\n        if (amount == 0) {\\n            return;\\n        }\\n\\n        // update the amount generated, store it in\\n        (uint256 totalPointsSoFar, uint256 accountPointsSoFar) = _update(account);\\n\\n        unchecked {\\n            // update total points and the account's point, their reward will be counted on next interaction.\\n            _global.totalPoints = uint112(totalPointsSoFar - amount);\\n            _sharedRateRewardPerAccount[account].points = uint112(accountPointsSoFar - amount);\\n        }\\n        emit Transfer(account, address(0), amount);\\n    }\\n\\n    /// @inheritdoc IOnStakeChange\\n    function move(address from, address to, uint256 amount) external override onlyGames {\\n        _remove(from, amount);\\n        _add(to, amount);\\n    }\\n\\n    /// @inheritdoc IERC20\\n    function totalSupply() external view override returns (uint256) {\\n        return _global.totalPoints;\\n    }\\n\\n    /// @inheritdoc IERC20\\n    function balanceOf(address owner) external view override returns (uint256) {\\n        return _sharedRateRewardPerAccount[owner].points;\\n    }\\n\\n    /// @inheritdoc IERC20\\n    function allowance(address, address) external pure override returns (uint256) {\\n        return 0;\\n    }\\n\\n    /// @inheritdoc IERC20\\n    function decimals() external pure virtual returns (uint8) {\\n        return uint8(18);\\n    }\\n\\n    /// @inheritdoc IERC20\\n    function transfer(address, uint256) external pure returns (bool) {\\n        revert UsingGenericErrors.NonTransferable();\\n    }\\n\\n    /// @inheritdoc IERC20\\n    function approve(address, uint256) external pure returns (bool) {\\n        revert UsingGenericErrors.NonTransferable();\\n    }\\n\\n    /// @inheritdoc IERC20\\n    function transferFrom(address, address, uint256) external pure returns (bool) {\\n        revert UsingGenericErrors.NonTransferable();\\n    }\\n\\n    // ---------------------------------------------------------------------------------------------------------------\\n    // For Accounts\\n    // ---------------------------------------------------------------------------------------------------------------\\n\\n    /// @notice claim the rewards earned so far in the shared pool\\n    function claimSharedPoolRewards(address to) external {\\n        if (address(REWARD) == address(0)) {\\n            revert UsingGenericErrors.NotAuthorized();\\n        }\\n        address account = msg.sender;\\n        uint256 accountPointsSoFar = _sharedRateRewardPerAccount[account].points;\\n\\n        (, uint256 totalRewardPerPoint) = _updateGlobal();\\n        uint256 amount = _computeRewardsEarned(\\n            _sharedRateRewardPerAccount[account].totalRewardPerPointAccounted,\\n            accountPointsSoFar,\\n            totalRewardPerPoint,\\n            _sharedRateRewardPerAccount[account].rewardsToWithdraw\\n        );\\n        _sharedRateRewardPerAccount[account].totalRewardPerPointAccounted = uint104(totalRewardPerPoint);\\n\\n        if (amount > 0) {\\n            _sharedRateRewardPerAccount[account].rewardsToWithdraw = 0;\\n            REWARD.reward(to, amount);\\n        }\\n    }\\n\\n    /// @notice claim the rewards earned so far using a fixed rate per point\\n    function claimFixedRewards(address to) external {\\n        if (address(REWARD) == address(0)) {\\n            revert UsingGenericErrors.NotAuthorized();\\n        }\\n        address account = msg.sender;\\n        uint256 amount = earnedFromFixedRate(account);\\n        if (amount > 0) {\\n            _fixedRateRewardPerAccount[account].lastTime = uint40(block.timestamp);\\n            _fixedRateRewardPerAccount[account].toWithdraw = 0;\\n            REWARD.reward(to, amount);\\n        }\\n    }\\n\\n    // ---------------------------------------------------------------------------------------------------------------\\n    // Getters\\n    // ---------------------------------------------------------------------------------------------------------------\\n\\n    /// @notice The amount of reward each point has earned so far\\n    function getTotalRewardPerPointWithPrecision24() external view returns (uint256) {\\n        return\\n            _global.totalRewardPerPointAtLastUpdate +\\n            _computeExtraTotalRewardPerPointSinceLastTime(\\n                _global.totalPoints,\\n                REWARD_RATE_millionth,\\n                _global.lastUpdateTime\\n            );\\n    }\\n\\n    /// @notice The amount of reward an account has accrued so far. Does not include already withdrawn rewards.\\n    function earnedFromPoolRate(address account) public view returns (uint256) {\\n        return\\n            _computeRewardsEarned(\\n                _sharedRateRewardPerAccount[account].totalRewardPerPointAccounted,\\n                _sharedRateRewardPerAccount[account].points,\\n                _global.totalRewardPerPointAtLastUpdate +\\n                    _computeExtraTotalRewardPerPointSinceLastTime(\\n                        _global.totalPoints,\\n                        REWARD_RATE_millionth,\\n                        _global.lastUpdateTime\\n                    ),\\n                _sharedRateRewardPerAccount[account].rewardsToWithdraw\\n            );\\n    }\\n\\n    /// @notice The amount of reward an account has accrued so far. Does not include already withdrawn rewards.\\n    function earnedFromFixedRate(address account) public view returns (uint256) {\\n        uint256 extraFixed = ((block.timestamp - _fixedRateRewardPerAccount[account].lastTime) *\\n            _sharedRateRewardPerAccount[account].points *\\n            FIXED_REWARD_RATE_thousands_millionth) / 1000000000;\\n        return extraFixed + _fixedRateRewardPerAccount[account].toWithdraw;\\n    }\\n\\n    /// @notice The amount of reward an account has accrued so far. Does not include already withdrawn rewards.\\n    function earnedFromFixedRateMultipleAccounts(\\n        address[] calldata accounts\\n    ) external view returns (uint256[] memory result) {\\n        result = new uint256[](accounts.length);\\n        for (uint256 i = 0; i < accounts.length; i++) {\\n            result[i] = earnedFromFixedRate(accounts[i]);\\n        }\\n    }\\n\\n    /// @notice The amount of reward an account has accrued so far. Does not include already withdrawn rewards.\\n    function earnedFromPoolRateMultipleAccounts(\\n        address[] calldata accounts\\n    ) external view returns (uint256[] memory result) {\\n        result = new uint256[](accounts.length);\\n        for (uint256 i = 0; i < accounts.length; i++) {\\n            result[i] = earnedFromPoolRate(accounts[i]);\\n        }\\n    }\\n    // ---------------------------------------------------------------------------------------------------------------\\n    // Internal\\n    // ---------------------------------------------------------------------------------------------------------------\\n\\n    function _computeRewardsEarned(\\n        uint256 totalRewardPerPointAccountedSoFar,\\n        uint256 accountPoints,\\n        uint256 currentTotalRewardPerPoint,\\n        uint256 accountRewardsSoFar\\n    ) internal pure returns (uint256) {\\n        return\\n            accountRewardsSoFar +\\n            (((accountPoints * (currentTotalRewardPerPoint - totalRewardPerPointAccountedSoFar)) *\\n                DECIMALS_18_MILLIONTH) / PRECISION);\\n    }\\n\\n    function _computeExtraTotalRewardPerPointSinceLastTime(\\n        uint256 totalPoints,\\n        uint256 rewardRateMillionth,\\n        uint256 lastUpdateTime\\n    ) internal view returns (uint256) {\\n        if (totalPoints == 0) {\\n            return 0;\\n        }\\n        return ((block.timestamp - lastUpdateTime) * rewardRateMillionth * PRECISION) / totalPoints;\\n    }\\n\\n    function _updateGlobal() internal returns (uint256 totalPointsSoFar, uint256 totalRewardPerPointAllocatedSoFar) {\\n        totalPointsSoFar = _global.totalPoints;\\n\\n        uint256 extraTotalRewardPerPoint = _computeExtraTotalRewardPerPointSinceLastTime(\\n            totalPointsSoFar,\\n            REWARD_RATE_millionth,\\n            _global.lastUpdateTime\\n        );\\n\\n        totalRewardPerPointAllocatedSoFar = _global.totalRewardPerPointAtLastUpdate + extraTotalRewardPerPoint;\\n\\n        _global.totalRewardPerPointAtLastUpdate = uint104(totalRewardPerPointAllocatedSoFar);\\n        _global.lastUpdateTime = uint40(block.timestamp);\\n    }\\n\\n    function _updateAccount(\\n        address account,\\n        uint256 totalRewardPerPointAllocatedSoFar\\n    ) internal returns (uint256 accountPointsSoFar) {\\n        accountPointsSoFar = _sharedRateRewardPerAccount[account].points;\\n\\n        // update the reward that can be withdrawn, catching up account state to global\\n        _sharedRateRewardPerAccount[account].rewardsToWithdraw = uint112(\\n            _computeRewardsEarned(\\n                // last checkpoint : when was the account last updated\\n                _sharedRateRewardPerAccount[account].totalRewardPerPointAccounted,\\n                accountPointsSoFar,\\n                totalRewardPerPointAllocatedSoFar,\\n                // rewards already registered\\n                _sharedRateRewardPerAccount[account].rewardsToWithdraw\\n            )\\n        );\\n        _sharedRateRewardPerAccount[account].totalRewardPerPointAccounted = uint104(totalRewardPerPointAllocatedSoFar);\\n\\n        uint256 extraFixed = ((block.timestamp - _fixedRateRewardPerAccount[account].lastTime) *\\n            accountPointsSoFar *\\n            FIXED_REWARD_RATE_thousands_millionth) / 1000000000;\\n        _fixedRateRewardPerAccount[account].lastTime = uint40(block.timestamp);\\n        _fixedRateRewardPerAccount[account].toWithdraw += uint112(extraFixed);\\n    }\\n\\n    function _update(address account) internal returns (uint256, uint256) {\\n        (uint256 totalPointsSoFar, uint256 totalRewardPerPointAllocatedSoFar) = _updateGlobal();\\n        uint256 accountPointsSoFar = _updateAccount(account, totalRewardPerPointAllocatedSoFar);\\n        return (totalPointsSoFar, accountPointsSoFar);\\n    }\\n\\n    // ---------------------------------------------------------------------------------------------------------------\\n    // Modifiers\\n    // ---------------------------------------------------------------------------------------------------------------\\n\\n    modifier onlyGames() {\\n        if (games[msg.sender] == 0) {\\n            revert UsingGenericErrors.NotAuthorized();\\n        }\\n        _;\\n    }\\n}\\n\",\"keccak256\":\"0xe8fbe31ec2a5f393c78deb6bec9c265863ee30fb213c856017f629947cfd2565\",\"license\":\"AGPL-3.0\"},\"src/token/interface/IOnStakeChange.sol\":{\"content\":\"// SPDX-License-Identifier: AGPL-3.0\\npragma solidity ^0.8.0;\\n\\ninterface IOnStakeChange {\\n    function add(address account, uint256 amount) external;\\n\\n    function remove(address account, uint256 amount) external;\\n\\n    function move(address from, address to, uint256 amount) external;\\n}\\n\",\"keccak256\":\"0xb73017e0afe41fc34d5ce6382ae3f67bc08eaffeedcf7064ca4205e54035dc38\",\"license\":\"AGPL-3.0\"},\"src/token/interface/IReward.sol\":{\"content\":\"// SPDX-License-Identifier: AGPL-3.0\\npragma solidity ^0.8.0;\\n\\ninterface IReward {\\n    function reward(address to, uint256 amount) external;\\n}\\n\",\"keccak256\":\"0xae796045d2b5cc17bb3799025ac0b02f4db432d625d7d52348702912a32091f1\",\"license\":\"AGPL-3.0\"}},\"version\":1}",
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 203,
+        "contract": "src/token/RewardsGenerator.sol:RewardsGenerator",
+        "label": "_global",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_struct(GlobalState)200_storage"
+      },
+      {
+        "astId": 215,
+        "contract": "src/token/RewardsGenerator.sol:RewardsGenerator",
+        "label": "_sharedRateRewardPerAccount",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_mapping(t_address,t_struct(SharedRatePerAccount)210_storage)"
+      },
+      {
+        "astId": 225,
+        "contract": "src/token/RewardsGenerator.sol:RewardsGenerator",
+        "label": "_fixedRateRewardPerAccount",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_mapping(t_address,t_struct(FixedRate)220_storage)"
+      },
+      {
+        "astId": 229,
+        "contract": "src/token/RewardsGenerator.sol:RewardsGenerator",
+        "label": "games",
+        "offset": 0,
+        "slot": "3",
+        "type": "t_mapping(t_address,t_uint256)"
+      },
+      {
+        "astId": 239,
+        "contract": "src/token/RewardsGenerator.sol:RewardsGenerator",
+        "label": "_init",
+        "offset": 0,
+        "slot": "4",
+        "type": "t_bool"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_bool": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      },
+      "t_mapping(t_address,t_struct(FixedRate)220_storage)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => struct RewardsGenerator.FixedRate)",
+        "numberOfBytes": "32",
+        "value": "t_struct(FixedRate)220_storage"
+      },
+      "t_mapping(t_address,t_struct(SharedRatePerAccount)210_storage)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => struct RewardsGenerator.SharedRatePerAccount)",
+        "numberOfBytes": "32",
+        "value": "t_struct(SharedRatePerAccount)210_storage"
+      },
+      "t_mapping(t_address,t_uint256)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": "t_uint256"
+      },
+      "t_struct(FixedRate)220_storage": {
+        "encoding": "inplace",
+        "label": "struct RewardsGenerator.FixedRate",
+        "members": [
+          {
+            "astId": 217,
+            "contract": "src/token/RewardsGenerator.sol:RewardsGenerator",
+            "label": "toWithdraw",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint112"
+          },
+          {
+            "astId": 219,
+            "contract": "src/token/RewardsGenerator.sol:RewardsGenerator",
+            "label": "lastTime",
+            "offset": 14,
+            "slot": "0",
+            "type": "t_uint40"
+          }
+        ],
+        "numberOfBytes": "32"
+      },
+      "t_struct(GlobalState)200_storage": {
+        "encoding": "inplace",
+        "label": "struct RewardsGenerator.GlobalState",
+        "members": [
+          {
+            "astId": 195,
+            "contract": "src/token/RewardsGenerator.sol:RewardsGenerator",
+            "label": "lastUpdateTime",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint40"
+          },
+          {
+            "astId": 197,
+            "contract": "src/token/RewardsGenerator.sol:RewardsGenerator",
+            "label": "totalRewardPerPointAtLastUpdate",
+            "offset": 5,
+            "slot": "0",
+            "type": "t_uint104"
+          },
+          {
+            "astId": 199,
+            "contract": "src/token/RewardsGenerator.sol:RewardsGenerator",
+            "label": "totalPoints",
+            "offset": 18,
+            "slot": "0",
+            "type": "t_uint112"
+          }
+        ],
+        "numberOfBytes": "32"
+      },
+      "t_struct(SharedRatePerAccount)210_storage": {
+        "encoding": "inplace",
+        "label": "struct RewardsGenerator.SharedRatePerAccount",
+        "members": [
+          {
+            "astId": 205,
+            "contract": "src/token/RewardsGenerator.sol:RewardsGenerator",
+            "label": "points",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint112"
+          },
+          {
+            "astId": 207,
+            "contract": "src/token/RewardsGenerator.sol:RewardsGenerator",
+            "label": "totalRewardPerPointAccounted",
+            "offset": 14,
+            "slot": "0",
+            "type": "t_uint104"
+          },
+          {
+            "astId": 209,
+            "contract": "src/token/RewardsGenerator.sol:RewardsGenerator",
+            "label": "rewardsToWithdraw",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_uint112"
+          }
+        ],
+        "numberOfBytes": "64"
+      },
+      "t_uint104": {
+        "encoding": "inplace",
+        "label": "uint104",
+        "numberOfBytes": "13"
+      },
+      "t_uint112": {
+        "encoding": "inplace",
+        "label": "uint112",
+        "numberOfBytes": "14"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      },
+      "t_uint40": {
+        "encoding": "inplace",
+        "label": "uint40",
+        "numberOfBytes": "5"
+      }
+    }
+  },
+  "userdoc": {
+    "errors": {
+      "NonTransferable()": [
+        {
+          "notice": "Token cannot be transfered"
+        }
+      ],
+      "NotAuthorized()": [
+        {
+          "notice": "Not authorized to perform this operation"
+        }
+      ]
+    },
+    "events": {
+      "Approval(address,address,uint256)": {
+        "notice": "trigger on approval amount being set.   Note that Transfer events need to be considered to compute the current allowance."
+      },
+      "Transfer(address,address,uint256)": {
+        "notice": "trigger when tokens are transferred, including zero value transfers."
+      }
+    },
+    "kind": "user",
+    "methods": {
+      "allowance(address,address)": {
+        "notice": "Returns the amount which `spender` is still allowed to withdraw from `owner`."
+      },
+      "approve(address,uint256)": {
+        "notice": "Allows `spender` to withdraw from your account multiple times, up to `amount`."
+      },
+      "balanceOf(address)": {
+        "notice": "Returns the account balance of another account with address `owner`."
+      },
+      "claimFixedRewards(address)": {
+        "notice": "claim the rewards earned so far using a fixed rate per point"
+      },
+      "claimSharedPoolRewards(address)": {
+        "notice": "claim the rewards earned so far in the shared pool"
+      },
+      "decimals()": {
+        "notice": "Returns the number of decimals the token uses."
+      },
+      "earnedFromFixedRate(address)": {
+        "notice": "The amount of reward an account has accrued so far. Does not include already withdrawn rewards."
+      },
+      "earnedFromFixedRateMultipleAccounts(address[])": {
+        "notice": "The amount of reward an account has accrued so far. Does not include already withdrawn rewards."
+      },
+      "earnedFromPoolRate(address)": {
+        "notice": "The amount of reward an account has accrued so far. Does not include already withdrawn rewards."
+      },
+      "earnedFromPoolRateMultipleAccounts(address[])": {
+        "notice": "The amount of reward an account has accrued so far. Does not include already withdrawn rewards."
+      },
+      "getTotalRewardPerPointWithPrecision24()": {
+        "notice": "The amount of reward each point has earned so far"
+      },
+      "name()": {
+        "notice": "Returns the name of the token."
+      },
+      "symbol()": {
+        "notice": "Returns the symbol of the token."
+      },
+      "totalSupply()": {
+        "notice": "Returns the total token supply."
+      },
+      "transfer(address,uint256)": {
+        "notice": "Transfers `amount` of tokens to address `to`."
+      },
+      "transferFrom(address,address,uint256)": {
+        "notice": "Transfers `amount` tokens from address `from` to address `to`."
+      }
+    },
+    "version": 1
+  },
+  "argsData": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000",
+  "transaction": {
+    "hash": "0x40c71a6cc45256d06e3517410a8d16d732e7d25514617a0e48f1e3877be6c917",
+    "origin": "0xbe19b59e8c588d68f475a407c7ba5fe813aeb792"
+  },
+  "receipt": {
+    "confirmations": 0,
+    "blockHash": "0x6e06ffbf5ef6cef8b4099e531e4e8a518ee2684dc928e0dd866cad6ea6d3a6a0",
+    "blockNumber": "0x171c2f",
+    "transactionIndex": "0x1"
+  }
+}
