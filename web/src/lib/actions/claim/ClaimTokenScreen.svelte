@@ -3,95 +3,118 @@
 	import {account, connection, network} from '$lib/blockchain/connection';
 	import ImgBlockie from '../../../utils/ethereum/ImgBlockie.svelte';
 	import tokenClaim from './tokenClaim';
+	import WelcomeContainer from '$lib/ui/tutorial/WelcomeContainer.svelte';
+	import FullScreenModal from '$lib/ui/FullScreenModal.svelte';
 	export let name: string;
 </script>
 
-<!-- TODO tailwind replacement -->
-
 {#if $tokenClaim.inUrl}
-	<div class="tokenClaim">
-		<div class="welcome">
+	<FullScreenModal>
+		<h1 class="welcome">
 			Welcome to {name}
-		</div>
+		</h1>
 		<div class="main">
 			{#if $tokenClaim.error}
-				<p class="m-5 text-error">{$tokenClaim.error}</p>
-				<button class="btn btn-warning" on:click={() => tokenClaim.acknowledgeError()}>ok</button>
+				<p class="error">{$tokenClaim.error}</p>
+				<button class="error" on:click={() => tokenClaim.acknowledgeError()}>ok</button>
 			{:else if $account.state === 'Connected'}
-				<p>Hello</p>
-				<!-- class="inline-block w-12 h-12" -->
-				<p><ImgBlockie address={$account.address} /></p>
-				<p>{$account.address}</p>
-				{#if $network.notSupported}
-					<p class="m-5 text-error">Please switch Your Network.</p>
-					<div>
-						<button class="btn btn-primary" on:click={() => network.switchTo(initialContractsInfos.chainId)}
-							>Switch</button
-						>
-					</div>
-				{:else if $tokenClaim.state === 'Loading'}
-					<p class="text-success">Congratulations! You have been given some tokens to claim.</p>
-					<p class="mt-5">Loading claim...</p>
-				{:else if $tokenClaim.state === 'Available'}
-					<p class="text-success">Congratulations! You have been given some tokens to claim.</p>
-					<button class="btn btn-primary" on:click={() => tokenClaim.claim()}>Claim</button>
-				{:else if $tokenClaim.state === 'SettingUpClaim'}
-					<p class="mt-5">Please wait while the claim is being executed...</p>
-					{#if $tokenClaim.txHash}
-						<p>
-							{#if import.meta.env.VITE_BLOCK_EXPLORER_TRANSACTION}
-								<a
-									href={`${import.meta.env.VITE_BLOCK_EXPLORER_TRANSACTION}${$tokenClaim.txHash}`}
-									target="_blank"
-									class="text-warning hover:text-error underline">{$tokenClaim.txHash}</a
-								>
-							{:else}
-								transaction : {$tokenClaim.txHash}
-							{/if}
+				<div class="user">
+					<ImgBlockie address={$account.address} style="width:64px;height:64px;display: inline-block;" /><span
+						>{$account.address}</span
+					>
+				</div>
+				<div class="info">
+					{#if $network.notSupported}
+						<p class="error">Please switch Your Network.</p>
+						<div>
+							<button class="primary" on:click={() => network.switchTo(initialContractsInfos.chainId)}>Switch</button>
+						</div>
+					{:else if $tokenClaim.state === 'Loading'}
+						<p class="success">Congratulations! You have been given some tokens to claim.</p>
+						<p class="">Loading claim...</p>
+					{:else if $tokenClaim.state === 'Available'}
+						<p class="success">Congratulations! You have been given some tokens to claim.</p>
+						<button class="error" on:click={() => connection.disconnect()}>Disconnect</button>
+						<button class="primary" on:click={() => tokenClaim.claim()}>Claim</button>
+					{:else if $tokenClaim.state === 'SettingUpClaim'}
+						<p>Please wait while the claim is being executed...</p>
+						{#if $tokenClaim.txHash}
+							<p>
+								{#if import.meta.env.VITE_BLOCK_EXPLORER_TRANSACTION}
+									<a
+										href={`${import.meta.env.VITE_BLOCK_EXPLORER_TRANSACTION}${$tokenClaim.txHash}`}
+										target="_blank"
+										class="underline">{$tokenClaim.txHash}</a
+									>
+								{:else}
+									transaction : {$tokenClaim.txHash}
+								{/if}
+							</p>
+						{/if}
+					{:else if $tokenClaim.state === 'Claiming'}
+						<p>Please wait while the claim is being executed...</p>
+						{#if $tokenClaim.txHash}
+							<p>
+								{#if import.meta.env.VITE_BLOCK_EXPLORER_TRANSACTION}
+									<a
+										href={`${import.meta.env.VITE_BLOCK_EXPLORER_TRANSACTION}${$tokenClaim.txHash}`}
+										target="_blank"
+										class="underline">{$tokenClaim.txHash}</a
+									>
+								{:else}
+									transaction : {$tokenClaim.txHash}
+								{/if}
+							</p>
+						{/if}
+					{:else if $tokenClaim.state === 'Claimed'}
+						<p class="success">The tokens are now yours!</p>
+						<button class="primary" on:click={() => tokenClaim.clearURL()}>Continue</button>
+					{:else if $tokenClaim.state === 'AlreadyClaimedAnother'}
+						<p class="error">
+							You already claimed tokens at this address. To ensure fairness, you should not be using multiple accounts
+							or claim keys.
 						</p>
+						<button class="primary" on:click={() => tokenClaim.clearURL()}>Continue</button>
+					{:else if $tokenClaim.state === 'AlreadyClaimed'}
+						<p class="error">The tokens have already been claimed. No more tokens to be given.</p>
+						<button class="primary" on:click={() => tokenClaim.clearURL()}>Continue</button>
 					{/if}
-				{:else if $tokenClaim.state === 'Claiming'}
-					<p class="mt-5">Please wait while the claim is being executed...</p>
-					{#if $tokenClaim.txHash}
-						<p>
-							{#if import.meta.env.VITE_BLOCK_EXPLORER_TRANSACTION}
-								<a
-									href={`${import.meta.env.VITE_BLOCK_EXPLORER_TRANSACTION}${$tokenClaim.txHash}`}
-									target="_blank"
-									class="text-warning hover:text-error underline">{$tokenClaim.txHash}</a
-								>
-							{:else}
-								transaction : {$tokenClaim.txHash}
-							{/if}
-						</p>
-					{/if}
-				{:else if $tokenClaim.state === 'Claimed'}
-					<p class="m-5 text-success">The tokens are now yours!</p>
-					<button class="btn btn-primary" on:click={() => tokenClaim.clearURL()}>Continue</button>
-				{:else if $tokenClaim.state === 'AlreadyClaimedAnother'}
-					<p class="m-5 text-error">
-						You already claimed tokens at this address. To ensure fairness, you should not be using multiple accounts or
-						claim keys.
-					</p>
-					<button class="btn btn-primary" on:click={() => tokenClaim.clearURL()}>Continue</button>
-				{:else if $tokenClaim.state === 'AlreadyClaimed'}
-					<p class="m-5 text-error">The tokens have already been claimed. No more tokens to be given.</p>
-					<button class="btn btn-primary" on:click={() => tokenClaim.clearURL()}>Continue</button>
-				{/if}
+				</div>
 			{:else}
-				<p class="text-success">Congratulations! You have been given some tokens to claim.</p>
-				<p class="m-5">Please connect to your wallet</p>
-				<button class="btn btn-primary" on:click={() => connection.connect()}>Connect</button>
+				<p class="success">Congratulations! You have been given some tokens to claim.</p>
+				<p>Please connect to your wallet</p>
+				<button class="primary" on:click={() => connection.connect()}>Connect</button>
 			{/if}
 		</div>
-	</div>
+	</FullScreenModal>
 {/if}
 
 <style>
-	.tokenClaim {
-		pointer-events: auto;
-		width: 100%;
-		height: 100%;
-		background-color: black;
+	.user {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 1rem;
+		font-size: 1.5rem;
+		flex-wrap: wrap;
+		margin-block: 1rem;
+	}
+	.user span {
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+
+	p.success {
+		padding: 0.5rem;
+		margin-block: 0.5rem;
+	}
+
+	.info {
+		margin-block: 0.5rem;
+	}
+
+	p {
+		margin-bottom: 0.5rem;
 	}
 </style>

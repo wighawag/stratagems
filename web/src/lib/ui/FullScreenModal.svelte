@@ -4,7 +4,7 @@
 	import {fly} from 'svelte/transition';
 	import {XCircle} from 'lucide-svelte';
 
-	export let oncancel: () => void;
+	export let oncancel: Cancellation = undefined;
 	export let onclosed: Cancellation = undefined;
 </script>
 
@@ -15,7 +15,9 @@
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
 
 		<div class="wrapper">
-			<div class="close-button" on:click={() => oncancel()}><XCircle style="width: 2rem;height:2rem;" /></div>
+			{#if oncancel}
+				<div class="close-button" on:click={() => oncancel()}><XCircle style="width: 2rem;height:2rem;" /></div>
+			{/if}
 			<div class="content">
 				<slot />
 			</div>
