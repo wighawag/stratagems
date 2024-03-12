@@ -153,7 +153,7 @@ export async function startCommit() {
 					if (remoteAccount !== zeroAddress) {
 						const balanceHex = await connection.provider.request({
 							method: 'eth_getBalance',
-							params: [remoteAccount],
+							params: [remoteAccount, 'latest'],
 						});
 						const balance = BigInt(balanceHex);
 
