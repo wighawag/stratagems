@@ -20,7 +20,8 @@ Stratagems is thus at its core a social game of coordination. It takes place on 
 Each day players stake a small amount of ETH (or Test Tokens in our free-to-play version) for each land they want to own. The next day they discover whether their strategy was wise or doomed. The social elements quickly come into play as who knows the other's moves get an advantage over those we do not.
 
 But the game does not stop there. Stratagems is a world being created by each player's action and new mechanics can be added on top, giving infinite possibilities to its inhabitants.
-How to play?
+
+## How to play?
 
 Stratagems is a [simultaneous turn-based game](https://en.wikipedia.org/wiki/Timekeeping_in_games#Simultaneously_executed_and_clock-based_turns) and each "turn" (we call them epoch) lasts 24 hours.
 
