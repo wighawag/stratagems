@@ -17,6 +17,7 @@ export type ContractCell = {
 	enemyMap: number;
 	distribution: number;
 	stake: number;
+	producingEpochs: number;
 };
 
 export type ContractFullCell = ContractCell & {

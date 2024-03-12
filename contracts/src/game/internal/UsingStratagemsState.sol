@@ -227,6 +227,10 @@ abstract contract UsingStratagemsState is
             updatedCell.lastEpochUpdate = epoch; // TODO check if this is useful to cap it to epoch where it died
             justDied = newLife == 0;
         }
+        int8 effectiveDelta = _effectiveDelta(updatedCell.delta, updatedCell.enemyMap);
+        if (effectiveDelta > 0) {
+            updatedCell.producingEpochs += epoch - lastUpdate;
+        }
     }
 
     /// @dev Get the owner of a token.

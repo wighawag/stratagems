@@ -153,14 +153,18 @@ export class StratagemsContract {
 			life: cell?.life || 0,
 			distribution: cell?.distribution || 0,
 			stake: cell?.stake || 0,
+			producingEpochs: cell?.producingEpochs || 0,
 		};
 	}
 
 	getUpdatedCell(position: bigint, epoch: number) {
 		const updatedCell = this.getCellInMemory(position);
 		let justDied = false;
+		const lastUpdate = updatedCell.lastEpochUpdate;
+		const delta = updatedCell.delta;
+		const life = updatedCell.life;
 
-		if (updatedCell.lastEpochUpdate >= 1 && updatedCell.life > 0) {
+		if (lastUpdate >= 1 && life > 0) {
 			const {newLife} = this.computeNewLife(
 				updatedCell.lastEpochUpdate,
 				updatedCell.enemyMap,
@@ -171,6 +175,11 @@ export class StratagemsContract {
 			updatedCell.life = newLife;
 			updatedCell.lastEpochUpdate = epoch;
 			justDied = newLife == 0;
+		}
+
+		const effectiveDelta = this._effectiveDelta(updatedCell.delta, updatedCell.enemyMap);
+		if (effectiveDelta > 0) {
+			updatedCell.producingEpochs += epoch - lastUpdate;
 		}
 
 		return {updatedCell, justDied};
@@ -202,6 +211,8 @@ export class StratagemsContract {
 			cell.distribution = ((cell.distribution >> 4) & (~(2 ** neighbourIndex) << 4)) + (cell.distribution & 0x0f);
 		}
 
+		const oldEffectiveDelta = this._effectiveDelta(cell.delta, cell.enemyMap);
+
 		if (oldColor != newColor) {
 			if (newColor == Color.None) {
 				if (cell.color == oldColor) {
@@ -224,6 +235,11 @@ export class StratagemsContract {
 				cell.enemyMap = cell.enemyMap | (1 << neighbourIndex);
 			}
 		}
+
+		if (oldEffectiveDelta > 0) {
+			cell.producingEpochs += epoch - cell.lastEpochUpdate;
+		}
+
 		cell.lastEpochUpdate = epoch;
 		cell.life = newLife;
 		this.state.cells[position.toString()] = cell;
@@ -418,6 +434,7 @@ export class StratagemsContract {
 		}
 
 		if (currentState.color == Color.None) {
+			currentState.producingEpochs += epoch - currentState.lastEpochUpdate;
 			currentState.life = 0;
 			currentState.stake = 0;
 			currentState.lastEpochUpdate = 0;
@@ -441,6 +458,7 @@ export class StratagemsContract {
 				}
 			} else {
 				currentState.stake = 1;
+				currentState.producingEpochs = 0;
 			}
 
 			currentState.delta = newDelta;
@@ -473,6 +491,7 @@ export class StratagemsContract {
 				enemyMap: enemyMap,
 				distribution: 0,
 				stake: simpleCell.stake,
+				producingEpochs: 0, // THIS IS FALSE but we go with it
 			};
 			this.state.owners[simpleCell.position.toString()] = simpleCell.owner;
 			// console.log({
@@ -503,7 +522,12 @@ export class StratagemsContract {
 				enemyMap: cell.enemyMap,
 				distribution: 0,
 				stake: cell.stake,
+				producingEpochs: 0,
 			};
+
+			if (this._effectiveDelta(newCell.delta, newCell.enemyMap) > 0) {
+				newCell.producingEpochs = 1;
+			}
 
 			this.state.cells[simpleCell.position.toString()] = newCell;
 			// const {x, y} = bigIntIDToXY(simpleCell.position);
