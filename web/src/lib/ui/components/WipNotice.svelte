@@ -2,11 +2,21 @@
 	import {initialContractsInfos} from '$lib/config';
 	import Modal from '$utils/ui/modals/Modal.svelte';
 	$: date = (initialContractsInfos as any).name == 'alpha1' ? 'Thursday 21st March' : undefined;
+	$: base = (initialContractsInfos as any).name == 'base' ? 'Thursday 21st March' : undefined;
 </script>
 
 <Modal>
 	<div class="wrapper">
-		{#if date}
+		{#if base}
+			<h3>Moved</h3>
+			<p>
+				This play-test has been discountinued. Join our first alpha on base at <a
+					href="https://alpha1.stratagems.world"
+					rel="noopener noreferer"
+					class="underline">alpha1.stratagems.world</a
+				>
+			</p>
+		{:else if date}
 			<h3>Come back on {date}</h3>
 			<p>
 				We recommend you join our community on <a
