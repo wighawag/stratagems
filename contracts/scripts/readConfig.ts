@@ -2,11 +2,12 @@ import {Deployment, loadEnvironment} from 'rocketh';
 import {context} from '../deploy/_context';
 import hre from 'hardhat';
 import {fetchContract} from '../utils/connection';
+import {EIP1193GenericRequestProvider} from 'eip-1193';
 
 async function main() {
 	const env = await loadEnvironment(
 		{
-			provider: hre.network.provider,
+			provider: hre.network.provider as EIP1193GenericRequestProvider,
 			network: hre.network.name,
 		},
 		context,

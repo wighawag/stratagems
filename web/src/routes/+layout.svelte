@@ -24,6 +24,7 @@
 	import EventsView from '$lib/ui/events/EventsView.svelte';
 	import RevealPhaseInformation from '$lib/ui/information/RevealPhaseInformation.svelte';
 	import Missiv from '$lib/ui/missiv/Missiv.svelte';
+	import LeaderboardView from '$lib/ui/leaderboard/LeaderboardView.svelte';
 
 	$: showWIPNotice =
 		!dev &&
@@ -49,6 +50,8 @@
 	<TransactionsView />
 
 	<CommitmentsView />
+
+	<LeaderboardView />
 
 	<IndexerView />
 

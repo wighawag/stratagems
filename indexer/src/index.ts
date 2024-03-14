@@ -7,6 +7,23 @@ export type CellPlacements = {
 	players: {color: Color; address: string}[];
 };
 
+export type SharedRatePerAccount = {
+	points: bigint;
+	totalRewardPerPointAccounted: bigint;
+	rewardsToWithdraw: bigint;
+};
+
+export type FixedRatePerAccount = {
+	toWithdraw: bigint;
+	lastTime: number;
+};
+
+export type GlobalRate = {
+	lastUpdateTime: number;
+	totalRewardPerPointAtLastUpdate: bigint;
+	totalPoints: bigint;
+};
+
 export type EpochPlacements = {
 	epoch: number;
 	cells: {
@@ -25,6 +42,15 @@ export type Data = {
 		[address: string]: {epoch: number; hash: `0x${string}`};
 	};
 	placements: EpochPlacements[];
+	points: {
+		global: GlobalRate;
+		fixed: {
+			[address: string]: FixedRatePerAccount;
+		};
+		shared: {
+			[address: string]: SharedRatePerAccount;
+		};
+	};
 };
 
 type ContractsABI = MergedAbis<typeof contractsInfo.contracts>;
@@ -33,7 +59,17 @@ const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
 	// version is automatically populated via version.cjs to let the browser knows to reindex on changes
 	version: '__VERSION_HASH__',
 	construct(): Data {
-		return {cells: {}, owners: {}, commitments: {}, placements: []};
+		return {
+			cells: {},
+			owners: {},
+			commitments: {},
+			placements: [],
+			points: {
+				global: {lastUpdateTime: 0, totalRewardPerPointAtLastUpdate: 0n, totalPoints: 0n},
+				fixed: {},
+				shared: {},
+			},
+		};
 	},
 	onCommitmentRevealed(state, event) {
 		const epoch = event.args.epoch;
@@ -105,6 +141,18 @@ const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
 	onForceSimpleCells(state, event) {
 		const stratagemsContract = new StratagemsContract(state, 7);
 		stratagemsContract.forceSimpleCells(event.args.epoch, event.args.cells as any);
+	},
+
+	onAccounFixedRewardUpdated(state, event) {
+		state.points.fixed[event.args.account] = event.args.fixedRateStatus;
+	},
+
+	onAccountSharedRewardUpdated(state, event) {
+		state.points.shared[event.args.account] = event.args.sharedRateStatus;
+	},
+
+	onGlobalRewardUpdated(state, event) {
+		state.points.global = event.args.globalStatus;
 	},
 };
 

@@ -8,13 +8,33 @@ import "solidity-proxy/solc_0_8/ERC1967/Proxied.sol";
 import "solidity-kit/solc_0_8/utils/UsingGenericErrors.sol";
 
 contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
+    // ---------------------------------------------------------------------------------------------------------------
+    // Constants and immutables
+    // ---------------------------------------------------------------------------------------------------------------
+
+    string internal constant SYMBOL = "POINT";
+    string internal constant NAME = "Points";
     uint256 internal constant PRECISION = 1e24;
     uint256 internal constant DECIMALS_18_MILLIONTH = 1000000000000; // 1 millionth of a token so that it matches with REWARD_RATE_millionth
 
     uint256 internal immutable REWARD_RATE_millionth;
     uint256 internal immutable FIXED_REWARD_RATE_thousands_millionth;
+    IReward internal immutable REWARD;
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // Events
+    // ---------------------------------------------------------------------------------------------------------------
 
     event GameEnabled(address indexed game, uint256 weight, uint256 timestamp);
+    event AccounFixedRewardUpdated(address indexed account, FixedRatePerAccount fixedRateStatus);
+    event AccountSharedRewardUpdated(address indexed account, SharedRatePerAccount sharedRateStatus, uint256 timestamp);
+    event GlobalRewardUpdated(GlobalState globalStatus);
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // State
+    // ---------------------------------------------------------------------------------------------------------------
+
+    bool internal _init;
 
     struct GlobalState {
         uint40 lastUpdateTime;
@@ -32,29 +52,29 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
 
     mapping(address => SharedRatePerAccount) _sharedRateRewardPerAccount;
 
-    struct FixedRate {
+    struct FixedRatePerAccount {
         uint112 toWithdraw;
         uint40 lastTime;
     }
-    mapping(address => FixedRate) internal _fixedRateRewardPerAccount;
+    mapping(address => FixedRatePerAccount) internal _fixedRateRewardPerAccount;
 
-    mapping(address => uint256) public games;
+    mapping(address => uint256) internal _games;
 
-    IReward public immutable REWARD;
+    // ---------------------------------------------------------------------------------------------------------------
+    // Constructor AND Upgrade
+    // ---------------------------------------------------------------------------------------------------------------
 
     struct Config {
         uint256 rewardRateMillionth;
         uint256 fixedRewardRateThousandsMillionth;
     }
 
-    bool internal _init;
-
     constructor(IReward rewardAddress, Config memory config, address[] memory initialGames) {
         REWARD = rewardAddress;
         REWARD_RATE_millionth = config.rewardRateMillionth;
         FIXED_REWARD_RATE_thousands_millionth = config.fixedRewardRateThousandsMillionth;
 
-        // _postUpgrade(rewardAddress, config, initialGames);
+        _postUpgrade(rewardAddress, config, initialGames);
     }
 
     function postUpgrade(
@@ -74,20 +94,27 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
         }
     }
 
-    string public constant symbol = "POINT";
+    // ---------------------------------------------------------------------------------------------------------------
+    // External
+    // ---------------------------------------------------------------------------------------------------------------
 
-    /// @inheritdoc IERC20
-    function name() public pure returns (string memory) {
-        return "Points";
-    }
-
+    /// @notice Allow a contract (a game) to add points to the rewards system
+    /// @param game the contract that is allowed to call in
+    /// @param weight (not implemented, act as boolean for now) (0 disable the game)
     function enableGame(address game, uint256 weight) external onlyProxyAdmin {
         _enableGame(game, weight);
     }
 
-    function _enableGame(address game, uint256 weight) internal {
-        games[game] = weight;
-        emit GameEnabled(game, weight, block.timestamp);
+    /// @notice return the weight of the game
+    /// @param game the contract to query about
+    /// @return weight the weight of the game (not implemented, act as boolean for now)
+    function games(address game) external view returns (uint256 weight) {
+        weight = _games[game];
+    }
+
+    /// @notice return the current global state
+    function global() external view returns (GlobalState memory) {
+        return _global;
     }
 
     /// @inheritdoc IOnStakeChange
@@ -95,46 +122,25 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
         _add(account, amount);
     }
 
-    function _add(address account, uint256 amount) internal {
-        if (amount == 0) {
-            return;
-        }
-
-        (uint256 totalPointsSoFar, uint256 accountPointsSoFar) = _update(account);
-
-        unchecked {
-            // update total points and the account's point, their reward will be counted on next interaction.
-            _global.totalPoints = uint112(totalPointsSoFar + amount);
-            _sharedRateRewardPerAccount[account].points = uint112(accountPointsSoFar + amount);
-        }
-        emit Transfer(address(0), account, amount);
-    }
-
     /// @inheritdoc IOnStakeChange
     function remove(address account, uint256 amount) external override onlyGames {
         _remove(account, amount);
-    }
-
-    function _remove(address account, uint256 amount) internal {
-        if (amount == 0) {
-            return;
-        }
-
-        // update the amount generated, store it in
-        (uint256 totalPointsSoFar, uint256 accountPointsSoFar) = _update(account);
-
-        unchecked {
-            // update total points and the account's point, their reward will be counted on next interaction.
-            _global.totalPoints = uint112(totalPointsSoFar - amount);
-            _sharedRateRewardPerAccount[account].points = uint112(accountPointsSoFar - amount);
-        }
-        emit Transfer(account, address(0), amount);
     }
 
     /// @inheritdoc IOnStakeChange
     function move(address from, address to, uint256 amount) external override onlyGames {
         _remove(from, amount);
         _add(to, amount);
+    }
+
+    /// @inheritdoc IERC20
+    function name() public pure returns (string memory) {
+        return NAME;
+    }
+
+    /// @inheritdoc IERC20
+    function symbol() external pure returns (string memory) {
+        return SYMBOL;
     }
 
     /// @inheritdoc IERC20
@@ -172,11 +178,8 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
         revert UsingGenericErrors.NonTransferable();
     }
 
-    // ---------------------------------------------------------------------------------------------------------------
-    // For Accounts
-    // ---------------------------------------------------------------------------------------------------------------
-
     /// @notice claim the rewards earned so far in the shared pool
+    /// @param to address to send the reward to
     function claimSharedPoolRewards(address to) external {
         if (address(REWARD) == address(0)) {
             revert UsingGenericErrors.NotAuthorized();
@@ -197,9 +200,12 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
             _sharedRateRewardPerAccount[account].rewardsToWithdraw = 0;
             REWARD.reward(to, amount);
         }
+
+        emit AccountSharedRewardUpdated(account, _sharedRateRewardPerAccount[account], block.timestamp);
     }
 
     /// @notice claim the rewards earned so far using a fixed rate per point
+    /// @param to address to send the reward to
     function claimFixedRewards(address to) external {
         if (address(REWARD) == address(0)) {
             revert UsingGenericErrors.NotAuthorized();
@@ -211,11 +217,8 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
             _fixedRateRewardPerAccount[account].toWithdraw = 0;
             REWARD.reward(to, amount);
         }
+        emit AccounFixedRewardUpdated(account, _fixedRateRewardPerAccount[account]);
     }
-
-    // ---------------------------------------------------------------------------------------------------------------
-    // Getters
-    // ---------------------------------------------------------------------------------------------------------------
 
     /// @notice The amount of reward each point has earned so far
     function getTotalRewardPerPointWithPrecision24() external view returns (uint256) {
@@ -229,6 +232,7 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
     }
 
     /// @notice The amount of reward an account has accrued so far. Does not include already withdrawn rewards.
+    /// @param account address to query about
     function earnedFromPoolRate(address account) public view returns (uint256) {
         return
             _computeRewardsEarned(
@@ -245,6 +249,7 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
     }
 
     /// @notice The amount of reward an account has accrued so far. Does not include already withdrawn rewards.
+    /// @param account address to query about
     function earnedFromFixedRate(address account) public view returns (uint256) {
         uint256 extraFixed = ((block.timestamp - _fixedRateRewardPerAccount[account].lastTime) *
             _sharedRateRewardPerAccount[account].points *
@@ -253,6 +258,7 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
     }
 
     /// @notice The amount of reward an account has accrued so far. Does not include already withdrawn rewards.
+    /// @param accounts list of address to query about
     function earnedFromFixedRateMultipleAccounts(
         address[] calldata accounts
     ) external view returns (uint256[] memory result) {
@@ -263,6 +269,7 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
     }
 
     /// @notice The amount of reward an account has accrued so far. Does not include already withdrawn rewards.
+    /// @param accounts list of address to query about
     function earnedFromPoolRateMultipleAccounts(
         address[] calldata accounts
     ) external view returns (uint256[] memory result) {
@@ -280,6 +287,46 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
     // ---------------------------------------------------------------------------------------------------------------
     // Internal
     // ---------------------------------------------------------------------------------------------------------------
+
+    function _enableGame(address game, uint256 weight) internal {
+        _games[game] = weight;
+        emit GameEnabled(game, weight, block.timestamp);
+    }
+
+    function _add(address account, uint256 amount) internal {
+        if (amount == 0) {
+            return;
+        }
+
+        (uint256 totalPointsSoFar, uint256 accountPointsSoFar) = _update(account);
+
+        unchecked {
+            // update total points and the account's point, their reward will be counted on next interaction.
+            _global.totalPoints = uint112(totalPointsSoFar + amount);
+            _sharedRateRewardPerAccount[account].points = uint112(accountPointsSoFar + amount);
+        }
+        emit Transfer(address(0), account, amount);
+        emit AccountSharedRewardUpdated(account, _sharedRateRewardPerAccount[account], block.timestamp);
+        emit AccounFixedRewardUpdated(account, _fixedRateRewardPerAccount[account]);
+    }
+
+    function _remove(address account, uint256 amount) internal {
+        if (amount == 0) {
+            return;
+        }
+
+        // update the amount generated, store it in
+        (uint256 totalPointsSoFar, uint256 accountPointsSoFar) = _update(account);
+
+        unchecked {
+            // update total points and the account's point, their reward will be counted on next interaction.
+            _global.totalPoints = uint112(totalPointsSoFar - amount);
+            _sharedRateRewardPerAccount[account].points = uint112(accountPointsSoFar - amount);
+        }
+        emit Transfer(account, address(0), amount);
+        emit AccountSharedRewardUpdated(account, _sharedRateRewardPerAccount[account], block.timestamp);
+        emit AccounFixedRewardUpdated(account, _fixedRateRewardPerAccount[account]);
+    }
 
     function _computeRewardsEarned(
         uint256 totalRewardPerPointAccountedSoFar,
@@ -317,6 +364,8 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
 
         _global.totalRewardPerPointAtLastUpdate = uint104(totalRewardPerPointAllocatedSoFar);
         _global.lastUpdateTime = uint40(block.timestamp);
+
+        emit GlobalRewardUpdated(_global);
     }
 
     function _updateAccount(
@@ -356,7 +405,7 @@ contract RewardsGenerator is IERC20, IOnStakeChange, Proxied {
     // ---------------------------------------------------------------------------------------------------------------
 
     modifier onlyGames() {
-        if (games[msg.sender] == 0) {
+        if (_games[msg.sender] == 0) {
             revert UsingGenericErrors.NotAuthorized();
         }
         _;

@@ -4,6 +4,7 @@
 	import {eventsView} from '$lib/ui/events/eventsView';
 	import {transactionsView} from '$lib/ui/transactions/transactionsView';
 	import {commitmentsView} from '$lib/ui/commitments/commitmentsView';
+	import {leaderboardView} from '$lib/ui/leaderboard/leaderboardView';
 	import {indexerView} from '$lib/ui/indexer/indexerView';
 	import {viewStateView} from '$lib/ui/viewstate/viewStateView';
 	import {admin} from '$lib/ui/admin/admin';
@@ -144,6 +145,12 @@
 						{/if}
 						<button on:click={() => ($openConversations.open = true)}>See Messages</button>
 					</div>
+				</div>
+
+				<div class="category">
+					<div>Leaderboard</div>
+					<hr />
+					<button on:click={() => ($leaderboardView.open = true)}>See Players</button>
 				</div>
 
 				<div class="category">

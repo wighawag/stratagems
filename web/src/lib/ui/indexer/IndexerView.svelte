@@ -18,7 +18,24 @@
 		}
 		return n;
 	}
-	$: stateDisplayed = $state && addLengthToFields($state);
+	function transform(json: any): any {
+		if (typeof json === 'bigint') {
+			return json.toString();
+		} else if (typeof json === 'object') {
+			if (Array.isArray(json)) {
+				return json.map(transform);
+			} else {
+				const keys = Object.keys(json);
+				const n = {} as any;
+				for (const key of keys) {
+					n[key] = transform(json[key]);
+				}
+				return n;
+			}
+		}
+		return json;
+	}
+	$: stateDisplayed = $state && transform(addLengthToFields($state));
 </script>
 
 {#if $indexerView.open}
