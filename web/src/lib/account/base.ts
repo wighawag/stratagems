@@ -5,6 +5,11 @@ import {AccountDB} from './account-db';
 import {writable, type Readable, type Writable} from 'svelte/store';
 import type {ScheduleInfo} from 'fuzd-scheduler';
 
+export type CommitCancelMetadata = {
+	type: 'commit-cancel';
+	epoch: number;
+};
+
 export type RevealMetadata = {
 	type: 'reveal';
 	commitTx: `0x${string}`;

@@ -42,7 +42,7 @@ export type StratagemsViewState = StratagemsState & {
 	};
 	owners: {[position: string]: `0x${string}`};
 	hasCommitmentToReveal?: {epoch: number; commit?: {hash: `0x${string}`; tx: StratagemsTransaction}};
-	hasCommitment?: boolean;
+	hasCommitment?: OnChainAction<CommitMetadata>;
 	hasSomeCells: boolean;
 	tokensToCollect: GemsToWithdraw[];
 	rawState: Data;
@@ -77,7 +77,7 @@ function merge(
 
 	// console.log({epoch: epochState.epoch, isActionPhase: epochState.isActionPhase});
 
-	let hasCommitment = false;
+	let lastCommitment: OnChainAction<CommitMetadata> | undefined;
 	if (offchainState.moves !== undefined && offchainState.moves.epoch === epochState.epoch && epochState.isActionPhase) {
 		for (const move of offchainState.moves.list) {
 			if (!isValidMove(move)) {
@@ -88,7 +88,6 @@ function merge(
 			stratagems.computeMove(account.address as `0x${string}`, epochState.epoch, localMoveToContractMove(move));
 		}
 	} else {
-		let lastCommitment: OnChainAction<CommitMetadata> | undefined;
 		for (const txHash of Object.keys(onchainActions)) {
 			const action = onchainActions[txHash as `0x${string}`];
 			if (action.tx.metadata && action.status !== 'Failure') {
@@ -109,12 +108,21 @@ function merge(
 							lastCommitment = action as OnChainAction<CommitMetadata>; // TODO why type ?
 						}
 					}
+				} else if (metadata.type === 'commit-cancel') {
+					if (
+						lastCommitment &&
+						((lastCommitment.tx.nonce &&
+							action.tx.nonce &&
+							Number(lastCommitment.tx.nonce) < Number(action.tx.nonce)) ||
+							(lastCommitment.tx.timestamp && action.tx.timestamp && lastCommitment.tx.timestamp < action.tx.timestamp))
+					) {
+						lastCommitment = undefined;
+					}
 				}
 			}
 		}
 
 		if (lastCommitment) {
-			hasCommitment = true;
 			const metadata = lastCommitment.tx.metadata;
 			if (!metadata) {
 				// TODO fix type
@@ -132,7 +140,7 @@ function merge(
 		viewCells: {},
 		owners: {},
 		hasCommitmentToReveal: undefined,
-		hasCommitment,
+		hasCommitment: lastCommitment,
 		hasSomeCells,
 		tokensToCollect: [],
 		rawState,

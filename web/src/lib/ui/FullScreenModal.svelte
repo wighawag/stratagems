@@ -16,7 +16,9 @@
 
 		<div class="wrapper">
 			{#if oncancel}
-				<div class="close-button" on:click={() => oncancel()}><XCircle style="width: 2rem;height:2rem;" /></div>
+				<div class="close-button" on:click={() => oncancel && oncancel()}>
+					<XCircle style="width: 2rem;height:2rem;" />
+				</div>
 			{/if}
 			<div class="content">
 				<slot />

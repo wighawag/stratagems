@@ -9,21 +9,73 @@
 	import CommitmentDetails from './CommitmentDetails.svelte';
 	import {fly} from 'svelte/transition';
 	import CommitmentDetailsButton from './CommitmentDetailsButton.svelte';
-	import type {OnChainAction} from '$lib/account/base';
+	import type {CommitCancelMetadata, OnChainAction} from '$lib/account/base';
 	import type {CommitMetadata} from '$lib/account/account-data';
 	import CommitmentRevealInfo from './CommitmentRevealInfo.svelte';
 
 	const onchainActions = accountData.onchainActions;
-	const commitments: Readable<{hash: `0x${string}`; action: OnChainAction<CommitMetadata>}[]> = derived(
-		onchainActions,
-		($onchainActions) =>
-			Object.keys($onchainActions)
-				.filter((k) => $onchainActions[k as `0x${string}`].tx.metadata?.type === 'commit')
-				.map((k) => ({
-					hash: k as `0x${string}`,
-					action: $onchainActions[k as `0x${string}`] as OnChainAction<CommitMetadata>,
-				})),
-	);
+	const commitments: Readable<
+		{
+			hash: `0x${string}`;
+			action: OnChainAction<CommitMetadata>;
+			replaced: boolean;
+			canceled: boolean;
+		}[]
+	> = derived(onchainActions, ($onchainActions) => {
+		const onChainActionsTransformedAndSorted: {
+			hash: `0x${string}`;
+			action: OnChainAction<CommitMetadata>;
+			replaced: boolean;
+			canceled: boolean;
+		}[] = Object.keys($onchainActions)
+			.map((actionhash) => {
+				return {
+					action: $onchainActions[actionhash as `0x${string}`] as OnChainAction<CommitMetadata>,
+					hash: actionhash as `0x${string}`,
+					replaced: false,
+					canceled: false,
+				};
+			})
+			.filter((v) => v.action.tx.metadata?.type === 'commit' || v.action.tx.metadata?.type === 'commit-cancel')
+			.sort((a, b) => {
+				if (
+					(a.action.tx.nonce && b.action.tx.nonce && Number(a.action.tx.nonce) < Number(b.action.tx.nonce)) ||
+					(a.action.tx.timestamp && b.action.tx.timestamp && a.action.tx.timestamp < b.action.tx.timestamp)
+				) {
+					return -1;
+				} else {
+					return 1;
+				}
+			});
+
+		let lastAction:
+			| {
+					hash: `0x${string}`;
+					action: OnChainAction<CommitMetadata | CommitCancelMetadata>;
+					replaced: boolean;
+					canceled: boolean;
+			  }
+			| undefined;
+		for (const fullAction of onChainActionsTransformedAndSorted) {
+			const action = fullAction.action;
+			if (action.tx.metadata && action.status !== 'Failure') {
+				const metadata = action.tx.metadata;
+				if (metadata.type === 'commit') {
+					if (lastAction && lastAction.action.tx.metadata.epoch == metadata.epoch) {
+						lastAction.replaced = true;
+					}
+					lastAction = fullAction;
+				} else if (metadata.type == 'commit-cancel') {
+					if (lastAction && lastAction.action.tx.metadata.epoch == metadata.epoch) {
+						lastAction.canceled = true;
+					}
+					lastAction = fullAction;
+				}
+			}
+		}
+
+		return onChainActionsTransformedAndSorted.filter((v) => v.action.tx.metadata?.type === 'commit');
+	});
 
 	const table = createTable(commitments, {
 		sort: addSortBy(),

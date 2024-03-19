@@ -1,5 +1,11 @@
 import type {PendingTransaction, EIP1193TransactionWithMetadata} from 'ethereum-tx-observer';
-import {BaseAccountHandler, type OnChainAction, type OnChainActions, type RevealMetadata} from './base';
+import {
+	BaseAccountHandler,
+	type CommitCancelMetadata,
+	type OnChainAction,
+	type OnChainActions,
+	type RevealMetadata,
+} from './base';
 import {mainnetClient, createClient} from '$utils/fuzd';
 import type {AccountInfo, SyncInfo} from './types';
 import {FUZD_URI, SYNC_DB_NAME, debugTools} from '$lib/config';
@@ -63,7 +69,7 @@ export type StratagemsMetadata =
 				hash: `0x${string}`;
 				number: number;
 			};
-	  } & (CommitMetadata | RevealMetadata));
+	  } & (CommitMetadata | RevealMetadata | CommitCancelMetadata));
 
 export type StratagemsTransaction = EIP1193TransactionWithMetadata<StratagemsMetadata>;
 

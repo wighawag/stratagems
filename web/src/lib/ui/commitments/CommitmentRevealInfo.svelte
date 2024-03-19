@@ -3,7 +3,12 @@
 	import type {OnChainAction} from '$lib/account/base';
 	import {FUZD_URI, blockchainExplorer} from '$lib/config';
 
-	export let commitment: {hash: `0x${string}`; action: OnChainAction<CommitMetadata>};
+	export let commitment: {
+		hash: `0x${string}`;
+		action: OnChainAction<CommitMetadata>;
+		replaced: boolean;
+		canceled: boolean;
+	};
 
 	function computeShortHash(hash: `0x${string}`) {
 		return hash.slice(0, 8) + '...';
@@ -23,7 +28,9 @@
 	<div class="text-sm opacity-50">{commitment.action.revealTx.inclusion}</div>
 {:else if commitment.action.tx.metadata?.type === 'commit' && commitment.action.tx.metadata.autoReveal && commitment.action.tx.metadata.autoReveal.type === 'fuzd'}
 	{#if commitment.action.fuzd}
-		{#if commitment.action.fuzd.state === 'replaced'}
+		{#if commitment.canceled}
+			Canceled
+		{:else if commitment.replaced || commitment.action.fuzd.state === 'replaced'}
 			Replaced
 		{:else if commitment.action.fuzd.state}
 			<div class="font-bold">
@@ -32,7 +39,8 @@
 					class="underline"
 					href={`${FUZD_URI}/queuedExecution/${commitment.action.fuzd.state.chainId}/${commitment.action.fuzd.state.account}/${commitment.action.fuzd.state.slot}`}
 					target="_blank"
-					rel="noreferer noopener">{`will reveal on ${commitment.action.fuzd.state.checkinTime}`}</a
+					rel="noreferer noopener"
+					>{`will reveal on ${new Date(commitment.action.fuzd.state.checkinTime * 1000).toISOString()}`}</a
 				>
 			</div>
 			<div class="text-sm opacity-50">...</div>
