@@ -18,8 +18,12 @@ Each Land have the following attributes:
 - `int8 delta`: whether the land is gaining life or losing life due to its neighboroud
 - `address owner`: the owner of land, the player who deposited a stake to choose a faction
 
-The `producingEpochs` is particularly useful to track whether a Land has been growing since your extension kept track
+The `producingEpochs` is particularly useful to track whether a Land has been growing since you can use to track it even if your game transaction happen later.
 
 This can be used for example to make a game where Land produce units as long as growth of the land is positive.
 
-This can lead to very interesting social interaction between players of the base game and the one playing the extension game.
+This can lead to very interesting social interaction between players of the base game and the one playing the extended game.
+
+You can of course also creating incentives mechanism to attract player of the base game.
+
+Stratagems has its own token: Gems, which does not have any role in the base game but is given to player whose land is propsering. Gems is thus a great token to integrate.

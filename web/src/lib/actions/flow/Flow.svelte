@@ -45,33 +45,54 @@
 
 {#if $currentFlow && $currentStepIndex !== undefined && $state}
 	<Modal oncancel={() => cancel()}>
-		{#if currentStep}
-			<div class="title">
-				{currentStep.title}
-			</div>
-			{#if currentStep.component}
-				<svelte:component this={currentStep.component} {state} />
-			{:else}
-				<p class="description">{currentStep.description}</p>
-			{/if}
-		{/if}
-
-		{#if !currentStep || currentStep.action}
-			<div class="actions">
-				{#if currentStep}
-					<button on:click={() => cancel()}>Back</button>
+		<div class="wrapper-top">
+			{#if currentStep}
+				<div class="title">
+					{currentStep.title}
+				</div>
+				{#if currentStep.component}
+					<svelte:component this={currentStep.component} {state} />
 				{:else}
-					<p>Steps completed</p>
+					<p class="description">{currentStep.description}</p>
 				{/if}
-				<button class="primary" on:click={() => execute()}>{action}</button>
-			</div>
-		{:else}
-			<p>Please wait...</p>
-		{/if}
+			{:else}
+				<p>{$currentFlow.completionMessage ? $currentFlow.completionMessage : 'Steps Completed'}</p>
+			{/if}
+		</div>
+
+		<div class="wrapper-bottom">
+			{#if !currentStep || currentStep.action}
+				<div class="actions">
+					{#if currentStep}
+						<button on:click={() => cancel()}>Back</button>
+					{/if}
+					<button class="primary" on:click={() => execute()}>{action}</button>
+				</div>
+			{:else}
+				<p>Please wait...</p>
+			{/if}
+		</div>
 	</Modal>
 {/if}
 
 <style>
+	.wrapper-top {
+		height: calc(100% - 48px);
+		display: flex;
+		flex-direction: column;
+		justify-content: start;
+
+		width: 100%;
+		overflow: auto;
+	}
+	.wrapper-bottom {
+		display: flex;
+		flex-direction: column;
+		justify-content: end;
+		height: 48px;
+
+		width: 100%;
+	}
 	.title {
 		font-weight: bold;
 		font-size: clamp(1rem, 4vw, 1.25rem);

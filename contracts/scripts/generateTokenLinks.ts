@@ -45,11 +45,11 @@ async function main() {
 		contentLines = content.split('\n');
 	} catch {}
 
+	const host =
+		env.network.name === 'localhost' ? 'http://localhost:5173' : `https://${env.network.name}.stratagems.world`;
 	fs.writeFileSync(
 		`.keys/${env.network.name}-list.csv`,
-		contentLines
-			.concat(accounts.map((v) => `${v.address},https://${env.network.name}.stratagems.world#tokenClaim=${v.key}`))
-			.join('\n'),
+		contentLines.concat(accounts.map((v) => `${v.address},${host}#tokenClaim=${v.key}`)).join('\n'),
 	);
 
 	const addresses = accounts.map((v) => v.address);

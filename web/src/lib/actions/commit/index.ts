@@ -10,7 +10,7 @@ import {time} from '$lib/blockchain/time';
 import {timeToText} from '$utils/time';
 import {localMoveToContractMove, type CommitMetadata} from '$lib/account/account-data';
 import PermitComponent from './PermitComponent.svelte';
-import {getRoughGasPriceEstimate} from '$utils/ethereum/gas';
+import TransactionComponent from './TransactionComponent.svelte';
 import {gameConfig} from '$lib/blockchain/networks';
 
 export type CommitState = {
@@ -262,7 +262,7 @@ export async function startCommit() {
 			title: 'Perform the Commit Transaction',
 			action: 'OK',
 			description: `This Transaction will Commit Your Moves. You can cancel (or Replace it with new Moves) before the Resolution Phase Start.`,
-			// component: PermitComponent,
+			component: TransactionComponent,
 			execute: async (state: CommitState) => {
 				const {amountToAdd, permit, fuzdData, gasPrice, epochNumber} = state;
 
@@ -464,6 +464,7 @@ export async function startCommit() {
 			type: 'commit',
 			currentStepIndex: writable(0),
 			state: writable({amountToAllow: undefined, amountToAdd: undefined}),
+			completionMessage: 'Commitment Complete.',
 			steps,
 		};
 		currentFlow.start(flow);

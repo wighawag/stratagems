@@ -14,6 +14,7 @@ export type Flow<State> = {
 	steps: Step<State>[];
 	state: Writable<State>;
 	currentStepIndex: Writable<number>;
+	completionMessage?: string;
 };
 
 export type FlowState = Flow<any> | undefined;

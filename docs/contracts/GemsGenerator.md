@@ -47,6 +47,10 @@ claim the rewards earned so far using a fixed rate per point
 
 function claimFixedRewards(address to)
 
+| Name | Description 
+| ---- | ----------- 
+| to | address to send the reward to
+
 ### **claimSharedPoolRewards**
 
 claim the rewards earned so far in the shared pool
@@ -56,6 +60,10 @@ claim the rewards earned so far in the shared pool
 *Signature*: claimSharedPoolRewards(address)
 
 function claimSharedPoolRewards(address to)
+
+| Name | Description 
+| ---- | ----------- 
+| to | address to send the reward to
 
 ### **decimals**
 
@@ -77,6 +85,10 @@ The amount of reward an account has accrued so far. Does not include already wit
 
 function earnedFromFixedRate(address account) view returns (uint256)
 
+| Name | Description 
+| ---- | ----------- 
+| account | address to query about
+
 ### **earnedFromFixedRateMultipleAccounts**
 
 The amount of reward an account has accrued so far. Does not include already withdrawn rewards.
@@ -86,6 +98,10 @@ The amount of reward an account has accrued so far. Does not include already wit
 *Signature*: earnedFromFixedRateMultipleAccounts(address[])
 
 function earnedFromFixedRateMultipleAccounts(address[] accounts) view returns (uint256[] result)
+
+| Name | Description 
+| ---- | ----------- 
+| accounts | list of address to query about
 
 ### **earnedFromPoolRate**
 
@@ -97,6 +113,10 @@ The amount of reward an account has accrued so far. Does not include already wit
 
 function earnedFromPoolRate(address account) view returns (uint256)
 
+| Name | Description 
+| ---- | ----------- 
+| account | address to query about
+
 ### **earnedFromPoolRateMultipleAccounts**
 
 The amount of reward an account has accrued so far. Does not include already withdrawn rewards.
@@ -107,6 +127,39 @@ The amount of reward an account has accrued so far. Does not include already wit
 
 function earnedFromPoolRateMultipleAccounts(address[] accounts) view returns (uint256[] result)
 
+| Name | Description 
+| ---- | ----------- 
+| accounts | list of address to query about
+
+### **enableGame**
+
+Allow a contract (a game) to add points to the rewards system
+
+*sig hash*: `0x16cf09f8`
+
+*Signature*: enableGame(address,uint256)
+
+function enableGame(address game, uint256 weight)
+
+| Name | Description 
+| ---- | ----------- 
+| game | the contract that is allowed to call in
+| weight | (not implemented, act as boolean for now) (0 disable the game)
+
+### **games**
+
+return the weight of the game
+
+*sig hash*: `0x79131a19`
+
+*Signature*: games(address)
+
+function games(address game) view returns (uint256 weight)
+
+| Name | Description 
+| ---- | ----------- 
+| game | the contract to query about
+
 ### **getTotalRewardPerPointWithPrecision24**
 
 The amount of reward each point has earned so far
@@ -116,6 +169,16 @@ The amount of reward each point has earned so far
 *Signature*: getTotalRewardPerPointWithPrecision24()
 
 function getTotalRewardPerPointWithPrecision24() view returns (uint256)
+
+### **global**
+
+return the current global state
+
+*sig hash*: `0xa05f9906`
+
+*Signature*: global()
+
+function global() view returns ((uint40 lastUpdateTime, uint104 totalRewardPerPointAtLastUpdate, uint112 totalPoints))
 
 ### **name**
 
@@ -135,7 +198,7 @@ Returns the symbol of the token.
 
 *Signature*: symbol()
 
-function symbol() view returns (string)
+function symbol() pure returns (string)
 
 ### **totalSupply**
 
@@ -166,6 +229,16 @@ Transfers `amount` tokens from address `from` to address `to`.
 *Signature*: transferFrom(address,address,uint256)
 
 function transferFrom(address, address, uint256) pure returns (bool)
+
+### **update**
+
+update the global pool rate
+
+*sig hash*: `0xa2e62045`
+
+*Signature*: update()
+
+function update()
 
 
 ## Events

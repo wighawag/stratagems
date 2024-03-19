@@ -5,7 +5,8 @@
 	import {indexerView} from './indexerView';
 	import ModalContainer from '$utils/ui/modals/ModalContainer.svelte';
 	import {fly} from 'svelte/transition';
-	// import JSONTree from 'svelte-json-tree';
+	import {serializeJSONWithBigInt} from '$utils/js';
+
 	function addLengthToFields(v: any): any {
 		const keys = Object.keys(v);
 		const n = {};
@@ -18,24 +19,8 @@
 		}
 		return n;
 	}
-	function transform(json: any): any {
-		if (typeof json === 'bigint') {
-			return json.toString();
-		} else if (typeof json === 'object') {
-			if (Array.isArray(json)) {
-				return json.map(transform);
-			} else {
-				const keys = Object.keys(json);
-				const n = {} as any;
-				for (const key of keys) {
-					n[key] = transform(json[key]);
-				}
-				return n;
-			}
-		}
-		return json;
-	}
-	$: stateDisplayed = $state && transform(addLengthToFields($state));
+
+	$: stateDisplayed = $state && serializeJSONWithBigInt(addLengthToFields($state));
 </script>
 
 {#if $indexerView.open}

@@ -450,6 +450,7 @@ event CommitmentRevealed(address indexed player, uint24 indexed epoch, bytes24 i
 | commitmentHash | the hash of the moves
 | moves | the moves
 | furtherMoves | hash of further moves, unless bytes32(0) which indicate end.
+| newReserveAmount | new amount in reserve as a result
 
 ### **CommitmentVoid**
 
