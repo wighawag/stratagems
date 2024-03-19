@@ -5,8 +5,7 @@
 	import {every3Seconds} from '$lib/blockchain/time';
 	import {increaseContractTime} from '$utils/debug';
 	import {timeToText} from '$utils/time';
-	import {account, connection, contracts, network, switchToSupportedNetwork} from '$lib/blockchain/connection';
-	import {parseEther} from 'viem';
+	import {account, connection, viemClient, network, switchToSupportedNetwork} from '$lib/blockchain/connection';
 	import Executor from './Executor.svelte';
 	import TxExecutor from './TxExecutor.svelte';
 	import {MINIMUM_REQUIRED_ETH_BALANCE, balance} from '$lib/state/balance';
@@ -61,7 +60,7 @@
 	const isSepolia = (initialContractsInfos.chainId as any) === '11155111';
 
 	async function topupToken() {
-		return await contracts.execute(async ({client, network: {contracts}, account}) => {
+		return await viemClient.execute(async ({client, network: {contracts}, account}) => {
 			const contract = (contracts as any).TestTokensDistributor;
 			// parseEther('0.01')
 			return client.wallet.writeContract({...contract, functionName: 'topup', account: account.address});

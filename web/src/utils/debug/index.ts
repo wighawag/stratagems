@@ -1,8 +1,8 @@
-import {contracts, devProvider} from '$lib/blockchain/connection';
+import {viemClient, devProvider} from '$lib/blockchain/connection';
 import {writable, type Readable} from 'svelte/store';
 export function initIncreaseContractTime(name: string) {
 	return async (numSeconds: number) => {
-		return contracts.execute(async ({client, network: {contracts}, account}) => {
+		return viemClient.execute(async ({client, network: {contracts}, account}) => {
 			const timeContract = (contracts as any).Time; // TODO artifacts info for optionally deployed contracts
 			return client.wallet.writeContract({
 				...timeContract,

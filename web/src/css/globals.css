@@ -55,3 +55,26 @@ a[role='button'].error:visited {
 }
 
 /* ------------------------------------------------- */
+
+::-webkit-scrollbar {
+	-webkit-appearance: none;
+}
+
+::-webkit-scrollbar:vertical {
+	width: 12px;
+}
+
+::-webkit-scrollbar:horizontal {
+	height: 12px;
+}
+
+::-webkit-scrollbar-thumb {
+	background-color: var(--color-surface-400);
+	border-radius: 10px;
+	border: 2px solid var(--color-surface-700);
+}
+
+::-webkit-scrollbar-track {
+	border-radius: 10px;
+	background-color: var(--color-surface-800);
+}

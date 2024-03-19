@@ -1,6 +1,6 @@
 import {writable} from 'svelte/store';
 import {currentFlow, type Flow, type Step} from '../flow';
-import {contracts} from '$lib/blockchain/connection';
+import {viemClient} from '$lib/blockchain/connection';
 import {prepareCommitment, zeroBytes24} from 'stratagems-common';
 import {zeroAddress} from 'viem';
 import {localMoveToContractMove, type CommitMetadata} from '$lib/account/account-data';
@@ -11,7 +11,7 @@ export type RevealState = {};
 export type RevealFlow = Flow<RevealState>;
 
 export async function startReveal(commitTx: `0x${string}`, data: CommitMetadata) {
-	await contracts.execute(async ({client, network: {contracts}, account, connection}) => {
+	await viemClient.execute(async ({client, network: {contracts}, account, connection}) => {
 		const steps: Step<RevealState>[] = [];
 		const {Stratagems} = contracts;
 
@@ -63,7 +63,7 @@ export async function startReveal(commitTx: `0x${string}`, data: CommitMetadata)
 }
 
 export async function startAcknowledgFailedReveal(commitTx: `0x${string}`, data: CommitMetadata) {
-	await contracts.execute(async ({client, network: {contracts}, account, connection}) => {
+	await viemClient.execute(async ({client, network: {contracts}, account, connection}) => {
 		const {Stratagems} = contracts;
 		const steps: Step<RevealState>[] = [];
 

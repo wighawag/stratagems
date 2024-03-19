@@ -2,7 +2,7 @@ import {hashParams, initialContractsInfos} from '$lib/config';
 import {formatError} from '$utils/debug';
 import {getRoughGasPriceEstimate} from '$utils/ethereum/gas';
 import {rebuildLocationHash} from '$utils/url';
-import {account, connection, contracts, network} from '$lib/blockchain/connection';
+import {account, connection, viemClient, network} from '$lib/blockchain/connection';
 import {derived, writable} from 'svelte/store';
 import {decodeFunctionResult, encodeFunctionData, formatEther, parseEther} from 'viem';
 import {privateKeyToAccount, type Account} from 'viem/accounts';
@@ -100,7 +100,7 @@ async function claim() {
 
 	const claimWallet = getClaimtWallet();
 
-	contracts.execute(async ({client, account, connection, network}) => {
+	viemClient.execute(async ({client, account, connection, network}) => {
 		const TestTokens = network.contracts.TestTokens;
 		// ----------------------------------------------------------------------------------------
 		// Fetch Balances and Nonce

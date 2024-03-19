@@ -1,25 +1,35 @@
 <script lang="ts">
-	import {connection, contracts} from '$lib/blockchain/connection';
+	import {account, connection} from '$lib/blockchain/connection';
 	import Modal from '$utils/ui/modals/Modal.svelte';
-	import {toHex} from 'viem';
+	import {toHex, type Address} from 'viem';
 	import {conversations} from './missiv';
 	import {getPublicKey, publicKeyAuthorizationMessage} from 'missiv-client';
+	import {createViemWalletClient} from 'web3-connection-viem';
+	import {contractsInfos} from '$lib/blockchain/networks';
+	import {get} from 'svelte/store';
+	import type {ConnectedAccountState, ConnectedState} from 'web3-connection';
 
 	let domainUsername: string = '';
 
 	async function registerWithSignature() {
-		await contracts.execute(async ({client}) => {
-			const user = $conversations.currentUser;
-			if (!user) {
-				throw new Error(`no user`);
-			}
-			const publicKey = toHex(getPublicKey(user.delegatePrivateKey));
-			const signature = await client.wallet.signMessage({
-				message: publicKeyAuthorizationMessage({address: user.address, publicKey}),
-			});
-
-			conversations.register(signature, {domainUsername});
+		// await connection.connect('connection+account');
+		const $connection = get(connection);
+		const $account = get(account);
+		const user = $conversations.currentUser;
+		if (!user) {
+			throw new Error(`no user`);
+		}
+		const client = createViemWalletClient({
+			chainInfo: get(contractsInfos).chainInfo,
+			account: $account as ConnectedAccountState<Address>,
+			connection: $connection as ConnectedState,
 		});
+		const publicKey = toHex(getPublicKey(user.delegatePrivateKey));
+		const signature = await client.signMessage({
+			message: publicKeyAuthorizationMessage({address: user.address, publicKey}),
+		});
+
+		conversations.register(signature, {domainUsername});
 	}
 </script>
 

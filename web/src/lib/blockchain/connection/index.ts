@@ -1,7 +1,7 @@
 import {init, type GenericContractsInfos} from 'web3-connection';
 import {contractsInfos, defaultRPC, initialContractsInfos, blockTime, localRPC, syncInfo} from '$lib/config';
 import {initTransactionProcessor} from 'ethereum-tx-observer';
-import {initViemContracts} from 'web3-connection-viem';
+import {initViemClientExecution} from 'web3-connection-viem';
 import {logs} from 'named-logs';
 import {time} from '$lib/blockchain/time';
 import {stringToHex} from 'viem';
@@ -12,6 +12,8 @@ import {contractNetwork} from '../networks';
 const logger = logs('stratagems');
 
 export const accountData = new StratagemsAccountData();
+
+const signaturesInMemory: {[address: `0x${string}`]: `0x${string}`} = {};
 
 // devNetwork is used for different purposes:
 //  - allow to detect Metamask cache issue
@@ -67,9 +69,14 @@ const stores = init({
 			let signature: `0x${string}` | undefined;
 			const private_signature_storageKey = `__private_signature__${address.toLowerCase()}`;
 			try {
-				const fromStorage = localStorage.getItem(private_signature_storageKey);
-				if (fromStorage && fromStorage.startsWith('0x')) {
-					signature = fromStorage as `0x${string}`;
+				const fromMemory = signaturesInMemory[address.toLowerCase() as `0x${string}`];
+				if (fromMemory) {
+					signature = fromMemory;
+				} else {
+					const fromStorage = localStorage.getItem(private_signature_storageKey);
+					if (fromStorage && fromStorage.startsWith('0x')) {
+						signature = fromStorage as `0x${string}`;
+					}
 				}
 			} catch (err) {}
 
@@ -116,6 +123,7 @@ const stores = init({
 
 				signMessage();
 				signature = (await waitForStep('SIGNING')) as `0x${string}`;
+				signaturesInMemory[address.toLowerCase() as `0x${string}`] = signature;
 				if (doNotAskAgainSignature) {
 					try {
 						localStorage.setItem(private_signature_storageKey, signature);
@@ -179,7 +187,7 @@ contractsInfos.subscribe((contractsInfos) => {
 
 export const {connection, network, account, pendingActions, execution, execute, devProvider} = stores;
 
-export const contracts = initViemContracts(execute);
+export const viemClient = initViemClientExecution(execute);
 
 export function switchToSupportedNetwork() {
 	const n = get(contractNetwork);

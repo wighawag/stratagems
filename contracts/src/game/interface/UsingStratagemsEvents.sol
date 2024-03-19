@@ -28,6 +28,7 @@ interface UsingStratagemsEvents is UsingStratagemsTypes {
     /// @param commitmentHash the hash of the moves
     /// @param moves the moves
     /// @param furtherMoves hash of further moves, unless bytes32(0) which indicate end.
+    /// @param newReserveAmount new amount in reserve as a result
     event CommitmentRevealed(
         address indexed player,
         uint24 indexed epoch,

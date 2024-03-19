@@ -2,7 +2,7 @@
 	import type {CommitMetadata} from '$lib/account/account-data';
 	import {epoch} from '$lib/state/Epoch';
 	import {stratagemsView} from '$lib/state/ViewState';
-	import {contracts} from '$lib/blockchain/connection';
+	import {viemClient} from '$lib/blockchain/connection';
 	import {startAcknowledgFailedReveal, startReveal} from './';
 	import {initialContractsInfos} from '$lib/config';
 
@@ -35,7 +35,7 @@
 			}
 		} else {
 			// TODO use flow
-			await contracts.execute(async ({client, network: {contracts}, account}) => {
+			await viemClient.execute(async ({client, network: {contracts}, account}) => {
 				const {Stratagems} = contracts;
 				console.log(account);
 				await client.wallet.writeContract({

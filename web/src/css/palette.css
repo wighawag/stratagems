@@ -34,6 +34,12 @@
 	--color-text-on-surface: hsl(var(--color-on-surface) var(--color-on-surface-lightness));
 	--color-text-for-links: hsl(var(--color-on-surface) var(--color-on-surface-lightness));
 
+	--color-surface-300: hsl(
+		var(--color-surface) calc(var(--color-surface-lightness) + var(--color-lighness-direction) * -3%)
+	);
+	--color-surface-400: hsl(
+		var(--color-surface) calc(var(--color-surface-lightness) + var(--color-lighness-direction) * -2%)
+	);
 	--color-surface-500: hsl(var(--color-surface) var(--color-surface-lightness));
 	--color-surface-600: hsl(
 		var(--color-surface) calc(var(--color-surface-lightness) + var(--color-lighness-direction) * 2%)
@@ -43,6 +49,9 @@
 	);
 	--color-surface-800: hsl(
 		var(--color-surface) calc(var(--color-surface-lightness) + var(--color-lighness-direction) * 4%)
+	);
+	--color-surface-900: hsl(
+		var(--color-surface) calc(var(--color-surface-lightness) + var(--color-lighness-direction) * 5%)
 	);
 
 	--color-primary-500: hsl(var(--color-primary) var(--color-primary-lightness));

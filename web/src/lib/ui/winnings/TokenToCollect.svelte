@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {contracts} from '$lib/blockchain/connection';
+	import {viemClient} from '$lib/blockchain/connection';
 	import {initialContractsInfos} from '$lib/config';
 	import {stratagemsView} from '$lib/state/ViewState';
 	import {formatUnits} from '$utils/ui/text';
@@ -8,7 +8,7 @@
 	$: total = $stratagemsView.tokensToCollect.reduce((p, c) => p + c.amount, 0n);
 
 	async function claim() {
-		await contracts.execute(async ({client, network: {contracts}, account, connection}) => {
+		await viemClient.execute(async ({client, network: {contracts}, account, connection}) => {
 			const positions: bigint[] = $stratagemsView.tokensToCollect.map((v) => v.position);
 			// TODO metadata + tracking
 			const txHash = await client.wallet.writeContract({

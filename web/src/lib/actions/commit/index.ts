@@ -1,6 +1,6 @@
 import {get, writable} from 'svelte/store';
 import {currentFlow, type Flow, type Step} from '../flow';
-import {accountData, contracts, network} from '$lib/blockchain/connection';
+import {accountData, viemClient, network} from '$lib/blockchain/connection';
 import {FUZD_URI, initialContractsInfos} from '$lib/config';
 import {prepareCommitment, zeroBytes24, zeroBytes32} from 'stratagems-common';
 import {epoch, epochInfo} from '$lib/state/Epoch';
@@ -45,7 +45,7 @@ export type CommitState = {
 export type CommitFlow = Flow<CommitState>;
 
 export async function startCommit() {
-	await contracts.execute(async ({client, account, connection, network: {contracts}}) => {
+	await viemClient.execute(async ({client, account, connection, network: {contracts}}) => {
 		const {Stratagems, TestTokens} = contracts;
 		const localMoves = accountData.$offchainState.moves?.list;
 		if (!localMoves) {

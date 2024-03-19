@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {account, connection, contracts, network} from '$lib/blockchain/connection';
+	import {account, connection, viemClient, network} from '$lib/blockchain/connection';
 	import {menu} from './menu';
 	import {eventsView} from '$lib/ui/events/eventsView';
 	import {transactionsView} from '$lib/ui/transactions/transactionsView';
@@ -53,7 +53,7 @@
 			: formatUnits(allowance, Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals));
 
 	function clearAllowance() {
-		contracts.execute(async ({client, network: {contracts}, account}) => {
+		viemClient.execute(async ({client, network: {contracts}, account}) => {
 			await client.wallet.writeContract({
 				...contracts.TestTokens,
 				functionName: 'approve',
