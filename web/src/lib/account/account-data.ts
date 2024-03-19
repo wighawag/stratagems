@@ -273,10 +273,16 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 			newDataOnLocal = true;
 		}
 
-		if (remoteData.offchainState.moves.timestamp > newData.offchainState.moves.timestamp) {
+		if (
+			remoteData.offchainState.moves.epoch &&
+			remoteData.offchainState.moves.timestamp > newData.offchainState.moves.timestamp
+		) {
 			newData.offchainState.moves = remoteData.offchainState.moves;
 			newDataOnRemote = true;
-		} else if (newData.offchainState.moves.timestamp > remoteData.offchainState.moves.timestamp) {
+		} else if (
+			newData.offchainState.moves.epoch &&
+			newData.offchainState.moves.timestamp > remoteData.offchainState.moves.timestamp
+		) {
 			remoteData.offchainState.moves = newData.offchainState.moves;
 			newDataOnLocal = true;
 		}
