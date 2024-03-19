@@ -151,6 +151,12 @@
 					<div>Leaderboard</div>
 					<hr />
 					<button on:click={() => ($leaderboardView.open = true)}>See Players</button>
+					<a
+						role="button"
+						href="https://stratagems.world/guide/alpha1/#rewards-and-scoring-system"
+						target="_blank"
+						rel="noreferer noopener">Rules</a
+					>
 				</div>
 
 				<div class="category">
@@ -240,6 +246,10 @@
 	.category button {
 		width: 100%;
 	}
+	.category a[role='button'] {
+		width: 100%;
+		text-align: center;
+	}
 	.info-line {
 		display: flex;
 		width: 100%;
@@ -300,7 +310,7 @@
 		}
 	}
 
-	.menu button {
+	.menu a[role='button'] {
 		display: inline-block;
 	}
 

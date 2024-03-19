@@ -19,8 +19,8 @@ hero:
       text: Contracts
       link: /contracts/Stratagems/
     - theme: brand
-      text: Extend
-      link: /guide/extending-the-world/
+      text: Play
+      link: https://alpha1.stratagems.world
 
 features:
   - title: Permission-less
