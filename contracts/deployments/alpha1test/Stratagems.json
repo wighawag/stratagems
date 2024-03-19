@@ -1,5 +1,5 @@
 {
-  "address": "0xe9004afc9459ab2453af008d1d350600b89b7b9e",
+  "address": "0x4fa1a11e311bcac8302b7c04e99c6e5daa2e3d4f",
   "abi": [
     {
       "inputs": [],
@@ -1541,6 +1541,7 @@
           "epoch": "epoch number on which this commit belongs to",
           "furtherMoves": "hash of further moves, unless bytes32(0) which indicate end.",
           "moves": "the moves",
+          "newReserveAmount": "new amount in reserve as a result",
           "player": "account who commited"
         }
       },
@@ -1881,9 +1882,9 @@
       ]
     }
   },
-  "argsData": "0x00000000000000000000000044e419070174b4fcad020bb3b8330c4c2481f87a00000000000000000000000061c461ecc993aadeb7e4b47e96d1b8cc37314b2000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000",
+  "argsData": "0x0000000000000000000000004bd932456d49efbfc8a76115b55c4bacb8d2ef7f00000000000000000000000061c461ecc993aadeb7e4b47e96d1b8cc37314b2000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000",
   "linkedData": {
-    "tokens": "0x3ab3844d5d6614febbe19d59244a815cff691a17",
+    "tokens": "0xefb2062c5c831c9d1f5217ac9ea741d5ad700457",
     "numTokensPerGems": "1000000000000000000n",
     "burnAddress": "0xdeaDDeADDEaDdeaDdEAddEADDEAdDeadDEADDEaD",
     "startTime": 0,
@@ -1891,7 +1892,7 @@
     "commitPhaseDuration": "82800n",
     "maxLife": 7,
     "time": "0x6de75a33cf63fea42ea8e5bafadaa1c80c246c6d",
-    "generator": "0x33a0d701f0619afb407963d6b7f9781dc40f9fcf",
+    "generator": "0x3ce20fb6f507e62ef28bc3c8a3673370cc37fc7b",
     "currency": {
       "symbol": "TOKEN",
       "name": "Tokens",
@@ -1900,13 +1901,13 @@
     "admin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
   },
   "transaction": {
-    "hash": "0x0e92c35ab2e5b77984e50af310fcce0ffc75ee535d35fb7cf7062f0bd54e0a48",
+    "hash": "0xa3079b4d05184ffa8bc1cee8317dafbbec9526128104589d903b66372d1c58ad",
     "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
   },
   "receipt": {
     "confirmations": 0,
-    "blockHash": "0x8698c990996418a30a03f016605acc666de3082ca903388a7bf9f0f10b83fdde",
-    "blockNumber": "0x6e9848",
+    "blockHash": "0x30510f8237c926fb353319e63fccf613a2828c9cff3ddf24aa789215e6711fa6",
+    "blockNumber": "0x733593",
     "transactionIndex": "0x6"
   },
   "updated": true
