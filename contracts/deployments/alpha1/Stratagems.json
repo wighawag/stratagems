@@ -1,5 +1,5 @@
 {
-  "address": "0xb99d938a722df8984722ab38732533130b4f3ec4",
+  "address": "0x2244e344726b3c3d8039d5e23016bb70184db510",
   "abi": [
     {
       "inputs": [],
@@ -1541,6 +1541,7 @@
           "epoch": "epoch number on which this commit belongs to",
           "furtherMoves": "hash of further moves, unless bytes32(0) which indicate end.",
           "moves": "the moves",
+          "newReserveAmount": "new amount in reserve as a result",
           "player": "account who commited"
         }
       },
@@ -1881,19 +1882,9 @@
       ]
     }
   },
-  "argsData": "0x000000000000000000000000e2b63fc22e26307011776b4f8b801500f4b31590000000000000000000000000be19b59e8c588d68f475a407c7ba5fe813aeb79200000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000",
-  "transaction": {
-    "hash": "0xe5df0741d61b03ecfc4aa7da099d9ae3759f8253c61fe3698b6ebb8f9fbf1937",
-    "origin": "0xbe19b59e8c588d68f475a407c7ba5fe813aeb792"
-  },
-  "receipt": {
-    "confirmations": 0,
-    "blockHash": "0xcb2f26cd94c37b09a0adb223d0c3b5d0ba177ef09db610df0d4f142e01c9553a",
-    "blockNumber": "0xb2ff5e",
-    "transactionIndex": "0xb"
-  },
+  "argsData": "0x000000000000000000000000b25de4c8422b9882b0a7efd2808d73e1e1b9bf3e000000000000000000000000be19b59e8c588d68f475a407c7ba5fe813aeb79200000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000",
   "linkedData": {
-    "tokens": "0xbf0dfd007862a0417326f8040a36f5ca44cb6453",
+    "tokens": "0xa695d9a632df8f65c02e24013b1a61f719d5cd9d",
     "numTokensPerGems": "1000000000000000000n",
     "burnAddress": "0xdeaDDeADDEaDdeaDdEAddEADDEAdDeadDEADDEaD",
     "startTime": 0,
@@ -1901,13 +1892,23 @@
     "commitPhaseDuration": "82800n",
     "maxLife": 7,
     "time": "0x0000000000000000000000000000000000000000",
-    "generator": "0xbe2f7c303b53f16f447fd82bf549e65185bf3477",
+    "generator": "0x070e873b9a829c7dd393c40313ee00bad66d6789",
     "currency": {
       "symbol": "TOKEN",
       "name": "Tokens",
       "decimals": 18
     },
     "admin": "0xbe19b59e8c588d68f475a407c7ba5fe813aeb792"
+  },
+  "transaction": {
+    "hash": "0x48a488a2e20cf43fd625d00a8d22c52fd23df949bd34a6d748c5d4bad99866de",
+    "origin": "0xbe19b59e8c588d68f475a407c7ba5fe813aeb792"
+  },
+  "receipt": {
+    "confirmations": 0,
+    "blockHash": "0xce17f835ce81500735c47642b92244b5c6f43934ee238089b25c9021130c6721",
+    "blockNumber": "0xb7b64d",
+    "transactionIndex": "0x18"
   },
   "updated": true
 }
