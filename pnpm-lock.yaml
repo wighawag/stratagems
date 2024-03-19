@@ -76,8 +76,8 @@ importers:
         specifier: ^0.2.5
         version: 0.2.5
       ethereum-indexer-browser:
-        specifier: ^0.7.0
-        version: 0.7.0(typescript@5.3.3)
+        specifier: ^0.7.2
+        version: 0.7.2(typescript@5.3.3)
       fs-extra:
         specifier: ^11.2.0
         version: 11.2.0
@@ -112,8 +112,8 @@ importers:
         specifier: ^4.0.13
         version: 4.0.13(rocketh@0.10.8)(typescript@5.3.3)
       rocketh-deploy-router:
-        specifier: ^4.0.11
-        version: 4.0.11(rocketh@0.10.8)(typescript@5.3.3)
+        specifier: ^4.0.12
+        version: 4.0.12(rocketh@0.10.8)(typescript@5.3.3)
       rocketh-doc:
         specifier: ^4.0.8
         version: 4.0.8(rocketh@0.10.8)
@@ -208,11 +208,11 @@ importers:
   helper-services/remote-indexer:
     devDependencies:
       ethereum-indexer-cli:
-        specifier: ^0.6.27
-        version: 0.6.27(typescript@5.3.3)
-      ethereum-indexer-server:
         specifier: ^0.6.29
         version: 0.6.29(typescript@5.3.3)
+      ethereum-indexer-server:
+        specifier: ^0.6.31
+        version: 0.6.31(typescript@5.3.3)
       stratagems-indexer:
         specifier: workspace:*
         version: link:../../indexer
@@ -229,8 +229,8 @@ importers:
   indexer:
     dependencies:
       ethereum-indexer-js-processor:
-        specifier: ^0.6.28
-        version: 0.6.28(typescript@5.3.3)
+        specifier: ^0.6.30
+        version: 0.6.30(typescript@5.3.3)
       named-logs:
         specifier: ^0.2.2
         version: 0.2.2
@@ -239,11 +239,11 @@ importers:
         version: link:../common
     devDependencies:
       ethereum-indexer-cli:
-        specifier: ^0.6.27
-        version: 0.6.27(typescript@5.3.3)
-      ethereum-indexer-server:
         specifier: ^0.6.29
         version: 0.6.29(typescript@5.3.3)
+      ethereum-indexer-server:
+        specifier: ^0.6.31
+        version: 0.6.31(typescript@5.3.3)
       ldenv:
         specifier: ^0.3.9
         version: 0.3.9
@@ -284,8 +284,8 @@ importers:
         specifier: ^1.3.1
         version: 1.3.1
       ethereum-indexer-browser:
-        specifier: ^0.7.0
-        version: 0.7.0(typescript@5.3.3)
+        specifier: ^0.7.2
+        version: 0.7.2(typescript@5.3.3)
       ethereum-tx-observer:
         specifier: ^0.0.5
         version: 0.0.5
@@ -5383,10 +5383,10 @@ packages:
       '@scure/bip39': 1.2.2
     dev: true
 
-  /ethereum-indexer-browser@0.7.0(typescript@5.3.3):
-    resolution: {integrity: sha512-SL/wJAWzdBbkxJtE1q6EyjbOSWOTgPxpWCETndq5lCwNRb/9XIv7v4VaVozjx+0CcftQsUPdPXDk4ClY8gXyCw==}
+  /ethereum-indexer-browser@0.7.2(typescript@5.3.3):
+    resolution: {integrity: sha512-u7glhEax+PNBEhTensmnaVsoFB/zBVvTjHM44cOkYo+M7sQYQ2W9yS94Kzub4GcBoPRfF4GUXKvmvsQirm9elA==}
     dependencies:
-      ethereum-indexer: 0.6.19(typescript@5.3.3)
+      ethereum-indexer: 0.6.21(typescript@5.3.3)
       ethereum-indexer-utils: 0.6.12
       idb-keyval: 6.2.1
       named-logs: 0.2.2
@@ -5398,13 +5398,13 @@ packages:
       - utf-8-validate
       - zod
 
-  /ethereum-indexer-cli@0.6.27(typescript@5.3.3):
-    resolution: {integrity: sha512-0WLcIv+uee3d9R85A+OESa3GA52ddnr/xIbMe8PWfe2Od9TUGM667xYelsohNy0TPrwvd6MhAKU3bkyvLxnY4g==}
+  /ethereum-indexer-cli@0.6.29(typescript@5.3.3):
+    resolution: {integrity: sha512-kh9iacVlpL9zb37KWAsjZEoN3v7ApmuQvS88nF5EjtdfzLEYxdRDmjx7eU/W1ecwnphPA/klI9h4Nz9gRLOZmg==}
     hasBin: true
     dependencies:
       commander: 11.1.0
       eip-1193-jsonrpc-provider: 0.3.0
-      ethereum-indexer: 0.6.19(typescript@5.3.3)
+      ethereum-indexer: 0.6.21(typescript@5.3.3)
       ethereum-indexer-utils: 0.6.12
       ldenv: 0.3.9
       named-logs: 0.2.2
@@ -5416,10 +5416,10 @@ packages:
       - zod
     dev: true
 
-  /ethereum-indexer-db-utils@0.6.19(typescript@5.3.3):
-    resolution: {integrity: sha512-WWtWRjjfvVpM0ZbLPVzEHoj+RY6VSByJ+ps+kJIi0PzCmaNkKVQSA334ZT9SV9KtYrHlWkxZm781j1wg6RU5jg==}
+  /ethereum-indexer-db-utils@0.6.21(typescript@5.3.3):
+    resolution: {integrity: sha512-etzs8ATMVAMToY4YUhJFJnwuf8sMeXjdgg4weqWhdB9aDIpY3bPcKkqQlAqvYyi9boGI5PrqPKQb45vEKeEAxw==}
     dependencies:
-      ethereum-indexer: 0.6.19(typescript@5.3.3)
+      ethereum-indexer: 0.6.21(typescript@5.3.3)
       named-logs: 0.2.2
       pouchdb: 8.0.1
       pouchdb-find: 8.0.1
@@ -5431,11 +5431,11 @@ packages:
       - zod
     dev: true
 
-  /ethereum-indexer-fs-cache@0.6.19(typescript@5.3.3):
-    resolution: {integrity: sha512-TkMu/LrHo65f97JSZfHBOweth8b+vcThh5g0NAUe4Tdh6jtf2Ik+G1144Kx3raORFs+pKuCpciCmN6n0OTBlUg==}
+  /ethereum-indexer-fs-cache@0.6.21(typescript@5.3.3):
+    resolution: {integrity: sha512-9JdczVpNyaGyweIGK0pjNxT0PqgxUOziys80lg3lV2wWSZG4TMCkUyLnFepAfHDeS/K/YtCPCCHrQza2ZqVM2w==}
     dependencies:
       '@types/fs-extra': 11.0.4
-      ethereum-indexer: 0.6.19(typescript@5.3.3)
+      ethereum-indexer: 0.6.21(typescript@5.3.3)
       fs-extra: 11.2.0
       named-logs: 0.2.2
       pouchdb: 8.0.1
@@ -5448,11 +5448,11 @@ packages:
       - zod
     dev: true
 
-  /ethereum-indexer-js-processor@0.6.28(typescript@5.3.3):
-    resolution: {integrity: sha512-PYXS0RqKgCrdWZSlYl7Ohx9gYFEIbLs6o3OKV0BHNpoBi7n9+aNXUZD8j5CquerZAuqKtrPC6npznANxDo8G4A==}
+  /ethereum-indexer-js-processor@0.6.30(typescript@5.3.3):
+    resolution: {integrity: sha512-hmWlDkVJcgBH1ElvZTgzpS0mIT2JFCdun9zmhSxkj4HwXS/oJXAGKR35OXMtRbPSALOzJRicQEC+coBjXZo9jQ==}
     dependencies:
-      ethereum-indexer: 0.6.19(typescript@5.3.3)
-      immer: 10.0.3
+      ethereum-indexer: 0.6.21(typescript@5.3.3)
+      immer: 10.0.4
       named-logs: 0.2.2
     transitivePeerDependencies:
       - bufferutil
@@ -5461,19 +5461,19 @@ packages:
       - zod
     dev: false
 
-  /ethereum-indexer-server@0.6.29(typescript@5.3.3):
-    resolution: {integrity: sha512-5Q7SpOvgLYanWYj+IBSuBu32ZAdBfdTgNTy4sH67PSclF9nCtWNd+5Px3Q+DOTJHDM2OiHaH6p2YEtUcNn3d8Q==}
+  /ethereum-indexer-server@0.6.31(typescript@5.3.3):
+    resolution: {integrity: sha512-UUY9VEUrltI5cYCI3bqosxUHfp5zzmRWEhgl6sXT8FCqlEm3nsrMwPacqasmTEnSTr+ql9zliDzGXBxCI3u77A==}
     hasBin: true
     dependencies:
       '@ethersproject/bignumber': 5.7.0
       commander: 11.1.0
       eip-1193-jsonrpc-provider: 0.3.0
-      ethereum-indexer: 0.6.19(typescript@5.3.3)
-      ethereum-indexer-db-utils: 0.6.19(typescript@5.3.3)
-      ethereum-indexer-fs-cache: 0.6.19(typescript@5.3.3)
+      ethereum-indexer: 0.6.21(typescript@5.3.3)
+      ethereum-indexer-db-utils: 0.6.21(typescript@5.3.3)
+      ethereum-indexer-fs-cache: 0.6.21(typescript@5.3.3)
       ethereum-indexer-utils: 0.6.12
       figlet: 1.7.0
-      koa: 2.15.0
+      koa: 2.15.1
       koa-bodyparser: 4.4.1
       koa-json: 2.0.2
       koa-logger: 3.2.1
@@ -5497,8 +5497,8 @@ packages:
     dependencies:
       named-logs: 0.2.2
 
-  /ethereum-indexer@0.6.19(typescript@5.3.3):
-    resolution: {integrity: sha512-kr0XQ4s+m5q4gdPnlhKiP5PMqQF8nPSNRGjsyq8WY7YLLqgsqiySWZWQ7MmRLlv/Nwx/6mtQQF6xPI81AeO2Iw==}
+  /ethereum-indexer@0.6.21(typescript@5.3.3):
+    resolution: {integrity: sha512-2jhvea/wl6FASc8GS5YzzPG2Cvn+mk9E5xHR/Qwv6XWsnb9sJkDshOxT2bWRlvaw9dyQ2dfpKI8QyYwE0ZiOng==}
     dependencies:
       named-logs: 0.2.2
       viem: 1.21.4(typescript@5.3.3)
@@ -6512,6 +6512,10 @@ packages:
     resolution: {integrity: sha512-pwupu3eWfouuaowscykeckFmVTpqbzW+rXFCX8rQLkZzM9ftBmU/++Ra+o+L27mz03zJTlyV4UUr+fdKNffo4A==}
     dev: false
 
+  /immer@10.0.4:
+    resolution: {integrity: sha512-cuBuGK40P/sk5IzWa9QPUaAdvPHjkk1c+xYsd9oZw+YQQEV+10G0P5uMpGctZZKnyQ+ibRO08bD25nWLmYi2pw==}
+    dev: false
+
   /immutable@4.3.5:
     resolution: {integrity: sha512-8eabxkth9gZatlwl5TBuJnCsoTADlL6ftEr7A4qgdaTsPyreilDSnUk57SO+jfKcNtxPa22U5KK6DSeAYhpBJw==}
     dev: true
@@ -7120,8 +7124,8 @@ packages:
       - supports-color
     dev: true
 
-  /koa@2.15.0:
-    resolution: {integrity: sha512-KEL/vU1knsoUvfP4MC4/GthpQrY/p6dzwaaGI6Rt4NQuFqkw3qrvsdYF5pz3wOfi7IGTvMPHC9aZIcUKYFNxsw==}
+  /koa@2.15.1:
+    resolution: {integrity: sha512-kpxzGxsv7tlc0WmccWd6CfdWqYXk4o/FsCTjnKaDnHLjPK/Sy1MpoBkuKO5LN7GdPHgPljrAVmMO3wbFxEJTeA==}
     engines: {node: ^4.8.4 || ^6.10.1 || ^7.10.1 || >= 8.1.4}
     dependencies:
       accepts: 1.3.8
@@ -9072,8 +9076,8 @@ packages:
       - zod
     dev: true
 
-  /rocketh-deploy-router@4.0.11(rocketh@0.10.8)(typescript@5.3.3):
-    resolution: {integrity: sha512-kVjvQfpQh+hbINMBibkjmVK7Gf5HAFUtAxJzSo+Bu24Uve5tWOYHhC3uojy2TpKf3zV8Url8UeHKeYo6vkWY6A==}
+  /rocketh-deploy-router@4.0.12(rocketh@0.10.8)(typescript@5.3.3):
+    resolution: {integrity: sha512-dxosUH/rRy7jYMlWrKPoB2NXkGaXehkCpOs7Mq4ByDYda3WVOauO9AnwE+lL3aZiaF6BG38YDel5baWiEuTj9g==}
     peerDependencies:
       rocketh: 0.10.8
     dependencies:

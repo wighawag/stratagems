@@ -13,10 +13,10 @@ const args = process.argv.slice(2);
 const num = (args[0] && parseInt(args[0])) || 100;
 
 const valuePerChainId = {
-	'888888888': parseEther('0.003'),
+	'888888888': parseEther('0.001'),
 	default: parseEther('0.001'),
 	'8453': parseEther('0.003'),
-	'28122024': parseEther('0.003'),
+	'28122024': parseEther('0.001'),
 };
 
 async function main() {
@@ -57,7 +57,7 @@ async function main() {
 	if (!valuePerAccount) {
 		valuePerAccount = valuePerChainId['default'];
 	}
-	const numTokensTMP = parseUnits('15', decimals);
+	const numTokensTMP = parseUnits('20', decimals);
 	const numTokensPerAccount = numTokensTMP + (numTokensTMP * 2n) / parseUnits('1', decimals);
 
 	const value = valuePerAccount * BigInt(addresses.length);
