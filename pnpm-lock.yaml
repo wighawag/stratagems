@@ -76,8 +76,8 @@ importers:
         specifier: ^0.2.5
         version: 0.2.5
       ethereum-indexer-browser:
-        specifier: ^0.7.2
-        version: 0.7.2(typescript@5.3.3)
+        specifier: ^0.7.5
+        version: 0.7.5(typescript@5.3.3)
       fs-extra:
         specifier: ^11.2.0
         version: 11.2.0
@@ -284,8 +284,8 @@ importers:
         specifier: ^1.3.1
         version: 1.3.1
       ethereum-indexer-browser:
-        specifier: ^0.7.2
-        version: 0.7.2(typescript@5.3.3)
+        specifier: ^0.7.5
+        version: 0.7.5(typescript@5.3.3)
       ethereum-tx-observer:
         specifier: ^0.0.5
         version: 0.0.5
@@ -5383,8 +5383,8 @@ packages:
       '@scure/bip39': 1.2.2
     dev: true
 
-  /ethereum-indexer-browser@0.7.2(typescript@5.3.3):
-    resolution: {integrity: sha512-u7glhEax+PNBEhTensmnaVsoFB/zBVvTjHM44cOkYo+M7sQYQ2W9yS94Kzub4GcBoPRfF4GUXKvmvsQirm9elA==}
+  /ethereum-indexer-browser@0.7.5(typescript@5.3.3):
+    resolution: {integrity: sha512-pbYzs2UnZfwe9wrwh1f+R25xajWXAUxEI3OmSBs5SjRgEvFPFQFsiDci3aP0eiMnwWfawti4KNnGgsWcfzATEQ==}
     dependencies:
       ethereum-indexer: 0.6.21(typescript@5.3.3)
       ethereum-indexer-utils: 0.6.12

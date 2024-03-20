@@ -11,7 +11,7 @@
     "chai-ethers": "^0.0.1",
     "eip-1193": "^0.5.0",
     "ethereum-contracts-test-suite": "^0.2.5",
-    "ethereum-indexer-browser": "^0.7.2",
+    "ethereum-indexer-browser": "^0.7.5",
     "fs-extra": "^11.2.0",
     "hardhat": "^2.20.1",
     "hardhat-preprocessor": "^0.1.5",

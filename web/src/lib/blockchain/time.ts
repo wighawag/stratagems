@@ -65,6 +65,16 @@ async function getBlockchainTime() {
 		}
 	} else {
 		if (connection.$state.provider) {
+			const block = await connection.$state.provider.request({
+				method: 'eth_getBlockByNumber',
+				params: ['latest', false],
+			});
+			if (block) {
+				blockchainTimestamp = {
+					timestamp: Number(block.timestamp),
+					lastFetchLocalTime: performance.now(),
+				};
+			}
 			if (contract) {
 				const rawTimestamp = await connection.$state.provider?.request({
 					method: 'eth_call',
