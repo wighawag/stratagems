@@ -360,8 +360,8 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 	// 	this._offchainState.set(this.$data.offchainState);
 	// }
 
-	resetOffchainMoves(alsoSave: boolean = true) {
-		this.$data.offchainState.moves = {list: [], timestamp: time.now, epoch: undefined};
+	resetOffchainMoves(epoch: number, alsoSave: boolean = true) {
+		this.$data.offchainState.moves = {list: [], timestamp: time.now, epoch};
 
 		if (alsoSave) {
 			this._save();

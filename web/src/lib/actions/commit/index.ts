@@ -345,7 +345,7 @@ export async function startCommit() {
 				}
 				state.txHash = txHash;
 
-				accountData.resetOffchainMoves();
+				accountData.resetOffchainMoves(epochNumber);
 
 				const timeToBroadcastReveal = time.now + get(epochInfo).timeLeftToCommit;
 				const data = encodeFunctionData({

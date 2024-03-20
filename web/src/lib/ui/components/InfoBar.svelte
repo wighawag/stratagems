@@ -12,6 +12,7 @@
 	import {contractNetwork} from '$lib/blockchain/networks';
 	import {status} from '$lib/state/State';
 	import SyncingInfo from './SyncingInfo.svelte';
+	import {parseEther} from 'viem';
 
 	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
 
@@ -125,24 +126,7 @@
 			</div>
 		{/if}
 	{:else if $balance.state === 'Loaded'}
-		{#if $balance.nativeBalance < MINIMUM_REQUIRED_ETH_BALANCE}
-			<div class="warning">
-				<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
-				<!-- {#if isSepolia}
-					<a href="https://sepoliafaucet.com/" target="_blank" rel="noopener noreferrer ">Request test ETH</a>
-				{:else} -->
-				You have not enough ETH to pay for gas
-				<!-- {/if} -->
-				<a class="underline" href="https://community.etherplay.io" target="_blank" rel="noreferer noopener"
-					>Ask on our Discord</a
-				>
-			</div>
-			{#if $every3Seconds.synced}
-				<span>{timeToText(timeLeftForNextPhase)} left</span>
-			{:else}
-				<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
-			{/if}
-		{:else if $balance.tokenBalance === 0n}
+		{#if $balance.tokenBalance < parseEther('1')}
 			{#if any(initialContractsInfos.contracts)['TestTokensDistributor']}
 				<div>
 					<TxExecutor btn="btn-sm" func={() => topupToken()}>Get Test token</TxExecutor>
@@ -151,13 +135,33 @@
 				<div>
 					<span>
 						<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
-						You do no not have any token to play
+						You do not have any token to play
 						<a class="underline" href="https://community.etherplay.io" target="_blank" rel="noreferer noopener"
 							>Ask on our Discord</a
 						>
 					</span>
 				</div>
 			{/if}
+			{#if $every3Seconds.synced}
+				<span>{timeToText(timeLeftForNextPhase)} left</span>
+			{:else}
+				<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
+			{/if}
+		{:else if $balance.nativeBalance < MINIMUM_REQUIRED_ETH_BALANCE}
+			<div class="warning">
+				<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
+				<!-- {#if isSepolia}
+					<a href="https://sepoliafaucet.com/" target="_blank" rel="noopener noreferrer ">Request test ETH</a>
+				{:else} -->
+				You do not have enough ETH to pay for gas
+				<!-- {/if} -->
+				<!-- TODO -->
+				<!-- {#if testnet}
+				<a class="underline" href="https://community.etherplay.io" target="_blank" rel="noreferer noopener"
+					>Ask on our Discord</a
+				>
+				{/if} -->
+			</div>
 			{#if $every3Seconds.synced}
 				<span>{timeToText(timeLeftForNextPhase)} left</span>
 			{:else}

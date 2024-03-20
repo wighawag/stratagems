@@ -5,6 +5,7 @@
 	import {startCommit} from '$lib/actions/commit';
 	import {MINIMUM_REQUIRED_ETH_BALANCE, balance} from '$lib/state/balance';
 	import {formatUnits} from '$utils/ui/text';
+	import {epoch} from '$lib/state/Epoch';
 
 	const decimals = Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals);
 
@@ -51,7 +52,7 @@
 
 	function clear(e: MouseEvent) {
 		e.preventDefault();
-		accountData.resetOffchainMoves();
+		accountData.resetOffchainMoves($epoch);
 	}
 
 	async function startCommiting(e: MouseEvent) {

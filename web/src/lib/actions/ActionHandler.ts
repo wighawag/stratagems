@@ -48,7 +48,7 @@ export class ActionHandler {
 		const currentColor = currentOffchainState.currentColor.color || Number((BigInt(player) % 5n) + 1n);
 
 		if (currentOffchainState.moves?.epoch && currentOffchainState.moves.epoch != $epochState.epoch) {
-			accountData.resetOffchainMoves();
+			accountData.resetOffchainMoves($epochState.epoch);
 		}
 		const currentMove = currentOffchainState.moves?.list.find((v) => v.x === x && v.y === y);
 		if (currentMove) {
