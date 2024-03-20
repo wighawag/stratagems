@@ -6,33 +6,16 @@ class LocalCache {
 	private _prefix: string;
 	public upgraded: Readable<boolean>;
 	constructor(private version?: string) {
-		this._prefix = base.startsWith('/ipfs/') || base.startsWith('/ipns/') ? base.slice(6) : ''; // ensure local storage is not conflicting across web3w-based apps on ipfs gateways (require encryption for sensitive data)
+		this._prefix = base.startsWith('/ipfs/') || base.startsWith('/ipns/') ? base.slice(6) : ''; // ensure local storage is not conflicting across apps on ipfs gateways (require encryption for sensitive data)
 
 		let isUpgraded = false;
 		if (this.version && typeof window !== 'undefined' && window.localStorage) {
-			if (
-				window.location &&
-				(window.location.host === 'base.stratagems.world' || window.location.host === 'localhost:5173') &&
-				window.localStorage.length > 0
-			) {
-				// special case as we forgot to write to storage
-				try {
-					const lastVersion = window.localStorage.getItem(this._prefix + '_version');
-					if (lastVersion !== this.version) {
-						console.log({lastVersion, version: this.version});
-						isUpgraded = true;
-					} else {
-						this.setItem('_version', this.version);
-					}
-				} catch {}
+			const lastVersion = this.getItem('_version');
+			if (lastVersion && lastVersion !== this.version) {
+				console.log({lastVersion, version: this.version});
+				isUpgraded = true;
 			} else {
-				const lastVersion = this.getItem('_version');
-				if (lastVersion && lastVersion !== this.version) {
-					console.log({lastVersion, version: this.version});
-					isUpgraded = true;
-				} else {
-					this.setItem('_version', this.version);
-				}
+				this.setItem('_version', this.version);
 			}
 		}
 

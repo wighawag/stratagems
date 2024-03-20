@@ -193,18 +193,42 @@ async function claim() {
 		}
 		// ----------------------------------------------------------------------------------------
 
-		const ethLeft = ethBalance - estimate * maxFeePerGas - extraFee;
-		let txHash;
+		const ethLeft = ethBalance - estimate * maxFeePerGas - extraFee * 2n;
+		let txHash: `0x${string}` | undefined;
 		try {
-			txHash = await client.wallet.writeContract({
-				...redeemTransactionData,
+			const txData = encodeFunctionData({
+				...TestTokens,
+				functionName: 'transferAlongWithETH',
+				args: [account.address, tokenBalance],
+			});
+
+			const rawTx = await client.wallet.signTransaction({
+				account: claimWallet,
 				value: ethLeft,
 				nonce,
 				maxFeePerGas,
 				maxPriorityFeePerGas,
-				account: claimWallet,
 				gas: estimate,
+				data: txData,
 			});
+
+			// TODO investigate: coinbase wallet do not seem to allow eth_sendRawTransaction
+			const provider = connection.httpProvider || connection.provider;
+
+			txHash = await provider.request({
+				method: 'eth_sendRawTransaction',
+				params: [rawTx],
+			});
+
+			// txHash = await client.wallet.writeContract({
+			// 	...redeemTransactionData,
+			// 	value: ethLeft,
+			// 	nonce,
+			// 	maxFeePerGas,
+			// 	maxPriorityFeePerGas,
+			// 	account: claimWallet,
+			// 	gas: estimate,
+			// });
 
 			state.state = 'Claiming';
 			tokenClaimStore.set(state);
