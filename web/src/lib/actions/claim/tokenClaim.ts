@@ -193,7 +193,7 @@ async function claim() {
 		}
 		// ----------------------------------------------------------------------------------------
 
-		const ethLeft = ethBalance - estimate * maxFeePerGas - extraFee * 2n;
+		const ethLeft = ethBalance - estimate * maxFeePerGas - extraFee;
 		let txHash: `0x${string}` | undefined;
 		try {
 			const txData = encodeFunctionData({
@@ -203,6 +203,7 @@ async function claim() {
 			});
 
 			const rawTx = await client.wallet.signTransaction({
+				to: TestTokens.address,
 				account: claimWallet,
 				value: ethLeft,
 				nonce,
