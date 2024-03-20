@@ -1,5 +1,5 @@
 {
-  "address": "0x2244e344726b3c3d8039d5e23016bb70184db510",
+  "address": "0x5ab6d5bb8012fc60ab3653e025be4a59b4406ff2",
   "abi": [
     {
       "inputs": [],
@@ -1882,9 +1882,9 @@
       ]
     }
   },
-  "argsData": "0x000000000000000000000000b25de4c8422b9882b0a7efd2808d73e1e1b9bf3e000000000000000000000000be19b59e8c588d68f475a407c7ba5fe813aeb79200000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000",
+  "argsData": "0x00000000000000000000000070339a5ce864ded4e7c7563fcb4f01e3a6b102a5000000000000000000000000be19b59e8c588d68f475a407c7ba5fe813aeb79200000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000",
   "linkedData": {
-    "tokens": "0xa695d9a632df8f65c02e24013b1a61f719d5cd9d",
+    "tokens": "0xf1afa696204e3f1c07838280bd2db799c660da1c",
     "numTokensPerGems": "1000000000000000000n",
     "burnAddress": "0xdeaDDeADDEaDdeaDdEAddEADDEAdDeadDEADDEaD",
     "startTime": 0,
@@ -1892,7 +1892,7 @@
     "commitPhaseDuration": "82800n",
     "maxLife": 7,
     "time": "0x0000000000000000000000000000000000000000",
-    "generator": "0x070e873b9a829c7dd393c40313ee00bad66d6789",
+    "generator": "0xb0855eaf94bf7f122af4f444141e83b7408cc7a7",
     "currency": {
       "symbol": "TOKEN",
       "name": "Tokens",
@@ -1901,14 +1901,14 @@
     "admin": "0xbe19b59e8c588d68f475a407c7ba5fe813aeb792"
   },
   "transaction": {
-    "hash": "0x48a488a2e20cf43fd625d00a8d22c52fd23df949bd34a6d748c5d4bad99866de",
+    "hash": "0xa56cb6daedd2f93400deb005fc5b9df8cbe5a22c7150673c911c0af0a23aed59",
     "origin": "0xbe19b59e8c588d68f475a407c7ba5fe813aeb792"
   },
   "receipt": {
     "confirmations": 0,
-    "blockHash": "0xce17f835ce81500735c47642b92244b5c6f43934ee238089b25c9021130c6721",
-    "blockNumber": "0xb7b64d",
-    "transactionIndex": "0x18"
+    "blockHash": "0xa8b6bc1f4eab10462dde5b8d01e093b52b325ecec3b9d0ce1b0398eb647c6fdc",
+    "blockNumber": "0xb85c93",
+    "transactionIndex": "0x35"
   },
   "updated": true
 }

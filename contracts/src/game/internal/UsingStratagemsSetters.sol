@@ -153,8 +153,12 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         if (currentState.color == Color.Evil) {
             if (oldOwner != 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF) {
                 if (newEffectiveDelta > 0) {
-                    GENERATOR.remove(oldOwner, NUM_TOKENS_PER_GEMS);
-                    GENERATOR.add(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, NUM_TOKENS_PER_GEMS * 2);
+                    if (oldOwner == address(0)) {
+                        GENERATOR.add(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, NUM_TOKENS_PER_GEMS);
+                    } else {
+                        GENERATOR.remove(oldOwner, NUM_TOKENS_PER_GEMS);
+                        GENERATOR.add(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, NUM_TOKENS_PER_GEMS * 2);
+                    }
                 }
                 emit Transfer(oldOwner, 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, move.position);
                 _owners[move.position] = uint256(uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF));
@@ -668,11 +672,14 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         uint24 epoch, // epoch at which the update occured (epochUsed TODO: confirm its use)
         int8 oldEffectiveDelta
     ) internal {
-        int8 newEffectiveDelta = _effectiveDelta(cell.delta, cell.enemyMap);
-        if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
-            GENERATOR.remove(_ownerOf(position), NUM_TOKENS_PER_GEMS * cell.stake);
-        } else if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
-            GENERATOR.add(_ownerOf(position), NUM_TOKENS_PER_GEMS * cell.stake);
+        address owner = _ownerOf(position);
+        if (owner != address(0)) {
+            int8 newEffectiveDelta = _effectiveDelta(cell.delta, cell.enemyMap);
+            if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
+                GENERATOR.remove(owner, NUM_TOKENS_PER_GEMS * cell.stake);
+            } else if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
+                GENERATOR.add(owner, NUM_TOKENS_PER_GEMS * cell.stake);
+            }
         }
 
         if (oldEffectiveDelta > 0) {

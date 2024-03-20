@@ -235,8 +235,12 @@ contract StratagemsERC721 is
         _owners[tokenID] = (block.number << 184) | uint256(uint160(to));
         Cell memory cell = _cells[uint64(tokenID)];
         if (_effectiveDelta(cell.delta, cell.enemyMap) > 0) {
-            GENERATOR.remove(from, NUM_TOKENS_PER_GEMS);
-            GENERATOR.add(to, NUM_TOKENS_PER_GEMS);
+            if (from != address(0)) {
+                GENERATOR.remove(from, NUM_TOKENS_PER_GEMS);
+            }
+            if (to != address(0)) {
+                GENERATOR.add(to, NUM_TOKENS_PER_GEMS);
+            }
         }
 
         emit Transfer(from, to, tokenID);

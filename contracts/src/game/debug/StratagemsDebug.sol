@@ -101,7 +101,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
             if (simpleCell.color == Color.Evil) {
                 owner = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
             }
-            if (_effectiveDelta(cell.delta, cell.enemyMap) > 0) {
+            if (_effectiveDelta(cell.delta, cell.enemyMap) > 0 && owner != address(0)) {
                 GENERATOR.add(owner, NUM_TOKENS_PER_GEMS);
             }
             emit Transfer(_ownerOf(simpleCell.position), owner, simpleCell.position);

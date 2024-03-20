@@ -11,7 +11,11 @@
 
 <div class="container">
 	<span class="blockie-wrapper">
-		<ImgBlockie style="object-fit: cover;height: 100%;width: 100%;" address={player} />
+		{#if player.toLowerCase() === '0xffffffffffffffffffffffffffffffffffffffff'}
+			<img alt="evil faction" src="/game-assets/black.png" />
+		{:else}
+			<ImgBlockie style="object-fit: cover;height: 100%;width: 100%;" address={player} />
+		{/if}
 		{pointsInfo.points}
 	</span>
 	<JsonView json={pointsInfo} depth={1} />
