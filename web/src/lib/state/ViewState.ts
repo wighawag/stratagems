@@ -78,7 +78,12 @@ function merge(
 	// console.log({epoch: epochState.epoch, isActionPhase: epochState.isActionPhase});
 
 	let lastCommitment: OnChainAction<CommitMetadata> | undefined;
-	if (offchainState.moves !== undefined && offchainState.moves.epoch === epochState.epoch && epochState.isActionPhase) {
+	if (
+		offchainState.moves !== undefined &&
+		offchainState.moves.list.length > 0 &&
+		offchainState.moves.epoch === epochState.epoch &&
+		epochState.isActionPhase
+	) {
 		for (const move of offchainState.moves.list) {
 			if (!isValidMove(move)) {
 				console.error(`INVALID MOVE`, move);
