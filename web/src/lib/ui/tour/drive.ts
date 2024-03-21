@@ -38,7 +38,7 @@ export function startTour(callback?: () => void) {
 				popover: {
 					title: 'The Info bar',
 					description:
-						'Stratagems is a "phase-based" game conssting of a 23h "Commit" phase where you make your moves (place new islands) and a 1h "Reveal" phase that execiute every player action simultaneously. This bar will tell you about your current situation and how much time is left for the next phase.',
+						'Stratagems is a "simultaneous turn" game consisting of a 23h "Commit" phase where you make your moves (place new islands) and a 1h "Reveal" phase that execute every player\'s actions simultaneously. This bar will tell you about your current situation and how much time is left for the next phase.',
 				},
 			},
 			{
