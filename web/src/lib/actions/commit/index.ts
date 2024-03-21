@@ -114,6 +114,16 @@ export async function startCommit() {
 					}
 				}
 
+				// TODO per network, this was taken from Base on 21/03/2024 at 23:30 UTC
+				const minWorstCaseFeePerGas = BigInt(1000000000);
+				const minWorstCaseFPriorityFeePerGas = BigInt(500000000);
+				if (maxFeePerGas < minWorstCaseFeePerGas) {
+					maxFeePerGas = minWorstCaseFeePerGas;
+				}
+				if (maxPriorityFeePerGas < minWorstCaseFPriorityFeePerGas) {
+					maxPriorityFeePerGas = minWorstCaseFPriorityFeePerGas;
+				}
+
 				// ----------------------------------------------------------------------------------------
 
 				if (accountData.hasFUZD()) {
