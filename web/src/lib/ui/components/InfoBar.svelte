@@ -179,11 +179,11 @@
 			{:else}
 				<span><svg class="font-icon"><use xlink:href="#warning" /></svg></span>
 			{/if}
-			{#if isAdmin}
-				<div>
-					<Executor func={() => nextPhase()}>Skip to Reveal Phase</Executor>
-				</div>
-			{/if}
+		{/if}
+		{#if isAdmin}
+			<div>
+				<Executor func={() => nextPhase()}>Skip to Reveal Phase</Executor>
+			</div>
 		{/if}
 	{:else if $account.state === 'Disconnected'}
 		{#if $account.locked}
