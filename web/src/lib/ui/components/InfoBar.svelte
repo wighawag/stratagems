@@ -13,6 +13,7 @@
 	import {status} from '$lib/state/State';
 	import SyncingInfo from './SyncingInfo.svelte';
 	import {parseEther} from 'viem';
+	import {camera} from '$lib/render/camera';
 
 	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
 
@@ -71,6 +72,10 @@
 	function any(t: any): any {
 		return t;
 	}
+
+	function centerCamera() {
+		camera.navigate(0, 0, 32);
+	}
 </script>
 
 <symbol id="warning" viewBox="0 0 32 32">
@@ -82,6 +87,7 @@
 	/>
 </symbol>
 <div class="info" id="info-bar">
+	<button on:click={() => centerCamera()}>0,0</button>
 	{#if $network.notSupported}
 		<div><svg class="font-icon"><use xlink:href="#warning" /></svg> You are connected to the wrong network</div>
 		<div>

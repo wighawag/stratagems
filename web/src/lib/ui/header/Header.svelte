@@ -1,7 +1,23 @@
 <script lang="ts">
 	import ConnectButton from '$lib/blockchain/connection/ConnectButton.svelte';
 	import {route, url} from '$utils/path';
-	// import PageLink from './PageLink.svelte';
+	import {balance} from '$lib/state/balance';
+	import {initialContractsInfos} from '$lib/config';
+	import {formatUnits} from '$utils/ui/text';
+
+	const symbol = initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol;
+	const name = initialContractsInfos.contracts.Stratagems.linkedData.currency.name;
+	$: currentReserve = $balance.reserve;
+	$: currentReserveString = formatUnits(
+		currentReserve,
+		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals),
+	);
+
+	$: currentBalance = $balance.tokenBalance;
+	$: currentBalnceString = formatUnits(
+		currentBalance,
+		Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals),
+	);
 </script>
 
 <header>
@@ -15,12 +31,20 @@
 		</nav> -->
 		<!-- <div></div> -->
 		<a href={route('/')}><img src={url('/title.png')} alt="Stratagems Title" style="max-height: 48px" /></a>
-		<ConnectButton></ConnectButton>
+		<div class="right">
+			<p>{symbol}s: {currentBalnceString} {currentReserve > 0n ? `( + ${currentReserveString} )` : ''}</p>
+			<ConnectButton></ConnectButton>
+		</div>
 	</div>
 	<slot />
 </header>
 
 <style>
+	.right {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+	}
 	header {
 		top: 0;
 		position: sticky;
