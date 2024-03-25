@@ -29,3 +29,6 @@ lib/forge-std
 
 
 .keys
+
+scripts/data/contracts.ts
+.data/

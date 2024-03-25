@@ -78,6 +78,12 @@ importers:
       ethereum-indexer-browser:
         specifier: ^0.7.5
         version: 0.7.5(typescript@5.3.3)
+      ethereum-indexer-fs:
+        specifier: ^0.7.6
+        version: 0.7.6(typescript@5.3.3)
+      ethereum-indexer-js-processor:
+        specifier: ^0.6.30
+        version: 0.6.30(typescript@5.3.3)
       fs-extra:
         specifier: ^11.2.0
         version: 11.2.0
@@ -5448,6 +5454,19 @@ packages:
       - zod
     dev: true
 
+  /ethereum-indexer-fs@0.7.6(typescript@5.3.3):
+    resolution: {integrity: sha512-R30gl26AmdIhmlESU1Gg8KsLdxr8Xt+qyUJEiJJelh/p4715peSPiTEDdY//iEMqnn9IjH0cpMD6tMmuqUhppg==}
+    dependencies:
+      ethereum-indexer: 0.6.21(typescript@5.3.3)
+      ethereum-indexer-utils: 0.6.12
+      named-logs: 0.2.2
+    transitivePeerDependencies:
+      - bufferutil
+      - typescript
+      - utf-8-validate
+      - zod
+    dev: true
+
   /ethereum-indexer-js-processor@0.6.30(typescript@5.3.3):
     resolution: {integrity: sha512-hmWlDkVJcgBH1ElvZTgzpS0mIT2JFCdun9zmhSxkj4HwXS/oJXAGKR35OXMtRbPSALOzJRicQEC+coBjXZo9jQ==}
     dependencies:
@@ -5459,7 +5478,6 @@ packages:
       - typescript
       - utf-8-validate
       - zod
-    dev: false
 
   /ethereum-indexer-server@0.6.31(typescript@5.3.3):
     resolution: {integrity: sha512-UUY9VEUrltI5cYCI3bqosxUHfp5zzmRWEhgl6sXT8FCqlEm3nsrMwPacqasmTEnSTr+ql9zliDzGXBxCI3u77A==}
@@ -6514,7 +6532,6 @@ packages:
 
   /immer@10.0.4:
     resolution: {integrity: sha512-cuBuGK40P/sk5IzWa9QPUaAdvPHjkk1c+xYsd9oZw+YQQEV+10G0P5uMpGctZZKnyQ+ibRO08bD25nWLmYi2pw==}
-    dev: false
 
   /immutable@4.3.5:
     resolution: {integrity: sha512-8eabxkth9gZatlwl5TBuJnCsoTADlL6ftEr7A4qgdaTsPyreilDSnUk57SO+jfKcNtxPa22U5KK6DSeAYhpBJw==}
