@@ -7,7 +7,7 @@
 
 	export let state: Writable<CommitState>;
 
-	$: value = $state.fuzdData?.value;
+	$: value = $state.transaction?.value;
 	$: formatedValue = value ? formatEther(value) : undefined;
 </script>
 

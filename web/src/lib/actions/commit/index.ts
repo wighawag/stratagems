@@ -2,7 +2,7 @@ import {get, writable} from 'svelte/store';
 import {currentFlow, type Flow, type Step} from '../flow';
 import {accountData, viemClient, network} from '$lib/blockchain/connection';
 import {FUZD_URI, initialContractsInfos} from '$lib/config';
-import {prepareCommitment, zeroBytes24, zeroBytes32} from 'stratagems-common';
+import {prepareCommitment, zeroBytes24, zeroBytes32, type ContractMove} from 'stratagems-common';
 import {epoch, epochInfo} from '$lib/state/Epoch';
 import {hexToVRS} from '$utils/ethereum/signatures';
 import {encodeFunctionData, formatEther, keccak256, parseEther, zeroAddress} from 'viem';
@@ -12,34 +12,63 @@ import {localMoveToContractMove, type CommitMetadata} from '$lib/account/account
 import PermitComponent from './PermitComponent.svelte';
 import TransactionComponent from './TransactionComponent.svelte';
 import {gameConfig} from '$lib/blockchain/networks';
+import NotEnoughEthComponent from './NotEnoughEthComponent.svelte';
 
 export type CommitState = {
+	tokenData?: {
+		amountToAdd: bigint;
+		amountToAllow: bigint;
+		permitCurrentNonce?: number;
+	};
+
 	permit?: {
 		signature: `0x${string}`;
 		amount: bigint;
 		nonce: number;
 	};
-	permitCurrentNonce?: number;
-	amountToAdd?: bigint;
-	amountToAllow?: bigint;
+
 	fuzdData?: {
-		slot: string;
-		value: bigint;
+		submission: {
+			slot: string;
+			broadcastSchedule: [
+				{
+					duration: number;
+					maxFeePerGas: bigint;
+					maxPriorityFeePerGas: bigint;
+				},
+			];
+			data: `0x${string}`;
+			to: `0x${string}`;
+			time: number;
+			expiry: number;
+			chainId: string;
+			gas: bigint;
+		};
 		remoteAccount: `0x${string}`;
 		fuzd: Awaited<ReturnType<typeof accountData.getFUZD>>;
-		revealGas: bigint;
-		maxFeePerGas: bigint;
-		maxPriorityFeePerGas: bigint;
 	};
-	gasPrice?: {
-		maxFeePerGas: bigint;
-		maxPriorityFeePerGas: bigint;
+
+	balanceData?: {
+		nativeToken: bigint;
+		amountRequired: bigint;
 	};
-	epochNumber?: number;
+
+	transaction?: {
+		to: `0x${string}`;
+		data: `0x${string}`;
+		maxFeePerGas?: bigint;
+		maxPriorityFeePerGas?: bigint;
+		value: bigint;
+	};
+
+	commitmentData?: {
+		metadata: CommitMetadata;
+		epochNumber: number;
+		secret: `0x${string}`;
+		moves: ContractMove[];
+	};
+
 	txHash?: `0x${string}`;
-	revealTxData?: `0x${string}`;
-	secret?: `0x${string}`;
-	timeToBroadcastReveal?: number;
 };
 
 export type CommitFlow = Flow<CommitState>;
@@ -57,13 +86,10 @@ export async function startCommit() {
 
 		const steps: Step<CommitState>[] = [];
 
-		const gatheringInfoStep = {
-			title: 'Gathering Info',
-			description: `Gather the Necessary Information to Perform the Commit`,
+		const checkingAllowanceStep = {
+			title: 'Checking Allowance',
+			description: `Checking Stratagems token allowance`,
 			execute: async (state: CommitState) => {
-				// so click to send tx becomes instant
-				const epochNumber = get(epoch); // TODO use from smart contract to ensure correct value
-
 				const tokenInReserve = await client.public.readContract({
 					...Stratagems,
 					functionName: 'getTokensInReserve',
@@ -79,7 +105,7 @@ export async function startCommit() {
 				});
 				const amountToAllow = amountToAdd > tokenApproved ? amountToAdd : 0n;
 
-				state.amountToAdd = amountToAdd;
+				state.tokenData = {amountToAdd, amountToAllow};
 
 				if (amountToAllow) {
 					const nonce = Number(
@@ -89,121 +115,18 @@ export async function startCommit() {
 							args: [account.address],
 						}),
 					);
-					state.permitCurrentNonce = nonce;
-					state.amountToAllow = amountToAllow;
+					state.tokenData.permitCurrentNonce = nonce;
 				}
-
-				// ----------------------------------------------------------------------------------------
-				// Gather the various fees and gas prices
-				// ----------------------------------------------------------------------------------------
-				let {maxFeePerGas, maxPriorityFeePerGas, gasPrice} = await client.public.estimateFeesPerGas({
-					type: 'eip1559',
-				});
-				let extraFee = 0n;
-				if (!maxFeePerGas) {
-					if (gasPrice) {
-						maxFeePerGas = gasPrice;
-						maxPriorityFeePerGas = gasPrice;
-					} else {
-						const errorMessage = `could not fetch gasPrice`;
-						throw new Error(errorMessage);
-					}
-				} else {
-					if (!maxPriorityFeePerGas) {
-						maxPriorityFeePerGas = 1000000n;
-					}
-				}
-
-				// TODO per network, this was taken from Base on 21/03/2024 at 23:30 UTC
-				const minWorstCaseFeePerGas = BigInt(1000000000);
-				const minWorstCaseFPriorityFeePerGas = BigInt(500000000);
-				if (maxFeePerGas < minWorstCaseFeePerGas) {
-					maxFeePerGas = minWorstCaseFeePerGas;
-				}
-				if (maxPriorityFeePerGas < minWorstCaseFPriorityFeePerGas) {
-					maxPriorityFeePerGas = minWorstCaseFPriorityFeePerGas;
-				}
-
-				// ----------------------------------------------------------------------------------------
-
-				if (accountData.hasFUZD()) {
-					const fuzd = await accountData.getFUZD();
-					const revealGas = 100000n + 200000n * BigInt(localMoves.length); //TODO compute worst case case
-					if ('estimateContractL1Fee' in client.public) {
-						// post fake data but same length to get an idea of the l1 fee
-						const l1Fee = await client.public.estimateContractL1Fee({
-							...Stratagems,
-							functionName: 'reveal',
-							args: [
-								account.address,
-								'0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF',
-								localMoves.map((v, i) => ({
-									position: BigInt(Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 1)) + 1),
-									color: Math.floor(Math.random() * 5) + 1,
-								})),
-								zeroBytes24,
-								true,
-								zeroAddress,
-							],
-							account: account.address,
-							gas: revealGas,
-							maxFeePerGas,
-							maxPriorityFeePerGas,
-						});
-						// TODO:
-						// const l1BaseFee = await client.public.getL1BaseFee();
-						// const gasPlusFactorsForL1 = (l1Fee / l1BaseFee) + 1;
-						// const updatedL1Fee = gasPlusFactorsForL1 * highBaseFee;
-
-						extraFee = l1Fee * 2n; // we multiply by 2 just in case
-					}
-
-					const remoteAccount = fuzd.remoteAccount;
-					let value = 0n;
-					if (remoteAccount !== zeroAddress) {
-						const balanceHex = await connection.provider.request({
-							method: 'eth_getBalance',
-							params: [remoteAccount, 'latest'],
-						});
-						const balance = BigInt(balanceHex);
-
-						const valueNeeded = maxFeePerGas * revealGas + extraFee;
-						// we then double that value to ensure tx go through
-						const valueToProvide = valueNeeded * 2n;
-						value = valueToProvide > balance ? valueToProvide - balance : 0n;
-					}
-
-					console.log({
-						value: formatEther(value),
-						rawValue: value,
-						maxFeePerGas: formatEther(maxFeePerGas),
-						maxPriorityFeePerGas: formatEther(maxPriorityFeePerGas),
-					});
-
-					state.fuzdData = {
-						slot: `epoch_${epochNumber}`,
-						fuzd,
-						maxFeePerGas,
-						maxPriorityFeePerGas,
-						revealGas,
-						value,
-						remoteAccount,
-					};
-				}
-
-				state.epochNumber = epochNumber;
-				state.gasPrice = {
-					maxFeePerGas,
-					maxPriorityFeePerGas,
-				};
 
 				return {
 					newState: state,
 					nextStep: amountToAllow ? 1 : 2,
+					auto: amountToAllow ? false : true,
 				};
 			},
 		};
-		steps.push(gatheringInfoStep);
+
+		steps.push(checkingAllowanceStep);
 
 		const permitStep = {
 			title: 'First: Allow Token Spending',
@@ -211,10 +134,15 @@ export async function startCommit() {
 			description: `allow the spending of tokens`,
 			component: PermitComponent,
 			execute: async (state: CommitState) => {
-				const amountToAllow = state.amountToAllow || 0n; // should not be zero
+				const {tokenData} = state;
+
+				if (!tokenData) {
+					throw new Error(`did not record tokenData`);
+				}
+				const amountToAllow = tokenData.amountToAllow;
 				const chainId = parseInt(initialContractsInfos.chainId);
 
-				const nonce = state.permitCurrentNonce;
+				const nonce = tokenData.permitCurrentNonce;
 				if (!nonce) {
 					throw new Error(`no permitCurrentNonce set`);
 				}
@@ -268,116 +196,135 @@ export async function startCommit() {
 
 		steps.push(permitStep);
 
-		const txStep = {
-			title: 'Perform the Commit Transaction',
-			action: 'OK',
-			description: `This Transaction will Commit Your Moves. You can cancel (or Replace it with new Moves) before the Resolution Phase Start.`,
-			component: TransactionComponent,
+		const gatheringInfoStep = {
+			title: 'Gathering Info',
+			description: `Gather the Necessary Information to Perform the Commit`,
 			execute: async (state: CommitState) => {
-				const {amountToAdd, permit, fuzdData, gasPrice, epochNumber} = state;
-
-				if (!gasPrice) {
-					throw new Error(`did not fetch gasPrice`);
-				}
-
-				if (!epochNumber) {
-					throw new Error(`did not record epochNumber`);
-				}
-
-				let txHash: `0x${string}`;
-
 				const localWallet = accountData.localWallet;
 				if (!localWallet) {
 					throw new Error(`no local wallet found`);
 				}
 
+				// so click to send tx becomes instant
+				const epochNumber = get(epoch); // TODO use from smart contract to ensure correct value
+
+				console.log(`getting balance...`);
+				const balanceETH = await client.public.getBalance({
+					address: account.address,
+				});
+
+				// ----------------------------------------------------------------------------------------
+				// Gather the various fees and gas prices
+				// ----------------------------------------------------------------------------------------
+				console.log(`estimating gas prices...`);
+				let {maxFeePerGas, maxPriorityFeePerGas, gasPrice} = await client.public.estimateFeesPerGas({
+					type: 'eip1559',
+				});
+
+				if (!maxFeePerGas) {
+					throw new Error(`could not get gas price`);
+				}
+
+				// ----------------------------------------------------------------------------------------
+
 				// TODO check for chain and contract existence
+				console.log(`generating deterministic secret...`);
 				const secretSig = await localWallet.signMessage({
 					message: `Commit:${network.$state.chainId}:${network.$state.contracts?.Stratagems.address}:${epochNumber}`,
 				});
 				const secret = keccak256(secretSig);
-				state.secret = secret;
+
 				const {hash, moves} = prepareCommitment(localMoves.map(localMoveToContractMove), secret);
 
-				const remoteAccount = fuzdData?.remoteAccount || zeroAddress;
-				const value = fuzdData?.value || 0n;
-
-				const commitMetadata: CommitMetadata = {
-					type: 'commit',
-					epoch: epochNumber,
-					localMoves,
-					secret,
-					autoReveal: fuzdData
-						? {
-								type: 'fuzd',
-								slot: fuzdData.slot,
-							}
-						: false,
-				};
-				connection.provider.setNextMetadata(commitMetadata);
-				if (amountToAdd && amountToAdd > 0n) {
-					let permitStruct: {deadline: bigint; value: bigint; v: number; r: `0x${string}`; s: `0x${string}`} = {
-						deadline: 0n,
-						value: 0n,
-						v: 0,
-						r: zeroBytes32,
-						s: zeroBytes32,
-					};
-					if (permit) {
-						const {v, r, s} = hexToVRS(permit.signature);
-						permitStruct = {
-							deadline: 0n,
-							value: permit.amount,
-							v,
-							r,
-							s,
-						};
+				let value = 0n;
+				if (accountData.hasFUZD()) {
+					console.log(`FUZD enabled, adjusting gas prices for the future...`);
+					let maxFeePerGasForReveal = maxFeePerGas || 0n;
+					let maxPriorityFeePerGasForReveal = maxPriorityFeePerGas || 0n;
+					// TODO per network, this was taken from Base on 21/03/2024 at 23:30 UTC
+					const minWorstCaseFeePerGas = BigInt(1000000000);
+					const minWorstCaseFPriorityFeePerGas = BigInt(500000000);
+					if (maxFeePerGasForReveal < minWorstCaseFeePerGas) {
+						maxFeePerGasForReveal = minWorstCaseFeePerGas;
 					}
-					txHash = await client.wallet.writeContract({
-						...Stratagems,
-						functionName: 'makeCommitmentWithExtraReserve',
-						args: [hash, amountToAdd, permitStruct, remoteAccount],
-						account: account.address,
-						value,
-						maxFeePerGas: gasPrice.maxFeePerGas,
-						maxPriorityFeePerGas: gasPrice.maxPriorityFeePerGas,
-					});
-				} else {
-					txHash = await client.wallet.writeContract({
-						...Stratagems,
-						functionName: 'makeCommitment',
-						args: [hash, remoteAccount],
-						account: account.address,
-						value,
-						maxFeePerGas: gasPrice.maxFeePerGas,
-						maxPriorityFeePerGas: gasPrice.maxPriorityFeePerGas,
-					});
-				}
-				state.txHash = txHash;
+					if (maxPriorityFeePerGasForReveal < minWorstCaseFPriorityFeePerGas) {
+						maxPriorityFeePerGasForReveal = minWorstCaseFPriorityFeePerGas;
+					}
+					let extraFeeForReveal = 0n;
+					if (!maxFeePerGasForReveal) {
+						if (gasPrice) {
+							maxFeePerGasForReveal = gasPrice;
+							maxPriorityFeePerGasForReveal = gasPrice;
+						} else {
+							const errorMessage = `could not fetch gasPrice`;
+							throw new Error(errorMessage);
+						}
+					} else {
+						if (!maxPriorityFeePerGasForReveal) {
+							maxPriorityFeePerGasForReveal = 1000000n;
+						}
+					}
+					const fuzd = await accountData.getFUZD();
+					const revealGas = 100000n + 200000n * BigInt(localMoves.length); //TODO compute worst case case
+					if ('estimateContractL1Fee' in client.public) {
+						console.log(`including l1 cost ...`);
+						// post fake data but same length to get an idea of the l1 fee
+						const l1Fee = await client.public.estimateContractL1Fee({
+							...Stratagems,
+							functionName: 'reveal',
+							args: [
+								account.address,
+								'0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF',
+								localMoves.map((v, i) => ({
+									position: BigInt(Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 1)) + 1),
+									color: Math.floor(Math.random() * 5) + 1,
+								})),
+								zeroBytes24,
+								true,
+								zeroAddress,
+							],
+							account: account.address,
+							gas: revealGas,
+							maxFeePerGas,
+							maxPriorityFeePerGas,
+						});
+						// TODO:
+						// const l1BaseFee = await client.public.getL1BaseFee();
+						// const gasPlusFactorsForL1 = (l1Fee / l1BaseFee) + 1;
+						// const updatedL1Fee = gasPlusFactorsForL1 * highBaseFee;
 
-				accountData.resetOffchainMoves(epochNumber);
+						extraFeeForReveal = l1Fee * 2n; // we multiply by 2 just in case
+					}
 
-				const timeToBroadcastReveal = time.now + get(epochInfo).timeLeftToCommit;
-				const data = encodeFunctionData({
-					abi: contracts.Stratagems.abi,
-					functionName: 'reveal',
-					args: [account.address, secret, moves, zeroBytes24, true, zeroAddress],
-				});
-				state.timeToBroadcastReveal = timeToBroadcastReveal;
-				state.revealTxData = data;
-				// await contracts.Stratagems.write.reveal([account.address, data.secret, moves, zeroBytes24, true, zeroAddress]);
+					const remoteAccount = fuzd.remoteAccount;
 
-				let fuzdFailed = false;
-				if (fuzdData) {
-					try {
-						const scheduleInfo = await fuzdData.fuzd.scheduleExecution(
-							{
-								slot: fuzdData.slot,
+					if (remoteAccount !== zeroAddress) {
+						console.log(`fetching remote account balance....`);
+						const balanceHex = await connection.provider.request({
+							method: 'eth_getBalance',
+							params: [remoteAccount, 'latest'],
+						});
+						const balance = BigInt(balanceHex);
+
+						const valueNeeded = maxFeePerGasForReveal * revealGas + extraFeeForReveal;
+						// we then double that value to ensure tx go through
+						const valueToProvide = valueNeeded * 2n;
+						value = valueToProvide > balance ? valueToProvide - balance : 0n;
+
+						const timeToBroadcastReveal = time.now + get(epochInfo).timeLeftToCommit;
+						const data = encodeFunctionData({
+							abi: contracts.Stratagems.abi,
+							functionName: 'reveal',
+							args: [account.address, secret, moves, zeroBytes24, true, zeroAddress],
+						});
+						state.fuzdData = {
+							submission: {
+								slot: `epoch_${epochNumber}`,
 								broadcastSchedule: [
 									{
 										duration: gameConfig.$current.revealPhaseDuration,
-										maxFeePerGas: fuzdData.maxFeePerGas,
-										maxPriorityFeePerGas: fuzdData.maxPriorityFeePerGas,
+										maxFeePerGas: maxFeePerGasForReveal,
+										maxPriorityFeePerGas: maxPriorityFeePerGasForReveal,
 									},
 								],
 								data,
@@ -385,10 +332,182 @@ export async function startCommit() {
 								time: timeToBroadcastReveal,
 								expiry: gameConfig.$current.revealPhaseDuration,
 								chainId: initialContractsInfos.chainId,
-								gas: fuzdData.revealGas,
+								gas: revealGas,
 							},
-							{fakeEncrypt: time.hasTimeContract},
-						);
+							remoteAccount,
+							fuzd,
+						};
+					}
+				}
+
+				state.commitmentData = {
+					secret,
+					epochNumber,
+					moves,
+					metadata: {
+						type: 'commit',
+						epoch: epochNumber,
+						localMoves,
+						secret,
+						autoReveal: state.fuzdData
+							? {
+									type: 'fuzd',
+									slot: state.fuzdData.submission.slot,
+								}
+							: false,
+					},
+				};
+
+				let transactionData: {data: `0x${string}`; gasEstimate: bigint; extraFee: bigint};
+
+				const remoteAccount = state.fuzdData?.remoteAccount || zeroAddress;
+
+				if (state.tokenData?.amountToAdd && state.tokenData?.amountToAdd > 0n) {
+					console.log(`preparing tx data including permit...`);
+					let permitStruct: {deadline: bigint; value: bigint; v: number; r: `0x${string}`; s: `0x${string}`} = {
+						deadline: 0n,
+						value: 0n,
+						v: 0,
+						r: zeroBytes32,
+						s: zeroBytes32,
+					};
+					if (state.permit) {
+						const {v, r, s} = hexToVRS(state.permit.signature);
+						permitStruct = {
+							deadline: 0n,
+							value: state.permit.amount,
+							v,
+							r,
+							s,
+						};
+					}
+
+					const params = {
+						...Stratagems,
+						functionName: 'makeCommitmentWithExtraReserve',
+						args: [hash, state.tokenData.amountToAdd, permitStruct, remoteAccount],
+						account: account.address,
+					} as const;
+
+					const gasEstimate = await client.public.estimateContractGas({
+						...params,
+						value: 1n, // fake to wirk even if not enough ETH
+					});
+					const data = encodeFunctionData({
+						...params,
+					});
+					let extraFee: bigint = 0n;
+					if ('estimateContractL1Fee' in client.public) {
+						const l1Fee = await client.public.estimateContractL1Fee({
+							...params,
+							value: 1n, // fake to wirk even if not enough ETH
+						});
+						extraFee = l1Fee;
+					}
+
+					transactionData = {
+						data,
+						gasEstimate,
+						extraFee,
+					};
+				} else {
+					console.log(`preparing tx data without permit...`);
+					const params = {
+						...Stratagems,
+						functionName: 'makeCommitment',
+						args: [hash, remoteAccount],
+						account: account.address,
+					} as const;
+
+					const gasEstimate = await client.public.estimateContractGas({
+						...params,
+						value: 1n, // fake to wirk even if not enough ETH
+					});
+					const data = encodeFunctionData({
+						...params,
+					});
+					let extraFee: bigint = 0n;
+					if ('estimateContractL1Fee' in client.public) {
+						const l1Fee = await client.public.estimateContractL1Fee({
+							...params,
+							value: 1n, // fake to wirk even if not enough ETH
+						});
+						extraFee = l1Fee;
+					}
+
+					transactionData = {
+						data,
+						gasEstimate,
+						extraFee,
+					};
+				}
+				state.transaction = {
+					data: transactionData.data,
+					to: Stratagems.address,
+					value,
+					maxFeePerGas,
+					maxPriorityFeePerGas,
+				};
+
+				state.balanceData = {
+					nativeToken: balanceETH,
+					amountRequired: (transactionData.gasEstimate + 20000n) * maxFeePerGas + transactionData.extraFee + value,
+				}; // TODO
+
+				const enoughETH = state.balanceData.nativeToken >= state.balanceData.amountRequired;
+				if (!enoughETH) {
+					console.error(`not enough eth`);
+				}
+
+				return {
+					newState: state,
+					nextStep: enoughETH ? 4 : 3,
+				};
+			},
+		};
+		steps.push(gatheringInfoStep);
+
+		const notEnoughETHStep = {
+			title: 'You dont have enough ETH',
+			action: 'OK',
+			description: `You need more ETH to proceed`,
+			component: NotEnoughEthComponent,
+			end: true,
+			execute: async (state: CommitState) => {
+				return {newState: state, nextStep: 6};
+			},
+		};
+		steps.push(notEnoughETHStep);
+
+		const txStep = {
+			title: 'Perform the Commit Transaction',
+			action: 'OK',
+			description: `This Transaction will Commit Your Moves. You can cancel (or Replace it with new Moves) before the Resolution Phase Start.`,
+			component: TransactionComponent,
+			execute: async (state: CommitState) => {
+				const {fuzdData, transaction, commitmentData} = state;
+
+				if (!commitmentData) {
+					throw new Error(`did not record commitmentData`);
+				}
+
+				if (!transaction) {
+					throw new Error(`did not record transaction`);
+				}
+
+				connection.provider.setNextMetadata(commitmentData.metadata);
+				const txHash = await client.wallet.sendTransaction(transaction);
+
+				state.txHash = txHash;
+
+				accountData.resetOffchainMoves(commitmentData.epochNumber);
+
+				let fuzdFailed = false;
+				if (fuzdData) {
+					try {
+						const scheduleInfo = await fuzdData.fuzd.scheduleExecution(fuzdData.submission, {
+							fakeEncrypt: time.hasTimeContract,
+						});
 
 						console.log({fakeEncrypt: time.hasTimeContract});
 
@@ -400,7 +519,7 @@ export async function startCommit() {
 					}
 				}
 
-				return {newState: state, nextStep: fuzdFailed ? 3 : 4};
+				return {newState: state, nextStep: fuzdFailed ? 5 : 6};
 			},
 		};
 		steps.push(txStep);
@@ -411,21 +530,12 @@ export async function startCommit() {
 			description: `We could not schedule the execution for later reveal. Please try again. If this error persist, you ll need to revea your move manually during the reveal phase`,
 			// component: PermitComponent,
 			execute: async (state: CommitState) => {
-				const {fuzdData, epochNumber, revealTxData, txHash, secret, timeToBroadcastReveal} = state;
+				const {fuzdData, txHash} = state;
 				if (!txHash) {
 					throw new Error(`did not record txHash`);
 				}
-				if (!timeToBroadcastReveal) {
-					throw new Error(`did not record timeToBroadcastReveal`);
-				}
-				if (!revealTxData) {
-					throw new Error(`did not record revealTxData`);
-				}
-				if (!secret) {
-					throw new Error(`did not record secret`);
-				}
-				if (!epochNumber) {
-					throw new Error(`did not record epochNumber`);
+				if (!fuzdData) {
+					throw new Error(`did not record fuzdData`);
 				}
 				const localWallet = accountData.localWallet;
 				if (!localWallet) {
@@ -435,25 +545,9 @@ export async function startCommit() {
 				let fuzdFailed = false;
 				if (fuzdData) {
 					try {
-						const scheduleInfo = await fuzdData.fuzd.scheduleExecution(
-							{
-								slot: fuzdData.slot,
-								broadcastSchedule: [
-									{
-										duration: gameConfig.$current.revealPhaseDuration,
-										maxFeePerGas: fuzdData.maxFeePerGas,
-										maxPriorityFeePerGas: fuzdData.maxPriorityFeePerGas,
-									},
-								],
-								data: revealTxData,
-								to: contracts.Stratagems.address,
-								time: timeToBroadcastReveal,
-								expiry: gameConfig.$current.revealPhaseDuration,
-								chainId: initialContractsInfos.chainId,
-								gas: fuzdData.revealGas,
-							},
-							{fakeEncrypt: time.hasTimeContract},
-						);
+						const scheduleInfo = await fuzdData.fuzd.scheduleExecution(fuzdData.submission, {
+							fakeEncrypt: time.hasTimeContract,
+						});
 
 						console.log({fakeEncrypt: time.hasTimeContract});
 
@@ -464,7 +558,7 @@ export async function startCommit() {
 						fuzdFailed = true;
 					}
 				}
-				return {newState: state, nextStep: fuzdFailed ? 3 : 4};
+				return {newState: state, nextStep: fuzdFailed ? 5 : 6};
 			},
 		};
 
@@ -473,7 +567,7 @@ export async function startCommit() {
 		const flow: CommitFlow = {
 			type: 'commit',
 			currentStepIndex: writable(0),
-			state: writable({amountToAllow: undefined, amountToAdd: undefined}),
+			state: writable({}),
 			completionMessage: 'Commitment Complete.',
 			steps,
 		};

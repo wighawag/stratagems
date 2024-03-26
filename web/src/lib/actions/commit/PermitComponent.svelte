@@ -16,21 +16,26 @@
 
 	let initialValue: bigint = 0n;
 	onMount(() => {
-		initialValue = $state.amountToAllow || 0n;
+		initialValue = $state.tokenData?.amountToAllow || 0n;
 	});
 
 	function setAmount(ev: Event) {
 		console.log({ev});
-		$state.amountToAllow = (ev.target as HTMLInputElement).checked ? MAX_VALUE : initialValue;
+		const amountToAllow = (ev.target as HTMLInputElement).checked ? MAX_VALUE : initialValue;
+		if ($state.tokenData) {
+			$state.tokenData.amountToAllow = amountToAllow;
+		} else {
+			$state.tokenData = {amountToAllow, amountToAdd: amountToAllow};
+		}
 	}
 
 	const symbol = initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol;
 
-	$: formatedValue = $state.amountToAllow
-		? $state.amountToAllow === MAX_VALUE
+	$: formatedValue = $state.tokenData?.amountToAllow
+		? $state.tokenData.amountToAllow === MAX_VALUE
 			? 'all'
 			: formatUnits(
-					$state.amountToAllow,
+					$state.tokenData.amountToAllow,
 					Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals),
 				)
 		: '0';

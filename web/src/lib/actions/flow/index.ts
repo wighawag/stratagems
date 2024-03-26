@@ -6,7 +6,8 @@ export type Step<State> = {
 	action?: string;
 	description: string;
 	component?: ComponentType;
-	execute(state: State): Promise<{newState: State; nextStep?: number}>;
+	execute(state: State): Promise<{newState: State; nextStep?: number; auto?: boolean}>;
+	end?: boolean;
 };
 
 export type Flow<State> = {
@@ -25,19 +26,37 @@ export function initFlow() {
 	return {
 		subscribe: store.subscribe,
 		async start(flow: Flow<any>) {
-			store.set(flow);
-			const currentStep = flow.steps[0];
-			if (!currentStep.action) {
-				const {newState, nextStep} = await currentStep.execute(get(flow.state));
-				flow.state.set(newState);
-				flow.currentStepIndex.update((v) => {
-					if (nextStep) {
-						v = nextStep;
-					} else {
-						v++;
+			let currentStep: Step<any> | undefined;
+			async function next() {
+				if (!currentStep) {
+					currentStep = flow.steps[0];
+				} else {
+					currentStep = flow.steps[get(flow.currentStepIndex)];
+				}
+				if (currentStep) {
+					const {newState, nextStep, auto} = await currentStep.execute(get(flow.state));
+					flow.state.set(newState);
+					flow.currentStepIndex.update((v) => {
+						if (nextStep) {
+							v = nextStep;
+						} else {
+							v++;
+						}
+
+						return v;
+					});
+					if (auto) {
+						next();
 					}
-					return v;
-				});
+				} else {
+					store.set(undefined);
+				}
+			}
+
+			store.set(flow);
+
+			if (!flow.steps[0].action) {
+				next();
 			}
 		},
 		cancel() {

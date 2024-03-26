@@ -66,7 +66,9 @@
 					{#if currentStep}
 						<button on:click={() => cancel()}>Back</button>
 					{/if}
-					<button class="primary" on:click={() => execute()}>{action}</button>
+					{#if !currentStep || !currentStep.end}
+						<button class="primary" on:click={() => execute()}>{action}</button>
+					{/if}
 				</div>
 			{:else}
 				<p>Please wait...</p>
