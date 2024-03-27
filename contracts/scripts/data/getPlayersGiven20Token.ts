@@ -19,10 +19,10 @@ export type Data = {
 type ContractsABI = MergedAbis<typeof contractsInfo.contracts>;
 
 const ignoreAddresses = [
-	`0x91fdbbc7dce85ae3ffdbd53f9655000e5993d1ea`, // claim key
-	'0x7913e00e37b9d756caf3fda78640458c6bc135d3', // claim key
-	`0x9b94e2b46b53efa924937c17ca7ea1d899ad7f08`, // claim key
-	'0xf1933fd6fb08f34769af5d4350303fa93bc5e0b0', // claim key
+	`0x91fdbbc7dce85ae3ffdbd53f9655000e5993d1ea`, // claim key claimed
+	'0x7913e00e37b9d756caf3fda78640458c6bc135d3', // claim key claimed
+	`0x9b94e2b46b53efa924937c17ca7ea1d899ad7f08`, // claim key claimed
+	// '0xf1933fd6fb08f34769af5d4350303fa93bc5e0b0', // claim key claimed
 	`0x784bd82da3ef62c48b85749efd49a79d191b5111`, // was used to setup black factions
 	'0xb4a8cf4a978e2940ee8c01583ffa6016fcd053a2', // test account
 	'0x7625ee9d5b346f1d18411e1bee5458b7831d62ea', // test account
@@ -30,7 +30,7 @@ const ignoreAddresses = [
 ];
 
 const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
-	version: '3',
+	version: '4',
 	construct(): Data {
 		return {
 			players: {},
@@ -66,19 +66,15 @@ export const {state, init, indexToLatest} = createIndexerState(processor, {
 	keepStream: keepStreamOnFile('.data', 'stratagems'),
 });
 
-async function main() {
-	init({
+export async function indexPlayersGiven20Tokens() {
+	await init({
 		provider: hre.network.provider as any, // TOD type
 		source: {
 			chainId: contractsInfo.chainId,
 			contracts: Object.keys(contractsInfo.contracts).map((name) => (contractsInfo as any).contracts[name]),
 			genesisHash: contractsInfo.genesisHash,
 		},
-	}).then(async (v) => {
-		const lastSync = await indexToLatest();
-		console.log(state.$state.players);
-		console.log(Object.keys(state.$state.players).length);
 	});
+	await indexToLatest();
+	return state.$state;
 }
-
-main();
