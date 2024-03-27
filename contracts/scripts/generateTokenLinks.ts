@@ -57,7 +57,7 @@ async function main() {
 	if (!valuePerAccount) {
 		valuePerAccount = valuePerChainId['default'];
 	}
-	const numTokensTMP = parseUnits('20', decimals);
+	const numTokensTMP = parseUnits('30', decimals);
 	const numTokensPerAccount = numTokensTMP + (numTokensTMP * 2n) / parseUnits('1', decimals);
 
 	const value = valuePerAccount * BigInt(addresses.length);

@@ -5,7 +5,7 @@ import hre from 'hardhat';
 import 'rocketh-deploy';
 import prompts from 'prompts';
 
-import {indexPlayersGiven20Tokens} from './data/getPlayersGiven20Token';
+import {indexPlayersGiven20Tokens} from './data/players';
 
 async function main() {
 	const env = await loadEnvironment(
