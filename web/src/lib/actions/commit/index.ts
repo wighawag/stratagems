@@ -242,8 +242,8 @@ export async function startCommit() {
 					let maxFeePerGasForReveal = maxFeePerGas || 0n;
 					let maxPriorityFeePerGasForReveal = maxPriorityFeePerGas || 0n;
 					// TODO per network, this was taken from Base on 21/03/2024 at 23:30 UTC
-					const minWorstCaseFeePerGas = BigInt(1000000000);
-					const minWorstCaseFPriorityFeePerGas = BigInt(500000000);
+					const minWorstCaseFeePerGas = BigInt(500000000);
+					const minWorstCaseFPriorityFeePerGas = BigInt(200000000);
 					if (maxFeePerGasForReveal < minWorstCaseFeePerGas) {
 						maxFeePerGasForReveal = minWorstCaseFeePerGas;
 					}
