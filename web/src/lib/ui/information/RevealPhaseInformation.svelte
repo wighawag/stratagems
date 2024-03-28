@@ -17,6 +17,16 @@
 			<button on:click={() => info.close()}>OK</button>
 		</div>
 	</Modal>
+{:else if $info.panel?.type === 'MaxMovesReached'}
+	<Modal oncancel={() => info.close()}>
+		<div class="title">Max Number of Moves Reached</div>
+		<div class="description">
+			<p>In the current version of the frontend, the max number of moves is limited to 30 moves</p>
+		</div>
+		<div class="actions">
+			<button on:click={() => info.close()}>OK</button>
+		</div>
+	</Modal>
 {/if}
 
 <style>

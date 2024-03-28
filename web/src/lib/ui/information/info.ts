@@ -2,7 +2,7 @@ import {everySeconds} from '$lib/blockchain/time';
 import {computeEpoch, epochInfo} from '$lib/state/Epoch';
 import {derived, get, writable} from 'svelte/store';
 
-export type InfoData = {panel: {type: 'RevealPhase'; timeLeftToReveal: number} | undefined};
+export type InfoData = {panel: {type: 'RevealPhase'; timeLeftToReveal: number} | {type: 'MaxMovesReached'} | undefined};
 
 const _info = writable<InfoData>(
 	{
@@ -28,6 +28,9 @@ export const info = {
 	subscribe: _info.subscribe,
 	setRevealPhase() {
 		_info.set({panel: {type: 'RevealPhase', timeLeftToReveal: get(epochInfo).timeLeftToReveal}});
+	},
+	setMaxMovesReached() {
+		_info.set({panel: {type: 'MaxMovesReached'}});
 	},
 	close() {
 		_info.set({panel: undefined});

@@ -56,12 +56,9 @@ export class ActionHandler {
 				info.setRevealPhase();
 				return;
 			}
+
 			accountData.removeMove(x, y);
 			if (currentMove.color !== Color.None && currentMove.color !== currentColor) {
-				if (!$epochState.isActionPhase) {
-					info.setRevealPhase();
-					return;
-				}
 				accountData.addMove({x, y, color: currentColor, player}, $epochState.epoch);
 			}
 		} else {
@@ -89,6 +86,10 @@ export class ActionHandler {
 					info.setRevealPhase();
 					return;
 				}
+				if (currentOffchainState.moves?.list.length >= 30) {
+					info.setMaxMovesReached();
+					return;
+				}
 				accountData.addMove({x, y, color: currentColor, player}, $epochState.epoch);
 			} else if (currentState.cells[cellID]) {
 				if (currentState.owners[cellID]?.toLowerCase() !== account.$state.address?.toLowerCase()) {
@@ -102,6 +103,10 @@ export class ActionHandler {
 			} else {
 				if (!$epochState.isActionPhase) {
 					info.setRevealPhase();
+					return;
+				}
+				if (currentOffchainState.moves?.list.length >= 30) {
+					info.setMaxMovesReached();
 					return;
 				}
 				accountData.addMove({x, y, color: currentColor, player}, $epochState.epoch);

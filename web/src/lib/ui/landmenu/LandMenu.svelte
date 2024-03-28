@@ -31,6 +31,10 @@
 				info.setRevealPhase();
 				return;
 			}
+			if ($offchainState.moves?.list.length >= 30) {
+				info.setMaxMovesReached();
+				return;
+			}
 			accountData.addMove({x: $landmenu.x, y: $landmenu.y, color: currentColor, player}, $epochState.epoch);
 		}
 
