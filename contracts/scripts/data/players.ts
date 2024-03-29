@@ -62,7 +62,7 @@ const createProcessor = fromJSProcessor(() => StratagemsIndexerProcessor);
 
 export const processor = createProcessor();
 export const {state, init, indexToLatest} = createIndexerState(processor, {
-	keepState: keepStateOnFile('.data', 'stratagems') as any, // TODO types
+	keepState: keepStateOnFile('.data', 'players') as any, // TODO types
 	keepStream: keepStreamOnFile('.data', 'stratagems'),
 });
 
