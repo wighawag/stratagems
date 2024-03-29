@@ -77,7 +77,7 @@ contract StratagemsReveal is IStratagemsReveal, UsingStratagemsSetters {
             commitment.epoch = 0; // used
         }
 
-        uint256 amount = moves.length;
+        uint256 amount = moves.length * NUM_TOKENS_PER_GEMS;
         _tokensInReserve[msg.sender] -= amount;
         TOKENS.transfer(BURN_ADDRESS, amount);
         emit CommitmentVoid(player, epoch, amount, furtherMoves);

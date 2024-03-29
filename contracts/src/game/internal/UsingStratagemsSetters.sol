@@ -219,7 +219,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         if (move.color == Color.None) {
             if (currentState.life != MAX_LIFE || _ownerOf(move.position) != player) {
                 // invalid move
-                return (0, 0, NUM_TOKENS_PER_GEMS);
+                // return (0, 0, NUM_TOKENS_PER_GEMS); // This is wrong ?
+                return (0, 0, 0); // TODO return tokens
             }
 
             _collectTransfer(transferCollection, TokenTransfer({to: payable(player), amount: NUM_TOKENS_PER_GEMS}));
@@ -231,7 +232,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             } else {
                 if (currentState.life != MAX_LIFE || _ownerOf(move.position) != player) {
                     // invalid move
-                    return (0, 0, NUM_TOKENS_PER_GEMS);
+                    // return (0, 0, NUM_TOKENS_PER_GEMS); // This is wrong ?
+                    return (0, 0, 0); // TODO return tokens
                 }
             }
             // we keep currentState.epochWhenTokenIsAdded as we do not want to be overwritten by conflcit: black
