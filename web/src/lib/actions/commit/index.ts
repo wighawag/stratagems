@@ -2,7 +2,7 @@ import {get, writable} from 'svelte/store';
 import {currentFlow, type Flow, type Step} from '../flow';
 import {accountData, viemClient, network} from '$lib/blockchain/connection';
 import {FUZD_URI, initialContractsInfos} from '$lib/config';
-import {prepareCommitment, zeroBytes24, zeroBytes32, type ContractMove} from 'stratagems-common';
+import {prepareCommitment, zeroBytes24, zeroBytes32, type ContractMove, Color} from 'stratagems-common';
 import {epoch, epochInfo} from '$lib/state/Epoch';
 import {hexToVRS} from '$utils/ethereum/signatures';
 import {encodeFunctionData, formatEther, keccak256, parseEther, zeroAddress} from 'viem';
@@ -81,9 +81,10 @@ export async function startCommit() {
 		if (!localMoves) {
 			throw new Error(`no local moves`);
 		}
-		const numMoves = localMoves.length;
+		const numMovesRequiringToken = localMoves.filter((v) => v.color != Color.None).length;
 		const tokenNeeded =
-			BigInt(initialContractsInfos.contracts.Stratagems.linkedData.numTokensPerGems.slice(0, -1)) * BigInt(numMoves);
+			BigInt(initialContractsInfos.contracts.Stratagems.linkedData.numTokensPerGems.slice(0, -1)) *
+			BigInt(numMovesRequiringToken);
 
 		const steps: Step<CommitState>[] = [];
 
@@ -225,7 +226,7 @@ export async function startCommit() {
 				let {maxFeePerGas, maxPriorityFeePerGas} = estimates.average;
 				const gasPrice = estimates.gasPrice;
 
-				if (!maxFeePerGas || !maxPriorityFeePerGas) {
+				if (maxFeePerGas === undefined || !maxPriorityFeePerGas === undefined) {
 					throw new Error(`could not get gas price`);
 				}
 

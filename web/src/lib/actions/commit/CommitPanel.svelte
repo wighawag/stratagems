@@ -6,6 +6,7 @@
 	import {MINIMUM_REQUIRED_ETH_BALANCE, balance} from '$lib/state/balance';
 	import {formatUnits} from '$utils/ui/text';
 	import {epoch} from '$lib/state/Epoch';
+	import {Color} from 'stratagems-common';
 
 	const decimals = Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals);
 
@@ -33,7 +34,7 @@
 	$: cost =
 		$offchainState.moves === undefined
 			? 0n
-			: BigInt($offchainState.moves.list.length) *
+			: BigInt($offchainState.moves.list.filter((v) => v.color != Color.None).length) *
 				BigInt(initialContractsInfos.contracts.Stratagems.linkedData.numTokensPerGems.slice(0, -1));
 	$: costString = formatUnits(cost, decimals);
 

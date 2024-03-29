@@ -29,10 +29,10 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
         // for withdrawal, we still require a minimal reserve so player cannot change their mind without losing at least one token
         // TODO we might want to increase that value to 10x as 10 moves might quite common, at least on some networks
-        if (inReserve < NUM_TOKENS_PER_GEMS) {
-            // TODO? special error for this case ?
-            revert ReserveTooLow(inReserve, NUM_TOKENS_PER_GEMS);
-        }
+        // if (inReserve < NUM_TOKENS_PER_GEMS) {
+        //     // TODO? special error for this case ?
+        //     revert ReserveTooLow(inReserve, NUM_TOKENS_PER_GEMS);
+        // }
 
         emit CommitmentMade(player, epoch, commitmentHash);
     }
@@ -71,6 +71,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         // Note: even if funds can comes from outside the reserve, we still check it
         // This ensure player have to have a reserve and cannot escape the slash if not
         if (newReserveAmount < tokens.tokensPlaced + tokens.tokensBurnt) {
+            // TODO add in the tokens.returned from Color.None move
             revert ReserveTooLow(newReserveAmount, tokens.tokensPlaced + tokens.tokensBurnt);
         }
         if (tokenGiver == address(0)) {
@@ -278,7 +279,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
                 currentState.enemyMap = 0;
                 emit Transfer(_ownerOf(move.position), address(0), move.position);
                 _owners[move.position] = 0;
-                tokensReturned = NUM_TOKENS_PER_GEMS;
+                // tokensReturned = NUM_TOKENS_PER_GEMS; // TODO enable when we check reserve for this amount
                 GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
             } else {
                 tokensPlaced = NUM_TOKENS_PER_GEMS;
