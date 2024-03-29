@@ -13,6 +13,7 @@ import PermitComponent from './PermitComponent.svelte';
 import TransactionComponent from './TransactionComponent.svelte';
 import {gameConfig} from '$lib/blockchain/networks';
 import NotEnoughEthComponent from './NotEnoughEthComponent.svelte';
+import {getRoughGasPriceEstimate} from '$utils/ethereum/gas';
 
 export type CommitState = {
 	tokenData?: {
@@ -56,8 +57,8 @@ export type CommitState = {
 	transaction?: {
 		to: `0x${string}`;
 		data: `0x${string}`;
-		maxFeePerGas?: bigint;
-		maxPriorityFeePerGas?: bigint;
+		maxFeePerGas: bigint;
+		maxPriorityFeePerGas: bigint;
 		value: bigint;
 	};
 
@@ -217,11 +218,14 @@ export async function startCommit() {
 				// Gather the various fees and gas prices
 				// ----------------------------------------------------------------------------------------
 				console.log(`estimating gas prices...`);
-				let {maxFeePerGas, maxPriorityFeePerGas, gasPrice} = await client.public.estimateFeesPerGas({
-					type: 'eip1559',
-				});
+				// let {maxFeePerGas, maxPriorityFeePerGas, gasPrice} = await client.public.estimateFeesPerGas({
+				// 	type: 'eip1559',
+				// });
+				const estimates = await getRoughGasPriceEstimate(connection.provider);
+				let {maxFeePerGas, maxPriorityFeePerGas} = estimates.average;
+				const gasPrice = estimates.gasPrice;
 
-				if (!maxFeePerGas) {
+				if (!maxFeePerGas || !maxPriorityFeePerGas) {
 					throw new Error(`could not get gas price`);
 				}
 
