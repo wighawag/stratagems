@@ -1,8 +1,8 @@
 {
     "name": "remote-indexer-service",
     "devDependencies": {
-        "ethereum-indexer-cli": "^0.6.29",
-        "ethereum-indexer-server": "^0.6.31",
+        "ethereum-indexer-cli": "^0.6.30",
+        "ethereum-indexer-server": "^0.6.32",
         "stratagems-indexer": "workspace:*"
     },
     "scripts": {
