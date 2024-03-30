@@ -208,6 +208,7 @@ function merge(
 			) {
 				const distribution =
 					contractCell.distribution || (contractCell.enemyMap << 4) + countBits(contractCell.enemyMap);
+				const stakeStr = contractCell.stake.toString();
 				const map = distribution >> 4;
 				const num = distribution & 0x0f;
 				if (num > 0) {
@@ -217,7 +218,7 @@ function merge(
 						const owner = state.owners[northPos.toString()]?.toLowerCase();
 						if (owner === addr && neighbor && neighbor.color !== contractCell.color) {
 							viewState.tokensToCollect.push({
-								amount: parseUnits('1', decimals) / BigInt(num),
+								amount: parseUnits(stakeStr, decimals) / BigInt(num),
 								position: northPos,
 								from: position,
 								color: contractCell.color,
@@ -231,7 +232,7 @@ function merge(
 						const owner = state.owners[westPos.toString()]?.toLowerCase();
 						if (owner === addr && neighbor && neighbor.color !== contractCell.color) {
 							viewState.tokensToCollect.push({
-								amount: parseUnits('1', decimals) / BigInt(num),
+								amount: parseUnits(stakeStr, decimals) / BigInt(num),
 								position: westPos,
 								from: position,
 								color: contractCell.color,
@@ -245,7 +246,7 @@ function merge(
 						const owner = state.owners[southPos.toString()]?.toLowerCase();
 						if (owner === addr && neighbor && neighbor.color !== contractCell.color) {
 							viewState.tokensToCollect.push({
-								amount: parseUnits('1', decimals) / BigInt(num),
+								amount: parseUnits(stakeStr, decimals) / BigInt(num),
 								position: southPos,
 								from: position,
 								color: contractCell.color,
@@ -258,7 +259,7 @@ function merge(
 						const owner = state.owners[eastPos.toString()]?.toLowerCase();
 						if (owner === addr && neighbor && neighbor.color !== contractCell.color) {
 							viewState.tokensToCollect.push({
-								amount: parseUnits('1', decimals) / BigInt(num),
+								amount: parseUnits(stakeStr, decimals) / BigInt(num),
 								position: eastPos,
 								from: position,
 								color: contractCell.color,
