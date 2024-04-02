@@ -1,4 +1,5 @@
 <script lang="ts">
+	import {getFactionIcon} from '$lib/actions/utils/faction-icons';
 	import ImgBlockie from '$utils/ethereum/ImgBlockie.svelte';
 	import {url} from '$utils/path';
 	import type {CellPlacements} from 'stratagems-indexer';
@@ -16,7 +17,7 @@
 		{/each}
 	{:else}
 		{@const player = event.players[0]}
-
+		<img src={url(getFactionIcon(event.players[0].color))} alt="color used" />
 		<span class="blockie-wrapper">
 			<ImgBlockie style="object-fit: cover;height: 100%;width: 100%;" address={player.address} />
 		</span>

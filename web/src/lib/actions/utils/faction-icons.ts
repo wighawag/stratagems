@@ -4,6 +4,9 @@ export function getFactionIcon(color: Color): string {
 	let src = '/game-assets/blue.png';
 
 	switch (color) {
+		case 0:
+			src = '/game-assets/withdrawal.png';
+			break;
 		case 1:
 			src = '/game-assets/blue.png';
 			break;
