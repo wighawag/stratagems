@@ -2,11 +2,12 @@ import {loadEnvironment} from 'rocketh';
 import {context} from '../deploy/_context';
 import {xyToBigIntID} from 'stratagems-common';
 import hre from 'hardhat';
+import 'rocketh-deploy';
 
 async function main() {
 	const env = await loadEnvironment(
 		{
-			provider: hre.network.provider,
+			provider: hre.network.provider as any,
 			network: hre.network.name,
 		},
 		context,
