@@ -9,6 +9,7 @@
 	import EventInfo from './EventInfo.svelte';
 	import type {CellPlacements} from 'stratagems-indexer';
 	import {bigIntIDToXY} from 'stratagems-common';
+	import PositionInfo from '../components/PositionInfo.svelte';
 
 	type Placements = {
 		epoch: number;
@@ -42,8 +43,9 @@
 			header: 'position',
 			accessor: (event) => {
 				const {x, y} = bigIntIDToXY(event.position);
-				return `${x},${y}`;
+				return {x, y};
 			},
+			cell: ({value}) => createRender(PositionInfo, value),
 		}),
 		table.column({
 			header: 'players',

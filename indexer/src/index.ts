@@ -81,10 +81,10 @@ const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
 				epoch,
 				cells: {},
 			};
-		}
-		state.placements.unshift(epochEvents);
-		if (state.placements.length > 7) {
-			state.placements.pop();
+			state.placements.unshift(epochEvents);
+			if (state.placements.length > 7) {
+				state.placements.pop();
+			}
 		}
 
 		const stratagemsContract = new StratagemsContract(state, 7);
