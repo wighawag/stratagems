@@ -8,7 +8,7 @@
 
 	function navigate() {
 		console.log({x, y});
-		camera.navigate(x, y, 128);
+		camera.navigate(x + 0.5, y + 0.5, 180);
 		eventsView.set({open: false});
 		menu.set({open: false});
 	}
