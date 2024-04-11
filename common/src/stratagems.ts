@@ -189,6 +189,15 @@ export class StratagemsContract {
 		return this.state.owners[position.toString()] || zeroAddress;
 	}
 
+	addPoints(owner: `0x${string}`, points: number) {
+		let existingPoints = this.state.computedPoints[owner] || 0;
+		this.state.computedPoints[owner] = existingPoints + points;
+	}
+	removePoints(owner: `0x${string}`, points: number) {
+		let existingPoints = this.state.computedPoints[owner] || 0; // TODO error
+		this.state.computedPoints[owner] = existingPoints - points;
+	}
+
 	updateCellFromNeighbor(
 		position: bigint,
 		cell: ContractCell,
@@ -233,6 +242,16 @@ export class StratagemsContract {
 				// if there were no oldCOlor and the newColor is not your (already checked in previous if clause)
 				cell.delta -= 1;
 				cell.enemyMap = cell.enemyMap | (1 << neighbourIndex);
+			}
+		}
+
+		const owner = this.ownerOf(position);
+		if (owner != zeroAddress) {
+			const newEffectiveDelta = this._effectiveDelta(cell.delta, cell.enemyMap);
+			if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
+				this.removePoints(owner, cell.stake); // GENERATOR.remove(owner, NUM_TOKENS_PER_GEMS * cell.stake);
+			} else if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
+				this.addPoints(owner, cell.stake); // GENERATOR.add(owner, NUM_TOKENS_PER_GEMS * cell.stake);
 			}
 		}
 
@@ -441,6 +460,7 @@ export class StratagemsContract {
 			currentState.delta = 0;
 			currentState.enemyMap = 0;
 			this.state.owners[move.position.toString()] = zeroAddress;
+			this.removePoints(player, 1); // GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
 			// tokensReturned = NUM_TOKENS_PER_GEMS;
 
 			// console.log({color: currentState.color, currentState});
@@ -464,9 +484,29 @@ export class StratagemsContract {
 			currentState.delta = newDelta;
 			currentState.life = 2;
 			currentState.lastEpochUpdate = epoch;
+
+			const oldOwner = this.ownerOf(move.position);
+
+			const newEffectiveDelta = this._effectiveDelta(currentState.delta, currentState.enemyMap);
+
 			if (currentState.color == Color.Evil) {
-				this.state.owners[move.position.toString()] = EVIL_OWNER_ADDRESS;
+				if (oldOwner != EVIL_OWNER_ADDRESS) {
+					if (newEffectiveDelta > 0) {
+						if (oldOwner == zeroAddress) {
+							this.addPoints(EVIL_OWNER_ADDRESS, 1); // GENERATOR.add(0xffffffffffffffffffffffffffffffffffffffff, NUM_TOKENS_PER_GEMS);
+						} else {
+							this.removePoints(oldOwner, 1); // GENERATOR.remove(oldOwner, NUM_TOKENS_PER_GEMS);
+							this.addPoints(EVIL_OWNER_ADDRESS, 2); // GENERATOR.add(0xffffffffffffffffffffffffffffffffffffffff, NUM_TOKENS_PER_GEMS * 2);
+						}
+					}
+					this.state.owners[move.position.toString()] = EVIL_OWNER_ADDRESS;
+				} else {
+					this.addPoints(EVIL_OWNER_ADDRESS, 1); // GENERATOR.add(0xffffffffffffffffffffffffffffffffffffffff, NUM_TOKENS_PER_GEMS);
+				}
 			} else {
+				if (newEffectiveDelta > 0) {
+					this.addPoints(player, 1); // GENERATOR.add(player, NUM_TOKENS_PER_GEMS);
+				}
 				this.state.owners[move.position.toString()] = player;
 			}
 		}

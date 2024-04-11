@@ -51,13 +51,14 @@ export type Data = {
 			[address: string]: SharedRatePerAccount;
 		};
 	};
+	computedPoints: {[player: string]: number};
 };
 
 type ContractsABI = MergedAbis<typeof contractsInfo.contracts>;
 
 const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
 	// version is automatically populated via version.cjs to let the browser knows to reindex on changes
-	version: '__VERSION_HASH__',
+	version: '__VERSION_HASH__', //
 	construct(): Data {
 		return {
 			cells: {},
@@ -69,6 +70,7 @@ const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
 				fixed: {},
 				shared: {},
 			},
+			computedPoints: {},
 		};
 	},
 	onCommitmentRevealed(state, event) {
