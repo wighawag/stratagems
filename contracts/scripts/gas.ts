@@ -19,7 +19,7 @@ function formatAll(obj: object) {
 	const newObj = {};
 	const keys = Object.keys(obj);
 	for (const key of keys) {
-		newObj[key] = formatEther(obj[key]);
+		newObj[key] = formatEther(obj[key], 'gwei');
 	}
 	return newObj;
 }
