@@ -88,7 +88,14 @@ export default defineConfig({
 				text: 'Documentation',
 				items: [
 					{text: 'Getting Started', link: '/guide/getting-started/'},
-					{text: 'Extending The World', link: `/guide/extending-the-world/`},
+					{
+						text: 'Extend',
+						items: [
+							{text: 'Extending The World', link: `/guide/extending-the-world/`},
+							{text: 'A Tutorial', link: `/guide/extending-the-world/tutorial/`},
+						],
+					},
+
 					{text: 'Contracts', items: contracts},
 					{text: 'Play The Alpha', link: `/guide/alpha1/`},
 				],
