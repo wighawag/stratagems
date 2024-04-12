@@ -5,7 +5,7 @@ import hre from 'hardhat';
 import 'rocketh-deploy';
 import prompts from 'prompts';
 
-import {indexPlayersGiven20Tokens} from './data/players';
+import {indexPlayers} from './data/players';
 
 async function main() {
 	const env = await loadEnvironment(
@@ -16,7 +16,7 @@ async function main() {
 		context,
 	);
 
-	const state = await indexPlayersGiven20Tokens();
+	const state = await indexPlayers();
 
 	const addresses: `0x${string}`[] = [];
 	for (const address of Object.keys(state.players)) {
