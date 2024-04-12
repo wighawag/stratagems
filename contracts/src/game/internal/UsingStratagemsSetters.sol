@@ -111,20 +111,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         int8 newDelta,
         uint8 newEnemyMap
     ) internal {
-        // WE do not need this as land cannot be placed on existing one
-        // {
-        //     // why do we need to do this on placeColor ?
-        //     int8 oldEffectiveDelta = _effectiveDelta(currentState.delta, currentState.enemyMap);
-        //     int8 newEffectiveDelta = _effectiveDelta(newDelta, newEnemyMap);
-        //     if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
-        //         GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
-        //     } else if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
-        //         GENERATOR.add(player, NUM_TOKENS_PER_GEMS);
-        //     }
-        //     if (oldEffectiveDelta > 0) {
-        //         currentState.producingEpochs += epoch - currentState.lastEpochUpdate;
-        //     }
-        // }
+        int8 oldEffectiveDelta = _effectiveDelta(currentState.delta, currentState.enemyMap);
+        uint8 oldLife = currentState.life;
 
         currentState.enemyMap = newEnemyMap;
 
@@ -153,17 +141,30 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
         if (currentState.color == Color.Evil) {
             if (oldOwner != 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF) {
-                if (newEffectiveDelta > 0) {
-                    if (oldOwner == address(0)) {
+                if (oldOwner == address(0)) {
+                    if (newEffectiveDelta > 0) {
                         GENERATOR.add(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, NUM_TOKENS_PER_GEMS);
-                    } else {
-                        GENERATOR.remove(oldOwner, NUM_TOKENS_PER_GEMS);
+                    }
+                } else {
+                    if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
                         GENERATOR.add(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, NUM_TOKENS_PER_GEMS * 2);
+                    } else if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
+                        GENERATOR.remove(oldOwner, NUM_TOKENS_PER_GEMS);
+                    } else if (oldEffectiveDelta <= 0 && newEffectiveDelta <= 0) {} else if (
+                        oldEffectiveDelta > 0 && newEffectiveDelta > 0
+                    ) {
+                        if (oldLife > 0) {
+                            GENERATOR.remove(oldOwner, NUM_TOKENS_PER_GEMS);
+                            GENERATOR.add(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, NUM_TOKENS_PER_GEMS * 2);
+                        } else {
+                            GENERATOR.add(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, NUM_TOKENS_PER_GEMS * 1);
+                        }
                     }
                 }
+
                 emit Transfer(oldOwner, 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, move.position);
                 _owners[move.position] = uint256(uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF));
-            } else {
+            } else if (newEffectiveDelta > 0) {
                 GENERATOR.add(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, NUM_TOKENS_PER_GEMS);
             }
         } else {
@@ -273,6 +274,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             }
 
             if (currentState.color == Color.None) {
+                int8 oldEffectiveDelta = _effectiveDelta(currentState.delta, currentState.enemyMap);
                 currentState.producingEpochs += epoch - currentState.lastEpochUpdate;
                 currentState.life = 0;
                 currentState.stake = 0;
@@ -282,7 +284,9 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
                 emit Transfer(_ownerOf(move.position), address(0), move.position);
                 _owners[move.position] = 0;
                 // tokensReturned = NUM_TOKENS_PER_GEMS; // TODO enable when we check reserve for this amount
-                GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
+                if (oldEffectiveDelta > 0) {
+                    GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
+                }
             } else {
                 tokensPlaced = NUM_TOKENS_PER_GEMS;
 
@@ -676,7 +680,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         int8 oldEffectiveDelta
     ) internal {
         address owner = _ownerOf(position);
-        if (owner != address(0)) {
+        if (owner != address(0) && newLife > 0) {
             int8 newEffectiveDelta = _effectiveDelta(cell.delta, cell.enemyMap);
             if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
                 GENERATOR.remove(owner, NUM_TOKENS_PER_GEMS * cell.stake);

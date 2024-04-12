@@ -246,7 +246,7 @@ export class StratagemsContract {
 		}
 
 		const owner = this.ownerOf(position);
-		if (owner != zeroAddress) {
+		if (owner != zeroAddress && newLife > 0) {
 			const newEffectiveDelta = this._effectiveDelta(cell.delta, cell.enemyMap);
 			if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
 				this.removePoints(owner, cell.stake); // GENERATOR.remove(owner, NUM_TOKENS_PER_GEMS * cell.stake);
@@ -402,6 +402,9 @@ export class StratagemsContract {
 		const MAX_LIFE = this.MAX_LIFE;
 
 		const {updatedCell: currentState, justDied} = this.getUpdatedCell(move.position, epoch);
+		const oldEffectiveDelta = this._effectiveDelta(currentState.delta, currentState.enemyMap);
+
+		const oldLife = currentState.life;
 
 		// const {x, y} = bigIntIDToXY(move.position);
 		// console.log(`COMPUTE_MOVE for ${x}, ${y}`, currentState);
@@ -460,7 +463,9 @@ export class StratagemsContract {
 			currentState.delta = 0;
 			currentState.enemyMap = 0;
 			this.state.owners[move.position.toString()] = zeroAddress;
-			this.removePoints(player, 1); // GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
+			if (oldEffectiveDelta > 0) {
+				this.removePoints(player, 1); // GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
+			}
 			// tokensReturned = NUM_TOKENS_PER_GEMS;
 
 			// console.log({color: currentState.color, currentState});
@@ -491,16 +496,27 @@ export class StratagemsContract {
 
 			if (currentState.color == Color.Evil) {
 				if (oldOwner != EVIL_OWNER_ADDRESS) {
-					if (newEffectiveDelta > 0) {
-						if (oldOwner == zeroAddress) {
+					if (oldOwner == zeroAddress) {
+						if (newEffectiveDelta > 0) {
 							this.addPoints(EVIL_OWNER_ADDRESS, 1); // GENERATOR.add(0xffffffffffffffffffffffffffffffffffffffff, NUM_TOKENS_PER_GEMS);
-						} else {
-							this.removePoints(oldOwner, 1); // GENERATOR.remove(oldOwner, NUM_TOKENS_PER_GEMS);
+						}
+					} else {
+						if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
 							this.addPoints(EVIL_OWNER_ADDRESS, 2); // GENERATOR.add(0xffffffffffffffffffffffffffffffffffffffff, NUM_TOKENS_PER_GEMS * 2);
+						} else if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
+							this.removePoints(oldOwner, 1); // GENERATOR.remove(oldOwner, NUM_TOKENS_PER_GEMS);
+						} else if (oldEffectiveDelta <= 0 && newEffectiveDelta <= 0) {
+						} else if (oldEffectiveDelta > 0 && newEffectiveDelta > 0) {
+							if (oldLife > 0) {
+								this.removePoints(oldOwner, 1); // GENERATOR.remove(oldOwner, NUM_TOKENS_PER_GEMS);
+								this.addPoints(EVIL_OWNER_ADDRESS, 2); // GENERATOR.add(0xffffffffffffffffffffffffffffffffffffffff, NUM_TOKENS_PER_GEMS * 2);
+							} else {
+								this.addPoints(EVIL_OWNER_ADDRESS, 1); // GENERATOR.add(0xffffffffffffffffffffffffffffffffffffffff, NUM_TOKENS_PER_GEMS);
+							}
 						}
 					}
 					this.state.owners[move.position.toString()] = EVIL_OWNER_ADDRESS;
-				} else {
+				} else if (newEffectiveDelta > 0) {
 					this.addPoints(EVIL_OWNER_ADDRESS, 1); // GENERATOR.add(0xffffffffffffffffffffffffffffffffffffffff, NUM_TOKENS_PER_GEMS);
 				}
 			} else {
