@@ -1,7 +1,7 @@
 import {context} from '../deploy/_context';
 import {xyToBigIntID} from 'stratagems-common';
 import hre from 'hardhat';
-import 'rocketh-deploy';
+import '@rocketh/deploy';
 import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
 
 async function main() {

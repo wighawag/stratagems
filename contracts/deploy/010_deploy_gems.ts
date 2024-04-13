@@ -1,5 +1,5 @@
 import {execute} from 'rocketh';
-import 'rocketh-deploy-proxy';
+import '@rocketh/deploy-proxy';
 import {context} from './_context';
 import {parseEther} from 'viem';
 

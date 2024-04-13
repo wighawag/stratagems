@@ -6,7 +6,7 @@ import {formatEther, parseEther, parseUnits} from 'viem';
 import hre from 'hardhat';
 import fs from 'fs-extra';
 import prompts from 'prompts';
-import 'rocketh-deploy';
+import '@rocketh/deploy';
 import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
 
 const args = process.argv.slice(2);

@@ -1,6 +1,6 @@
 import {execute} from 'rocketh';
-import 'rocketh-deploy';
-import 'rocketh-deploy-proxy';
+import '@rocketh/deploy';
+import '@rocketh/deploy-proxy';
 import {context} from './_context';
 import {zeroAddress} from 'viem';
 

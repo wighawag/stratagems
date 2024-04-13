@@ -1,6 +1,6 @@
 import {context} from '../deploy/_context';
 import hre from 'hardhat';
-import 'rocketh-deploy';
+import '@rocketh/deploy';
 import {formatEther, parseEther} from 'viem';
 import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
 

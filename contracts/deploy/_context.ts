@@ -3,7 +3,7 @@
 /// to typed artifacts as well as account names
 
 import artifacts from '../generated/artifacts';
-import 'rocketh-signer';
+import '@rocketh/signer';
 
 export const context = {
 	accounts: {

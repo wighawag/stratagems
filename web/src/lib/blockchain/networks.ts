@@ -1,5 +1,5 @@
 import {derived, get, readable, type Readable} from 'svelte/store';
-import type {ChainInfo} from 'rocketh-export';
+import type {ChainInfo} from '@rocketh/export';
 
 import _contractsInfos from '$data/contracts';
 

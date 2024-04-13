@@ -2,7 +2,7 @@ import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
 import {context} from '../deploy/_context';
 import {formatEther, formatUnits, parseEther, parseUnits} from 'viem';
 import hre from 'hardhat';
-import 'rocketh-deploy';
+import '@rocketh/deploy';
 import prompts from 'prompts';
 import {indexAll} from './data/main';
 

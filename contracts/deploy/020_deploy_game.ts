@@ -1,7 +1,7 @@
 import {Deployment, execute} from 'rocketh';
-import 'rocketh-deploy-proxy';
-import 'rocketh-deploy-router';
-import 'rocketh-deploy';
+import '@rocketh/deploy-proxy';
+import '@rocketh/deploy-router';
+import '@rocketh/deploy';
 import {context} from './_context';
 import {days, hours, minutes} from '../utils/time';
 import {checksumAddress, parseEther, zeroAddress} from 'viem';

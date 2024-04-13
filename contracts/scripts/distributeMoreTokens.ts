@@ -1,7 +1,7 @@
 import {context} from '../deploy/_context';
 import {formatEther, parseUnits} from 'viem';
 import hre from 'hardhat';
-import 'rocketh-deploy';
+import '@rocketh/deploy';
 import prompts from 'prompts';
 
 import {indexPlayers} from './data/players';
