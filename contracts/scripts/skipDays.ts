@@ -1,18 +1,11 @@
-import {loadEnvironment} from 'rocketh';
 import {context} from '../deploy/_context';
 import hre from 'hardhat';
-import {EIP1193GenericRequestProvider} from 'eip-1193';
 import SolidityKit from 'solidity-kit/generated/artifacts';
 import 'rocketh-deploy';
+import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
 
 async function main() {
-	const env = await loadEnvironment(
-		{
-			provider: hre.network.provider as EIP1193GenericRequestProvider,
-			network: hre.network.name,
-		},
-		context,
-	);
+	const env = await loadEnvironmentFromHardhat({hre, context});
 
 	const args = process.argv.slice(2);
 	const valueStr = args[0];

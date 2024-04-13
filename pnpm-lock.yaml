@@ -97,8 +97,8 @@ importers:
         specifier: ^0.1.5
         version: 0.1.5(hardhat@2.20.1)
       hardhat-rocketh:
-        specifier: ^4.0.9
-        version: 4.0.9(rocketh@0.10.8)
+        specifier: ^4.0.12
+        version: 4.0.12(rocketh@0.10.8)
       ldenv:
         specifier: ^0.3.10
         version: 0.3.10
@@ -6284,8 +6284,8 @@ packages:
       murmur-128: 0.2.1
     dev: true
 
-  /hardhat-rocketh@4.0.9(rocketh@0.10.8):
-    resolution: {integrity: sha512-ptaGrOlnd3pbGdLJbKoe0hAFX0K0UaeWSaunmGumd5lCOdK0Azxz3VBnTkGD4DsfrAqcYws/N+Qfy6pe6y8Niw==}
+  /hardhat-rocketh@4.0.12(rocketh@0.10.8):
+    resolution: {integrity: sha512-6LgaiRSqvIeW5KOYq6Ih2EzRART9m+tB8pfBqpA0/JYY483WbGURj2v1pOptK8HuXZ/yZ/H3fIN5c1ESDfWaaQ==}
     peerDependencies:
       rocketh: 0.10.8
     dependencies:

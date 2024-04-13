@@ -1,4 +1,3 @@
-import {loadEnvironment} from 'rocketh';
 import {context} from '../deploy/_context';
 import {formatEther, formatUnits, parseEther, parseUnits} from 'viem';
 import hre from 'hardhat';
@@ -6,15 +5,10 @@ import 'rocketh-deploy';
 import prompts from 'prompts';
 
 import {indexPlayers} from './data/players';
+import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
 
 async function main() {
-	const env = await loadEnvironment(
-		{
-			provider: hre.network.provider as any,
-			network: hre.network.name,
-		},
-		context,
-	);
+	const env = await loadEnvironmentFromHardhat({hre, context});
 
 	const state = await indexPlayers();
 

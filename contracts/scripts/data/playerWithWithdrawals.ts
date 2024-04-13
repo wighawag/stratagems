@@ -6,6 +6,7 @@ import {Color} from 'stratagems-common';
 
 import type {MergedAbis, JSProcessor} from 'ethereum-indexer-js-processor';
 import {fromJSProcessor} from 'ethereum-indexer-js-processor';
+import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
 
 export type Data = {
 	players: {
@@ -45,8 +46,9 @@ export const {state, init, indexToLatest} = createIndexerState(processor, {
 });
 
 export async function indexPlayersWithWithdrawals() {
+	const env = await loadEnvironmentFromHardhat({hre}, {useChainIdOfForkedNetwork: true});
 	await init({
-		provider: hre.network.provider as any, // TOD type
+		provider: env.network.provider,
 		source: {
 			chainId: contractsInfo.chainId,
 			contracts: Object.keys(contractsInfo.contracts).map((name) => (contractsInfo as any).contracts[name]),

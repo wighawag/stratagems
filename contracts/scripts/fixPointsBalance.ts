@@ -1,4 +1,4 @@
-import {loadEnvironment} from 'rocketh';
+import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
 import {context} from '../deploy/_context';
 import {formatEther, formatUnits, parseEther, parseUnits} from 'viem';
 import hre from 'hardhat';
@@ -7,17 +7,7 @@ import prompts from 'prompts';
 import {indexAll} from './data/main';
 
 async function main() {
-	const env = await loadEnvironment(
-		{
-			provider: hre.network.provider as any,
-			network: process.env.HARDHAT_FORK // TODO move that in rocketh-harchat somehow
-				? {
-						fork: process.env.HARDHAT_FORK,
-					}
-				: hre.network.name,
-		},
-		context,
-	);
+	const env = await loadEnvironmentFromHardhat({hre, context});
 
 	const state = await indexAll();
 

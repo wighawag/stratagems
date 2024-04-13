@@ -1,17 +1,11 @@
-import {loadEnvironment} from 'rocketh';
 import {context} from '../deploy/_context';
 import {xyToBigIntID} from 'stratagems-common';
 import hre from 'hardhat';
 import 'rocketh-deploy';
+import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
 
 async function main() {
-	const env = await loadEnvironment(
-		{
-			provider: hre.network.provider as any,
-			network: hre.network.name,
-		},
-		context,
-	);
+	const env = await loadEnvironmentFromHardhat({hre, context});
 
 	const args = process.argv.slice(2);
 	const positionStr = args[0];

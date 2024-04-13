@@ -1,16 +1,10 @@
-import {loadEnvironment} from 'rocketh';
 import {context} from '../deploy/_context';
 import {parseUnits} from 'viem';
 import hre from 'hardhat';
+import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
 
 async function main() {
-	const env = await loadEnvironment(
-		{
-			provider: hre.network.provider,
-			network: hre.network.name,
-		},
-		context,
-	);
+	const env = await loadEnvironmentFromHardhat({hre, context});
 
 	const TestTokens = env.get<typeof context.artifacts.TestTokens.abi>('TestTokens');
 	const decimals = await env.read(TestTokens, {functionName: 'decimals'});

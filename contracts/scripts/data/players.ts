@@ -6,6 +6,7 @@ import hre from 'hardhat';
 import type {MergedAbis, JSProcessor} from 'ethereum-indexer-js-processor';
 import {fromJSProcessor} from 'ethereum-indexer-js-processor';
 import {formatEther, zeroAddress} from 'viem';
+import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
 
 const testTokenAddress = contractsInfo.contracts['TestTokens'].address.toLowerCase();
 const stratagemsAddress = contractsInfo.contracts['Stratagems'].address.toLowerCase();
@@ -92,8 +93,9 @@ export const {state, init, indexToLatest} = createIndexerState(processor, {
 });
 
 export async function indexPlayers() {
+	const env = await loadEnvironmentFromHardhat({hre}, {useChainIdOfForkedNetwork: true});
 	await init({
-		provider: hre.network.provider as any, // TOD type
+		provider: env.network.provider,
 		source: {
 			chainId: contractsInfo.chainId,
 			contracts: Object.keys(contractsInfo.contracts).map((name) => (contractsInfo as any).contracts[name]),

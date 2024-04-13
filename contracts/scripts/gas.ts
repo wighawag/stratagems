@@ -1,9 +1,10 @@
-import {getGasPriceEstimate, getRoughGasPriceEstimate, loadEnvironment} from 'rocketh';
-import type {EIP1193BlockTag, EIP1193GenericRequestProvider} from 'eip-1193';
+import {getGasPriceEstimate, getRoughGasPriceEstimate} from 'rocketh';
+import type {EIP1193BlockTag} from 'eip-1193';
 import {context} from '../deploy/_context';
 import hre from 'hardhat';
-import {decodeFunctionResult, encodeFunctionData, formatEther} from 'viem';
+import {formatEther} from 'viem';
 import {getBaseFee, getGasPrice, getL1BaseFee, getL1Fee, getL1GasUsed} from './op';
+import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
 
 const args = process.argv.slice(2);
 const blockTag = (args[0] || 'latest') as EIP1193BlockTag;
@@ -25,13 +26,7 @@ function formatAll(obj: object) {
 }
 
 async function main() {
-	const env = await loadEnvironment(
-		{
-			network: hre.network.name,
-			provider: hre.network.provider as EIP1193GenericRequestProvider,
-		},
-		context,
-	);
+	const env = await loadEnvironmentFromHardhat({hre, context});
 	const provider = env.network.provider;
 
 	const gasPriceEstimates = await getRoughGasPriceEstimate(provider);

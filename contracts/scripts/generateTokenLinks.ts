@@ -1,13 +1,13 @@
 import {generatePrivateKey, privateKeyToAccount} from 'viem/accounts';
 
-import {Deployment, loadEnvironment} from 'rocketh';
+import {Deployment} from 'rocketh';
 import {context} from '../deploy/_context';
 import {formatEther, parseEther, parseUnits} from 'viem';
 import hre from 'hardhat';
 import fs from 'fs-extra';
 import prompts from 'prompts';
 import 'rocketh-deploy';
-import {EIP1193GenericRequestProvider} from 'eip-1193';
+import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
 
 const args = process.argv.slice(2);
 const num = (args[0] && parseInt(args[0])) || 100;
@@ -20,13 +20,7 @@ const valuePerChainId = {
 };
 
 async function main() {
-	const env = await loadEnvironment(
-		{
-			provider: hre.network.provider as EIP1193GenericRequestProvider,
-			network: hre.network.name,
-		},
-		context,
-	);
+	const env = await loadEnvironmentFromHardhat({hre, context});
 
 	const TestTokens = env.get<typeof context.artifacts.TestTokens.abi>('TestTokens');
 	const decimals = await env.read(TestTokens, {functionName: 'decimals'});
