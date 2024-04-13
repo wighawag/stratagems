@@ -1,7 +1,5 @@
 <script lang="ts">
 	import ImgBlockie from '$utils/ethereum/ImgBlockie.svelte';
-	import {JsonView} from '@zerodevx/svelte-json-view';
-	import type {SharedRatePerAccount} from 'stratagems-indexer';
 
 	export let player: `0x${string}`;
 	export let pointsInfo: {
@@ -18,7 +16,6 @@
 		{/if}
 		{pointsInfo.points}
 	</span>
-	<JsonView json={pointsInfo} depth={1} />
 </div>
 
 <style>
