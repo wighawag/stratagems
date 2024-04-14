@@ -26,6 +26,11 @@ export type SyncingState<T> = {
 	error?: unknown;
 };
 
+// TODO
+// window.addEventListener("beforeunload", function(e){
+// 	save
+//  });
+
 export class AccountDB<T extends Record<string, unknown>> implements Readable<SyncingState<T>> {
 	private _lastId = 1;
 	private state: SyncingState<T>;
