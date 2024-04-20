@@ -26,7 +26,7 @@ import {
 import type {OnChainAction, OnChainActions} from '$lib/account/base';
 import {createDraft} from 'immer';
 import {parseEther, parseUnits} from 'viem';
-import {initialContractsInfos} from '$lib/config';
+import {asPlayer, initialContractsInfos} from '$lib/config';
 
 export type ViewCell = ContractCell & {
 	localState?: 'pending' | 'planned';
@@ -169,7 +169,7 @@ function merge(
 		const viewCell = {
 			next,
 			future,
-			currentPlayer: cellOwner === account.address?.toLowerCase(),
+			currentPlayer: cellOwner === (asPlayer || account.address?.toLowerCase()),
 		};
 		viewState.viewCells[xyToXYID(x, y)] = viewCell;
 		viewState.cells[xyToXYID(x, y)] = copyState.cells[cellID];

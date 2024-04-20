@@ -27,12 +27,15 @@ export const globalQueryParams = [
 	'snapshot',
 	'debugTools',
 	'missiv',
+	'asPlayer',
 ];
 
 export const hashParams = getHashParamsFromLocation();
 export const {params} = getParamsFromLocation();
 
 export const dev = 'dev' in params ? params['dev'] === 'true' : devEnvironment;
+
+export const asPlayer = 'asPlayer' in params ? params['asPlayer'] : undefined;
 
 export const debugTools = 'debugTools' in params ? params['debugTools'] === 'true' : false;
 
