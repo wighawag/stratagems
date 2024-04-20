@@ -169,7 +169,7 @@ function merge(
 		const viewCell = {
 			next,
 			future,
-			currentPlayer: cellOwner === (asPlayer || account.address?.toLowerCase()),
+			currentPlayer: cellOwner === (asPlayer?.toLowerCase() || account.address?.toLowerCase()),
 		};
 		viewState.viewCells[xyToXYID(x, y)] = viewCell;
 		viewState.cells[xyToXYID(x, y)] = copyState.cells[cellID];
