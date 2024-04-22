@@ -168,6 +168,10 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
                 GENERATOR.add(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, NUM_TOKENS_PER_GEMS);
             }
         } else {
+            if (currentState.epochWhenTokenIsAdded != epoch && oldEffectiveDelta > 0) {
+                // here we are dealing with a color replacement and so we need to consider points removal
+                GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
+            }
             if (newEffectiveDelta > 0) {
                 GENERATOR.add(player, NUM_TOKENS_PER_GEMS);
             }

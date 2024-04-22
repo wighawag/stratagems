@@ -511,6 +511,8 @@ export class StratagemsContract {
 								this.removePoints(oldOwner, 1); // GENERATOR.remove(oldOwner, NUM_TOKENS_PER_GEMS);
 								this.addPoints(EVIL_OWNER_ADDRESS, 2); // GENERATOR.add(0xffffffffffffffffffffffffffffffffffffffff, NUM_TOKENS_PER_GEMS * 2);
 							} else {
+								// SHOULD NOT REACH THERE
+								console.error(`collision for black can only happen when tile are placed, so life > 0`);
 								this.addPoints(EVIL_OWNER_ADDRESS, 1); // GENERATOR.add(0xffffffffffffffffffffffffffffffffffffffff, NUM_TOKENS_PER_GEMS);
 							}
 						}
@@ -520,6 +522,10 @@ export class StratagemsContract {
 					this.addPoints(EVIL_OWNER_ADDRESS, 1); // GENERATOR.add(0xffffffffffffffffffffffffffffffffffffffff, NUM_TOKENS_PER_GEMS);
 				}
 			} else {
+				if (currentState.epochWhenTokenIsAdded != epoch && oldEffectiveDelta > 0) {
+					// here we are dealing with a color replacement and so we need to consider points removal
+					this.removePoints(player, 1); // GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
+				}
 				if (newEffectiveDelta > 0) {
 					this.addPoints(player, 1); // GENERATOR.add(player, NUM_TOKENS_PER_GEMS);
 				}
