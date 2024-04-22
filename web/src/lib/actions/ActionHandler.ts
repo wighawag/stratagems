@@ -8,6 +8,7 @@ import {tour} from '$lib/ui/tour/drive';
 import {info} from '$lib/ui/information/info';
 import {modalStack} from '$utils/ui/modals/ModalContainer.svelte';
 import {landmenu} from '$lib/ui/landmenu/landmenu';
+import {zeroAddress} from 'viem';
 
 export class ActionHandler {
 	onCellClicked(x: number, y: number) {
@@ -91,15 +92,17 @@ export class ActionHandler {
 					return;
 				}
 				accountData.addMove({x, y, color: currentColor, player}, $epochState.epoch);
-			} else if (currentState.cells[cellID]) {
-				if (currentState.owners[cellID]?.toLowerCase() !== account.$state.address?.toLowerCase()) {
-					menu = {
-						x,
-						y,
-						cell: currentState.viewCells[cellID],
-						owner: currentState.owners[cellID],
-					};
-				}
+			} else if (
+				currentState.cells[cellID] &&
+				currentState.owners[cellID]?.toLowerCase() !== account.$state.address?.toLowerCase() &&
+				currentState.owners[cellID]?.toLowerCase() !== zeroAddress
+			) {
+				menu = {
+					x,
+					y,
+					cell: currentState.viewCells[cellID],
+					owner: currentState.owners[cellID],
+				};
 			} else {
 				if (!$epochState.isActionPhase) {
 					info.setRevealPhase();
