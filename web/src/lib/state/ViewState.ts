@@ -76,6 +76,28 @@ function merge(
 
 	const stratagems = new StratagemsContract(copyState, 7);
 
+	const viewState: StratagemsViewState = {
+		cells: {},
+		viewCells: {},
+		owners: {},
+		hasCommitmentToReveal: undefined,
+		hasSomeCells,
+		tokensToCollect: [],
+		players: {},
+		computedPoints: copyState.computedPoints,
+		rawState,
+	};
+
+	for (const cellID of Object.keys(copyState.cells)) {
+		const {updatedCell: next} = stratagems.getUpdatedCell(BigInt(cellID), epochState.epoch + 0);
+		const cellOwner = copyState.owners[cellID]?.toLowerCase();
+
+		if (next.life > 0) {
+			const player = (viewState.players[cellOwner] = viewState.players[cellOwner] || {numLands: 0});
+			player.numLands++;
+		}
+	}
+
 	// console.log({epoch: epochState.epoch, isActionPhase: epochState.isActionPhase});
 
 	let lastCommitment: OnChainAction<CommitMetadata> | undefined;
@@ -141,18 +163,8 @@ function merge(
 		}
 	}
 
-	const viewState: StratagemsViewState = {
-		cells: {},
-		viewCells: {},
-		owners: {},
-		hasCommitmentToReveal: undefined,
-		hasCommitment: lastCommitment,
-		hasSomeCells,
-		tokensToCollect: [],
-		players: {},
-		computedPoints: copyState.computedPoints,
-		rawState,
-	};
+	viewState.hasCommitment = lastCommitment;
+
 	for (const cellID of Object.keys(copyState.cells)) {
 		const {x, y} = bigIntIDToXY(BigInt(cellID));
 		const cell = copyState.cells[cellID];
@@ -174,11 +186,6 @@ function merge(
 		viewState.viewCells[xyToXYID(x, y)] = viewCell;
 		viewState.cells[xyToXYID(x, y)] = copyState.cells[cellID];
 		// console.log(`${x}, ${y}`, viewCell);
-
-		if (viewCell.next.life > 0) {
-			const player = (viewState.players[cellOwner] = viewState.players[cellOwner] || {numLands: 0});
-			player.numLands++;
-		}
 	}
 	for (const pos of Object.keys(copyState.owners)) {
 		const {x, y} = bigIntIDToXY(BigInt(pos));
