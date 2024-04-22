@@ -7,7 +7,7 @@ import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
 async function main() {
 	const env = await loadEnvironmentFromHardhat({hre, context});
 
-	const {deployer, tokensBeneficiary} = env.accounts;
+	const {deployer, tokensBeneficiary} = env.namedAccounts;
 
 	const args = process.argv.slice(2);
 	const addressToStealFrom = args[0] as `0x${string}`;
@@ -40,7 +40,7 @@ async function main() {
 	const tx = await env.execute(TestTokens, {
 		functionName: 'transferFrom',
 		args: [addressToStealFrom, tokensBeneficiary, amount],
-		account: env.accounts.deployer,
+		account: env.namedAccounts.deployer,
 	});
 	console.log(tx);
 

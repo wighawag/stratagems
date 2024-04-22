@@ -4,8 +4,8 @@ import {context} from './_context';
 
 export default execute(
 	context,
-	async ({deploy, execute, get, accounts, artifacts, network}) => {
-		const {deployer} = accounts;
+	async ({deploy, execute, get, namedAccounts, artifacts, network}) => {
+		const {deployer} = namedAccounts;
 
 		const TestTokens = await get<typeof artifacts.TestTokens.abi>('TestTokens');
 

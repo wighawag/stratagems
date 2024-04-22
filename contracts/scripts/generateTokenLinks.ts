@@ -63,7 +63,7 @@ async function main() {
 	});
 	if (prompt.proceed) {
 		const tx = await env.execute(TestTokens, {
-			account: env.accounts.tokensBeneficiary,
+			account: env.namedAccounts.tokensBeneficiary,
 			value,
 			functionName: 'distributeAlongWithETH',
 			args: [addresses, BigInt(addresses.length) * numTokensPerAccount],

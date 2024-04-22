@@ -15,7 +15,7 @@ async function main() {
 	const tx = await env.execute(Time, {
 		functionName: 'increaseTime',
 		args: [days * 24n * 3600n],
-		account: env.accounts.deployer,
+		account: env.namedAccounts.deployer,
 	});
 	console.log(tx);
 }

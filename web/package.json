@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@rocketh/export": "^0.10.3",
+    "@rocketh/export": "^0.10.5",
     "@sveltejs/adapter-static": "^3.0.0",
     "@sveltejs/kit": "^2.5.0",
     "@sveltejs/vite-plugin-svelte": "^3.0.2",

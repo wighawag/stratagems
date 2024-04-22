@@ -17,7 +17,7 @@ async function main() {
 	const tx = await env.execute(Stratagems, {
 		functionName: 'poke',
 		args: [xyToBigIntID(x, y)],
-		account: env.accounts.deployer,
+		account: env.namedAccounts.deployer,
 	});
 	console.log(tx);
 }

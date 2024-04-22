@@ -34,7 +34,7 @@ async function main() {
 		const tx = await env.execute(TestTokens, {
 			functionName: 'distributeAlongWithETH',
 			args: [addresses, total],
-			account: env.accounts.tokensBeneficiary,
+			account: env.namedAccounts.tokensBeneficiary,
 		});
 		console.log(tx);
 	}

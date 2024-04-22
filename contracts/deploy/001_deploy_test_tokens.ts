@@ -5,8 +5,8 @@ import {parseEther} from 'viem';
 
 export default execute(
 	context,
-	async ({deploy, execute, accounts, artifacts}) => {
-		const {deployer, tokensBeneficiary} = accounts;
+	async ({deploy, execute, namedAccounts, artifacts}) => {
+		const {deployer, tokensBeneficiary} = namedAccounts;
 
 		const config = {admin: deployer};
 

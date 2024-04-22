@@ -5,8 +5,8 @@ import {parseEther} from 'viem';
 
 export default execute(
 	context,
-	async ({deploy, accounts, artifacts}) => {
-		const {deployer, tokensBeneficiary} = accounts;
+	async ({deploy, namedAccounts, artifacts}) => {
+		const {deployer, tokensBeneficiary} = namedAccounts;
 		await deploy('Gems', {
 			account: deployer,
 			artifact: artifacts.Gems,

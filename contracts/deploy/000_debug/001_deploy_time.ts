@@ -12,16 +12,16 @@ const timeSalts = {
 export default execute(
 	context,
 	async (env) => {
-		const {deploy, accounts, artifacts, network} = env;
+		const {deploy, namedAccounts, artifacts, network} = env;
 		const deterministic = timeSalts[network.name] || true;
 		const deployConfig = getConfig(env);
 		if (deployConfig.useTimeContract) {
 			await deploy(
 				'Time',
 				{
-					account: accounts.deployer,
+					account: namedAccounts.deployer,
 					artifact: SolidityKit.Time,
-					args: [accounts.timeOwner],
+					args: [namedAccounts.timeOwner],
 				},
 				{deterministic, skipIfAlreadyDeployed: true},
 			);

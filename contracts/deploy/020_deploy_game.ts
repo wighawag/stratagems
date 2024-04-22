@@ -20,8 +20,8 @@ export type GameConfig = {
 export default execute(
 	context,
 	async (env, configOverride?: Partial<GameConfig>) => {
-		const {deployViaProxy, deployments, accounts, artifacts, network, deployViaRouter, get} = env;
-		const {deployer} = accounts;
+		const {deployViaProxy, deployments, namedAccounts, artifacts, network, deployViaRouter, get} = env;
+		const {deployer} = namedAccounts;
 		const deployConfig = getConfig(env);
 
 		const startTime = 0; // BigInt(Math.floor(Date.now() / 1000)); // startTime: nextSunday(),
@@ -42,7 +42,7 @@ export default execute(
 
 		const numTokensPerGems = BigInt(10) ** BigInt(decimals);
 
-		const admin = accounts.deployer;
+		const admin = namedAccounts.deployer;
 
 		let time: `0x${string}` = zeroAddress;
 		const timeContract = await deployments['Time'];
@@ -141,7 +141,7 @@ export default execute(
 			});
 		}
 
-		const addressesToAuthorize = Object.values(env.accounts).concat([stratagems.address]);
+		const addressesToAuthorize = Object.values(env.namedAccounts).concat([stratagems.address]);
 		const anyNotAuthorized = await env.read(testTokens, {
 			functionName: 'anyNotAuthorized',
 			args: [addressesToAuthorize],

@@ -13,7 +13,7 @@ async function main() {
 	const tx = await env.execute(TestTokens, {
 		functionName: 'distributeAlongWithETH',
 		args: [addresses, BigInt(addresses.length) * parseUnits('10', decimals)],
-		account: env.accounts.tokensBeneficiary,
+		account: env.namedAccounts.tokensBeneficiary,
 	});
 	console.log(tx);
 }

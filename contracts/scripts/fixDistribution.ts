@@ -41,7 +41,7 @@ async function main() {
 			const tx = await env.execute(TestTokens, {
 				functionName: 'transfer',
 				args: [to.address, to.amount],
-				account: env.accounts.tokensBeneficiary,
+				account: env.namedAccounts.tokensBeneficiary,
 			});
 			console.log(tx);
 		}

@@ -6,8 +6,8 @@ import {zeroAddress} from 'viem';
 
 export default execute(
 	context,
-	async ({deployViaProxy, accounts, artifacts, get, getOrNull, execute, showMessage}) => {
-		const {deployer, tokensBeneficiary} = accounts;
+	async ({deployViaProxy, namedAccounts, artifacts, get, getOrNull, execute, showMessage}) => {
+		const {deployer, tokensBeneficiary} = namedAccounts;
 
 		const Gems = await get<typeof artifacts.Gems.abi>('Gems');
 		const GemsGenerator = await getOrNull<typeof artifacts.RewardsGenerator.abi>('GemsGenerator');
@@ -38,7 +38,7 @@ export default execute(
 				],
 			},
 			{
-				owner: accounts.deployer,
+				owner: namedAccounts.deployer,
 				execute: 'postUpgrade',
 			},
 		);
