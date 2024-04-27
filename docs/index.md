@@ -4,8 +4,8 @@ layout: home
 
 hero:
   # name: "Stratagems"
-  text: 'The Genesis of a New World'
-  tagline: 'Stratagems is an independent universe forever running where players, like actual gods create islands on an endless sea using ETH with the hope to collect more of it from the other players. Alliances and betrayal are part of the arsenal as factions battle for the control of the world.'
+  text: 'World Genesis'
+  tagline: 'Stratagems is a persistent world where players act as gods and create islands on an endless sea by imbuing them with one of the spirits (montains, forest, grassland, etc...) and hope to collect the same from the other players. Alliances and betrayal are omnipresent as spirits get summoned into the world. The map thus created is a beginning for new experiences.'
   image:
     src: /logo.png
     width: 512
@@ -23,12 +23,12 @@ hero:
       link: https://alpha1.stratagems.world
 
 features:
-  - title: Permission-less
-    details: Any player can join at any time.
+  - title: Open
+    details: Any player can join and anybody can build upon to add new mechanics.
   - title: Persistent
-    details: The game never ends
+    details: The game never ends and whatever get created on it can inherit its lifeline.
   - title: Composable
-    details: New Games are being built on top.
+    details: The map serves as a foundation for new experiences
 ---
 
 <script setup>
