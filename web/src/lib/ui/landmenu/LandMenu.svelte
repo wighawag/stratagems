@@ -48,6 +48,14 @@
 		if (!$landmenu) {
 			throw new Error('No menu');
 		}
+		if (!$epochState.isActionPhase) {
+			info.setRevealPhase();
+			return;
+		}
+		if ($offchainState.moves?.list.length >= 30) {
+			info.setMaxMovesReached();
+			return;
+		}
 		accountData.addMove({x: $landmenu.x, y: $landmenu.y, color: Color.None, player}, $epochState.epoch);
 		landmenu.set(undefined);
 	}
