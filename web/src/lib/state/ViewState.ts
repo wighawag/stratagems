@@ -32,6 +32,17 @@ export type ViewCell = ContractCell & {
 	localState?: 'pending' | 'planned';
 };
 
+export type Neighbors = {
+	N: boolean;
+	NE: boolean;
+	E: boolean;
+	SE: boolean;
+	S: boolean;
+	SW: boolean;
+	W: boolean;
+	NW: boolean;
+};
+
 export type ViewCellData = {next: ViewCell; future: ViewCell; currentPlayer: boolean};
 
 export type GemsToWithdraw = {position: bigint; amount: bigint; from: bigint; color: Color};
@@ -47,6 +58,7 @@ export type StratagemsViewState = StratagemsState & {
 	hasSomeCells: boolean;
 	tokensToCollect: GemsToWithdraw[];
 	rawState: Data;
+	neighbors: {[position: string]: Neighbors};
 };
 
 function isValidMove(move: LocalMove) {
@@ -86,6 +98,7 @@ function merge(
 		players: {},
 		computedPoints: copyState.computedPoints,
 		rawState,
+		neighbors: {},
 	};
 
 	for (const cellID of Object.keys(copyState.cells)) {
@@ -285,6 +298,22 @@ function merge(
 				}
 			}
 		}
+	}
+
+	for (const cellID of Object.keys(copyState.cells)) {
+		const {x, y} = bigIntIDToXY(BigInt(cellID));
+
+		const neighbors = {
+			N: !!state.cells[xyToBigIntID(x, y - 1).toString()],
+			NE: !!state.cells[xyToBigIntID(x + 1, y - 1).toString()],
+			E: !!state.cells[xyToBigIntID(x + 1, y).toString()],
+			SE: !!state.cells[xyToBigIntID(x + 1, y + 1).toString()],
+			S: !!state.cells[xyToBigIntID(x, y + 1).toString()],
+			SW: !!state.cells[xyToBigIntID(x - 1, y + 1).toString()],
+			W: !!state.cells[xyToBigIntID(x - 1, y).toString()],
+			NW: !!state.cells[xyToBigIntID(x - 1, y - 1).toString()],
+		};
+		viewState.neighbors[cellID] = neighbors;
 	}
 
 	return viewState;

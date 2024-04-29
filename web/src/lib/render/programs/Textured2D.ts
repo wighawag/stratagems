@@ -117,17 +117,8 @@ export class Textured2DLayer {
 			const cell = state.viewCells[cellPos];
 			const [x, y] = cellPos.split(',').map((v) => parseInt(v));
 			const oldCell = state.rawState.cells[xyToBigIntID(x, y).toString()];
-			const neighbors = {
-				N: !!state.cells[`${x},${y - 1}`],
-				NE: !!state.cells[`${x + 1},${y - 1}`],
-				E: !!state.cells[`${x + 1},${y}`],
-				SE: !!state.cells[`${x + 1},${y + 1}`],
-				S: !!state.cells[`${x},${y + 1}`],
-				SW: !!state.cells[`${x - 1},${y + 1}`],
-				W: !!state.cells[`${x - 1},${y}`],
-				NW: !!state.cells[`${x - 1},${y - 1}`],
-			};
-			drawCorners(attributes, this.size, offset, neighbors, tileSize, x, y, 1);
+
+			drawCorners(attributes, this.size, offset, state.neighbors[xyToBigIntID(x, y).toString()], tileSize, x, y, 1);
 			if (
 				(oldCell && cell.next.color != oldCell?.color) ||
 				cell.next.epochWhenTokenIsAdded >= get(epoch) /* TODO access to epcoh*/
