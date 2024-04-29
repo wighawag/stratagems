@@ -14,7 +14,7 @@
 
 	const PRECISION = BigInt(1e24);
 	const DECIMALS_18_MILLIONTH = 1000000000000n;
-	const REWARD_RATE_millionth = 0n; // 100n
+	const REWARD_RATE_millionth = 100n;
 
 	function _computeExtraTotalRewardPerPointSinceLastTime(
 		timestamp: bigint,
@@ -124,7 +124,7 @@
 		}),
 		table.column({
 			header: 'gems',
-			accessor: (playerInfo) => `${playerInfo.pointsInfo.gems} (coming in phase 2)`,
+			accessor: (playerInfo) => `${playerInfo.pointsInfo.gems}`,
 		}),
 	]);
 
