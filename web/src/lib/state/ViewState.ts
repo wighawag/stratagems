@@ -304,14 +304,14 @@ function merge(
 		const {x, y} = bigIntIDToXY(BigInt(cellID));
 
 		const neighbors = {
-			N: !!state.cells[xyToBigIntID(x, y - 1).toString()],
-			NE: !!state.cells[xyToBigIntID(x + 1, y - 1).toString()],
-			E: !!state.cells[xyToBigIntID(x + 1, y).toString()],
-			SE: !!state.cells[xyToBigIntID(x + 1, y + 1).toString()],
-			S: !!state.cells[xyToBigIntID(x, y + 1).toString()],
-			SW: !!state.cells[xyToBigIntID(x - 1, y + 1).toString()],
-			W: !!state.cells[xyToBigIntID(x - 1, y).toString()],
-			NW: !!state.cells[xyToBigIntID(x - 1, y - 1).toString()],
+			N: !!copyState.cells[xyToBigIntID(x, y - 1).toString()],
+			NE: !!copyState.cells[xyToBigIntID(x + 1, y - 1).toString()],
+			E: !!copyState.cells[xyToBigIntID(x + 1, y).toString()],
+			SE: !!copyState.cells[xyToBigIntID(x + 1, y + 1).toString()],
+			S: !!copyState.cells[xyToBigIntID(x, y + 1).toString()],
+			SW: !!copyState.cells[xyToBigIntID(x - 1, y + 1).toString()],
+			W: !!copyState.cells[xyToBigIntID(x - 1, y).toString()],
+			NW: !!copyState.cells[xyToBigIntID(x - 1, y - 1).toString()],
 		};
 		viewState.neighbors[cellID] = neighbors;
 	}
