@@ -5,7 +5,7 @@ import type {StratagemsViewState} from '$lib/state/ViewState';
 import {Blockie} from '$utils/ethereum/blockie';
 import {Color, bigIntIDToXYID} from 'stratagems-common';
 
-type Attributes = {positions: number[]; colors: number[]};
+type Attributes = {positions: {data: Float32Array; nextIndex: number}; colors: {data: Float32Array; nextIndex: number}};
 
 const vertexShaderSource = `#version 300 es
 in vec2 a_position;
@@ -34,9 +34,30 @@ void main() {
 `;
 
 function drawRect(attributes: Attributes, x1: number, y1: number, x2: number, y2: number, color: number[]) {
-	attributes.positions.push(x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2);
-	for (let i = 0; i < 6; i++) {
-		attributes.colors.push(...color);
+	{
+		let i = attributes.positions.nextIndex;
+		attributes.positions.data[i++] = x1;
+		attributes.positions.data[i++] = y1;
+		attributes.positions.data[i++] = x2;
+		attributes.positions.data[i++] = y1;
+		attributes.positions.data[i++] = x1;
+		attributes.positions.data[i++] = y2;
+		attributes.positions.data[i++] = x1;
+		attributes.positions.data[i++] = y2;
+		attributes.positions.data[i++] = x2;
+		attributes.positions.data[i++] = y1;
+		attributes.positions.data[i++] = x2;
+		attributes.positions.data[i++] = y2;
+		attributes.positions.nextIndex = i;
+	}
+	{
+		let ni = attributes.colors.nextIndex;
+		for (let i = 0; i < 6; i++) {
+			for (let c of color) {
+				attributes.colors.data[ni++] = c;
+			}
+		}
+		attributes.colors.nextIndex = ni;
 	}
 }
 
@@ -59,6 +80,7 @@ export class BlockiesLayer {
 	programInfo!: twgl.ProgramInfo;
 	bufferInfo!: twgl.BufferInfo;
 	gl!: WebGL2RenderingContext;
+	attributes!: Attributes;
 
 	constructor(public size: number) {}
 
@@ -71,6 +93,11 @@ export class BlockiesLayer {
 			a_color: {numComponents: 3, data: new Float32Array([])},
 		};
 		this.bufferInfo = twgl.createBufferInfoFromArrays(GL, attributes);
+
+		this.attributes = {
+			positions: {data: new Float32Array(999999), nextIndex: 0},
+			colors: {data: new Float32Array(9999999), nextIndex: 0},
+		};
 	}
 
 	use() {
@@ -96,10 +123,8 @@ export class BlockiesLayer {
 		const numTiles = 6;
 		const tileSize = this.size / (numTiles + 1);
 		const offset = tileSize / 2;
-		const attributes: Attributes = {
-			positions: [],
-			colors: [],
-		};
+		this.attributes.positions.nextIndex = 0;
+		this.attributes.colors.nextIndex = 0;
 		for (let cellPos of Object.keys(state.cells)) {
 			const cell = state.viewCells[cellPos];
 			const owner = state.owners[cellPos];
@@ -122,7 +147,23 @@ export class BlockiesLayer {
 						const r = l + blockieSize / 16;
 						const t = y1 + (y * blockieSize) / 16;
 						const b = t + blockieSize / 16;
-						attributes.positions.push(l, t, r, t, l, b, l, b, r, t, r, b);
+
+						{
+							let i = this.attributes.positions.nextIndex;
+							this.attributes.positions.data[i++] = l;
+							this.attributes.positions.data[i++] = t;
+							this.attributes.positions.data[i++] = r;
+							this.attributes.positions.data[i++] = t;
+							this.attributes.positions.data[i++] = l;
+							this.attributes.positions.data[i++] = b;
+							this.attributes.positions.data[i++] = l;
+							this.attributes.positions.data[i++] = b;
+							this.attributes.positions.data[i++] = r;
+							this.attributes.positions.data[i++] = t;
+							this.attributes.positions.data[i++] = r;
+							this.attributes.positions.data[i++] = b;
+							this.attributes.positions.nextIndex = i;
+						}
 
 						let rgb = blockie.bgcolorRGB;
 						if (data[i] === 1) {
@@ -130,15 +171,21 @@ export class BlockiesLayer {
 						} else if (data[i] === 2) {
 							rgb = blockie.spotcolorRGB;
 						}
-						for (let j = 0; j < 6; j++) {
-							attributes.colors.push(...rgb);
+						{
+							let ni = this.attributes.colors.nextIndex;
+							for (let i = 0; i < 6; i++) {
+								for (let c of rgb) {
+									this.attributes.colors.data[ni++] = c;
+								}
+							}
+							this.attributes.colors.nextIndex = ni;
 						}
 						i++;
 					}
 				}
 				const doorThickness = this.size / 100;
 				drawRect(
-					attributes,
+					this.attributes,
 					x1 - doorThickness,
 					y1 - doorThickness,
 					x1 + blockieSize / 2 + doorThickness,
@@ -146,9 +193,9 @@ export class BlockiesLayer {
 					[1, 1, 1],
 				);
 
-				drawRect(attributes, x1 - doorThickness, y1 - doorThickness, x1, y1 + blockieSize / 2, [1, 1, 1]);
+				drawRect(this.attributes, x1 - doorThickness, y1 - doorThickness, x1, y1 + blockieSize / 2, [1, 1, 1]);
 				drawRect(
-					attributes,
+					this.attributes,
 					x1 + blockieSize / 2 - -doorThickness,
 					y1 - doorThickness,
 					x1 + blockieSize / 2,
@@ -171,17 +218,17 @@ export class BlockiesLayer {
 					let endY = y + this.size - thickness / 2;
 
 					if (!neighbors.N) {
-						drawRect(attributes, startX, startY, endX, startY + thickness, [0, 1, 0]);
+						drawRect(this.attributes, startX, startY, endX, startY + thickness, [0, 1, 0]);
 					}
 
 					if (!neighbors.S) {
-						drawRect(attributes, startX, endY, endX, endY + thickness, [0, 1, 0]);
+						drawRect(this.attributes, startX, endY, endX, endY + thickness, [0, 1, 0]);
 					}
 					if (!neighbors.W) {
-						drawRect(attributes, startX, startY, startX + thickness, endY, [0, 1, 0]);
+						drawRect(this.attributes, startX, startY, startX + thickness, endY, [0, 1, 0]);
 					}
 					if (!neighbors.E) {
-						drawRect(attributes, endX, startY, endX + thickness, endY, [0, 1, 0]);
+						drawRect(this.attributes, endX, startY, endX + thickness, endY, [0, 1, 0]);
 					}
 				}
 			}
@@ -204,7 +251,7 @@ export class BlockiesLayer {
 			y2 = y2 - (y2 - y1) / 5;
 
 			drawEmptyRect(
-				attributes,
+				this.attributes,
 				toX + this.size / 2 - this.size / 4,
 				toY + this.size / 2 - this.size / 4,
 				toX + this.size / 2 + this.size / 4,
@@ -219,15 +266,15 @@ export class BlockiesLayer {
 			// if (withdrawal.color === Color.Red) {
 			// 	color = [1, 0, 0];
 			// }
-			drawRect(attributes, x1, y1, x2, y2, color);
+			drawRect(this.attributes, x1, y1, x2, y2, color);
 		}
 
 		// we update the buffer with the new arrays
-		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_position, attributes.positions);
-		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_color, attributes.colors);
+		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_position, this.attributes.positions);
+		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_color, this.attributes.colors);
 		// we need to tell twgl the number of element to draw
 		// see : https://github.com/greggman/twgl.js/issues/211
-		this.bufferInfo.numElements = attributes.positions.length / 2;
+		this.bufferInfo.numElements = this.attributes.positions.nextIndex / 2;
 
 		// we draw
 		twgl.setBuffersAndAttributes(GL, this.programInfo, this.bufferInfo);

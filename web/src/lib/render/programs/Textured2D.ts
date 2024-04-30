@@ -63,6 +63,7 @@ export class Textured2DLayer {
 	bufferInfo!: twgl.BufferInfo;
 	gl!: WebGL2RenderingContext;
 	textures!: {[key: string]: WebGLTexture};
+	attributes!: Attributes;
 
 	constructor(public size: number) {}
 
@@ -80,6 +81,12 @@ export class Textured2DLayer {
 		this.textures = twgl.createTextures(GL, {
 			sheet: {src: sheetURL, mag: GL.NEAREST},
 		});
+
+		this.attributes = {
+			positions: {data: new Float32Array(9999999), nextIndex: 0},
+			texs: {data: new Float32Array(9999999), nextIndex: 0},
+			alphas: {data: new Float32Array(9999999), nextIndex: 0},
+		};
 	}
 
 	use() {
@@ -108,24 +115,32 @@ export class Textured2DLayer {
 		const numTiles = 6;
 		const tileSize = this.size / (numTiles + 1);
 		const offset = tileSize / 2;
-		const attributes: Attributes = {
-			positions: [],
-			texs: [],
-			alphas: [],
-		};
+
+		this.attributes.positions.nextIndex = 0;
+		this.attributes.texs.nextIndex = 0;
+		this.attributes.alphas.nextIndex = 0;
 		for (let cellPos of Object.keys(state.cells)) {
 			const cell = state.viewCells[cellPos];
 			const [x, y] = cellPos.split(',').map((v) => parseInt(v));
 			const oldCell = state.rawState.cells[xyToBigIntID(x, y).toString()];
 
-			drawCorners(attributes, this.size, offset, state.neighbors[xyToBigIntID(x, y).toString()], tileSize, x, y, 1);
+			drawCorners(
+				this.attributes,
+				this.size,
+				offset,
+				state.neighbors[xyToBigIntID(x, y).toString()],
+				tileSize,
+				x,
+				y,
+				1,
+			);
 			if (
 				(oldCell && cell.next.color != oldCell?.color) ||
 				cell.next.epochWhenTokenIsAdded >= get(epoch) /* TODO access to epcoh*/
 			) {
-				drawSandCenter(attributes, this.size, offset, tileSize, numTiles, x, y, 1);
+				drawSandCenter(this.attributes, this.size, offset, tileSize, numTiles, x, y, 1);
 			} else {
-				drawGrassCenter(attributes, this.size, offset, tileSize, numTiles, x, y, 1);
+				drawGrassCenter(this.attributes, this.size, offset, tileSize, numTiles, x, y, 1);
 			}
 		}
 
@@ -134,54 +149,54 @@ export class Textured2DLayer {
 			const contractCell = state.cells[cellPos];
 			const [x, y] = cellPos.split(',').map((v) => parseInt(v));
 
-			drawCastle(attributes, this.size, tileSize, x, y, cell.next.color, 1);
+			drawCastle(this.attributes, this.size, tileSize, x, y, cell.next.color, 1);
 
 			for (let i = 0; i < cell.next.life; i++) {
-				drawHouse(attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
+				drawHouse(this.attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
 			}
 
 			if (cell.next.life > 0) {
-				drawGem(attributes, this.size, tileSize, x, y, cell.next.color, 1);
+				drawGem(this.attributes, this.size, tileSize, x, y, cell.next.color, 1);
 				if (contractCell.stake > 1) {
 					for (let i = 1; i < contractCell.stake; i++) {
-						drawGem(attributes, this.size, tileSize, x + 0.05 * i, y - 0.05 * i, cell.next.color, 1);
+						drawGem(this.attributes, this.size, tileSize, x + 0.05 * i, y - 0.05 * i, cell.next.color, 1);
 					}
 				}
 			}
 
 			if (cell.future.life > cell.next.life) {
 				for (let i = cell.next.life; i < cell.future.life; i++) {
-					drawTent(attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
+					drawTent(this.attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
 				}
 			} else if (cell.future.life < cell.next.life) {
 				for (let i = Math.max(0, cell.next.life - (cell.next.life - cell.future.life)); i < cell.next.life; i++) {
 					const offset = 0.2 * tileSize;
 					const margin = 0.3 * tileSize;
-					drawHouseInFire(attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
+					drawHouseInFire(this.attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
 				}
 			}
 
 			if ((cell.next.enemyMap & 1) == 1) {
-				drawUnit(attributes, this.size, tileSize, x, y, cell.next.color, 1, 0, -1);
+				drawUnit(this.attributes, this.size, tileSize, x, y, cell.next.color, 1, 0, -1);
 			}
 			if ((cell.next.enemyMap & 2) == 2) {
-				drawUnit(attributes, this.size, tileSize, x, y, cell.next.color, 1, -1, 0);
+				drawUnit(this.attributes, this.size, tileSize, x, y, cell.next.color, 1, -1, 0);
 			}
 			if ((cell.next.enemyMap & 4) == 4) {
-				drawUnit(attributes, this.size, tileSize, x, y, cell.next.color, 1, 0, 1);
+				drawUnit(this.attributes, this.size, tileSize, x, y, cell.next.color, 1, 0, 1);
 			}
 			if ((cell.next.enemyMap & 8) == 8) {
-				drawUnit(attributes, this.size, tileSize, x, y, cell.next.color, 1, 1, 0);
+				drawUnit(this.attributes, this.size, tileSize, x, y, cell.next.color, 1, 1, 0);
 			}
 		}
 
 		// we update the buffer with the new arrays
-		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_position, attributes.positions);
-		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_tex, attributes.texs);
-		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_alpha, attributes.alphas);
+		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_position, this.attributes.positions);
+		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_tex, this.attributes.texs);
+		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_alpha, this.attributes.alphas);
 		// we need to tell twgl the number of element to draw
 		// see : https://github.com/greggman/twgl.js/issues/211
-		this.bufferInfo.numElements = attributes.positions.length / 2;
+		this.bufferInfo.numElements = this.attributes.positions.nextIndex / 2;
 
 		// we draw
 		twgl.setBuffersAndAttributes(GL, this.programInfo, this.bufferInfo);

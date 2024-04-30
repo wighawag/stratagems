@@ -182,9 +182,39 @@ function drawTile(
 	const x2 = x1 + tileSize;
 	const y2 = y1 + tileSize;
 
-	attributes.positions.push(x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2);
-	attributes.texs.push(...tile.uv);
-	attributes.alphas.push(opacity, opacity, opacity, opacity, opacity, opacity); // TODO
+	{
+		let i = attributes.positions.nextIndex;
+		attributes.positions.data[i++] = x1;
+		attributes.positions.data[i++] = y1;
+		attributes.positions.data[i++] = x2;
+		attributes.positions.data[i++] = y1;
+		attributes.positions.data[i++] = x1;
+		attributes.positions.data[i++] = y2;
+		attributes.positions.data[i++] = x1;
+		attributes.positions.data[i++] = y2;
+		attributes.positions.data[i++] = x2;
+		attributes.positions.data[i++] = y1;
+		attributes.positions.data[i++] = x2;
+		attributes.positions.data[i++] = y2;
+		attributes.positions.nextIndex = i;
+	}
+	{
+		let i = attributes.texs.nextIndex;
+		for (let v of tile.uv) {
+			attributes.texs.data[i++] = v;
+		}
+		attributes.texs.nextIndex = i;
+	}
+	{
+		let i = attributes.alphas.nextIndex;
+		attributes.alphas.data[i++] = opacity;
+		attributes.alphas.data[i++] = opacity;
+		attributes.alphas.data[i++] = opacity;
+		attributes.alphas.data[i++] = opacity;
+		attributes.alphas.data[i++] = opacity;
+		attributes.alphas.data[i++] = opacity;
+		attributes.alphas.nextIndex = i;
+	}
 }
 function drawTileRow(
 	attributes: Attributes,
@@ -450,7 +480,11 @@ export type Neighbors = {
 	NW: boolean;
 };
 
-export type Attributes = {positions: number[]; texs: number[]; alphas: number[]};
+export type Attributes = {
+	positions: {data: Float32Array; nextIndex: number};
+	texs: {data: Float32Array; nextIndex: number};
+	alphas: {data: Float32Array; nextIndex: number};
+};
 
 export function drawCorners(
 	attributes: Attributes,
@@ -522,9 +556,42 @@ export function drawGrassCenter(
 			const y1 = offset + y * cellSize + cy * tileSize;
 			const y2 = y1 + tileSize;
 
-			attributes.positions.push(x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2);
-			attributes.texs.push(...grasses[(cx + cy) % 8].uv);
-			attributes.alphas.push(opacity, opacity, opacity, opacity, opacity, opacity); // TODO
+			{
+				//attributes.positions.push(x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2);
+				let i = attributes.positions.nextIndex;
+				attributes.positions.data[i++] = x1;
+				attributes.positions.data[i++] = y1;
+				attributes.positions.data[i++] = x2;
+				attributes.positions.data[i++] = y1;
+				attributes.positions.data[i++] = x1;
+				attributes.positions.data[i++] = y2;
+				attributes.positions.data[i++] = x1;
+				attributes.positions.data[i++] = y2;
+				attributes.positions.data[i++] = x2;
+				attributes.positions.data[i++] = y1;
+				attributes.positions.data[i++] = x2;
+				attributes.positions.data[i++] = y2;
+				attributes.positions.nextIndex = i;
+			}
+
+			{
+				const uv = grasses[(cx + cy) % 8].uv;
+				let i = attributes.texs.nextIndex;
+				for (let v of uv) {
+					attributes.texs.data[i++] = v;
+				}
+				attributes.texs.nextIndex = i;
+			}
+			{
+				let i = attributes.alphas.nextIndex;
+				attributes.alphas.data[i++] = opacity;
+				attributes.alphas.data[i++] = opacity;
+				attributes.alphas.data[i++] = opacity;
+				attributes.alphas.data[i++] = opacity;
+				attributes.alphas.data[i++] = opacity;
+				attributes.alphas.data[i++] = opacity;
+				attributes.alphas.nextIndex = i;
+			}
 		}
 	}
 }
