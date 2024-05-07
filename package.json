@@ -8,9 +8,9 @@
 		"ask-env": "^0.0.1",
 		"ldenv": "^0.3.10",
 		"prettier": "^3.2.5",
-		"sharp": "^0.33.2",
-		"syncpack": "^12.3.0",
-		"vitepress": "1.0.0-rc.44"
+		"sharp": "^0.33.3",
+		"syncpack": "^12.3.2",
+		"vitepress": "1.1.4"
 	},
 	"pnpm": {
 		"supportedArchitectures": {
@@ -20,7 +20,10 @@
 			"cpu": [
 				"x64"
 			]
-		}
+		},
+		"patchedDependencies": {
+			"named-logs@0.2.4-patchable": "patches/named-logs@0.2.4-patchable.patch"
+		  }
 	},
 	"scripts": {
 		"preinstall": "npx only-allow pnpm",
