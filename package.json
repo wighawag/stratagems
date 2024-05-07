@@ -23,7 +23,13 @@
 		},
 		"overrides": {
 			"fuzd-cf-worker>named-logs": "npm:named-logs-for-servers@0.0.1",
-			"fuzd-server>named-logs": "npm:named-logs-for-servers@0.0.1"
+			"fuzd-server>named-logs": "npm:named-logs-for-servers@0.0.1",
+			"fuzd-common>named-logs": "npm:named-logs-for-servers@0.0.1",
+			"fuzd-executor>named-logs": "npm:named-logs-for-servers@0.0.1",
+			"fuzd-gateways>named-logs": "npm:named-logs-for-servers@0.0.1",
+			"remote-account>named-logs": "npm:named-logs-for-servers@0.0.1",
+			"fuzd-scheduler>named-logs": "npm:named-logs-for-servers@0.0.1",
+			"fuzd-tlock-decrypter>named-logs": "npm:named-logs-for-servers@0.0.1"
 		}
 	},
 	"scripts": {

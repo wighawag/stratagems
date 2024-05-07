@@ -7,6 +7,12 @@ settings:
 overrides:
   fuzd-cf-worker>named-logs: npm:named-logs-for-servers@0.0.1
   fuzd-server>named-logs: npm:named-logs-for-servers@0.0.1
+  fuzd-common>named-logs: npm:named-logs-for-servers@0.0.1
+  fuzd-executor>named-logs: npm:named-logs-for-servers@0.0.1
+  fuzd-gateways>named-logs: npm:named-logs-for-servers@0.0.1
+  remote-account>named-logs: npm:named-logs-for-servers@0.0.1
+  fuzd-scheduler>named-logs: npm:named-logs-for-servers@0.0.1
+  fuzd-tlock-decrypter>named-logs: npm:named-logs-for-servers@0.0.1
 
 importers:
 
@@ -6049,7 +6055,7 @@ packages:
     dependencies:
       eip-1193: 0.5.0
       eip-1193-signer: 0.0.2(typescript@5.4.5)(zod@3.23.6)
-      named-logs: 0.2.4
+      named-logs: /named-logs-for-servers@0.0.1
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -6065,7 +6071,7 @@ packages:
       eip-1193: 0.5.0
       eip-1193-signer: 0.0.2(typescript@5.4.5)(zod@3.23.6)
       fuzd-common: 0.2.0(typescript@5.4.5)(zod@3.23.6)
-      named-logs: 0.2.4
+      named-logs: /named-logs-for-servers@0.0.1
       wighawag-ono: 7.1.3
       zod: 3.23.6
     transitivePeerDependencies:
@@ -6080,7 +6086,7 @@ packages:
       atomikv: 0.1.0
       fuzd-executor: 0.2.1(typescript@5.4.5)
       fuzd-scheduler: 0.3.0(typescript@5.4.5)
-      named-logs: 0.2.4
+      named-logs: /named-logs-for-servers@0.0.1
       viem: 2.10.1(typescript@5.4.5)(zod@3.23.6)
       wighawag-ono: 7.1.3
     transitivePeerDependencies:
@@ -6097,7 +6103,7 @@ packages:
       eip-1193: 0.5.0
       eip-1193-signer: 0.0.2(typescript@5.4.5)(zod@3.23.6)
       fuzd-common: 0.2.0(typescript@5.4.5)(zod@3.23.6)
-      named-logs: 0.2.4
+      named-logs: /named-logs-for-servers@0.0.1
       wighawag-ono: 7.1.3
       zod: 3.23.6
     transitivePeerDependencies:
@@ -6137,7 +6143,7 @@ packages:
     resolution: {integrity: sha512-vCKyUMBgjFU9W6ev89a0U9JZSlzh9Bt9j7lFMh3oZTvoDWx0hTZgPlwmuHipaAUia13EjVDKQkiJl+Qs32rlpQ==}
     dependencies:
       fuzd-scheduler: 0.3.0(typescript@5.4.5)
-      named-logs: 0.2.4
+      named-logs: /named-logs-for-servers@0.0.1
       tlock-js: 0.9.0
     transitivePeerDependencies:
       - bufferutil
