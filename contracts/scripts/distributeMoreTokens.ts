@@ -22,7 +22,7 @@ async function main() {
 
 	const TestTokens = env.get<typeof context.artifacts.TestTokens.abi>('TestTokens');
 	const decimals = await env.read(TestTokens, {functionName: 'decimals'});
-	const numTokensTMP = parseUnits('20', decimals);
+	const numTokensTMP = parseUnits('30', decimals);
 	const numTokensPerAccount = numTokensTMP + (numTokensTMP * 6n) / parseUnits('1', decimals);
 	const total = BigInt(addresses.length) * numTokensPerAccount;
 	const prompt = await prompts({
