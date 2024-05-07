@@ -2,7 +2,7 @@ import localCache from '$utils/localCache';
 import {writable} from 'svelte/store';
 import type {Readable, Writable} from 'svelte/store';
 import {xchacha20poly1305} from '@noble/ciphers/chacha';
-import {randomBytes} from '@noble/ciphers/webcrypto/utils';
+import {randomBytes} from '@noble/ciphers/webcrypto';
 import {base64url} from '@scure/base';
 import {compressToUint8Array, decompressFromUint8Array} from '$utils/data';
 import {privateKeyToAccount, type PrivateKeyAccount} from 'viem/accounts';

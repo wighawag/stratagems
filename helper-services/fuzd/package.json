@@ -1,8 +1,8 @@
 {
     "name": "fuzd-service",
     "devDependencies": {
-        "fuzd-cf-worker": "^0.1.1",
-        "fuzd-server": "^0.3.0",
+        "fuzd-cf-worker": "^0.1.2",
+        "fuzd-server": "^0.3.1",
         "ldenv": "^0.3.10",
         "node-cron": "^3.0.3",
         "set-defaults": "^0.0.2",
@@ -12,8 +12,9 @@
     },
     "scripts": {
         "prepare": "set-defaults .",
+        "dev:setup": "wrangler d1 execute fuzd-db --local --file=node_modules/fuzd-server/src/storage/scheduler.sql && wrangler d1 execute fuzd-db --local --file=node_modules/fuzd-server/src/storage/executor.sql",
         "dev:cron": "node cron.js",
-        "dev:worker": "echo 'waiting for contracts.json...'; wait-on contracts.json && node generate-env.js && wrangler dev -c ./wrangler.toml --port 34002",
+        "dev:worker": "echo 'waiting for contracts.json...'; wait-on contracts.json && node generate-env.js && pnpm dev:setup && wrangler dev -c ./wrangler.toml --port 34002",
         "dev": "pnpm run /^dev:.*/",
         "wrangler": "wrangler"
     }

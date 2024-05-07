@@ -30,7 +30,7 @@ export function createClient(config: ClientConfig) {
 	const wallet = privateKeyToAccount(config.privateKey);
 
 	async function getRemoteAccount() {
-		const publicKey = await fetch(`${schedulerEndPoint}/publicKey`).then((v) => v.text());
+		const publicKey = await fetch(`${schedulerEndPoint}/api/publicKey`).then((v) => v.text());
 		const remoteAddress = deriveRemoteAddress(publicKey, wallet.address);
 		return remoteAddress;
 	}
@@ -105,7 +105,7 @@ export function createClient(config: ClientConfig) {
 		const jsonAsString = JSON.stringify(executionToSend);
 		const signature = await wallet.signMessage({message: jsonAsString});
 		if (typeof config.schedulerEndPoint === 'string') {
-			const response = await fetch(`${schedulerEndPoint}/scheduleExecution`, {
+			const response = await fetch(`${schedulerEndPoint}/api/scheduling/scheduleExecution`, {
 				method: 'POST',
 				body: jsonAsString,
 				headers: {

@@ -4,10 +4,8 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-patchedDependencies:
-  named-logs@0.2.4-patchable:
-    hash: cyjcrnxqmvdxplbo6umdn2lcju
-    path: patches/named-logs@0.2.4-patchable.patch
+overrides:
+  fuzd-cf-worker>named-logs: npm:named-logs-for-servers@0.0.1
 
 importers:
 
@@ -180,11 +178,11 @@ importers:
   helper-services/fuzd:
     devDependencies:
       fuzd-cf-worker:
-        specifier: ^0.1.1
-        version: 0.1.1(@cloudflare/workers-types@4.20240502.0)
+        specifier: ^0.1.2
+        version: 0.1.2(@cloudflare/workers-types@4.20240502.0)
       fuzd-server:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.3.1
+        version: 0.3.1
       ldenv:
         specifier: ^0.3.10
         version: 0.3.10
@@ -6035,10 +6033,10 @@ packages:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
     dev: true
 
-  /fuzd-cf-worker@0.1.1(@cloudflare/workers-types@4.20240502.0):
-    resolution: {integrity: sha512-Qu6Nei+ulFtkskeMYl4LeEW75MKwPzYI+yQlNAnMuggePt5Ch+rBE1KHnWU1l8Dga2bHm8RMpi/xMs7mXlqFGw==}
+  /fuzd-cf-worker@0.1.2(@cloudflare/workers-types@4.20240502.0):
+    resolution: {integrity: sha512-L5+eCF9Yy3x5nc/7nI+ugxrYNxw4eyMhb3GTYP7hcI/jMnby444CbRN027x7PMFvj24wNhSvKPaQFl3ltQZz6Q==}
     dependencies:
-      named-logs: 0.2.4-patchable(patch_hash=cyjcrnxqmvdxplbo6umdn2lcju)
+      named-logs: /named-logs-for-servers@0.0.1
       remote-sql-d1: 0.0.3(@cloudflare/workers-types@4.20240502.0)
       workers-logger: 0.2.0
     transitivePeerDependencies:
@@ -6107,8 +6105,8 @@ packages:
       - utf-8-validate
     dev: true
 
-  /fuzd-server@0.3.0:
-    resolution: {integrity: sha512-rRkqg1Kt8tp9yiQtBgWH6sWcSS+CdbPicvYse4NFfUcWyo2HhNN2UyWnLLM11r6mAIwMRziUp2ak/zCB6rVonA==}
+  /fuzd-server@0.3.1:
+    resolution: {integrity: sha512-PeNAPpVbymKgazb8xK+inz/D3EWxBtorrMUI/kMH+FLzlkw6OdBNNUIs2Cqah/NwHcEDzfueTS1QOOYa/YQQaw==}
     dependencies:
       '@hono/zod-validator': 0.2.1(hono@4.3.2)(zod@3.23.6)
       '@scure/bip32': 1.4.0
@@ -8198,13 +8196,12 @@ packages:
       named-logs: 0.2.4
     dev: true
 
+  /named-logs-for-servers@0.0.1:
+    resolution: {integrity: sha512-fuYEOBPjBOjbSjTIpOYOxmhhHgPXApyvR7h/o9f7YuNrFd10hOkS9iSxlXyq6u9+AevrvqVtnGbrTPn3HPuMRg==}
+    dev: true
+
   /named-logs@0.2.4:
     resolution: {integrity: sha512-QHlcLpK2Ij+u7ZYDYgaYkTIlC/NcOwEnFdqbY+PF9ewAMUjvBwRVUyqBUtVaJ3V2YKVy2HiloAgLUdOEVRRyBA==}
-
-  /named-logs@0.2.4-patchable(patch_hash=cyjcrnxqmvdxplbo6umdn2lcju):
-    resolution: {integrity: sha512-Yjsclc4d0uzb5/qfm02XjUZP4ZcdW9ZA/GpPTZydH9KHRDQrpVD+e1MfI+xI1gTBc7/RyLeY2d+ZBk8k9fh6Pg==}
-    dev: true
-    patched: true
 
   /nanoid@3.3.7:
     resolution: {integrity: sha512-eSRppjcPIatRIMC1U6UngP8XFcz8MQWGQdt1MTBQ7NaAmvXDfvNxbvWV3x2y6CdEUciCSsDHDQZbhYaB8QEo2g==}
