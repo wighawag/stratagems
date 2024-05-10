@@ -11,7 +11,12 @@ if (config.triggers?.crons) {
         cron.schedule(trigger, async () => {
             console.log(`triggering ${trigger} ... `)
             try {
-                await fetch(`http://localhost:34002/cdn-cgi/mf/scheduled?cron=${trigger}`)
+                // await fetch(`http://localhost:34002/cdn-cgi/mf/scheduled?cron=${trigger}`)
+                if (trigger === `* * * * *`) {
+                    await fetch(`http://localhost:34002/api/internal/processQueue`);
+                } else if (trigger === `*/1 * * * *`) {
+                    await fetch(`http://localhost:34002/api/internal/processTransactions`);
+                }
             } catch(e) {
                 console.log(`failed to fetch...`, e)
             }

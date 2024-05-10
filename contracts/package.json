@@ -38,9 +38,9 @@
     "solidity-proxy": "^0.4.0",
     "stratagems-common": "workspace:*",
     "stratagems-indexer": "workspace:*",
-    "tsx": "^4.9.3",
+    "tsx": "^4.9.4",
     "typescript": "^5.4.5",
-    "viem": "^2.10.1",
+    "viem": "^2.10.3",
     "vitest": "^1.6.0",
     "vitest-solidity-coverage": "0.1.13"
   },

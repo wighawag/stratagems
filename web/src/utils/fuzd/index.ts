@@ -1,13 +1,7 @@
 import {timelockEncrypt, roundTime, roundAt, timelockDecrypt, Buffer, HttpChainClient} from 'tlock-js';
 (globalThis as any).Buffer = Buffer;
 
-import type {
-	ScheduleInfo,
-	ScheduledExecution,
-	TimeBasedTiming,
-	RoundBasedTiming,
-	DecryptedPayload,
-} from 'fuzd-scheduler';
+import type {ScheduleInfo, ScheduledExecution, DecryptedPayload} from 'fuzd-scheduler';
 import type {BroadcastSchedule, TransactionSubmission} from 'fuzd-executor';
 import {privateKeyToAccount} from 'viem/accounts';
 import {deriveRemoteAddress} from 'remote-account';
@@ -53,11 +47,7 @@ export function createClient(config: ClientConfig) {
 		},
 		options?: {fakeEncrypt?: boolean},
 	): Promise<ScheduleInfo> {
-		let executionToSend: ScheduledExecution<
-			TransactionSubmission,
-			RoundBasedTiming | TimeBasedTiming,
-			RoundBasedTiming | TimeBasedTiming
-		>;
+		let executionToSend: ScheduledExecution<TransactionSubmission>;
 
 		const chainId = (
 			execution.chainId.startsWith('0x') ? execution.chainId : `0x` + parseInt(execution.chainId).toString(16)
@@ -88,20 +78,19 @@ export function createClient(config: ClientConfig) {
 
 		const payload = await timelockEncrypt(round, Buffer.from(payloadAsJSONString, 'utf-8'), config.drand);
 		executionToSend = {
+			type: 'time-locked',
 			slot: execution.slot,
 			chainId,
 			timing: {
-				type: 'fixed',
-				value: {
-					type: 'round',
-					expectedTime: execution.time,
-					round,
-				},
+				type: 'fixed-round',
+				expectedTime: execution.time,
+				scheduledRound: round,
 				expiry: execution.expiry,
 			},
-			type: 'time-locked',
+			maxFeePerGas: '0',
+			paymentReserve: '0', // TODO
 			payload,
-		} as any;
+		};
 		const jsonAsString = JSON.stringify(executionToSend);
 		const signature = await wallet.signMessage({message: jsonAsString});
 		if (typeof config.schedulerEndPoint === 'string') {
