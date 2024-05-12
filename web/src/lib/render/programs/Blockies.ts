@@ -95,8 +95,8 @@ export class BlockiesLayer {
 		this.bufferInfo = twgl.createBufferInfoFromArrays(GL, attributes);
 
 		this.attributes = {
-			positions: {data: new Float32Array(999999), nextIndex: 0},
-			colors: {data: new Float32Array(9999999), nextIndex: 0},
+			positions: {data: new Float32Array(2000000), nextIndex: 0},
+			colors: {data: new Float32Array(2000000), nextIndex: 0},
 		};
 	}
 
