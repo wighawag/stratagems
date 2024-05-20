@@ -40,14 +40,14 @@ importers:
   common:
     dependencies:
       '@types/node':
-        specifier: ^20.12.11
-        version: 20.12.11
+        specifier: ^20.12.12
+        version: 20.12.12
       named-logs:
         specifier: ^0.2.4
         version: 0.2.4
       viem:
-        specifier: ^2.10.3
-        version: 2.10.3(typescript@5.4.5)(zod@3.23.8)
+        specifier: ^2.10.8
+        version: 2.10.8(typescript@5.4.5)(zod@3.23.8)
     devDependencies:
       ldenv:
         specifier: ^0.3.10
@@ -66,7 +66,7 @@ importers:
     devDependencies:
       '@nomicfoundation/hardhat-network-helpers':
         specifier: ^1.0.10
-        version: 1.0.10(hardhat@2.22.3)
+        version: 1.0.10(hardhat@2.22.4)
       '@openzeppelin/contracts':
         specifier: ^5.0.2
         version: 5.0.2
@@ -122,11 +122,11 @@ importers:
         specifier: ^11.2.0
         version: 11.2.0
       hardhat:
-        specifier: ^2.22.3
-        version: 2.22.3(typescript@5.4.5)
+        specifier: ^2.22.4
+        version: 2.22.4(typescript@5.4.5)
       hardhat-preprocessor:
         specifier: ^0.1.5
-        version: 0.1.5(hardhat@2.22.3)
+        version: 0.1.5(hardhat@2.22.4)
       hardhat-rocketh:
         specifier: ^4.0.17
         version: 4.0.17(rocketh@0.10.13)
@@ -153,7 +153,7 @@ importers:
         version: 0.0.2
       solidity-coverage:
         specifier: ^0.8.12
-        version: 0.8.12(hardhat@2.22.3)
+        version: 0.8.12(hardhat@2.22.4)
       solidity-kit:
         specifier: ^0.5.0
         version: 0.5.0
@@ -167,29 +167,29 @@ importers:
         specifier: workspace:*
         version: link:../indexer
       tsx:
-        specifier: ^4.9.4
-        version: 4.9.4
+        specifier: ^4.10.3
+        version: 4.10.3
       typescript:
         specifier: ^5.4.5
         version: 5.4.5
       viem:
-        specifier: ^2.10.3
-        version: 2.10.3(typescript@5.4.5)(zod@3.23.8)
+        specifier: ^2.10.8
+        version: 2.10.8(typescript@5.4.5)(zod@3.23.8)
       vitest:
         specifier: ^1.6.0
         version: 1.6.0
       vitest-solidity-coverage:
         specifier: 0.1.13
-        version: 0.1.13(hardhat@2.22.3)(solidity-coverage@0.8.12)(vitest@1.6.0)
+        version: 0.1.13(hardhat@2.22.4)(solidity-coverage@0.8.12)(vitest@1.6.0)
 
   helper-services/fuzd:
     devDependencies:
       fuzd-cf-worker:
-        specifier: ^0.2.0
-        version: 0.2.0(@cloudflare/workers-types@4.20240502.0)
+        specifier: ^0.5.0
+        version: 0.5.0(@cloudflare/workers-types@4.20240512.0)
       fuzd-server:
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.5.1
+        version: 0.5.1
       ldenv:
         specifier: ^0.3.10
         version: 0.3.10
@@ -206,8 +206,8 @@ importers:
         specifier: ^7.2.0
         version: 7.2.0
       wrangler:
-        specifier: ^3.55.0
-        version: 3.55.0(@cloudflare/workers-types@4.20240502.0)
+        specifier: ^3.56.0
+        version: 3.56.0(@cloudflare/workers-types@4.20240512.0)
 
   helper-services/missiv:
     devDependencies:
@@ -224,8 +224,8 @@ importers:
         specifier: ^7.2.0
         version: 7.2.0
       wrangler:
-        specifier: ^3.55.0
-        version: 3.55.0(@cloudflare/workers-types@4.20240502.0)
+        specifier: ^3.56.0
+        version: 3.56.0(@cloudflare/workers-types@4.20240512.0)
 
   helper-services/remote-indexer:
     devDependencies:
@@ -245,8 +245,8 @@ importers:
         specifier: ^0.0.1
         version: 0.0.1
       wrangler:
-        specifier: ^3.55.0
-        version: 3.55.0(@cloudflare/workers-types@4.20240502.0)
+        specifier: ^3.56.0
+        version: 3.56.0(@cloudflare/workers-types@4.20240512.0)
 
   indexer:
     dependencies:
@@ -301,7 +301,7 @@ importers:
         version: 4.17.12
       '@zerodevx/svelte-json-view':
         specifier: ^1.0.9
-        version: 1.0.9(svelte@4.2.16)
+        version: 1.0.9(svelte@4.2.17)
       driver.js:
         specifier: ^1.3.1
         version: 1.3.1
@@ -322,13 +322,13 @@ importers:
         version: 4.17.21
       lucide-svelte:
         specifier: ^0.378.0
-        version: 0.378.0(svelte@4.2.16)
+        version: 0.378.0(svelte@4.2.17)
       lz-string:
         specifier: ^1.5.0
         version: 1.5.0
       missiv-client:
         specifier: ^0.0.13
-        version: 0.0.13(svelte@4.2.16)
+        version: 0.0.13(svelte@4.2.17)
       named-logs:
         specifier: ^0.2.4
         version: 0.2.4
@@ -349,7 +349,7 @@ importers:
         version: link:../indexer
       svelte-headless-table:
         specifier: ^0.18.2
-        version: 0.18.2(svelte@4.2.16)
+        version: 0.18.2(svelte@4.2.17)
       svelte-portal:
         specifier: ^2.2.1
         version: 2.2.1
@@ -366,27 +366,27 @@ importers:
         specifier: ^5.5.4
         version: 5.5.4
       viem:
-        specifier: ^2.10.3
-        version: 2.10.3(typescript@5.4.5)(zod@3.23.8)
+        specifier: ^2.10.8
+        version: 2.10.8(typescript@5.4.5)(zod@3.23.8)
       web3-connection:
         specifier: ^0.1.39
-        version: 0.1.39(svelte@4.2.16)
+        version: 0.1.39(svelte@4.2.17)
       web3-connection-viem:
         specifier: ^0.3.0
-        version: 0.3.0(viem@2.10.3)
+        version: 0.3.0(viem@2.10.8)
     devDependencies:
       '@rocketh/export':
         specifier: ^0.10.7
         version: 0.10.7(rocketh@0.10.13)
       '@sveltejs/adapter-static':
         specifier: ^3.0.0
-        version: 3.0.1(@sveltejs/kit@2.5.7)
+        version: 3.0.1(@sveltejs/kit@2.5.8)
       '@sveltejs/kit':
-        specifier: ^2.5.7
-        version: 2.5.7(@sveltejs/vite-plugin-svelte@3.1.0)(svelte@4.2.16)(vite@5.2.11)
+        specifier: ^2.5.8
+        version: 2.5.8(@sveltejs/vite-plugin-svelte@3.1.0)(svelte@4.2.17)(vite@5.2.11)
       '@sveltejs/vite-plugin-svelte':
         specifier: ^3.1.0
-        version: 3.1.0(svelte@4.2.16)(vite@5.2.11)
+        version: 3.1.0(svelte@4.2.17)(vite@5.2.11)
       abitype:
         specifier: ^1.0.2
         version: 1.0.2(typescript@5.4.5)(zod@3.23.8)
@@ -394,11 +394,11 @@ importers:
         specifier: ^0.5.0
         version: 0.5.0
       fuzd-executor:
-        specifier: ^0.3.0
-        version: 0.3.0(typescript@5.4.5)
+        specifier: ^0.5.0
+        version: 0.5.0(typescript@5.4.5)
       fuzd-scheduler:
-        specifier: ^0.4.0
-        version: 0.4.0(typescript@5.4.5)
+        specifier: ^0.5.1
+        version: 0.5.1(typescript@5.4.5)
       ipfs-gateway-emulator:
         specifier: 4.2.1-ipfs.2
         version: 4.2.1-ipfs.2
@@ -407,16 +407,16 @@ importers:
         version: 3.2.5
       prettier-plugin-svelte:
         specifier: ^3.2.3
-        version: 3.2.3(prettier@3.2.5)(svelte@4.2.16)
+        version: 3.2.3(prettier@3.2.5)(svelte@4.2.17)
       pwag:
         specifier: 0.3.0
         version: 0.3.0
       svelte:
-        specifier: ^4.2.16
-        version: 4.2.16
+        specifier: ^4.2.17
+        version: 4.2.17
       svelte-check:
         specifier: ^3.7.1
-        version: 3.7.1(@babel/core@7.24.5)(svelte@4.2.16)
+        version: 3.7.1(@babel/core@7.24.5)(svelte@4.2.17)
       tslib:
         specifier: ^2.6.2
         version: 2.6.2
@@ -774,8 +774,8 @@ packages:
       mime: 3.0.0
     dev: true
 
-  /@cloudflare/workerd-darwin-64@1.20240419.0:
-    resolution: {integrity: sha512-PGVe9sYWULHfvGhN0IZh8MsskNG/ufnBSqPbgFCxJHCTrVXLPuC35EoVaforyqjKRwj3U35XMyGo9KHcGnTeHQ==}
+  /@cloudflare/workerd-darwin-64@1.20240512.0:
+    resolution: {integrity: sha512-VMp+CsSHFALQiBzPdQ5dDI4T1qwLu0mQ0aeKVNDosXjueN0f3zj/lf+mFil5/9jBbG3t4mG0y+6MMnalP9Lobw==}
     engines: {node: '>=16'}
     cpu: [x64]
     os: [darwin]
@@ -783,8 +783,8 @@ packages:
     dev: true
     optional: true
 
-  /@cloudflare/workerd-darwin-arm64@1.20240419.0:
-    resolution: {integrity: sha512-z4etQSPiD5Gcjs962LiC7ZdmXnN6SGof5KrYoFiSI9X9kUvpuGH/lnjVVPd+NnVNeDU2kzmcAIgyZjkjTaqVXQ==}
+  /@cloudflare/workerd-darwin-arm64@1.20240512.0:
+    resolution: {integrity: sha512-lZktXGmzMrB5rJqY9+PmnNfv1HKlj/YLZwMjPfF0WVKHUFdvQbAHsi7NlKv6mW9uIvlZnS+K4sIkWc0MDXcRnA==}
     engines: {node: '>=16'}
     cpu: [arm64]
     os: [darwin]
@@ -792,8 +792,8 @@ packages:
     dev: true
     optional: true
 
-  /@cloudflare/workerd-linux-64@1.20240419.0:
-    resolution: {integrity: sha512-lBwhg0j3sYTFMsEb4bOClbVje8nqrYOu0H3feQlX+Eks94JIhWPkf8ywK4at/BUc1comPMhCgzDHwc2OMPUGgg==}
+  /@cloudflare/workerd-linux-64@1.20240512.0:
+    resolution: {integrity: sha512-wrHvqCZZqXz6Y3MUTn/9pQNsvaoNjbJpuA6vcXsXu8iCzJi911iVW2WUEBX+MpUWD+mBIP0oXni5tTlhkokOPw==}
     engines: {node: '>=16'}
     cpu: [x64]
     os: [linux]
@@ -801,8 +801,8 @@ packages:
     dev: true
     optional: true
 
-  /@cloudflare/workerd-linux-arm64@1.20240419.0:
-    resolution: {integrity: sha512-ZMY6wwWkxL+WPq8ydOp/irSYjAnMhBz1OC1+4z+OANtDs2beaZODmq7LEB3hb5WUAaTPY7DIjZh3DfDfty0nYg==}
+  /@cloudflare/workerd-linux-arm64@1.20240512.0:
+    resolution: {integrity: sha512-YPezHMySL9J9tFdzxz390eBswQ//QJNYcZolz9Dgvb3FEfdpK345cE/bsWbMOqw5ws2f82l388epoenghtYvAg==}
     engines: {node: '>=16'}
     cpu: [arm64]
     os: [linux]
@@ -810,8 +810,8 @@ packages:
     dev: true
     optional: true
 
-  /@cloudflare/workerd-windows-64@1.20240419.0:
-    resolution: {integrity: sha512-YJjgaJN2yGTkV7Cr4K3i8N4dUwVQTclT3Pr3NpRZCcLjTszwlE53++XXDnHMKGXBbSguIizaVbmcU2EtmIXyeQ==}
+  /@cloudflare/workerd-windows-64@1.20240512.0:
+    resolution: {integrity: sha512-SxKapDrIYSscMR7lGIp/av0l6vokjH4xQ9ACxHgXh+OdOus9azppSmjaPyw4/ePvg7yqpkaNjf9o258IxWtvKQ==}
     engines: {node: '>=16'}
     cpu: [x64]
     os: [win32]
@@ -819,8 +819,8 @@ packages:
     dev: true
     optional: true
 
-  /@cloudflare/workers-types@4.20240502.0:
-    resolution: {integrity: sha512-OB1jIyPOzyOcuZFHWhsQnkRLN6u8+jmU9X3T4KZlGgn3Ivw8pBiswhLOp+yFeChR3Y4/5+V0hPFRko5SReordg==}
+  /@cloudflare/workers-types@4.20240512.0:
+    resolution: {integrity: sha512-o2yTEWg+YK/I1t/Me+dA0oarO0aCbjibp6wSeaw52DSE9tDyKJ7S+Qdyw/XsMrKn4t8kF6f/YOba+9O4MJfW9w==}
     dev: true
 
   /@cspotcode/source-map-support@0.8.1:
@@ -1866,13 +1866,13 @@ packages:
       '@hapi/hoek': 9.3.0
     dev: true
 
-  /@hono/zod-validator@0.2.1(hono@4.3.4)(zod@3.23.8):
+  /@hono/zod-validator@0.2.1(hono@4.3.7)(zod@3.23.8):
     resolution: {integrity: sha512-HFoxln7Q6JsE64qz2WBS28SD33UB2alp3aRKmcWnNLDzEL1BLsWfbdX6e1HIiUprHYTIXf5y7ax8eYidKUwyaA==}
     peerDependencies:
       hono: '>=3.9.0'
       zod: ^3.19.1
     dependencies:
-      hono: 4.3.4
+      hono: 4.3.7
       zod: 3.23.8
     dev: true
 
@@ -2240,80 +2240,52 @@ packages:
       fastq: 1.15.0
     dev: true
 
-  /@nomicfoundation/edr-darwin-arm64@0.3.7:
-    resolution: {integrity: sha512-6tK9Lv/lSfyBvpEQ4nsTfgxyDT1y1Uv/x8Wa+aB+E8qGo3ToexQ1BMVjxJk6PChXCDOWxB3B4KhqaZFjdhl3Ow==}
+  /@nomicfoundation/edr-darwin-arm64@0.3.8:
+    resolution: {integrity: sha512-eB0leCexS8sQEmfyD72cdvLj9djkBzQGP4wSQw6SNf2I4Sw4Cnzb3d45caG2FqFFjbvfqL0t+badUUIceqQuMw==}
     engines: {node: '>= 18'}
-    cpu: [arm64]
-    os: [darwin]
-    requiresBuild: true
     dev: true
-    optional: true
 
-  /@nomicfoundation/edr-darwin-x64@0.3.7:
-    resolution: {integrity: sha512-1RrQ/1JPwxrYO69e0tglFv5H+ggour5Ii3bb727+yBpBShrxtOTQ7fZyfxA5h62LCN+0Z9wYOPeQ7XFcVurMaQ==}
+  /@nomicfoundation/edr-darwin-x64@0.3.8:
+    resolution: {integrity: sha512-JksVCS1N5ClwVF14EvO25HCQ+Laljh/KRfHERMVAC9ZwPbTuAd/9BtKvToCBi29uCHWqsXMI4lxCApYQv2nznw==}
     engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [darwin]
-    requiresBuild: true
     dev: true
-    optional: true
 
-  /@nomicfoundation/edr-linux-arm64-gnu@0.3.7:
-    resolution: {integrity: sha512-ds/CKlBoVXIihjhflhgPn13EdKWed6r5bgvMs/YwRqT5wldQAQJZWAfA2+nYm0Yi2gMGh1RUpBcfkyl4pq7G+g==}
+  /@nomicfoundation/edr-linux-arm64-gnu@0.3.8:
+    resolution: {integrity: sha512-raCE+fOeNXhVBLUo87cgsHSGvYYRB6arih4eG6B9KGACWK5Veebtm9xtKeiD8YCsdUlUfat6F7ibpeNm91fpsA==}
     engines: {node: '>= 18'}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
     dev: true
-    optional: true
 
-  /@nomicfoundation/edr-linux-arm64-musl@0.3.7:
-    resolution: {integrity: sha512-e29udiRaPujhLkM3+R6ju7QISrcyOqpcaxb2FsDWBkuD7H8uU9JPZEyyUIpEp5uIY0Jh1eEJPKZKIXQmQAEAuw==}
+  /@nomicfoundation/edr-linux-arm64-musl@0.3.8:
+    resolution: {integrity: sha512-PwiDp4wBZWMCIy29eKkv8moTKRrpiSDlrc+GQMSZLhOAm8T33JKKXPwD/2EbplbhCygJDGXZdtEKl9x9PaH66A==}
     engines: {node: '>= 18'}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
     dev: true
-    optional: true
 
-  /@nomicfoundation/edr-linux-x64-gnu@0.3.7:
-    resolution: {integrity: sha512-/xkjmTyv+bbJ4akBCW0qzFKxPOV4AqLOmqurov+s9umHb16oOv72osSa3SdzJED2gHDaKmpMITT4crxbar4Axg==}
+  /@nomicfoundation/edr-linux-x64-gnu@0.3.8:
+    resolution: {integrity: sha512-6AcvA/XKoipGap5jJmQ9Y6yT7Uf39D9lu2hBcDCXnXbMcXaDGw4mn1/L4R63D+9VGZyu1PqlcJixCUZlGGIWlg==}
     engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
     dev: true
-    optional: true
 
-  /@nomicfoundation/edr-linux-x64-musl@0.3.7:
-    resolution: {integrity: sha512-QwBP9xlmsbf/ldZDGLcE4QiAb8Zt46E/+WLpxHBATFhGa7MrpJh6Zse+h2VlrT/SYLPbh2cpHgSmoSlqVxWG9g==}
+  /@nomicfoundation/edr-linux-x64-musl@0.3.8:
+    resolution: {integrity: sha512-cxb0sEmZjlwhYWO28sPsV64VDx31ekskhC1IsDXU1p9ntjHSJRmW4KEIqJ2O3QwJap/kLKfMS6TckvY10gjc6w==}
     engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
     dev: true
-    optional: true
 
-  /@nomicfoundation/edr-win32-x64-msvc@0.3.7:
-    resolution: {integrity: sha512-j/80DEnkxrF2ewdbk/gQ2EOPvgF0XSsg8D0o4+6cKhUVAW6XwtWKzIphNL6dyD2YaWEPgIrNvqiJK/aln0ww4Q==}
+  /@nomicfoundation/edr-win32-x64-msvc@0.3.8:
+    resolution: {integrity: sha512-yVuVPqRRNLZk7TbBMkKw7lzCvI8XO8fNTPTYxymGadjr9rEGRuNTU1yBXjfJ59I1jJU/X2TSkRk1OFX0P5tpZQ==}
     engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [win32]
-    requiresBuild: true
     dev: true
-    optional: true
 
-  /@nomicfoundation/edr@0.3.7:
-    resolution: {integrity: sha512-v2JFWnFKRsnOa6PDUrD+sr8amcdhxnG/YbL7LzmgRGU1odWEyOF4/EwNeUajQr4ZNKVWrYnJ6XjydXtUge5OBQ==}
+  /@nomicfoundation/edr@0.3.8:
+    resolution: {integrity: sha512-u2UJ5QpznSHVkZRh6ePWoeVb6kmPrrqh08gCnZ9FHlJV9CITqlrTQHJkacd+INH31jx88pTAJnxePE4XAiH5qg==}
     engines: {node: '>= 18'}
-    optionalDependencies:
-      '@nomicfoundation/edr-darwin-arm64': 0.3.7
-      '@nomicfoundation/edr-darwin-x64': 0.3.7
-      '@nomicfoundation/edr-linux-arm64-gnu': 0.3.7
-      '@nomicfoundation/edr-linux-arm64-musl': 0.3.7
-      '@nomicfoundation/edr-linux-x64-gnu': 0.3.7
-      '@nomicfoundation/edr-linux-x64-musl': 0.3.7
-      '@nomicfoundation/edr-win32-x64-msvc': 0.3.7
+    dependencies:
+      '@nomicfoundation/edr-darwin-arm64': 0.3.8
+      '@nomicfoundation/edr-darwin-x64': 0.3.8
+      '@nomicfoundation/edr-linux-arm64-gnu': 0.3.8
+      '@nomicfoundation/edr-linux-arm64-musl': 0.3.8
+      '@nomicfoundation/edr-linux-x64-gnu': 0.3.8
+      '@nomicfoundation/edr-linux-x64-musl': 0.3.8
+      '@nomicfoundation/edr-win32-x64-msvc': 0.3.8
     dev: true
 
   /@nomicfoundation/ethereumjs-common@4.0.4:
@@ -2358,13 +2330,13 @@ packages:
       ethereum-cryptography: 0.1.3
     dev: true
 
-  /@nomicfoundation/hardhat-network-helpers@1.0.10(hardhat@2.22.3):
+  /@nomicfoundation/hardhat-network-helpers@1.0.10(hardhat@2.22.4):
     resolution: {integrity: sha512-R35/BMBlx7tWN5V6d/8/19QCwEmIdbnA4ZrsuXgvs8i2qFx5i7h6mH5pBS4Pwi4WigLH+upl6faYusrNPuzMrQ==}
     peerDependencies:
       hardhat: ^2.9.5
     dependencies:
       ethereumjs-util: 7.1.5
-      hardhat: 2.22.3(typescript@5.4.5)
+      hardhat: 2.22.4(typescript@5.4.5)
     dev: true
 
   /@nomicfoundation/solidity-analyzer-darwin-arm64@0.1.1:
@@ -2632,7 +2604,7 @@ packages:
       named-logs: 0.2.4
       rocketh: 0.10.13(typescript@5.4.5)
       solidity-proxy: 0.4.0
-      viem: 2.10.3(typescript@5.4.5)(zod@3.23.8)
+      viem: 2.10.8(typescript@5.4.5)(zod@3.23.8)
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -2650,7 +2622,7 @@ packages:
       named-logs: 0.2.4
       rocketh: 0.10.13(typescript@5.4.5)
       solidity-proxy: 0.4.0
-      viem: 2.10.3(typescript@5.4.5)(zod@3.23.8)
+      viem: 2.10.8(typescript@5.4.5)(zod@3.23.8)
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -2665,7 +2637,7 @@ packages:
     dependencies:
       named-logs: 0.2.4
       rocketh: 0.10.13(typescript@5.4.5)
-      viem: 2.10.3(typescript@5.4.5)(zod@3.23.8)
+      viem: 2.10.8(typescript@5.4.5)(zod@3.23.8)
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -3291,16 +3263,16 @@ packages:
   /@stablelib/wipe@1.0.1:
     resolution: {integrity: sha512-WfqfX/eXGiAd3RJe4VU2snh/ZPwtSjLG4ynQ/vYzvghTh7dHFcI1wl+nrkWG6lGhukOxOsUHfv8dUXr58D0ayg==}
 
-  /@sveltejs/adapter-static@3.0.1(@sveltejs/kit@2.5.7):
+  /@sveltejs/adapter-static@3.0.1(@sveltejs/kit@2.5.8):
     resolution: {integrity: sha512-6lMvf7xYEJ+oGeR5L8DFJJrowkefTK6ZgA4JiMqoClMkKq0s6yvsd3FZfCFvX1fQ0tpCD7fkuRVHsnUVgsHyNg==}
     peerDependencies:
       '@sveltejs/kit': ^2.0.0
     dependencies:
-      '@sveltejs/kit': 2.5.7(@sveltejs/vite-plugin-svelte@3.1.0)(svelte@4.2.16)(vite@5.2.11)
+      '@sveltejs/kit': 2.5.8(@sveltejs/vite-plugin-svelte@3.1.0)(svelte@4.2.17)(vite@5.2.11)
     dev: true
 
-  /@sveltejs/kit@2.5.7(@sveltejs/vite-plugin-svelte@3.1.0)(svelte@4.2.16)(vite@5.2.11):
-    resolution: {integrity: sha512-6uedTzrb7nQrw6HALxnPrPaXdIN2jJJTzTIl96Z3P5NiG+OAfpdPbrWrvkJ3GN4CfWqrmU4dJqwMMRMTD/C7ow==}
+  /@sveltejs/kit@2.5.8(@sveltejs/vite-plugin-svelte@3.1.0)(svelte@4.2.17)(vite@5.2.11):
+    resolution: {integrity: sha512-ZQXYaVHd1p0kDGwOi4l82i5kAiUQtrhMthDKtJi0zVzmNupKJ0ZlBVAoceuarCuIntPNctyQchW29h5DkFxd1Q==}
     engines: {node: '>=18.13'}
     hasBin: true
     requiresBuild: true
@@ -3309,7 +3281,7 @@ packages:
       svelte: ^4.0.0 || ^5.0.0-next.0
       vite: ^5.0.3
     dependencies:
-      '@sveltejs/vite-plugin-svelte': 3.1.0(svelte@4.2.16)(vite@5.2.11)
+      '@sveltejs/vite-plugin-svelte': 3.1.0(svelte@4.2.17)(vite@5.2.11)
       '@types/cookie': 0.6.0
       cookie: 0.6.0
       devalue: 5.0.0
@@ -3321,12 +3293,12 @@ packages:
       sade: 1.8.1
       set-cookie-parser: 2.6.0
       sirv: 2.0.4
-      svelte: 4.2.16
+      svelte: 4.2.17
       tiny-glob: 0.2.9
       vite: 5.2.11
     dev: true
 
-  /@sveltejs/vite-plugin-svelte-inspector@2.1.0(@sveltejs/vite-plugin-svelte@3.1.0)(svelte@4.2.16)(vite@5.2.11):
+  /@sveltejs/vite-plugin-svelte-inspector@2.1.0(@sveltejs/vite-plugin-svelte@3.1.0)(svelte@4.2.17)(vite@5.2.11):
     resolution: {integrity: sha512-9QX28IymvBlSCqsCll5t0kQVxipsfhFFL+L2t3nTWfXnddYwxBuAEtTtlaVQpRz9c37BhJjltSeY4AJSC03SSg==}
     engines: {node: ^18.0.0 || >=20}
     peerDependencies:
@@ -3334,28 +3306,28 @@ packages:
       svelte: ^4.0.0 || ^5.0.0-next.0
       vite: ^5.0.0
     dependencies:
-      '@sveltejs/vite-plugin-svelte': 3.1.0(svelte@4.2.16)(vite@5.2.11)
+      '@sveltejs/vite-plugin-svelte': 3.1.0(svelte@4.2.17)(vite@5.2.11)
       debug: 4.3.4(supports-color@8.1.1)
-      svelte: 4.2.16
+      svelte: 4.2.17
       vite: 5.2.11
     transitivePeerDependencies:
       - supports-color
     dev: true
 
-  /@sveltejs/vite-plugin-svelte@3.1.0(svelte@4.2.16)(vite@5.2.11):
+  /@sveltejs/vite-plugin-svelte@3.1.0(svelte@4.2.17)(vite@5.2.11):
     resolution: {integrity: sha512-sY6ncCvg+O3njnzbZexcVtUqOBE3iYmQPJ9y+yXSkOwG576QI/xJrBnQSRXFLGwJNBa0T78JEKg5cIR0WOAuUw==}
     engines: {node: ^18.0.0 || >=20}
     peerDependencies:
       svelte: ^4.0.0 || ^5.0.0-next.0
       vite: ^5.0.0
     dependencies:
-      '@sveltejs/vite-plugin-svelte-inspector': 2.1.0(@sveltejs/vite-plugin-svelte@3.1.0)(svelte@4.2.16)(vite@5.2.11)
+      '@sveltejs/vite-plugin-svelte-inspector': 2.1.0(@sveltejs/vite-plugin-svelte@3.1.0)(svelte@4.2.17)(vite@5.2.11)
       debug: 4.3.4(supports-color@8.1.1)
       deepmerge: 4.3.1
       kleur: 4.1.5
       magic-string: 0.30.10
-      svelte: 4.2.16
-      svelte-hmr: 0.16.0(svelte@4.2.16)
+      svelte: 4.2.17
+      svelte-hmr: 0.16.0(svelte@4.2.17)
       vite: 5.2.11
       vitefu: 0.2.5(vite@5.2.11)
     transitivePeerDependencies:
@@ -3375,13 +3347,13 @@ packages:
   /@types/bn.js@4.11.6:
     resolution: {integrity: sha512-pqr857jrp2kPuO9uRjZ3PwnJTjoQy+fcdxvBTvHm6dkmEL9q+hDD/2j/0ELOBPtPnS8LjCX0gI9nbl8lVkadpg==}
     dependencies:
-      '@types/node': 20.12.11
+      '@types/node': 20.12.12
     dev: true
 
   /@types/bn.js@5.1.5:
     resolution: {integrity: sha512-V46N0zwKRF5Q00AZ6hWtN0T8gGmDUaUzLWQvHFo5yThtVwK/VCenFY3wXVbOvNfajEpsTfQM4IN9k/d6gUVX3A==}
     dependencies:
-      '@types/node': 20.12.11
+      '@types/node': 20.12.12
     dev: true
 
   /@types/cookie@0.6.0:
@@ -3399,20 +3371,20 @@ packages:
     resolution: {integrity: sha512-yTbItCNreRooED33qjunPthRcSjERP1r4MqCZc7wv0u2sUkzTFp45tgUfS5+r7FrZPdmCCNflLhVSP/o+SemsQ==}
     dependencies:
       '@types/jsonfile': 6.1.4
-      '@types/node': 20.12.11
+      '@types/node': 20.12.12
     dev: true
 
   /@types/glob@7.2.0:
     resolution: {integrity: sha512-ZUxbzKl0IfJILTS6t7ip5fQQM/J3TJYubDm3nMbgubNNYS62eXeUpoLUC8/7fJNiFYHTrGPQn7hspDUzIHX3UA==}
     dependencies:
       '@types/minimatch': 5.1.2
-      '@types/node': 20.12.11
+      '@types/node': 20.12.12
     dev: true
 
   /@types/jsonfile@6.1.4:
     resolution: {integrity: sha512-D5qGUYwjvnNNextdU59/+fI+spnwtTFmyQP0h+PfIOSkNfpU6AOICUOkm4i0OnSk+NyjdPJrxCDro0sJsWlRpQ==}
     dependencies:
-      '@types/node': 20.12.11
+      '@types/node': 20.12.12
     dev: true
 
   /@types/linkify-it@5.0.0:
@@ -3451,28 +3423,28 @@ packages:
   /@types/node-forge@1.3.11:
     resolution: {integrity: sha512-FQx220y22OKNTqaByeBGqHWYz4cl94tpcxeFdvBo3wjG6XPBuZ0BNgNZRV5J5TFmmcsJ4IzsLkmGRiQbnYsBEQ==}
     dependencies:
-      '@types/node': 20.12.11
+      '@types/node': 20.12.12
     dev: true
 
   /@types/node@18.15.13:
     resolution: {integrity: sha512-N+0kuo9KgrUQ1Sn/ifDXsvg0TTleP7rIy4zOBGECxAljqvqfqpTfzx0Q1NUedOixRMBfe2Whhb056a42cWs26Q==}
     dev: true
 
-  /@types/node@20.12.11:
-    resolution: {integrity: sha512-vDg9PZ/zi+Nqp6boSOT7plNuthRugEKixDv5sFTIpkE89MmNtEArAShI4mxuX2+UrLEe9pxC1vm2cjm9YlWbJw==}
+  /@types/node@20.12.12:
+    resolution: {integrity: sha512-eWLDGF/FOSPtAvEqeRAQ4C8LSA7M1I7i0ky1I8U7kD1J5ITyW3AsRhQrKVoWf5pFKZ2kILsEGJhsI9r93PYnOw==}
     dependencies:
       undici-types: 5.26.5
 
   /@types/pbkdf2@3.1.0:
     resolution: {integrity: sha512-Cf63Rv7jCQ0LaL8tNXmEyqTHuIJxRdlS5vMh1mj5voN4+QFhVZnlZruezqpWYDiJ8UTzhP0VmeLXCmBk66YrMQ==}
     dependencies:
-      '@types/node': 20.12.11
+      '@types/node': 20.12.12
     dev: true
 
   /@types/prompts@2.4.9:
     resolution: {integrity: sha512-qTxFi6Buiu8+50/+3DGIWLHM6QuWsEKugJnnP6iv2Mc4ncxE4A/OJkjuVOA+5X0X1S/nq5VJRa8Lu+nwcvbrKA==}
     dependencies:
-      '@types/node': 20.12.11
+      '@types/node': 20.12.12
       kleur: 3.0.3
     dev: true
 
@@ -3487,7 +3459,7 @@ packages:
   /@types/secp256k1@4.0.3:
     resolution: {integrity: sha512-Da66lEIFeIz9ltsdMZcpQvmrmmoqrfju8pm1BH8WbYjZSwUgCwXLb9C+9XYogwBITnbsSaMdVPb2ekf7TV+03w==}
     dependencies:
-      '@types/node': 20.12.11
+      '@types/node': 20.12.12
     dev: true
 
   /@types/web-bluetooth@0.0.20:
@@ -3719,12 +3691,12 @@ packages:
       - vue
     dev: true
 
-  /@zerodevx/svelte-json-view@1.0.9(svelte@4.2.16):
+  /@zerodevx/svelte-json-view@1.0.9(svelte@4.2.17):
     resolution: {integrity: sha512-2KKxBfDxEo7lM/kJSy+m1PdLAp5Q9c5nB6OYVBg7oWPdCLXB9JVH1Ytxn2hkqTn77m9MobqGI1fz9FFOTPONfA==}
     peerDependencies:
       svelte: ^3.57.0 || ^4.0.0
     dependencies:
-      svelte: 4.2.16
+      svelte: 4.2.17
     dev: false
 
   /JSONStream@1.3.5:
@@ -5152,10 +5124,17 @@ packages:
       promise-throttle: 1.1.2
     dev: true
 
+  /eip-1193-jsonrpc-provider@0.4.0:
+    resolution: {integrity: sha512-UBs9L6PTw49d9kHvCEy0gMc7MmXquLA0yQxWB5EpmnF6/Fce2hRJTfJ27n5erUNX80+oh7PJX532Ute+KMpG0Q==}
+    dependencies:
+      named-logs: 0.2.4
+      promise-throttle: 1.1.2
+    dev: true
+
   /eip-1193-signer@0.0.2(typescript@5.4.5)(zod@3.23.8):
     resolution: {integrity: sha512-z+Gys1SMWEmIG5xtdiO5RbY84EIkFBjja6ikTkS/kUNP9qrWQgsu6k8WI75mjivAN3OgZHUEz+lXGgbiZ56iLg==}
     dependencies:
-      viem: 2.10.3(typescript@5.4.5)(zod@3.23.8)
+      viem: 2.10.8(typescript@5.4.5)(zod@3.23.8)
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -6036,18 +6015,18 @@ packages:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
     dev: true
 
-  /fuzd-cf-worker@0.2.0(@cloudflare/workers-types@4.20240502.0):
-    resolution: {integrity: sha512-XwLS+pkA+sJYMBARKIsHQ6eFVjFSantSS+/TD/hip6CswV2aPyu2c6wAmNQka8w0rByVCIBuvhrsGyFi8uuypg==}
+  /fuzd-cf-worker@0.5.0(@cloudflare/workers-types@4.20240512.0):
+    resolution: {integrity: sha512-z1S2ACwZnKOej+pUV8U7Y41ng9tGcH8kgiiafeT7lE0U0YWLYqIdJC0hrqDLem0pheqfiFn4DoLV+IOggcwktA==}
     dependencies:
       named-logs: /named-logs-for-servers@0.0.1
-      remote-sql-d1: 0.0.5(@cloudflare/workers-types@4.20240502.0)
+      remote-sql-d1: 0.0.5(@cloudflare/workers-types@4.20240512.0)
       workers-logger: 0.2.0
     transitivePeerDependencies:
       - '@cloudflare/workers-types'
     dev: true
 
-  /fuzd-common@0.3.0(typescript@5.4.5):
-    resolution: {integrity: sha512-/PpfxuMDlsxNurWgPLbHIPBkJ2AqlWIOXQWoypPvSqc6z1X3+8+maAbwG0TkB+2vTumUfrSBvdJb1Q/HNqGofw==}
+  /fuzd-common@0.5.0(typescript@5.4.5):
+    resolution: {integrity: sha512-qLVX/E/7bckClEpOcdNh21eUobLeuaLfxtXPaX1vt2TVBj3O2pfK15IKlt7zrwECkf6AxxexsbTVaqaSX73fsA==}
     dependencies:
       eip-1193: 0.5.0
       eip-1193-signer: 0.0.2(typescript@5.4.5)(zod@3.23.8)
@@ -6059,14 +6038,14 @@ packages:
       - utf-8-validate
     dev: true
 
-  /fuzd-executor@0.3.0(typescript@5.4.5):
-    resolution: {integrity: sha512-5x6+l98C4Qs43VVeXvawJ66gvzf7kYCMo/f/b7Jkc1ZFCAsO8TqZc7MVmP0n7g2fvRZNS4j/bNyWC27bYGIIzA==}
+  /fuzd-executor@0.5.0(typescript@5.4.5):
+    resolution: {integrity: sha512-j6WBWk+Japx+Sh2xsEtA1nFoZgIrk2irghjf3GRBA11Hzc5rwc0RxQzcBgvXUBfEapsAofnls3JPaP4yiv4rgQ==}
     dependencies:
       '@noble/hashes': 1.4.0
       abitype: 1.0.2(typescript@5.4.5)(zod@3.23.8)
       eip-1193: 0.5.0
       eip-1193-signer: 0.0.2(typescript@5.4.5)(zod@3.23.8)
-      fuzd-common: 0.3.0(typescript@5.4.5)
+      fuzd-common: 0.5.0(typescript@5.4.5)
       named-logs: /named-logs-for-servers@0.0.1
       zod: 3.23.8
     transitivePeerDependencies:
@@ -6075,13 +6054,13 @@ packages:
       - utf-8-validate
     dev: true
 
-  /fuzd-scheduler@0.4.0(typescript@5.4.5):
-    resolution: {integrity: sha512-FeFEkrNUhefN8hLhquIVpJe+sum+wMQN9xsfdtXoq2rF0Iq5UHmG14FunhfKq8KhUIm9FSuIjef2H+CpLTU/3w==}
+  /fuzd-scheduler@0.5.1(typescript@5.4.5):
+    resolution: {integrity: sha512-ESGRiauuL/mr0+Z80S0raqAm2wjd/z+zvMR6j5IfGImXPddxrN+VyH4bJuoW+VyVtkObjl4LE3Orcm0dQybJHQ==}
     dependencies:
       abitype: 1.0.2(typescript@5.4.5)(zod@3.23.8)
       eip-1193: 0.5.0
       eip-1193-signer: 0.0.2(typescript@5.4.5)(zod@3.23.8)
-      fuzd-common: 0.3.0(typescript@5.4.5)
+      fuzd-common: 0.5.0(typescript@5.4.5)
       named-logs: /named-logs-for-servers@0.0.1
       zod: 3.23.8
     transitivePeerDependencies:
@@ -6090,25 +6069,25 @@ packages:
       - utf-8-validate
     dev: true
 
-  /fuzd-server@0.4.0:
-    resolution: {integrity: sha512-Xa+1nFW9zGtVfS8USNdj34Z8NHsU9raGF7WAYOIPS18eLQzbrLgsBVXePxpg2gcqF+h2X/SyJclayyrVhN6uKg==}
+  /fuzd-server@0.5.1:
+    resolution: {integrity: sha512-hzA1L7Ow32Qym86j/aGMtxcUB3rRWJWmiBg4Ci1Md3nSDxEDUd8pw8caP/4qBQklqYpj6e3/XwyxgF4M8xZAng==}
     dependencies:
-      '@hono/zod-validator': 0.2.1(hono@4.3.4)(zod@3.23.8)
+      '@hono/zod-validator': 0.2.1(hono@4.3.7)(zod@3.23.8)
       '@scure/bip32': 1.4.0
       '@scure/bip39': 1.3.0
       eip-1193: 0.5.0
-      eip-1193-jsonrpc-provider: 0.3.0
+      eip-1193-jsonrpc-provider: 0.4.0
       eip-1193-signer: 0.0.2(typescript@5.4.5)(zod@3.23.8)
-      fuzd-common: 0.3.0(typescript@5.4.5)
-      fuzd-executor: 0.3.0(typescript@5.4.5)
-      fuzd-scheduler: 0.4.0(typescript@5.4.5)
-      fuzd-tlock-decrypter: 0.4.0
-      hono: 4.3.4
+      fuzd-common: 0.5.0(typescript@5.4.5)
+      fuzd-executor: 0.5.0(typescript@5.4.5)
+      fuzd-scheduler: 0.5.1(typescript@5.4.5)
+      fuzd-tlock-decrypter: 0.5.1
+      hono: 4.3.7
       named-logs: /named-logs-for-servers@0.0.1
       remote-account: 0.1.0
       remote-sql: 0.0.5
       tlock-js: 0.9.0
-      viem: 2.10.3(typescript@5.4.5)(zod@3.23.8)
+      viem: 2.10.8(typescript@5.4.5)(zod@3.23.8)
       zod: 3.23.8
     transitivePeerDependencies:
       - bufferutil
@@ -6117,10 +6096,10 @@ packages:
       - utf-8-validate
     dev: true
 
-  /fuzd-tlock-decrypter@0.4.0:
-    resolution: {integrity: sha512-fDgLvgxoIKRDEMXBcWqr/d0S6u4uCJfgh4wgch3OwfzWb8+ZclYAMSgHukR0imXqRoMA6POb6dkVqd3AwfBUYg==}
+  /fuzd-tlock-decrypter@0.5.1:
+    resolution: {integrity: sha512-5DDwZPSJcbZhe5FUO17b+nBmIDgbzDEfXO+5xkCnzGNBqI+hKQa4O7r2l9lUgc2XpMJ4pIRoY+Jsi2dmvLW0Ww==}
     dependencies:
-      fuzd-scheduler: 0.4.0(typescript@5.4.5)
+      fuzd-scheduler: 0.5.1(typescript@5.4.5)
       named-logs: /named-logs-for-servers@0.0.1
       tlock-js: 0.9.0
     transitivePeerDependencies:
@@ -6404,12 +6383,12 @@ packages:
       har-schema: 2.0.0
     dev: true
 
-  /hardhat-preprocessor@0.1.5(hardhat@2.22.3):
+  /hardhat-preprocessor@0.1.5(hardhat@2.22.4):
     resolution: {integrity: sha512-j8m44mmPxpxAAd0G8fPHRHOas/INZdzptSur0TNJvMEGcFdLDhbHHxBcqZVQ/bmiW42q4gC60AP4CXn9EF018g==}
     peerDependencies:
       hardhat: ^2.0.5
     dependencies:
-      hardhat: 2.22.3(typescript@5.4.5)
+      hardhat: 2.22.4(typescript@5.4.5)
       murmur-128: 0.2.1
     dev: true
 
@@ -6421,8 +6400,8 @@ packages:
       rocketh: 0.10.13(typescript@5.4.5)
     dev: true
 
-  /hardhat@2.22.3(typescript@5.4.5):
-    resolution: {integrity: sha512-k8JV2ECWNchD6ahkg2BR5wKVxY0OiKot7fuxiIpRK0frRqyOljcR2vKwgWSLw6YIeDcNNA4xybj7Og7NSxr2hA==}
+  /hardhat@2.22.4(typescript@5.4.5):
+    resolution: {integrity: sha512-09qcXJFBHQUaraJkYNr7XlmwjOj27xBB0SL2rYS024hTj9tPMbp26AFjlf5quBMO9SR4AJFg+4qWahcYcvXBuQ==}
     hasBin: true
     peerDependencies:
       ts-node: '*'
@@ -6435,7 +6414,7 @@ packages:
     dependencies:
       '@ethersproject/abi': 5.7.0
       '@metamask/eth-sig-util': 4.0.1
-      '@nomicfoundation/edr': 0.3.7
+      '@nomicfoundation/edr': 0.3.8
       '@nomicfoundation/ethereumjs-common': 4.0.4
       '@nomicfoundation/ethereumjs-tx': 5.0.4
       '@nomicfoundation/ethereumjs-util': 9.0.4
@@ -6459,7 +6438,7 @@ packages:
       fp-ts: 1.19.3
       fs-extra: 7.0.1
       glob: 7.2.0
-      immutable: 4.3.5
+      immutable: 4.3.6
       io-ts: 1.10.4
       keccak: 3.0.4
       lodash: 4.17.21
@@ -6574,8 +6553,8 @@ packages:
       minimalistic-crypto-utils: 1.0.1
     dev: true
 
-  /hono@4.3.4:
-    resolution: {integrity: sha512-oh+PBwW8yElj3bUlY2dTXhuPt1MCZp6Nb04tejLwY+GXdphQH6uCpUP0dY5iLvFY5wM8fNHrMx1QeMKbhnzw9w==}
+  /hono@4.3.7:
+    resolution: {integrity: sha512-GXlsGnCAwGosu+COwYyYC8MwOY2L6Ihg9V1znYdMD8DHCJl+13Nk4o8dsBYJpae4oujjw24jBaITuYWVq2+V8Q==}
     engines: {node: '>=16.0.0'}
     dev: true
 
@@ -6708,8 +6687,8 @@ packages:
   /immer@10.1.1:
     resolution: {integrity: sha512-s2MPrmjovJcoMaHtx6K11Ra7oD05NT97w1IC5zpMkT6Atjr7H8LjaDd81iIxUYpMKSRRNMJE703M1Fhr/TctHw==}
 
-  /immutable@4.3.5:
-    resolution: {integrity: sha512-8eabxkth9gZatlwl5TBuJnCsoTADlL6ftEr7A4qgdaTsPyreilDSnUk57SO+jfKcNtxPa22U5KK6DSeAYhpBJw==}
+  /immutable@4.3.6:
+    resolution: {integrity: sha512-Ju0+lEMyzMVZarkTn/gqRpdqd5dOPaz1mCZ0SH3JV6iFw81PldE/PEB1hWVEA288HPt4WXW8O7AWxB10M+03QQ==}
     dev: true
 
   /import-fresh@3.3.0:
@@ -6942,6 +6921,13 @@ packages:
 
   /isows@1.0.3(ws@8.13.0):
     resolution: {integrity: sha512-2cKei4vlmg2cxEjm3wVSqn8pcoRF/LX/wpifuuNquFO4SQmPwarClT+SUCA2lt+l581tTeZIPIZuIDo2jWN1fg==}
+    peerDependencies:
+      ws: '*'
+    dependencies:
+      ws: 8.13.0
+
+  /isows@1.0.4(ws@8.13.0):
+    resolution: {integrity: sha512-hEzjY+x9u9hPmBom9IIAqdJCwNLax+xrPb51vEPpERoFlIxgmZcHzsT5jKG06nvInKOBGvReAVz80Umed5CczQ==}
     peerDependencies:
       ws: '*'
     dependencies:
@@ -7642,12 +7628,12 @@ packages:
     resolution: {integrity: sha512-AI2r85+4MquTw9ZYqabu4nMwy9Oftlfa/e/52t9IjtfG+mGBbTNdAoZ3RQKLHR6r0wQnwZnPIEh/Ya6XTWAKNA==}
     dev: true
 
-  /lucide-svelte@0.378.0(svelte@4.2.16):
+  /lucide-svelte@0.378.0(svelte@4.2.17):
     resolution: {integrity: sha512-T7hV1sfOc94AWE5GOJ6r9wGEsR4h4TJr8d4Z0sM8O0e3IBcmeIvEGRAA6jCp7NGy4PeGrn5Tju6Y2JwJQntNrQ==}
     peerDependencies:
       svelte: ^3 || ^4 || ^5.0.0-next.42
     dependencies:
-      svelte: 4.2.16
+      svelte: 4.2.17
     dev: false
 
   /lws-basic-auth@2.0.0:
@@ -7926,8 +7912,8 @@ packages:
     engines: {node: '>=4'}
     dev: true
 
-  /miniflare@3.20240419.1:
-    resolution: {integrity: sha512-Q9n0W07uUD/u0c/b03E4iogeXOAMjZnE3P7B5Yi8sPaZAx6TYWwjurGBja+Pg2yILN2iMaliEobfVyAKss33cA==}
+  /miniflare@3.20240512.0:
+    resolution: {integrity: sha512-X0PlKR0AROKpxFoJNmRtCMIuJxj+ngEcyTOlEokj2rAQ0TBwUhB4/1uiPvdI6ofW5NugPOD1uomAv+gLjwsLDQ==}
     engines: {node: '>=16.13'}
     hasBin: true
     dependencies:
@@ -7939,7 +7925,7 @@ packages:
       glob-to-regexp: 0.4.1
       stoppable: 1.1.0
       undici: 5.28.4
-      workerd: 1.20240419.0
+      workerd: 1.20240512.0
       ws: 8.17.0
       youch: 3.3.3
       zod: 3.23.8
@@ -8018,7 +8004,7 @@ packages:
     resolution: {integrity: sha512-ihFnidEeU8iXzcVHy74dhkxh/dn8Dc08ERl0xwoMMGqp4+LvRSCgicb+zGqWthVokQKvCSxITlh3P08OzdTYCQ==}
     dev: true
 
-  /missiv-client@0.0.13(svelte@4.2.16):
+  /missiv-client@0.0.13(svelte@4.2.17):
     resolution: {integrity: sha512-rsTyX+v5SYoG9GotA8DyVXF3nr7aB99u0ce6LIPColxml7o9Zsks0UFvdyuEa5WK4joWcw0maucLoeK4X1e3tQ==}
     peerDependencies:
       svelte: ^4.0.0
@@ -8027,7 +8013,7 @@ packages:
       '@noble/hashes': 1.3.3
       '@noble/secp256k1': 2.0.0
       '@scure/base': 1.1.6
-      svelte: 4.2.16
+      svelte: 4.2.17
     dev: false
 
   /missiv-server@0.0.11:
@@ -8039,7 +8025,7 @@ packages:
       '@noble/secp256k1': 2.0.0
       missiv: 0.0.9
       valibot: 0.28.1
-      viem: 2.10.3(typescript@5.4.5)(zod@3.23.8)
+      viem: 2.10.8(typescript@5.4.5)(zod@3.23.8)
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -8872,14 +8858,14 @@ packages:
       solidity-comments-extractor: 0.0.8
     dev: true
 
-  /prettier-plugin-svelte@3.2.3(prettier@3.2.5)(svelte@4.2.16):
+  /prettier-plugin-svelte@3.2.3(prettier@3.2.5)(svelte@4.2.17):
     resolution: {integrity: sha512-wJq8RunyFlWco6U0WJV5wNCM7zpBFakS76UBSbmzMGpncpK98NZABaE+s7n8/APDCEVNHXC5Mpq+MLebQtsRlg==}
     peerDependencies:
       prettier: ^3.0.0
       svelte: ^3.2.0 || ^4.0.0-next.0 || ^5.0.0-next.0
     dependencies:
       prettier: 3.2.5
-      svelte: 4.2.16
+      svelte: 4.2.17
     dev: true
 
   /prettier@3.2.5:
@@ -9150,12 +9136,12 @@ packages:
       '@scure/bip32': 1.4.0
       '@scure/bip39': 1.3.0
 
-  /remote-sql-d1@0.0.5(@cloudflare/workers-types@4.20240502.0):
+  /remote-sql-d1@0.0.5(@cloudflare/workers-types@4.20240512.0):
     resolution: {integrity: sha512-VdiaZAaQyL2/Z1uar48sLzbCQS5t9mU+CVzMUUc0OGZbXGIKzTLhhq80PxyId1fT0jBrIBvG8ENvUlbkL8dXtQ==}
     peerDependencies:
       '@cloudflare/workers-types': ^4.20230814.0
     dependencies:
-      '@cloudflare/workers-types': 4.20240502.0
+      '@cloudflare/workers-types': 4.20240512.0
       remote-sql: 0.0.5
     dev: true
 
@@ -9316,7 +9302,7 @@ packages:
       named-logs: 0.2.4
       named-logs-console: 0.3.1
       prompts: 2.4.2
-      viem: 2.10.3(typescript@5.4.5)(zod@3.23.8)
+      viem: 2.10.8(typescript@5.4.5)(zod@3.23.8)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -9736,7 +9722,7 @@ packages:
     resolution: {integrity: sha512-htM7Vn6LhHreR+EglVMd2s+sZhcXAirB1Zlyrv5zBuTxieCvjfnRpd7iZk75m/u6NOlEyQ94C6TWbBn2cY7w8g==}
     dev: true
 
-  /solidity-coverage@0.8.12(hardhat@2.22.3):
+  /solidity-coverage@0.8.12(hardhat@2.22.4):
     resolution: {integrity: sha512-8cOB1PtjnjFRqOgwFiD8DaUsYJtVJ6+YdXQtSZDrLGf8cdhhh8xzTtGzVTGeBf15kTv0v7lYPJlV/az7zLEPJw==}
     hasBin: true
     peerDependencies:
@@ -9751,7 +9737,7 @@ packages:
       ghost-testrpc: 0.0.2
       global-modules: 2.0.0
       globby: 10.0.2
-      hardhat: 2.22.3(typescript@5.4.5)
+      hardhat: 2.22.4(typescript@5.4.5)
       jsonschema: 1.4.1
       lodash: 4.17.21
       mocha: 10.4.0
@@ -10078,7 +10064,7 @@ packages:
     engines: {node: '>= 0.4'}
     dev: true
 
-  /svelte-check@3.7.1(@babel/core@7.24.5)(svelte@4.2.16):
+  /svelte-check@3.7.1(@babel/core@7.24.5)(svelte@4.2.17):
     resolution: {integrity: sha512-U4uJoLCzmz2o2U33c7mPDJNhRYX/DNFV11XTUDlFxaKLsO7P+40gvJHMPpoRfa24jqZfST4/G9fGNcUGMO8NAQ==}
     hasBin: true
     peerDependencies:
@@ -10090,8 +10076,8 @@ packages:
       import-fresh: 3.3.0
       picocolors: 1.0.0
       sade: 1.8.1
-      svelte: 4.2.16
-      svelte-preprocess: 5.1.4(@babel/core@7.24.5)(svelte@4.2.16)(typescript@5.4.5)
+      svelte: 4.2.17
+      svelte-preprocess: 5.1.4(@babel/core@7.24.5)(svelte@4.2.17)(typescript@5.4.5)
       typescript: 5.4.5
     transitivePeerDependencies:
       - '@babel/core'
@@ -10105,39 +10091,39 @@ packages:
       - sugarss
     dev: true
 
-  /svelte-headless-table@0.18.2(svelte@4.2.16):
+  /svelte-headless-table@0.18.2(svelte@4.2.17):
     resolution: {integrity: sha512-dnDTaXW5CNzRUjHVbc/Hb0Zv80zU4VcIUnAja6OuZriXvim1AqcWYQCHPRzBGwqj1m3YEHHNvspSzY0o5HzA0A==}
     peerDependencies:
       svelte: ^4.0.0
     dependencies:
-      svelte: 4.2.16
-      svelte-keyed: 2.0.0(svelte@4.2.16)
-      svelte-render: 2.0.1(svelte@4.2.16)
-      svelte-subscribe: 2.0.1(svelte@4.2.16)
+      svelte: 4.2.17
+      svelte-keyed: 2.0.0(svelte@4.2.17)
+      svelte-render: 2.0.1(svelte@4.2.17)
+      svelte-subscribe: 2.0.1(svelte@4.2.17)
     dev: false
 
-  /svelte-hmr@0.16.0(svelte@4.2.16):
+  /svelte-hmr@0.16.0(svelte@4.2.17):
     resolution: {integrity: sha512-Gyc7cOS3VJzLlfj7wKS0ZnzDVdv3Pn2IuVeJPk9m2skfhcu5bq3wtIZyQGggr7/Iim5rH5cncyQft/kRLupcnA==}
     engines: {node: ^12.20 || ^14.13.1 || >= 16}
     peerDependencies:
       svelte: ^3.19.0 || ^4.0.0
     dependencies:
-      svelte: 4.2.16
+      svelte: 4.2.17
     dev: true
 
-  /svelte-keyed@2.0.0(svelte@4.2.16):
+  /svelte-keyed@2.0.0(svelte@4.2.17):
     resolution: {integrity: sha512-7TeEn+QbJC2OJrHiuM0T8vMBkms3DNpTE+Ir+NtnVBnBMA78aL4f1ft9t0Hn/pBbD/TnIXi4YfjFRAgtN+DZ5g==}
     peerDependencies:
       svelte: ^4.0.0
     dependencies:
-      svelte: 4.2.16
+      svelte: 4.2.17
     dev: false
 
   /svelte-portal@2.2.1:
     resolution: {integrity: sha512-uF7is5sM4aq5iN7QF/67XLnTUvQCf2iiG/B1BHTqLwYVY1dsVmTeXZ/LeEyU6dLjApOQdbEG9lkqHzxiQtOLEQ==}
     dev: false
 
-  /svelte-preprocess@5.1.4(@babel/core@7.24.5)(svelte@4.2.16)(typescript@5.4.5):
+  /svelte-preprocess@5.1.4(@babel/core@7.24.5)(svelte@4.2.17)(typescript@5.4.5):
     resolution: {integrity: sha512-IvnbQ6D6Ao3Gg6ftiM5tdbR6aAETwjhHV+UKGf5bHGYR69RQvF1ho0JKPcbUON4vy4R7zom13jPjgdOWCQ5hDA==}
     engines: {node: '>= 16.0.0'}
     requiresBuild: true
@@ -10181,29 +10167,29 @@ packages:
       magic-string: 0.30.10
       sorcery: 0.11.0
       strip-indent: 3.0.0
-      svelte: 4.2.16
+      svelte: 4.2.17
       typescript: 5.4.5
     dev: true
 
-  /svelte-render@2.0.1(svelte@4.2.16):
+  /svelte-render@2.0.1(svelte@4.2.17):
     resolution: {integrity: sha512-RpB0SurwXm4xhjvHHtjeqMmvd645FURb79GFOotScOSqnKK5vpqBgoBPGC0pp+E/eZgDSQ9rRAdn/+N4ys1mXQ==}
     peerDependencies:
       svelte: ^4.0.0
     dependencies:
-      svelte: 4.2.16
-      svelte-subscribe: 2.0.1(svelte@4.2.16)
+      svelte: 4.2.17
+      svelte-subscribe: 2.0.1(svelte@4.2.17)
     dev: false
 
-  /svelte-subscribe@2.0.1(svelte@4.2.16):
+  /svelte-subscribe@2.0.1(svelte@4.2.17):
     resolution: {integrity: sha512-eKXIjLxB4C7eQWPqKEdxcGfNXm2g/qJ67zmEZK/GigCZMfrTR3m7DPY93R6MX+5uoqM1FRYxl8LZ1oy4URWi2A==}
     peerDependencies:
       svelte: ^4.0.0
     dependencies:
-      svelte: 4.2.16
+      svelte: 4.2.17
     dev: false
 
-  /svelte@4.2.16:
-    resolution: {integrity: sha512-mQwHpqHD2PmFcCyHaZ7XiTqposaLvJ75WpYcyY5/ce3qxbYtwQpZ+M7ZKP+2CG5U6kfnBZBpPLyofhlE6ROrnQ==}
+  /svelte@4.2.17:
+    resolution: {integrity: sha512-N7m1YnoXtRf5wya5Gyx3TWuTddI4nAyayyIWFojiWV5IayDYNV5i2mRp/7qNGol4DtxEYxljmrbgp1HM6hUbmQ==}
     engines: {node: '>=16'}
     dependencies:
       '@ampproject/remapping': 2.3.0
@@ -10495,8 +10481,8 @@ packages:
       - ts-node
     dev: true
 
-  /tsx@4.9.4:
-    resolution: {integrity: sha512-TlSJTVn2taGGDgdV3jAqCj7WQ/CafCB5p4SbG7W2Bl/0AJWH1ShJlBbc0y2lOFTjQEVAAULSTlmehw/Mwv3S/Q==}
+  /tsx@4.10.3:
+    resolution: {integrity: sha512-f0g60aFSVRVkzcQkEflh8fPLRfmt+HJHgWi/plG5UgvVaV+9TcpOwJ0sZJSACXmwmjMPg9yQR0BhTLbhkfV2uA==}
     engines: {node: '>=18.0.0'}
     hasBin: true
     dependencies:
@@ -10744,8 +10730,8 @@ packages:
       - utf-8-validate
       - zod
 
-  /viem@2.10.3(typescript@5.4.5)(zod@3.23.8):
-    resolution: {integrity: sha512-GmPMH+D/SDSXpVSjLM0GN1H1/h4NUPHaIqnFLwAit8nkfCiDuajKflGFiMPCIs1h7QZlBICuKvON/rc09H+w6Q==}
+  /viem@2.10.8(typescript@5.4.5)(zod@3.23.8):
+    resolution: {integrity: sha512-ttCXlDmjjcZ8M/eJezXFzDtHj+RFOjEQ3elmXnCC7suXo/y8CuIM1LrIoyUFk7LKIE5E+bzmWUErS4u/MQBtpQ==}
     peerDependencies:
       typescript: '>=5.0.4'
     peerDependenciesMeta:
@@ -10758,7 +10744,7 @@ packages:
       '@scure/bip32': 1.3.2
       '@scure/bip39': 1.2.1
       abitype: 1.0.0(typescript@5.4.5)(zod@3.23.8)
-      isows: 1.0.3(ws@8.13.0)
+      isows: 1.0.4(ws@8.13.0)
       typescript: 5.4.5
       ws: 8.13.0
     transitivePeerDependencies:
@@ -10888,15 +10874,15 @@ packages:
       - universal-cookie
     dev: true
 
-  /vitest-solidity-coverage@0.1.13(hardhat@2.22.3)(solidity-coverage@0.8.12)(vitest@1.6.0):
+  /vitest-solidity-coverage@0.1.13(hardhat@2.22.4)(solidity-coverage@0.8.12)(vitest@1.6.0):
     resolution: {integrity: sha512-/RAYQoUAuFB4fPvXhrIs+Kn6sGtj/EQ/kUsUwog6I+ua++V3q2v83E57MPmXW5BWIDfzFo7wmJBDEqtQ0UBIIw==}
     peerDependencies:
       hardhat: ^2.20.1
       solidity-coverage: ^0.8.7
       vitest: ^1.3.1
     dependencies:
-      hardhat: 2.22.3(typescript@5.4.5)
-      solidity-coverage: 0.8.12(hardhat@2.22.3)
+      hardhat: 2.22.4(typescript@5.4.5)
+      solidity-coverage: 0.8.12(hardhat@2.22.4)
       vitest: 1.6.0
     dev: true
 
@@ -11008,21 +10994,21 @@ packages:
     engines: {node: '>=8.0.0'}
     dev: true
 
-  /web3-connection-viem@0.3.0(viem@2.10.3):
+  /web3-connection-viem@0.3.0(viem@2.10.8):
     resolution: {integrity: sha512-QhOzZKwPojFb907dMMpQhylaVjB1uM5tSyxPRj5vrh1GFKt0O/iPD6/Hp6GogeVmA1ed2lCn8C+e4LEhRbeiJw==}
     peerDependencies:
       viem: ^2.1.1
     dependencies:
-      viem: 2.10.3(typescript@5.4.5)(zod@3.23.8)
+      viem: 2.10.8(typescript@5.4.5)(zod@3.23.8)
     dev: false
 
-  /web3-connection@0.1.39(svelte@4.2.16):
+  /web3-connection@0.1.39(svelte@4.2.17):
     resolution: {integrity: sha512-VpGOg0uJQ/Xp/rwV+QDTxOl5sloFBuSuIlfaSb60eLvaub3kW5ca2njqdDsuvh5/3H3KEd0cY88WiWXTifHCaQ==}
     peerDependencies:
       svelte: ^4.0.0
     dependencies:
       named-logs: 0.2.4
-      svelte: 4.2.16
+      svelte: 4.2.17
     dev: false
 
   /web3-utils@1.10.4:
@@ -11116,17 +11102,17 @@ packages:
       typical: 5.2.0
     dev: true
 
-  /workerd@1.20240419.0:
-    resolution: {integrity: sha512-9yV98KpkQgG+bdEsKEW8i1AYZgxns6NVSfdOVEB2Ue1pTMtIEYfUyqUE+O2amisRrfaC3Pw4EvjtTmVaoetfeg==}
+  /workerd@1.20240512.0:
+    resolution: {integrity: sha512-VUBmR1PscAPHEE0OF/G2K7/H1gnr9aDWWZzdkIgWfNKkv8dKFCT75H+GJtUHjfwqz3rYCzaNZmatSXOpLGpF8A==}
     engines: {node: '>=16'}
     hasBin: true
     requiresBuild: true
     optionalDependencies:
-      '@cloudflare/workerd-darwin-64': 1.20240419.0
-      '@cloudflare/workerd-darwin-arm64': 1.20240419.0
-      '@cloudflare/workerd-linux-64': 1.20240419.0
-      '@cloudflare/workerd-linux-arm64': 1.20240419.0
-      '@cloudflare/workerd-windows-64': 1.20240419.0
+      '@cloudflare/workerd-darwin-64': 1.20240512.0
+      '@cloudflare/workerd-darwin-arm64': 1.20240512.0
+      '@cloudflare/workerd-linux-64': 1.20240512.0
+      '@cloudflare/workerd-linux-arm64': 1.20240512.0
+      '@cloudflare/workerd-windows-64': 1.20240512.0
     dev: true
 
   /workerpool@6.2.1:
@@ -11139,24 +11125,24 @@ packages:
       diary: 0.3.1
     dev: true
 
-  /wrangler@3.55.0(@cloudflare/workers-types@4.20240502.0):
-    resolution: {integrity: sha512-VhtCioKxOdVqkHa8jQ6C6bX3by2Ko0uM0DKzrA+6lBZvfDUlGDWSOPiG+1fOHBHj2JTVBntxWCztXP6L+Udr8w==}
+  /wrangler@3.56.0(@cloudflare/workers-types@4.20240512.0):
+    resolution: {integrity: sha512-YEUscEmg6F7nVPoNX5uaQ/KT0ztkPLLN4XGOl9uwgLCTHsyilzeh4WvEg6lelDi60EIXhuzWLjf0jBFN4wbnZw==}
     engines: {node: '>=16.17.0'}
     hasBin: true
     peerDependencies:
-      '@cloudflare/workers-types': ^4.20240419.0
+      '@cloudflare/workers-types': ^4.20240512.0
     peerDependenciesMeta:
       '@cloudflare/workers-types':
         optional: true
     dependencies:
       '@cloudflare/kv-asset-handler': 0.3.2
-      '@cloudflare/workers-types': 4.20240502.0
+      '@cloudflare/workers-types': 4.20240512.0
       '@esbuild-plugins/node-globals-polyfill': 0.2.3(esbuild@0.17.19)
       '@esbuild-plugins/node-modules-polyfill': 0.2.2(esbuild@0.17.19)
       blake3-wasm: 2.1.5
       chokidar: 3.6.0
       esbuild: 0.17.19
-      miniflare: 3.20240419.1
+      miniflare: 3.20240512.0
       nanoid: 3.3.7
       path-to-regexp: 6.2.2
       resolve: 1.22.8

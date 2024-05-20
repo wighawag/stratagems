@@ -2,7 +2,7 @@ import {timelockEncrypt, roundTime, roundAt, timelockDecrypt, Buffer, HttpChainC
 (globalThis as any).Buffer = Buffer;
 
 import type {ScheduleInfo, ScheduledExecution, DecryptedPayload} from 'fuzd-scheduler';
-import type {BroadcastSchedule, TransactionSubmission} from 'fuzd-executor';
+import type {ExecutionSubmission} from 'fuzd-executor';
 import {privateKeyToAccount} from 'viem/accounts';
 import {deriveRemoteAddress} from 'remote-account';
 
@@ -32,41 +32,36 @@ export function createClient(config: ClientConfig) {
 		execution: {
 			slot: string;
 			chainId: `0x${string}` | string;
-			gas: bigint;
-			broadcastSchedule: [
-				{
-					duration: number;
-					maxFeePerGas: bigint;
-					maxPriorityFeePerGas: bigint;
-				},
-			];
-			data: `0x${string}`;
-			to: `0x${string}`;
+			transaction: {
+				gas: bigint;
+				data: `0x${string}`;
+				to: `0x${string}`;
+			}
+			maxFeePerGasAuthorized: bigint;
 			time: number;
 			expiry?: number;
+			paymentReserve?: bigint;
 		},
 		options?: {fakeEncrypt?: boolean},
 	): Promise<ScheduleInfo> {
-		let executionToSend: ScheduledExecution<TransactionSubmission>;
+		let executionToSend: ScheduledExecution<ExecutionSubmission>;
 
 		const chainId = (
 			execution.chainId.startsWith('0x') ? execution.chainId : `0x` + parseInt(execution.chainId).toString(16)
 		) as `0x${string}`;
 
-		const payloadJSON: DecryptedPayload<TransactionSubmission> = {
+		const payloadJSON: DecryptedPayload<ExecutionSubmission> = {
 			type: 'clear',
-			transactions: [
+			executions: [
 				{
-					type: '0x2',
 					chainId,
-					gas: ('0x' + execution.gas.toString(16)) as `0x${string}`,
-					broadcastSchedule: execution.broadcastSchedule.map((v) => ({
-						duration: ('0x' + v.duration.toString(16)) as `0x${string}`,
-						maxFeePerGas: ('0x' + v.maxFeePerGas.toString(16)) as `0x${string}`,
-						maxPriorityFeePerGas: ('0x' + v.maxPriorityFeePerGas.toString(16)) as `0x${string}`,
-					})) as BroadcastSchedule,
-					data: execution.data,
-					to: execution.to,
+					transaction: {
+						type: '0x2',
+						gas: ('0x' + execution.transaction.gas.toString(16)) as `0x${string}`,
+						data: execution.transaction.data,
+						to: execution.transaction.to,
+					},
+					maxFeePerGasAuthorized: ('0x' + execution.maxFeePerGasAuthorized.toString(16)) as `0x${string}`,
 				},
 			],
 		};
@@ -87,8 +82,7 @@ export function createClient(config: ClientConfig) {
 				scheduledRound: round,
 				expiry: execution.expiry,
 			},
-			maxFeePerGas: '0',
-			paymentReserve: '0', // TODO
+			paymentReserve: execution.paymentReserve ? `0x${execution.paymentReserve.toString(16)}` : undefined,
 			payload,
 		};
 		const jsonAsString = JSON.stringify(executionToSend);

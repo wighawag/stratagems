@@ -30,20 +30,17 @@ export type CommitState = {
 
 	fuzdData?: {
 		submission: {
+			chainId: string;
 			slot: string;
-			broadcastSchedule: [
-				{
-					duration: number;
-					maxFeePerGas: bigint;
-					maxPriorityFeePerGas: bigint;
-				},
-			];
-			data: `0x${string}`;
-			to: `0x${string}`;
+			maxFeePerGasAuthorized: bigint;
+			transaction: {
+				data: `0x${string}`;
+				to: `0x${string}`;
+				gas: bigint;
+			}
 			time: number;
 			expiry: number;
-			chainId: string;
-			gas: bigint;
+			paymentReserve?: bigint;
 		};
 		remoteAccount: `0x${string}`;
 		fuzd: Awaited<ReturnType<typeof accountData.getFUZD>>;
@@ -324,20 +321,17 @@ export async function startCommit() {
 						});
 						state.fuzdData = {
 							submission: {
+								chainId: initialContractsInfos.chainId,
 								slot: `epoch_${epochNumber}`,
-								broadcastSchedule: [
-									{
-										duration: gameConfig.$current.revealPhaseDuration,
-										maxFeePerGas: maxFeePerGasForReveal,
-										maxPriorityFeePerGas: maxPriorityFeePerGasForReveal,
-									},
-								],
-								data,
-								to: contracts.Stratagems.address,
+								maxFeePerGasAuthorized: maxFeePerGasForReveal,
+								transaction: {
+									data,
+									to: contracts.Stratagems.address,
+									gas: revealGas,
+								},
 								time: timeToBroadcastReveal,
 								expiry: gameConfig.$current.revealPhaseDuration,
-								chainId: initialContractsInfos.chainId,
-								gas: revealGas,
+								paymentReserve: valueToProvide,
 							},
 							remoteAccount,
 							fuzd,
