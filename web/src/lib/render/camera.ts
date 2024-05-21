@@ -391,7 +391,7 @@ export class Camera extends BasicObjectStore<CameraState> {
 		const {x, y} = this.screenToWorld(offsetX, offsetY);
 
 		const maxSize = 500 * 500; //700 * 700; was too big
-		const minSize = 3 * 3;
+		const minSize = 1 * 1;
 
 		const size = this.$store.width * this.$store.height;
 		const renderSize = this.$store.renderWidth * this.$store.renderHeight;

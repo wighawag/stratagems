@@ -1,24 +1,4 @@
 import * as twgl from 'twgl.js';
-import * as m3 from '$utils/m3';
-import type {CameraState} from '../camera';
-import type {StratagemsViewState} from '$lib/state/ViewState';
-import {
-	drawCastle,
-	drawCorners,
-	drawGrassCenter,
-	drawHouse,
-	sheetURL,
-	type Attributes,
-	drawSandCenter,
-	drawHouseInFire,
-	drawTent,
-	drawGem,
-	drawUnit,
-	drawFire,
-} from '../tiles';
-import {epoch} from '$lib/state/Epoch';
-import {get} from 'svelte/store';
-import {bigIntIDToXYID, xyToBigIntID} from 'stratagems-common';
 
 const vertexShaderSource = `#version 300 es
 
@@ -58,7 +38,13 @@ void main() {
 }
 `;
 
-export class Textured2DLayer {
+export type Attributes = {
+	positions: {data: Float32Array; nextIndex: number};
+	texs: {data: Float32Array; nextIndex: number};
+	alphas: {data: Float32Array; nextIndex: number};
+};
+
+export class Textured2DProgram {
 	programInfo!: twgl.ProgramInfo;
 	bufferInfo!: twgl.BufferInfo;
 	gl!: WebGL2RenderingContext;
@@ -78,10 +64,6 @@ export class Textured2DLayer {
 		};
 		this.bufferInfo = twgl.createBufferInfoFromArrays(GL, attributes);
 
-		this.textures = twgl.createTextures(GL, {
-			sheet: {src: sheetURL, mag: GL.NEAREST},
-		});
-
 		this.attributes = {
 			positions: {data: new Float32Array(9999999), nextIndex: 0},
 			texs: {data: new Float32Array(9999999), nextIndex: 0},
@@ -93,114 +75,8 @@ export class Textured2DLayer {
 		const GL = this.gl;
 		GL.useProgram(this.programInfo.program);
 		GL.blendFunc(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA);
+
 		GL.enable(GL.BLEND);
 		GL.disable(GL.DEPTH_TEST);
-	}
-
-	render(cameraState: CameraState, state: StratagemsViewState) {
-		const GL = this.gl;
-		// Compute the matrices
-		var projectionMatrix = m3.projection(cameraState.renderWidth, cameraState.renderHeight);
-		var scaleMatrix = m3.scaling(cameraState.renderScale, cameraState.renderScale);
-		var translationMatrix = m3.translation(cameraState.renderX, cameraState.renderY);
-
-		var viewMatrix = m3.multiply(translationMatrix, scaleMatrix);
-
-		var matrix = m3.multiply(projectionMatrix, viewMatrix);
-		const uniforms = {
-			u_matrix: matrix,
-			u_tex: this.textures['sheet'],
-		};
-
-		const numTiles = 6;
-		const tileSize = this.size / (numTiles + 1);
-		const offset = tileSize / 2;
-
-		this.attributes.positions.nextIndex = 0;
-		this.attributes.texs.nextIndex = 0;
-		this.attributes.alphas.nextIndex = 0;
-		for (let cellPos of Object.keys(state.cells)) {
-			const cell = state.viewCells[cellPos];
-			const [x, y] = cellPos.split(',').map((v) => parseInt(v));
-			const oldCell = state.rawState.cells[xyToBigIntID(x, y).toString()];
-
-			drawCorners(
-				this.attributes,
-				this.size,
-				offset,
-				state.neighbors[xyToBigIntID(x, y).toString()],
-				tileSize,
-				x,
-				y,
-				1,
-			);
-			if (
-				(oldCell && cell.next.color != oldCell?.color) ||
-				cell.next.epochWhenTokenIsAdded >= get(epoch) /* TODO access to epcoh*/
-			) {
-				drawSandCenter(this.attributes, this.size, offset, tileSize, numTiles, x, y, 1);
-			} else {
-				drawGrassCenter(this.attributes, this.size, offset, tileSize, numTiles, x, y, 1);
-			}
-		}
-
-		for (let cellPos of Object.keys(state.cells)) {
-			const cell = state.viewCells[cellPos];
-			const contractCell = state.cells[cellPos];
-			const [x, y] = cellPos.split(',').map((v) => parseInt(v));
-
-			drawCastle(this.attributes, this.size, tileSize, x, y, cell.next.color, 1);
-
-			for (let i = 0; i < cell.next.life; i++) {
-				drawHouse(this.attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
-			}
-
-			if (cell.next.life > 0) {
-				drawGem(this.attributes, this.size, tileSize, x, y, cell.next.color, 1);
-				if (contractCell.stake > 1) {
-					for (let i = 1; i < contractCell.stake; i++) {
-						drawGem(this.attributes, this.size, tileSize, x + 0.05 * i, y - 0.05 * i, cell.next.color, 1);
-					}
-				}
-			}
-
-			if (cell.future.life > cell.next.life) {
-				for (let i = cell.next.life; i < cell.future.life; i++) {
-					drawTent(this.attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
-				}
-			} else if (cell.future.life < cell.next.life) {
-				for (let i = Math.max(0, cell.next.life - (cell.next.life - cell.future.life)); i < cell.next.life; i++) {
-					const offset = 0.2 * tileSize;
-					const margin = 0.3 * tileSize;
-					drawHouseInFire(this.attributes, this.size, tileSize, x, y, cell.next.color, 1, i);
-				}
-			}
-
-			if ((cell.next.enemyMap & 1) == 1) {
-				drawUnit(this.attributes, this.size, tileSize, x, y, cell.next.color, 1, 0, -1);
-			}
-			if ((cell.next.enemyMap & 2) == 2) {
-				drawUnit(this.attributes, this.size, tileSize, x, y, cell.next.color, 1, -1, 0);
-			}
-			if ((cell.next.enemyMap & 4) == 4) {
-				drawUnit(this.attributes, this.size, tileSize, x, y, cell.next.color, 1, 0, 1);
-			}
-			if ((cell.next.enemyMap & 8) == 8) {
-				drawUnit(this.attributes, this.size, tileSize, x, y, cell.next.color, 1, 1, 0);
-			}
-		}
-
-		// we update the buffer with the new arrays
-		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_position, this.attributes.positions);
-		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_tex, this.attributes.texs);
-		twgl.setAttribInfoBufferFromArray(GL, this.bufferInfo.attribs!.a_alpha, this.attributes.alphas);
-		// we need to tell twgl the number of element to draw
-		// see : https://github.com/greggman/twgl.js/issues/211
-		this.bufferInfo.numElements = this.attributes.positions.nextIndex / 2;
-
-		// we draw
-		twgl.setBuffersAndAttributes(GL, this.programInfo, this.bufferInfo);
-		twgl.setUniforms(this.programInfo, uniforms);
-		twgl.drawBufferInfo(GL, this.bufferInfo, GL.TRIANGLES);
 	}
 }

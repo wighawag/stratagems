@@ -62,7 +62,7 @@
 {:else}
 	<canvas
 		id="world-map"
-		style="background-color: #038AAB; position: absolute; width:100%; height: 100%; pointer-events: auto;"
+		style="background-color: #5c699f; position: absolute; width:100%; height: 100%; pointer-events: auto;"
 	/>
 	<div
 		id="canvas-overlay"

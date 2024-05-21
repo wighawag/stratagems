@@ -4,9 +4,9 @@ import type {CameraState} from './camera';
 import type {RenderViewState} from './renderview';
 import {GridLayer} from './programs/Grid';
 import type {StratagemsViewState} from '$lib/state/ViewState';
-import {Textured2DLayer} from './programs/Textured2D';
 import {Colored2DLayer} from './programs/Colored2D';
 import {BlockiesLayer} from './programs/Blockies';
+import {TerrainLayer} from './layers/TerrainLayer';
 
 export class WebGLRenderer implements Readable<RenderViewState> {
 	private state!: StratagemsViewState;
@@ -16,7 +16,7 @@ export class WebGLRenderer implements Readable<RenderViewState> {
 	private store: Writable<RenderViewState>;
 	private gridLayer: GridLayer = new GridLayer(1);
 	private coloredLayer: Colored2DLayer = new Colored2DLayer(1, 0.1);
-	private cellLayer: Textured2DLayer = new Textured2DLayer(1);
+	private terrainLayer: TerrainLayer = new TerrainLayer(1);
 	private blockiesLayer: BlockiesLayer = new BlockiesLayer(1);
 
 	constructor() {
@@ -42,7 +42,7 @@ export class WebGLRenderer implements Readable<RenderViewState> {
 			height: this.canvas.height,
 		});
 		this.gridLayer.initialize(gl);
-		this.cellLayer.initialize(gl);
+		this.terrainLayer.initialize(gl);
 		this.coloredLayer.initialize(gl);
 		this.blockiesLayer.initialize(gl);
 	}
@@ -63,11 +63,13 @@ export class WebGLRenderer implements Readable<RenderViewState> {
 		GL.clearColor(0, 0, 0, 0);
 		GL.clear(GL.COLOR_BUFFER_BIT);
 
-		this.gridLayer.use();
-		this.gridLayer.render(this.cameraState);
+		if (this.cameraState.zoom > 20) {
+			this.gridLayer.use();
+			this.gridLayer.render(this.cameraState);
+		}
 
-		this.cellLayer.use();
-		this.cellLayer.render(this.cameraState, this.state);
+		this.terrainLayer.use();
+		this.terrainLayer.render(this.cameraState, this.state);
 
 		this.coloredLayer.use();
 		this.coloredLayer.render(this.cameraState, this.state);
