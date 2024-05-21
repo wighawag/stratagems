@@ -50,6 +50,7 @@ export function createClient(config: ClientConfig) {
 			to: `0x${string}`;
 			time: number;
 			expiry?: number;
+			value?: `0x${string}`;
 		},
 		options?: {fakeEncrypt?: boolean},
 	): Promise<ScheduleInfo> {
@@ -77,6 +78,7 @@ export function createClient(config: ClientConfig) {
 					})) as BroadcastSchedule,
 					data: execution.data,
 					to: execution.to,
+					value: execution.value,
 				},
 			],
 		};

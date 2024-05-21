@@ -338,6 +338,7 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 					to: `0x${string}`;
 					time: number;
 					expiry?: number;
+					value: `0x${string}`;
 				},
 				options?: {fakeEncrypt?: boolean},
 			) {

@@ -381,8 +381,8 @@ importers:
         specifier: ^0.5.0
         version: 0.5.0
       fuzd-executor:
-        specifier: ^0.1.12
-        version: 0.1.12
+        specifier: ^0.1.15
+        version: 0.1.15
       fuzd-scheduler:
         specifier: ^0.2.3
         version: 0.2.3
@@ -6104,12 +6104,28 @@ packages:
       named-logs: 0.2.2
     dev: true
 
+  /fuzd-common@0.1.9:
+    resolution: {integrity: sha512-Xw9jCZXhaz7zpiulrFtUCRvDG0nl52ZZ5J1nNunKq576u5SgbDWN8z87M8PdKQ+nxGgKgE8I9FPqmAaT7BIwwQ==}
+    dependencies:
+      named-logs: 0.2.4
+    dev: true
+
   /fuzd-executor@0.1.12:
     resolution: {integrity: sha512-z9iYjGQ60mhAn28gqlzKXqeMdelg1gkpZvbLNM+aCP6C9S/CxmFj5mZNFKgLd+ikrS/8Q119rPqVHi5xAvmOJQ==}
     dependencies:
       '@noble/hashes': 1.3.3
       fuzd-common: 0.1.8
       named-logs: 0.2.2
+      wighawag-ono: 7.1.3
+      zod: 3.22.4
+    dev: true
+
+  /fuzd-executor@0.1.15:
+    resolution: {integrity: sha512-OtpxubV8ahiq/4Iu7fgtivO9RhAQgxqv1UKRBUvZJ++tIyiXsAcl+mPndDv5U8X6xkwH9hTaa8fB5xiopMKidg==}
+    dependencies:
+      '@noble/hashes': 1.3.3
+      fuzd-common: 0.1.9
+      named-logs: 0.2.4
       wighawag-ono: 7.1.3
       zod: 3.22.4
     dev: true
