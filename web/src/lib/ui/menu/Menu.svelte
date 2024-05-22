@@ -134,6 +134,15 @@
 					{#if debugTools}
 						<button class="error" on:click={() => addTokenToWallet()}>Show Tokens in Wallet</button>
 					{/if}
+
+					<a
+						role="button"
+						on:click={() => {
+							$menu.open = false;
+							return true;
+						}}
+						href="/fuzd">Reveal Funds</a
+					>
 				</div>
 
 				<div class="category">

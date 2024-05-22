@@ -99,7 +99,7 @@
 			{#await schedulingResponse}
 				subbmitting...
 			{:then scheduleInfo}
-				wait until {new Date(scheduleInfo.checkinTime * 1000).toLocaleString()}
+				wait a couple of minutes
 				<button on:click={() => location.reload()}>reload</button>
 			{:catch err}
 				{err}
