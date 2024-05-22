@@ -111,7 +111,7 @@
 				}}>withdraw {formatEther(data.value)} ETH</button
 			>
 		{:else}
-			Not enough balance to witdraw
+			No balance to witdraw
 		{/if}
 	{:catch err}
 		<p>err</p>
