@@ -8,9 +8,9 @@
 		"ask-env": "^0.0.1",
 		"ldenv": "^0.3.10",
 		"prettier": "^3.2.5",
-		"sharp": "^0.33.3",
+		"sharp": "^0.33.4",
 		"syncpack": "^12.3.2",
-		"vitepress": "1.1.4"
+		"vitepress": "1.2.2"
 	},
 	"pnpm": {
 		"supportedArchitectures": {

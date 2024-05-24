@@ -9,7 +9,7 @@
   "dependencies": {
     "@types/node": "^20.12.12",
     "named-logs": "^0.2.4",
-    "viem": "^2.10.8"
+    "viem": "^2.12.1"
   },
   "devDependencies": {
     "ldenv": "^0.3.10",

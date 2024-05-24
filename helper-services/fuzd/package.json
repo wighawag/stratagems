@@ -8,7 +8,7 @@
         "set-defaults": "^0.0.2",
         "toml": "^3.0.0",
         "wait-on": "^7.2.0",
-        "wrangler": "^3.56.0"
+        "wrangler": "^3.57.1"
     },
     "scripts": {
         "prepare": "set-defaults .",
