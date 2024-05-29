@@ -331,14 +331,17 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 			scheduleExecution(
 				execution: {
 					slot: string;
-					chainId: string;
-					gas: bigint;
-					broadcastSchedule: [{duration: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint}];
-					data: `0x${string}`;
-					to: `0x${string}`;
+					chainId: `0x${string}` | string;
+					transaction: {
+						gas: bigint;
+						data: `0x${string}`;
+						to: `0x${string}`;
+					};
+					maxFeePerGasAuthorized: bigint;
 					time: number;
 					expiry?: number;
-					value: `0x${string}`;
+					// value: `0x${string}`;
+					paymentReserve?: bigint;
 				},
 				options?: {fakeEncrypt?: boolean},
 			) {

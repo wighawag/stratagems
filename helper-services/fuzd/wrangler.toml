@@ -1,24 +1,13 @@
-name = "fuzd-worker"
-main = "node_modules/fuzd-cf-worker/src/index.ts"
-compatibility_date = "2023-05-18"
+name = "fuzd-cf-worker"
+main = "node_modules/fuzd-cf-worker/src/worker.ts"
+compatibility_date = "2023-08-14"
 
-[vars]
+compatibility_flags = [ "nodejs_compat" ] # for node:async_hooks
 
-# The necessary secrets are:
-# - HD_MNEMONIC
-# - CHAIN_0x<CHAINID>
-# see in .dev.vars.default
-# Run `echo <VALUE> | wrangler secret put <NAME>` for each of these
-
-
-[durable_objects]
-bindings = [
-  { name = "SCHEDULER", class_name = "SchedulerDO" }
-]
-
-[[migrations]]
-tag = "v1"
-new_classes = ["SchedulerDO"]
+[[d1_databases]]
+binding = "DB" # i.e. available in your Worker on env.DB
+database_name = "fuzd-db"
+database_id = "3b9d30e7-6f33-4607-b4cd-4448e4d88951"
 
 [triggers]
 crons = ["* * * * *", "*/1 * * * *"]

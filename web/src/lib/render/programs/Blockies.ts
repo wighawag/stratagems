@@ -136,7 +136,7 @@ export class BlockiesLayer {
 				const blockieSize = tileSize * 2;
 
 				const x1 = x + this.size / 2 - blockieSize / 4;
-				const y1 = y + this.size / 2 - blockieSize / 4 + (tileSize * 4) / 5;
+				const y1 = y + this.size - blockieSize + tileSize / 2;
 				// const x2 = x1 + tileSize;
 				// const y2 = y1 + tileSize;
 
@@ -183,25 +183,25 @@ export class BlockiesLayer {
 						i++;
 					}
 				}
-				const doorThickness = this.size / 100;
-				drawRect(
-					this.attributes,
-					x1 - doorThickness,
-					y1 - doorThickness,
-					x1 + blockieSize / 2 + doorThickness,
-					y1,
-					[1, 1, 1],
-				);
+				// const doorThickness = this.size / 100;
+				// drawRect(
+				// 	this.attributes,
+				// 	x1 - doorThickness,
+				// 	y1 - doorThickness,
+				// 	x1 + blockieSize / 2 + doorThickness,
+				// 	y1,
+				// 	[1, 1, 1],
+				// );
 
-				drawRect(this.attributes, x1 - doorThickness, y1 - doorThickness, x1, y1 + blockieSize / 2, [1, 1, 1]);
-				drawRect(
-					this.attributes,
-					x1 + blockieSize / 2 - -doorThickness,
-					y1 - doorThickness,
-					x1 + blockieSize / 2,
-					y1 + blockieSize / 2,
-					[1, 1, 1],
-				);
+				// drawRect(this.attributes, x1 - doorThickness, y1 - doorThickness, x1, y1 + blockieSize / 2, [1, 1, 1]);
+				// drawRect(
+				// 	this.attributes,
+				// 	x1 + blockieSize / 2 - -doorThickness,
+				// 	y1 - doorThickness,
+				// 	x1 + blockieSize / 2,
+				// 	y1 + blockieSize / 2,
+				// 	[1, 1, 1],
+				// );
 
 				if (cell.currentPlayer) {
 					const neighbors = {

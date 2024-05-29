@@ -24,8 +24,14 @@ layout {
 			}
 		}
 		pane name="helper-services"  split_direction="vertical" {
+			// pane name="FUZD"  command="bash"  {
+			// 	args "-c" "pnpm fuzd:dev; cd helper-services/fuzd; ${SHELL-bash}"
+			// }
+			pane name="FUZD CRON"  command="bash"  {
+				args "-c" "pnpm fuzd:dev:cron; cd helper-services/fuzd; ${SHELL-bash}"
+			}
 			pane name="FUZD"  command="bash"  {
-				args "-c" "pnpm fuzd:dev; cd helper-services/fuzd; ${SHELL-bash}"
+				args "-c" "pnpm fuzd:dev:worker; cd helper-services/fuzd; ${SHELL-bash}"
 			}
 			pane name="SYNC"  command="bash"  {
 				args "-c" "pnpm sync:dev; cd helper-services/secp256k1-db; ${SHELL-bash}"
