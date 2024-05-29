@@ -407,8 +407,8 @@ importers:
         specifier: ^0.5.0
         version: 0.5.0
       fuzd-executor:
-        specifier: ^0.1.15
-        version: 0.1.15
+        specifier: ^0.5.0
+        version: 0.5.0(typescript@5.4.5)
       fuzd-scheduler:
         specifier: ^0.5.1
         version: 0.5.1(typescript@5.4.5)
@@ -6096,43 +6096,13 @@ packages:
   /fuzd-executor@0.5.0(typescript@5.4.5):
     resolution: {integrity: sha512-j6WBWk+Japx+Sh2xsEtA1nFoZgIrk2irghjf3GRBA11Hzc5rwc0RxQzcBgvXUBfEapsAofnls3JPaP4yiv4rgQ==}
     dependencies:
-      named-logs: 0.2.2
-    dev: true
-
-  /fuzd-common@0.1.9:
-    resolution: {integrity: sha512-Xw9jCZXhaz7zpiulrFtUCRvDG0nl52ZZ5J1nNunKq576u5SgbDWN8z87M8PdKQ+nxGgKgE8I9FPqmAaT7BIwwQ==}
-    dependencies:
-      named-logs: 0.2.4
-    dev: true
-
-  /fuzd-executor@0.1.12:
-    resolution: {integrity: sha512-z9iYjGQ60mhAn28gqlzKXqeMdelg1gkpZvbLNM+aCP6C9S/CxmFj5mZNFKgLd+ikrS/8Q119rPqVHi5xAvmOJQ==}
-    dependencies:
-      '@noble/hashes': 1.3.3
-      fuzd-common: 0.1.8
-      named-logs: 0.2.2
-      wighawag-ono: 7.1.3
-      zod: 3.22.4
-    dev: true
-
-  /fuzd-executor@0.1.15:
-    resolution: {integrity: sha512-OtpxubV8ahiq/4Iu7fgtivO9RhAQgxqv1UKRBUvZJ++tIyiXsAcl+mPndDv5U8X6xkwH9hTaa8fB5xiopMKidg==}
-    dependencies:
-      '@noble/hashes': 1.3.3
-      fuzd-common: 0.1.9
-      named-logs: 0.2.4
-      wighawag-ono: 7.1.3
-      zod: 3.22.4
-    dev: true
-
-  /fuzd-gateways@0.1.17(typescript@5.4.5):
-    resolution: {integrity: sha512-+aP14fZTBKCSq40kf0VVNZI45+SrXPpgVLr8CCLtznehhxvFVXhtWZQDtRCX/CkCBLTyHJxCrSeB1KXAioSRQQ==}
-    dependencies:
-      fuzd-executor: 0.1.12
-      fuzd-scheduler: 0.2.3
-      named-logs: 0.2.2
-      viem: 2.7.20(typescript@5.4.5)
-      wighawag-ono: 7.1.3
+      '@noble/hashes': 1.4.0
+      abitype: 1.0.2(typescript@5.4.5)(zod@3.23.8)
+      eip-1193: 0.5.0
+      eip-1193-signer: 0.0.2(typescript@5.4.5)(zod@3.23.8)
+      fuzd-common: 0.5.0(typescript@5.4.5)
+      named-logs: /named-logs-for-servers@0.0.1
+      zod: 3.23.8
     transitivePeerDependencies:
       - bufferutil
       - typescript
