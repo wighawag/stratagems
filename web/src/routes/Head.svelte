@@ -57,14 +57,14 @@
 				let load_plugins = '';
 				if (eruda_options.length > 0) {
 					for (const plugin of eruda_options.split(',')) {
-						let [package, v] = plugin.split(':');
+						let [pkg, v] = plugin.split(':');
 						v =
 							v ||
-							package
+							pkg
 								.split('-')
 								.map((split, i) => (i > 0 ? split[0].toUpperCase() + split.slice(1) : split))
 								.join('');
-						load_plugins += `document.write(\`<scr\${_}ipt src="//cdn.jsdelivr.net/npm/${package}"></scr\${_}ipt>\`);`;
+						load_plugins += `document.write(\`<scr\${_}ipt src="//cdn.jsdelivr.net/npm/${pkg}"></scr\${_}ipt>\`);`;
 						add_plugins += `eruda.add(${v});`;
 					}
 				}

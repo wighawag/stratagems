@@ -5,7 +5,7 @@
         "missiv-server": "^0.0.11",
         "set-defaults": "^0.0.2",
         "wait-on": "^7.2.0",
-        "wrangler": "^3.57.1"
+        "wrangler": "^3.60.1"
     },
     "scripts": {
         "prepare": "set-defaults .",

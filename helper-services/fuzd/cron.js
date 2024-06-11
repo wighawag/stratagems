@@ -16,6 +16,8 @@ if (config.triggers?.crons) {
                     await fetch(`http://localhost:34002/api/internal/processQueue`);
                 } else if (trigger === `*/1 * * * *`) {
                     await fetch(`http://localhost:34002/api/internal/processTransactions`);
+                } else if (trigger === `*/2 * * * *`) {
+                    await fetch(`http://localhost:34002/api/internal/checkScheduledExecutionStatus`);
                 }
             } catch(e) {
                 console.log(`failed to fetch...`, e)

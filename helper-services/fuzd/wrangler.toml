@@ -10,4 +10,4 @@ database_name = "fuzd-db"
 database_id = "3b9d30e7-6f33-4607-b4cd-4448e4d88951"
 
 [triggers]
-crons = ["* * * * *", "*/1 * * * *"]
+crons = ["* * * * *", "*/1 * * * *", "*/2 * * * *"]
