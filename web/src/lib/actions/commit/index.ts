@@ -266,7 +266,11 @@ export async function startCommit() {
 							maxPriorityFeePerGasForReveal = 1000000n;
 						}
 					}
-					const fuzd = await accountData.getFUZD();
+					if (!network.$state.chainId){
+						// TODO save chainId in preceding steps ?
+						throw new Error(`not connected to any chain`);
+					}
+					const fuzd = await accountData.getFUZD(network.$state.chainId);
 					const revealGas = 100000n + 200000n * BigInt(localMoves.length); //TODO compute worst case case
 					if ('estimateContractL1Fee' in client.public) {
 						console.log(`including l1 cost ...`);
@@ -300,11 +304,11 @@ export async function startCommit() {
 
 					const remoteAccount = fuzd.remoteAccount;
 
-					if (remoteAccount !== zeroAddress) {
+					if (remoteAccount.address !== zeroAddress) {
 						console.log(`fetching remote account balance....`);
 						const balanceHex = await connection.provider.request({
 							method: 'eth_getBalance',
-							params: [remoteAccount, 'latest'],
+							params: [remoteAccount.address, 'latest'],
 						});
 						const balance = BigInt(balanceHex);
 
@@ -333,7 +337,7 @@ export async function startCommit() {
 								expiry: gameConfig.$current.revealPhaseDuration,
 								paymentReserve: valueToProvide,
 							},
-							remoteAccount,
+							remoteAccount: remoteAccount.address,
 							fuzd,
 						};
 					}
@@ -504,16 +508,21 @@ export async function startCommit() {
 				let fuzdFailed = false;
 				if (fuzdData) {
 					try {
-						const scheduleInfo = await fuzdData.fuzd.scheduleExecution(fuzdData.submission, {
+						const scheduleResponse = await fuzdData.fuzd.fuzdClient.scheduleExecution(fuzdData.submission, {
 							fakeEncrypt: time.hasTimeContract,
 						});
+						if (!scheduleResponse.success) {
+							throw scheduleResponse.error;
+						}
+						const scheduleInfo = scheduleResponse.info;
 
 						console.log({fakeEncrypt: time.hasTimeContract});
 
 						console.log(`will be executed in ${timeToText(scheduleInfo.checkinTime - time.now)}`);
 
 						accountData.recordFUZD(txHash, scheduleInfo);
-					} catch {
+					} catch (err) {
+						console.error("FUZD FAILED", err);
 						fuzdFailed = true;
 					}
 				}
@@ -544,16 +553,21 @@ export async function startCommit() {
 				let fuzdFailed = false;
 				if (fuzdData) {
 					try {
-						const scheduleInfo = await fuzdData.fuzd.scheduleExecution(fuzdData.submission, {
+						const scheduleResponse = await fuzdData.fuzd.fuzdClient.scheduleExecution(fuzdData.submission, {
 							fakeEncrypt: time.hasTimeContract,
 						});
+						if (!scheduleResponse.success) {
+							throw scheduleResponse.error;
+						}
+						const scheduleInfo = scheduleResponse.info;
 
 						console.log({fakeEncrypt: time.hasTimeContract});
 
 						console.log(`will be executed in ${timeToText(scheduleInfo.checkinTime - time.now)}`);
 
 						accountData.recordFUZD(txHash, scheduleInfo);
-					} catch {
+					} catch (err) {
+						console.error("FUZD FAILED", err);
 						fuzdFailed = true;
 					}
 				}

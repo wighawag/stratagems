@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {accountData, viemClient} from '$lib/blockchain/connection';
+	import {accountData, network, viemClient} from '$lib/blockchain/connection';
 	import {gameConfig, initialContractsInfos} from '$lib/blockchain/networks';
 	import {time} from '$lib/blockchain/time';
 	import {getRoughGasPriceEstimate} from '$utils/ethereum/gas';
@@ -15,7 +15,11 @@
 			}
 
 			let extraFeeForReveal = 0n;
-			const fuzd = await accountData.getFUZD();
+
+			if (!network.$state.chainId){
+				throw new Error(`not connected to any chain`);
+			}
+			const fuzd = await accountData.getFUZD(network.$state.chainId);
 			const gas = 30000n;
 
 			if ('estimateContractL1Fee' in client.public) {
@@ -33,7 +37,7 @@
 			console.log(`fetching remote account balance....`);
 			const balanceHex = await connection.provider.request({
 				method: 'eth_getBalance',
-				params: [remoteAccount, 'latest'],
+				params: [remoteAccount.address, 'latest'],
 			});
 			const balance = BigInt(balanceHex);
 			const valueNeeded = maxFeePerGas * gas + extraFeeForReveal;
@@ -60,23 +64,19 @@
 			const data = await fetchData();
 			if (data) {
 				const {fuzd, maxFeePerGas, maxPriorityFeePerGas, account, value, gas} = data;
-				const scheduleInfo = await fuzd.scheduleExecution(
+				const scheduleInfo = await fuzd.fuzdClient.scheduleExecution(
 					{
+						chainId: initialContractsInfos.chainId,
 						slot: `withdrawal`,
-						broadcastSchedule: [
-							{
-								duration: gameConfig.$current.revealPhaseDuration,
-								maxFeePerGas: maxFeePerGas,
-								maxPriorityFeePerGas: maxPriorityFeePerGas,
-							},
-						],
-						data: '0x',
-						to: account.address,
+						maxFeePerGasAuthorized: maxFeePerGas,
+						transaction: {
+							data: '0x',
+							to: account.address,
+							value,
+							gas,
+						},
 						time: time.now + 10,
 						expiry: gameConfig.$current.revealPhaseDuration,
-						chainId: initialContractsInfos.chainId,
-						value: `0x${value.toString(16)}`,
-						gas,
 					},
 					{
 						fakeEncrypt: time.hasTimeContract,
@@ -107,7 +107,13 @@
 		{:else if data.value >= 0}
 			<button
 				on:click={() => {
-					schedulingResponse = withdraw();
+					schedulingResponse = withdraw().then(v => {
+						if (v.success) {
+							return v.info;
+						} else {
+							throw v.error;
+						}
+					});
 				}}>withdraw {formatEther(data.value)} ETH</button
 			>
 		{:else}

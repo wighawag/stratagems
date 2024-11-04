@@ -6,7 +6,7 @@ import {
 	type OnChainActions,
 	type RevealMetadata,
 } from './base';
-import {mainnetClient, createClient} from '$utils/fuzd';
+import {createClient} from 'fuzd-client';
 import type {AccountInfo, SyncInfo} from './types';
 import {FUZD_URI, SYNC_DB_NAME, debugTools} from '$lib/config';
 import {xyToBigIntID, type Color, type ContractMove} from 'stratagems-common';
@@ -168,7 +168,6 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 				throw new Error(`no local key, FUZD requires it`);
 			}
 			this.fuzdClient = createClient({
-				drand: mainnetClient(),
 				privateKey: info.localKey,
 				schedulerEndPoint: FUZD_URI,
 			});
@@ -320,36 +319,14 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		return !!this.fuzdClient;
 	}
 
-	async getFUZD() {
+	async getFUZD(chainId: `0x${string}` | string) {
 		if (!this.fuzdClient) {
 			throw new Error(`no fuzd client setup`);
 		}
-		const remoteAccount = await this.fuzdClient.getRemoteAccount();
-		const self = this;
+		const remoteAccount = await this.fuzdClient.assignRemoteAccount(chainId);
 		return {
 			remoteAccount,
-			scheduleExecution(
-				execution: {
-					slot: string;
-					chainId: `0x${string}` | string;
-					transaction: {
-						gas: bigint;
-						data: `0x${string}`;
-						to: `0x${string}`;
-					};
-					maxFeePerGasAuthorized: bigint;
-					time: number;
-					expiry?: number;
-					// value: `0x${string}`;
-					paymentReserve?: bigint;
-				},
-				options?: {fakeEncrypt?: boolean},
-			) {
-				if (!self.fuzdClient) {
-					throw new Error(`no fuzd client setup`);
-				}
-				return self.fuzdClient.scheduleExecution(execution, options);
-			},
+			fuzdClient: this.fuzdClient
 		};
 	}
 

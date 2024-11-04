@@ -22,7 +22,7 @@
 	async function nextPhase() {
 		const isActionPhase = $epochInfo.isActionPhase;
 		if (!isActionPhase) {
-			await fetch(`${FUZD_URI}/api/internal/processQueue`)
+			await fetch(`${FUZD_URI}/internal/processQueue`)
 				.then((v) => v.text())
 				.then((v) => console.log(v));
 		}
@@ -33,7 +33,7 @@
 		if (isActionPhase) {
 			if (hash) {
 				// TODO wait for inclusion
-				await fetch(`${FUZD_URI}/api/internal/processQueue`)
+				await fetch(`${FUZD_URI}/internal/processQueue`)
 					.then((v) => v.text())
 					.then((v) => console.log(v));
 			} else {
@@ -50,7 +50,7 @@
 		if (isActionPhase) {
 			if (hash) {
 				// TODO wait for inclusion
-				await fetch(`${FUZD_URI}/api/internal/processQueue`)
+				await fetch(`${FUZD_URI}/internal/processQueue`)
 					.then((v) => v.text())
 					.then((v) => console.log(v));
 				await increaseContractTime(parseInt($contractsInfos.contracts.Stratagems.linkedData.revealPhaseDuration));
