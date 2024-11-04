@@ -35,6 +35,7 @@
     "ethereum-indexer-browser": "^0.7.6",
     "ethereum-tx-observer": "^0.0.5",
     "focus-trap": "^7.5.4",
+    "fuzd-client": "^0.7.0",
     "immer": "^10.1.1",
     "lodash-es": "^4.17.21",
     "lucide-svelte": "^0.394.0",
