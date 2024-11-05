@@ -200,15 +200,9 @@ importers:
 
   helper-services/fuzd:
     devDependencies:
-      fuzd-cf-worker:
-        specifier: ^0.7.1
-        version: 0.7.2(@cloudflare/workers-types@4.20241022.0)
       fuzd-nodejs:
         specifier: ^0.7.6
-        version: 0.7.6(@libsql/core@0.14.0)(@types/node@22.9.0)(hono@4.6.9)(typescript@5.6.3)(typia@6.11.3(typescript@5.6.3))(zod@3.23.8)
-      fuzd-server:
-        specifier: ^0.7.1
-        version: 0.7.3(@types/node@22.9.0)(typescript@5.6.3)(typia@6.11.3(typescript@5.6.3))(zod@3.23.8)
+        version: 0.7.6(@libsql/core@0.14.0)(@types/node@22.9.0)(hono@4.6.9)(typescript@5.6.3)(typia@6.11.3(typescript@5.6.3))
       ldenv:
         specifier: ^0.3.10
         version: 0.3.10
@@ -724,9 +718,6 @@ packages:
   '@babel/types@7.26.0':
     resolution: {integrity: sha512-Z/yiTPj+lDVnF7lWeKCIJzaIkI0vYO87dMpZ4bg4TDrFe4XXLFWL1TbXU27gBP3QccxV9mZICCrnjnYlJjXHOA==}
     engines: {node: '>=6.9.0'}
-
-  '@bug-fix/workers-logger@0.2.0-fix.1':
-    resolution: {integrity: sha512-LmqK840+H0QGshoJn6ELINH3HotGEZc8PL/wviD50snqCqmzJGWEXjKK2NN7Wo12ghEvAEtmJw+70CG8eIyYbw==}
 
   '@cloudflare/kv-asset-handler@0.3.2':
     resolution: {integrity: sha512-EeEjMobfuJrwoctj7FA1y1KEbM0+Q1xSjobIEyie9k4haVEBB7vkDvsasw1pM3rO39mL2akxIAzLMUAtrMHZhA==}
@@ -3319,9 +3310,6 @@ packages:
   devalue@5.0.0:
     resolution: {integrity: sha512-gO+/OMXF7488D+u3ue+G7Y4AA3ZmUnB3eHJXmBTgNHvr4ZNzl36A0ZtG+XCRNYCkYx/bFmw4qtkoFLa+wSrwAA==}
 
-  diary@0.4.5:
-    resolution: {integrity: sha512-dUtG/AVG5bt9Mi+23TgTvjZ0NDJaszjs1GpYooM5cbEzk2xoqdvxCOlVw0xkenQXZw/DFxp23tj5VkP6YmlRmw==}
-
   diff-sequences@29.6.3:
     resolution: {integrity: sha512-EjePK1srD3P08o2j4f0ExnylqRs5B9tJjcp9t1krH2qRi8CCdsYfwe9JgSLurFBWwq4uOlipzfk5fHNvwFKr8Q==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
@@ -3827,9 +3815,6 @@ packages:
 
   function-bind@1.1.2:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
-
-  fuzd-cf-worker@0.7.2:
-    resolution: {integrity: sha512-sszzxhuOt30jyNLAzptjq0Kpvu89H6qItby5y6Y1M/gfh/AIh6P40rp496oUWLCRsulVCTuaGJavX8qFNrk0ww==}
 
   fuzd-chain-protocol@0.7.0:
     resolution: {integrity: sha512-qYSAWZO9x40fg5TumeqJI0JgqK+llUjbgVJ31cZCgB6D7/4ChJKVnLHaClkJ6L5ofcICfxwAbx1bRodZ+6w6QA==}
@@ -4620,7 +4605,6 @@ packages:
 
   libsql@0.4.6:
     resolution: {integrity: sha512-F5M+ltteK6dCcpjMahrkgT96uFJvVI8aQ4r9f2AzHQjC7BkAYtvfMSTWGvRBezRgMUIU2h1Sy0pF9nOGOD5iyA==}
-    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lilconfig@3.1.2:
@@ -5605,11 +5589,6 @@ packages:
 
   remote-procedure-call@0.0.15:
     resolution: {integrity: sha512-zM95e3m0q/x5hMlbtcolH18rRqx/HtbrUmvrPzW5sswH1FM8sNUHpYlzABLt6h9snZworm9wP6KYEERGAVHMYA==}
-
-  remote-sql-d1@0.0.5:
-    resolution: {integrity: sha512-VdiaZAaQyL2/Z1uar48sLzbCQS5t9mU+CVzMUUc0OGZbXGIKzTLhhq80PxyId1fT0jBrIBvG8ENvUlbkL8dXtQ==}
-    peerDependencies:
-      '@cloudflare/workers-types': ^4.20230814.0
 
   remote-sql-libsql@0.0.6:
     resolution: {integrity: sha512-qgTCREAwZ/QHMYujH4lABCfqrqR7NIxthSoMnCw9Cv/cZ04R7Ne50wxDhrH/lXb9KGu0OY/cO2Af1JyGOSbwhw==}
@@ -7415,10 +7394,6 @@ snapshots:
       '@babel/helper-string-parser': 7.25.9
       '@babel/helper-validator-identifier': 7.25.9
 
-  '@bug-fix/workers-logger@0.2.0-fix.1':
-    dependencies:
-      diary: 0.4.5
-
   '@cloudflare/kv-asset-handler@0.3.2':
     dependencies:
       mime: 3.0.0
@@ -7438,7 +7413,8 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20240605.0':
     optional: true
 
-  '@cloudflare/workers-types@4.20241022.0': {}
+  '@cloudflare/workers-types@4.20241022.0':
+    optional: true
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -9145,10 +9121,9 @@ snapshots:
       typescript: 5.4.5
       zod: 3.23.8
 
-  abitype@1.0.6(typescript@5.6.3)(zod@3.23.8):
+  abitype@1.0.6(typescript@5.6.3):
     optionalDependencies:
       typescript: 5.6.3
-      zod: 3.23.8
 
   abort-controller@3.0.0:
     dependencies:
@@ -9995,8 +9970,6 @@ snapshots:
 
   devalue@5.0.0: {}
 
-  diary@0.4.5: {}
-
   diff-sequences@29.6.3: {}
 
   diff@5.0.0: {}
@@ -10088,9 +10061,9 @@ snapshots:
       - utf-8-validate
       - zod
 
-  eip-1193-signer@0.0.5(typescript@5.6.3)(zod@3.23.8):
+  eip-1193-signer@0.0.5(typescript@5.6.3):
     dependencies:
-      viem: 2.21.40(typescript@5.6.3)(zod@3.23.8)
+      viem: 2.21.40(typescript@5.6.3)
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -10846,15 +10819,6 @@ snapshots:
 
   function-bind@1.1.2: {}
 
-  fuzd-cf-worker@0.7.2(@cloudflare/workers-types@4.20241022.0):
-    dependencies:
-      named-logs: named-logs-for-servers@0.0.1
-      named-logs-context: 0.1.1
-      remote-sql-d1: 0.0.5(@cloudflare/workers-types@4.20241022.0)
-      workers-logger: '@bug-fix/workers-logger@0.2.0-fix.1'
-    transitivePeerDependencies:
-      - '@cloudflare/workers-types'
-
   fuzd-chain-protocol@0.7.0(@types/node@22.9.0)(typescript@5.4.5)(zod@3.23.8):
     dependencies:
       '@noble/hashes': 1.5.0
@@ -10919,12 +10883,12 @@ snapshots:
       - utf-8-validate
       - zod
 
-  fuzd-chain-protocol@0.7.2(@types/node@22.9.0)(typescript@5.6.3)(zod@3.23.8):
+  fuzd-chain-protocol@0.7.2(@types/node@22.9.0)(typescript@5.6.3):
     dependencies:
       '@noble/hashes': 1.5.0
       '@scure/bip32': 1.5.0
       '@scure/starknet': 1.0.0
-      eip-1193-signer: 0.0.5(typescript@5.6.3)(zod@3.23.8)
+      eip-1193-signer: 0.0.5(typescript@5.6.3)
       fuzd-common: 0.7.2
       remote-account: 0.2.1
       remote-procedure-call: 0.0.15(@types/node@22.9.0)
@@ -11047,9 +11011,9 @@ snapshots:
       - utf-8-validate
       - zod
 
-  fuzd-executor@0.7.2(@types/node@22.9.0)(typescript@5.6.3)(zod@3.23.8):
+  fuzd-executor@0.7.2(@types/node@22.9.0)(typescript@5.6.3):
     dependencies:
-      fuzd-chain-protocol: 0.7.2(@types/node@22.9.0)(typescript@5.6.3)(zod@3.23.8)
+      fuzd-chain-protocol: 0.7.2(@types/node@22.9.0)(typescript@5.6.3)
       fuzd-common: 0.7.2
       named-logs: named-logs-for-servers@0.0.1
     transitivePeerDependencies:
@@ -11073,12 +11037,12 @@ snapshots:
       - utf-8-validate
       - zod
 
-  fuzd-nodejs@0.7.6(@libsql/core@0.14.0)(@types/node@22.9.0)(hono@4.6.9)(typescript@5.6.3)(typia@6.11.3(typescript@5.6.3))(zod@3.23.8):
+  fuzd-nodejs@0.7.6(@libsql/core@0.14.0)(@types/node@22.9.0)(hono@4.6.9)(typescript@5.6.3)(typia@6.11.3(typescript@5.6.3)):
     dependencies:
       '@hono/node-server': 1.13.5(hono@4.6.9)
       '@libsql/client': 0.14.0
       commander: 12.1.0
-      fuzd-server: 0.7.3(@types/node@22.9.0)(typescript@5.6.3)(typia@6.11.3(typescript@5.6.3))(zod@3.23.8)
+      fuzd-server: 0.7.3(@types/node@22.9.0)(typescript@5.6.3)(typia@6.11.3(typescript@5.6.3))
       ldenv: 0.3.11
       named-logs-context: 0.1.1
       remote-sql-libsql: 0.0.6(@libsql/core@0.14.0)
@@ -11158,9 +11122,9 @@ snapshots:
       - utf-8-validate
       - zod
 
-  fuzd-scheduler@0.7.2(@types/node@22.9.0)(typescript@5.6.3)(zod@3.23.8):
+  fuzd-scheduler@0.7.2(@types/node@22.9.0)(typescript@5.6.3):
     dependencies:
-      fuzd-chain-protocol: 0.7.2(@types/node@22.9.0)(typescript@5.6.3)(zod@3.23.8)
+      fuzd-chain-protocol: 0.7.2(@types/node@22.9.0)(typescript@5.6.3)
       fuzd-common: 0.7.2
       named-logs: named-logs-for-servers@0.0.1
     transitivePeerDependencies:
@@ -11184,7 +11148,7 @@ snapshots:
       - utf-8-validate
       - zod
 
-  fuzd-server@0.7.3(@types/node@22.9.0)(typescript@5.6.3)(typia@6.11.3(typescript@5.6.3))(zod@3.23.8):
+  fuzd-server@0.7.3(@types/node@22.9.0)(typescript@5.6.3)(typia@6.11.3(typescript@5.6.3)):
     dependencies:
       '@hono/swagger-ui': 0.4.1(hono@4.6.9)
       '@hono/typia-validator': 0.0.5(hono@4.6.9)(typia@6.11.3(typescript@5.6.3))
@@ -11192,18 +11156,18 @@ snapshots:
       '@scure/bip39': 1.4.0
       eip-1193: 0.6.1
       eip-1193-jsonrpc-provider: 0.4.2
-      eip-1193-signer: 0.0.5(typescript@5.6.3)(zod@3.23.8)
-      fuzd-chain-protocol: 0.7.2(@types/node@22.9.0)(typescript@5.6.3)(zod@3.23.8)
+      eip-1193-signer: 0.0.5(typescript@5.6.3)
+      fuzd-chain-protocol: 0.7.2(@types/node@22.9.0)(typescript@5.6.3)
       fuzd-common: 0.7.2
-      fuzd-executor: 0.7.2(@types/node@22.9.0)(typescript@5.6.3)(zod@3.23.8)
-      fuzd-scheduler: 0.7.2(@types/node@22.9.0)(typescript@5.6.3)(zod@3.23.8)
-      fuzd-tlock-decrypter: 0.7.2(@types/node@22.9.0)(typescript@5.6.3)(zod@3.23.8)
+      fuzd-executor: 0.7.2(@types/node@22.9.0)(typescript@5.6.3)
+      fuzd-scheduler: 0.7.2(@types/node@22.9.0)(typescript@5.6.3)
+      fuzd-tlock-decrypter: 0.7.2(@types/node@22.9.0)(typescript@5.6.3)
       hono: 4.6.9
       named-logs: named-logs-for-servers@0.0.1
       remote-account: 0.2.1
       remote-sql: 0.0.5
       tlock-js: 0.9.0
-      viem: 2.21.40(typescript@5.6.3)(zod@3.23.8)
+      viem: 2.21.40(typescript@5.6.3)
     transitivePeerDependencies:
       - '@edge-runtime/vm'
       - '@types/node'
@@ -11226,9 +11190,9 @@ snapshots:
       - utf-8-validate
       - zod
 
-  fuzd-tlock-decrypter@0.7.2(@types/node@22.9.0)(typescript@5.6.3)(zod@3.23.8):
+  fuzd-tlock-decrypter@0.7.2(@types/node@22.9.0)(typescript@5.6.3):
     dependencies:
-      fuzd-scheduler: 0.7.2(@types/node@22.9.0)(typescript@5.6.3)(zod@3.23.8)
+      fuzd-scheduler: 0.7.2(@types/node@22.9.0)(typescript@5.6.3)
       named-logs: named-logs-for-servers@0.0.1
       tlock-js: 0.9.0
     transitivePeerDependencies:
@@ -13288,11 +13252,6 @@ snapshots:
       - supports-color
       - terser
 
-  remote-sql-d1@0.0.5(@cloudflare/workers-types@4.20241022.0):
-    dependencies:
-      '@cloudflare/workers-types': 4.20241022.0
-      remote-sql: 0.0.5
-
   remote-sql-libsql@0.0.6(@libsql/core@0.14.0):
     dependencies:
       '@libsql/core': 0.14.0
@@ -14435,14 +14394,14 @@ snapshots:
       - utf-8-validate
       - zod
 
-  viem@2.21.40(typescript@5.6.3)(zod@3.23.8):
+  viem@2.21.40(typescript@5.6.3):
     dependencies:
       '@adraffy/ens-normalize': 1.11.0
       '@noble/curves': 1.6.0
       '@noble/hashes': 1.5.0
       '@scure/bip32': 1.5.0
       '@scure/bip39': 1.4.0
-      abitype: 1.0.6(typescript@5.6.3)(zod@3.23.8)
+      abitype: 1.0.6(typescript@5.6.3)
       isows: 1.0.6(ws@8.18.0)
       webauthn-p256: 0.0.10
       ws: 8.18.0
