@@ -33,7 +33,7 @@ function stringify(obj) {
 
 const contractInfos = JSON.parse(fs.readFileSync('contracts.json', 'utf-8'));
 if (contractInfos.contracts.Time.address) {
-	const parsedDevVars = parse(fs.readFileSync('.dev.vars', 'utf-8'));
+	const parsedDevVars = parse(fs.readFileSync('.env', 'utf-8'));
 	parsedDevVars.CONTRACT_TIMESTAMP = contractInfos.contracts.Time.address;
-	fs.writeFileSync('.dev.vars', stringify(parsedDevVars));
+	fs.writeFileSync('.env', stringify(parsedDevVars));
 }
