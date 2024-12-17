@@ -1,13 +1,23 @@
 <script lang="ts">
 	import {initialContractsInfos} from '$lib/config';
 	import Modal from '$utils/ui/modals/Modal.svelte';
-	$: date = (initialContractsInfos as any).name == 'alpha1' ? 'Thursday 21st March' : undefined;
+	$: date = undefined;
 	$: base = (initialContractsInfos as any).name == 'base' ? 'Thursday 21st March' : undefined;
+	$: discontinued  = (initialContractsInfos as any).name == 'alpha1';
 </script>
 
 <Modal>
 	<div class="wrapper">
-		{#if base}
+		{#if discontinued }
+		<h3>Discontinued </h3>
+			<p>
+				This play-test has been discountinued. Stay in touch with our community <a
+				href="https://community.etherplay.io"
+				rel="noopener noreferer"
+				class="underline">here</a
+			>
+			</p>
+		{:else if base}
 			<h3>Moved</h3>
 			<p>
 				This play-test has been discountinued. Join our first alpha on base at <a
