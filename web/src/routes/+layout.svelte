@@ -33,8 +33,7 @@
 		(initialContractsInfos as any).name !== 'redstone-holesky' &&
 		(initialContractsInfos as any).name !== 'fast' &&
 		(initialContractsInfos as any).name !== 'sepolia' &&
-		(initialContractsInfos as any).name !== 'alpha1test' &&
-		(initialContractsInfos as any).name !== 'alpha1';
+		(initialContractsInfos as any).name !== 'alpha1test';
 </script>
 
 <!-- add head, meta, sentry and other debug utilties-->
