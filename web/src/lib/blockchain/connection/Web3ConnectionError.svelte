@@ -71,7 +71,14 @@
 		<p class="main-message">You seemed to have recovered from Block Cacke Issue</p>
 
 		<p class="message">You most likely need to clear any data dervided from the chain as it may be invalid.</p>
-		<button tabindex="0" on:click={() => resetIndexer().then(() => network.acknowledgeBlockCacheIssue())}>
+		<button
+			tabindex="0"
+			on:click={() =>
+				resetIndexer().then(() => {
+					network.acknowledgeBlockCacheIssue();
+					location.reload();
+				})}
+		>
 			Clear
 		</button>
 	</Banner>

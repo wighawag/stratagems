@@ -13,6 +13,10 @@ export default defineConfig({
 				})
 			: undefined,
 	],
+	// the indexer worker (src/lib/state/indexer.worker.ts) is a MODULE worker
+	worker: {
+		format: 'es',
+	},
 	build: {
 		minify: false,
 		sourcemap: true,

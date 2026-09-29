@@ -24,5 +24,8 @@ static/pwa
 src/data/contracts.ts
 static/indexed-states/*
 
+# the processor bundle, copied from ../indexer/dist by scripts/processor-bundle.js
+static/processor.bundle.js
+
 # Sentry Auth Token
 .env.sentry-build-plugin

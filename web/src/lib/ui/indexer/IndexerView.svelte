@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {status, state, syncing} from '$lib/state/State';
+	import {state, syncing, queryError} from '$lib/state/State';
 	import RadialProgress from '$utils/progress/RadialProgress.svelte';
 	import {JsonView} from '@zerodevx/svelte-json-view';
 	import {indexerView} from './indexerView';
@@ -26,18 +26,22 @@
 {#if $indexerView.open}
 	<ModalContainer oncancel={() => ($indexerView.open = false)}>
 		<div class="container" transition:fly={{x: '100%'}}>
-			<RadialProgress value={$syncing.lastSync?.syncPercentage || 0} style="margin-bottom:1rem;" />
+			<RadialProgress value={$syncing?.syncPercentage || 0} style="margin-bottom:1rem;" />
 
 			<div>Syncing</div>
 
-			<JsonView json={$syncing} depth={0} />
+			<JsonView json={$syncing ?? {}} depth={0} />
+
+			{#if $queryError}
+				<div>Query refused: {$queryError.message}</div>
+			{/if}
 
 			<div>State</div>
 
 			{#if $state}
 				<JsonView json={stateDisplayed} depth={0} />
 			{:else}
-				<JsonView json={$syncing} />
+				<JsonView json={$syncing ?? {}} />
 			{/if}
 		</div>
 	</ModalContainer>

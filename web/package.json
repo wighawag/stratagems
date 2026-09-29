@@ -25,6 +25,9 @@
     "wait-on": "^7.2.0"
   },
   "dependencies": {
+    "@etherfold/browser": "^0.12.0",
+    "@etherfold/graphql": "^0.1.0",
+    "@etherfold/processor-entities": "^0.3.1",
     "@metamask/onboarding": "^1.0.1",
     "@noble/ciphers": "^0.5.3",
     "@scure/base": "^1.1.6",
@@ -32,7 +35,6 @@
     "@types/lodash-es": "^4.17.12",
     "@zerodevx/svelte-json-view": "^1.0.9",
     "driver.js": "^1.3.1",
-    "ethereum-indexer-browser": "^0.7.6",
     "ethereum-tx-observer": "^0.0.5",
     "focus-trap": "^7.5.4",
     "fuzd-client": "^0.7.1",
@@ -59,8 +61,8 @@
   },
   "scripts": {
     "prepare": "pwag static/icon.png src/web-config.json",
-    "dev": "echo 'waiting for src/data/contracts.ts...'; wait-on src/data/contracts.ts && ldenv vite dev",
-    "build": "pnpm run prepare && ldenv vite build",
+    "dev": "echo 'waiting for src/data/contracts.ts and the processor bundle...'; wait-on src/data/contracts.ts ../indexer/dist/processor.bundle.js && node scripts/processor-bundle.js && ldenv vite dev",
+    "build": "pnpm run prepare && node scripts/processor-bundle.js && ldenv vite build",
     "preview": "ldenv vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",

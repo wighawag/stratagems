@@ -10,7 +10,7 @@
 	import TxExecutor from './TxExecutor.svelte';
 	import {MINIMUM_REQUIRED_ETH_BALANCE, balance} from '$lib/state/balance';
 	import {contractNetwork} from '$lib/blockchain/networks';
-	import {status} from '$lib/state/State';
+	import {indexedToLatest} from '$lib/state/State';
 	import SyncingInfo from './SyncingInfo.svelte';
 	import {parseEther} from 'viem';
 	import {camera} from '$lib/render/camera';
@@ -107,7 +107,7 @@
 				to even read the latest game state. Please Connect to a web3 wallet.
 			</div>
 		{/if}
-	{:else if $status.state !== 'IndexingLatest'}
+	{:else if !$indexedToLatest}
 		<SyncingInfo />
 	{:else if !$every3Seconds.synced}
 		<span>Syncing Time, Please wait... </span>
