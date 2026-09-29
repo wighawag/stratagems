@@ -18,12 +18,13 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        node-version: [20]
+        node-version: [22]
     steps:
       - uses: actions/checkout@v3
       - uses: pnpm/action-setup@v2
         with:
-          version: 8
+          # the lockfile is v9, which pnpm 8 cannot read
+          version: 9
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
@@ -31,6 +32,8 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install
+      # 'pnpm build' folds sepolia with 'etherfold build --publish' into
+      # web/static/indexed-states/sepolia (pnpm indexer:index), then builds web/
       - name: build
         run: pnpm build
       # - name: deploy web

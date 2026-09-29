@@ -37,19 +37,21 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 8
+          # the lockfile is v9, which pnpm 8 cannot read
+          version: 9
 
-      - name: Use Node.js 18
+      - name: Use Node.js 22
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 22
           cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build all
-        run: pnpm build
+      # This workflow publishes the docs, which need no app build. 'pnpm build' is
+      # the app's (it folds a chain with 'pnpm indexer:index <mode>' first, which
+      # needs a node URL this workflow is not given): see ipfs.yml.
 
       - name: Build with VitePress
         run: pnpm run docs:build
