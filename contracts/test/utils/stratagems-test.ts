@@ -11,8 +11,8 @@ import {
 	xyToBigIntID,
 	EVIL_OWNER_ADDRESS,
 } from 'stratagems-common';
-import {Data, createProcessor} from 'stratagems-indexer';
-import {createIndexerState} from 'ethereum-indexer-browser';
+import {Data, readState, stratagemsProcessor} from 'stratagems-indexer';
+import {indexInProcess} from '../../utils/indexer';
 
 import {Deployment, loadAndExecuteDeployments} from 'rocketh';
 
@@ -66,23 +66,26 @@ export async function setupWallets(env: GridEnv, walletsBefore: {[playerIndex: n
 	}
 }
 
-export async function expectIndexedGridToMatch(env: GridEnv, resultGrid: string, epoch: number) {
-	const processor = createProcessor();
-	const {state, syncing, status, init, indexToLatest} = createIndexerState(processor);
-	// console.log('--------------------------------------------------------');
-	// console.log(state.$state);
-	// console.log('--------------------------------------------------------');
-	await init({
+/** Index the local chain with the stratagems processor, and read the whole state back (as the web app does). */
+async function indexedState(env: GridEnv): Promise<Data> {
+	const indexed = await indexInProcess({
+		processor: stratagemsProcessor,
 		provider: env.provider,
 		source: {
 			chainId: '31337',
 			contracts: [{abi: env.Stratagems.abi as any, address: env.Stratagems.address}],
 		},
-	}).then((v) => indexToLatest());
-	// console.log('- INDEXED -------------------------------------------------------');
-	// console.log(state.$state);
-	// console.log('--------------------------------------------------------');
-	const grid = fromStateToGrid(env, state.$state, epoch);
+	});
+	try {
+		return (await readState(indexed.execute)).data;
+	} finally {
+		indexed.close();
+	}
+}
+
+export async function expectIndexedGridToMatch(env: GridEnv, resultGrid: string, epoch: number) {
+	const state = await indexedState(env);
+	const grid = fromStateToGrid(env, state, epoch);
 	// console.log(grid);
 	// TODO reenable
 	await expect(renderGrid(grid)).to.equal(renderGrid(parseGrid(resultGrid)));
@@ -219,19 +222,9 @@ export async function deployStratagemsWithTestConfig() {
 }
 
 export async function pokeAll(env: GridEnv, resultGrid: string, epoch: number) {
-	const processor = createProcessor();
-	const {state, syncing, status, init, indexToLatest} = createIndexerState(processor);
-
-	// keep grid already
-	await init({
-		provider: env.provider,
-		source: {
-			chainId: '31337',
-			contracts: [{abi: env.Stratagems.abi as any, address: env.Stratagems.address}],
-		},
-	}).then((v) => indexToLatest());
+	const state = await indexedState(env);
 
 	const {accounts, walletClient, publicClient} = await getConnection();
 	const [deployer] = accounts;
-	await env.Stratagems.write.pokeMultiple([Object.keys(state.$state.cells).map((v) => BigInt(v))], {account: deployer});
+	await env.Stratagems.write.pokeMultiple([Object.keys(state.cells).map((v) => BigInt(v))], {account: deployer});
 }

@@ -1,60 +1,66 @@
-import {createIndexerState} from 'ethereum-indexer-browser';
-import {keepStateOnFile, keepStreamOnFile} from 'ethereum-indexer-fs';
 import contractsInfo from './contracts';
 import hre from 'hardhat';
 import {Color} from 'stratagems-common';
 
-import type {MergedAbis, JSProcessor} from 'ethereum-indexer-js-processor';
-import {fromJSProcessor} from 'ethereum-indexer-js-processor';
+import type {EntityProcessor} from '@etherfold/processor-entities';
 import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
+import {indexInProcess} from '../../utils/indexer';
 
 export type Data = {
 	players: {
-		[address: `0x${string}`]: {moves: any[]};
+		[address: `0x${string}`]: {moves: {position: bigint; color: number}[]};
 	};
 };
 
-type ContractsABI = MergedAbis<typeof contractsInfo.contracts>;
+type StratagemsABI = (typeof contractsInfo.contracts)['Stratagems']['abi'];
 
-const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
-	version: '6',
-	construct(): Data {
-		return {
-			players: {},
-		};
-	},
+/** Fixed width, so a listing's id order is the numeric one. */
+const wide = (value: number | bigint) => String(value).padStart(12, '0');
+
+/**
+ * Every move of colour `None` a player revealed (a withdrawal), in the order
+ * revealed: one row per move, keyed by the player and the move's arrival.
+ */
+const WithdrawalsProcessor: EntityProcessor<StratagemsABI> = {
+	entities: [{name: 'withdrawal', id: ['player', 'ordinal'], fields: {position: 'text', color: 'integer'}}],
 	onCommitmentRevealed(state, event) {
-		const playerAddress = event.args.player.toLowerCase();
-		for (const move of event.args.moves) {
-			console.log(move.color, Color.None);
+		const player = event.args.player.toLowerCase();
+		event.args.moves.forEach((move, index) => {
 			if (move.color == Color.None) {
-				const player = (state.players[playerAddress] = state.players[playerAddress] || {
-					moves: [],
-				});
-				player.moves.push(move);
+				state.set(
+					'withdrawal',
+					{player, ordinal: `${wide(event.blockNumber)}:${wide(event.logIndex)}:${wide(index)}`},
+					{position: move.position.toString(), color: move.color},
+				);
 			}
-		}
+		});
 	},
 };
 
-const createProcessor = fromJSProcessor(() => StratagemsIndexerProcessor);
-
-export const processor = createProcessor();
-export const {state, init, indexToLatest} = createIndexerState(processor, {
-	keepState: keepStateOnFile('.data', 'playerWithWithdrawals') as any, // TODO types
-	keepStream: keepStreamOnFile('.data', 'stratagems'),
-});
-
-export async function indexPlayersWithWithdrawals() {
+export async function indexPlayersWithWithdrawals(): Promise<Data> {
 	const env = await loadEnvironmentFromHardhat({hre}, {useChainIdOfForkedNetwork: true});
-	await init({
+	const Stratagems = contractsInfo.contracts['Stratagems'];
+	const indexed = await indexInProcess({
+		processor: WithdrawalsProcessor,
 		provider: env.network.provider,
 		source: {
 			chainId: contractsInfo.chainId,
-			contracts: Object.keys(contractsInfo.contracts).map((name) => (contractsInfo as any).contracts[name]),
-			genesisHash: contractsInfo.genesisHash,
+			genesisHash: contractsInfo.genesisHash as `0x${string}`,
+			contracts: [{abi: Stratagems.abi, address: Stratagems.address, startBlock: Stratagems.startBlock}],
 		},
+		db: `file:.data/withdrawals-${contractsInfo.name}.db`,
 	});
-	await indexToLatest();
-	return state.$state;
+	try {
+		const {data, errors} = await indexed.execute({
+			query: `{ withdrawal(first: 100000, orderBy: {field: ordinal, direction: asc}) { player position color } }`,
+		});
+		if (errors) throw new Error(errors[0].message);
+		const players: Data['players'] = {};
+		for (const row of (data as {withdrawal: {player: `0x${string}`; position: string; color: number}[]}).withdrawal) {
+			(players[row.player] ??= {moves: []}).moves.push({position: BigInt(row.position), color: Number(row.color)});
+		}
+		return {players};
+	} finally {
+		indexed.close();
+	}
 }

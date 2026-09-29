@@ -1,12 +1,10 @@
-import {createIndexerState} from 'ethereum-indexer-browser';
-import {keepStateOnFile, keepStreamOnFile} from 'ethereum-indexer-fs';
 import contractsInfo from './contracts';
 import hre from 'hardhat';
 
-import type {MergedAbis, JSProcessor} from 'ethereum-indexer-js-processor';
-import {fromJSProcessor} from 'ethereum-indexer-js-processor';
-import {formatEther, zeroAddress} from 'viem';
+import type {EntityProcessor} from '@etherfold/processor-entities';
+import {zeroAddress} from 'viem';
 import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
+import {indexInProcess} from '../../utils/indexer';
 
 const testTokenAddress = contractsInfo.contracts['TestTokens'].address.toLowerCase();
 const stratagemsAddress = contractsInfo.contracts['Stratagems'].address.toLowerCase();
@@ -17,7 +15,7 @@ export type Data = {
 	};
 };
 
-type ContractsABI = MergedAbis<typeof contractsInfo.contracts>;
+type TestTokensABI = (typeof contractsInfo.contracts)['TestTokens']['abi'];
 
 const tokenGiver = `0xab1346cf31b343ddfbe03effee19bab88c410514`;
 
@@ -46,62 +44,79 @@ for (const player of playerWhoReceivedByClaimLinks) {
 	ignoreAddresses.push(player.claim.toLowerCase());
 }
 
-const StratagemsIndexerProcessor: JSProcessor<ContractsABI, Data> = {
-	version: `` + Math.random(),
-	construct(): Data {
-		return {
-			players: {},
-		};
-	},
-	onTransfer(state, event) {
+/**
+ * Per player, the test tokens they hold and were given. A balance can go negative
+ * here (a player's transfers are counted from the first gift on), so the two
+ * amounts are decimal TEXT rather than `u256`, which refuses a negative value.
+ */
+const PlayersProcessor: EntityProcessor<TestTokensABI> = {
+	entities: [{name: 'player', id: 'address', fields: {balance: 'text', tokenGiven: 'text'}}],
+	async onTransfer(state, event) {
 		const contractAddress = event.address.toLowerCase();
 		const from = event.args.from.toLowerCase();
 		const to = event.args.to.toLowerCase();
 		const amount = event.args.value;
-		if (contractAddress === testTokenAddress) {
-			if (
-				!ignoreAddresses.includes(to) &&
-				(from.toLowerCase() === tokenGiver.toLowerCase() || claimKeys[from.toLowerCase()])
-			) {
-				const playerGiven = (state.players[to] = state.players[to] || {balance: 0n, tokenGiven: 0n});
-				playerGiven.tokenGiven += amount;
-			}
+		if (contractAddress !== testTokenAddress) return;
 
-			if (!ignoreAddresses.includes(from) && to.toLowerCase() === tokenGiver.toLowerCase()) {
-				const playerGiven = (state.players[from] = state.players[from] || {balance: 0n, tokenGiven: 0n});
-				playerGiven.tokenGiven -= amount;
-			}
+		const read = async (address: string) => {
+			const row = await state.get<{balance: string; tokenGiven: string}>('player', {address});
+			return row ? {balance: BigInt(row.balance), tokenGiven: BigInt(row.tokenGiven)} : undefined;
+		};
+		const write = (address: string, player: {balance: bigint; tokenGiven: bigint}) =>
+			state.set('player', {address}, {balance: player.balance.toString(), tokenGiven: player.tokenGiven.toString()});
 
-			if (state.players[from]) {
-				const playerFROM = state.players[from];
-				playerFROM.balance -= amount;
-			}
-			if (!ignoreAddresses.includes(to) && to != zeroAddress) {
-				const playerTO = (state.players[to] = state.players[to] || {balance: 0n, tokenGiven: 0n});
-				playerTO.balance += amount;
-			}
+		if (
+			!ignoreAddresses.includes(to) &&
+			(from.toLowerCase() === tokenGiver.toLowerCase() || claimKeys[from.toLowerCase()])
+		) {
+			const playerGiven = (await read(to)) ?? {balance: 0n, tokenGiven: 0n};
+			playerGiven.tokenGiven += amount;
+			write(to, playerGiven);
+		}
+
+		if (!ignoreAddresses.includes(from) && to.toLowerCase() === tokenGiver.toLowerCase()) {
+			const playerGiven = (await read(from)) ?? {balance: 0n, tokenGiven: 0n};
+			playerGiven.tokenGiven -= amount;
+			write(from, playerGiven);
+		}
+
+		const playerFROM = await read(from);
+		if (playerFROM) {
+			playerFROM.balance -= amount;
+			write(from, playerFROM);
+		}
+		if (!ignoreAddresses.includes(to) && to != zeroAddress) {
+			const playerTO = (await read(to)) ?? {balance: 0n, tokenGiven: 0n};
+			playerTO.balance += amount;
+			write(to, playerTO);
 		}
 	},
 };
 
-const createProcessor = fromJSProcessor(() => StratagemsIndexerProcessor);
-
-export const processor = createProcessor();
-export const {state, init, indexToLatest} = createIndexerState(processor, {
-	keepState: keepStateOnFile('.data', 'players') as any, // TODO types
-	keepStream: keepStreamOnFile('.data', 'stratagems'),
-});
-
-export async function indexPlayers() {
+export async function indexPlayers(): Promise<Data> {
 	const env = await loadEnvironmentFromHardhat({hre}, {useChainIdOfForkedNetwork: true});
-	await init({
+	const TestTokens = contractsInfo.contracts['TestTokens'];
+	const indexed = await indexInProcess({
+		processor: PlayersProcessor,
 		provider: env.network.provider,
 		source: {
 			chainId: contractsInfo.chainId,
-			contracts: Object.keys(contractsInfo.contracts).map((name) => (contractsInfo as any).contracts[name]),
-			genesisHash: contractsInfo.genesisHash,
+			genesisHash: contractsInfo.genesisHash as `0x${string}`,
+			contracts: [{abi: TestTokens.abi, address: TestTokens.address, startBlock: TestTokens.startBlock}],
 		},
+		db: `file:.data/players-${contractsInfo.name}.db`,
 	});
-	await indexToLatest();
-	return state.$state;
+	try {
+		const {data, errors} = await indexed.execute({
+			query: `{ player(first: 100000) { address balance tokenGiven } }`,
+		});
+		if (errors) throw new Error(errors[0].message);
+		const players: Data['players'] = {};
+		for (const row of (data as {player: {address: `0x${string}`; balance: string; tokenGiven: string}[]}).player) {
+			players[row.address] = {balance: BigInt(row.balance), tokenGiven: BigInt(row.tokenGiven)};
+		}
+		return {players};
+	} finally {
+		indexed.close();
+	}
 }

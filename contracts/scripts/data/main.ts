@@ -1,25 +1,26 @@
-import {createIndexerState} from 'ethereum-indexer-browser';
-import {keepStreamOnFile} from 'ethereum-indexer-fs';
 import contractsInfo from './contracts';
 import hre from 'hardhat';
-import {createProcessor} from 'stratagems-indexer';
+import {indexingSource, readState, stratagemsProcessor, STREAM_FINALITY} from 'stratagems-indexer';
 import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
+import {indexInProcess} from '../../utils/indexer';
 
-export const processor = createProcessor();
-export const {state, init, indexToLatest} = createIndexerState(processor, {
-	keepStream: keepStreamOnFile('.data', 'stratagems'),
-});
-
+/**
+ * The whole stratagems state of the network the script runs against, indexed with
+ * the same processor and source as the web app and the snapshot job, kept in
+ * `.data/stratagems-<name>.db` (SQLite), so a second run resumes from its cursor.
+ */
 export async function indexAll() {
 	const env = await loadEnvironmentFromHardhat({hre}, {useChainIdOfForkedNetwork: true});
-	await init({
+	const indexed = await indexInProcess({
+		processor: stratagemsProcessor,
 		provider: env.network.provider,
-		source: {
-			chainId: contractsInfo.chainId,
-			contracts: Object.keys(contractsInfo.contracts).map((name) => (contractsInfo as any).contracts[name]),
-			genesisHash: contractsInfo.genesisHash,
-		},
+		source: indexingSource(contractsInfo),
+		finality: STREAM_FINALITY,
+		db: `file:.data/stratagems-${contractsInfo.name}.db`,
 	});
-	await indexToLatest();
-	return state.$state;
+	try {
+		return (await readState(indexed.execute)).data;
+	} finally {
+		indexed.close();
+	}
 }
