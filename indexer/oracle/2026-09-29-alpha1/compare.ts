@@ -66,7 +66,11 @@ function canonical(value: unknown): string {
 	return JSON.stringify(value, (_key, v) => {
 		if (typeof v === 'bigint') return `${v}n`;
 		if (v && typeof v === 'object' && !Array.isArray(v)) {
-			return Object.fromEntries(Object.keys(v).sort().map((k) => [k, (v as Record<string, unknown>)[k]]));
+			return Object.fromEntries(
+				Object.keys(v)
+					.sort()
+					.map((k) => [k, (v as Record<string, unknown>)[k]]),
+			);
 		}
 		return v;
 	});
