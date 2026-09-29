@@ -5,6 +5,7 @@
   "type": "module",
   "private": true,
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "@rocketh/export": "^0.10.7",
     "@sveltejs/adapter-static": "^3.0.0",
     "@sveltejs/kit": "^2.5.10",
@@ -69,6 +70,7 @@
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "svelte-check": "svelte-check",
-    "serve": "ipfs-emulator --only -d build -p 8080"
+    "serve": "ipfs-emulator --only -d build -p 8080",
+    "verify:alpha1": "playwright test -c verify/playwright.config.ts"
   }
 }

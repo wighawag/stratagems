@@ -57,8 +57,18 @@ const $progress = writable<HostProgress | undefined>(undefined);
 /** The worker's progress: `phase` (`at-tip` once caught up), `lastToBlock`, `latestBlock`, `syncPercentage`, `publication`, `failure`. */
 export const syncing: Readable<HostProgress | undefined> = {subscribe: $progress.subscribe};
 
-/** Whether the state is caught up with the chain (what the UI waits for before letting a player act). */
-export const indexedToLatest = derived(syncing, ($syncing) => $syncing?.phase === 'at-tip');
+/**
+ * Whether the state is caught up with the chain (what the UI waits for before
+ * letting a player act): true once the worker has reached the tip, and kept while
+ * it follows it, so each new block does not flash the syncing screen.
+ */
+let reachedTip = false;
+export const indexedToLatest = derived(syncing, ($syncing) => {
+	if ($syncing?.phase === 'at-tip') reachedTip = true;
+	else if (!$syncing || $syncing.phase === 'refused' || $syncing.phase === 'waiting' || $syncing.phase === 'loading')
+		reachedTip = false;
+	return reachedTip;
+});
 
 /** A query the worker refused or could not answer, shown rather than swallowed. */
 export const queryError = writable<StateQueryError | undefined>(undefined);

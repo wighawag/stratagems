@@ -29,3 +29,7 @@ static/processor.bundle.js
 
 # Sentry Auth Token
 .env.sentry-build-plugin
+
+# playwright (verify/)
+/test-results
+/playwright-report
