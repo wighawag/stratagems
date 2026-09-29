@@ -62,7 +62,15 @@ function serve(options: {withPublication: boolean}): Promise<{server: Server; or
 	);
 }
 
-type Snapshot = {phase?: string; lastToBlock?: number; latestBlock?: number; publication?: unknown; state: string};
+type Snapshot = {
+	phase?: string;
+	lastToBlock?: number;
+	latestBlock?: number;
+	publication?: unknown;
+	election?: {role?: string};
+	stateBlock?: number;
+	state: string;
+};
 
 /** The worker's progress and the app's `state` (the answer to readState), bigints tagged, keys sorted. */
 async function read(page: Page): Promise<Snapshot> {
@@ -90,25 +98,36 @@ async function read(page: Page): Promise<Snapshot> {
 			lastToBlock: progress?.lastToBlock,
 			latestBlock: progress?.latestBlock,
 			publication: progress?.publication,
+			election: progress?.election,
+			stateBlock: (window as any).stratagemsIndexer?.stateBlock,
 			state: canonical(w.state.$state),
 		};
 	});
 }
 
-/** Wait for the worker to reach the tip, then for the state it answers to be read at least once more. */
+/**
+ * Wait for the worker to reach the tip. The state is NOT re-read in full here: what
+ * is compared is the state the app FOLLOWED, built by re-reading only the parts
+ * each state-moved signal named (`StateFollower`), which is the path under test.
+ * Alpha1's last log is far below the tip, so once at the tip the state stops moving.
+ */
 async function untilAtTip(page: Page, label: string): Promise<Snapshot> {
 	const started = Date.now();
 	let last: Snapshot | undefined;
 	for (;;) {
 		last = await read(page);
-		if (last.phase === 'at-tip') break;
+		if (last.phase === 'at-tip' && last.stateBlock !== undefined) break;
 		if (Date.now() - started > 40 * 60 * 1000)
 			throw new Error(`${label} never reached the tip: ${JSON.stringify(last)}`);
 		await page.waitForTimeout(2_000);
 	}
-	await page.evaluate(() => (window as any).stratagemsIndexer.refresh());
+	await page.waitForTimeout(3_000);
 	const at = await read(page);
-	console.log(`${label}: at the tip (block ${at.lastToBlock}) after ${Math.round((Date.now() - started) / 1000)} s`);
+	const seconds = Math.round((Date.now() - started) / 1000);
+	const role = at.election?.role ?? 'no election';
+	console.log(
+		`${label}: at the tip (block ${at.lastToBlock}, state as of ${at.stateBlock}, ${role}) after ${seconds} s`,
+	);
 	return at;
 }
 
@@ -169,5 +188,31 @@ test('a tab started from the publication lands on the state of a tab that indexe
 	} finally {
 		withPublication.server.close();
 		withoutPublication.server.close();
+	}
+});
+
+test('a second tab of the same app reads the state the first one indexes', async ({browser}) => {
+	expect(NODE, 'set VERIFY_ETH_NODE to a node for Base (chain 8453)').toBeTruthy();
+	const app = await serve({withPublication: true});
+	try {
+		// one browser CONTEXT, so both tabs share one origin's IndexedDB and one lock manager
+		const context = await browser.newContext();
+		const query = `?ethnode=${encodeURIComponent(NODE!)}`;
+		const first = await context.newPage();
+		await first.goto(`${app.origin}/${query}`);
+		const leader = await untilAtTip(first, 'first tab');
+		const second = await context.newPage();
+		await second.goto(`${app.origin}/${query}`);
+		const reader = await untilAtTip(second, 'second tab');
+		// the second tab is in front, so it may take the lock from the hidden first one
+		// (ADR-0097, foreground takeover): what matters is ONE writer and one state
+		const roles = [(await read(first)).election?.role, (await read(second)).election?.role].sort();
+		console.log(`  roles: ${roles.join(', ')}`);
+		expect(roles).toEqual(['reader', 'writer']);
+		expect(reader.state).toBe(leader.state);
+		expect(JSON.stringify(sorted(JSON.parse(reader.state)))).toBe(oracleState());
+		await context.close();
+	} finally {
+		app.server.close();
 	}
 });

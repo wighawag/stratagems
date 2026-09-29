@@ -23,7 +23,9 @@ import {createBrowserStateStore, hostIndexerInThisWorker, type InstantiatedProce
 import {graphqlQueryHandler} from '@etherfold/graphql/worker';
 import {
 	EntityEventProcessor,
+	EntityStateView,
 	openAndBootstrap,
+	openForReading,
 	openForWriting,
 	type EntityProcessor,
 } from '@etherfold/processor-entities';
@@ -53,6 +55,9 @@ function definitionOf(bundle?: InstantiatedProcessorBundle): EntityProcessor<Str
 	return bundle.processor as EntityProcessor<StratagemsABI>;
 }
 
+/** One IndexedDB database per stream (source + stream config), shared by the leader and the readers. */
+const databaseName = (context: {stream: string}) => `stratagems-${context.stream}`;
+
 hostIndexerInThisWorker({
 	// The published bundle: fetched, named by the SHA-256 of its bytes, and
 	// instantiated FROM those bytes (etherfold ADR-0095).
@@ -64,7 +69,7 @@ hostIndexerInThisWorker({
 	// would take too long: `replaceLocal`).
 	createState: async (context, {signal}, bundle, published) => {
 		const {store, outcome} = await openAndBootstrap(
-			await createBrowserStateStore(definitionOf(bundle).entities, {databaseName: `stratagems-${context.stream}`}),
+			await createBrowserStateStore(definitionOf(bundle).entities, {databaseName: databaseName(context)}),
 			published?.locations ?? [],
 			{
 				processor: published?.processor ?? 'none',
@@ -83,6 +88,20 @@ hostIndexerInThisWorker({
 		return openForWriting(store, {signal});
 	},
 	createProcessor: (state, _context, bundle) => new EntityEventProcessor(state, definitionOf(bundle)),
+	// ONE TAB INDEXES, THE OTHERS READ (etherfold ADR-0097). Without this, every open
+	// stratagems tab fetches the chain through the wallet, and all but one then lose the
+	// writer claim. The election is one Web Lock per app: the worker holding it builds
+	// its store through `createState` (and bootstraps it); every other one is built from
+	// `openState`, the SAME database opened for reading, and answers its tab's queries
+	// from the rows the leader writes. It takes over when the leader's tab closes, or
+	// when its own tab is in front and the leader's is hidden.
+	tabElection: {name: 'stratagems'},
+	openState: async (context, bundle) => {
+		const store = openForReading(
+			await createBrowserStateStore(definitionOf(bundle).entities, {databaseName: databaseName(context)}),
+		);
+		return {store, state: new EntityStateView(store)};
+	},
 	// GraphQL, answered HERE where the store is (etherfold ADR-0099): the tab sends
 	// documents with `workerExecutor` (`stratagems-indexer`'s `readState`). The
 	// IndexedDB scan refuses past 25,000 rows examined; alpha1's largest list, the
