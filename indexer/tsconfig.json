@@ -1,10 +1,17 @@
 {
 	"compilerOptions": {
-		"moduleResolution": "node",
-		"target": "es2020",
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"target": "ES2022",
+		"lib": ["ES2022", "DOM"],
+		"types": ["node"],
 		"declaration": true,
 		"declarationMap": true,
 		"sourceMap": true,
-		"strict": true
-	}
+		"strict": true,
+		"skipLibCheck": true,
+		"allowImportingTsExtensions": false,
+		"resolveJsonModule": true
+	},
+	"include": ["src", "scripts", "oracle"]
 }

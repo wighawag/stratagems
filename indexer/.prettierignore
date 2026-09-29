@@ -6,9 +6,9 @@ node_modules
 
 # data generated
 /dist
-/ethereum-indexer-data
+/data
 /src/contracts.ts
-/indexed/
+/oracle/**/*.gz
 
 #############################################
 package.json

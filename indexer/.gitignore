@@ -3,6 +3,5 @@
 
 # data generated
 /dist
-/ethereum-indexer-data
+/data
 /src/contracts.ts
-/indexed/
