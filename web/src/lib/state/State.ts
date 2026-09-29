@@ -6,10 +6,10 @@
  * published and indexes forward through the user's own wallet. This tab holds a
  * PORT to it and never folds a block:
  *
- * - `state` is the ANSWER to the GraphQL questions in `stratagems-indexer`
- *   (`readState`), asked of the worker (`workerExecutor`) and asked again every
- *   time the worker says the state moved (`onStateMoved`), or the account whose
- *   commitment it reads changes. It has the shape the old JS processor's state had
+ * - `state` is the ANSWER to the GraphQL questions in `stratagems-indexer`,
+ *   asked of the worker (`workerExecutor`): once in full, then, every time the
+ *   worker says the state moved (`onStateMoved`), only the parts whose entities
+ *   moved (`StateFollower`), and the commitment again when the account changes. It has the shape the old JS processor's state had
  *   (`Data`), so the game logic that computes the view from it is unchanged.
  * - `syncing` is the worker's progress, as it pushes it.
  */
@@ -21,7 +21,14 @@ import {
 	type IndexerPort,
 } from '@etherfold/browser';
 import {workerExecutor} from '@etherfold/graphql/worker';
-import {emptyData, indexingSource, readState, STREAM_FINALITY, StateQueryError, type Data} from 'stratagems-indexer';
+import {
+	emptyData,
+	indexingSource,
+	STREAM_FINALITY,
+	StateFollower,
+	StateQueryError,
+	type Data,
+} from 'stratagems-indexer';
 import {derived, writable, type Readable} from 'svelte/store';
 import {initialContractsInfos, remoteIndexedState} from '$lib/config';
 import {account, connection, network} from '$lib/blockchain/connection';
@@ -74,28 +81,11 @@ export const indexedToLatest = derived(syncing, ($syncing) => {
 export const queryError = writable<StateQueryError | undefined>(undefined);
 
 let indexer: IndexerPort | undefined;
-let execute: ReturnType<typeof workerExecutor> | undefined;
+let follower: StateFollower | undefined;
 
-/**
- * Ask the state questions again. Answers can arrive out of order (the worker
- * answers concurrently), so each read takes a number and only the latest one is
- * written: an older answer landing late would show a past block.
- */
-let latestRead = 0;
+/** Read the whole state again (debug, and the browser verification). */
 async function refresh() {
-	if (!execute) return;
-	const mine = ++latestRead;
-	try {
-		const read = await readState(execute, {account: account.$state.address ?? ''});
-		if (mine !== latestRead) return;
-		current = read.data;
-		$state.set(read.data);
-		queryError.set(undefined);
-	} catch (err) {
-		if (mine !== latestRead) return;
-		namedLogger.error(`state query failed`, err);
-		queryError.set(err instanceof StateQueryError ? err : new StateQueryError(String(err), undefined));
-	}
+	await follower?.refreshAll();
 }
 
 function initialize(provider: EIP1193Provider) {
@@ -116,7 +106,19 @@ function initialize(provider: EIP1193Provider) {
 			},
 		},
 	);
-	execute = workerExecutor(indexer);
+	// Follows the state: one full read, then per state-moved signal a read of only the
+	// parts whose entities moved, pinned to the block the signal names, so the parts
+	// compose into the state of one block (stratagems-indexer's StateFollower).
+	follower = new StateFollower(workerExecutor(indexer), account.$state.address ?? '', (err) => {
+		namedLogger.error(`state query failed`, err);
+		queryError.set(err);
+	});
+	follower.onUpdate((read) => {
+		current = read.data;
+		$state.set(read.data);
+		queryError.set(undefined);
+	});
+	const following = follower;
 
 	// subscribe last: a listener may be called before the code after it runs
 	const progress = createProgressReadable(indexer);
@@ -124,9 +126,9 @@ function initialize(provider: EIP1193Provider) {
 		$progress.set(value);
 		if (value?.failure) namedLogger.error(`indexer stopped`, value.failure);
 	});
-	indexer.onStateMoved(() => void refresh());
-	account.subscribe(() => void refresh());
-	void refresh();
+	indexer.onStateMoved((moved) => void following.moved(moved));
+	account.subscribe(($account) => void following.setAccount($account.address ?? ''));
+	void following.refreshAll();
 	namedLogger.log(`indexer worker started`);
 }
 
@@ -140,7 +142,7 @@ export async function resetIndexer() {
 		await indexer.stopIndexing().catch(() => undefined);
 		indexer.close();
 		indexer = undefined;
-		execute = undefined;
+		follower = undefined;
 	}
 	const databases = (await indexedDB.databases?.()) ?? [];
 	await Promise.all(
@@ -184,5 +186,9 @@ if (typeof window !== 'undefined') {
 			return indexer;
 		},
 		refresh,
+		/** The block the displayed state is as of (the verification waits on it). */
+		get stateBlock() {
+			return follower?.state?.block;
+		},
 	};
 }
