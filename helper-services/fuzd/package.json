@@ -1,6 +1,7 @@
 {
     "name": "fuzd-service",
     "devDependencies": {
+        "@libsql/core": "^0.14.0",
         "fuzd-nodejs": "^0.7.6",
         "ldenv": "^0.3.10",
         "node-cron": "^3.0.3",

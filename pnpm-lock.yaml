@@ -209,9 +209,12 @@ importers:
 
   helper-services/fuzd:
     devDependencies:
+      '@libsql/core':
+        specifier: ^0.14.0
+        version: 0.14.0
       fuzd-nodejs:
         specifier: ^0.7.6
-        version: 0.7.6(@libsql/core@0.17.4)(@types/node@22.9.0)(hono@4.6.9)(typescript@5.6.3)(typia@6.11.3(typescript@5.6.3))
+        version: 0.7.6(@libsql/core@0.14.0)(@types/node@22.9.0)(hono@4.6.9)(typescript@5.6.3)(typia@6.11.3(typescript@5.6.3))
       ldenv:
         specifier: ^0.3.10
         version: 0.3.10
@@ -11773,7 +11776,7 @@ snapshots:
       - utf-8-validate
       - zod
 
-  fuzd-nodejs@0.7.6(@libsql/core@0.17.4)(@types/node@22.9.0)(hono@4.6.9)(typescript@5.6.3)(typia@6.11.3(typescript@5.6.3)):
+  fuzd-nodejs@0.7.6(@libsql/core@0.14.0)(@types/node@22.9.0)(hono@4.6.9)(typescript@5.6.3)(typia@6.11.3(typescript@5.6.3)):
     dependencies:
       '@hono/node-server': 1.13.5(hono@4.6.9)
       '@libsql/client': 0.14.0
@@ -11781,7 +11784,7 @@ snapshots:
       fuzd-server: 0.7.3(@types/node@22.9.0)(typescript@5.6.3)(typia@6.11.3(typescript@5.6.3))
       ldenv: 0.3.11
       named-logs-context: 0.1.1
-      remote-sql-libsql: 0.0.6(@libsql/core@0.17.4)
+      remote-sql-libsql: 0.0.6(@libsql/core@0.14.0)
     transitivePeerDependencies:
       - '@edge-runtime/vm'
       - '@libsql/core'
@@ -13849,9 +13852,9 @@ snapshots:
       - supports-color
       - terser
 
-  remote-sql-libsql@0.0.6(@libsql/core@0.17.4):
+  remote-sql-libsql@0.0.6(@libsql/core@0.14.0):
     dependencies:
-      '@libsql/core': 0.17.4
+      '@libsql/core': 0.14.0
       remote-sql: 0.0.6
 
   remote-sql-libsql@0.0.7(@libsql/core@0.17.4):
