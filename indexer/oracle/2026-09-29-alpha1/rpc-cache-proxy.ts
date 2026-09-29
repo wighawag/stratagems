@@ -42,7 +42,7 @@ const cacheFile = resolve(cacheDir, 'chunks.ndjson');
 
 const CHUNK = 2_000;
 const MAX_RANGE = 200_000;
-const PARALLEL = 6;
+const PARALLEL = Number(argument('--parallel') ?? 6);
 const FINAL_DEPTH = 1_000;
 
 type Log = {blockNumber: string; logIndex: string; [key: string]: unknown};
@@ -106,12 +106,14 @@ async function chunkLogs(filter: Filter, start: number): Promise<Log[]> {
 	const cached = chunks.get(key);
 	if (cached) return cached;
 	const end = start + CHUNK - 1;
+	// the chunk holding the tip is asked only up to the tip: a node refuses a range past its head
+	const asked = Math.min(end, tip);
 	const body = await call('eth_getLogs', [
-		{...filter, fromBlock: `0x${start.toString(16)}`, toBlock: `0x${end.toString(16)}`},
+		{...filter, fromBlock: `0x${start.toString(16)}`, toBlock: `0x${asked.toString(16)}`},
 	]);
 	if (body.error) throw Object.assign(new Error('upstream refused'), {rpc: body.error});
 	const logs = body.result as Log[];
-	if (end <= tip - FINAL_DEPTH) {
+	if (asked === end && end <= tip - FINAL_DEPTH) {
 		chunks.set(key, logs);
 		appendFileSync(cacheFile, JSON.stringify({key, logs}) + '\n');
 	}
