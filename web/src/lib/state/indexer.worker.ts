@@ -74,6 +74,12 @@ hostIndexerInThisWorker({
 			},
 		);
 		logger.info(`state store opened`, outcome);
+		if (published && outcome.status === 'not-bootstrapped') {
+			// said out loud: the tab then indexes from the start block, which on alpha1 is
+			// ~40M blocks. `unreadable-format` is what a host that serves the `.gz` body with
+			// `Content-Encoding: gzip` (Vite's dev server does) produces.
+			console.warn(`the published snapshot was not installed (${outcome.reason}): indexing from the start block`);
+		}
 		return openForWriting(store, {signal});
 	},
 	createProcessor: (state, _context, bundle) => new EntityEventProcessor(state, definitionOf(bundle)),
