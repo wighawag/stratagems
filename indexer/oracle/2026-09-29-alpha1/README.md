@@ -155,3 +155,27 @@ RESULT: every question answered the same
 ### Under `vite dev`
 
 Vite's dev server serves `static/**/*.gz` with `Content-Encoding: gzip` (checked with `curl`: `Content-Encoding: gzip`, 29,411 bytes on the wire). With `@etherfold/state-store@0.5.0` the snapshot installs anyway: a Chromium tab on `pnpm --filter ./web dev` (mode alpha1) started at the publication's cut (the worker's first `lastToBlock` is 51,989,137, not the start block 12,082,311), reached the tip in 18 s with 1,956 cells as of `0x36c9b72d...`, and its worker logged no "the published snapshot was not installed" warning.
+
+## Result (2026-09-30, later): etherfold 0.11.0, then Hardhat 3
+
+### etherfold 0.11.0 and `"sideEffects": false`
+
+`etherfold@0.11.0` with `@etherfold/core@0.11.1`, `@etherfold/processor-entities@0.4.1` and `@etherfold/state-store@0.5.1` declare `"sideEffects": false`, so the bundle no longer carries etherfold's module-level loggers: it shrinks from 14.6 KB to 11.6 KB, holds no `@etherfold/` logger string, and its identity moved one last time, to `sha256:e4a5b95ba471698ba29e8fd624ffb3d224e0655d3661af9891f69c9120d8159d`. From now on an etherfold upgrade moves it only when code the bundle actually runs changes.
+
+`pnpm indexer:index alpha1`, into an empty `data/alpha1.db` through the proxy, took 241 s and published generation `dbe71f606c80350a56819d13a51ba4ab` (cut 51,995,296, `takenAt` 23,303,136, body `state-cf1d9d12...ndjson.gz`). The CLI now says when a bundle is new to a publication directory:
+
+```
+new processor: sha256:e4a5b95b... is not among the processors .../publication.json held a snapshot of. [...]
+  held: sha256:3a768a1a...
+  held: sha256:6e22cab1...
+```
+
+The body's rows are again byte for byte those of every earlier publication. `compare:alpha1`: every question answered the same, both reads name `takenAt` by hash, rows examined 1,956 at most; `--negative-control` still fails (Q1 DIFFERENT, exit 1).
+
+Real Chromium, `web/verify/alpha1.spec.ts`, 2 passed (39.6 min): from the publication 17 s, indexing itself 2,315 s, the election 30 s (writer) and 5 s (reader).
+
+### Hardhat 3, hardhat-deploy 2, rocketh 0.23
+
+etherfold refuses a log that carries no `blockTimestamp`, which only EDR >= 0.20 (Hardhat >= 3.17) supplies, so `contracts/` moved to Hardhat 3. rocketh 0.19+ exports the chain as `chain: {id, genesisHash, ...}` instead of `chainId` / `genesisHash` / `chainInfo`; `indexingSource` builds the same source from it, checked byte for byte against the old export for alpha1, so the stream digest (`c4d140b82c4f004d824c59fb46188361`) and the publication above are unchanged.
+
+Real Chromium on that build, 2 passed (38.3 min): from the publication 14 s, indexing itself 2,242 s, the election 28 s (writer) and 5 s (reader). The same state as of block 23,303,136 (`0x36c9b72d...`) every time, the oracle's.
