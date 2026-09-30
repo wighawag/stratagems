@@ -26,9 +26,9 @@
     "wait-on": "^7.2.0"
   },
   "dependencies": {
-    "@etherfold/browser": "^0.12.1",
-    "@etherfold/graphql": "^0.2.0",
-    "@etherfold/processor-entities": "^0.4.0",
+    "@etherfold/browser": "^0.12.2",
+    "@etherfold/graphql": "^0.2.1",
+    "@etherfold/processor-entities": "^0.4.1",
     "@metamask/onboarding": "^1.0.1",
     "@noble/ciphers": "^0.5.3",
     "@scure/base": "^1.1.6",

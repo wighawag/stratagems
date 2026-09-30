@@ -7,15 +7,15 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "@etherfold/processor-entities": "^0.4.0",
+    "@etherfold/processor-entities": "^0.4.1",
     "stratagems-common": "workspace:*"
   },
   "devDependencies": {
-    "@etherfold/browser": "^0.12.1",
-    "@etherfold/graphql": "^0.2.0",
+    "@etherfold/browser": "^0.12.2",
+    "@etherfold/graphql": "^0.2.1",
     "@types/node": "^20.14.2",
     "esbuild": "0.28.2",
-    "etherfold": "0.10.1",
+    "etherfold": "0.11.0",
     "fake-indexeddb": "^6.2.5",
     "ldenv": "^0.3.10",
     "prettier": "^3.3.1",
