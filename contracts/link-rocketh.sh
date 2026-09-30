@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
-pnpm link ~/dev/github.com/wighawag/rocketh/packages/rocketh
-pnpm link ~/dev/github.com/wighawag/rocketh/packages/hardhat-rocketh
-pnpm link ~/dev/github.com/wighawag/rocketh/packages/rocketh-deploy
-pnpm link ~/dev/github.com/wighawag/rocketh/packages/rocketh-deploy-proxy
-pnpm link ~/dev/github.com/wighawag/rocketh/packages/rocketh-deploy-router
-pnpm link ~/dev/github.com/wighawag/rocketh/packages/rocketh-doc
-pnpm link ~/dev/github.com/wighawag/rocketh/packages/rocketh-export
-pnpm link ~/dev/github.com/wighawag/rocketh/packages/rocketh-signer
-pnpm link ~/dev/github.com/wighawag/rocketh/packages/rocketh-verifier
+# link a local rocketh checkout's packages, to develop rocketh against stratagems
+ROCKETH=${ROCKETH:-~/dev/github/wighawag/rocketh}
+for package in rocketh hardhat-deploy rocketh-node rocketh-deploy rocketh-proxy rocketh-router rocketh-read-execute rocketh-signer rocketh-viem rocketh-doc rocketh-export rocketh-verifier; do
+	pnpm link "$ROCKETH/packages/$package"
+done
