@@ -1,12 +1,12 @@
-import {context} from '../deploy/_context';
+import * as abis from '../generated/abis/index.js';
 import {parseUnits} from 'viem';
 import hre from 'hardhat';
-import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
+import {loadEnvironmentFromHardhat} from '../rocketh/environment.js';
 
 async function main() {
-	const env = await loadEnvironmentFromHardhat({hre, context});
+	const env = await loadEnvironmentFromHardhat({hre});
 
-	const TestTokens = env.get<typeof context.artifacts.TestTokens.abi>('TestTokens');
+	const TestTokens = env.get<typeof abis.TestTokens>('TestTokens');
 	const decimals = await env.read(TestTokens, {functionName: 'decimals'});
 	const addresses = await env.network.provider.request({method: 'eth_accounts'});
 

@@ -1,0 +1,14 @@
+{
+	"compilerOptions": {
+		"lib": ["es2023"],
+		"module": "node16",
+		"target": "es2022",
+		"moduleResolution": "node16",
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"noEmit": true,
+		"types": ["node"]
+	},
+	"include": ["deploy", "generated", "rocketh", "utils", "hardhat.config.ts"]
+}

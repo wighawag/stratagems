@@ -10,7 +10,7 @@ import {
 	getContract,
 } from 'viem';
 
-import hre from 'hardhat';
+import {network} from 'hardhat';
 import type {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {Chain} from 'viem';
 
@@ -21,19 +21,30 @@ export type Connection = {
 	provider: EIP1193ProviderWithoutEvents;
 };
 
+/**
+ * ONE connection to the network hardhat runs this process against (Hardhat 3:
+ * `network.connect()`), shared by everything in the process: the deploys, the
+ * fixtures (`loadFixture` snapshots THIS connection's chain) and the viem clients.
+ */
+const hardhatConnection = await network.connect();
+export const networkName = hardhatConnection.networkName;
+export const hardhatProvider = hardhatConnection.provider;
+export const loadFixture = hardhatConnection.networkHelpers.loadFixture;
+export const networkHelpers = hardhatConnection.networkHelpers;
+
 const cache: {connection?: Connection} = {};
 export async function getConnection(): Promise<Connection> {
 	if (cache.connection) {
 		return cache.connection;
 	}
-	const provider = hre.network.provider as EIP1193ProviderWithoutEvents;
+	const provider = hardhatProvider as unknown as EIP1193ProviderWithoutEvents;
 
 	const chainIdAsHex = await provider.request({method: 'eth_chainId'});
 	const chainIdAsNumber = Number(chainIdAsHex);
 	const chain = defineChain({
 		id: chainIdAsNumber,
-		name: hre.network.name,
-		network: hre.network.name,
+		name: networkName,
+		network: networkName,
 		nativeCurrency: {
 			decimals: 18,
 			name: 'Ether',

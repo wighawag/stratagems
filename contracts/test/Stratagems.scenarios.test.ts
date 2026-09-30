@@ -4,7 +4,7 @@ import path from 'path';
 import {fileURLToPath} from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
+import {loadFixture} from '../utils/connection.js';
 import {
 	WalletBalance,
 	deployStratagemsWithTestConfig,
@@ -13,7 +13,7 @@ import {
 	expectWallet,
 	pokeAll,
 	setupWallets,
-} from './utils/stratagems-test';
+} from './utils/stratagems-test.js';
 import {parseEther} from 'viem';
 
 const scenarioFolder = path.join(__dirname, 'scenarios');

@@ -1,15 +1,14 @@
-import {Deployment} from 'rocketh';
-import '@rocketh/deploy';
-import {context} from '../deploy/_context';
+import * as abis from '../generated/abis/index.js';
+import type {Deployment} from 'rocketh/types';
 import hre from 'hardhat';
-import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
+import {loadEnvironmentFromHardhat} from '../rocketh/environment.js';
 
 const args = process.argv.slice(2) as `0x${string}`[];
 
 async function main() {
-	const env = await loadEnvironmentFromHardhat({hre, context});
+	const env = await loadEnvironmentFromHardhat({hre});
 
-	const GemsGenerator = env.deployments.GemsGenerator as Deployment<typeof context.artifacts.RewardsGenerator.abi>;
+	const GemsGenerator = env.deployments.GemsGenerator as Deployment<typeof abis.RewardsGenerator>;
 	const value = await env.read(GemsGenerator, {
 		functionName: 'earnedFromPoolRateMultipleAccounts',
 		args: [args],

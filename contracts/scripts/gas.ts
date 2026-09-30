@@ -1,10 +1,8 @@
-import {getGasPriceEstimate, getRoughGasPriceEstimate} from 'rocketh';
 import type {EIP1193BlockTag} from 'eip-1193';
-import {context} from '../deploy/_context';
 import hre from 'hardhat';
-import {formatEther} from 'viem';
-import {getBaseFee, getGasPrice, getL1BaseFee, getL1Fee, getL1GasUsed} from './op';
-import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
+import {createPublicClient, custom, formatEther} from 'viem';
+import {getBaseFee, getGasPrice, getL1BaseFee, getL1Fee, getL1GasUsed} from './op.js';
+import {loadEnvironmentFromHardhat} from '../rocketh/environment.js';
 
 const args = process.argv.slice(2);
 const blockTag = (args[0] || 'latest') as EIP1193BlockTag;
@@ -26,28 +24,31 @@ function formatAll(obj: object) {
 }
 
 async function main() {
-	const env = await loadEnvironmentFromHardhat({hre, context});
+	const env = await loadEnvironmentFromHardhat({hre});
 	const provider = env.network.provider;
 
-	const gasPriceEstimates = await getRoughGasPriceEstimate(provider);
+	// rocketh 0.23 no longer exports its fee estimates: viem's are the same eth_feeHistory reads
+	const client = createPublicClient({transport: custom(provider as any)});
+	const estimate = await client.estimateFeesPerGas();
 	console.log({
-		slow: displayGas(gasPriceEstimates.slow),
-		average: displayGas(gasPriceEstimates.average),
-		fast: displayGas(gasPriceEstimates.fast),
+		estimate: displayGas({maxFeePerGas: estimate.maxFeePerGas!, maxPriorityFeePerGas: estimate.maxPriorityFeePerGas!}),
 	});
 
-	const gasPriceHex = await provider.request<`0x${string}`>({
-		method: 'eth_gasPrice',
-		params: [],
-	});
-	console.log({gasPrice: formatEther(BigInt(gasPriceHex), 'gwei') + ' gwei'});
+	const gasPrice = await client.getGasPrice();
+	console.log({gasPrice: formatEther(gasPrice, 'gwei') + ' gwei'});
 
-	const moreGasPriceEstimates = await getGasPriceEstimate(provider, {
+	const history = await client.getFeeHistory({
 		blockCount: 100,
-		newestBlock: blockTag,
+		blockTag: blockTag as 'latest',
 		rewardPercentiles: [10, 20, 50, 90, 99],
 	});
-	console.log(moreGasPriceEstimates.map((v) => JSON.stringify(displayGas(v), null, 2)).join(`\n`));
+	const baseFee = history.baseFeePerGas[history.baseFeePerGas.length - 1];
+	const percentiles = [10, 20, 50, 90, 99].map((percentile, i) => {
+		const rewards = (history.reward ?? []).map((r) => r[i]).sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));
+		const median = rewards[Math.floor(rewards.length / 2)] ?? 0n;
+		return {percentile, ...displayGas({maxFeePerGas: median + baseFee, maxPriorityFeePerGas: median})};
+	});
+	console.log(percentiles.map((v) => JSON.stringify(v, null, 2)).join(`\n`));
 
 	if (args[1] === 'op') {
 		const l1BaseFee = await getL1BaseFee(provider);

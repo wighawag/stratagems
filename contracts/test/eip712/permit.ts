@@ -1,4 +1,4 @@
-import {EIP712SignerFactory} from '.';
+import {EIP712SignerFactory} from './index.js';
 
 export const PermitFactory = new EIP712SignerFactory({
 	domain: {},

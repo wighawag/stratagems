@@ -1,12 +1,8 @@
-import {execute} from 'rocketh';
-import '@rocketh/deploy';
-import '@rocketh/deploy-proxy';
-import {context} from './_context';
+import {deployScript, artifacts} from '../rocketh/deploy.js';
 import {zeroAddress} from 'viem';
 
-export default execute(
-	context,
-	async ({deployViaProxy, namedAccounts, artifacts, get, getOrNull, execute, showMessage}) => {
+export default deployScript(
+	async ({deployViaProxy, namedAccounts, get, getOrNull, execute, showMessage}) => {
 		const {deployer, tokensBeneficiary} = namedAccounts;
 
 		const Gems = await get<typeof artifacts.Gems.abi>('Gems');

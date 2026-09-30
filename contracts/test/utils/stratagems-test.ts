@@ -1,5 +1,5 @@
 import {expect} from 'vitest';
-import solidityKitArtifacts from 'solidity-kit/generated/artifacts';
+import solidityKitArtifacts from 'solidity-kit/generated/artifacts.js';
 
 import {
 	parseGrid,
@@ -12,18 +12,19 @@ import {
 	EVIL_OWNER_ADDRESS,
 } from 'stratagems-common';
 import {Data, readState, stratagemsProcessor} from 'stratagems-indexer';
-import {indexInProcess} from '../../utils/indexer';
+import {indexInProcess} from '../../utils/indexer.js';
 
-import {Deployment, loadAndExecuteDeployments} from 'rocketh';
+import type {Deployment} from 'rocketh/types';
+import {loadAndExecuteDeploymentsFromFiles} from '../../rocketh/environment.js';
 
-import {getConnection, fetchContract} from '../../utils/connection';
+import {getConnection, fetchContract, hardhatProvider} from '../../utils/connection.js';
 
-import artifacts from '../../generated/artifacts';
-import {network} from 'hardhat';
+import * as abis from '../../generated/abis/index.js';
+import * as artifacts from '../../generated/artifacts/index.js';
 
-import type {GameConfig} from '../../deploy/020_deploy_game';
+import type {GameConfig} from '../../deploy/020_deploy_game.js';
 import {formatEther, parseEther} from 'viem';
-import {GridEnv, getGrid, performGridActions, withGrid} from './stratagems';
+import {GridEnv, getGrid, performGridActions, withGrid} from './stratagems.js';
 import {EIP1193GenericRequestProvider, EIP1193ProviderWithoutEvents} from 'eip-1193';
 
 export type WalletBalance = {stakingToken: bigint; points?: bigint};
@@ -173,25 +174,14 @@ async function deployStratagems(override?: Partial<GameConfig>) {
 	const {accounts, walletClient, publicClient} = await getConnection();
 	const [deployer, tokensBeneficiary, ...otherAccounts] = accounts;
 
-	const provider = network.provider as EIP1193GenericRequestProvider;
-	const {deployments} = await loadAndExecuteDeployments(
-		{
-			provider,
-			// logLevel: 6,
-		},
-		// the context comes from the deploy scripts; the override is their ARGUMENTS
-		undefined,
-		override,
-	);
+	const provider = hardhatProvider as unknown as EIP1193GenericRequestProvider;
+	// the override is the deploy scripts' ARGUMENTS (020_deploy_game reads it)
+	const {deployments} = await loadAndExecuteDeploymentsFromFiles({provider: hardhatProvider}, override);
 
-	const TestTokens = await fetchContract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
-	const Gems = await fetchContract(deployments['Gems'] as Deployment<typeof artifacts.Gems.abi>);
-	const GemsGenerator = await fetchContract(
-		deployments['GemsGenerator'] as Deployment<typeof artifacts.RewardsGenerator.abi>,
-	);
-	const Stratagems = await fetchContract(
-		deployments['Stratagems'] as Deployment<typeof artifacts.IStratagemsWithDebug.abi>,
-	);
+	const TestTokens = await fetchContract(deployments['TestTokens'] as Deployment<typeof abis.TestTokens>);
+	const Gems = await fetchContract(deployments['Gems'] as Deployment<typeof abis.Gems>);
+	const GemsGenerator = await fetchContract(deployments['GemsGenerator'] as Deployment<typeof abis.RewardsGenerator>);
+	const Stratagems = await fetchContract(deployments['Stratagems'] as Deployment<typeof abis.IStratagemsWithDebug>);
 	const Time = await fetchContract(deployments['Time'] as Deployment<typeof solidityKitArtifacts.Time.abi>);
 
 	const config = await Stratagems.read.getConfig();

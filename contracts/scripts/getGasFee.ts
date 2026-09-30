@@ -1,7 +1,6 @@
-import {context} from '../deploy/_context';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import hre from 'hardhat';
-import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
+import {loadEnvironmentFromHardhat} from '../rocketh/environment.js';
 
 function avg(arr: bigint[]) {
 	const sum = arr.reduce((a: bigint, v: bigint) => a + v);
@@ -45,9 +44,9 @@ export async function estimateGasPrice(provider: EIP1193ProviderWithoutEvents) {
 }
 
 async function main() {
-	const env = await loadEnvironmentFromHardhat({hre, context});
+	const env = await loadEnvironmentFromHardhat({hre});
 
-	const result = await estimateGasPrice(env.network.provider);
+	const result = await estimateGasPrice(env.network.provider as any);
 	console.log(result);
 }
 main();

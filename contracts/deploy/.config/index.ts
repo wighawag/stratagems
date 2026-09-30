@@ -1,18 +1,8 @@
-import {
-	Environment,
-	ResolvedNamedAccounts,
-	UnknownArtifacts,
-	UnknownDeployments,
-	UnresolvedUnknownNamedAccounts,
-} from 'rocketh';
+import type {Environment} from '../../rocketh/config.js';
 
-export function getConfig<
-	Artifacts extends UnknownArtifacts = UnknownArtifacts,
-	NamedAccounts extends UnresolvedUnknownNamedAccounts = UnresolvedUnknownNamedAccounts,
-	ArgumentsTypes = undefined,
-	Deployments extends UnknownDeployments = UnknownDeployments,
->(env: Environment<Artifacts, ResolvedNamedAccounts<NamedAccounts>, Deployments>, args?: ArgumentsTypes) {
+/** What the deploy scripts decide from the environment they run in. */
+export function getConfig(env: Pick<Environment, 'name' | 'tags'>) {
 	return {
-		useTimeContract: !env.network.tags['mainnet'] && !(env.network.name === 'fast'),
+		useTimeContract: !env.tags['mainnet'] && !(env.name === 'fast'),
 	};
 }

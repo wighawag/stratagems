@@ -1,11 +1,10 @@
-import {Deployment} from 'rocketh';
-import {context} from '../deploy/_context';
+import type {Deployment} from 'rocketh/types';
 import hre from 'hardhat';
-import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
-import artifacts from 'solidity-kit/generated/artifacts';
+import {loadEnvironmentFromHardhat} from '../rocketh/environment.js';
+import artifacts from 'solidity-kit/generated/artifacts.js';
 
 async function main() {
-	const env = await loadEnvironmentFromHardhat({hre, context});
+	const env = await loadEnvironmentFromHardhat({hre});
 
 	const args = process.argv.slice(2);
 	const account = (args[0] || process.env.ACCOUNT) as `0x${string}`;

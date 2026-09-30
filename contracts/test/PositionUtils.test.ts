@@ -1,7 +1,7 @@
 import {expect, describe, it} from 'vitest';
-import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
-import {getConnection, fetchContract} from '../utils/connection';
-import artifacts from '../generated/artifacts';
+import {loadFixture} from '../utils/connection.js';
+import {getConnection, fetchContract} from '../utils/connection.js';
+import * as artifacts from '../generated/artifacts/index.js';
 import {bigIntIDToXY, xyToBigIntID} from 'stratagems-common';
 
 async function deployTestPositionUtils() {

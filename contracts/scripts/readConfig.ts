@@ -1,15 +1,15 @@
-import {Deployment} from 'rocketh';
-import {context} from '../deploy/_context';
+import * as abis from '../generated/abis/index.js';
+import type {Deployment} from 'rocketh/types';
 import hre from 'hardhat';
-import {fetchContract} from '../utils/connection';
-import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
+import {fetchContract} from '../utils/connection.js';
+import {loadEnvironmentFromHardhat} from '../rocketh/environment.js';
 
 async function main() {
-	const env = await loadEnvironmentFromHardhat({hre, context});
+	const env = await loadEnvironmentFromHardhat({hre});
 
 	const args = process.argv.slice(2);
 	const account = (args[0] || process.env.ACCOUNT) as `0x${string}`;
-	const Stratagems = env.deployments.Stratagems as Deployment<typeof context.artifacts.IStratagems.abi>;
+	const Stratagems = env.deployments.Stratagems as Deployment<typeof abis.IStratagems>;
 	const StratagemsContract = await fetchContract(Stratagems);
 	const config = await StratagemsContract.read.getConfig();
 

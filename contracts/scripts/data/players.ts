@@ -1,10 +1,10 @@
-import contractsInfo from './contracts';
+import contractsInfo from './contracts.js';
 import hre from 'hardhat';
 
 import type {EntityProcessor} from '@etherfold/processor-entities';
 import {zeroAddress} from 'viem';
-import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
-import {indexInProcess} from '../../utils/indexer';
+import {loadEnvironmentFromHardhat} from '../../rocketh/environment.js';
+import {indexInProcess} from '../../utils/indexer.js';
 
 const testTokenAddress = contractsInfo.contracts['TestTokens'].address.toLowerCase();
 const stratagemsAddress = contractsInfo.contracts['Stratagems'].address.toLowerCase();
@@ -94,14 +94,14 @@ const PlayersProcessor: EntityProcessor<TestTokensABI> = {
 };
 
 export async function indexPlayers(): Promise<Data> {
-	const env = await loadEnvironmentFromHardhat({hre}, {useChainIdOfForkedNetwork: true});
+	const env = await loadEnvironmentFromHardhat({hre});
 	const TestTokens = contractsInfo.contracts['TestTokens'];
 	const indexed = await indexInProcess({
 		processor: PlayersProcessor,
 		provider: env.network.provider,
 		source: {
-			chainId: contractsInfo.chainId,
-			genesisHash: contractsInfo.genesisHash as `0x${string}`,
+			chainId: String(contractsInfo.chain.id),
+			genesisHash: contractsInfo.chain.genesisHash as `0x${string}`,
 			contracts: [{abi: TestTokens.abi, address: TestTokens.address, startBlock: TestTokens.startBlock}],
 		},
 		db: `file:.data/players-${contractsInfo.name}.db`,

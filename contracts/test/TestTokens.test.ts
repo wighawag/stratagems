@@ -1,13 +1,12 @@
 import {expect, describe, it} from 'vitest';
 
-import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
-import {Deployment, loadAndExecuteDeployments} from 'rocketh';
+import type {Deployment} from 'rocketh/types';
+import {loadAndExecuteDeploymentsFromFiles} from '../rocketh/environment.js';
 
-import {getConnection, fetchContract} from '../utils/connection';
+import {getConnection, fetchContract, hardhatProvider, loadFixture} from '../utils/connection.js';
 
-import artifacts from '../generated/artifacts';
-import {network} from 'hardhat';
-import {PermitFactory} from './eip712/permit';
+import * as abis from '../generated/abis/index.js';
+import {PermitFactory} from './eip712/permit.js';
 import {hexToSignature, parseEther} from 'viem';
 
 async function deployStratagems(config?: {
@@ -19,19 +18,13 @@ async function deployStratagems(config?: {
 	const {accounts} = await getConnection();
 	const [deployer, tokensBeneficiary, ...otherAccounts] = accounts;
 
-	const {deployments} = await loadAndExecuteDeployments(
-		{
-			provider: network.provider,
-		},
-		// the context comes from the deploy scripts; the config is their ARGUMENTS
-		undefined,
-		config,
-	);
+	// the config is the deploy scripts' ARGUMENTS
+	const {deployments} = await loadAndExecuteDeploymentsFromFiles({provider: hardhatProvider}, config);
 
-	const TestTokens = await fetchContract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
-	const Stratagems = await fetchContract(deployments['Stratagems'] as Deployment<typeof artifacts.IStratagems.abi>);
+	const TestTokens = await fetchContract(deployments['TestTokens'] as Deployment<typeof abis.TestTokens>);
+	const Stratagems = await fetchContract(deployments['Stratagems'] as Deployment<typeof abis.IStratagems>);
 
-	const TestTokensPermitSigner = PermitFactory.createSigner(network.provider as any, {
+	const TestTokensPermitSigner = PermitFactory.createSigner(hardhatProvider as any, {
 		chainId: 0,
 		name: 'Tokens',
 		verifyingContract: TestTokens.address,
@@ -55,10 +48,8 @@ async function deployStratagemsWithDefaultConfig() {
 describe('TestTokens', function () {
 	describe('Deployment', function () {
 		it('Should be already deployed', async function () {
-			const {deployments} = await loadAndExecuteDeployments({
-				provider: network.provider,
-			});
-			const TestTokens = await fetchContract(deployments['TestTokens'] as Deployment<typeof artifacts.TestTokens.abi>);
+			const {deployments} = await loadAndExecuteDeploymentsFromFiles({provider: hardhatProvider});
+			const TestTokens = await fetchContract(deployments['TestTokens'] as Deployment<typeof abis.TestTokens>);
 			const decimals = await TestTokens.read.decimals();
 			expect(decimals).to.equal(18);
 		});

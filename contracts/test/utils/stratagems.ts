@@ -1,5 +1,6 @@
-import artifacts from '../../generated/artifacts';
-import solidityKitArtifacts from 'solidity-kit/generated/artifacts';
+import * as abis from '../../generated/abis/index.js';
+import * as artifacts from '../../generated/artifacts/index.js';
+import solidityKitArtifacts from 'solidity-kit/generated/artifacts.js';
 import {
 	Action,
 	CellXYPosition,
@@ -15,14 +16,14 @@ import {
 	zeroBytes32,
 	zeroBytes24,
 } from 'stratagems-common';
-import {ContractWithViemClient} from '../../utils/connection';
+import {ContractWithViemClient} from '../../utils/connection.js';
 import {parseEther, zeroAddress} from 'viem';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 
 export type GridEnv = {
-	Stratagems: ContractWithViemClient<typeof artifacts.IStratagemsWithDebug.abi>;
-	TestTokens: ContractWithViemClient<typeof artifacts.TestTokens.abi>;
-	GemsGenerator: ContractWithViemClient<typeof artifacts.RewardsGenerator.abi>;
+	Stratagems: ContractWithViemClient<typeof abis.IStratagemsWithDebug>;
+	TestTokens: ContractWithViemClient<typeof abis.TestTokens>;
+	GemsGenerator: ContractWithViemClient<typeof abis.RewardsGenerator>;
 	Time: ContractWithViemClient<typeof solidityKitArtifacts.Time.abi>;
 	otherAccounts: `0x${string}`[];
 	stratagemsAdmin: `0x${string}`;
@@ -118,7 +119,7 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 
 export async function getGrid(
 	env: {
-		Stratagems: ContractWithViemClient<typeof artifacts.IStratagemsWithDebug.abi>;
+		Stratagems: ContractWithViemClient<typeof abis.IStratagemsWithDebug>;
 		otherAccounts: `0x${string}`[];
 	},
 	location: {

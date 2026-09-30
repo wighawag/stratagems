@@ -1,11 +1,8 @@
-import {execute} from 'rocketh';
-import '@rocketh/deploy-proxy';
-import {context} from './_context';
+import {deployScript, artifacts} from '../rocketh/deploy.js';
 import {parseEther} from 'viem';
 
-export default execute(
-	context,
-	async ({deploy, namedAccounts, artifacts}) => {
+export default deployScript(
+	async ({deploy, namedAccounts}) => {
 		const {deployer, tokensBeneficiary} = namedAccounts;
 		await deploy('Gems', {
 			account: deployer,

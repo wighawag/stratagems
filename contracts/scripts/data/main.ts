@@ -1,8 +1,8 @@
-import contractsInfo from './contracts';
+import contractsInfo from './contracts.js';
 import hre from 'hardhat';
 import {indexingSource, readState, stratagemsProcessor, STREAM_FINALITY} from 'stratagems-indexer';
-import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
-import {indexInProcess} from '../../utils/indexer';
+import {loadEnvironmentFromHardhat} from '../../rocketh/environment.js';
+import {indexInProcess} from '../../utils/indexer.js';
 
 /**
  * The whole stratagems state of the network the script runs against, indexed with
@@ -10,7 +10,7 @@ import {indexInProcess} from '../../utils/indexer';
  * `.data/stratagems-<name>.db` (SQLite), so a second run resumes from its cursor.
  */
 export async function indexAll() {
-	const env = await loadEnvironmentFromHardhat({hre}, {useChainIdOfForkedNetwork: true});
+	const env = await loadEnvironmentFromHardhat({hre});
 	const indexed = await indexInProcess({
 		processor: stratagemsProcessor,
 		provider: env.network.provider,

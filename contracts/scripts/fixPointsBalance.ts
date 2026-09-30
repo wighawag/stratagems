@@ -1,17 +1,16 @@
-import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
-import {context} from '../deploy/_context';
+import * as abis from '../generated/abis/index.js';
+import {loadEnvironmentFromHardhat} from '../rocketh/environment.js';
 import {formatEther, formatUnits, parseEther, parseUnits} from 'viem';
 import hre from 'hardhat';
-import '@rocketh/deploy';
 import prompts from 'prompts';
-import {indexAll} from './data/main';
+import {indexAll} from './data/main.js';
 
 async function main() {
-	const env = await loadEnvironmentFromHardhat({hre, context});
+	const env = await loadEnvironmentFromHardhat({hre});
 
 	const state = await indexAll();
 
-	const GemsGenerator = env.get<typeof context.artifacts.RewardsGenerator.abi>('GemsGenerator');
+	const GemsGenerator = env.get<typeof abis.RewardsGenerator>('GemsGenerator');
 	const decimals = await env.read(GemsGenerator, {functionName: 'decimals'});
 
 	const toSend: {address: `0x${string}`; amount: bigint}[] = [];

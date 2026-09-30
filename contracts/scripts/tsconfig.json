@@ -1,0 +1,7 @@
+{
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"noImplicitAny": false
+	},
+	"include": [".", "../deploy", "../generated", "../rocketh", "../utils", "../hardhat.config.ts"]
+}

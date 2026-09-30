@@ -1,10 +1,10 @@
-import contractsInfo from './contracts';
+import contractsInfo from './contracts.js';
 import hre from 'hardhat';
 import {Color} from 'stratagems-common';
 
 import type {EntityProcessor} from '@etherfold/processor-entities';
-import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
-import {indexInProcess} from '../../utils/indexer';
+import {loadEnvironmentFromHardhat} from '../../rocketh/environment.js';
+import {indexInProcess} from '../../utils/indexer.js';
 
 export type Data = {
 	players: {
@@ -38,14 +38,14 @@ const WithdrawalsProcessor: EntityProcessor<StratagemsABI> = {
 };
 
 export async function indexPlayersWithWithdrawals(): Promise<Data> {
-	const env = await loadEnvironmentFromHardhat({hre}, {useChainIdOfForkedNetwork: true});
+	const env = await loadEnvironmentFromHardhat({hre});
 	const Stratagems = contractsInfo.contracts['Stratagems'];
 	const indexed = await indexInProcess({
 		processor: WithdrawalsProcessor,
 		provider: env.network.provider,
 		source: {
-			chainId: contractsInfo.chainId,
-			genesisHash: contractsInfo.genesisHash as `0x${string}`,
+			chainId: String(contractsInfo.chain.id),
+			genesisHash: contractsInfo.chain.genesisHash as `0x${string}`,
 			contracts: [{abi: Stratagems.abi, address: Stratagems.address, startBlock: Stratagems.startBlock}],
 		},
 		db: `file:.data/withdrawals-${contractsInfo.name}.db`,

@@ -1,13 +1,12 @@
+import * as abis from '../generated/abis/index.js';
 import {generatePrivateKey, privateKeyToAccount} from 'viem/accounts';
 
-import {Deployment} from 'rocketh';
-import {context} from '../deploy/_context';
+import type {Deployment} from 'rocketh/types';
 import {formatEther, parseEther, parseUnits} from 'viem';
 import hre from 'hardhat';
 import fs from 'fs-extra';
 import prompts from 'prompts';
-import '@rocketh/deploy';
-import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
+import {loadEnvironmentFromHardhat} from '../rocketh/environment.js';
 
 const args = process.argv.slice(2);
 const num = (args[0] && parseInt(args[0])) || 100;
@@ -20,9 +19,9 @@ const valuePerChainId = {
 };
 
 async function main() {
-	const env = await loadEnvironmentFromHardhat({hre, context});
+	const env = await loadEnvironmentFromHardhat({hre});
 
-	const TestTokens = env.get<typeof context.artifacts.TestTokens.abi>('TestTokens');
+	const TestTokens = env.get<typeof abis.TestTokens>('TestTokens');
 	const decimals = await env.read(TestTokens, {functionName: 'decimals'});
 
 	fs.ensureDirSync('keys');
@@ -35,14 +34,13 @@ async function main() {
 
 	let contentLines: string[] = [];
 	try {
-		const content = fs.readFileSync(`.keys/${env.network.name}-list.csv`, 'utf-8');
+		const content = fs.readFileSync(`.keys/${env.name}-list.csv`, 'utf-8');
 		contentLines = content.split('\n');
 	} catch {}
 
-	const host =
-		env.network.name === 'localhost' ? 'http://localhost:5173' : `https://${env.network.name}.stratagems.world`;
+	const host = env.name === 'localhost' ? 'http://localhost:5173' : `https://${env.name}.stratagems.world`;
 	fs.writeFileSync(
-		`.keys/${env.network.name}-list.csv`,
+		`.keys/${env.name}-list.csv`,
 		contentLines.concat(accounts.map((v) => `${v.address},${host}#tokenClaim=${v.key}`)).join('\n'),
 	);
 

@@ -1,5 +1,5 @@
-import {deployStratagemsWithTestConfig} from './utils/stratagems-test';
-import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
+import {deployStratagemsWithTestConfig} from './utils/stratagems-test.js';
+import {loadFixture} from '../utils/connection.js';
 import {describe, it} from 'vitest';
 import {erc721, runtests} from 'ethereum-contracts-test-suite';
 import {xyToBigIntID} from 'stratagems-common';

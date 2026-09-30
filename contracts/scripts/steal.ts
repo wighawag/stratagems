@@ -1,11 +1,10 @@
-import {context} from '../deploy/_context';
+import * as abis from '../generated/abis/index.js';
 import hre from 'hardhat';
-import '@rocketh/deploy';
 import {formatEther, parseEther} from 'viem';
-import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
+import {loadEnvironmentFromHardhat} from '../rocketh/environment.js';
 
 async function main() {
-	const env = await loadEnvironmentFromHardhat({hre, context});
+	const env = await loadEnvironmentFromHardhat({hre});
 
 	const {deployer, tokensBeneficiary} = env.namedAccounts;
 
@@ -13,7 +12,7 @@ async function main() {
 	const addressToStealFrom = args[0] as `0x${string}`;
 	const amount = parseEther(args[1]);
 
-	const TestTokens = env.get<typeof context.artifacts.TestTokens.abi>('TestTokens');
+	const TestTokens = env.get<typeof abis.TestTokens>('TestTokens');
 
 	const currentBalance = await env.read(TestTokens, {
 		functionName: 'balanceOf',

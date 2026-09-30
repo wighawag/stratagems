@@ -1,5 +1,5 @@
 import {formatEther} from 'viem';
-import {indexPlayers} from './data/players';
+import {indexPlayers} from './data/players.js';
 
 async function main() {
 	const state = await indexPlayers();

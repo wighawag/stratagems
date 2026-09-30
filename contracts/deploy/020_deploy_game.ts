@@ -1,11 +1,10 @@
-import {Deployment, execute} from 'rocketh';
-import '@rocketh/deploy-proxy';
-import '@rocketh/deploy-router';
-import '@rocketh/deploy';
-import {context} from './_context';
-import {days, hours, minutes} from '../utils/time';
+import {deployScript, artifacts} from '../rocketh/deploy.js';
+import type {Deployment} from 'rocketh/types';
+import {Abi_IStratagems} from '../generated/abis/IStratagems.js';
+import {Abi_UsingStratagemsDebugEvents} from '../generated/abis/UsingStratagemsDebugEvents.js';
+import {days, hours, minutes} from '../utils/time.js';
 import {checksumAddress, parseEther, zeroAddress} from 'viem';
-import {getConfig} from './.config';
+import {getConfig} from './.config/index.js';
 
 export type GameConfig = {
 	tokens: `0x${string}`;
@@ -17,10 +16,9 @@ export type GameConfig = {
 	maxLife: number;
 };
 
-export default execute(
-	context,
+export default deployScript(
 	async (env, configOverride?: Partial<GameConfig>) => {
-		const {deployViaProxy, deployments, namedAccounts, artifacts, network, deployViaRouter, get} = env;
+		const {deployViaProxy, deployments, namedAccounts, deployViaRouter, get} = env;
 		const {deployer} = namedAccounts;
 		const deployConfig = getConfig(env);
 
@@ -54,7 +52,7 @@ export default execute(
 		let revealPhaseDuration = BigInt(hours(1));
 		let commitPhaseDuration = BigInt(days(1)) - revealPhaseDuration;
 
-		if (network.name === 'fast') {
+		if (env.name === 'fast') {
 			revealPhaseDuration = BigInt(minutes(3));
 			commitPhaseDuration = BigInt(minutes(8)) - revealPhaseDuration;
 		}
@@ -74,17 +72,17 @@ export default execute(
 		};
 
 		const routes = [
-			{name: 'Getters', artifact: artifacts.StratagemsGetters, args: [config], account: deployer},
-			{name: 'Commit', artifact: artifacts.StratagemsCommit, args: [config], account: deployer},
-			{name: 'Reveal', artifact: artifacts.StratagemsReveal, args: [config], account: deployer},
-			{name: 'Poke', artifact: artifacts.StratagemsPoke, args: [config], account: deployer},
-			{name: 'ERC721', artifact: artifacts.StratagemsERC721 as any, args: [config], account: deployer},
+			{name: 'Getters', artifact: artifacts.StratagemsGetters, args: [config]},
+			{name: 'Commit', artifact: artifacts.StratagemsCommit, args: [config]},
+			{name: 'Reveal', artifact: artifacts.StratagemsReveal, args: [config]},
+			{name: 'Poke', artifact: artifacts.StratagemsPoke, args: [config]},
+			{name: 'ERC721', artifact: artifacts.StratagemsERC721 as any, args: [config]},
 		];
-		if (network.name === 'hardhat' || network.name === 'memory') {
-			routes.push({name: 'Debug', artifact: artifacts.StratagemsDebug as any, args: [config], account: deployer});
+		if (env.name === 'hardhat' || env.name === 'memory' || env.name === 'default') {
+			routes.push({name: 'Debug', artifact: artifacts.StratagemsDebug as any, args: [config]});
 		}
 
-		const stratagems = await deployViaProxy<typeof artifacts.IStratagems.abi>(
+		const stratagems = await deployViaProxy<Abi_IStratagems>(
 			'Stratagems',
 			{
 				account: deployer,
@@ -95,8 +93,8 @@ export default execute(
 							...(args as any),
 						},
 						routes,
-						[artifacts.UsingStratagemsDebugEvents.abi],
-					) as Promise<Deployment<typeof artifacts.IStratagems.abi>>;
+						{extraABIs: [Abi_UsingStratagemsDebugEvents]},
+					) as Promise<Deployment<Abi_IStratagems>>;
 				},
 				args: [config],
 			},

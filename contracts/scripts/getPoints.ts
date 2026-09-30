@@ -1,4 +1,4 @@
-import {indexAll} from './data/main';
+import {indexAll} from './data/main.js';
 
 async function main() {
 	const state = await indexAll();

@@ -1,18 +1,17 @@
-import {context} from '../deploy/_context';
+import * as abis from '../generated/abis/index.js';
 import {formatEther, formatUnits, parseEther, parseUnits} from 'viem';
 import hre from 'hardhat';
-import '@rocketh/deploy';
 import prompts from 'prompts';
 
-import {indexPlayers} from './data/players';
-import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
+import {indexPlayers} from './data/players.js';
+import {loadEnvironmentFromHardhat} from '../rocketh/environment.js';
 
 async function main() {
-	const env = await loadEnvironmentFromHardhat({hre, context});
+	const env = await loadEnvironmentFromHardhat({hre});
 
 	const state = await indexPlayers();
 
-	const TestTokens = env.get<typeof context.artifacts.TestTokens.abi>('TestTokens');
+	const TestTokens = env.get<typeof abis.TestTokens>('TestTokens');
 	const decimals = await env.read(TestTokens, {functionName: 'decimals'});
 
 	const expectedAmount = parseUnits('50', decimals);

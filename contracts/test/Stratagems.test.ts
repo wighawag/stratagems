@@ -1,10 +1,14 @@
 import {expect, describe, it} from 'vitest';
 
 import {parseGrid, renderGrid, toContractSimpleCell, xyToBigIntID} from 'stratagems-common';
-import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
+import {loadFixture} from '../utils/connection.js';
 
-import {getGrid, withGrid} from './utils/stratagems';
-import {deployStratagemsWithTestConfig, expectGridChange, expectGridChangeAfterActions} from './utils/stratagems-test';
+import {getGrid, withGrid} from './utils/stratagems.js';
+import {
+	deployStratagemsWithTestConfig,
+	expectGridChange,
+	expectGridChangeAfterActions,
+} from './utils/stratagems-test.js';
 import {parseEther} from 'viem';
 
 describe('Stratagems', function () {
