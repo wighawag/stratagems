@@ -167,7 +167,7 @@ async function installPublication() {
 	const bundle = readFileSync(BUNDLE);
 	const processor = `sha256:${createHash('sha256').update(bundle).digest('hex')}`;
 	const index = JSON.parse(readFileSync(resolve(PUBLICATION, 'publication.json'), 'utf8')) as {
-		snapshots: Record<string, {processor: string; body: string; cut: number; takenAt: {number: number}}>;
+		snapshots: Record<string, {processor: string; body: string; cut: number; takenAt: {number: number; hash: string}}>;
 	};
 	const entries = Object.values(index.snapshots).filter((entry) => entry.processor === processor);
 	if (entries.length !== 1) {
@@ -235,13 +235,21 @@ const fold = await serveFold();
 let failed = false;
 try {
 	const folded = await readState(fold.execute);
-	console.log(`fold: data/${MODE}.db, answered as of block ${folded.block} by generation ${folded.generation}`);
+	console.log(
+		`fold: data/${MODE}.db, answered as of block ${folded.block} (${folded.blockHash}) by generation ${folded.generation}`,
+	);
 
 	const publication = await installPublication();
 	const published = await readState(publication.executeWithBound());
 	console.log(
-		`publication: ${publication.entry.body} (processor ${publication.processor}), installed at block ${published.block}`,
+		`publication: ${publication.entry.body} (processor ${publication.processor}), installed at block ${published.block} (${published.blockHash})`,
 	);
+	// the answers name the block they are as of by hash too, and it is the one the
+	// publication was taken at: what a follower pins its re-reads to
+	if (folded.blockHash !== publication.entry.takenAt.hash || published.blockHash !== publication.entry.takenAt.hash) {
+		console.log(`DIFFERENT: the answers name block hashes other than the publication's takenAt`);
+		failed = true;
+	}
 
 	const maxEpoch = Math.max(...Object.values(oracle.state.cells).map((cell) => cell.lastEpochUpdate));
 	const lines = ['| | question | oracle | fold | publication |', '| --- | --- | --- | --- | --- |'];
