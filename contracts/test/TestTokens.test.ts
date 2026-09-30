@@ -23,6 +23,8 @@ async function deployStratagems(config?: {
 		{
 			provider: network.provider,
 		},
+		// the context comes from the deploy scripts; the config is their ARGUMENTS
+		undefined,
 		config,
 	);
 
