@@ -109,3 +109,49 @@ RESULT: every question answered the same
 ### Rows examined
 
 The IndexedDB accessor answers a list by scanning the entity's live rows and refuses past a bound (25,000 by default, etherfold ADR-0099). A root list with no prefix examines every live row of its entity, whatever its `where`; a nested list examines its parent's children. On alpha1 the web app's one document examines, per list: `cell` 1,956, `cellOwner` 1,956, `sharedRate` 34, `fixedRate` 34, `computedPoints` 33, `placement` 7 (+ 25 players under them), `commitment` 0 (it holds none at the end of the game), `globalRate` 1. The largest scan is 1,956 rows, measured above as the smallest bound the document passes, so nothing is near the bound and `web/` keeps the default.
+
+## Result (2026-09-30): after moving to etherfold 0.10.1
+
+Re-run after the upgrade to `etherfold@0.10.1`, `@etherfold/browser@0.12.1`, `@etherfold/graphql@0.2.0`, `@etherfold/processor-entities@0.4.0` (with `@etherfold/core@0.11.0`, `@etherfold/state-store@0.5.0`, `@etherfold/state-store-indexeddb@0.4.0`, `@etherfold/state-store-sqlite@0.5.0`, `@etherfold/server@0.5.0`). Two things changed for the port: a query is pinned to a block by `BlockAddress` (`{number}` or `{hash}`) and every answer names the block's hash (`extensions.blockHash`), and the state-moved `applied` notification names its block's hash, which `StateFollower` now pins its re-reads to.
+
+### The processor bundle moved
+
+`dist/processor.bundle.js` is now `sha256:6e22cab13613c63cae0bee564749d6cb7484791d627a762f62d45e791ef6d395` (it was `3a768a1a...`). No handler changed: the bundle carries the module-level loggers of `@etherfold/core` and `@etherfold/processor-entities` (neither package declares `"sideEffects": false`, so esbuild keeps every `logs(...)` call of every module the barrel reaches), and 0.4.0 adds one module (`stateFactories.js`) with such a call; the minified identifiers are renamed around it. A new processor identity is a new generation, so the old publication is no longer found by a tab running the new bytes, and alpha1 was republished.
+
+### The run
+
+`pnpm indexer:index alpha1` through the proxy, into an EMPTY `data/alpha1.db` (the previous one kept beside it as `alpha1.pre-etherfold-0.10.1.db`), folded from 12,082,311 to 51,989,149 in 155 s and published:
+
+```
+generation: 23d39423576dc174adf36baa7b6fd536
+  stream: c4d140b82c4f004d824c59fb46188361
+  processor: sha256:6e22cab13613c63cae0bee564749d6cb7484791d627a762f62d45e791ef6d395
+cut: 51989137 (folded through 51989149, finality 12)
+takenAt: 23303136 (0x36c9b72dea6626e4c865f23cde21eedd81f7f4757a6825cacccbc762e3f5ee64)
+history: none (floor 23303136)
+body: state-36ee4c86a19d0bf858e60a6cc0e4433e06b18cbab430702ff8fb2291a2fb9232.ndjson.gz (29,411 bytes)
+```
+
+The stream digest is unchanged. Every row of the body is byte for byte the previous publication's (the 4,064 lines after the head hash the same); the head differs only in `processor`, `savedAt` and the cursor of the later cut.
+
+`pnpm --filter ./indexer compare:alpha1`: every question answered the same (the table above, unchanged), and both reads now name the block they are as of by hash, which `compare.ts` checks against the publication's `takenAt`:
+
+```
+fold: data/alpha1.db, answered as of block 23303136 (0x36c9b72dea6626e4c865f23cde21eedd81f7f4757a6825cacccbc762e3f5ee64) by generation 23d39423576dc174adf36baa7b6fd536
+publication: state-36ee4c86...ndjson.gz (processor sha256:6e22cab1...), installed at block 23303136 (0x36c9b72dea6626e4c865f23cde21eedd81f7f4757a6825cacccbc762e3f5ee64)
+rows examined: answered under a bound of 1956 and refused under 1955; the default bound is 25,000.
+RESULT: every question answered the same
+```
+
+`--negative-control` still fails: `Q1 ... DIFFERENT` for the fold and the publication, exit code 1. The rows-examined bound the web app's document needs is unchanged at 1,956.
+
+### In a real Chromium (`web/verify/alpha1.spec.ts`)
+
+`MODE=alpha1 pnpm --filter ./web build`, then `VERIFY_ETH_NODE=http://127.0.0.1:18546 pnpm --filter ./web verify:alpha1`: 2 passed in 37.7 min.
+
+- From the publication versus self-indexed: the published tab reached the tip in 15 s (13 s on 2026-09-29), the tab indexing alpha1 from its start block in 2,204 s (2,310 s). Both answer the oracle's state, and both name it as of block 23,303,136 by the same hash, `0x36c9b72d...`, which the spec now asserts.
+- The two-tab election: the first tab reached the tip in 30 s as writer, the second in 5 s as reader, same state, the oracle's.
+
+### Under `vite dev`
+
+Vite's dev server serves `static/**/*.gz` with `Content-Encoding: gzip` (checked with `curl`: `Content-Encoding: gzip`, 29,411 bytes on the wire). With `@etherfold/state-store@0.5.0` the snapshot installs anyway: a Chromium tab on `pnpm --filter ./web dev` (mode alpha1) started at the publication's cut (the worker's first `lastToBlock` is 51,989,137, not the start block 12,082,311), reached the tip in 18 s with 1,956 cells as of `0x36c9b72d...`, and its worker logged no "the published snapshot was not installed" warning.
