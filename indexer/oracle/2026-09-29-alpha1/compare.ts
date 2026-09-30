@@ -29,7 +29,7 @@ import {dirname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {gunzipSync} from 'node:zlib';
 import {createBrowserStateStore} from '@etherfold/browser';
-import {buildQuerySchema, httpExecutor, localExecutor} from '@etherfold/graphql';
+import {buildQuerySchema, httpExecutor, localExecutor, queryBlocksOf} from '@etherfold/graphql';
 import {openAndBootstrap} from '@etherfold/processor-entities';
 import {StratagemsContract, bigIntIDToXY} from 'stratagems-common';
 import {FULL_STATE_QUERY, readState, StateQueryError, type Execute} from '../../src/queries.js';
@@ -186,9 +186,9 @@ async function installPublication() {
 	});
 	if (outcome.status !== 'bootstrapped') throw new Error(`the publication did not install: ${canonical(outcome)}`);
 	const schema = buildQuerySchema(stratagemsProcessor.entities);
-	const queryable = store as unknown as {
+	// the snapshot-aware handle forwards the store's query reads (tip, blockAt, blockOf, revertSequence)
+	const queryable = store as unknown as Parameters<typeof queryBlocksOf>[0] & {
 		accessor(options?: {rowsExaminedBound?: number}): never;
-		tip(): Promise<number | undefined>;
 	};
 	const executeWithBound = (rowsExaminedBound?: number) =>
 		localExecutor(schema, {
@@ -196,6 +196,7 @@ async function installPublication() {
 			generation: 'publication',
 			tip: () => queryable.tip(),
 			asOf: false,
+			blocks: queryBlocksOf(queryable),
 		}) as Execute;
 	return {entry, processor, outcome, executeWithBound};
 }

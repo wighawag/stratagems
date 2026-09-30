@@ -19,7 +19,7 @@ import {RemoteLibSQL} from 'remote-sql-libsql';
 import {VersionedStateStore} from '@etherfold/state-store-sqlite';
 import {fromEntityProcessor, openForWriting, type EntityProcessor} from '@etherfold/processor-entities';
 import {createIndexerState} from '@etherfold/browser';
-import {buildQuerySchema, localExecutor, type QueryExecutor} from '@etherfold/graphql';
+import {buildQuerySchema, localExecutor, queryBlocksOf, type QueryExecutor} from '@etherfold/graphql';
 import type {EIP1193ProviderWithoutEvents} from 'eip-1193';
 
 export type IndexedInProcess = {
@@ -59,8 +59,11 @@ export async function indexInProcess<ABI extends readonly unknown[]>(options: {
 	const execute = localExecutor(buildQuerySchema(options.processor.entities), () => ({
 		accessor: store.accessor(),
 		generation: 'in-process',
-		tip: async () => (await store.getBlockAtOrBelow(Number.MAX_SAFE_INTEGER))?.number,
+		tip: () => store.tip(),
 		asOf: store.capabilities.asOf,
+		// the block reads and revert sequence: every answer names its block's hash, and
+		// no operation is answered from two branches
+		blocks: queryBlocksOf(store),
 	}));
 
 	return {

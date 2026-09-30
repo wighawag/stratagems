@@ -121,7 +121,7 @@ export function stateDocument(parts: Iterable<Part>, options: {commitments: Comm
 	const wanted = new Set(parts);
 	const variables: string[] = [];
 	if (options.commitments === 'one' && wanted.has('commitments')) variables.push('$account: String!');
-	if (options.pinned) variables.push('$block: SafeInt!');
+	if (options.pinned) variables.push('$block: BlockAddress!');
 	const fields = PARTS.filter((part) => wanted.has(part)).map((part) =>
 		rootFields(part, options.commitments, options.pinned),
 	);
@@ -278,7 +278,7 @@ export async function readParts(
 	const commitments: Commitments = options.account !== undefined ? 'one' : 'all';
 	const variables: Record<string, unknown> = {};
 	if (commitments === 'one' && wanted.has('commitments')) variables.account = options.account!.toLowerCase();
-	if (options.block !== undefined) variables.block = options.block;
+	if (options.block !== undefined) variables.block = {number: options.block};
 	const result = await execute({
 		query: stateDocument(wanted, {commitments, pinned: options.block !== undefined}),
 		variables,
