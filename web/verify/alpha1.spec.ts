@@ -69,6 +69,7 @@ type Snapshot = {
 	publication?: unknown;
 	election?: {role?: string};
 	stateBlock?: number;
+	stateBlockHash?: string;
 	state: string;
 };
 
@@ -100,6 +101,7 @@ async function read(page: Page): Promise<Snapshot> {
 			publication: progress?.publication,
 			election: progress?.election,
 			stateBlock: (window as any).stratagemsIndexer?.stateBlock,
+			stateBlockHash: (window as any).stratagemsIndexer?.stateBlockHash,
 			state: canonical(w.state.$state),
 		};
 	});
@@ -116,7 +118,7 @@ async function untilAtTip(page: Page, label: string): Promise<Snapshot> {
 	let last: Snapshot | undefined;
 	for (;;) {
 		last = await read(page);
-		if (last.phase === 'at-tip' && last.stateBlock !== undefined) break;
+		if (last.phase === 'at-tip' && last.stateBlock !== undefined && last.stateBlockHash !== undefined) break;
 		if (Date.now() - started > 40 * 60 * 1000)
 			throw new Error(`${label} never reached the tip: ${JSON.stringify(last)}`);
 		await page.waitForTimeout(2_000);
@@ -126,7 +128,7 @@ async function untilAtTip(page: Page, label: string): Promise<Snapshot> {
 	const seconds = Math.round((Date.now() - started) / 1000);
 	const role = at.election?.role ?? 'no election';
 	console.log(
-		`${label}: at the tip (block ${at.lastToBlock}, state as of ${at.stateBlock}, ${role}) after ${seconds} s`,
+		`${label}: at the tip (block ${at.lastToBlock}, state as of ${at.stateBlock} ${at.stateBlockHash}, ${role}) after ${seconds} s`,
 	);
 	return at;
 }
@@ -182,6 +184,10 @@ test('a tab started from the publication lands on the state of a tab that indexe
 
 		expect(fromPublication.state.length).toBeGreaterThan(1000);
 		expect(fromPublication.state, 'the two tabs answer the same state').toBe(indexedItself.state);
+		expect(
+			[fromPublication.stateBlock, fromPublication.stateBlockHash],
+			'as of the same block, named by the same hash',
+		).toEqual([indexedItself.stateBlock, indexedItself.stateBlockHash]);
 		expect(JSON.stringify(sorted(JSON.parse(fromPublication.state, (_k, v) => v))), 'and it is the oracle').toBe(
 			oracleState(),
 		);

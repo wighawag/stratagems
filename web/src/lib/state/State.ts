@@ -107,8 +107,10 @@ function initialize(provider: EIP1193Provider) {
 		},
 	);
 	// Follows the state: one full read, then per state-moved signal a read of only the
-	// parts whose entities moved, pinned to the block the signal names, so the parts
-	// compose into the state of one block (stratagems-indexer's StateFollower).
+	// parts whose entities moved, pinned to the HASH of the block the signal names, so
+	// the parts compose into the state of one block of one chain; a block a reorg
+	// replaced meanwhile is refused and everything is read again (stratagems-indexer's
+	// StateFollower).
 	follower = new StateFollower(workerExecutor(indexer), account.$state.address ?? '', (err) => {
 		namedLogger.error(`state query failed`, err);
 		queryError.set(err);
@@ -189,6 +191,10 @@ if (typeof window !== 'undefined') {
 		/** The block the displayed state is as of (the verification waits on it). */
 		get stateBlock() {
 			return follower?.state?.block;
+		},
+		/** And its hash (`extensions.blockHash`, or the hash a re-read was pinned to). */
+		get stateBlockHash() {
+			return follower?.state?.blockHash;
 		},
 	};
 }

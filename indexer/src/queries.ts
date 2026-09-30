@@ -7,7 +7,7 @@
  *
  * - `web/` follows the state with a `StateFollower`: one full read, then, each time
  *   the worker says the state moved, a read of only the PARTS whose entities moved,
- *   pinned to the block the signal names;
+ *   pinned to the HASH of the block the signal names;
  * - `oracle/2026-09-29-alpha1/compare.ts` runs the same documents against the
  *   database `etherfold build` folded and against the publication, and compares the
  *   answers with the old processor's state; `web/verify/alpha1.spec.ts` checks, in a
@@ -84,7 +84,7 @@ export function partsMovedBy(entities: readonly string[]): Set<Part> {
 
 type Commitments = 'one' | 'all';
 
-/** The root field(s) of one part, as of `$block` when `pinned`. */
+/** The root field(s) of one part, as of `$block` (a `BlockAddress`: `{number}` or `{hash}`) when `pinned`. */
 function rootFields(part: Part, commitments: Commitments, pinned: boolean): string {
 	const at = pinned ? ', block: $block' : '';
 	switch (part) {
@@ -115,7 +115,8 @@ function rootFields(part: Part, commitments: Commitments, pinned: boolean): stri
 
 /**
  * One document asking the given parts, every root field as of the same block:
- * the tip when `pinned` is false (the operation pins one block itself), or `$block`.
+ * the tip when `pinned` is false (the operation pins one block itself), or
+ * `$block`, a `BlockAddress` (`{number}` or `{hash}`, etherfold ADR-0099).
  */
 export function stateDocument(parts: Iterable<Part>, options: {commitments: Commitments; pinned: boolean}): string {
 	const wanted = new Set(parts);
@@ -137,8 +138,21 @@ export const FULL_STATE_QUERY = stateDocument(PARTS, {commitments: 'all', pinned
 export type QueryAnswer = {
 	readonly data?: unknown;
 	readonly errors?: readonly {readonly message: string; readonly extensions?: {readonly code?: unknown}}[];
-	readonly extensions?: {readonly block?: number | null; readonly generation?: string};
+	readonly extensions?: {
+		readonly block?: number | null;
+		readonly blockHash?: string | null;
+		readonly generation?: string;
+	};
 };
+
+/** A recorded block: its number, and the hash that names it on ONE chain. */
+export type BlockRef = {readonly number: number; readonly hash: string};
+
+/**
+ * The code a read pinned to a hash is refused with when the store has no record of
+ * that hash: here, the block was replaced by a reorg (etherfold ADR-0015, ADR-0099).
+ */
+export const BLOCK_NOT_RECORDED = 'block-not-recorded';
 
 /** Any executor: `workerExecutor(port)`, `httpExecutor(url)`, `localExecutor(schema, context)`. */
 export type Execute = (request: {
@@ -161,6 +175,8 @@ export type StateRead = {
 	readonly data: Data;
 	/** The one block every field was read as of (undefined before the first block). */
 	readonly block?: number;
+	/** That block's hash (`extensions.blockHash`, or the hash the read was pinned to). */
+	readonly blockHash?: string;
 	/** The generation that answered. */
 	readonly generation?: string;
 };
@@ -263,8 +279,10 @@ function writeParts(data: Data, parts: ReadonlySet<Part>, answer: Record<string,
 }
 
 /**
- * Ask some parts of the state, all as of one block (`block`, or the tip), and write
- * them into a copy of `into` (a fresh state when left out).
+ * Ask some parts of the state, all as of one block, and write them into a copy of
+ * `into` (a fresh state when left out). The block is `at`: a number (`block:
+ * {number}`), a `BlockRef` (`block: {hash}`: that block on ONE chain, refused as
+ * `block-not-recorded` once a reorg replaced it), or, left out, the tip.
  *
  * `account` given: that account's commitment only (the web app's question). Left
  * out: every commitment (the comparison's).
@@ -272,15 +290,16 @@ function writeParts(data: Data, parts: ReadonlySet<Part>, answer: Record<string,
 export async function readParts(
 	execute: Execute,
 	parts: Iterable<Part>,
-	options: {account?: string; block?: number; into?: Data} = {},
+	options: {account?: string; at?: number | BlockRef; into?: Data} = {},
 ): Promise<StateRead> {
 	const wanted = new Set(parts);
 	const commitments: Commitments = options.account !== undefined ? 'one' : 'all';
 	const variables: Record<string, unknown> = {};
 	if (commitments === 'one' && wanted.has('commitments')) variables.account = options.account!.toLowerCase();
-	if (options.block !== undefined) variables.block = {number: options.block};
+	const at = options.at;
+	if (at !== undefined) variables.block = typeof at === 'number' ? {number: at} : {hash: at.hash};
 	const result = await execute({
-		query: stateDocument(wanted, {commitments, pinned: options.block !== undefined}),
+		query: stateDocument(wanted, {commitments, pinned: at !== undefined}),
 		variables,
 	});
 	if (result.errors && result.errors.length > 0) {
@@ -290,9 +309,15 @@ export async function readParts(
 	}
 	const data: Data = options.into ? {...options.into} : emptyData();
 	writeParts(data, wanted, result.data as Record<string, Row[]>);
+	// Pinned, the fields are as of `at`; `extensions` names the OPERATION's pin (the
+	// tip), which may be later. Unpinned, the fields are as of that pin.
+	if (at !== undefined && typeof at !== 'number') {
+		return {data, block: at.number, blockHash: at.hash, generation: result.extensions?.generation};
+	}
 	return {
 		data,
-		block: options.block ?? result.extensions?.block ?? undefined,
+		block: at ?? result.extensions?.block ?? undefined,
+		blockHash: at === undefined ? result.extensions?.blockHash ?? undefined : undefined,
 		generation: result.extensions?.generation,
 	};
 }
@@ -304,7 +329,13 @@ export function readState(execute: Execute, options: {account?: string} = {}): P
 
 /** What the state-moved signal says (etherfold's `StateMoved`), as far as the follower reads it. */
 export type Moved =
-	| {readonly kind: 'applied'; readonly block: number; readonly coherence: string; readonly entities: readonly string[]}
+	| {
+			readonly kind: 'applied';
+			readonly block: number;
+			readonly hash: string;
+			readonly coherence: string;
+			readonly entities: readonly string[];
+	  }
 	| {readonly kind: 'retracted' | 'repointed'; readonly coherence: string};
 
 /**
@@ -315,7 +346,8 @@ export type Moved =
  * - a coherence token it does not hold (a reorg, a promotion, the first signal):
  *   read everything again;
  * - an `applied` block: read only the parts whose entities the signal names, AS OF
- *   the signal's block (or the block this state is at, when that is later).
+ *   the signal's block (or the block this state is at, when that is later), pinned
+ *   by its HASH (`block: {hash}`), so the re-read is of that block on ONE chain.
  *
  * Why that composes into the state of ONE block: a part the signals did not name
  * since it was read did not change since, so it is still right as of the newer
@@ -323,15 +355,24 @@ export type Moved =
  * fold has just applied is also what keeps the read cheap on IndexedDB, whose
  * as-of read costs the versions closed ABOVE that block (none, or a few).
  *
+ * Why by hash and not by number: a reorg can replace the block between the signal
+ * and the re-read. Pinned to its number, the re-read would read the REPLACEMENT and
+ * compose it with parts read on the old chain, until the rotated coherence token
+ * arrives. Pinned to its hash, it is refused (`block-not-recorded`), and the
+ * follower reads everything again, at the tip, without telling anyone: a replaced
+ * block is the chain moving, not a failure.
+ *
  * Work is serialised: one read at a time, the moves that arrive meanwhile merged
- * into the next one, so an older answer can never land after a newer one.
+ * into the next one, so an older answer can never land after a newer one. Any other
+ * failure is reported (`onError`) and the next read is a full one.
  */
 export class StateFollower {
 	private current: StateRead | undefined;
 	private coherence: string | undefined;
 	private everything = true;
 	private dirty = new Set<Part>();
-	private dirtyAt: number | undefined;
+	/** The latest block an `applied` signal named since the last read. */
+	private dirtyAt: BlockRef | undefined;
 	private running: Promise<void> | undefined;
 	private readonly listeners = new Set<(read: StateRead) => void>();
 
@@ -364,7 +405,9 @@ export class StateFollower {
 			this.everything = true;
 		} else if (moved.kind === 'applied') {
 			for (const part of partsMovedBy(moved.entities)) this.dirty.add(part);
-			this.dirtyAt = Math.max(this.dirtyAt ?? moved.block, moved.block);
+			if (!this.dirtyAt || moved.block >= this.dirtyAt.number) {
+				this.dirtyAt = {number: moved.block, hash: moved.hash};
+			}
 		} else {
 			this.everything = true;
 		}
@@ -390,17 +433,22 @@ export class StateFollower {
 		while (this.everything || this.dirty.size > 0) {
 			const everything = this.everything || !this.current;
 			const parts = everything ? new Set(PARTS) : this.dirty;
-			const block = everything ? undefined : Math.max(this.dirtyAt ?? 0, this.current!.block ?? 0) || undefined;
+			const at = everything ? undefined : this.pin(this.dirtyAt, this.current!);
 			this.everything = false;
 			this.dirty = new Set();
 			this.dirtyAt = undefined;
 			try {
 				this.current = await readParts(this.execute, parts, {
 					account: this.account,
-					block,
+					at,
 					into: everything ? undefined : this.current!.data,
 				});
 			} catch (error) {
+				if (error instanceof StateQueryError && error.code === BLOCK_NOT_RECORDED) {
+					// the block this read was pinned to was replaced: read it all again, at the tip
+					this.everything = true;
+					continue;
+				}
 				// read it all again next time: a part that failed is not known to be right
 				this.everything = true;
 				this.onError(error instanceof StateQueryError ? error : new StateQueryError(String(error), undefined));
@@ -408,5 +456,24 @@ export class StateFollower {
 			}
 			for (const listener of this.listeners) listener(this.current);
 		}
+	}
+
+	/**
+	 * The block a partial read is pinned to: the latest one a signal named, or the
+	 * block the state is at when that is later (or when no signal named one: an
+	 * account change). By hash when it is known; by number only for a state read
+	 * before a host named hashes; the tip when the state is at no block yet.
+	 */
+	private pin(signalled: BlockRef | undefined, current: StateRead): number | BlockRef | undefined {
+		const held =
+			current.block === undefined
+				? undefined
+				: current.blockHash !== undefined
+					? {number: current.block, hash: current.blockHash}
+					: current.block;
+		if (!signalled) return held;
+		if (held === undefined) return signalled;
+		const heldNumber = typeof held === 'number' ? held : held.number;
+		return heldNumber > signalled.number ? held : signalled;
 	}
 }
