@@ -24,9 +24,9 @@ type AbiEntry = {readonly type: string; readonly name?: string};
 
 type ContractInfo = {readonly abi: readonly AbiEntry[]; readonly address: `0x${string}`; readonly startBlock?: number};
 
+/** What `rocketh-export` writes (rocketh 0.19+), as far as the source reads it. */
 export type ContractsInfo = {
-	readonly chainId: string;
-	readonly genesisHash?: string;
+	readonly chain: {readonly id: number; readonly genesisHash?: string};
 	readonly contracts: {readonly [name: string]: ContractInfo};
 };
 
@@ -58,8 +58,10 @@ function handled(entry: AbiEntry): boolean {
  */
 export function indexingSource(info: ContractsInfo): StratagemsIndexingSource {
 	return {
-		chainId: info.chainId,
-		...(info.genesisHash ? {genesisHash: info.genesisHash as `0x${string}`} : {}),
+		// a decimal string, as the export wrote it before rocketh 0.19: the source is part of
+		// the stream digest a publication is found by, so its shape must not move
+		chainId: String(info.chain.id),
+		...(info.chain.genesisHash ? {genesisHash: info.chain.genesisHash as `0x${string}`} : {}),
 		contracts: INDEXED_CONTRACTS.map((name) => {
 			const contract = info.contracts[name];
 			if (!contract) {

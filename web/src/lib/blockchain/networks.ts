@@ -1,7 +1,34 @@
 import {derived, get, readable, type Readable} from 'svelte/store';
-import type {ChainInfo} from '@rocketh/export';
 
-import _contractsInfos from '$data/contracts';
+import _exported from '$data/contracts';
+
+/** The chain description `rocketh-export` writes, as far as the app reads it. */
+type ChainInfo = {
+	readonly name: string;
+	readonly rpcUrls: {readonly default: {readonly http: readonly string[]}};
+	readonly blockExplorers?: {readonly default: {readonly url: string}};
+	readonly nativeCurrency: {readonly name: string; readonly symbol: string; readonly decimals: number};
+};
+
+/**
+ * The deployment as the app reads it: what `rocketh-export` wrote, plus the three
+ * fields the app has always read, which rocketh 0.19+ folds into `chain`: `chainId`
+ * (a DECIMAL STRING, compared with the wallet's), `genesisHash` and `chainInfo`.
+ * Derived here, in one place, so no other file depends on the export's layout.
+ */
+function asNetworkConfig<T extends {chain: {id: number; genesisHash?: string}}>(exported: T) {
+	return {
+		...exported,
+		chainId: String(exported.chain.id),
+		genesisHash: exported.chain.genesisHash,
+		// `web3-connection` requires `chainType`, which the export writes only when the
+		// chain has one (Base: `op-stack`; a local node: none): viem's default otherwise
+		chainInfo: {chainType: 'default' as 'zksync' | 'op-stack' | 'celo' | 'default', ...exported.chain} as T['chain'] & {
+			chainType: 'zksync' | 'op-stack' | 'celo' | 'default';
+		},
+	};
+}
+const _contractsInfos = asNetworkConfig(_exported);
 
 export type NetworkConfig = typeof _contractsInfos;
 export const initialContractsInfos = _contractsInfos;
@@ -41,10 +68,10 @@ export type NetworkData = {
 
 export function getWalletSwitchChainInfo(chainInfo: ChainInfo): NetworkWalletData {
 	return {
-		rpcUrls: chainInfo.rpcUrls.default.http,
+		rpcUrls: [...chainInfo.rpcUrls.default.http],
 		blockExplorerUrls: chainInfo.blockExplorers?.default.url ? [chainInfo.blockExplorers?.default.url] : undefined,
 		chainName: chainInfo.name,
-		nativeCurrency: chainInfo.nativeCurrency,
+		nativeCurrency: {...chainInfo.nativeCurrency},
 	};
 }
 
