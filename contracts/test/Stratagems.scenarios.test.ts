@@ -47,10 +47,12 @@ const scenarios = fs
 					.slice(1)
 					.split(':')
 					.map((s) => s.trim());
-				const [stakingTokenAmountStr, pointsAmountStr] = amountStr.split(',').map((s) => s.trim());
+				// `$<player>: <wallet>[,<points>[,<reserve>]]`, in tokens
+				const [stakingTokenAmountStr, pointsAmountStr, reserveAmountStr] = amountStr.split(',').map((s) => s.trim());
 				const playerIndex = Number(playerIndexStr);
 				const stakingTokenAmount = parseEther(stakingTokenAmountStr);
 				const pointsAmount = pointsAmountStr ? parseEther(pointsAmountStr) : undefined;
+				const reserveAmount = reserveAmountStr ? parseEther(reserveAmountStr) : undefined;
 				if (stage === 'before') {
 					walletsBefore[playerIndex] = {
 						stakingToken: stakingTokenAmount,
@@ -60,11 +62,13 @@ const scenarios = fs
 					expectedWalletsAfter[playerIndex] = {
 						stakingToken: stakingTokenAmount,
 						points: pointsAmount,
+						reserve: reserveAmount,
 					};
 				} else {
 					expectedWalletsAfterPoke[playerIndex] = {
 						stakingToken: stakingTokenAmount,
 						points: pointsAmount,
+						reserve: reserveAmount,
 					};
 				}
 			} else if (line.startsWith('+')) {

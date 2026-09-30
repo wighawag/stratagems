@@ -27,7 +27,8 @@ import {formatEther, parseEther} from 'viem';
 import {GridEnv, getGrid, performGridActions, withGrid} from './stratagems.js';
 import {EIP1193GenericRequestProvider, EIP1193ProviderWithoutEvents} from 'eip-1193';
 
-export type WalletBalance = {stakingToken: bigint; points?: bigint};
+/** A player's balances: the staking token in the wallet, the points, and (when given) the tokens in the game's reserve. */
+export type WalletBalance = {stakingToken: bigint; points?: bigint; reserve?: bigint};
 
 export async function expectGridChange(setup: GridEnv, gridWithAction: string, resultGrid: string) {
 	await expect(
@@ -166,6 +167,10 @@ export async function expectWallet(env: GridEnv, expectedWalletsAfter: {[playerI
 		if (expectedAmount.points) {
 			const pointsTokenAmount = await env.GemsGenerator.read.balanceOf([player]);
 			expect(pointsTokenAmount, `player ${playerIndex} (${player}) points`).to.equal(expectedAmount.points);
+		}
+		if (expectedAmount.reserve !== undefined) {
+			const inReserve = await env.Stratagems.read.getTokensInReserve([player]);
+			expect(inReserve, `player ${playerIndex} (${player}) reserve`).to.equal(expectedAmount.reserve);
 		}
 	}
 }
