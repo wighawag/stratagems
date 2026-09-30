@@ -15,20 +15,14 @@
  *   snapshot is keyed by the processor's identity, the SHA-256 of those bytes, so
  *   only the same bytes find it.
  * - The store is bootstrapped from the snapshot the publication index names for
- *   this generation (`openAndBootstrap`), and there is NO stream keeper: this is
- *   etherfold's snapshot-only mode (the job publishes with history `none` and no
- *   seed), so a processor change waits for the job to republish.
+ *   this generation (`openAndBootstrap`, inside `stateFactoriesFrom`), and there is
+ *   NO stream keeper: this is etherfold's snapshot-only mode (the job publishes with
+ *   history `none` and no seed), so a processor change waits for the job to
+ *   republish.
  */
 import {createBrowserStateStore, hostIndexerInThisWorker, type InstantiatedProcessorBundle} from '@etherfold/browser';
 import {graphqlQueryHandler} from '@etherfold/graphql/worker';
-import {
-	EntityEventProcessor,
-	EntityStateView,
-	openAndBootstrap,
-	openForReading,
-	openForWriting,
-	type EntityProcessor,
-} from '@etherfold/processor-entities';
+import {EntityEventProcessor, stateFactoriesFrom, type EntityProcessor} from '@etherfold/processor-entities';
 import {STREAM_FINALITY, type StratagemsABI} from 'stratagems-indexer';
 import {logs} from 'named-logs';
 
@@ -55,55 +49,48 @@ function definitionOf(bundle?: InstantiatedProcessorBundle): EntityProcessor<Str
 	return bundle.processor as EntityProcessor<StratagemsABI>;
 }
 
-/** One IndexedDB database per stream (source + stream config), shared by the leader and the readers. */
-const databaseName = (context: {stream: string}) => `stratagems-${context.stream}`;
-
 hostIndexerInThisWorker({
 	// The published bundle: fetched, named by the SHA-256 of its bytes, and
 	// instantiated FROM those bytes (etherfold ADR-0095).
 	processorBundle: {url: new URL('processor.bundle.js', appRoot())},
+	// THE STORE, named ONCE: `stateFactoriesFrom` derives both seats of the tab
+	// election from this one constructor, so the reader always opens the database
+	// the leader writes.
+	//
+	// - `createState` (the tab that indexes) installs the published snapshot into an
+	//   EMPTY store with `openAndBootstrap`, and downloads nothing when this tab already
+	//   holds state, unless the host asks to REPLACE it after a catch-up that would take
+	//   too long (`replaceLocal`, forwarded); then it claims the store (`openForWriting`).
+	// - `openState` (every other tab) opens the same store snapshot-aware and for
+	//   READING, with its `EntityStateView`: no claim, no download.
+	//
 	// ONE IndexedDB database per stream (source + stream config), so a redeploy's
-	// source never lands in the rows of the previous one. `openAndBootstrap` installs
-	// the published snapshot into an EMPTY store and downloads nothing when this tab
-	// already holds state (unless the host asks to REPLACE it, after a catch-up that
-	// would take too long: `replaceLocal`).
-	createState: async (context, {signal}, bundle, published) => {
-		const {store, outcome} = await openAndBootstrap(
-			await createBrowserStateStore(definitionOf(bundle).entities, {databaseName: databaseName(context)}),
-			published?.locations ?? [],
-			{
-				processor: published?.processor ?? 'none',
-				replaceLocal: published?.replaceLocal,
-				// the finality the job published under: a snapshot inside the reorg window is refused
-				finalityDepth: STREAM_FINALITY,
-			},
-		);
-		logger.info(`state store opened`, outcome);
-		if (published && outcome.status === 'not-bootstrapped') {
-			// said out loud: the tab then indexes from the start block, which on alpha1 is
-			// ~40M blocks. `unreadable-format` is what a host that serves the `.gz` body with
-			// `Content-Encoding: gzip` (Vite's dev server does) produces.
-			console.warn(`the published snapshot was not installed (${outcome.reason}): indexing from the start block`);
-		}
-		return openForWriting(store, {signal});
-	},
+	// source never lands in the rows of the previous one. The declarations come from
+	// the published bundle's own processor.
+	...stateFactoriesFrom({
+		open: (context, entities) => createBrowserStateStore(entities, {databaseName: `stratagems-${context.stream}`}),
+		// the finality the job published under: a snapshot inside the reorg window is refused
+		finalityDepth: STREAM_FINALITY,
+		onBootstrap: (outcome) => {
+			logger.info(`published snapshot`, outcome);
+			if (outcome.status === 'not-bootstrapped') {
+				// said out loud: the tab then indexes from the start block, which on alpha1 is
+				// ~40M blocks
+				console.warn(`the published snapshot was not installed (${outcome.reason}): indexing from the start block`);
+			}
+		},
+	}),
 	createProcessor: (state, _context, bundle) => new EntityEventProcessor(state, definitionOf(bundle)),
 	// ONE TAB INDEXES, THE OTHERS READ (etherfold ADR-0097). Without this, every open
 	// stratagems tab fetches the chain through the wallet, and all but one then lose the
 	// writer claim. The election is one Web Lock per app: the worker holding it builds
 	// its store through `createState` (and bootstraps it); every other one is built from
-	// `openState`, the SAME database opened for reading, and answers its tab's queries
-	// from the rows the leader writes. It takes over when the leader's tab closes, or
-	// when its own tab is in front and the leader's is hidden.
+	// `openState` and answers its tab's queries from the rows the leader writes. It takes
+	// over when the leader's tab closes, or when its own tab is in front and the leader's
+	// is hidden.
 	tabElection: {name: 'stratagems'},
-	openState: async (context, bundle) => {
-		const store = openForReading(
-			await createBrowserStateStore(definitionOf(bundle).entities, {databaseName: databaseName(context)}),
-		);
-		return {store, state: new EntityStateView(store)};
-	},
 	// GraphQL, answered HERE where the store is (etherfold ADR-0099): the tab sends
-	// documents with `workerExecutor` (`stratagems-indexer`'s `readState`). The
+	// documents with `workerExecutor` (`stratagems-indexer`'s `StateFollower`). The
 	// IndexedDB scan refuses past 25,000 rows examined; alpha1's largest list, the
 	// cells, examines 1,956 (see `indexer/oracle/2026-09-29-alpha1/README.md`).
 	query: graphqlQueryHandler(),
