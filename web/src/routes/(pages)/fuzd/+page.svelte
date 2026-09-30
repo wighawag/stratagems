@@ -16,7 +16,7 @@
 
 			let extraFeeForReveal = 0n;
 
-			if (!network.$state.chainId){
+			if (!network.$state.chainId) {
 				throw new Error(`not connected to any chain`);
 			}
 			const fuzd = await accountData.getFUZD(network.$state.chainId);
@@ -107,7 +107,7 @@
 		{:else if data.value >= 0}
 			<button
 				on:click={() => {
-					schedulingResponse = withdraw().then(v => {
+					schedulingResponse = withdraw().then((v) => {
 						if (v.success) {
 							return v.info;
 						} else {

@@ -37,7 +37,7 @@ export type CommitState = {
 				data: `0x${string}`;
 				to: `0x${string}`;
 				gas: bigint;
-			}
+			};
 			time: number;
 			expiry: number;
 			paymentReserve?: bigint;
@@ -266,7 +266,7 @@ export async function startCommit() {
 							maxPriorityFeePerGasForReveal = 1000000n;
 						}
 					}
-					if (!network.$state.chainId){
+					if (!network.$state.chainId) {
 						// TODO save chainId in preceding steps ?
 						throw new Error(`not connected to any chain`);
 					}
@@ -522,7 +522,7 @@ export async function startCommit() {
 
 						accountData.recordFUZD(txHash, scheduleInfo);
 					} catch (err) {
-						console.error("FUZD FAILED", err);
+						console.error('FUZD FAILED', err);
 						fuzdFailed = true;
 					}
 				}
@@ -567,7 +567,7 @@ export async function startCommit() {
 
 						accountData.recordFUZD(txHash, scheduleInfo);
 					} catch (err) {
-						console.error("FUZD FAILED", err);
+						console.error('FUZD FAILED', err);
 						fuzdFailed = true;
 					}
 				}

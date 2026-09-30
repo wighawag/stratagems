@@ -326,7 +326,7 @@ export class StratagemsAccountData extends BaseAccountHandler<AccountData, Strat
 		const remoteAccount = await this.fuzdClient.assignRemoteAccount(chainId);
 		return {
 			remoteAccount,
-			fuzdClient: this.fuzdClient
+			fuzdClient: this.fuzdClient,
 		};
 	}
 

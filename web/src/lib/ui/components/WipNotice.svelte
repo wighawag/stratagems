@@ -3,19 +3,19 @@
 	import Modal from '$utils/ui/modals/Modal.svelte';
 	$: date = undefined;
 	$: base = (initialContractsInfos as any).name == 'base' ? 'Thursday 21st March' : undefined;
-	$: discontinued  = (initialContractsInfos as any).name == 'alpha1';
+	$: discontinued = (initialContractsInfos as any).name == 'alpha1';
 </script>
 
 <Modal>
 	<div class="wrapper">
-		{#if discontinued }
-		<h3>Discontinued </h3>
+		{#if discontinued}
+			<h3>Discontinued</h3>
 			<p>
 				This play-test has been discountinued. Stay in touch with our community <a
-				href="https://community.etherplay.io"
-				rel="noopener noreferer"
-				class="underline">here</a
-			>
+					href="https://community.etherplay.io"
+					rel="noopener noreferer"
+					class="underline">here</a
+				>
 			</p>
 		{:else if base}
 			<h3>Moved</h3>
