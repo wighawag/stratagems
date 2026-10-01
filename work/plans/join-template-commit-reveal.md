@@ -1,30 +1,36 @@
 # Plan: stratagems joins template-commit-reveal
 
-Written 2026-09-30. One step per fresh agent context: each step below starts with what to read, says what to do and what "done" means, and ends by appending an entry to the **Progress log** at the bottom of this file and ticking its box. Do ONE step per context. The prompt to start a step is in the next section.
+Written 2026-09-30. One step per fresh agent context: each step below starts with what to read, says what to do and what "done" means, and ends by appending an entry to the **Progress log** at the bottom of this file and ticking its box. Do ONE step per context. The prompt that starts a step is in the next section, and it is the same prompt every time.
+
+## Branches
+
+**`main` stays untouched until the whole join is good** (the user, 2026-10-01). The plan and every step's work live on the local integration branch **`join-template-commit-reveal`**, which nothing checks out. Each step branches from it into its own worktree, and when its acceptance criteria hold, fast-forwards the integration branch to its step branch. So the live copy of this file is `git show join-template-commit-reveal:work/plans/join-template-commit-reveal.md`, and the copy on `main` is stale by design. Nothing is pushed without asking, in any repo. Merging the integration branch into `main` is the user's call, at the end (step 4 and step 5 say where).
 
 ## The prompt for a step
 
-Paste this into a fresh session, replacing `<N>` with the step number:
+Paste this into a fresh session as it is. It picks the next step itself. To run a different step (for example U2 in parallel with steps 1 to 3), add one line after it: `Do step U2.`
 
 ```
-You are working in the stratagems repository, /home/wighawag/dev/github/wighawag/stratagems. Read work/plans/join-template-commit-reveal.md in full, then do STEP <N> of it and nothing else.
+You are working in the stratagems repository, /home/wighawag/dev/github/wighawag/stratagems, on the plan in work/plans/join-template-commit-reveal.md. The live copy of the plan is on the local integration branch `join-template-commit-reveal`, NOT on main: read it in full with `git -C ~/dev/github/wighawag/stratagems show join-template-commit-reveal:work/plans/join-template-commit-reveal.md`.
+
+Which step: if my message after this prompt names a step, do that one. Otherwise do the first step whose box is unticked in the plan's Steps list. If that is the "Later" entry, stop: the port's next step has to be specified first, so tell me and propose its specification instead. Do ONE step and nothing else.
 
 First:
-1. Check `git status` in the main checkout is clean and `main` is up to date with origin. If not, stop and tell me.
-2. Read the "Start here" block of step <N> and re-derive reality: this plan was written on 2026-09-30 and the numbers in it are measurements from that day. If a premise of the step no longer holds (a file moved, a version changed, the template changed), stop and tell me the discrepancy rather than building on it.
-3. Check the Progress log: every step before <N> must be ticked. If not, stop and tell me.
+1. Check that the main checkout is clean (`git status`), that `main` is up to date with origin, and that the integration branch exists and contains origin/main (`git merge-base --is-ancestor origin/main join-template-commit-reveal`). If not, stop and tell me.
+2. Read the step's "Start here" block and re-derive reality: the numbers in the plan are measurements from the day they were written. If a premise of the step no longer holds (a file moved, a version changed, the template changed), stop and tell me the discrepancy rather than building on it.
+3. Check that every step the chosen step needs is ticked: what its own text says it needs, and otherwise every step above it in the Steps list. If not, stop and tell me.
 
 Rules:
-- Work in a git worktree under ~/dev/worktrees/stratagems/<branch> on a branch named in the step, never beside the repo, never directly on main.
-- Commit in small steps on that branch. Do not push, open a PR, or touch main without asking me.
+- Work in a git worktree under ~/dev/worktrees/<repo>/<branch>, never beside a repo. In stratagems, branch from `join-template-commit-reveal`, on the branch the step names, or `step-<id>` if it names none. Never commit to main or to the integration branch directly.
+- Commit in small steps. Do not push anything, in any repo, and do not open a PR or touch main without asking me. A step that works in another repo (the template tree) follows that repo's own AGENTS.md and work protocol there.
 - Ask before any destructive command. Never `git stash` inside a conflicted merge.
 - Bound every exploratory shell command with `timeout` and cap its output with `head`. Never grep node_modules, dist, .git or minified bundles, and never run an unbounded regex over a generated or minified file.
 - Before starting anything on a port, check it is free (`ss -ltn`) and what holds it; 8545 and 8546 belong to another project. Stop every proxy, node, dev server and browser you start, by its process group, before you finish.
 - Never write an em dash character, and do not hard-wrap Markdown prose.
 
-When the step's acceptance criteria all hold, append a dated entry to the Progress log (what was done, the measurements, the commits, anything that surprised you), tick the step's box, and commit that too.
+When the step's acceptance criteria all hold: append a dated entry to the Progress log (what was done, the measurements, the commits, anything that surprised you), tick the step's box, commit, then fast-forward the integration branch with `git -C ~/dev/github/wighawag/stratagems fetch . <step-branch>:join-template-commit-reveal`. That only ever fast-forwards. If it refuses because another step landed first, rebase your step branch onto the integration branch keeping both log entries, and try again; never force. If the criteria do not all hold, do not tick and do not fast-forward: say what is missing.
 
-End with a report: what changed, the measurements against the step's acceptance criteria, anything you could not verify, and a `## Decisions` block for every non-obvious choice.
+End with a report: what changed, the measurements against the step's acceptance criteria, anything you could not verify, a `## Decisions` block for every non-obvious choice, and which step comes next. If what you learned changes the order or the content of later steps, fix the Steps list and the step's text in the plan, and if it changes how a session must start or finish, fix this prompt there too (it must stay paste-as-is, with nothing to fill in), and say what you changed. The next session gets this same prompt, unchanged.
 ```
 
 ## Where things stand (2026-09-30)
@@ -170,7 +176,7 @@ Branch `join-template`, worktree `~/dev/worktrees/stratagems/join-template`. Nee
 - `check-omissions` and `check-dangling-imports` are clean, and `web/test/offshoot-omissions.test.ts` passes;
 - the merge commit has two parents, and nothing in `web/src/lib/{core,game,kit}` differs from `stem/main` (`git diff --stat stem/main -- web/src/lib/core web/src/lib/game web/src/lib/kit` is empty), unless a difference is recorded as a finding with its reason.
 
-Then ask the user before fast-forwarding `main` and pushing.
+Then ask the user before merging anything into `main` and pushing: the integration branch (see "Branches") is what carries the result until then.
 
 **If step U2 has landed, step 4 changes** (re-derive this in step 4's own context; it is a prediction from the prototype, not a measurement on stratagems): stratagems does not omit the framework files that read the app context, because they no longer reach the reference game. It supplies its own game module (for example `web/src/lib/stratagems/game.ts`, exporting what the template's game module exports: `createGameContext`, `SIGNER_GRANT`, `GameMembers`, `delegationRegistry`, `operationScope`, `startDiagnostics`) and points the `$game` alias at it, in `svelte.config.js`, which step 4 merges by hand anyway. Before the port that module is the stub's shape: an `onchainState` with `update` and `status`, no submission, and contract functions that name `Stratagems` and compile but never run, because stratagems' shell does not mount the template's context until step 6. What it still omits is the reference game itself (`placement/`, the offline world, `routes/{play,offline}`, the template's `+page.svelte`) and the tests that test the reference game's fixtures or guard the framework's use (`test/lib/embedded/{world,deployments}.test.ts`, `test/lib/game/render/canvas2d.svelte.test.ts`, `test/identity-boundary.test.ts` until step 8, `test/render-host-boundary.test.ts` until step 9), each with its reason.
 
