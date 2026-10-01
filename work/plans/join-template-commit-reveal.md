@@ -202,7 +202,7 @@ In the template tree, so it follows `reconcile-template-tree` and each repo's ow
 
 **Why.** Step 0 measured that the reference game reaches 65 of the template's 240 framework files, nearly all through the app context: `context/types.ts` names the game's types, and `context/game.ts` is the reference game's composition, which every game rewrites (reveal-or-die: 992 changed lines against `with/all`, about 620 of them comments). A game that is not a variant of the reference game, which stratagems is the first of, cannot compile the framework without editing it. The home test answers yes: reveal-or-die and bomber-world conflict on those files on every cascade.
 
-**Start here.** The prototype: template-commit-reveal branch `proto/game-slot` (4 commits on `main` b4d101ba, local only, worktree `~/dev/worktrees/template-commit-reveal/proto/game-slot`), and `/tmp/stub-test.sh` with `/tmp/stub-game.ts` if they still exist (the log entry describes both, so they can be rebuilt). Then `git diff stem/integration main -- web/src/lib/context web/src/lib/ui/delegation web/src/lib/ui/credits/top-up-flow.ts` in the template: what is already jolly-roger's.
+**Start here.** The prototype: template-commit-reveal branch `proto/game-slot` (4 commits on `main` b4d101ba, pushed to origin 2026-10-01 at 4e1ee404, worktree `~/dev/worktrees/template-commit-reveal/proto/game-slot`), and `/tmp/stub-test.sh` with `/tmp/stub-game.ts` if they still exist (the log entry describes both, so they can be rebuilt). Then `git diff stem/integration main -- web/src/lib/context web/src/lib/ui/delegation web/src/lib/ui/credits/top-up-flow.ts` in the template: what is already jolly-roger's.
 
 **Do**, as separate changes, each at its home:
 
@@ -298,7 +298,7 @@ Surprises: the pnpm 11 lockfile refusal; `check` needing `indexer:build` first; 
 
 ### 2026-10-01, after step 0: how much of the app context is the game, and a prototype of the slot (step U2)
 
-Not a step: the measurement and prototype behind step U2, asked for by the user after step 0's finding 4. Nothing pushed; the template prototype is a local branch.
+Not a step: the measurement and prototype behind step U2, asked for by the user after step 0's finding 4. The template prototype was a local branch at first; it was pushed to origin later that day (`proto/game-slot`, 4e1ee404), at the user's request, for later reference.
 
 **Template `main` moved overnight**: b4d101ba (2026-09-30 19:56, after step 0's 2694b172), 10 commits of app-shell chrome (`ui/chrome`, `AppShell`, nav progress), none under `context/`, `placement/`, `ui/delegation` or `game/acquire`. At b4d101ba: `check` 0, unit 1697 + **78** (client 14 files; step 0 measured 76 in 13).
 
