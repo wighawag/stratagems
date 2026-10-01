@@ -75,7 +75,7 @@ Candidates already visible, each to be judged when its step comes (not decided h
 
 - [x] **Step 0**: baseline and measurement (read-only)
 - [x] **Step 1**: pnpm 10
-- [ ] **Step 2**: stratagems' app moves to `web/src/lib/stratagems/`
+- [x] **Step 2**: stratagems' app moves to `web/src/lib/stratagems/`
 - [ ] **Step 3**: the web toolchain the template runs on (Svelte 5 in legacy mode, SvelteKit, Vite 8, TypeScript 6)
 - [ ] **Step U** (optional, in the template tree): rocketh 0.23 / hardhat-deploy 2.0.30 / Hardhat 3.18 at their home, cascaded
 - [ ] **Step U2** (in the template tree): the game becomes a slot the framework compiles against, and the delegation registration is typed
@@ -348,3 +348,22 @@ Branch `pnpm-10` from the integration branch at a4fb8f0, worktree `~/dev/worktre
 | `MODE=alpha1 pnpm --filter ./web build` | exit 0, no `(!)`, 14 MB, 102 files        | exit 0, no `(!)`, 14 MB, 102 files                                           |
 
 Surprises: the prettier hoisting change; and `pnpm --filter ./contracts test` (`pnpm compile && vitest`) does not exit when run from this agent's shell: vitest 1.x decided it was interactive and stayed in watch mode after passing (timed out at 900 s). With `CI=1` it exits 0 in 64 s. Not a pnpm effect (the same `vitest` binary and script), so step 0 presumably ran it non-interactively; step 4's criteria now say `CI=1`.
+
+### 2026-10-01, step 2: stratagems' app moves to `web/src/lib/stratagems/`
+
+Branch `lib-stratagems` from the integration branch at 7412c7e, worktree `~/dev/worktrees/stratagems/lib-stratagems`. Two commits:
+
+- 99bb0bf, **the pure move**: `web/src/lib/{account,actions,blockchain,config.ts,render,state,ui}` into `web/src/lib/stratagems/`. 118 files, every one a rename at similarity 100%, 0 insertions, 0 deletions. This commit alone does not build (its imports still point at the old paths); it is split from the next one so git records every file as an exact rename, which is what `git log --follow` and step 4's merge read.
+- bdc87c5, **the imports the move broke, and nothing else**: every `$lib/` becomes `$lib/stratagems/` (193 lines in 71 files, inside and outside `lib`), the one relative import that leaves `lib` gains a `../` (`actions/claim/ClaimTokenScreen.svelte` to `src/utils/ethereum/ImgBlockie.svelte`), two comments name the worker's new path (`vite.config.ts`, `scripts/processor-bundle.js`), and prettier wraps the one import line that grew past 120 columns (`ui/components/InfoBar.svelte`). 73 files, +202/-196.
+
+Not changed, on purpose: the `svelte.config.js` aliases (`$data`, `$external`, `$utils`, `web-config` point outside `lib`); `web/src/utils` and `web/src/data`; and the indexer worker's `appRoot()` marker `'/src/lib/'`, which still matches the worker's dev URL `/src/lib/stratagems/state/...` because it slices at the marker's first occurrence. The worker's `new URL('./indexer.worker.ts', import.meta.url)` is relative to its own file, which moved with it.
+
+**Measured** (fresh install, then `pnpm indexer:build alpha1`):
+
+- `pnpm --filter ./web check`: svelte-check 0 errors, 0 warnings.
+- `pnpm format:check`: clean.
+- `MODE=alpha1 pnpm --filter ./web build`: exit 0, no `(!)`, 14 MB, 102 files (as at steps 0 and 1).
+- `git show --stat -M 99bb0bf`: 118 files changed, 0 insertions, 0 deletions, 118 renames at 100%. `git log --follow web/src/lib/stratagems/state/State.ts` crosses the move to the file's earlier history.
+- **The board under `vite dev`**: `MODE=alpha1 ldenv vite dev --port 5180` (5173 and 5174 belong to other projects), with the alpha1 publication copied from the main checkout's gitignored `web/static/indexed-states/alpha1`. In headless Chromium (Playwright 1.62.1), the welcome screen, then "Just Observe": the canvas draws the alpha1 board (factions and terrain, the "Indexing..." bar running). Three failed requests, none about the move: `snapshots.stratagems.world/alpha1/publication.json` 404 (the remote snapshot is not published; the embedded one is used), and `mainnet.base.org` 413 on a POST, Base's public node refusing a large request while the worker indexes forward from the publication's cut (`.env.alpha1` points at the public node; the full verification in step 3 goes through the caching proxy). The dev server was stopped by its process group.
+
+Surprises: none of substance. The move commit is not buildable by itself, by design; bisecting across it needs to skip it.
