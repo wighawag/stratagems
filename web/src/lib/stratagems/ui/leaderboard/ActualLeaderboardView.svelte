@@ -2,14 +2,14 @@
 	import {Render, Subscribe, createRender, createTable} from 'svelte-headless-table';
 	import {addSortBy} from 'svelte-headless-table/plugins';
 	import {leaderboardView} from './leaderboardView';
-	import {stratagemsView} from '$lib/state/ViewState';
+	import {stratagemsView} from '$lib/stratagems/state/ViewState';
 	import ModalContainer from '$utils/ui/modals/ModalContainer.svelte';
 	import {fly} from 'svelte/transition';
 	import {derived} from 'svelte/store';
 	import type {Readable} from 'svelte/store';
 	import type {GlobalRate, SharedRatePerAccount} from 'stratagems-indexer';
 	import LeaderboardPlayer from './LeaderboardPlayer.svelte';
-	import {every3Seconds, time} from '$lib/blockchain/time';
+	import {every3Seconds, time} from '$lib/stratagems/blockchain/time';
 	import {formatEther} from 'viem';
 
 	const PRECISION = BigInt(1e24);

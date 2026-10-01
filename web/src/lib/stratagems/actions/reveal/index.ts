@@ -1,10 +1,10 @@
 import {writable} from 'svelte/store';
 import {currentFlow, type Flow, type Step} from '../flow';
-import {viemClient} from '$lib/blockchain/connection';
+import {viemClient} from '$lib/stratagems/blockchain/connection';
 import {prepareCommitment, zeroBytes24} from 'stratagems-common';
 import {zeroAddress} from 'viem';
-import {localMoveToContractMove, type CommitMetadata} from '$lib/account/account-data';
-import type {RevealMetadata} from '$lib/account/base';
+import {localMoveToContractMove, type CommitMetadata} from '$lib/stratagems/account/account-data';
+import type {RevealMetadata} from '$lib/stratagems/account/base';
 
 export type RevealState = {};
 

@@ -4,7 +4,7 @@
 	import {fly} from 'svelte/transition';
 	import {Render, Subscribe, createRender, createTable} from 'svelte-headless-table';
 	import {addSortBy} from 'svelte-headless-table/plugins';
-	import {state} from '$lib/state/State';
+	import {state} from '$lib/stratagems/state/State';
 	import {derived} from 'svelte/store';
 	import EventInfo from './EventInfo.svelte';
 	import type {CellPlacements} from 'stratagems-indexer';

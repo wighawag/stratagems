@@ -1,6 +1,6 @@
 import {BaseStore} from '$utils/stores/base';
 import lcache from '$utils/localCache';
-import {params} from '$lib/config';
+import {params} from '$lib/stratagems/config';
 
 const MAX_STAGE = 2;
 

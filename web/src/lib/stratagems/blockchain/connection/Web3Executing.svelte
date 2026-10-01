@@ -1,6 +1,6 @@
 <script lang="ts">
-	import {contractsInfos} from '$lib/config';
-	import {getWalletSwitchChainInfo} from '$lib/blockchain/networks';
+	import {contractsInfos} from '$lib/stratagems/config';
+	import {getWalletSwitchChainInfo} from '$lib/stratagems/blockchain/networks';
 	import Modal from '$utils/ui/modals/Modal.svelte';
 	import type {connection as Connection, execution as Execution, network as Network, account as Account} from './';
 	import GenericModal from '$utils/ui/modals/GenericModal.svelte';

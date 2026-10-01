@@ -3,7 +3,7 @@
 	import {viewStateView} from './viewStateView';
 	import ModalContainer from '$utils/ui/modals/ModalContainer.svelte';
 	import {fly} from 'svelte/transition';
-	import {stratagemsView} from '$lib/state/ViewState';
+	import {stratagemsView} from '$lib/stratagems/state/ViewState';
 	// import JSONTree from 'svelte-json-tree';
 	function addLengthToFields(v: any): any {
 		const keys = Object.keys(v);

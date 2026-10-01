@@ -2,9 +2,9 @@
 	import {switchToSupportedNetwork, type connection as Connection, type network as Network, account} from './';
 	export let network: typeof Network;
 	export let connection: typeof Connection;
-	import {contractNetwork} from '$lib/blockchain/networks';
+	import {contractNetwork} from '$lib/stratagems/blockchain/networks';
 	import {url} from '$utils/path';
-	import {resetIndexer} from '$lib/state/State';
+	import {resetIndexer} from '$lib/stratagems/state/State';
 	import NeedAWallet from './NeedAWallet.svelte';
 	import GenericBanner from '$utils/ui/banners/GenericBanner.svelte';
 	import Banner from '$utils/ui/banners/Banner.svelte';

@@ -1,6 +1,6 @@
-// import {createStore} from '$lib/utils/stores/utils';
-import {every3Seconds} from '$lib/blockchain/time';
-import {contractsInfos} from '$lib/config';
+// import {createStore} from '$lib/stratagems/utils/stores/utils';
+import {every3Seconds} from '$lib/stratagems/blockchain/time';
+import {contractsInfos} from '$lib/stratagems/config';
 import {writable, type Readable, derived, get} from 'svelte/store';
 
 export function computeEpoch(time: number) {

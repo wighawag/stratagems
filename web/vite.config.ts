@@ -13,7 +13,7 @@ export default defineConfig({
 				})
 			: undefined,
 	],
-	// the indexer worker (src/lib/state/indexer.worker.ts) is a MODULE worker
+	// the indexer worker (src/lib/stratagems/state/indexer.worker.ts) is a MODULE worker
 	worker: {
 		format: 'es',
 	},

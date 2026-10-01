@@ -1,4 +1,4 @@
-import type {OffchainState} from '$lib/account/account-data';
+import type {OffchainState} from '$lib/stratagems/account/account-data';
 import type {Color} from 'stratagems-common';
 
 export function getCurrentColor(offchainState: OffchainState, address?: `0x${string}`): Color {

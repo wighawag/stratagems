@@ -1,6 +1,6 @@
 <script lang="ts">
 	import {url} from '$utils/path';
-	import {account, accountData} from '$lib/blockchain/connection';
+	import {account, accountData} from '$lib/stratagems/blockchain/connection';
 	import {getFactionIcon} from './utils/faction-icons';
 	import {getCurrentColor} from './utils/current-color';
 

@@ -1,10 +1,10 @@
 <script lang="ts">
-	import type {CommitMetadata} from '$lib/account/account-data';
-	import {epoch} from '$lib/state/Epoch';
-	import {stratagemsView} from '$lib/state/ViewState';
-	import {viemClient} from '$lib/blockchain/connection';
+	import type {CommitMetadata} from '$lib/stratagems/account/account-data';
+	import {epoch} from '$lib/stratagems/state/Epoch';
+	import {stratagemsView} from '$lib/stratagems/state/ViewState';
+	import {viemClient} from '$lib/stratagems/blockchain/connection';
 	import {startAcknowledgFailedReveal, startReveal} from './';
-	import {initialContractsInfos} from '$lib/config';
+	import {initialContractsInfos} from '$lib/stratagems/config';
 
 	// const onchainActions = accountData.onchainActions;
 

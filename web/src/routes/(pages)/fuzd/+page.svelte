@@ -1,7 +1,7 @@
 <script lang="ts">
-	import {accountData, network, viemClient} from '$lib/blockchain/connection';
-	import {gameConfig, initialContractsInfos} from '$lib/blockchain/networks';
-	import {time} from '$lib/blockchain/time';
+	import {accountData, network, viemClient} from '$lib/stratagems/blockchain/connection';
+	import {gameConfig, initialContractsInfos} from '$lib/stratagems/blockchain/networks';
+	import {time} from '$lib/stratagems/blockchain/time';
 	import {getRoughGasPriceEstimate} from '$utils/ethereum/gas';
 	import type {ScheduleInfo} from 'fuzd-scheduler';
 	import {formatEther} from 'viem';

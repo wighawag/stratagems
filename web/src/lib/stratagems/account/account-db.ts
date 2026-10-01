@@ -7,7 +7,7 @@ import {base64url} from '@scure/base';
 import {compressToUint8Array, decompressFromUint8Array} from '$utils/data';
 import {privateKeyToAccount, type PrivateKeyAccount} from 'viem/accounts';
 import {hexToBytes} from 'viem';
-import {time} from '$lib/blockchain/time';
+import {time} from '$lib/stratagems/blockchain/time';
 
 import {logs} from 'named-logs';
 import type {AccountInfo, CleanFunction, MergeFunction, SyncInfo} from './types';

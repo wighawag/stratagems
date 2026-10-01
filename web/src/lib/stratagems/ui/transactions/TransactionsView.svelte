@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {txObserver} from '$lib/blockchain/connection';
+	import {txObserver} from '$lib/stratagems/blockchain/connection';
 	import ModalContainer from '$utils/ui/modals/ModalContainer.svelte';
 	import {transactionsView} from './transactionsView';
 	import {fly} from 'svelte/transition';
@@ -9,7 +9,7 @@
 	import TransactionDetailsButton from './TransactionDetailsButton.svelte';
 	import TransactionDetails from './TransactionDetails.svelte';
 
-	// import {accountData} from '$lib/blockchain/connection';
+	// import {accountData} from '$lib/stratagems/blockchain/connection';
 	// const actions = accountData.onchainActions;
 	// $: transactions = Object.keys($actions).map((v) => ({hash: v, transaction: ($actions as any)[v]}));
 

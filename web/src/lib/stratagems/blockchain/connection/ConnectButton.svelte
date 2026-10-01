@@ -1,11 +1,11 @@
 <script lang="ts">
 	import {connection, account, network} from './';
 	import ImgBlockie from '$utils/ethereum/ImgBlockie.svelte';
-	import {contractsInfos} from '$lib/config';
-	import {menu} from '$lib/ui/menu/menu';
-	import {tour} from '$lib/ui/tour/drive';
-	import {getWalletSwitchChainInfo} from '$lib/blockchain/networks';
-	import {conversations} from '$lib/ui/missiv/missiv';
+	import {contractsInfos} from '$lib/stratagems/config';
+	import {menu} from '$lib/stratagems/ui/menu/menu';
+	import {tour} from '$lib/stratagems/ui/tour/drive';
+	import {getWalletSwitchChainInfo} from '$lib/stratagems/blockchain/networks';
+	import {conversations} from '$lib/stratagems/ui/missiv/missiv';
 
 	$: conversationsView = $conversations.conversations;
 

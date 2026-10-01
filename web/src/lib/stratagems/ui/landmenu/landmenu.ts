@@ -1,4 +1,4 @@
-import type {ViewCellData} from '$lib/state/ViewState';
+import type {ViewCellData} from '$lib/stratagems/state/ViewState';
 import {writable} from 'svelte/store';
 
 export type LandMenuState =

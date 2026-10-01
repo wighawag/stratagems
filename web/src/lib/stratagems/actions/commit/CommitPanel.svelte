@@ -1,11 +1,11 @@
 <script lang="ts">
-	import {devProvider, account, accountData} from '$lib/blockchain/connection';
-	import {initialContractsInfos} from '$lib/config';
+	import {devProvider, account, accountData} from '$lib/stratagems/blockchain/connection';
+	import {initialContractsInfos} from '$lib/stratagems/config';
 	import {encodeFunctionData} from 'viem';
-	import {startCommit} from '$lib/actions/commit';
-	import {MINIMUM_REQUIRED_ETH_BALANCE, balance} from '$lib/state/balance';
+	import {startCommit} from '$lib/stratagems/actions/commit';
+	import {MINIMUM_REQUIRED_ETH_BALANCE, balance} from '$lib/stratagems/state/balance';
 	import {formatUnits} from '$utils/ui/text';
-	import {epoch} from '$lib/state/Epoch';
+	import {epoch} from '$lib/stratagems/state/Epoch';
 	import {Color} from 'stratagems-common';
 
 	const decimals = Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals);

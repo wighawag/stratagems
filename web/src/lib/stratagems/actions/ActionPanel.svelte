@@ -1,9 +1,9 @@
 <script lang="ts">
-	import {epochInfo} from '$lib/state/Epoch';
+	import {epochInfo} from '$lib/stratagems/state/Epoch';
 	import RevealPanel from './reveal/RevealPanel.svelte';
 	import CommitPanel from './commit/CommitPanel.svelte';
-	import {accountData} from '$lib/blockchain/connection';
-	import {stratagemsView} from '$lib/state/ViewState';
+	import {accountData} from '$lib/stratagems/blockchain/connection';
+	import {stratagemsView} from '$lib/stratagems/state/ViewState';
 	import CommitCancelPanel from './commit-cancel/CommitCancelPanel.svelte';
 
 	const offchainState = accountData.offchainState;

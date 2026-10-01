@@ -1,8 +1,8 @@
 import {get, writable} from 'svelte/store';
 import {currentFlow, type Flow, type Step} from '../flow';
-import {viemClient} from '$lib/blockchain/connection';
-import type {CommitCancelMetadata} from '$lib/account/base';
-import {epoch} from '$lib/state/Epoch';
+import {viemClient} from '$lib/stratagems/blockchain/connection';
+import type {CommitCancelMetadata} from '$lib/stratagems/account/base';
+import {epoch} from '$lib/stratagems/state/Epoch';
 
 export type CommitCancelState = {};
 

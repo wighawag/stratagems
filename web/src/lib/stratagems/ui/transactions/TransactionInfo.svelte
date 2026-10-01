@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {blockchainExplorer} from '$lib/config';
+	import {blockchainExplorer} from '$lib/stratagems/config';
 	import type {PendingTransactionInclusion} from 'ethereum-tx-observer';
 
 	export let tx: {hash: `0x${string}`; inclusion: PendingTransactionInclusion};

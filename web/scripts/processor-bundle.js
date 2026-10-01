@@ -1,5 +1,5 @@
 // Copy the processor BUNDLE the snapshot job folds with into static/, where the
-// indexer worker fetches it (src/lib/state/indexer.worker.ts).
+// indexer worker fetches it (src/lib/stratagems/state/indexer.worker.ts).
 //
 // Copied, never rebuilt: a published snapshot is keyed by the SHA-256 of the
 // bundle's bytes (etherfold ADR-0086, ADR-0095), so the tab has to run exactly the

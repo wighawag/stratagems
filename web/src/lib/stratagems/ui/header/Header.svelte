@@ -1,8 +1,8 @@
 <script lang="ts">
-	import ConnectButton from '$lib/blockchain/connection/ConnectButton.svelte';
+	import ConnectButton from '$lib/stratagems/blockchain/connection/ConnectButton.svelte';
 	import {route, url} from '$utils/path';
-	import {balance} from '$lib/state/balance';
-	import {initialContractsInfos} from '$lib/config';
+	import {balance} from '$lib/stratagems/state/balance';
+	import {initialContractsInfos} from '$lib/stratagems/config';
 	import {formatUnits} from '$utils/ui/text';
 
 	const symbol = initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol;

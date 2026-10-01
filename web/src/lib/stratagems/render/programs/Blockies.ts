@@ -1,7 +1,7 @@
 import * as twgl from 'twgl.js';
 import * as m3 from '$utils/m3';
 import type {CameraState} from '../camera';
-import type {StratagemsViewState} from '$lib/state/ViewState';
+import type {StratagemsViewState} from '$lib/stratagems/state/ViewState';
 import {Blockie} from '$utils/ethereum/blockie';
 import {Color, bigIntIDToXYID} from 'stratagems-common';
 

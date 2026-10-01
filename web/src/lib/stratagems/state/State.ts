@@ -30,8 +30,8 @@ import {
 	type Data,
 } from 'stratagems-indexer';
 import {derived, writable, type Readable} from 'svelte/store';
-import {initialContractsInfos, remoteIndexedState} from '$lib/config';
-import {account, connection, network} from '$lib/blockchain/connection';
+import {initialContractsInfos, remoteIndexedState} from '$lib/stratagems/config';
+import {account, connection, network} from '$lib/stratagems/blockchain/connection';
 import {browser} from '$app/environment';
 import type {EIP1193Provider} from 'eip-1193';
 import {logs} from 'named-logs';

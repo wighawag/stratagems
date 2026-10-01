@@ -1,19 +1,25 @@
 <script lang="ts">
-	import {epochInfo} from '$lib/state/Epoch';
-	import {FUZD_URI, contractsInfos, defaultRPC, initialContractsInfos} from '$lib/config';
-	import {stratagemsView} from '$lib/state/ViewState';
-	import {every3Seconds} from '$lib/blockchain/time';
+	import {epochInfo} from '$lib/stratagems/state/Epoch';
+	import {FUZD_URI, contractsInfos, defaultRPC, initialContractsInfos} from '$lib/stratagems/config';
+	import {stratagemsView} from '$lib/stratagems/state/ViewState';
+	import {every3Seconds} from '$lib/stratagems/blockchain/time';
 	import {increaseContractTime} from '$utils/debug';
 	import {timeToText} from '$utils/time';
-	import {account, connection, viemClient, network, switchToSupportedNetwork} from '$lib/blockchain/connection';
+	import {
+		account,
+		connection,
+		viemClient,
+		network,
+		switchToSupportedNetwork,
+	} from '$lib/stratagems/blockchain/connection';
 	import Executor from './Executor.svelte';
 	import TxExecutor from './TxExecutor.svelte';
-	import {MINIMUM_REQUIRED_ETH_BALANCE, balance} from '$lib/state/balance';
-	import {contractNetwork} from '$lib/blockchain/networks';
-	import {indexedToLatest} from '$lib/state/State';
+	import {MINIMUM_REQUIRED_ETH_BALANCE, balance} from '$lib/stratagems/state/balance';
+	import {contractNetwork} from '$lib/stratagems/blockchain/networks';
+	import {indexedToLatest} from '$lib/stratagems/state/State';
 	import SyncingInfo from './SyncingInfo.svelte';
 	import {parseEther} from 'viem';
-	import {camera} from '$lib/render/camera';
+	import {camera} from '$lib/stratagems/render/camera';
 
 	$: isAdmin = $account.address?.toLowerCase() === $contractsInfos.contracts.Stratagems.linkedData.admin?.toLowerCase();
 

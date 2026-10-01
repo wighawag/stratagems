@@ -1,10 +1,10 @@
 <script lang="ts">
-	import {initialContractsInfos} from '$lib/config';
-	import {account, connection, network} from '$lib/blockchain/connection';
-	import ImgBlockie from '../../../utils/ethereum/ImgBlockie.svelte';
+	import {initialContractsInfos} from '$lib/stratagems/config';
+	import {account, connection, network} from '$lib/stratagems/blockchain/connection';
+	import ImgBlockie from '../../../../utils/ethereum/ImgBlockie.svelte';
 	import tokenClaim from './tokenClaim';
-	import WelcomeContainer from '$lib/ui/tutorial/WelcomeContainer.svelte';
-	import FullScreenModal from '$lib/ui/FullScreenModal.svelte';
+	import WelcomeContainer from '$lib/stratagems/ui/tutorial/WelcomeContainer.svelte';
+	import FullScreenModal from '$lib/stratagems/ui/FullScreenModal.svelte';
 	export let name: string;
 </script>
 

@@ -1,28 +1,28 @@
 <script lang="ts">
-	import {account, connection, viemClient, network} from '$lib/blockchain/connection';
+	import {account, connection, viemClient, network} from '$lib/stratagems/blockchain/connection';
 	import {menu} from './menu';
-	import {eventsView} from '$lib/ui/events/eventsView';
-	import {transactionsView} from '$lib/ui/transactions/transactionsView';
-	import {commitmentsView} from '$lib/ui/commitments/commitmentsView';
-	import {leaderboardView} from '$lib/ui/leaderboard/leaderboardView';
-	import {indexerView} from '$lib/ui/indexer/indexerView';
-	import {viewStateView} from '$lib/ui/viewstate/viewStateView';
-	import {admin} from '$lib/ui/admin/admin';
-	import {debug} from '$lib/ui/debug/debug';
+	import {eventsView} from '$lib/stratagems/ui/events/eventsView';
+	import {transactionsView} from '$lib/stratagems/ui/transactions/transactionsView';
+	import {commitmentsView} from '$lib/stratagems/ui/commitments/commitmentsView';
+	import {leaderboardView} from '$lib/stratagems/ui/leaderboard/leaderboardView';
+	import {indexerView} from '$lib/stratagems/ui/indexer/indexerView';
+	import {viewStateView} from '$lib/stratagems/ui/viewstate/viewStateView';
+	import {admin} from '$lib/stratagems/ui/admin/admin';
+	import {debug} from '$lib/stratagems/ui/debug/debug';
 	import {fly} from 'svelte/transition';
 	import {HelpCircle, Power} from 'lucide-svelte';
 	import ImgBlockie from '$utils/ethereum/ImgBlockie.svelte';
-	import {balance} from '$lib/state/balance';
+	import {balance} from '$lib/stratagems/state/balance';
 	import {formatUnits} from '$utils/ui/text';
-	import {contractsInfos, debugTools, dev, initialContractsInfos} from '$lib/config';
+	import {contractsInfos, debugTools, dev, initialContractsInfos} from '$lib/stratagems/config';
 	import {tooltip} from '$utils/ui/tooltip';
 	import ModalContainer from '$utils/ui/modals/ModalContainer.svelte';
 
-	import {startTour} from '$lib/ui/tour/drive';
-	import {addTokenToWallet} from '$lib/blockchain/token';
+	import {startTour} from '$lib/stratagems/ui/tour/drive';
+	import {addTokenToWallet} from '$lib/stratagems/blockchain/token';
 	import {openConversations} from '../missiv/missiv';
 
-	import {conversations} from '$lib/ui/missiv/missiv';
+	import {conversations} from '$lib/stratagems/ui/missiv/missiv';
 
 	$: conversationsView = $conversations.conversations;
 

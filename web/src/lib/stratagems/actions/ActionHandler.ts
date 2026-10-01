@@ -1,13 +1,13 @@
-import {stratagemsView, type ViewCellData} from '$lib/state/ViewState';
-import {account, accountData} from '$lib/blockchain/connection';
+import {stratagemsView, type ViewCellData} from '$lib/stratagems/state/ViewState';
+import {account, accountData} from '$lib/stratagems/blockchain/connection';
 
 import {xyToXYID, Color, type ContractCell} from 'stratagems-common';
 import {get} from 'svelte/store';
-import {epochState} from '$lib/state/Epoch';
-import {tour} from '$lib/ui/tour/drive';
-import {info} from '$lib/ui/information/info';
+import {epochState} from '$lib/stratagems/state/Epoch';
+import {tour} from '$lib/stratagems/ui/tour/drive';
+import {info} from '$lib/stratagems/ui/information/info';
 import {modalStack} from '$utils/ui/modals/ModalContainer.svelte';
-import {landmenu} from '$lib/ui/landmenu/landmenu';
+import {landmenu} from '$lib/stratagems/ui/landmenu/landmenu';
 import {zeroAddress} from 'viem';
 
 export class ActionHandler {

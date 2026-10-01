@@ -3,8 +3,8 @@
 	import {fly} from 'svelte/transition';
 	import {admin} from './admin';
 
-	import Executor from '$lib/ui/components/Executor.svelte';
-	import {every3Seconds} from '$lib/blockchain/time';
+	import Executor from '$lib/stratagems/ui/components/Executor.svelte';
+	import {every3Seconds} from '$lib/stratagems/blockchain/time';
 	import {increaseBlockTime, increaseContractTime} from '$utils/debug';
 
 	$: date = new Date($every3Seconds.timestamp * 1000);

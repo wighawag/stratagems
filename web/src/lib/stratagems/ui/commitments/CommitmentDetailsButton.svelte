@@ -1,7 +1,7 @@
 <script lang="ts">
 	import {commitmentDetailsView} from './commitmentsView';
-	import type {OnChainAction} from '$lib/account/base';
-	import type {CommitMetadata} from '$lib/account/account-data';
+	import type {OnChainAction} from '$lib/stratagems/account/base';
+	import type {CommitMetadata} from '$lib/stratagems/account/account-data';
 
 	export let commitment: OnChainAction<CommitMetadata>;
 

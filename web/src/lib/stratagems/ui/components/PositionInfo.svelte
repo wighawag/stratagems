@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {camera} from '$lib/render/camera';
+	import {camera} from '$lib/stratagems/render/camera';
 	import {eventsView} from '../events/eventsView';
 	import {menu} from '../menu/menu';
 

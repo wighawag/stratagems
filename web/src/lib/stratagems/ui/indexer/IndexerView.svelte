@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {state, syncing, queryError} from '$lib/state/State';
+	import {state, syncing, queryError} from '$lib/stratagems/state/State';
 	import RadialProgress from '$utils/progress/RadialProgress.svelte';
 	import {JsonView} from '@zerodevx/svelte-json-view';
 	import {indexerView} from './indexerView';

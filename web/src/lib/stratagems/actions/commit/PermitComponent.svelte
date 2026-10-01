@@ -3,7 +3,7 @@
 	import type {CommitState} from '.';
 	import {onMount} from 'svelte';
 	import {formatUnits} from '$utils/ui/text';
-	import {initialContractsInfos} from '$lib/config';
+	import {initialContractsInfos} from '$lib/stratagems/config';
 
 	// TODO this does not work for some reason
 	const MAX_VALUE = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');

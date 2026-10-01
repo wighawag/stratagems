@@ -1,9 +1,9 @@
-import {blockTime, initialContractsInfos} from '$lib/config';
+import {blockTime, initialContractsInfos} from '$lib/stratagems/config';
 import type {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {writable, type Readable} from 'svelte/store';
 import {zeroAddress, type Address, encodeFunctionData, parseEther, decodeFunctionResult} from 'viem';
 import type {AccountState, ConnectionState} from 'web3-connection';
-import {connection, account} from '$lib/blockchain/connection';
+import {connection, account} from '$lib/stratagems/blockchain/connection';
 
 export type BalanceData = {
 	state: 'Idle' | 'Loaded';

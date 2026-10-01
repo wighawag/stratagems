@@ -1,12 +1,12 @@
 <script lang="ts">
-	import {stratagemsView} from '$lib/state/ViewState';
-	import WebGlCanvas from '$lib/render/WebGLCanvas.svelte';
-	import ActionPanel from '$lib/actions/ActionPanel.svelte';
-	import InfoBar from '$lib/ui/components/InfoBar.svelte';
-	import FactionPicker from '$lib/actions/FactionPicker.svelte';
-	import Header from '$lib/ui/header/Header.svelte';
-	import TokenToCollect from '$lib/ui/winnings/TokenToCollect.svelte';
-	import LandMenu from '$lib/ui/landmenu/LandMenu.svelte';
+	import {stratagemsView} from '$lib/stratagems/state/ViewState';
+	import WebGlCanvas from '$lib/stratagems/render/WebGLCanvas.svelte';
+	import ActionPanel from '$lib/stratagems/actions/ActionPanel.svelte';
+	import InfoBar from '$lib/stratagems/ui/components/InfoBar.svelte';
+	import FactionPicker from '$lib/stratagems/actions/FactionPicker.svelte';
+	import Header from '$lib/stratagems/ui/header/Header.svelte';
+	import TokenToCollect from '$lib/stratagems/ui/winnings/TokenToCollect.svelte';
+	import LandMenu from '$lib/stratagems/ui/landmenu/LandMenu.svelte';
 </script>
 
 <div style="position: absolute; z-index: 1; width: 100%; height: 100%; pointer-events: none;">

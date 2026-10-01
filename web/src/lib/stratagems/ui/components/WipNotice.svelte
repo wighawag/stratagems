@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {initialContractsInfos} from '$lib/config';
+	import {initialContractsInfos} from '$lib/stratagems/config';
 	import Modal from '$utils/ui/modals/Modal.svelte';
 	$: date = undefined;
 	$: base = (initialContractsInfos as any).name == 'base' ? 'Thursday 21st March' : undefined;

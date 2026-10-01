@@ -1,5 +1,5 @@
 import {base} from '$app/paths';
-import {SYNC_DB_NAME} from '$lib/config';
+import {SYNC_DB_NAME} from '$lib/stratagems/config';
 import {writable, type Readable, type Writable} from 'svelte/store';
 
 class LocalCache {

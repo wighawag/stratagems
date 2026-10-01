@@ -1,8 +1,8 @@
-import {hashParams, initialContractsInfos} from '$lib/config';
+import {hashParams, initialContractsInfos} from '$lib/stratagems/config';
 import {formatError} from '$utils/debug';
 import {getRoughGasPriceEstimate} from '$utils/ethereum/gas';
 import {rebuildLocationHash} from '$utils/url';
-import {account, connection, viemClient, network} from '$lib/blockchain/connection';
+import {account, connection, viemClient, network} from '$lib/stratagems/blockchain/connection';
 import {derived, writable} from 'svelte/store';
 import {decodeFunctionResult, encodeFunctionData, formatEther, parseEther} from 'viem';
 import {privateKeyToAccount, type Account} from 'viem/accounts';

@@ -8,12 +8,12 @@ import {
 } from './base';
 import {createClient} from 'fuzd-client';
 import type {AccountInfo, SyncInfo} from './types';
-import {FUZD_URI, SYNC_DB_NAME, debugTools} from '$lib/config';
+import {FUZD_URI, SYNC_DB_NAME, debugTools} from '$lib/stratagems/config';
 import {xyToBigIntID, type Color, type ContractMove} from 'stratagems-common';
 import {writable, type Readable, type Writable} from 'svelte/store';
-import {time} from '$lib/blockchain/time';
+import {time} from '$lib/stratagems/blockchain/time';
 import type {ScheduleInfo} from 'fuzd-scheduler';
-import {account} from '$lib/blockchain/connection';
+import {account} from '$lib/stratagems/blockchain/connection';
 import type {PrivateKeyAccount} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {copy} from '$utils/js';

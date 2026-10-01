@@ -3,7 +3,7 @@
 	import {JsonView} from '@zerodevx/svelte-json-view';
 	import ModalContainer from '$utils/ui/modals/ModalContainer.svelte';
 	import {fly} from 'svelte/transition';
-	// import {account, connection} from '$lib/blockchain/connection';
+	// import {account, connection} from '$lib/stratagems/blockchain/connection';
 
 	// export async function force() {
 	// 	if (connection.$state.provider && account.$state.address) {

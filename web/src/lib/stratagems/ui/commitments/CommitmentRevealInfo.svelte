@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type {CommitMetadata} from '$lib/account/account-data';
-	import type {OnChainAction} from '$lib/account/base';
-	import {FUZD_URI, blockchainExplorer} from '$lib/config';
+	import type {CommitMetadata} from '$lib/stratagems/account/account-data';
+	import type {OnChainAction} from '$lib/stratagems/account/base';
+	import {FUZD_URI, blockchainExplorer} from '$lib/stratagems/config';
 
 	export let commitment: {
 		hash: `0x${string}`;

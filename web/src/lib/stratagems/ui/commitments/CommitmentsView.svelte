@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {accountData} from '$lib/blockchain/connection';
+	import {accountData} from '$lib/stratagems/blockchain/connection';
 	import {Render, Subscribe, createRender, createTable} from 'svelte-headless-table';
 	import {addSortBy} from 'svelte-headless-table/plugins';
 	import {derived, type Readable} from 'svelte/store';
@@ -9,8 +9,8 @@
 	import CommitmentDetails from './CommitmentDetails.svelte';
 	import {fly} from 'svelte/transition';
 	import CommitmentDetailsButton from './CommitmentDetailsButton.svelte';
-	import type {CommitCancelMetadata, OnChainAction} from '$lib/account/base';
-	import type {CommitMetadata} from '$lib/account/account-data';
+	import type {CommitCancelMetadata, OnChainAction} from '$lib/stratagems/account/base';
+	import type {CommitMetadata} from '$lib/stratagems/account/account-data';
 	import CommitmentRevealInfo from './CommitmentRevealInfo.svelte';
 
 	const onchainActions = accountData.onchainActions;

@@ -1,4 +1,4 @@
-import {viemClient, devProvider} from '$lib/blockchain/connection';
+import {viemClient, devProvider} from '$lib/stratagems/blockchain/connection';
 import {writable, type Readable} from 'svelte/store';
 export function initIncreaseContractTime(name: string) {
 	return async (numSeconds: number) => {

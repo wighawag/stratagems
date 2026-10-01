@@ -1,5 +1,5 @@
 <script>
-	import {syncing} from '$lib/state/State';
+	import {syncing} from '$lib/stratagems/state/State';
 </script>
 
 <!-- <span>{JSON.stringify($syncing, null, 2)}</span> -->

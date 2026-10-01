@@ -1,6 +1,6 @@
 import {writable} from 'svelte/store';
 import {connection, devProvider} from './connection';
-import {params} from '$lib/config';
+import {params} from '$lib/stratagems/config';
 
 let timestamp = Math.floor(Date.now() / 1000);
 let lastFetchLocalTime = performance.now();

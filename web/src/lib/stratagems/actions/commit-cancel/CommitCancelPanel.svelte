@@ -1,6 +1,6 @@
 <script lang="ts">
-	import {stratagemsView} from '$lib/state/ViewState';
-	import {initialContractsInfos} from '$lib/config';
+	import {stratagemsView} from '$lib/stratagems/state/ViewState';
+	import {initialContractsInfos} from '$lib/stratagems/config';
 	import {startCancellingCommitment} from '.';
 
 	const symbol = initialContractsInfos.contracts.Stratagems.linkedData.currency.symbol;

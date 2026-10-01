@@ -11,9 +11,9 @@ import {
 } from 'stratagems-common';
 import type {Data} from 'stratagems-indexer';
 import {derived} from 'svelte/store';
-import {state} from '$lib/state/State';
-import {account, accountData} from '$lib/blockchain/connection';
-import {epochState, type EpochState} from '$lib/state/Epoch';
+import {state} from '$lib/stratagems/state/State';
+import {account, accountData} from '$lib/stratagems/blockchain/connection';
+import {epochState, type EpochState} from '$lib/stratagems/state/Epoch';
 import type {AccountState} from 'web3-connection';
 import {
 	localMoveToContractMove,
@@ -22,11 +22,11 @@ import {
 	type StratagemsMetadata,
 	type StratagemsTransaction,
 	type LocalMove,
-} from '$lib/account/account-data';
-import type {OnChainAction, OnChainActions} from '$lib/account/base';
+} from '$lib/stratagems/account/account-data';
+import type {OnChainAction, OnChainActions} from '$lib/stratagems/account/base';
 import {createDraft} from 'immer';
 import {parseEther, parseUnits} from 'viem';
-import {asPlayer, initialContractsInfos} from '$lib/config';
+import {asPlayer, initialContractsInfos} from '$lib/stratagems/config';
 
 export type ViewCell = ContractCell & {
 	localState?: 'pending' | 'planned';

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import {ActionHandler} from '$lib/actions/ActionHandler';
+	import {ActionHandler} from '$lib/stratagems/actions/ActionHandler';
 	import {onMount} from 'svelte';
 	import {camera} from './camera';
 	import {WebGLRenderer} from './WebGLRenderer';
-	import type {StratagemsView} from '$lib/state/ViewState';
+	import type {StratagemsView} from '$lib/stratagems/state/ViewState';
 	export let state: StratagemsView;
 
 	let renderer: WebGLRenderer = new WebGLRenderer();

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {camera} from '$lib/render/camera';
+	import {camera} from '$lib/stratagems/render/camera';
 	export let x: number;
 	export let y: number;
 

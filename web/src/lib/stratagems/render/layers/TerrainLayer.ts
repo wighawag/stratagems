@@ -1,4 +1,4 @@
-import type {StratagemsViewState} from '$lib/state/ViewState';
+import type {StratagemsViewState} from '$lib/stratagems/state/ViewState';
 import type {CameraState} from '../camera';
 import {Textured2DProgram, type Attributes} from '../programs/Textured2D';
 import * as twgl from 'twgl.js';

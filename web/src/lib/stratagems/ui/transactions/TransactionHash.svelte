@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {blockchainExplorer} from '$lib/config';
+	import {blockchainExplorer} from '$lib/stratagems/config';
 
 	export let hash: `0x${string}`;
 

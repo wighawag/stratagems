@@ -1,17 +1,17 @@
 import {get, writable} from 'svelte/store';
 import {currentFlow, type Flow, type Step} from '../flow';
-import {accountData, viemClient, network} from '$lib/blockchain/connection';
-import {FUZD_URI, initialContractsInfos} from '$lib/config';
+import {accountData, viemClient, network} from '$lib/stratagems/blockchain/connection';
+import {FUZD_URI, initialContractsInfos} from '$lib/stratagems/config';
 import {prepareCommitment, zeroBytes24, zeroBytes32, type ContractMove, Color} from 'stratagems-common';
-import {epoch, epochInfo} from '$lib/state/Epoch';
+import {epoch, epochInfo} from '$lib/stratagems/state/Epoch';
 import {hexToVRS} from '$utils/ethereum/signatures';
 import {encodeFunctionData, formatEther, keccak256, parseEther, zeroAddress} from 'viem';
-import {time} from '$lib/blockchain/time';
+import {time} from '$lib/stratagems/blockchain/time';
 import {timeToText} from '$utils/time';
-import {localMoveToContractMove, type CommitMetadata} from '$lib/account/account-data';
+import {localMoveToContractMove, type CommitMetadata} from '$lib/stratagems/account/account-data';
 import PermitComponent from './PermitComponent.svelte';
 import TransactionComponent from './TransactionComponent.svelte';
-import {gameConfig} from '$lib/blockchain/networks';
+import {gameConfig} from '$lib/stratagems/blockchain/networks';
 import NotEnoughEthComponent from './NotEnoughEthComponent.svelte';
 import {getRoughGasPriceEstimate} from '$utils/ethereum/gas';
 

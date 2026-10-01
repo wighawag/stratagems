@@ -1,12 +1,12 @@
 <script>
-	import {account, accountData, connection, network} from '$lib/blockchain/connection';
+	import {account, accountData, connection, network} from '$lib/stratagems/blockchain/connection';
 	import {JsonView} from '@zerodevx/svelte-json-view';
 	// import Typewriter from '$utils/ui/text/Typewriter.svelte';
-	import {TUTORIAL_STEP, hasCompletedTutorial} from '$lib/account/account-data';
+	import {TUTORIAL_STEP, hasCompletedTutorial} from '$lib/stratagems/account/account-data';
 	import {startTour} from '../tour/drive';
-	import {defaultRPC, initialContractsInfos} from '$lib/config';
+	import {defaultRPC, initialContractsInfos} from '$lib/stratagems/config';
 	import {justObserve} from './observe';
-	import tokenClaim from '$lib/actions/claim/tokenClaim';
+	import tokenClaim from '$lib/stratagems/actions/claim/tokenClaim';
 	import WelcomeContainer from './WelcomeContainer.svelte';
 	import MissivRegistration from '../missiv/MissivRegistration.svelte';
 	import {conversations} from '../missiv/missiv';

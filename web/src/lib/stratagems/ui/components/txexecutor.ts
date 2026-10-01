@@ -1,5 +1,5 @@
-import type {OnChainAction, OnChainActions} from '$lib/account/base';
-import {accountData} from '$lib/blockchain/connection';
+import type {OnChainAction, OnChainActions} from '$lib/stratagems/account/base';
+import {accountData} from '$lib/stratagems/blockchain/connection';
 import {writable, type Readable} from 'svelte/store';
 
 export type TxExecution = {waitingSigning: boolean; sent: boolean; error?: any; action?: OnChainAction<unknown>};

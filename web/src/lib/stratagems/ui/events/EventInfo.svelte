@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {getFactionIcon} from '$lib/actions/utils/faction-icons';
+	import {getFactionIcon} from '$lib/stratagems/actions/utils/faction-icons';
 	import ImgBlockie from '$utils/ethereum/ImgBlockie.svelte';
 	import {url} from '$utils/path';
 	import type {CellPlacements} from 'stratagems-indexer';

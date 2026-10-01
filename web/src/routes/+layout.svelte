@@ -1,30 +1,30 @@
 <script lang="ts">
 	import '../css/index.css';
-	import EraseNotice from '$lib/ui/components/EraseNotice.svelte';
-	import ClaimTokenScreen from '$lib/actions/claim/ClaimTokenScreen.svelte';
-	import WipNotice from '$lib/ui/components/WipNotice.svelte';
+	import EraseNotice from '$lib/stratagems/ui/components/EraseNotice.svelte';
+	import ClaimTokenScreen from '$lib/stratagems/actions/claim/ClaimTokenScreen.svelte';
+	import WipNotice from '$lib/stratagems/ui/components/WipNotice.svelte';
 	import Banners from '$utils/ui/banners/Banners.svelte';
-	import VersionAndInstallNotfications from '$lib/ui/install/VersionAndInstallNotfications.svelte';
+	import VersionAndInstallNotfications from '$lib/stratagems/ui/install/VersionAndInstallNotfications.svelte';
 	import Modals from '$utils/ui/modals/Modals.svelte';
 	import {url} from '$utils/path';
-	import Web3ConnectionUI from '$lib/blockchain/connection/Web3ConnectionUI.svelte';
-	import Flow from '$lib/actions/flow/Flow.svelte';
+	import Web3ConnectionUI from '$lib/stratagems/blockchain/connection/Web3ConnectionUI.svelte';
+	import Flow from '$lib/stratagems/actions/flow/Flow.svelte';
 
-	import {dev, initialContractsInfos, params} from '$lib/config';
+	import {dev, initialContractsInfos, params} from '$lib/stratagems/config';
 	import Head from './Head.svelte';
-	import Menu from '$lib/ui/menu/Menu.svelte';
-	import TransactionsView from '$lib/ui/transactions/TransactionsView.svelte';
-	import Admin from '$lib/ui/admin/Admin.svelte';
-	import CommitmentsView from '$lib/ui/commitments/CommitmentsView.svelte';
-	import IndexerView from '$lib/ui/indexer/IndexerView.svelte';
-	import ViewStateView from '$lib/ui/viewstate/ViewStateView.svelte';
-	import Welcome from '$lib/ui/tutorial/Welcome.svelte';
-	import SplashScreen from '$lib/ui/loading/SplashScreen.svelte';
-	import Debug from '$lib/ui/debug/Debug.svelte';
-	import EventsView from '$lib/ui/events/EventsView.svelte';
-	import RevealPhaseInformation from '$lib/ui/information/RevealPhaseInformation.svelte';
-	import Missiv from '$lib/ui/missiv/Missiv.svelte';
-	import LeaderboardView from '$lib/ui/leaderboard/LeaderboardView.svelte';
+	import Menu from '$lib/stratagems/ui/menu/Menu.svelte';
+	import TransactionsView from '$lib/stratagems/ui/transactions/TransactionsView.svelte';
+	import Admin from '$lib/stratagems/ui/admin/Admin.svelte';
+	import CommitmentsView from '$lib/stratagems/ui/commitments/CommitmentsView.svelte';
+	import IndexerView from '$lib/stratagems/ui/indexer/IndexerView.svelte';
+	import ViewStateView from '$lib/stratagems/ui/viewstate/ViewStateView.svelte';
+	import Welcome from '$lib/stratagems/ui/tutorial/Welcome.svelte';
+	import SplashScreen from '$lib/stratagems/ui/loading/SplashScreen.svelte';
+	import Debug from '$lib/stratagems/ui/debug/Debug.svelte';
+	import EventsView from '$lib/stratagems/ui/events/EventsView.svelte';
+	import RevealPhaseInformation from '$lib/stratagems/ui/information/RevealPhaseInformation.svelte';
+	import Missiv from '$lib/stratagems/ui/missiv/Missiv.svelte';
+	import LeaderboardView from '$lib/stratagems/ui/leaderboard/LeaderboardView.svelte';
 
 	$: showWIPNotice =
 		!dev &&

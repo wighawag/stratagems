@@ -1,7 +1,7 @@
 import {setup} from 'missiv-client';
-import {account, accountData} from '$lib/blockchain/connection';
+import {account, accountData} from '$lib/stratagems/blockchain/connection';
 import {derived, writable} from 'svelte/store';
-import {MISSIV_URI, initialContractsInfos} from '$lib/config';
+import {MISSIV_URI, initialContractsInfos} from '$lib/stratagems/config';
 
 export const openConversations = writable({
 	open: false,

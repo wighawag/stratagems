@@ -1,5 +1,5 @@
 import {base} from '$app/paths';
-import {params, globalQueryParams} from '$lib/config';
+import {params, globalQueryParams} from '$lib/stratagems/config';
 import {getParamsFromURL, queryStringifyNoArray} from './url';
 
 export function route(p: string, hash?: string) {

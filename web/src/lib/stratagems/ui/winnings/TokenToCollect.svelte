@@ -1,7 +1,7 @@
 <script lang="ts">
-	import {viemClient} from '$lib/blockchain/connection';
-	import {initialContractsInfos} from '$lib/config';
-	import {stratagemsView} from '$lib/state/ViewState';
+	import {viemClient} from '$lib/stratagems/blockchain/connection';
+	import {initialContractsInfos} from '$lib/stratagems/config';
+	import {stratagemsView} from '$lib/stratagems/state/ViewState';
 	import {formatUnits} from '$utils/ui/text';
 
 	const decimals = Number(initialContractsInfos.contracts.Stratagems.linkedData.currency.decimals);

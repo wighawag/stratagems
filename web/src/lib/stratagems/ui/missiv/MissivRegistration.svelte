@@ -1,11 +1,11 @@
 <script lang="ts">
-	import {account, connection} from '$lib/blockchain/connection';
+	import {account, connection} from '$lib/stratagems/blockchain/connection';
 	import Modal from '$utils/ui/modals/Modal.svelte';
 	import {toHex, type Address} from 'viem';
 	import {conversations} from './missiv';
 	import {getPublicKey, publicKeyAuthorizationMessage} from 'missiv-client';
 	import {createViemWalletClient} from 'web3-connection-viem';
-	import {contractsInfos} from '$lib/blockchain/networks';
+	import {contractsInfos} from '$lib/stratagems/blockchain/networks';
 	import {get} from 'svelte/store';
 	import type {ConnectedAccountState, ConnectedState} from 'web3-connection';
 

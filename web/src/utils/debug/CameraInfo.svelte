@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {camera} from '$lib/render/camera';
+	import {camera} from '$lib/stratagems/render/camera';
 </script>
 
 {#if $camera}

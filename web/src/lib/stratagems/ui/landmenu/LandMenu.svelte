@@ -1,11 +1,11 @@
 <script lang="ts">
 	import CanvasOverlay from '../canvas/CanvasOverlay.svelte';
-	import {landmenu} from '$lib/ui/landmenu/landmenu';
+	import {landmenu} from '$lib/stratagems/ui/landmenu/landmenu';
 	import ImgBlockie from '$utils/ethereum/ImgBlockie.svelte';
-	import {getFactionIcon} from '$lib/actions/utils/faction-icons';
-	import {getCurrentColor} from '$lib/actions/utils/current-color';
-	import {account, accountData} from '$lib/blockchain/connection';
-	import {epochState} from '$lib/state/Epoch';
+	import {getFactionIcon} from '$lib/stratagems/actions/utils/faction-icons';
+	import {getCurrentColor} from '$lib/stratagems/actions/utils/current-color';
+	import {account, accountData} from '$lib/stratagems/blockchain/connection';
+	import {epochState} from '$lib/stratagems/state/Epoch';
 	import {CircleOff, Trash2} from 'lucide-svelte';
 	import {Color, EVIL_OWNER_ADDRESS} from 'stratagems-common';
 	import {info} from '../information/info';

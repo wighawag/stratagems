@@ -1,7 +1,7 @@
 import 'driver.js/dist/driver.css';
 import {driver} from 'driver.js';
 import {writable} from 'svelte/store';
-import {initialContractsInfos} from '$lib/config';
+import {initialContractsInfos} from '$lib/stratagems/config';
 
 const _tour = writable({running: false});
 export const tour = {

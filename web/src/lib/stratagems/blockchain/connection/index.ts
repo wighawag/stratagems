@@ -1,12 +1,12 @@
 import {init, type GenericContractsInfos} from 'web3-connection';
-import {contractsInfos, defaultRPC, initialContractsInfos, blockTime, localRPC, syncInfo} from '$lib/config';
+import {contractsInfos, defaultRPC, initialContractsInfos, blockTime, localRPC, syncInfo} from '$lib/stratagems/config';
 import {initTransactionProcessor} from 'ethereum-tx-observer';
 import {initViemClientExecution} from 'web3-connection-viem';
 import {logs} from 'named-logs';
-import {time} from '$lib/blockchain/time';
+import {time} from '$lib/stratagems/blockchain/time';
 import {stringToHex} from 'viem';
 import {get} from 'svelte/store';
-import {StratagemsAccountData} from '$lib/account/account-data';
+import {StratagemsAccountData} from '$lib/stratagems/account/account-data';
 import {contractNetwork} from '../networks';
 
 const logger = logs('stratagems');

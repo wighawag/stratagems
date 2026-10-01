@@ -1,4 +1,4 @@
-import type {OnChainActions} from '$lib/account/base';
+import type {OnChainActions} from '$lib/stratagems/account/base';
 
 export function getTransactionToReveal($onchainActions: OnChainActions<unknown>) {
 	console.log($onchainActions);

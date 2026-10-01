@@ -1,5 +1,5 @@
-import {everySeconds} from '$lib/blockchain/time';
-import {computeEpoch, epochInfo} from '$lib/state/Epoch';
+import {everySeconds} from '$lib/stratagems/blockchain/time';
+import {computeEpoch, epochInfo} from '$lib/stratagems/state/Epoch';
 import {derived, get, writable} from 'svelte/store';
 
 export type InfoData = {panel: {type: 'RevealPhase'; timeLeftToReveal: number} | {type: 'MaxMovesReached'} | undefined};

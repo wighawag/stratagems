@@ -2,7 +2,7 @@
 	import ModalContainer from '$utils/ui/modals/ModalContainer.svelte';
 	import {fly} from 'svelte/transition';
 	import {debug} from './debug';
-	import {accountData} from '$lib/blockchain/connection';
+	import {accountData} from '$lib/stratagems/blockchain/connection';
 </script>
 
 {#if $debug.open}
