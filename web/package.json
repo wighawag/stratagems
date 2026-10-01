@@ -9,7 +9,7 @@
     "@rocketh/export": "^0.19.30",
     "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/kit": "^2.70.3",
-    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "abitype": "^1.0.2",
     "eip-1193": "^0.5.0",
     "fuzd-scheduler": "^0.7.0",
@@ -17,11 +17,11 @@
     "prettier": "^3.3.1",
     "prettier-plugin-svelte": "^3.2.4",
     "pwag": "0.3.0",
-    "svelte": "^5.57.1",
+    "svelte": "^5.56.9",
     "svelte-check": "^4.7.6",
     "tslib": "^2.6.3",
-    "typescript": "^6.0.3",
-    "vite": "^8.3.1",
+    "typescript": "~6.0.3",
+    "vite": "^8.2.1",
     "wait-on": "^7.2.0"
   },
   "dependencies": {

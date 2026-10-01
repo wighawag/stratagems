@@ -217,7 +217,7 @@ importers:
         version: 0.14.0
       fuzd-nodejs:
         specifier: ^0.7.6
-        version: 0.7.6(@libsql/core@0.14.0)(@types/node@22.9.0)(hono@4.13.11)(lightningcss@1.33.0)(typescript@6.0.3)(typia@6.11.3(typescript@6.0.3))
+        version: 0.7.6(@libsql/core@0.14.0)(@types/node@22.9.0)(hono@4.13.11)(lightningcss@1.33.0)(typescript@6.0.3)(typia@6.11.3(typescript@6.0.3))(zod@3.25.76)
       ldenv:
         specifier: ^0.3.10
         version: 0.3.10
@@ -419,7 +419,7 @@ importers:
         specifier: ^2.70.3
         version: 2.70.3(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.1)(vite@8.3.1(@types/node@22.9.0)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.4.5)))(svelte@5.57.1)(typescript@6.0.3)(vite@8.3.1(@types/node@22.9.0)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.4.5))
       '@sveltejs/vite-plugin-svelte':
-        specifier: ^7.3.1
+        specifier: ^7.3.0
         version: 7.3.1(svelte@5.57.1)(vite@8.3.1(@types/node@22.9.0)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.4.5))
       abitype:
         specifier: ^1.0.2
@@ -443,7 +443,7 @@ importers:
         specifier: 0.3.0
         version: 0.3.0
       svelte:
-        specifier: ^5.57.1
+        specifier: ^5.56.9
         version: 5.57.1
       svelte-check:
         specifier: ^4.7.6
@@ -452,10 +452,10 @@ importers:
         specifier: ^2.6.3
         version: 2.6.3
       typescript:
-        specifier: ^6.0.3
+        specifier: ~6.0.3
         version: 6.0.3
       vite:
-        specifier: ^8.3.1
+        specifier: ^8.2.1
         version: 8.3.1(@types/node@22.9.0)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.4.5)
       wait-on:
         specifier: ^7.2.0
@@ -9818,15 +9818,6 @@ snapshots:
       named-logs: 0.3.2
       promise-throttle: 1.1.2
 
-  eip-1193-signer@0.0.5(typescript@6.0.3):
-    dependencies:
-      viem: 2.57.1(typescript@6.0.3)
-    transitivePeerDependencies:
-      - bufferutil
-      - typescript
-      - utf-8-validate
-      - zod
-
   eip-1193-signer@0.0.5(typescript@6.0.3)(zod@3.25.76):
     dependencies:
       viem: 2.57.1(typescript@6.0.3)(zod@3.25.76)
@@ -10320,12 +10311,12 @@ snapshots:
       - utf-8-validate
       - zod
 
-  fuzd-chain-protocol@0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3):
+  fuzd-chain-protocol@0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76):
     dependencies:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/starknet': 1.0.0
-      eip-1193-signer: 0.0.5(typescript@6.0.3)
+      eip-1193-signer: 0.0.5(typescript@6.0.3)(zod@3.25.76)
       fuzd-common: 0.7.2
       remote-account: 0.2.1
       remote-procedure-call: 0.0.15(@types/node@22.9.0)(lightningcss@1.33.0)
@@ -10422,9 +10413,9 @@ snapshots:
       - utf-8-validate
       - zod
 
-  fuzd-executor@0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3):
+  fuzd-executor@0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76):
     dependencies:
-      fuzd-chain-protocol: 0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)
+      fuzd-chain-protocol: 0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76)
       fuzd-common: 0.7.2
       named-logs: named-logs-for-servers@0.0.1
     transitivePeerDependencies:
@@ -10448,12 +10439,12 @@ snapshots:
       - utf-8-validate
       - zod
 
-  fuzd-nodejs@0.7.6(@libsql/core@0.14.0)(@types/node@22.9.0)(hono@4.13.11)(lightningcss@1.33.0)(typescript@6.0.3)(typia@6.11.3(typescript@6.0.3)):
+  fuzd-nodejs@0.7.6(@libsql/core@0.14.0)(@types/node@22.9.0)(hono@4.13.11)(lightningcss@1.33.0)(typescript@6.0.3)(typia@6.11.3(typescript@6.0.3))(zod@3.25.76):
     dependencies:
       '@hono/node-server': 1.13.5(hono@4.13.11)
       '@libsql/client': 0.14.0
       commander: 12.1.0
-      fuzd-server: 0.7.3(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)(typia@6.11.3(typescript@6.0.3))
+      fuzd-server: 0.7.3(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)(typia@6.11.3(typescript@6.0.3))(zod@3.25.76)
       ldenv: 0.3.11
       named-logs-context: 0.1.1
       remote-sql-libsql: 0.0.6(@libsql/core@0.14.0)
@@ -10533,9 +10524,9 @@ snapshots:
       - utf-8-validate
       - zod
 
-  fuzd-scheduler@0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3):
+  fuzd-scheduler@0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76):
     dependencies:
-      fuzd-chain-protocol: 0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)
+      fuzd-chain-protocol: 0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76)
       fuzd-common: 0.7.2
       named-logs: named-logs-for-servers@0.0.1
     transitivePeerDependencies:
@@ -10559,7 +10550,7 @@ snapshots:
       - utf-8-validate
       - zod
 
-  fuzd-server@0.7.3(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)(typia@6.11.3(typescript@6.0.3)):
+  fuzd-server@0.7.3(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)(typia@6.11.3(typescript@6.0.3))(zod@3.25.76):
     dependencies:
       '@hono/swagger-ui': 0.4.1(hono@4.6.9)
       '@hono/typia-validator': 0.0.5(hono@4.6.9)(typia@6.11.3(typescript@6.0.3))
@@ -10567,18 +10558,18 @@ snapshots:
       '@scure/bip39': 1.6.0
       eip-1193: 0.6.1
       eip-1193-jsonrpc-provider: 0.4.2
-      eip-1193-signer: 0.0.5(typescript@6.0.3)
-      fuzd-chain-protocol: 0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)
+      eip-1193-signer: 0.0.5(typescript@6.0.3)(zod@3.25.76)
+      fuzd-chain-protocol: 0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76)
       fuzd-common: 0.7.2
-      fuzd-executor: 0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)
-      fuzd-scheduler: 0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)
-      fuzd-tlock-decrypter: 0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)
+      fuzd-executor: 0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76)
+      fuzd-scheduler: 0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76)
+      fuzd-tlock-decrypter: 0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76)
       hono: 4.6.9
       named-logs: named-logs-for-servers@0.0.1
       remote-account: 0.2.1
       remote-sql: 0.0.5
       tlock-js: 0.9.0
-      viem: 2.57.1(typescript@6.0.3)
+      viem: 2.57.1(typescript@6.0.3)(zod@3.25.76)
     transitivePeerDependencies:
       - '@edge-runtime/vm'
       - '@types/node'
@@ -10601,9 +10592,9 @@ snapshots:
       - utf-8-validate
       - zod
 
-  fuzd-tlock-decrypter@0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3):
+  fuzd-tlock-decrypter@0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76):
     dependencies:
-      fuzd-scheduler: 0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)
+      fuzd-scheduler: 0.7.2(@types/node@22.9.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76)
       named-logs: named-logs-for-servers@0.0.1
       tlock-js: 0.9.0
     transitivePeerDependencies:
