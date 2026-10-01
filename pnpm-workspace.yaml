@@ -4,3 +4,58 @@ packages:
   - 'indexer'
   - 'web'
   - 'helper-services/*'
+
+# pnpm settings (pnpm 10 reads them here; pnpm 11 reads them only here, not from package.json)
+supportedArchitectures:
+  os:
+    - linux
+  cpu:
+    - x64
+
+overrides:
+  'fuzd-cf-worker>named-logs': 'npm:named-logs-for-servers@0.0.1'
+  'fuzd-server>named-logs': 'npm:named-logs-for-servers@0.0.1'
+  'fuzd-common>named-logs': 'npm:named-logs-for-servers@0.0.1'
+  'fuzd-executor>named-logs': 'npm:named-logs-for-servers@0.0.1'
+  'fuzd-gateways>named-logs': 'npm:named-logs-for-servers@0.0.1'
+  'remote-account>named-logs': 'npm:named-logs-for-servers@0.0.1'
+  'fuzd-scheduler>named-logs': 'npm:named-logs-for-servers@0.0.1'
+  'fuzd-tlock-decrypter>named-logs': 'npm:named-logs-for-servers@0.0.1'
+  'bl@<0.9.5': '>=0.9.5'
+  'jpeg-js@<0.4.4': '>=0.4.4'
+  'bl@<1.2.3': '>=1.2.3'
+  'semver@<4.3.2': '>=4.3.2'
+  'jpeg-js@<0.4.0': '>=0.4.0'
+  '@koa/cors@<5.0.0': '>=5.0.0'
+  'minimist@<0.2.1': '>=0.2.1'
+  'semver@<5.7.2': '>=5.7.2'
+  'minimist@<0.2.4': '>=0.2.4'
+  'tough-cookie@<4.1.3': '>=4.1.3'
+  'browserify-sign@>=2.6.0 <=4.2.1': '>=4.2.2'
+  'follow-redirects@<=1.15.5': '>=1.15.6'
+  'phin@<3.7.1': '>=3.7.1'
+
+auditConfig:
+  ignoreCves:
+    - CVE-2020-7661
+    - CVE-2023-28155
+
+# pnpm 10 runs no dependency install script unless it is listed here. esbuild is
+# allowed as in template-commit-reveal (its postinstall only verifies the binary).
+onlyBuiltDependencies:
+  - esbuild
+
+# Measured 2026-10-01 (work/plans/join-template-commit-reveal.md, step 1): none of
+# these needs its script here. sharp, workerd, @sentry/cli and @parcel/watcher get
+# their linux-x64 binary from optionalDependencies (the script is a fallback
+# download or build); vue-demi already defaults to Vue 3; @sveltejs/kit's
+# postinstall is a 'svelte-kit sync' that web's check, dev and build run anyway;
+# svelte-preprocess only prints a reminder.
+ignoredBuiltDependencies:
+  - '@parcel/watcher'
+  - '@sentry/cli'
+  - '@sveltejs/kit'
+  - sharp
+  - svelte-preprocess
+  - vue-demi
+  - workerd

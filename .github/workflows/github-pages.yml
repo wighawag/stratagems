@@ -35,10 +35,9 @@ jobs:
           lfs: true
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          # the lockfile is v9, which pnpm 8 cannot read
-          version: 9
+        uses: pnpm/action-setup@v4
+        # no 'version:': the action reads packageManager from package.json, and
+        # setting both fails with ERR_PNPM_BAD_PM_VERSION
 
       - name: Use Node.js 22
         uses: actions/setup-node@v3
