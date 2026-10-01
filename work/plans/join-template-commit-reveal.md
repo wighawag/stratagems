@@ -74,7 +74,7 @@ Candidates already visible, each to be judged when its step comes (not decided h
 ## Steps
 
 - [x] **Step 0**: baseline and measurement (read-only)
-- [ ] **Step 1**: pnpm 10
+- [x] **Step 1**: pnpm 10
 - [ ] **Step 2**: stratagems' app moves to `web/src/lib/stratagems/`
 - [ ] **Step 3**: the web toolchain the template runs on (Svelte 5 in legacy mode, SvelteKit, Vite 8, TypeScript 6)
 - [ ] **Step U** (optional, in the template tree): rocketh 0.23 / hardhat-deploy 2.0.30 / Hardhat 3.18 at their home, cascaded
@@ -172,7 +172,7 @@ Branch `join-template`, worktree `~/dev/worktrees/stratagems/join-template`. Nee
 **Done when**, all measured, in the worktree:
 
 - the node's verify passes: `pnpm install && pnpm --filter ./web check && pnpm --filter ./web run test:unit` (framework tests included);
-- stratagems' own checks are what they were: contracts tests (69 pass), `pnpm format:check`, `MODE=alpha1 pnpm --filter ./web build`, `compare:alpha1`, and the real-Chromium `verify:alpha1` (both tests) plus the `vite dev` start;
+- stratagems' own checks are what they were: contracts tests (69 pass; run them as `CI=1 pnpm --filter ./contracts test`, or vitest stays in watch mode after passing and never exits), `pnpm format:check`, `MODE=alpha1 pnpm --filter ./web build`, `compare:alpha1`, and the real-Chromium `verify:alpha1` (both tests) plus the `vite dev` start;
 - `check-omissions` and `check-dangling-imports` are clean, and `web/test/offshoot-omissions.test.ts` passes;
 - the merge commit has two parents, and nothing in `web/src/lib/{core,game,kit}` differs from `stem/main` (`git diff --stat stem/main -- web/src/lib/core web/src/lib/game web/src/lib/kit` is empty), unless a difference is recorded as a finding with its reason.
 
@@ -322,3 +322,29 @@ After every commit: `check` 0, unit 1697 + 78, unchanged.
 **Where each part lives**: `ui/delegation/register-delegate.ts` and `ui/credits/top-up-flow.ts` are byte-identical to jolly-roger's (`stem/integration`), `registration.ts` differs by 2 lines, and jolly-roger's `core.ts` already has the `Context['onchainState']` pattern for its greetings app. So parts 1 and 2 of step U2 are jolly-roger's, part 3 is the template's.
 
 **Found on the way, the template's**: `pnpm install` on a fresh worktree failed in `contracts prepare` with `FileNotFoundError ... cache/build-info/solc-0_8_28-....output.json`: the root `prepare` (`ensure-deployments.mjs`, whose fallback deploy compiles) and `contracts prepare` (which compiles) run concurrently into the same Hardhat cache. That is the likely cause of step 0's missing `deployments.ts` on the first install too. Not diagnosed further; worth a note in the template's own work tree.
+
+### 2026-10-01, step 1: pnpm 10
+
+Branch `pnpm-10` from the integration branch at a4fb8f0, worktree `~/dev/worktrees/stratagems/pnpm-10`. Two commits: 4bc97be (the move) and d4864bf (a hoisting fix the move needed). Node v24.19.0.
+
+**What changed.**
+
+- `packageManager: "pnpm@10.28.1"` in the root `package.json` (the template's). The system pnpm here is 11.25.0; it honours the field and runs 10.28.1, so step 0's caveat a (pnpm 11 refusing the lockfile, and its one-day `minimumReleaseAge`) no longer applies on a machine whose pnpm honours the field.
+- The root `pnpm` field (`supportedArchitectures`, `overrides` (21 entries), `auditConfig`) moved verbatim to `pnpm-workspace.yaml`. pnpm 10.28.1 itself still read the field silently; the "no longer read" warning came from the pnpm 11 front-end, on every command, and is gone.
+- Install scripts: pnpm 10 skipped 11 (`@parcel/watcher`, `@sentry/cli`, `@sveltejs/kit`, four `esbuild`s, `sharp`, `svelte-preprocess`, `vue-demi`, `workerd`). `onlyBuiltDependencies: [esbuild]`, as in the template. The other seven are in `ignoredBuiltDependencies` (so pnpm stops warning about them), each checked to work without its script, with the reason in a comment: `sharp` rendered a PNG, `workerd` 2024-06-05 and `sentry-cli` 2.32.1 answer `--version`, all from their `optionalDependencies` platform binaries; the four esbuild binaries answer a transform; `vue-demi` already defaults to Vue 3; kit's postinstall is a `svelte-kit sync`, which web's `check`, `dev` and `build` run anyway; `svelte-preprocess` only prints a reminder. The plan's other candidates do not exist here: contracts' hardhat and solc have no install script (solc is downloaded at compile time), and there is no `better-sqlite3`; libsql ships prebuilt optional binaries.
+- CI (`ipfs.yml`, `github-pages.yml`): `pnpm/action-setup@v2` with `version: 9` became `@v4` with no `version:`, so it reads `packageManager`. Not run in CI (both workflows only run on push to `public`/pages); judged by reading.
+- **Found: pnpm 10 dropped `*prettier*` from its default `public-hoist-pattern`**, so the root `prettier --check .` failed on `docs/.prettierrc` (`Cannot find package 'prettier-plugin-svelte'`): `docs/` is not a workspace, and only `web` declares the plugin. Fixed by declaring it at the root (`^3.2.4`, the same resolved 3.2.4 as web). Step 4 merges the root `package.json`, so keep it there.
+- The lockfile: the first install with pnpm 10 was frozen and wrote nothing (pnpm 10 keeps lockfile v9, and the moved overrides match). The `pnpm add` above was pnpm 10's first write: the set of resolved packages is identical (1420 keys in `packages:` before and after), only peer contexts were re-derived: `fuzd-nodejs`'s optional `hono` peer now points at the 4.13.11 already in the tree instead of 4.6.9, and a `zod` peer context drops from viem, abitype, ox and the fuzd packages. `fuzd-nodejs --help` runs (it prints "Failed to find Response internal state key", which is `@hono/node-server` 1.13.5 probing Node 24's own `Response`, independent of the hono version).
+
+**Baselines, from a clean install** (all `node_modules`, `common/dist`, `indexer/dist`, `web/build`, `web/.svelte-kit` removed first), against step 0:
+
+| check                                   | step 0 (pnpm 9.15.9)                      | step 1 (pnpm 10.28.1)                                                        |
+| --------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------- |
+| `pnpm install --frozen-lockfile`        | exit 0, 1241 packages, no warning         | exit 0, 1241 packages, no warning, no ignored-build notice (4 s, warm store) |
+| `pnpm indexer:build alpha1`             | exit 0                                    | exit 0 (6 s)                                                                 |
+| `pnpm --filter ./web check`             | 0 errors, 0 warnings                      | 0 errors, 0 warnings                                                         |
+| `pnpm --filter ./contracts test`        | 6 files pass, 1 skipped; 69 pass, 67 skip | the same, 62.5 s                                                             |
+| `pnpm format:check`                     | clean                                     | clean (after d4864bf; failed before it, see above)                           |
+| `MODE=alpha1 pnpm --filter ./web build` | exit 0, no `(!)`, 14 MB, 102 files        | exit 0, no `(!)`, 14 MB, 102 files                                           |
+
+Surprises: the prettier hoisting change; and `pnpm --filter ./contracts test` (`pnpm compile && vitest`) does not exit when run from this agent's shell: vitest 1.x decided it was interactive and stayed in watch mode after passing (timed out at 900 s). With `CI=1` it exits 0 in 64 s. Not a pnpm effect (the same `vitest` binary and script), so step 0 presumably ran it non-interactively; step 4's criteria now say `CI=1`.
