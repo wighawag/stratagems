@@ -20,7 +20,7 @@
 			<Executor func={increaseBlockTime} args={[1 * 3600]}>Add 1 hours</Executor>
 			<Executor func={increaseBlockTime} args={[23 * 3600]}>Add 23 hours</Executor>
 			<form class="add-x-hours">
-				<label for="hours" />
+				<label for="hours"></label>
 				<input id="hours" type="number" bind:value={hours} />
 				<Executor func={increaseBlockTime} args={[hours * 3600]}>Add {hours} hours</Executor>
 			</form>
@@ -29,7 +29,7 @@
 			<Executor func={increaseContractTime} args={[23 * 3600]}>Contract: Add 23 hours</Executor>
 			<Executor func={increaseContractTime} args={[(1 * 3600) / 6]}>Contract: Add 10 min</Executor>
 			<form>
-				<label for="hours" />
+				<label for="hours"></label>
 				<input id="hours" type="number" bind:value={hours} />
 				<Executor func={increaseContractTime} args={[hours * 3600]}>Contract: Add {hours} hours</Executor>
 			</form>

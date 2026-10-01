@@ -135,7 +135,7 @@
 	afterUpdate(update);
 </script>
 
-<canvas class={rootClass} bind:this={canvas} />
+<canvas class={rootClass} bind:this={canvas}></canvas>
 
 <style>
 	canvas {

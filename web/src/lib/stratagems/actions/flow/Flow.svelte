@@ -51,7 +51,7 @@
 					{currentStep.title}
 				</div>
 				{#if currentStep.component}
-					<svelte:component this={currentStep.component} {state} />
+					<svelte:component this={currentStep.component} state={$currentFlow.state} />
 				{:else}
 					<p class="description">{currentStep.description}</p>
 				{/if}

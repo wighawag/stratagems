@@ -63,7 +63,7 @@
 	<canvas
 		id="world-map"
 		style="background-color: #5c699f; position: absolute; width:100%; height: 100%; pointer-events: auto;"
-	/>
+	></canvas>
 	<div
 		id="canvas-overlay"
 		style="position: absolute;width:100%; height: 100%; pointer-events: none; overflow: hidden;"

@@ -144,8 +144,9 @@ export function isPrivateWindow(): Promise<boolean | null> {
 						e = true;
 						resolve(true);
 					}
-					// eslint-disable-next-line no-unused-expressions, no-void
-					void !e && ((e = !1), window.localStorage.removeItem('test'));
+					// A `void !e && (e = false, localStorage.removeItem('test'))` stood here. `void` binds
+					// tighter than `&&`, so it was always `undefined` and its right-hand side never ran
+					// (TypeScript 6 reports it as always falsy). Removed as the no-op it was.
 				}
 			} else if (navigator.userAgent.includes('Firefox')) {
 				// Firefox

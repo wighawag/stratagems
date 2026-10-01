@@ -6,7 +6,7 @@
 
 <div class="info">
 	<div>Indexing...</div>
-	<progress value={$syncing?.syncPercentage || 0} max="100" />
+	<progress value={$syncing?.syncPercentage || 0} max="100"></progress>
 </div>
 
 <style>

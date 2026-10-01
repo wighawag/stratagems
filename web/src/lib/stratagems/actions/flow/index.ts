@@ -1,11 +1,12 @@
-import type {ComponentType} from 'svelte';
+import type {Component} from 'svelte';
 import {get, writable, type Writable} from 'svelte/store';
 
 export type Step<State> = {
 	title: string;
 	action?: string;
 	description: string;
-	component?: ComponentType;
+	// Flow.svelte mounts it with the flow's state store as its one prop
+	component?: Component<{state: Writable<State>}>;
 	execute(state: State): Promise<{newState: State; nextStep?: number; auto?: boolean}>;
 	end?: boolean;
 };

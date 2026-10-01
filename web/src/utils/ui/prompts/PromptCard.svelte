@@ -22,7 +22,7 @@
 			>
 		</div>
 	</div>
-	<button on:click={() => dispatch('reject')} class="button-close">
+	<button on:click={() => dispatch('reject')} class="button-close" aria-label="close">
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
 			width="24"
