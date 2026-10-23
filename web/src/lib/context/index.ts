@@ -7,15 +7,17 @@
  * - `./core.ts` is the template's. Connection, executors, balances, transaction
  *   observation, the RPC-health picture. It is merged down from upstream, so
  *   the less it differs the better.
- * - `./game.ts` is the commit-reveal framework wired to one game. It is what a
- *   descendant of this template rewrites.
+ * - The game's half is the commit-reveal framework wired to one game. It is
+ *   what a descendant of this template rewrites, and it is reached through the
+ *   `$app-specific` alias (see svelte.config.js), so a game keeps it beside its own
+ *   code and points the alias there.
  *
  * The core builds the game rather than the other way round, because the order
  * matters: the game needs the connection, and the health/refresh wiring needs
  * the game's chain reads. See the injection point in `core.ts`.
  */
 import {createCoreContext, type ConnectionFactory} from './core.js';
-import {createGameContext, SIGNER_GRANT} from './game.js';
+import {createAppContext, SIGNER_GRANT} from '$app-specific';
 import type {Context} from './types.js';
 
 export type {
@@ -43,7 +45,7 @@ export function createContext(options?: {
 	// (the payment dialog's consent step and the account panel's delegation row)
 	// and neither can work out. See ui/delegation/grant.
 	return createCoreContext({
-		createApp: createGameContext,
+		createApp: createAppContext,
 		signerGrant: SIGNER_GRANT,
 		establishConnection: options?.establishConnection,
 	});
