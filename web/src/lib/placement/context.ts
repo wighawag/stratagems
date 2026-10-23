@@ -12,8 +12,7 @@
  * starts IO, which belongs to `start()`. See ADR-0002.
  */
 import {derived, get, type Readable} from 'svelte/store';
-import type {CoreServices} from './core';
-import type {TypedDeployments} from '$lib/deployments-store';
+import type {CoreServices} from '$lib/context/core';
 import type {SignerGrant} from '$lib/ui/delegation/grant';
 import {createChainTime, type ChainTimeStore} from '$lib/game/core/chain-time';
 import {
@@ -236,13 +235,6 @@ export type Render = {
 	gameRenderer: GameRenderer<GameSurface>;
 	eventEmitter: CanvasEventEmitter;
 };
-
-/**
- * What this game adds to the app context, as the framework sees it: every
- * member of `GameContext` except its lifecycle. `$lib/context/types` adds this
- * to `Context` through `$app-specific`, so the framework names no game type.
- */
-export type AppMembers = Omit<GameContext, 'start'>;
 
 export type GameContext = {
 	onchainState: OnchainStateStore<BoardState & {cycleNumber: number}>;
@@ -930,29 +922,4 @@ export function createGameContext(core: CoreServices): GameContext {
 		render: {camera, cameraControl, gameRenderer, eventEmitter},
 		start,
 	};
-}
-
-/**
- * The game's half of the context, under the name the framework asks
- * `$app-specific` for (see `$lib/context/index`).
- */
-export {createGameContext as createAppContext};
-
-/**
- * The contract that records who may act for whom (`UsingDelegation`). In this
- * game the Game is the registry.
- */
-export function delegationRegistry(
-	deployments: TypedDeployments,
-): `0x${string}` {
-	return deployments.contracts.Game.address;
-}
-
-/**
- * The contract whose address scopes this browser's local operation records.
- * One whose address is stable for the deployment's lifetime (a proxy, not an
- * implementation).
- */
-export function operationScope(deployments: TypedDeployments): `0x${string}` {
-	return deployments.contracts.Game.address;
 }

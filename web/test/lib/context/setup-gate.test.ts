@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import {setupNeeded} from '$lib/context/game';
+import {setupNeeded} from '$lib/placement/context';
 import type {DelegationValue} from '$lib/onchain/delegation';
 
 /**

@@ -34,8 +34,8 @@
  * core services, and the submission. What a GAME adds to the same trace - which
  * entity is being played, what its own flows are doing - is its own, and it
  * adds it by calling {@link watch} beside {@link startCoreDiagnostics}. See
- * `$lib/debug/diagnostics.ts`, which is the app-level file every descendant
- * keeps.
+ * `$lib/placement/diagnostics.ts`, the reference game's: a game supplies its own
+ * as `startDiagnostics` through `$app-specific`.
  */
 import type {Readable} from 'svelte/store';
 import {logs} from 'named-logs';
