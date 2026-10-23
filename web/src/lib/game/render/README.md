@@ -140,7 +140,7 @@ Two guards in `attachKeys` are worth not losing, because both were paid for:
 
 `attachGamepad` polls only while a pad is connected and starts on `gamepadconnected`, so a player with no gamepad pays nothing. Neither one decides a lifetime: bind them where input should be live, which is usually the route rather than the canvas, so input survives a canvas unmount without outliving the board.
 
-**A click leaves this layer as a world POINT, not a cell.** Snapping is a game rule: rounding to the nearest integer would make every game on the template a square grid with cells centred on integers. The template's game does that rounding in its own click handler in `context/game.ts`; a hex board or a continuous world does something else.
+**A click leaves this layer as a world POINT, not a cell.** Snapping is a game rule: rounding to the nearest integer would make every game on the template a square grid with cells centred on integers. The template's game does that rounding in its own click handler in `placement/context.ts`; a hex board or a continuous world does something else.
 
 Two units, and confusing them is the only way to be wrong here: **world means GAME units (cells), and `scale` is CSS pixels per game unit.** Device pixel ratio belongs to the surface, which scales its own backing store. `cellSize` is only meaningful to a scene graph authored in PIXELS, so an immediate renderer never needs it: it draws in game units under the camera transform and lets the context do the conversion. On `with/pixi-js` it appears in exactly one framework file (`pixi/world.ts`); here it appears in none, and is carried through the host's props only so that swapping costs one file.
 

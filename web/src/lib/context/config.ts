@@ -4,6 +4,7 @@ import {
 	resolveCreditsConfig,
 	type CreditsConfig,
 } from '$lib/core/connection/credits.js';
+import {delegationRegistry, operationScope} from '$app-specific';
 
 // ============================================================================
 // Default configuration values
@@ -73,21 +74,29 @@ export function resolveAppConfig(chain: AugmentedChainInfo): ResolvedAppConfig {
  * The address that scopes local operation data.
  *
  * Local operations belong to a specific deployment, so the storage key
- * includes one contract's address. Which contract is app-specific: this is
- * the single place a descendant changes it, and since the deployments object
- * is typed, renaming the contract or removing it is a compile error.
- *
- * The contract should be one whose address is stable for the deployment's
- * lifetime (e.g. the main proxy), not its implementation, which changes on
- * every hot contract replacement.
+ * includes one contract's address. Which contract is app-specific, so the app
+ * names it, in `operationScope` in its own module (`$app-specific`), and this file
+ * names no contract.
  */
 export function operationScopeAddress(
 	deployments: TypedDeployments,
 ): `0x${string}` {
-	return deployments.contracts.Game.address;
+	return operationScope(deployments);
 }
 
-// Delegation names its contract in `context/core`, not here: it needs the CHAIN
-// ID as well as the address (a credential is bound to the pair), and it is read
-// before the connection exists, so it cannot take a `TypedDeployments` the way
-// the scope above does. See `delegationTarget` there.
+/**
+ * The contract this app's delegation lives in.
+ *
+ * App-specific, so the app names it, in `delegationRegistry` in its own module
+ * (`$app-specific`), and this file names no contract.
+ *
+ * ONE PLACE, and it feeds three: the chain read, every writer, and the
+ * permission the app declares at connect time. The credential an owner signs
+ * names this contract, so anything reaching for a different one gets a
+ * signature the contract will not recover.
+ */
+export function delegationRegistryAddress(
+	deployments: TypedDeployments,
+): `0x${string}` {
+	return delegationRegistry(deployments);
+}

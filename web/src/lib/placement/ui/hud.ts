@@ -22,7 +22,7 @@ import type {ReserveState} from '../reserve';
 import {blocksCommitting, type MissedRevealState} from '../missed-reveal';
 import type {RecoveryState} from '$lib/game/core/recovery';
 import {SignerOutOfFundsError} from '../errors';
-import type {SetupNeeded} from '$lib/context/game';
+import type {SetupNeeded} from '$lib/placement/context';
 import type {CyclePhase} from '$lib/game/core/cycle-phase';
 
 export type HudModel = {

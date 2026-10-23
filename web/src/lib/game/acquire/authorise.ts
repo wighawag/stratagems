@@ -4,7 +4,6 @@ import {registrationRequest} from '$lib/ui/delegation/registration';
 import {
 	delegationAccountOf,
 	submitRegistration,
-	type RegistrationWriter,
 } from '$lib/ui/delegation/register-delegate';
 import {topUpCeiling} from '$lib/ui/credits';
 import type {Context} from '$lib/context/types';
@@ -143,11 +142,7 @@ export async function authoriseTheBrowsersKey(
 			address: delegation.registry.address,
 			abi: delegation.registry.abi,
 		},
-		// One cast, at the one place the mismatch is: the entry point is decided
-		// at runtime, and viem's `writeContract` types are built for a call site
-		// that names one function literally. The top-up flow casts here too, for
-		// the same reason and with the same type.
-		client: $executor.client as unknown as RegistrationWriter,
+		client: $executor.client,
 		publicClient,
 		account: $executor.account,
 		request: registrationRequest({

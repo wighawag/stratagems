@@ -61,7 +61,6 @@ import {
 	fetchDelegation,
 	signsWithoutPrompt,
 	submitRegistration,
-	type RegistrationWriter,
 } from '$lib/ui/delegation/register-delegate';
 import {consentBullets, type SignerGrant} from '$lib/ui/delegation/grant';
 import {findPendingAcquisition, type PendingAcquisition} from './pending';
@@ -463,10 +462,10 @@ export function createAcquisition(params: {
 	 */
 	function authorisationRoute(): AcquisitionAuthorisation | undefined {
 		const $connection = get(deps.connection);
-		const deployments = get(deps.deployments);
+		const {registry} = deps.delegation;
 		const account = delegationAccountOf($connection, {
-			chainId: deployments.chain.id,
-			contract: deployments.contracts.Game.address,
+			chainId: registry.chainId,
+			contract: registry.address,
 		});
 		return acquisitionAuthorisation({
 			registered: isRegistered(get(deps.delegation)),
@@ -511,14 +510,14 @@ export function createAcquisition(params: {
 
 		logger.debug(`authorising: ${authorisation}`);
 		state.set({step: 'Authorising', authorisation});
-		const deployments = get(deps.deployments);
+		const {registry} = deps.delegation;
 		return {
 			delegate: $signer.address,
 			credential: await fetchDelegation({
 				connection: deps.connection,
 				target: {
-					chainId: deployments.chain.id,
-					contract: deployments.contracts.Game.address,
+					chainId: registry.chainId,
+					contract: registry.address,
 				},
 				delegate: $signer.address,
 			}),
@@ -824,15 +823,8 @@ export function createAcquisition(params: {
 				const $signer = get(deps.signerExecutor);
 				if ($signer.status === 'ready') {
 					await submitRegistration({
-						registry: {
-							address: deployments.contracts.Game.address,
-							abi: deployments.contracts.Game.abi,
-						},
-						// One cast, at the one place the mismatch is: viem's
-						// `writeContract` types are built for a call site that names one
-						// function literally, and the entry point here is chosen at
-						// runtime. Same cast, same reason, as the top-up flow's.
-						client: $signer.client as unknown as RegistrationWriter,
+						registry: deps.delegation.registry,
+						client: $signer.client,
 						publicClient: deps.publicClient,
 						account: $signer.account,
 						request: registrationRequest({

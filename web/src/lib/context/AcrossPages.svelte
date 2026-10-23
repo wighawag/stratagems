@@ -4,7 +4,7 @@
 	import {DebugOperations} from '$lib/ui/debug';
 	import {PendingOperationModal} from '$lib/ui/pending-operation';
 	import TxObserverDebugOverlay from '$lib/debug/TxObserverDebugOverlay.svelte';
-	import {startDiagnostics} from '$lib/debug/diagnostics';
+	import {startDiagnostics} from '$app-specific';
 
 	import InsufficientFundsModal from '$lib/core/transaction/InsufficientFundsModal.svelte';
 	import {TopUpModal} from '$lib/ui/credits/index.js';

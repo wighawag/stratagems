@@ -348,7 +348,7 @@ export async function planManyOnCanvas(
  * definition too late.
  *
  * Clicks are gated on setup rather than on the phase (see the click handler in
- * `context/game.ts`), so this is a real affordance and not a test-only door.
+ * `placement/context.ts`), so this is a real affordance and not a test-only door.
  */
 export async function clickCanvas(
 	page: Page,
