@@ -4,10 +4,7 @@ import {createPollingOnchainState} from '$lib/onchain/state';
 import type {ChainTimeStore, SyncedTime} from '$lib/game/core/chain-time';
 import type {CycleInfo, CycleInfoStore} from '$lib/game/core/cycle';
 import type {Camera, CameraWatcher} from '$lib/game/render/camera';
-import type {
-	TypedDeployments,
-	TypedPublicClient,
-} from '$lib/core/connection/types';
+import type {TypedPublicClient} from '$lib/core/connection/types';
 
 /**
  * THE POLICY IS THE POLLER'S, not the app's, and this is what pins that.
@@ -92,11 +89,7 @@ function harness(
 		publicClient: {
 			getBlockNumber: async () => 100n,
 		} as unknown as TypedPublicClient,
-		deployments: {
-			contracts: {
-				Game: {linkedData: {commitPhaseDuration: 10, revealPhaseDuration: 10}},
-			},
-		} as unknown as TypedDeployments,
+		cycleDuration: 20,
 		camera,
 		cycleInfo,
 		chainTime,

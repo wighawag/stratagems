@@ -466,11 +466,12 @@ export function createGameContext(core: CoreServices): GameContext {
 
 	const onchainState = createPollingOnchainState<BoardState>({
 		publicClient: core.publicClient,
-		deployments,
 		camera,
 		cycleInfo,
 		chainTime,
 		zonesForCamera,
+		cycleDuration:
+			config.cycle.commitPhaseDuration + config.cycle.revealPhaseDuration,
 		read: createBoardReader({publicClient: core.publicClient, deployments}),
 		emptyState: emptyBoard,
 		fetchGate: core.chainFetchGate,

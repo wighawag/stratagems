@@ -12,10 +12,7 @@
  * and the rest of the app does not notice: the view layer, the RPC-health
  * banner and the refresh connector only ever see the contract.
  */
-import type {
-	TypedDeployments,
-	TypedPublicClient,
-} from '$lib/core/connection/types';
+import type {TypedPublicClient} from '$lib/core/connection/types';
 import {createPollingStore} from '$lib/core/connection/polling-store';
 import type {CameraWatcher} from '$lib/game/render/camera';
 import type {ChainTimeStore} from '$lib/game/core/chain-time';
@@ -173,11 +170,17 @@ const readableTrue: Readable<boolean> = {
  */
 export function createPollingOnchainState<TState>(params: {
 	publicClient: TypedPublicClient;
-	deployments: TypedDeployments;
 	camera: CameraWatcher;
 	cycleInfo: CycleInfoStore;
 	chainTime: ChainTimeStore;
 	zonesForCamera: ZonesForCamera;
+	/**
+	 * One whole cycle, commit plus reveal, in seconds. A parameter because it is
+	 * the GAME's config: the poller used to read it off `contracts.Game`'s
+	 * linked data through a cast, which tied it to one contract name and typed
+	 * nothing.
+	 */
+	cycleDuration: number;
 	read: ZonesReader<TState>;
 	emptyState: () => TState;
 	config?: {
@@ -194,22 +197,14 @@ export function createPollingOnchainState<TState>(params: {
 }): OnchainStateStore<TState> {
 	const {
 		publicClient,
-		deployments,
 		camera,
 		cycleInfo,
 		chainTime,
 		zonesForCamera,
+		cycleDuration,
 		read,
 		emptyState,
 	} = params;
-
-	const linkedData = deployments.contracts.Game.linkedData as {
-		commitPhaseDuration: unknown;
-		revealPhaseDuration: unknown;
-	};
-	const cycleDuration =
-		Number(linkedData.commitPhaseDuration) +
-		Number(linkedData.revealPhaseDuration);
 
 	const scope = derived<
 		[CameraWatcher, CycleInfoStore, ChainTimeStore, Readable<boolean>],

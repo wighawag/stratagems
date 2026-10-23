@@ -5,10 +5,7 @@ import {createPollingOnchainState} from '$lib/onchain/state';
 import type {ChainTimeStore, SyncedTime} from '$lib/game/core/chain-time';
 import type {CycleInfo, CycleInfoStore} from '$lib/game/core/cycle';
 import type {Camera, CameraWatcher} from '$lib/game/render/camera';
-import type {
-	TypedDeployments,
-	TypedPublicClient,
-} from '$lib/core/connection/types';
+import type {TypedPublicClient} from '$lib/core/connection/types';
 
 /**
  * EVERY FETCH READS THE BLOCK THE CHAIN IS AT, not one viem remembered.
@@ -102,13 +99,7 @@ describe('createPollingOnchainState: the block a fetch reads at', () => {
 
 		const store = createPollingOnchainState<{cells: Map<bigint, unknown>}>({
 			publicClient,
-			deployments: {
-				contracts: {
-					Game: {
-						linkedData: {commitPhaseDuration: 10, revealPhaseDuration: 10},
-					},
-				},
-			} as unknown as TypedDeployments,
+			cycleDuration: 20,
 			camera,
 			cycleInfo,
 			chainTime,
