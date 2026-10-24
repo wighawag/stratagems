@@ -34,6 +34,10 @@ overrides:
   'browserify-sign@>=2.6.0 <=4.2.1': '>=4.2.2'
   'follow-redirects@<=1.15.5': '>=1.15.6'
   'phin@<3.7.1': '>=3.7.1'
+  # from template-commit-reveal (its root package.json): cookie@<0.7.0 (GHSA-pxg6-pf52-xh8x, low).
+  # @sveltejs/kit declares cookie ^0.6.0 and has no release past it; web is adapter-static, so
+  # not reachable. A range key, so it disarms itself once SvelteKit moves past 0.6.x: delete it then.
+  'cookie@<0.7.0': '^0.7.0'
 
 auditConfig:
   ignoreCves:
@@ -59,3 +63,23 @@ ignoredBuiltDependencies:
   - svelte-preprocess
   - vue-demi
   - workerd
+
+# Four packages the template's framework uses publish types that import 'eip-1193' but
+# declare it only as a devDependency, so those types resolve against whatever pnpm hoists.
+# In template-commit-reveal that is the only copy (0.6.5) and it works by luck; here the
+# hoisted copy is stratagems' 0.5.0, and the framework fails `check` in context/core.ts and
+# embedded/wallet.ts (measured 2026-10-24, work/plans/join-template-commit-reveal.md, step 4).
+# Delete an entry once its package declares the dependency.
+packageExtensions:
+  '@etherplay/wallet-connector-ethereum':
+    dependencies:
+      eip-1193: ^0.6.3
+  '@etherplay/connect':
+    dependencies:
+      eip-1193: ^0.6.3
+  '@etherplay/connect-core':
+    dependencies:
+      eip-1193: ^0.6.3
+  '@etherkit/tx-observer':
+    dependencies:
+      eip-1193: ^0.6.5

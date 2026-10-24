@@ -34,3 +34,13 @@ pnpm-lock.yaml
 static/
 
 *.json
+
+# from template-commit-reveal
+src/app.html
+src/lib/shadcn/
+
+# Note .prettierignore is being ignored by vscode prettier plugin, see https://github.com/prettier/prettier-vscode/issues/3465
+
+# template-commit-reveal's own, and red in its own format:check too (2026-10-24: a table
+# wider than prettier 3.9 aligns). Delete this line once the template reformats it.
+src/lib/game/render/README.md

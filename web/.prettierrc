@@ -1,11 +1,42 @@
 {
 	"useTabs": true,
 	"singleQuote": true,
-	"printWidth": 120,
 	"bracketSpacing": false,
-	"plugins": ["prettier-plugin-svelte"],
+	"printWidth": 80,
+	"plugins": ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
+	"tailwindStylesheet": "./src/app.css",
+	"tailwindFunctions": ["clsx"],
 	"overrides": [
-		{"files": "*.svelte", "options": {"parser": "svelte"}},
-		{"files": "*.ts", "options": {"parser": "typescript"}}
+		{
+			"files": "*.svelte",
+			"options": {
+				"parser": "svelte"
+			}
+		},
+		{
+			"files": [
+				"src/lib/stratagems/**",
+				"src/routes/(pages)/**",
+				"src/routes/+layout.svelte",
+				"src/routes/+layout.ts",
+				"src/routes/+page.svelte",
+				"src/routes/Head.svelte",
+				"src/routes/_redirects/**",
+				"src/routes/version/**",
+				"src/service-worker.ts",
+				"src/svelte.d.ts",
+				"src/utils/**",
+				"src/data/**",
+				"src/css/**",
+				"scripts/**",
+				"verify/**",
+				"svelte.config.js",
+				"README.md",
+				"TODO.md"
+			],
+			"options": {
+				"printWidth": 120
+			}
+		}
 	]
 }

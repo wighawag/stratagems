@@ -32,3 +32,11 @@ lib/forge-std
 
 scripts/data/contracts.ts
 .data/
+
+# from template-commit-reveal
+deployments/hardhat*
+deployments/default
+deployments/test
+deployments/ephemeral
+dist/
+purgatory.db

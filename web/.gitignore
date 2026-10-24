@@ -33,3 +33,22 @@ static/processor.bundle.js
 # playwright (verify/)
 /test-results
 /playwright-report
+
+# from template-commit-reveal
+src/lib/deployments.ts
+
+.yalc
+yalc.lock
+blob-report/
+.playwright
+
+# The sprite pipeline's output, which only `with/pixi-js` generates.
+#
+# Listed HERE, on a base that has no pipeline, on purpose. A checkout that has
+# been on that branch leaves these behind, and without this they show up as
+# untracked files and fail `format:check` on a generated manifest - a false red
+# in a gate, which is the thing that teaches people to stop reading gates. It
+# also keeps `.gitignore` off the branch's shared-file edit list (rule N1).
+static/assets
+src/lib/manifest.json
+.assetpack

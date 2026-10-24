@@ -1,6 +1,7 @@
 import type {PendingTransaction, EIP1193TransactionWithMetadata, PendingTransactionState} from 'ethereum-tx-observer';
 import type {AccountHandler, AccountInfo, OnPendingTransaction, SyncInfo} from './types';
-import {initEmitter} from 'radiate';
+// radiate 0.3 (the template's framework) has no initEmitter: this is stratagems' 0.0.x, aliased
+import {initEmitter} from 'radiate-legacy';
 import {AccountDB} from './account-db';
 import {writable, type Readable, type Writable} from 'svelte/store';
 import type {ScheduleInfo} from 'fuzd-scheduler';

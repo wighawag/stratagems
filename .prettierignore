@@ -22,3 +22,9 @@ package.json
 /docs/contracts/
 /docs/.vitepress/*
 !/docs/.vitepress/config.mts
+# from template-commit-reveal, formatted by its own conventions (80 columns), and
+# not format-checked there either (its root format:check only recurses into packages)
+/README.embedded-chain.md
+/README.integration.md
+/scripts/*
+!/scripts/stratagems-generated.mjs
