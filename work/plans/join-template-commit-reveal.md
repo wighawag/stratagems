@@ -80,7 +80,7 @@ Candidates already visible, each to be judged when its step comes (not decided h
 - [x] **Step U** (optional, in the template tree): rocketh 0.23 / hardhat-deploy 2.0.30 / Hardhat 3.18 at their home, cascaded
 - [x] **Step U2** (in the template tree): the game becomes a slot the framework compiles against, and the delegation registration is typed
 - [x] **Step 4**: the merge
-- [ ] **Step 5**: stratagems becomes a node of the tree
+- [x] **Step 5**: stratagems becomes a node of the tree
 - [ ] **Later**: the port proper (steps 6 to 11, each specified in its own context when reached)
 
 ### Step 0: baseline and measurement (read-only)
@@ -592,3 +592,5 @@ Branch `offshoot-node` from the integration branch at 3e5f96e1, worktree `~/dev/
 **Proposed to the user, not made** (template-commit-reveal `work`, `work/specs/proposed/games-on-this-foundation.md`): the status table's stratagems row, Decision 1's tree line and its "Why the dormant games still join the tree" paragraph, and the deferred list's "Stratagems and catacombs beyond compiling". The text is in this session's report; it should land only after `main` takes the merge, since it says stratagems is wired.
 
 Surprises: that the live tree has been reporting an error for stratagems since step 4, which nobody would see without running a cascade; and that `--verify --dry-run` cannot measure a verify at all.
+
+**Landed, 2026-10-24**: the user approved everything ("I approve all"): the integration branch fast-forwarded to this branch and pushed, `main` fast-forwarded to the integration branch and pushed, `offshoot` pushed, and the proposed text applied to the template's plan. After the push, `offshoot-fanout --dry-run` from template-commit-reveal is the measurement of record (below, in this session's report).
