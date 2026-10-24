@@ -3,9 +3,9 @@
  * game, in one module, reached only through the `$app-specific` alias.
  *
  * Same mechanism as `$ui` (see svelte.config.js): the framework imports
- * `$app-specific`, never `$lib/placement`, so a game that is not this one points
- * the alias at its own module and the framework compiles against that instead,
- * without a framework file being edited. A game supplies exactly what this file
+ * `$app-specific`, never a game's own folder, so a game that is not this one
+ * points the alias at its own module and the framework compiles against that
+ * instead, without a framework file being edited. A game supplies exactly what this file
  * exports. The names are jolly-roger's (`createAppContext`, `AppMembers`), the
  * template's own additions are `startDiagnostics`, and the two contract choices
  * are the same as upstream's.
