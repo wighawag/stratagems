@@ -151,6 +151,15 @@ Needs decision 3 confirmed. Uses the `reconcile-template-tree` skill; this is te
 
 **Done when** the template's `contracts/package.json` carries the same versions as stratagems', every node of its subtree is green, and the user has approved the pushes.
 
+**Decided by the user, 2026-10-24** (before the step ran):
+
+1. **The home is jolly-roger**, the root of this tree's contracts. Bump it on jolly-roger `main`, then cascade to every node that has contracts: jolly-roger's branches (`with/local-signer`, `with/hosted-account`, `with/embedded-chain`, `integration`, `website`), template-commit-reveal's (`main`, `with/pixi-js`, `with/nft-identity`, `with/all`), reveal-or-die, bleeps and mandalas.
+2. **template-ethereum-contracts is updated too**, but it shares no history with this tree, so it is an independent hand port, done after jolly-roger, in its own commits, following that repo's own work protocol (it has none written down: a branch, verified, then its `main`).
+3. **bomber-world is left out of the cascade** (`offshoot-fanout --ignore bomber-world`): an agent is working in it. It is reported as deferred, and picks the bump up at its next cascade from reveal-or-die, together with U2.
+4. **Every push is asked for, per repo**; the user may approve them all at once at the end.
+
+Found while doing it: `@rocketh/web` (the embedded chain's in-tab deploy, `web/package.json` on jolly-roger `with/embedded-chain` and below) has to move with rocketh, since 0.19.23 pins rocketh ^0.21 as its peer and brings `@rocketh/core` 0.21; 0.19.27 is the release for rocketh 0.23. Its home is `with/embedded-chain`, the branch that introduces it.
+
 ### Step 4: the merge
 
 Branch `join-template`, worktree `~/dev/worktrees/stratagems/join-template`. Needs decisions 1, 2 and 4 confirmed, steps 1 to 3 done (and U, or a recorded decision to skip it).
@@ -453,3 +462,66 @@ The previews of the 2026-10-23 entry, landed with the user's approval, after one
 **Found, not fixed** (each its repo's own): bleeps' editor preview of one melody ("Old MacDonald Had A Farm", speed 24) needs more than the dev node's 50M call cap, against ADR 0002's measured 34M for one melody, so "comfortable" does not hold for every melody; bleeps' `PUBLIC_BOOKING_SERVICE_URL` is still a loopback literal; mandalas' committed `goerli` records make a fresh worktree's `check` fail. A wallet that already knows chain 31337 keeps its own RPC url, so the same-host notation does not reach it: MetaMask had to be pointed at `telemaque.ska.sh:8545` by hand.
 
 **For step 4**: the names to supply are `$app-specific`, `createAppContext`, `AppMembers`, `SIGNER_GRANT`, `operationScope`, `delegationRegistry`, `startDiagnostics` (see `placement/game.ts` in the template), and `test/alias-targets.test.ts` arrives with the merge and checks that stratagems' `$app-specific` target exists.
+
+### 2026-10-24, step U: the contracts toolchain at jolly-roger, cascaded and hand-ported, NOT pushed (awaiting the user's approval of the pushes)
+
+Not ticked: the last criterion is the user's approval of the pushes, asked for at the end of this session. Everything below is on LOCAL branches; nothing is pushed in any repo. The user's decisions of 2026-10-24 are in step U's text. Premises re-derived first: every node of the tree (jolly-roger, template-commit-reveal, reveal-or-die, bleeps, mandalas, template-ethereum-contracts) level with origin and clean; `offshoot-fanout` dry-run from the root: every node up to date except bomber-world, which would take U2 (30 files), as the U2 entry left it. Every node with contracts was on hardhat ^3.13.0, hardhat-deploy ^2.0.24, rocketh ^0.19.19 and `@rocketh/*` ^0.19.x; stratagems on the integration branch on hardhat ^3.18.0, hardhat-deploy ^2.0.30, rocketh ^0.23.1, and those are still the latest releases of every rocketh package (hardhat itself is at 3.21.0 since 2026-10-22).
+
+**What changed, at its home.** jolly-roger `main` 00143cb (branch `contracts-toolchain`, worktree `~/dev/worktrees/jolly-roger/contracts-toolchain`, then `main` fast-forwarded): `contracts/package.json` takes stratagems' exact specifiers for the 13 packages (hardhat, hardhat-deploy, rocketh, `@rocketh/{deploy,doc,export,node,proxy,read-execute,router,signer,verifier,viem}`), and the lockfile. hardhat resolves to 3.21.0 (stratagems' lockfile: 3.18.0; same specifier). **No source, config or script had to change**: the breaking points stratagems met (09a8ae6) were from rocketh 0.1x, and the tree was already in rocketh 0.19's shape (`-e` on the CLIs, `rocketh/config.ts` with `environments`, the export's `chain`). Then jolly-roger `with/embedded-chain` 9e7e7df: **`@rocketh/web` ^0.19.27**, because 0.19.23 declares rocketh ^0.21 as its peer and pulls `@rocketh/core` 0.21 (pnpm: "unmet peer rocketh@^0.21.0: found 0.23.1"), so the world in the tab would run the deploy scripts through an older rocketh than they are written for.
+
+**The cascade** (`offshoot-fanout --ignore bomber-world --leave-conflicts`, from jolly-roger, five passes). Every conflict was a lockfile or a `contracts/package.json`, resolved by intent: the node's own lockfile, then `pnpm install` against the merged manifests; the node's own `contracts/package.json` (name, pinned OpenZeppelin, workspace deps, scripts) with the 13 new versions set. Tips:
+
+| node | tip | how |
+| --- | --- | --- |
+| jolly-roger `main` | 00143cb2 | the bump |
+| jolly-roger `with/local-signer` | c08b767d | clean merge |
+| jolly-roger `with/hosted-account` | 01166029 | clean merge |
+| jolly-roger `with/embedded-chain` | 9e7e7df7 | f85cfc9 merge (lockfile), then the `@rocketh/web` bump |
+| jolly-roger `integration` | cd2ac596 | two merges, lockfile each |
+| jolly-roger `website` | 40606468 | merge (lockfile) |
+| template-commit-reveal `main` | 3fe2b29d | merge (lockfile, `contracts/package.json`: its exports, OZ 5.4.0, abitype, solidity-kit) |
+| template-commit-reveal `with/pixi-js` | f659420d | merge (lockfile) |
+| template-commit-reveal `with/nft-identity` | e9be8493 | clean merge |
+| template-commit-reveal `with/all` | 9369b1ea | clean merges |
+| reveal-or-die `main` | 4e9004b2 | merge (`contracts/package.json`); its lockfile merged clean and `pnpm install` leaves it unchanged |
+| bleeps `main` | 05ade63a | merge (lockfile, `contracts/package.json`: OZ 4.3.2 pinned, no forge-std) |
+| mandalas `main` | 56f63b89 | merge (lockfile, `contracts/package.json`: OZ 3.4.2 pinned) |
+| bomber-world `main` | 2cf09a75 | **deferred** (user's decision 3) |
+| template-ethereum-contracts `main` | 9f152bf | hand port, branch `contracts-toolchain` then `main` fast-forwarded; no change beyond the 13 versions and the lockfile |
+
+A final dry-run from jolly-roger: every node up to date, bomber-world ignored.
+
+**Measured, per node** (in the node's worktree, after `pnpm install --frozen-lockfile`: web `check`, web `test:unit` server + client, the contract tests, `pnpm typescript` in contracts):
+
+| node | check | unit | contract tests | typescript |
+| --- | --- | --- | --- | --- |
+| jolly-roger `main` | 0 | 955 + 44 (before: the same) | 20 passing (before: the same) | 0 |
+| jolly-roger `with/local-signer` | 0 | 1220 + 58 | 25 passing | 0 |
+| jolly-roger `with/hosted-account` | 0 | 1220 + 58 | 25 passing | 0 |
+| jolly-roger `with/embedded-chain` | 0 | 981 + 46 | 20 passing | 0 |
+| jolly-roger `integration` | 0 | 1246 + 60 | 25 passing | 0 |
+| jolly-roger `website` | 0 | 955 + 44 | 20 passing | (not run) |
+| template-commit-reveal `main` | 0 | 1699 + 78 | 47 passing | 0 |
+| template-commit-reveal `with/pixi-js` | 0 | 1708 + 78 | 47 passing | 0 |
+| template-commit-reveal `with/nft-identity` | 0 | 1707 + 78 | 49 passing | 7 errors, pre-existing (below) |
+| template-commit-reveal `with/all` | 0 | 1716 + 78 | 49 passing | 7 errors, pre-existing (below) |
+| reveal-or-die `main` | 0 | 1861 + 72 (U2: the same) | 21 passing | 0 |
+| bleeps `main` | 0 | 1106 + 44 (U2: the same) | 111 passing, 6 skipped | 0 |
+| mandalas `main` | 0 | 963 + 44 (U2: the same) | 84 passing | 0 |
+| template-ethereum-contracts `main` | (no web) | (no web) | 20 passing (before: the same) | 0 |
+
+The unit counts are U2's plus the two alias tests that landed with it, so unchanged. Beyond the verify:
+
+- **Deployed bytecode** (production profile, executable code without the metadata blob): jolly-roger's GreetingsRegistry identical before and after; bleeps' own `verify:bytecode`: 12 deployed contracts reproduce exactly, 2 skipped as before; mandalas' MandalaToken identical before and after AND to its mainnet record; template-ethereum-contracts' GreetingsRegistry identical before and after. (jolly-roger's committed sepolia record does NOT match its current source, before or after: the record predates a source change. Not this step's.)
+- **The deploy pipeline**: on a `hardhat node` on port 8645 (8545 belongs to another project), a full deploy, its `rocketh-export` and a `pnpm execute localhost scripts/setMessage.ts` in jolly-roger and template-ethereum-contracts; a full deploy (token, routed game, stake sale) and export in template-commit-reveal. The throwaway deploy of `ensure-deployments` (`scripts/deploy-ephemeral.ts` plus export) in jolly-roger and template-commit-reveal, and the template's web `check` against that export: 0. The committed sepolia records export to a byte-identical `deployments.ts` in jolly-roger, and export in template-ethereum-contracts. The in-tab deploy through `@rocketh/web` is covered by `test/lib/embedded/world.test.ts` (it runs the real deploy scripts on webevm), green on every node that has it. Every node was stopped by its process group.
+
+**Found, not fixed** (each its repo's own, both pre-existing, measured on the untouched branch in a throwaway worktree):
+
+- template-commit-reveal `with/nft-identity` (and `with/all` from it): `pnpm typescript` fails on `test/js/{Game,StakeSale}.test.ts` (six `env.execute(..., {functionName: 'withdrawAvatar'})` calls on a deployment whose ABI type lacks it) and `test/js/utils/index.ts:428`: 13 errors before the bump, the same 7 sites after (rocketh 0.23's overloads report each call once). The tests run and pass; `prepare` runs plain `tsc`, so installs are not gated.
+- bleeps: `pnpm test` straight after `hardhat compile --build-profile production` fails 7 `BleepsFixedPriceSale` tests (`SALE_NOT_STARTED`); run again, all pass. Identical with hardhat 3.13 before the bump.
+
+**Surprises.** That nothing but versions had to change. That `@rocketh/web` was part of the toolchain (the plan did not list it). That hardhat moved to 3.21 in the meantime, so the tree resolves a newer hardhat than stratagems for the same specifier. The install race of the U2 entry did not show up in any of these (all were existing worktrees, not fresh ones).
+
+**For step 4**: the `contracts/package.json` conflict of the merge is now about the game only (the toolchain lines agree), and the template's `web/package.json` arrives with `@rocketh/web` ^0.19.27, which matches stratagems' rocketh.
+
+**Left for the landing:** the pushes (per repo, branches named in the table), then the tick. Local branches `contracts-toolchain` in jolly-roger and template-ethereum-contracts (merged into `main`, delete after pushing), and their worktrees under `~/dev/worktrees/{jolly-roger,template-ethereum-contracts}/contracts-toolchain`.
