@@ -77,7 +77,7 @@ Candidates already visible, each to be judged when its step comes (not decided h
 - [x] **Step 1**: pnpm 10
 - [x] **Step 2**: stratagems' app moves to `web/src/lib/stratagems/`
 - [x] **Step 3**: the web toolchain the template runs on (Svelte 5 in legacy mode, SvelteKit, Vite 8, TypeScript 6)
-- [ ] **Step U** (optional, in the template tree): rocketh 0.23 / hardhat-deploy 2.0.30 / Hardhat 3.18 at their home, cascaded
+- [x] **Step U** (optional, in the template tree): rocketh 0.23 / hardhat-deploy 2.0.30 / Hardhat 3.18 at their home, cascaded
 - [x] **Step U2** (in the template tree): the game becomes a slot the framework compiles against, and the delegation registration is typed
 - [ ] **Step 4**: the merge
 - [ ] **Step 5**: stratagems becomes a node of the tree
@@ -463,7 +463,7 @@ The previews of the 2026-10-23 entry, landed with the user's approval, after one
 
 **For step 4**: the names to supply are `$app-specific`, `createAppContext`, `AppMembers`, `SIGNER_GRANT`, `operationScope`, `delegationRegistry`, `startDiagnostics` (see `placement/game.ts` in the template), and `test/alias-targets.test.ts` arrives with the merge and checks that stratagems' `$app-specific` target exists.
 
-### 2026-10-24, step U: the contracts toolchain at jolly-roger, cascaded and hand-ported, NOT pushed (awaiting the user's approval of the pushes)
+### 2026-10-24, step U: the contracts toolchain at jolly-roger, cascaded and hand-ported
 
 Not ticked: the last criterion is the user's approval of the pushes, asked for at the end of this session. Everything below is on LOCAL branches; nothing is pushed in any repo. The user's decisions of 2026-10-24 are in step U's text. Premises re-derived first: every node of the tree (jolly-roger, template-commit-reveal, reveal-or-die, bleeps, mandalas, template-ethereum-contracts) level with origin and clean; `offshoot-fanout` dry-run from the root: every node up to date except bomber-world, which would take U2 (30 files), as the U2 entry left it. Every node with contracts was on hardhat ^3.13.0, hardhat-deploy ^2.0.24, rocketh ^0.19.19 and `@rocketh/*` ^0.19.x; stratagems on the integration branch on hardhat ^3.18.0, hardhat-deploy ^2.0.30, rocketh ^0.23.1, and those are still the latest releases of every rocketh package (hardhat itself is at 3.21.0 since 2026-10-22).
 
@@ -524,4 +524,4 @@ The unit counts are U2's plus the two alias tests that landed with it, so unchan
 
 **For step 4**: the `contracts/package.json` conflict of the merge is now about the game only (the toolchain lines agree), and the template's `web/package.json` arrives with `@rocketh/web` ^0.19.27, which matches stratagems' rocketh.
 
-**Left for the landing:** the pushes (per repo, branches named in the table), then the tick. Local branches `contracts-toolchain` in jolly-roger and template-ethereum-contracts (merged into `main`, delete after pushing), and their worktrees under `~/dev/worktrees/{jolly-roger,template-ethereum-contracts}/contracts-toolchain`.
+**Landed, 2026-10-24**: the user approved every push, and all 14 were fast-forwards: jolly-roger `main`, `with/local-signer`, `with/hosted-account`, `with/embedded-chain`, `integration`, `website`; template-commit-reveal `main`, `with/pixi-js`, `with/nft-identity`, `with/all`; reveal-or-die, bleeps, mandalas and template-ethereum-contracts `main`, each at the tip in the table above. bomber-world stays deferred. Still to clean up: the local branches `contracts-toolchain` in jolly-roger and template-ethereum-contracts (merged into `main`, delete after pushing), and their worktrees under `~/dev/worktrees/{jolly-roger,template-ethereum-contracts}/contracts-toolchain`.
