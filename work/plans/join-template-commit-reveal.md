@@ -79,7 +79,7 @@ Candidates already visible, each to be judged when its step comes (not decided h
 - [x] **Step 3**: the web toolchain the template runs on (Svelte 5 in legacy mode, SvelteKit, Vite 8, TypeScript 6)
 - [x] **Step U** (optional, in the template tree): rocketh 0.23 / hardhat-deploy 2.0.30 / Hardhat 3.18 at their home, cascaded
 - [x] **Step U2** (in the template tree): the game becomes a slot the framework compiles against, and the delegation registration is typed
-- [ ] **Step 4**: the merge
+- [x] **Step 4**: the merge
 - [ ] **Step 5**: stratagems becomes a node of the tree
 - [ ] **Later**: the port proper (steps 6 to 11, each specified in its own context when reached)
 
@@ -193,7 +193,7 @@ Then ask the user before merging anything into `main` and pushing: the integrati
 
 Branch `offshoot-node` (the config itself lives on an orphan branch). Uses the `reconcile-template-tree` skill.
 
-**Start here.** `git -C ../reveal-or-die show offshoot:fanout.config.json` and `git -C ../bomber-world show offshoot:fanout.config.json` (the shape to copy). `offshoot-fanout config --help`.
+**Start here.** `git -C ../reveal-or-die show offshoot:fanout.config.json` and `git -C ../bomber-world show offshoot:fanout.config.json` (the shape to copy). `offshoot-fanout config --help`. Step 4's log entry: the `stem` remote exists in the shared `.git` (fetched with `tagOpt --no-tags`, so the template's `old` tag is not copied again; one copy was, before that was set), `.offshoot-omissions` lists 140 paths, and a fresh worktree's `pnpm install` generates what `check` needs (the root `prepare` runs `scripts/stratagems-generated.mjs`, then the template's `ensure-deployments.mjs`). The verify's `test:unit` runs a browser project, so the machine running it needs Playwright's Chromium.
 
 **Do.**
 
@@ -235,13 +235,13 @@ Each of these is its own step and gets its own detailed specification, in its ow
 
 Every step below starts with the home test from "The direction": what it needs from the template that the template does not have yet is built there first.
 
-- **Step 6, the app shell and the connection.** Adopt the template's app context and `@etherplay/connect` in place of `web3-connection`; the omitted template routes (explorer, contracts, transactions, offline, debug) come back; their `.offshoot-omissions` entries go.
+- **Step 6, the app shell and the connection.** Adopt the template's app context and `@etherplay/connect` in place of `web3-connection`; the omitted template routes (explorer, contracts, transactions, debug, `+error.svelte`) come back; their `.offshoot-omissions` entries go, with the rest of that file's group 3 (the template's service worker entry, its `static/_redirects`, `test/routes`, and the three framework tests omitted for their premise: `layers`, `json`, `fatal`). `web/src/lib/stratagems/game.ts` (the `$app-specific` placeholder) becomes stratagems' real composition, and the two generated deployment files (`web/src/data/contracts.ts`, stratagems'; `web/src/lib/deployments.ts`, the framework's; the same export today) become one. Delegation: see step U2's last paragraph, step 6 still depends on 10b.
 - **Step 7, the clock.** `web/src/lib/stratagems/state/Epoch.ts` onto `game/core` (cycle, phase, chain time), and the vocabulary: stratagems says `epoch` and renames TWICE, its contracts and its 700-line TypeScript reimplementation of them in `common/` (the template's backlog task `vocabulary-in-the-game-repos` says so, and says the rename belongs inside the port, not in a pass of its own).
-- **Step 8, commit and reveal.** Onto the submission, secret and recovery seams; fuzd's automatic reveal through the seam, not beside it (and, if a sibling would want automatic reveal, as a service layer upstream).
-- **Step 9, the renderer.** twgl.js as stratagems' own render host behind the template's render seam (the template's plan: stratagems "supplies its own third host").
+- **Step 8, commit and reveal.** Onto the submission, secret and recovery seams (`test/identity-boundary.test.ts` comes back, omitted since step 4 because it refuses to pass with nothing to check); fuzd's automatic reveal through the seam, not beside it (and, if a sibling would want automatic reveal, as a service layer upstream).
+- **Step 9, the renderer.** twgl.js as stratagems' own render host behind the template's render seam (the template's plan: stratagems "supplies its own third host"); `test/render-host-boundary.test.ts` comes back, omitted since step 4 because it reads `routes/play` and `placement/render` by path.
 - **Step 10a, upstream: the commit-reveal base.** In the template repo, following its own work protocol: separate the mechanism in `UsingGameInternal` (reserve, commitment, hash chain of chunks, cycle policy, advance, forfeit, delegation, attendance) from the reference game's placement rules, behind a game-agnostic action type and a resolution hook; the reference game becomes the first user, reveal-or-die (and bomber-world by cascade) the second, which is the test that the base is really generic. A decision for the template's maintainer, so it is proposed there as a spec, not done from here.
 - **Step 10b, the contracts.** stratagems un-omits the base (its `.offshoot-omissions` entries go) and rebuilds its game on it: its placement, life, delta and reward rules become the resolution hook; its reserve, commitment and epoch code go, replaced by the base's (with the vocabulary, decision 5 and step 7). The TypeScript reimplementation in `common/` follows. This means a NEW deployment: alpha1 is discontinued and stays as history, its oracle and publication with it.
-- **Step 11, Svelte conventions.** Components out of legacy mode, logic out of `.svelte` files into `.ts` stores, per `AGENTS.md`; the step-4 boundary-test exemptions end here. Two svelte-check warnings from step 3 end here too: `actions/flow/Flow.svelte` and `ui/indexer/IndexerView.svelte` name a store `state`, which Svelte 5 reads as the `$state` rune once the component leaves legacy mode (`store_rune_conflict`), so the store is renamed in the same change.
+- **Step 11, Svelte conventions.** Components out of legacy mode, logic out of `.svelte` files into `.ts` stores, per `AGENTS.md`; the step-4 boundary-test exemptions end here (the five `KNOWN_LEAKS` entries in `web/test/framework-boundary.test.ts`, and the `radiate-legacy` alias once stratagems' account handler is gone). Two svelte-check warnings from step 3 end here too: `actions/flow/Flow.svelte` and `ui/indexer/IndexerView.svelte` name a store `state`, which Svelte 5 reads as the `$state` rune once the component leaves legacy mode (`store_rune_conflict`), so the store is renamed in the same change.
 
 ## Progress log
 
@@ -421,20 +421,20 @@ Not ticked: two of the criteria need the user (the cascade into reveal-or-die, b
 
 **Measured** (fresh install in each worktree, then `check` and `test:unit`, against a baseline of the untouched branch run the same way the same day):
 
-| node | baseline check / unit (server + client) | with U2 |
-| --- | --- | --- |
-| jolly-roger `main` | 0 / 953 + 44 | 0 / 953 + 44 |
-| jolly-roger `with/local-signer` | 0 / 1218 + 58 | 0 / 1218 + 58 |
-| jolly-roger `with/hosted-account` | (no test file changed) | 0 / 1218 + 58 |
-| jolly-roger `with/embedded-chain` | (no test file changed) | 0 / 979 + 46 |
-| jolly-roger `website` | (no test file changed) | 0 / 953 + 44 |
-| jolly-roger `integration` | 0 / 1244 + 60 | 0 / 1244 + 60 |
-| template `main` | 0 / 1697 + 78 | 0 / 1697 + 78 |
-| template `with/pixi-js` | 0 / 1706 + 78 | 0 / 1706 + 78 |
-| template `with/nft-identity` | 0 / 1705 + 78 | 0 / 1705 + 78 |
-| template `with/all` | 0 / 1714 + 78 | 0 / 1714 + 78 |
-| reveal-or-die `main` (trial) | 0 / 1859 + 72 | 0 / 1859 + 72 |
-| bomber-world `main` (trial) | 0 / 1907 + 72 | 0 / 1907 + 72 |
+| node                              | baseline check / unit (server + client) | with U2       |
+| --------------------------------- | --------------------------------------- | ------------- |
+| jolly-roger `main`                | 0 / 953 + 44                            | 0 / 953 + 44  |
+| jolly-roger `with/local-signer`   | 0 / 1218 + 58                           | 0 / 1218 + 58 |
+| jolly-roger `with/hosted-account` | (no test file changed)                  | 0 / 1218 + 58 |
+| jolly-roger `with/embedded-chain` | (no test file changed)                  | 0 / 979 + 46  |
+| jolly-roger `website`             | (no test file changed)                  | 0 / 953 + 44  |
+| jolly-roger `integration`         | 0 / 1244 + 60                           | 0 / 1244 + 60 |
+| template `main`                   | 0 / 1697 + 78                           | 0 / 1697 + 78 |
+| template `with/pixi-js`           | 0 / 1706 + 78                           | 0 / 1706 + 78 |
+| template `with/nft-identity`      | 0 / 1705 + 78                           | 0 / 1705 + 78 |
+| template `with/all`               | 0 / 1714 + 78                           | 0 / 1714 + 78 |
+| reveal-or-die `main` (trial)      | 0 / 1859 + 72                           | 0 / 1859 + 72 |
+| bomber-world `main` (trial)       | 0 / 1907 + 72                           | 0 / 1907 + 72 |
 
 - The three teeth in the template (`game-slot`): a `number` deadline, a dropped argument, `Game.abi` passed as the registry ABI in `acquire.ts`: 1 `check` error each.
 - The stub test (`~/dev/worktrees/template-commit-reveal/u2-stub`, detached at the part-3 tip, not committed): the prototype's 52 paths removed (reference game, offline world, `routes/{play,offline}`, `+page.svelte`, their tests including `embedded/{world,deployments}.test.ts` and `game/render`), `"Game"` renamed `"Stub"` in the generated `deployments.ts`, `$this-app` pointed at a 40-line stub: **`check` 0 errors, 0 warnings in all of `web/`** (the prototype: 0 in `web/src`, 13 in the 3 tests now removed); unit 1538 pass and 3 fail, the same three guards as the prototype (`identity-boundary` 1, `render-host-boundary` 2).
@@ -471,44 +471,44 @@ Not ticked: the last criterion is the user's approval of the pushes, asked for a
 
 **The cascade** (`offshoot-fanout --ignore bomber-world --leave-conflicts`, from jolly-roger, five passes). Every conflict was a lockfile or a `contracts/package.json`, resolved by intent: the node's own lockfile, then `pnpm install` against the merged manifests; the node's own `contracts/package.json` (name, pinned OpenZeppelin, workspace deps, scripts) with the 13 new versions set. Tips:
 
-| node | tip | how |
-| --- | --- | --- |
-| jolly-roger `main` | 00143cb2 | the bump |
-| jolly-roger `with/local-signer` | c08b767d | clean merge |
-| jolly-roger `with/hosted-account` | 01166029 | clean merge |
-| jolly-roger `with/embedded-chain` | 9e7e7df7 | f85cfc9 merge (lockfile), then the `@rocketh/web` bump |
-| jolly-roger `integration` | cd2ac596 | two merges, lockfile each |
-| jolly-roger `website` | 40606468 | merge (lockfile) |
-| template-commit-reveal `main` | 3fe2b29d | merge (lockfile, `contracts/package.json`: its exports, OZ 5.4.0, abitype, solidity-kit) |
-| template-commit-reveal `with/pixi-js` | f659420d | merge (lockfile) |
-| template-commit-reveal `with/nft-identity` | e9be8493 | clean merge |
-| template-commit-reveal `with/all` | 9369b1ea | clean merges |
-| reveal-or-die `main` | 4e9004b2 | merge (`contracts/package.json`); its lockfile merged clean and `pnpm install` leaves it unchanged |
-| bleeps `main` | 05ade63a | merge (lockfile, `contracts/package.json`: OZ 4.3.2 pinned, no forge-std) |
-| mandalas `main` | 56f63b89 | merge (lockfile, `contracts/package.json`: OZ 3.4.2 pinned) |
-| bomber-world `main` | 2cf09a75 | **deferred** (user's decision 3) |
-| template-ethereum-contracts `main` | 9f152bf | hand port, branch `contracts-toolchain` then `main` fast-forwarded; no change beyond the 13 versions and the lockfile |
+| node                                       | tip      | how                                                                                                                   |
+| ------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| jolly-roger `main`                         | 00143cb2 | the bump                                                                                                              |
+| jolly-roger `with/local-signer`            | c08b767d | clean merge                                                                                                           |
+| jolly-roger `with/hosted-account`          | 01166029 | clean merge                                                                                                           |
+| jolly-roger `with/embedded-chain`          | 9e7e7df7 | f85cfc9 merge (lockfile), then the `@rocketh/web` bump                                                                |
+| jolly-roger `integration`                  | cd2ac596 | two merges, lockfile each                                                                                             |
+| jolly-roger `website`                      | 40606468 | merge (lockfile)                                                                                                      |
+| template-commit-reveal `main`              | 3fe2b29d | merge (lockfile, `contracts/package.json`: its exports, OZ 5.4.0, abitype, solidity-kit)                              |
+| template-commit-reveal `with/pixi-js`      | f659420d | merge (lockfile)                                                                                                      |
+| template-commit-reveal `with/nft-identity` | e9be8493 | clean merge                                                                                                           |
+| template-commit-reveal `with/all`          | 9369b1ea | clean merges                                                                                                          |
+| reveal-or-die `main`                       | 4e9004b2 | merge (`contracts/package.json`); its lockfile merged clean and `pnpm install` leaves it unchanged                    |
+| bleeps `main`                              | 05ade63a | merge (lockfile, `contracts/package.json`: OZ 4.3.2 pinned, no forge-std)                                             |
+| mandalas `main`                            | 56f63b89 | merge (lockfile, `contracts/package.json`: OZ 3.4.2 pinned)                                                           |
+| bomber-world `main`                        | 2cf09a75 | **deferred** (user's decision 3)                                                                                      |
+| template-ethereum-contracts `main`         | 9f152bf  | hand port, branch `contracts-toolchain` then `main` fast-forwarded; no change beyond the 13 versions and the lockfile |
 
 A final dry-run from jolly-roger: every node up to date, bomber-world ignored.
 
 **Measured, per node** (in the node's worktree, after `pnpm install --frozen-lockfile`: web `check`, web `test:unit` server + client, the contract tests, `pnpm typescript` in contracts):
 
-| node | check | unit | contract tests | typescript |
-| --- | --- | --- | --- | --- |
-| jolly-roger `main` | 0 | 955 + 44 (before: the same) | 20 passing (before: the same) | 0 |
-| jolly-roger `with/local-signer` | 0 | 1220 + 58 | 25 passing | 0 |
-| jolly-roger `with/hosted-account` | 0 | 1220 + 58 | 25 passing | 0 |
-| jolly-roger `with/embedded-chain` | 0 | 981 + 46 | 20 passing | 0 |
-| jolly-roger `integration` | 0 | 1246 + 60 | 25 passing | 0 |
-| jolly-roger `website` | 0 | 955 + 44 | 20 passing | (not run) |
-| template-commit-reveal `main` | 0 | 1699 + 78 | 47 passing | 0 |
-| template-commit-reveal `with/pixi-js` | 0 | 1708 + 78 | 47 passing | 0 |
-| template-commit-reveal `with/nft-identity` | 0 | 1707 + 78 | 49 passing | 7 errors, pre-existing (below) |
-| template-commit-reveal `with/all` | 0 | 1716 + 78 | 49 passing | 7 errors, pre-existing (below) |
-| reveal-or-die `main` | 0 | 1861 + 72 (U2: the same) | 21 passing | 0 |
-| bleeps `main` | 0 | 1106 + 44 (U2: the same) | 111 passing, 6 skipped | 0 |
-| mandalas `main` | 0 | 963 + 44 (U2: the same) | 84 passing | 0 |
-| template-ethereum-contracts `main` | (no web) | (no web) | 20 passing (before: the same) | 0 |
+| node                                       | check    | unit                        | contract tests                | typescript                     |
+| ------------------------------------------ | -------- | --------------------------- | ----------------------------- | ------------------------------ |
+| jolly-roger `main`                         | 0        | 955 + 44 (before: the same) | 20 passing (before: the same) | 0                              |
+| jolly-roger `with/local-signer`            | 0        | 1220 + 58                   | 25 passing                    | 0                              |
+| jolly-roger `with/hosted-account`          | 0        | 1220 + 58                   | 25 passing                    | 0                              |
+| jolly-roger `with/embedded-chain`          | 0        | 981 + 46                    | 20 passing                    | 0                              |
+| jolly-roger `integration`                  | 0        | 1246 + 60                   | 25 passing                    | 0                              |
+| jolly-roger `website`                      | 0        | 955 + 44                    | 20 passing                    | (not run)                      |
+| template-commit-reveal `main`              | 0        | 1699 + 78                   | 47 passing                    | 0                              |
+| template-commit-reveal `with/pixi-js`      | 0        | 1708 + 78                   | 47 passing                    | 0                              |
+| template-commit-reveal `with/nft-identity` | 0        | 1707 + 78                   | 49 passing                    | 7 errors, pre-existing (below) |
+| template-commit-reveal `with/all`          | 0        | 1716 + 78                   | 49 passing                    | 7 errors, pre-existing (below) |
+| reveal-or-die `main`                       | 0        | 1861 + 72 (U2: the same)    | 21 passing                    | 0                              |
+| bleeps `main`                              | 0        | 1106 + 44 (U2: the same)    | 111 passing, 6 skipped        | 0                              |
+| mandalas `main`                            | 0        | 963 + 44 (U2: the same)     | 84 passing                    | 0                              |
+| template-ethereum-contracts `main`         | (no web) | (no web)                    | 20 passing (before: the same) | 0                              |
 
 The unit counts are U2's plus the two alias tests that landed with it, so unchanged. Beyond the verify:
 
@@ -525,3 +525,49 @@ The unit counts are U2's plus the two alias tests that landed with it, so unchan
 **For step 4**: the `contracts/package.json` conflict of the merge is now about the game only (the toolchain lines agree), and the template's `web/package.json` arrives with `@rocketh/web` ^0.19.27, which matches stratagems' rocketh.
 
 **Landed, 2026-10-24**: the user approved every push, and all 14 were fast-forwards: jolly-roger `main`, `with/local-signer`, `with/hosted-account`, `with/embedded-chain`, `integration`, `website`; template-commit-reveal `main`, `with/pixi-js`, `with/nft-identity`, `with/all`; reveal-or-die, bleeps, mandalas and template-ethereum-contracts `main`, each at the tip in the table above. bomber-world stays deferred. Still to clean up: the local branches `contracts-toolchain` in jolly-roger and template-ethereum-contracts (merged into `main`, delete after pushing), and their worktrees under `~/dev/worktrees/{jolly-roger,template-ethereum-contracts}/contracts-toolchain`.
+
+### 2026-10-24, step 4: the merge
+
+Branch `join-template` from the integration branch at 6322c54, worktree `~/dev/worktrees/stratagems/join-template`. Premises re-derived first: template-commit-reveal `main` at 3fe2b29d (step U's tip), the trial merge again **40 add/add conflicts** (the same list) and **672 clean adds** (step 0: 668). Two commits:
+
+- 32635ebf, **the merge** (`git log -1 --format='%h parents: %p'`: `32635ebf parents: 6322c546 3fe2b29d`), message in the mandalas shape.
+- d52de245, **formatting only**: ten of stratagems' files formatted by the template's prettier (3.9, prettier-plugin-svelte 4, prettier-plugin-tailwindcss: class lists sorted, an unquoted enum key, a union joined), and the 120-column override's `(pages)` glob escaped (unescaped it matched nothing).
+
+**How the 40 conflicts went.** stratagems' side, as decision 2 says: its shell (`+layout.*`, `+page.svelte`, `app.html`, `web-config.json`, `preview.png`), both READMEs, `dev/zellij*.kdl`, and in `contracts/` everything (`package.json`, `hardhat.config.ts`, `rocketh/*`, `tsconfig`s, `.env`, `.prettier*`, `remappings.txt`, `zellij.kdl`, the three Solidity files): every template line there serves its reference contracts or its dev stack (0.8.28/london against stratagems' 0.8.24/viaIR, which the alpha1 bytecode needs), and step U had already made the toolchain lines agree. The template's side: `web/src/app.d.ts`, `web/tsconfig.json` and `web/vite.config.ts` (byte for byte the stem's; stratagems' Sentry plugin, module worker and unminified build moved into `vite.plugins.ts`, the template's slot, as a `config` hook). Merged by hand: the root and `web/` `package.json`s (stratagems' scripts plus a root `prepare` and web's `test:unit`; the template's framework dependencies beside stratagems', its specifier where both name a package, except `pwag`, which stays 0.3.0 for stratagems' icon pipeline), `pnpm-workspace.yaml` (the template's `cookie` override), `svelte.config.js` (both alias sets, `$app-specific` pointed at `web/src/lib/stratagems/game.ts`; stratagems' adapter and deterministic version kept), the `.gitignore`s and `web/.env` (both sets, the template's under a heading), and `web/.prettierrc` (the template's, with an override keeping stratagems' paths at 120 columns). The lockfile: stratagems', then `pnpm install`.
+
+**The slot.** `web/src/lib/stratagems/game.ts` exports what the template's `placement/game.ts` does (`createAppContext`, `AppMembers`, `SIGNER_GRANT`, `startDiagnostics`, `delegationRegistry`, `operationScope`): an `onchainState` with `update` and `status` and nothing behind it, no diagnostics, and both contract choices naming `Stratagems`, which compiles and is not a delegation registry (alpha1 has no `UsingDelegation`). Nothing under `web/src/lib/{core,game,kit}` differs from `stem/main` (`git diff --stat` empty), and no framework file was edited. **U2's prediction held**: nothing of the framework had to be omitted for the reference game's sake.
+
+**Omitted: 140 paths**, listed in `.offshoot-omissions` in four groups, each with its reason and the step that ends it: (1) the template's contracts, deploy scripts, contract tests and `contracts/js`, until 10b; (2) its game client (`placement/`, the offline world, `routes/{play,offline}`), their tests, the framework tests that drive its fixtures (`embedded/{world,deployments}`, `canvas2d`, `context/{resume-on-gas,setup-gate}`), and its e2e suite with `playwright.config.ts`, `run-e2e-tests.sh` and `e2e-account-claims.test.ts`; (3) until step 6, the routes that read the template's context (explorer, contracts, transactions, debug, `+error.svelte`) with `test/routes`, the template's service-worker entry (two SvelteKit entries are ambiguous), its `static/_redirects` (it shadowed stratagems' `_redirects` route and failed the prerender) and brand icon, and three framework tests whose premise is the template's shell or fixture: `layers` (reads the template's `+layout.svelte`), `json` (its guard needs a stringify that only the omitted routes have), `fatal` (needs a deployment chain with no rpcUrl; Base has one); (4) `identity-boundary` until step 8 and `render-host-boundary` until step 9, both measured failing here (3 tests). The template's own list (jolly-roger's demo) was not copied: those paths are not in our stem.
+
+**Found, and fixed outside the framework** (each says so where it is):
+
+- **`@rocketh/export` writes a chain's `formatters` and `serializers` as JSON residue** (`{"type": "block"}`), and for Base, alpha1's chain, that is a type no viem client accepts: with the framework's `deployments.ts` exported from alpha1, `check` reported 47 errors, 19 of them this. `contracts/rocketh/config.ts` now describes chain 8453 with both `undefined` (left out, rocketh's merge puts viem's back). The residue never ran (it has no `format`). Home of the real fix: rocketh's exporter, which should drop function-valued chain fields.
+- **Four packages publish types that import `eip-1193` but declare it only as a devDependency**: `@etherplay/connect` 0.14.0, `@etherplay/connect-core` 0.7.3, `@etherplay/wallet-connector-ethereum` 0.1.1, `@etherkit/tx-observer` 0.2.0. Their types resolved against stratagems' hoisted 0.5.0 (`context/core.ts`, `embedded/wallet.ts` failed); the template works because 0.6.5 is its only copy. `packageExtensions` in `pnpm-workspace.yaml`. Home: those packages.
+- `radiate` 0.3 (the framework's) has no `initEmitter`: stratagems' account handler imports its 0.0.x as `radiate-legacy`. `eip-1193` 0.6 types `request` by method: `utils/ethereum/gas.ts` annotates the results instead of passing a type argument, and drops an empty `params` from `eth_gasPrice`.
+- `test/alias-targets` caught a **dead alias of stratagems' own**, `$external` (its directory went in 2023, 00477bec); removed. `DefaultHead` needed a `preview` in `web-config.json` (`static/preview.png`, which stratagems has).
+- `test/framework-boundary`: stratagems' five files that import `$app/*` are `KNOWN_LEAKS`, each with its reason, ending with the port; the paragraph above the list that says it stays empty is the template's, and the entries say so.
+- **A fresh worktree could not `check`** (step 0's caveat b): the root `prepare` now runs `scripts/stratagems-generated.mjs` before `ensure-deployments.mjs`; it generates, only when missing, `web/src/data/contracts.ts`, `indexer/src/contracts.ts`, `common/dist`, `indexer/dist` and the framework's `web/src/lib/deployments.ts` from the committed alpha1 records (`pnpm indexer:build alpha1`), and the root export scripts write the framework's file too, so both are the same chain. Without it, `ensure-deployments` exports whichever network `readdir` returns first.
+
+**Found, not fixed** (the template's): its own `web/src/lib/game/render/README.md` fails its own `prettier --check` (a table prettier 3.9 aligns), so it is in `web/.prettierignore` here; `test/lib/context/fatal.test.ts` reads the generated deployments' chain instead of stating its fixture. Root `format:check` here covers files the template never checks, so its root READMEs and `scripts/*` are in the root `.prettierignore` (except stratagems' own script).
+
+**Measured**, in the worktree:
+
+| check                                                                                 | step 3                               | step 4                                                                                                                         |
+| ------------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| node verify, this worktree                                                            | (n/a)                                | `pnpm install` exit 0; `check` 0 errors, 2 warnings (step 3's two); unit server 120 files 1401 tests, client 13 files 72 tests |
+| node verify, a FRESH worktree of d52de245                                             | (n/a)                                | install 17 s, generates all five files; the same counts (worktree removed after)                                               |
+| `check-omissions stem/main` / `check-dangling-imports` / `offshoot-omissions.test.ts` | (n/a)                                | 140 paths covered / clean / pass                                                                                               |
+| `CI=1 pnpm --filter ./contracts test`                                                 | 69 pass, 67 skip                     | 69 pass, 67 skip                                                                                                               |
+| `pnpm format:check`                                                                   | clean                                | clean (after d52de245, and this file reformatted by prettier: tables aligned)                                                  |
+| `MODE=alpha1 pnpm --filter ./web build`                                               | 94 files with the publication, 14 MB | exit 0, no `(!)`, 102 files with the publication, 14.6 MB: the template's six wallet icons and two more `_app` chunks          |
+| `compare:alpha1`                                                                      | every question the same              | every question the same (Q1 to Q7, D1, D2, Q3a for 36 accounts)                                                                |
+| `verify:alpha1`, real Chromium                                                        | 2 passed, 38.6 min                   | 2 passed, 39.1 min: publication 14 s, self-indexed 2,287 s, election 28 s and 5 s                                              |
+| board under `vite dev`                                                                | drawn                                | drawn (Vite 8.3.1, port 5181, the publication found, at the tip)                                                               |
+
+The publication was re-made in this worktree (`pnpm indexer:index alpha1`): generation `dbe71f606c80350a56819d13a51ba4ab` again, processor `sha256:e4a5b95b...` (byte-identical bundle to step 3's), cut 53,029,305, `takenAt` 23,303,136.
+
+**Harness, for the next browser verification** (cost about an hour here): `mainnet.base.org` now answers `eth_getLogs` with 429 "request limit reached" from this machine, and the RPC cache ended near step 3's cut, so the 1M new blocks had nowhere to come from. `base-rpc.publicnode.com` serves 2,000-block `eth_getLogs` but refuses the genesis block ("Archive requests require a personal token"), and the app's worker reads genesis, so with it alone the app sat in `loading` (the step-3 build did the same, which is how it was ruled out as a merge regression); it also sometimes omits `id`. What worked: a throwaway shim (not committed) sending `eth_getLogs` to publicnode and everything else to `mainnet.base.org`, with the proxy's `--upstream` pointed at it. The cache now reaches 53.03M (20,492 chunks), so the next run needs only the blocks since. Everything started was stopped by its process group.
+
+Surprises: that U2's slot made the framework compile against stratagems with no framework file omitted; the two packaging defects (eip-1193 types, the export's residue), both invisible in the template because its lockfile and chain happen to hide them; and a dead alias of stratagems' own found by an inherited test. Also: the first `git fetch stem` copied the template's tag `old` into stratagems' local tags (not pushed; `remote.stem.tagOpt --no-tags` is set now). Whether to delete it is the user's call.
+
+Not done here, by the plan: merging into `main` and pushing it is the user's call (see "Branches"); the integration branch carries the result.
