@@ -47,7 +47,7 @@
 				>
 				<button
 					disabled={$connection.connecting}
-					class={`${$connection.initialised ? '' : '!invisible'} m-1 button primary`}
+					class={`${$connection.initialised ? '' : '!invisible'} button primary m-1`}
 					on:click={() => connection.connect()}>{$connection.connecting ? 'Connecting' : 'Connect'}</button
 				>
 			</div>

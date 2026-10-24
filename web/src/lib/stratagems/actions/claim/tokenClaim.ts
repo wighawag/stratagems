@@ -12,13 +12,7 @@ import {getBalance, getTransactionCount, waitForTransactionReceipt} from 'viem/a
 type TokenClaim = {
 	inUrl: boolean;
 	state:
-		| 'Loading'
-		| 'Available'
-		| 'SettingUpClaim'
-		| 'Claiming'
-		| 'Claimed'
-		| 'AlreadyClaimed'
-		| 'AlreadyClaimedAnother';
+		'Loading' | 'Available' | 'SettingUpClaim' | 'Claiming' | 'Claimed' | 'AlreadyClaimed' | 'AlreadyClaimedAnother';
 	error?: unknown;
 	txHash?: string;
 };

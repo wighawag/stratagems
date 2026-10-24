@@ -16,7 +16,7 @@
 		{
 			"files": [
 				"src/lib/stratagems/**",
-				"src/routes/(pages)/**",
+				"src/routes/\\(pages\\)/**",
 				"src/routes/+layout.svelte",
 				"src/routes/+layout.ts",
 				"src/routes/+page.svelte",

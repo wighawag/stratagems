@@ -79,7 +79,7 @@
 	{/if}
 
 	<div class="actions">
-		<button class={`pointer-events-auto btn btn-primary`} on:click={startRevealing}
+		<button class={`btn btn-primary pointer-events-auto`} on:click={startRevealing}
 			>{#if expired}Acknowledge{:else}Reveal{/if}</button
 		>
 	</div>

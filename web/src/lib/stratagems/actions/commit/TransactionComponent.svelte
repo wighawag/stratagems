@@ -19,8 +19,8 @@
 
 	{#if formatedValue}
 		<p>
-			The transaction is also sending {formatedValue} ETH so we can reveal on your behalf. This is a worst-case estimate
-			and unspend value can be used for further tx.
+			The transaction is also sending {formatedValue} ETH so we can reveal on your behalf. This is a worst-case estimate and
+			unspend value can be used for further tx.
 		</p>
 	{/if}
 

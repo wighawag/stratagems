@@ -18,7 +18,7 @@
 		</p>
 
 		<div class="actions">
-			<button class={`pointer-events-auto btn btn-primary`} on:click={cancelCommitment}>Cancel</button>
+			<button class={`btn btn-primary pointer-events-auto`} on:click={cancelCommitment}>Cancel</button>
 		</div>
 	</div>
 {/if}

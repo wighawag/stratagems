@@ -76,7 +76,7 @@ export type StratagemsTransaction = EIP1193TransactionWithMetadata<StratagemsMet
 export type Epoch = {number: number};
 
 export enum TUTORIAL_STEP {
-	'WELCOME' = 0,
+	WELCOME = 0,
 }
 export function hasCompletedTutorial(progression: number, step: TUTORIAL_STEP): boolean {
 	return (progression & Math.pow(2, step)) == Math.pow(2, step);

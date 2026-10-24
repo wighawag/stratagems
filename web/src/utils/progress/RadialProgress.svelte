@@ -20,7 +20,8 @@
 		width: 100px;
 		height: 100px;
 		border-radius: 50%;
-		background: radial-gradient(closest-side, var(--progress-bg-color, black) 79%, transparent 80% 100%),
+		background:
+			radial-gradient(closest-side, var(--progress-bg-color, black) 79%, transparent 80% 100%),
 			conic-gradient(var(--progress-color, white) var(--progress-value), var(--progress-dim-color, gray) 0);
 	}
 
