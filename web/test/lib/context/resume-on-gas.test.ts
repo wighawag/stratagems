@@ -1,6 +1,6 @@
 import {describe, it, expect, vi} from 'vitest';
 import {writable} from 'svelte/store';
-import {resumeWhenGasArrives} from '$lib/placement/context';
+import {resumeWhenGasArrives as resumeWhen} from '$lib/game/core/commit-reveal-game';
 import {SignerOutOfFundsError} from '$lib/placement/errors';
 import type {SubmissionState} from '$lib/game/core/submission';
 import type {Placement} from '$lib/placement/commit-reveal';
@@ -20,6 +20,20 @@ import type {Placement} from '$lib/placement/commit-reveal';
  */
 
 type State = SubmissionState<Placement>;
+
+/**
+ * The framework's wiring with THIS GAME'S classification of the failure, which
+ * is exactly what the composition hands the skeleton: the error type the game
+ * constructs at its own boundary, not a fresh look at the node's wording.
+ */
+function resumeWhenGasArrives(
+	params: Omit<Parameters<typeof resumeWhen<Placement>>[0], 'isOutOfGas'>,
+) {
+	return resumeWhen({
+		...params,
+		isOutOfGas: (error) => error instanceof SignerOutOfFundsError,
+	});
+}
 
 function fakeSubmission(state: State) {
 	const commit = vi.fn(async () => {});
