@@ -8,14 +8,25 @@ import {compressToUint8Array, decompressFromUint8Array} from '$utils/data';
 import {privateKeyToAccount, type PrivateKeyAccount} from 'viem/accounts';
 import {hexToBytes} from 'viem';
 import {time} from '$lib/stratagems/blockchain/time';
+import {initialContractsInfos} from '$lib/stratagems/blockchain/networks';
 
 import {logs} from 'named-logs';
 import type {AccountInfo, CleanFunction, MergeFunction, SyncInfo} from './types';
 const logger = logs('AccountDB');
 
 const LOCAL_STORAGE_PRIVATE_ACCOUNT = '_account';
+/**
+ * Where an account's record (its commitments' secrets among it) is kept.
+ *
+ * THE GAME'S ADDRESS IS PART OF IT since the deployment on the commit-reveal base
+ * (2026-10-25): alpha1's key had none, so a new deployment on the same chain would
+ * have loaded alpha1's records as its own. A key is a wire (AGENTS.md, "Commit-reveal
+ * rules"), and changing this one is safe only because alpha1 is dormant (its last
+ * log is about December 2024) and no longer supported, so no commitment is in flight.
+ */
 function LOCAL_STORAGE_KEY(address: string, chainId: string, genesisHash: string) {
-	return `${LOCAL_STORAGE_PRIVATE_ACCOUNT}_${address.toLowerCase()}_${chainId}_${genesisHash}`;
+	const game = initialContractsInfos.contracts.Stratagems.address.toLowerCase();
+	return `${LOCAL_STORAGE_PRIVATE_ACCOUNT}_${address.toLowerCase()}_${chainId}_${genesisHash}_${game}`;
 }
 
 export type SyncingState<T> = {

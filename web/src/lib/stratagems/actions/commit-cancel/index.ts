@@ -28,6 +28,7 @@ export async function startCancellingCommitment() {
 				await client.wallet.writeContract({
 					...Stratagems,
 					functionName: 'cancelCommitment',
+					args: [BigInt(account.address)],
 				});
 				return {newState: state};
 			},

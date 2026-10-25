@@ -40,7 +40,9 @@
 				console.log(account);
 				await client.wallet.writeContract({
 					...Stratagems,
-					functionName: 'acknowledgeMissedRevealByBurningAllReserve',
+					// without the chunks the whole remaining bond is forfeited; only the player (or their delegate) may
+					functionName: 'forfeitMissedReveal',
+					args: [BigInt(account.address)],
 					account: account.address,
 				});
 			});

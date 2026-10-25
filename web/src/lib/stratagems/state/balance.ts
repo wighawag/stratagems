@@ -71,13 +71,13 @@ export function initBalance({
 									abi: [
 										{
 											type: 'function',
-											name: 'getTokensInReserve',
-											inputs: [{type: 'address'}],
-											outputs: [{type: 'uint56'}],
+											name: 'getReserve',
+											inputs: [{type: 'uint256'}],
+											outputs: [{type: 'uint256'}],
 										},
 									],
-									args: [account],
-									functionName: 'getTokensInReserve',
+									args: [BigInt(account)],
+									functionName: 'getReserve',
 								}),
 							},
 							'latest',

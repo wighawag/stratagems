@@ -208,16 +208,16 @@ function merge(
 	if (account.address) {
 		const addr = account.address.toLowerCase();
 		const commitment = state.commitments[account.address.toLowerCase()];
-		if (commitment && (!epochState.isActionPhase || commitment.epoch < epochState.epoch)) {
-			viewState.hasCommitmentToReveal = {epoch: commitment.epoch};
+		if (commitment && (!epochState.isActionPhase || commitment.cycle < epochState.epoch)) {
+			viewState.hasCommitmentToReveal = {epoch: commitment.cycle};
 			for (const txHash of Object.keys(onchainActions)) {
 				const action = onchainActions[txHash as `0x${string}`];
 				if (action.tx.metadata) {
 					const metadata = action.tx.metadata;
 					if (metadata.type === 'commit') {
-						if (metadata.epoch == commitment.epoch) {
+						if (metadata.epoch == commitment.cycle) {
 							viewState.hasCommitmentToReveal = {
-								epoch: commitment.epoch,
+								epoch: commitment.cycle,
 								commit: {hash: txHash as `0x${string}`, tx: action.tx},
 							};
 						}

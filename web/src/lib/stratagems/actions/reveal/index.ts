@@ -20,7 +20,7 @@ export async function startReveal(commitTx: `0x${string}`, data: CommitMetadata)
 		const currentCommitment = await client.public.readContract({
 			...Stratagems,
 			functionName: 'getCommitment',
-			args: [account.address],
+			args: [BigInt(account.address)],
 		});
 
 		if (currentCommitment.hash != hash) {
@@ -45,7 +45,7 @@ export async function startReveal(commitTx: `0x${string}`, data: CommitMetadata)
 				await client.wallet.writeContract({
 					...Stratagems,
 					functionName: 'reveal',
-					args: [account.address, data.secret, moves, zeroBytes24, true, zeroAddress],
+					args: [BigInt(account.address), moves, data.secret, zeroBytes24, zeroAddress],
 				});
 				return {newState: state};
 			},
@@ -72,7 +72,7 @@ export async function startAcknowledgFailedReveal(commitTx: `0x${string}`, data:
 		const currentCommitment = await client.public.readContract({
 			...Stratagems,
 			functionName: 'getCommitment',
-			args: [account.address],
+			args: [BigInt(account.address)],
 		});
 
 		if (currentCommitment.hash != hash) {
@@ -97,7 +97,7 @@ export async function startAcknowledgFailedReveal(commitTx: `0x${string}`, data:
 				await client.wallet.writeContract({
 					...Stratagems,
 					functionName: 'acknowledgeMissedReveal',
-					args: [account.address, data.secret, moves, zeroBytes24],
+					args: [BigInt(account.address), moves, data.secret, zeroBytes24],
 				});
 				return {newState: state};
 			},

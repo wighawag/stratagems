@@ -19,6 +19,8 @@ export type CommitState = {
 	tokenData?: {
 		amountToAdd: bigint;
 		amountToAllow: bigint;
+		/** what the commitment bonds: one whole chunk, capped at the reserve (see the allowance step) */
+		bond: bigint;
 		permitCurrentNonce?: number;
 	};
 
@@ -79,9 +81,8 @@ export async function startCommit() {
 			throw new Error(`no local moves`);
 		}
 		const numMovesRequiringToken = localMoves.filter((v) => v.color != Color.None).length;
-		const tokenNeeded =
-			BigInt(initialContractsInfos.contracts.Stratagems.linkedData.numTokensPerGems.slice(0, -1)) *
-			BigInt(numMovesRequiringToken);
+		const numTokensPerGems = BigInt(initialContractsInfos.contracts.Stratagems.linkedData.numTokensPerGems.slice(0, -1));
+		const tokenNeeded = numTokensPerGems * BigInt(numMovesRequiringToken);
 
 		const steps: Step<CommitState>[] = [];
 
@@ -91,11 +92,18 @@ export async function startCommit() {
 			execute: async (state: CommitState) => {
 				const tokenInReserve = await client.public.readContract({
 					...Stratagems,
-					functionName: 'getTokensInReserve',
-					args: [account.address],
+					functionName: 'getReserve',
+					args: [BigInt(account.address)],
 				});
 				// TODO extra token to put in reserver
 				const amountToAdd = tokenNeeded > tokenInReserve ? tokenNeeded - tokenInReserve : 0n;
+				// THE BOND IS PUBLIC, so it is one whole chunk (32 moves' worth) rather than
+				// the exact cost, which would tell everyone how many gems the turn places;
+				// capped at the reserve. A turn is capped at 30 moves, so it always covers
+				// the cost, and the base returns the surplus with the last chunk.
+				const reserveAfter = tokenInReserve + amountToAdd;
+				const wholeChunk = numTokensPerGems * 32n;
+				const bond = wholeChunk < reserveAfter ? wholeChunk : reserveAfter;
 
 				const tokenApproved = await client.public.readContract({
 					...TestTokens,
@@ -104,7 +112,7 @@ export async function startCommit() {
 				});
 				const amountToAllow = amountToAdd > tokenApproved ? amountToAdd : 0n;
 
-				state.tokenData = {amountToAdd, amountToAllow};
+				state.tokenData = {amountToAdd, amountToAllow, bond};
 
 				if (amountToAllow) {
 					const nonce = Number(
@@ -279,14 +287,13 @@ export async function startCommit() {
 							...Stratagems,
 							functionName: 'reveal',
 							args: [
-								account.address,
-								'0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF',
+								BigInt(account.address),
 								localMoves.map((v, i) => ({
 									position: BigInt(Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 1)) + 1),
 									color: Math.floor(Math.random() * 5) + 1,
 								})),
+								'0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF',
 								zeroBytes24,
-								true,
 								zeroAddress,
 							],
 							account: account.address,
@@ -321,7 +328,7 @@ export async function startCommit() {
 						const data = encodeFunctionData({
 							abi: contracts.Stratagems.abi,
 							functionName: 'reveal',
-							args: [account.address, secret, moves, zeroBytes24, true, zeroAddress],
+							args: [BigInt(account.address), moves, secret, zeroBytes24, zeroAddress],
 						});
 						state.fuzdData = {
 							submission: {
@@ -388,7 +395,8 @@ export async function startCommit() {
 					const params = {
 						...Stratagems,
 						functionName: 'makeCommitmentWithExtraReserve',
-						args: [hash, state.tokenData.amountToAdd, permitStruct, remoteAccount],
+						// no permit any more (step 10b, P3): the deploy gives the game a global approval
+						args: [BigInt(account.address), hash, state.tokenData.bond, state.tokenData.amountToAdd, remoteAccount],
 						account: account.address,
 					} as const;
 
@@ -418,7 +426,7 @@ export async function startCommit() {
 					const params = {
 						...Stratagems,
 						functionName: 'makeCommitment',
-						args: [hash, remoteAccount],
+						args: [BigInt(account.address), hash, state.tokenData?.bond ?? 0n, remoteAccount],
 						account: account.address,
 					} as const;
 

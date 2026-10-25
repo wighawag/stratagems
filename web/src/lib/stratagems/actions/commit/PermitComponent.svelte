@@ -25,7 +25,7 @@
 		if ($state.tokenData) {
 			$state.tokenData.amountToAllow = amountToAllow;
 		} else {
-			$state.tokenData = {amountToAllow, amountToAdd: amountToAllow};
+			$state.tokenData = {amountToAllow, amountToAdd: amountToAllow, bond: amountToAllow};
 		}
 	}
 

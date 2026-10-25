@@ -22,7 +22,7 @@
 		for (const epochPlacements of $state.placements) {
 			for (const position of Object.keys(epochPlacements.cells)) {
 				placements.push({
-					epoch: epochPlacements.epoch,
+					epoch: epochPlacements.cycle,
 					position: BigInt(position),
 					cells: epochPlacements.cells[position],
 				});
