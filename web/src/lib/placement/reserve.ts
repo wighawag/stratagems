@@ -4,7 +4,7 @@
  * This is the template's answer to the second commit-reveal rule - something
  * must be at stake, or nobody has to reveal. A player who dislikes what they
  * committed to can always go quiet; the bond taken from this reserve at commit
- * time, and forfeited by `acknowledgeMissedReveal`, is what makes that cost
+ * time, and forfeited when a missed reveal is settled, is what makes that cost
  * them. A game that gates differently (holding custody of an item the player
  * bought, say) replaces this file; the framework only requires that SOMETHING
  * is lost.

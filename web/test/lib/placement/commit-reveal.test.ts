@@ -223,6 +223,8 @@ function adapterRecording(options?: {
 	gas?: {commit: bigint; reveal: bigint};
 	/** Refuse every send after this many have succeeded, as a node would. */
 	refuseSendAfter?: number;
+	/** What `getReserve` answers, for the bond's cap. Unbounded by default. */
+	reserve?: bigint;
 }) {
 	const sent: {
 		functionName: string;
@@ -277,7 +279,10 @@ function adapterRecording(options?: {
 				timeline.push('wait');
 				return {status: 'success'};
 			},
-			readContract: async () => ({hash: head, cycleNumber: 7n, bond: 0n}),
+			readContract: async ({functionName}: {functionName: string}) =>
+				functionName === 'getReserve'
+					? (options?.reserve ?? 10n ** 30n)
+					: {hash: head, cycleNumber: 7n, bond: 0n},
 		},
 		signerBalance: FUNDED,
 	} as unknown as CommitRevealDeps;
@@ -338,9 +343,24 @@ describe('the identity that reaches the contract', () => {
 		// The identity, and NOT the address it happens to be spelled as here.
 		expect(sent[0].args[0]).toBe(onchainIdentity(PLAYER));
 		expect(typeof sent[0].args[0]).toBe('bigint');
-		// The bond is the exact cost of what was planned: bonding less makes the
-		// reveal revert once the commitment is already immovable.
-		expect(sent[0].args[2]).toBe(20n);
+		// A WHOLE CHUNK, not the exact cost: two placements at four per reveal
+		// bond four placements' worth, so the bond does not say how many there
+		// are. Bonding less than the cost makes the reveal revert once the
+		// commitment is immovable; the surplus comes back with the last reveal.
+		expect(sent[0].args[2]).toBe(40n);
+	});
+
+	it('bonds no more than the reserve holds, and never less than the cost', async () => {
+		const covered = adapterRecording({reserve: 25n});
+		await covered.adapter.commit({
+			identity: PLAYER,
+			hash: '0xhash' as `0x${string}`,
+			actions: [{cellID: 1n}, {cellID: 2n}],
+			secret: '0xsecret' as `0x${string}`,
+			cycleNumber: 3,
+			revealDueAt: 0,
+		});
+		expect(covered.sent[0].args[2]).toBe(25n);
 	});
 
 	it('reveals against the same identity it committed under', async () => {

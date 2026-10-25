@@ -367,9 +367,20 @@ describe('Game', function () {
 		const {cycleNumber} = getCycleNumber(await getTimestamp());
 		await advanceToCycleNumber(cycleNumber + 1, true);
 
+		// WITHOUT THE CHUNKS ONLY THE PLAYER MAY SETTLE: it takes the whole
+		// bond, and a stranger could otherwise take a surplus the player could
+		// have recovered by showing the chunks.
+		await expect(
+			env.execute(Game, {
+				account: unnamedAccounts[1],
+				functionName: 'forfeitMissedReveal',
+				args: [identity],
+			}),
+		).toBeRejectedWith('NotDelegate');
+
 		await env.execute(Game, {
-			account: unnamedAccounts[1],
-			functionName: 'acknowledgeMissedReveal',
+			account: player,
+			functionName: 'forfeitMissedReveal',
 			args: [identity],
 		});
 
@@ -377,6 +388,132 @@ describe('Game', function () {
 		expect(
 			await env.read(Game, {functionName: 'getReserve', args: [identity]}),
 		).toEqual(parseEther('6'));
+	});
+
+	it('settles a missed reveal shown its chunks, by anyone, taking only what was committed', async function () {
+		// THE BOND IS A WHOLE NUMBER OF CHUNKS, as the client posts it, so it
+		// does not say how many placements the turn holds. Shown the chunks, the
+		// settlement establishes what was committed, forfeits what those
+		// placements would have cost, and gives the rest back.
+		const {
+			env,
+			Game,
+			GameToken,
+			actionsPerReveal,
+			unnamedAccounts,
+			advanceToCycleNumber,
+			getCycleNumber,
+			getTimestamp,
+		} = await networkHelpers.loadFixture(deployAll);
+
+		const player = unnamedAccounts[0];
+		const stranger = unnamedAccounts[1];
+		const {cycleNumber: startCycleNumber} = getCycleNumber(
+			await getTimestamp(),
+		);
+		await advanceToCycleNumber(startCycleNumber + 2, true);
+
+		const identity = await enterGame({env, Game, GameToken}, player);
+		const strangerIdentity = await enterGame({env, Game, GameToken}, stranger);
+
+		const turn: Placement[] = Array.from({length: 6}, (_, i) => ({
+			cellID: cellAt(i, 3),
+		}));
+		const {head, chunks} = commitmentChain(turn, SECRET_A, actionsPerReveal);
+		expect(chunks.length).toEqual(2);
+		const wholeChunks = parseEther(String(chunks.length * actionsPerReveal));
+		await env.execute(Game, {
+			account: player,
+			functionName: 'makeCommitment',
+			args: [identity, head, wholeChunks, zeroAddress],
+		});
+
+		const {cycleNumber} = getCycleNumber(await getTimestamp());
+
+		// Not while the commitment's own cycle is in progress: that is a reveal.
+		await expect(
+			env.execute(Game, {
+				account: stranger,
+				functionName: 'acknowledgeMissedReveal',
+				args: [
+					identity,
+					chunks[0].placements,
+					SECRET_A,
+					chunks[0].furtherActions,
+				],
+			}),
+		).toBeRejectedWith('CanStillReveal');
+
+		await advanceToCycleNumber(cycleNumber + 1, true);
+
+		const balanceBefore = (await env.read(GameToken, {
+			functionName: 'balanceOf',
+			args: [stranger],
+		})) as bigint;
+
+		// A chunk that is not the head is refused, exactly as a reveal would be.
+		await expect(
+			env.execute(Game, {
+				account: stranger,
+				functionName: 'acknowledgeMissedReveal',
+				args: [
+					identity,
+					chunks[1].placements,
+					SECRET_A,
+					chunks[1].furtherActions,
+				],
+			}),
+		).toBeRejectedWith('CommitmentHashNotMatching');
+
+		for (const chunk of chunks) {
+			await env.execute(Game, {
+				account: stranger,
+				functionName: 'acknowledgeMissedReveal',
+				args: [identity, chunk.placements, SECRET_A, chunk.furtherActions],
+			});
+		}
+
+		// Six placements' worth is forfeited out of the eight bonded; the other
+		// two are reserve again.
+		expect(
+			await env.read(Game, {functionName: 'getReserve', args: [identity]}),
+		).toEqual(parseEther('4'));
+		const settled = (await env.read(Game, {
+			functionName: 'getCommitment',
+			args: [identity],
+		})) as {cycleNumber: bigint; bond: bigint};
+		expect(settled.cycleNumber).toEqual(0n);
+		expect(settled.bond).toEqual(0n);
+
+		// NOTHING WENT TO WHOEVER SETTLED, in tokens or in reserve.
+		expect(
+			await env.read(GameToken, {functionName: 'balanceOf', args: [stranger]}),
+		).toEqual(balanceBefore);
+		expect(
+			await env.read(Game, {
+				functionName: 'getReserve',
+				args: [strangerIdentity],
+			}),
+		).toEqual(parseEther('10'));
+
+		// The placements were never applied: their cycle is over.
+		const cell = (await env.read(Game, {
+			functionName: 'getCell',
+			args: [turn[0].cellID],
+		})) as {totalStake: bigint};
+		expect(cell.totalStake).toEqual(0n);
+
+		// And the player is playing again.
+		await env.execute(Game, {
+			account: player,
+			functionName: 'makeCommitment',
+			args: [
+				identity,
+				commitmentHashFor([{cellID: cellAt(0, 4)}], SECRET_B, actionsPerReveal),
+				parseEther('1'),
+				zeroAddress,
+			],
+		});
 	});
 
 	it('lets one address pay the stake and another play with it', async function () {
@@ -847,17 +984,16 @@ describe('a turn bigger than a transaction', function () {
 		});
 	});
 
-	it('settles a half-revealed turn in ONE call, and frees the next cycle', async function () {
+	it('lets the player settle a half-revealed turn in ONE call without its chunks, and frees the next cycle', async function () {
 		// THE PART WITH A PLAYER'S STAKE IN IT. A commitment left open with its
 		// head pointing at a chunk nobody will ever submit blocks every later
 		// commitment that player makes, forever, and nothing else can resolve it.
 		//
-		// It settles here without the secret and without the chunk, which is a
-		// deliberate departure from the design this chaining is ported from. There
-		// the penalty is computed FROM the revealed moves, so the settlement has
-		// to walk the chain too; here the penalty is the bond, the bond falls as
-		// each chunk lands, and what is outstanding is already on chain. Requiring
-		// the secret would make settling depend on the very thing that failed.
+		// The player can always settle it WITHOUT the secret and without the
+		// chunks, which is what makes it a settlement rather than a dependency on
+		// the very thing that failed: what is left of the bond is forfeited, all
+		// of it, because without the chunks the contract cannot tell the stake
+		// from a surplus the bond may have been hiding the turn's length with.
 		const turn = row(6, 25);
 		const game = await committed(turn, parseEther('6'));
 		const {
@@ -877,10 +1013,18 @@ describe('a turn bigger than a transaction', function () {
 		// The rest of the turn never arrives and the cycle passes.
 		await advanceToCycleNumber(game.cycleNumber + 1, true);
 
-		// ONE call, by anybody, with nothing but the identity.
+		// ONE call, by the player, with nothing but the identity. Not by anybody:
+		// a stranger may only settle shown the chunks.
+		await expect(
+			env.execute(Game, {
+				account: unnamedAccounts[1],
+				functionName: 'forfeitMissedReveal',
+				args: [identity],
+			}),
+		).toBeRejectedWith('NotDelegate');
 		await env.execute(Game, {
-			account: unnamedAccounts[1],
-			functionName: 'acknowledgeMissedReveal',
+			account: player,
+			functionName: 'forfeitMissedReveal',
 			args: [identity],
 		});
 

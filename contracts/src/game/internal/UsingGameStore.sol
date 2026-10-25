@@ -2,59 +2,24 @@
 pragma solidity ^0.8.0;
 
 import "../interfaces/UsingGameTypes.sol";
-import "./UsingVirtualTime.sol";
+import {UsingCommitReveal} from "../../commit-reveal/UsingCommitReveal.sol";
 
-abstract contract UsingGameStore is UsingGameTypes, UsingVirtualTime {
-    /// @notice the timestamp (in seconds) at which the game start, it start in the commit phase
-    uint256 internal immutable START_TIME;
-    /// @notice the duration of the commit phase in seconds
-    uint256 internal immutable COMMIT_PHASE_DURATION;
-    /// @notice the duration of the reveal phase in seconds
-    uint256 internal immutable REVEAL_PHASE_DURATION;
+/// @dev THIS GAME'S STATE, AND ONLY THIS GAME'S. The reserve, the commitments,
+///      the cycle and who it waits for are the commit-reveal base's
+///      (`src/commit-reveal/`), held in its own namespaced storage and reached
+///      through {UsingCommitReveal}; what is declared here is the board and
+///      the two numbers its actions need.
+abstract contract UsingGameStore is UsingGameTypes, UsingCommitReveal {
     /// @notice the token players stake in order to place
     IERC20 internal immutable TOKENS;
     /// @notice how much one placement costs
     uint256 internal immutable PLACEMENT_COST;
-    /// @notice how the cycle advances: see {UsingGameTypes-CyclePolicy}
-    CyclePolicy internal immutable CYCLE_POLICY;
-
-    /// @notice THE CHUNK: how many actions one reveal transaction may carry.
-    /// @dev Deliberately an IMMUTABLE read off the deployment rather than the
-    ///      constant that used to sit here. `MAX_NUM_PLACEMENTS_PER_HASH = 32`
-    ///      was stratagems' number for stratagems' chain, left in this game's
-    ///      first commit, referenced by nothing; it was never a cap on a turn,
-    ///      it was a note-to-self for the chunked reveal this now implements.
-    ///      What it should have said is that a chunk size is a property of a
-    ///      GAME on a CHAIN, so it belongs in {UsingGameTypes-Config}.
-    ///
-    ///      It bounds the TRANSACTION and not the TURN. A turn here is unbounded
-    ///      and arrives in as many reveals as it takes; what a game may
-    ///      additionally want is a cap on how many actions a turn contains at
-    ///      all, and that is a game RULE rather than a mechanism - it only binds
-    ///      where identity is scarce, which is not true of every game, so the
-    ///      framework does not take a position on it.
-    uint256 internal immutable ACTIONS_PER_REVEAL;
-
-    /// @notice WHO PLAYS, as a number, and never as an address.
-    /// @dev A player is a `uint256` here whatever a given game means by one,
-    ///      which is the storage half of the rule the client keeps in
-    ///      `web/src/lib/game/identity.ts`. THIS game is an address game: its
-    ///      identity is the account, widened, and there is no avatar and no
-    ///      token to own. Games that key by an entity (an avatar, a character,
-    ///      an empire) put its token id in the same slot, and the only thing
-    ///      that has to change is {UsingGameInternal-_playerOf}.
-    ///
-    ///      It is deliberately NOT an `address` that a token game would cast
-    ///      into. Twenty bytes holds every account and does not hold every
-    ///      token id: reveal-or-die's are `owner << 96 | subID` and conquest's
-    ///      are derived the same way, so truncating would alias two players
-    ///      onto one reserve with nothing raised anywhere. See N4 of Decision 3
-    ///      in the plan on the `work` branch.
-    mapping(uint256 => uint256) internal _reserve;
-
-    mapping(uint256 => Commitment) internal _commitments;
 
     /// @notice The board. Accumulated, never contested: see _reveal.
+    /// @dev Keyed by WHO PLAYS, as a number and never as an address, which is
+    ///      the storage half of the rule the client keeps in
+    ///      `web/src/lib/game/identity.ts`: twenty bytes holds every account
+    ///      and does not hold every token id.
     mapping(uint64 => Cell) internal _cells;
     mapping(uint64 => mapping(uint256 => uint256)) internal _stakeOnCellBy;
 
@@ -66,38 +31,23 @@ abstract contract UsingGameStore is UsingGameTypes, UsingVirtualTime {
     ///      by _place on a cell's first ever placement; read by _cellsInZones.
     mapping(uint64 => uint64[]) internal _occupiedCellsInZone;
 
-    /// @notice What the last advance wrote down. See {UsingGameTypes-CycleState}.
-    CycleState internal _cycleState;
-
-    /// @notice How many members the cycle waits for.
-    /// @dev THE DENOMINATOR OF UNANIMITY, and the reason early advance cannot
-    ///      be offered as a switch independent of membership: "everyone has
-    ///      committed" has no meaning under open entry, because there is no
-    ///      denominator. A count is enough and a roster is not needed, so the
-    ///      roster is not stored until something else wants one.
-    uint64 internal _waitedFor;
-
-    /// @notice Whether this player is one of them, so the count cannot be
-    ///         incremented twice for the same member.
-    mapping(uint256 => bool) internal _isWaitedFor;
-
-    /// @notice How many of them have acted in the cycle it names.
-    /// @dev One slot rather than a mapping per cycle: it is only ever read for
-    ///      the CURRENT cycle, so a stale cycle number means both counts are
-    ///      zero and the slot is reset in place by whoever acts first.
-    CycleTally internal _tally;
-
     /// @notice Create an instance of a game
     /// @param config configuration options for the game
-    constructor(Config memory config) UsingVirtualTime(config.time) {
-        START_TIME = config.startTime;
-        COMMIT_PHASE_DURATION = config.commitPhaseDuration;
-        REVEAL_PHASE_DURATION = config.revealPhaseDuration;
+    constructor(
+        Config memory config
+    )
+        UsingCommitReveal(
+            CommitRevealConfig({
+                startTime: config.startTime,
+                commitPhaseDuration: config.commitPhaseDuration,
+                revealPhaseDuration: config.revealPhaseDuration,
+                time: config.time,
+                actionsPerReveal: config.actionsPerReveal,
+                cyclePolicy: config.cyclePolicy
+            })
+        )
+    {
         TOKENS = config.tokens;
         PLACEMENT_COST = config.placementCost;
-        ACTIONS_PER_REVEAL = config.actionsPerReveal;
-        CYCLE_POLICY = config.cyclePolicy;
-        // What makes a configuration VALID is checked one level up, in
-        // {UsingGameInternal}, which is where the errors are declared.
     }
 }

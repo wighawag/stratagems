@@ -349,9 +349,10 @@ describe('A turn bigger than one transaction', () => {
  *
  * The nastiest state this game has: a commitment that is never revealed keeps
  * the bond and blocks every later commitment, and nothing resolves it on its
- * own. It is settled by `acknowledgeMissedReveal`, which FORFEITS the bond, so
- * the app must never call it on the player's behalf - it has to say what
- * happened, what it cost, and wait to be asked.
+ * own. Settling it FORFEITS (what the placements would have cost when the
+ * browser can show the chunks, the whole bond when it cannot), so the app must
+ * never do it on the player's behalf - it has to say what happened, what it
+ * cost, and wait to be asked.
  *
  * The reveal is missed here the way it is missed in real life: the tab goes
  * away before the reveal phase. The second half then uses a BRAND-NEW browser
@@ -438,6 +439,10 @@ describe('A missed reveal', () => {
 		// generates its accounts per browser, and signing in derives the signer
 		// from those, so a clean context is a different player altogether and would
 		// prove nothing.
+		//
+		// The COMMITTED TURN the game copies aside (`__placement_committed_turn__`)
+		// is left, so the settlement below is the one shown the chunks: the route
+		// a stranger may take too, and the one that returns the bond's surplus.
 		await page.evaluate(() => {
 			for (const key of Object.keys(localStorage)) {
 				if (key.startsWith('__placement_submission__'))

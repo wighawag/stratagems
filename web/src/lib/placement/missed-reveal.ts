@@ -6,9 +6,16 @@
  * `makeCommitment` reverts with `PreviousCommitmentNotRevealed`. Nothing
  * resolves it on its own, so a player who misses a single reveal - closes the
  * tab at the wrong moment, loses their connection - is locked out of the game
- * until someone calls `acknowledgeMissedReveal`.
+ * until it is settled.
  *
- * That call FORFEITS THE BOND, so it is the player's to make.
+ * SETTLING FORFEITS, so it is the player's to press. There are two ways, and
+ * this file picks the cheaper one it can. Shown the CHUNKS
+ * (`acknowledgeMissedReveal`, one call per chunk still owed), the contract
+ * forfeits only what the placements would have cost and gives back the rest of
+ * the bond, which the client rounds up to whole chunks to hide the turn's
+ * length. Without them (`forfeitMissedReveal`, the player or their signer only)
+ * the whole remaining bond goes. The chunks come from the committed turn
+ * `storage.ts` keeps aside, matched against the head the chain is holding.
  *
  * This was briefly done automatically, as a quiet fix-up at the start of the
  * next commit. That was wrong in two ways at once: it spent the player's money
@@ -33,9 +40,20 @@
  */
 import {derived, get, writable, type Readable} from 'svelte/store';
 import type {Context} from '$lib/context/types';
-import {onchainIdentity, type ActiveIdentityStore} from '$lib/game/identity';
-import type {PlacementConfig} from './config';
-import {sendPlacementTransaction} from './commit-reveal';
+import {
+	onchainIdentity,
+	type ActiveIdentityStore,
+	type GameIdentity,
+} from '$lib/game/identity';
+import {costOfPlacements, type PlacementConfig} from './config';
+import {
+	buildPlacementChain,
+	chunkDueNext,
+	sendPlacementTransaction,
+	type Placement,
+	type PlacementChunk,
+} from './commit-reveal';
+import type {PersistedSubmission} from '$lib/game/core/submission';
 import type {LiveCommitment} from '$lib/game/core/recovery';
 
 export type MissedRevealState =
@@ -44,19 +62,21 @@ export type MissedRevealState =
 	/** No open commitment from a past cycle: the player is free to commit. */
 	| {step: 'Clear'}
 	/**
-	 * An unrevealed commitment is blocking play. The bond is already lost; what
-	 * is left is to say so on chain, which is what frees the player to commit
-	 * again.
+	 * An unrevealed commitment is blocking play. Settling it is what frees the
+	 * player to commit again; `forfeit` is what settling will cost, which is
+	 * the whole `bond` unless this browser still has the turn's chunks.
 	 */
-	| {step: 'Blocked'; cycleNumber: number; bond: bigint}
-	| {step: 'Acknowledging'; cycleNumber: number; bond: bigint}
-	| {step: 'Failed'; cycleNumber: number; bond: bigint; message: string};
+	| ({step: 'Blocked'} & Blocked)
+	| ({step: 'Acknowledging'} & Blocked)
+	| ({step: 'Failed'; message: string} & Blocked);
+
+type Blocked = {cycleNumber: number; bond: bigint; forfeit: bigint};
 
 export type MissedRevealStore = Readable<MissedRevealState> & {
 	readonly value: MissedRevealState;
 	/** Re-read the chain. Cheap: one call, plus one more only if blocked. */
 	check(): Promise<void>;
-	/** Forfeit the bond and free the player to commit again. */
+	/** Settle the missed reveal and free the player to commit again. */
 	acknowledge(): Promise<void>;
 	/**
 	 * The commitment the contract holds for the cycle NOW IN PROGRESS, if any.
@@ -89,10 +109,44 @@ export function createMissedReveal(params: {
 	config: PlacementConfig;
 	/** WHO PLAYS, and so whose commitment this is. */
 	identity: ActiveIdentityStore;
+	/**
+	 * The last turn this browser committed for a player, if it still has it.
+	 * Absent, every settlement goes without the chunks.
+	 */
+	committedTurn?: (
+		player: GameIdentity,
+	) => PersistedSubmission<Placement> | undefined;
 	/** Called once a forfeit settles, so the reserve can be re-read. */
 	onSettled?: () => void;
 }): MissedRevealStore {
-	const {deps} = params;
+	const {deps, config} = params;
+
+	/** The chunks still owed on the head the chain holds, with their secret. */
+	let owed: {chunks: PlacementChunk[]; secret: `0x${string}`} | undefined;
+
+	/**
+	 * The chunks of the committed turn the chain is still holding, from the
+	 * head on, or undefined when this browser cannot reproduce that head.
+	 * THE CHAIN JUDGES, not the record: a record from another turn, another
+	 * chunk size or another secret simply matches no head.
+	 */
+	function chunksStillOwed(
+		player: GameIdentity,
+		onChain: {hash: `0x${string}`; cycleNumber: bigint},
+	): typeof owed {
+		const turn = params.committedTurn?.(player);
+		if (!turn || BigInt(turn.cycleNumber) !== onChain.cycleNumber) {
+			return undefined;
+		}
+		const chain = buildPlacementChain({
+			actions: turn.actions,
+			secret: turn.secret,
+			actionsPerReveal: config.actionsPerReveal,
+		});
+		const from = chunkDueNext(chain, onChain.hash);
+		if (from === undefined) return undefined;
+		return {chunks: chain.slice(from), secret: turn.secret};
+	}
 
 	let $state: MissedRevealState = {step: 'Unknown'};
 	const store = writable<MissedRevealState>($state);
@@ -147,10 +201,18 @@ export function createMissedReveal(params: {
 			}
 
 			commitment.set(undefined);
+			owed = chunksStillOwed(player, onChain);
+			const penalty = owed
+				? costOfPlacements(
+						config,
+						owed.chunks.reduce((n, chunk) => n + chunk.actions.length, 0),
+					)
+				: onChain.bond;
 			set({
 				step: 'Blocked',
 				cycleNumber: Number(onChain.cycleNumber),
 				bond: onChain.bond,
+				forfeit: penalty < onChain.bond ? penalty : onChain.bond,
 			});
 		} catch {
 			// A failed read is not evidence of anything. Leaving the last known
@@ -161,7 +223,7 @@ export function createMissedReveal(params: {
 
 	async function acknowledge() {
 		if ($state.step !== 'Blocked' && $state.step !== 'Failed') return;
-		const {cycleNumber, bond} = $state;
+		const {cycleNumber, bond, forfeit} = $state;
 
 		const player = get(params.identity);
 		if (player === undefined) return;
@@ -170,24 +232,52 @@ export function createMissedReveal(params: {
 		const executor = get(deps.signerExecutor);
 		if (executor.status !== 'ready') return;
 
-		set({step: 'Acknowledging', cycleNumber, bond});
+		set({step: 'Acknowledging', cycleNumber, bond, forfeit});
+		const game = deps.deployments.get().contracts.Game;
 		try {
 			// Sent by the signer, like every other move, so no spending modal.
-			await sendPlacementTransaction(
-				deps,
-				executor,
-				{
-					address: deps.deployments.get().contracts.Game.address,
-					abi: deps.deployments.get().contracts.Game.abi,
-					// Takes the player rather than using msg.sender: anyone may settle
-					// anyone's missed reveal. Here the player settles their own.
-					functionName: 'acknowledgeMissedReveal',
-					args: [onchainIdentity(player)],
-					account: executor.account,
-					chain: null,
-				},
-				'Acknowledging the missed reveal',
-			);
+			if (owed) {
+				// SHOWN THE CHUNKS, in order, from wherever the head got to: each
+				// call opens the next one exactly as a reveal would, and the last
+				// gives back what the bond held beyond the turn's cost.
+				for (const chunk of owed.chunks) {
+					await sendPlacementTransaction(
+						deps,
+						executor,
+						{
+							address: game.address,
+							abi: game.abi,
+							functionName: 'acknowledgeMissedReveal',
+							args: [
+								onchainIdentity(player),
+								chunk.actions as {cellID: bigint}[],
+								owed.secret,
+								chunk.furtherActions,
+							],
+							account: executor.account,
+							chain: null,
+						},
+						'Acknowledging the missed reveal',
+					);
+				}
+			} else {
+				// WITHOUT THEM the whole bond goes, and only the player (or the
+				// signer acting for them, as here) may choose that.
+				await sendPlacementTransaction(
+					deps,
+					executor,
+					{
+						address: game.address,
+						abi: game.abi,
+						functionName: 'forfeitMissedReveal',
+						args: [onchainIdentity(player)],
+						account: executor.account,
+						chain: null,
+					},
+					'Acknowledging the missed reveal',
+				);
+			}
+			owed = undefined;
 			commitment.set(undefined);
 			set({step: 'Clear'});
 			params.onSettled?.();
@@ -196,6 +286,7 @@ export function createMissedReveal(params: {
 				step: 'Failed',
 				cycleNumber,
 				bond,
+				forfeit,
 				message: error instanceof Error ? error.message : String(error),
 			});
 		}

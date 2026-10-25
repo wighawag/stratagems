@@ -56,7 +56,7 @@ export type Chunk = {
  * It is written out here rather than asked of the contract, for the same reason
  * {@link cycleClock} is: a test that computed the hash by calling the thing it
  * is testing would assert nothing. The encoding must match
- * `UsingGameInternal._checkHash` exactly, and note that it is ONE encoding for
+ * `UsingGameInternal._digest` exactly, and note that it is ONE encoding for
  * every chunk including the last, where `furtherActions` is zero and is hashed
  * in anyway.
  *
@@ -292,7 +292,7 @@ export async function deployGameWith(
  * The contract keys every player by a `uint256` and never by an address, so
  * that a game keying by an avatar, a character or an empire puts its token id
  * in the same slot without changing a signature (see
- * `UsingGameInternal._playerOf`). This template is an address game, so the
+ * `UsingCommitReveal._playerOf`). This template is an address game, so the
  * widening happens here, and it happens in ONE function so that the suites read
  * as "this account's reserve" rather than as arithmetic.
  *

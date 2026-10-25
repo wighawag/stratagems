@@ -297,10 +297,39 @@ export function resolvePlacementConfig(
 	};
 }
 
-/** What a set of placements will cost, and so what has to be bonded. */
+/** What a set of placements will cost when they are revealed. */
 export function costOfPlacements(
 	config: PlacementConfig,
 	count: number,
 ): bigint {
 	return config.placementCost * BigInt(count);
+}
+
+/**
+ * What to bond for a turn of `count` placements: a WHOLE NUMBER OF CHUNKS.
+ *
+ * THE BOND IS PUBLIC (`CommitmentMade`, `getCommitment`), so bonding the exact
+ * cost would tell every observer how many placements the commitment hides. A
+ * whole number of chunks says only how many reveal transactions the turn will
+ * take, which the reveals disclose anyway. The surplus is not lost: the last
+ * reveal releases it, and a missed reveal settled with the chunks gives it back
+ * (the contract forfeits only what the placements would have cost). An empty
+ * turn is zero chunks of placements and bonds nothing.
+ *
+ * CAPPED AT THE RESERVE, never below the cost. A reserve that covers the cost
+ * and not the rounding still lets the player commit, bonding all of it (the
+ * reserve is public too, so this tells nobody anything new); one that cannot
+ * cover the cost is refused by the contract either way, and bonding the cost
+ * keeps that refusal's numbers about the turn.
+ */
+export function bondFor(
+	config: PlacementConfig,
+	count: number,
+	reserve?: bigint,
+): bigint {
+	const cost = costOfPlacements(config, count);
+	const chunks = Math.ceil(count / config.actionsPerReveal);
+	const whole = costOfPlacements(config, chunks * config.actionsPerReveal);
+	if (reserve === undefined || whole <= reserve) return whole;
+	return cost > reserve ? cost : reserve;
 }
