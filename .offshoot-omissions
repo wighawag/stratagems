@@ -52,11 +52,11 @@
 # (AGENTS.md), and these would deploy a second game beside stratagems' own
 # (contracts/src/game/{interface,internal,routes}/Stratagems*, contracts/src/token).
 #
-# OMITTED UNTIL STEP 10b, not for ever (decision 5 of the plan): step 10a
-# separates the template's commit-reveal MECHANISM (reserve, commitment, hash
-# chain, cycle policy, advance, forfeit, delegation) from this reference game into
-# a base a game extends, and step 10b rebuilds stratagems' game on that base. The
-# entries for the base then go; the reference game's stay.
+# The base these used to be mixed with is KEPT since step 10b (2026-10-25):
+# step 10a separated the template's commit-reveal MECHANISM (reserve, commitment,
+# hash chain, cycle policy, advance, forfeit, delegation) into
+# contracts/src/commit-reveal, and stratagems' game is rebuilt on it. What is left
+# here is the reference GAME, which is the template's and not ours, and its suites.
 #
 # Listed file by file where stratagems has a directory of the same name
 # (internal/, routes/, deploy/), so the entry asserts nothing about our own files.
@@ -71,19 +71,17 @@ contracts/src/tokens
 contracts/deploy/001_deploy_token.ts
 contracts/deploy/010_deploy_game.ts
 contracts/deploy/020_deploy_stake_sale.ts
-contracts/test/js
+# The reference game's suites. The base's own suite (CommitRevealBase.test.ts) and
+# the folder's tsconfig are kept: they run here on Hardhat's node test runner.
+contracts/test/js/Game.test.ts
+contracts/test/js/CyclePolicy.test.ts
+contracts/test/js/GasBudget.test.ts
+contracts/test/js/StakeSale.test.ts
+contracts/test/js/utils
 contracts/js
 # The template's Solidity linter config. stratagems has no `lint` script and no
 # slippy; its contracts are formatted by prettier-plugin-solidity.
 contracts/slippy.config.js
-# The commit-reveal BASE (step 10a-contract, 2026-10-25): the mechanism the
-# template now keeps for every game, a library over namespaced storage plus a
-# convenience contract and a stub game for its tests (whose suite,
-# contracts/test/js/CommitRevealBase.test.ts, is covered by the entry above).
-# OMITTED UNTIL STEP 10b, which un-omits it and rebuilds stratagems' game on it.
-# Today it could not even compile here: alpha1 compiles with solc 0.8.24 and
-# viaIR, and stratagems has no @etherplay/delegation, which the base imports.
-contracts/src/commit-reveal
 
 # ---------------------------------------------------------------------------
 # 2. THE TEMPLATE'S GAME, CLIENT SIDE: `placement/` is template-commit-reveal's

@@ -1,6 +1,7 @@
 import type {HardhatUserConfig} from 'hardhat/config';
 import {loadEnv} from 'ldenv';
 
+import HardhatNodeTestRunner from '@nomicfoundation/hardhat-node-test-runner';
 import HardhatViem from '@nomicfoundation/hardhat-viem';
 import HardhatNetworkHelpers from '@nomicfoundation/hardhat-network-helpers';
 import HardhatDeploy from 'hardhat-deploy';
@@ -30,7 +31,7 @@ const compilerSettings = {
 };
 
 const config: HardhatUserConfig = {
-	plugins: [HardhatViem, HardhatNetworkHelpers, HardhatDeploy, HardhatExternalArtifactsPlugin],
+	plugins: [HardhatNodeTestRunner, HardhatViem, HardhatNetworkHelpers, HardhatDeploy, HardhatExternalArtifactsPlugin],
 	solidity: {
 		profiles: {
 			default: {
@@ -55,6 +56,12 @@ const config: HardhatUserConfig = {
 					allowUnlimitedContractSize: true,
 					initialBaseFeePerGas: 0n,
 				},
+				// the commit-reveal base's suite (test/js, Hardhat's node test runner), as the stem has it
+				test: {
+					type: 'edr-simulated',
+					chainType: 'l1',
+					allowBlocksWithSameTimestamp: true,
+				},
 				// `pnpm local_node` (hardhat node): what `localhost` connects to
 				node: {
 					type: 'edr-simulated',
@@ -67,6 +74,9 @@ const config: HardhatUserConfig = {
 		),
 	paths: {
 		sources: ['src'],
+		tests: {
+			nodejs: 'test/js',
+		},
 	},
 	generateTypedArtifacts: {
 		destinations: [
