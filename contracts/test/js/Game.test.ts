@@ -414,10 +414,7 @@ describe('Game', function () {
 		await advanceToCycleNumber(startCycleNumber + 2, true);
 
 		const identity = await enterGame({env, Game, GameToken}, player);
-		const strangerIdentity = await enterGame(
-			{env, Game, GameToken},
-			stranger,
-		);
+		const strangerIdentity = await enterGame({env, Game, GameToken}, stranger);
 
 		const turn: Placement[] = Array.from({length: 6}, (_, i) => ({
 			cellID: cellAt(i, 3),
@@ -438,7 +435,12 @@ describe('Game', function () {
 			env.execute(Game, {
 				account: stranger,
 				functionName: 'acknowledgeMissedReveal',
-				args: [identity, chunks[0].placements, SECRET_A, chunks[0].furtherActions],
+				args: [
+					identity,
+					chunks[0].placements,
+					SECRET_A,
+					chunks[0].furtherActions,
+				],
 			}),
 		).toBeRejectedWith('CanStillReveal');
 
@@ -454,7 +456,12 @@ describe('Game', function () {
 			env.execute(Game, {
 				account: stranger,
 				functionName: 'acknowledgeMissedReveal',
-				args: [identity, chunks[1].placements, SECRET_A, chunks[1].furtherActions],
+				args: [
+					identity,
+					chunks[1].placements,
+					SECRET_A,
+					chunks[1].furtherActions,
+				],
 			}),
 		).toBeRejectedWith('CommitmentHashNotMatching');
 

@@ -15,7 +15,7 @@ import "./UsingGameErrors.sol";
 
 /// @dev EVERY `player` HERE IS A `uint256`, and it is the identity rather than
 ///      an account: what this game means by a player is decided in exactly one
-///      place, {UsingGameInternal-_playerOf}. On this game it is the account
+///      place, {UsingCommitReveal-_playerOf}. On this game it is the account
 ///      widened, because the template is deliberately an address game; on a
 ///      game that keys by an avatar, a character or an empire it is that
 ///      token's id, and nothing in this interface changes. See
@@ -130,7 +130,7 @@ interface IGameReveal is UsingGameTypes {
     ///
     ///      IT IS ITS OWN TRANSACTION AND NEVER A RIDER ON THE LAST REVEAL,
     ///      which is what keeps `reveal` meaning the same thing whoever sends
-    ///      it and whenever it lands. See {UsingGameInternal-_advanceCycle}.
+    ///      it and whenever it lands. See {UsingCommitReveal-_advanceCycle}.
     ///
     ///      On a purely timed game it always reverts, because the cycle is
     ///      whatever the clock says and no transaction can change that.

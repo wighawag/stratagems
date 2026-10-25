@@ -146,7 +146,10 @@ async function setup(orders: Order[], bond: bigint) {
 
 	const read = {
 		reserve: async (id: bigint) =>
-			(await env.read(Stub, {functionName: 'getReserve', args: [id]})) as bigint,
+			(await env.read(Stub, {
+				functionName: 'getReserve',
+				args: [id],
+			})) as bigint,
 		commitment: async () =>
 			(await env.read(Stub, {
 				functionName: 'getCommitment',
@@ -158,10 +161,7 @@ async function setup(orders: Order[], bond: bigint) {
 
 	function send(
 		account: `0x${string}`,
-		functionName:
-			| 'reveal'
-			| 'revealWithoutClosing'
-			| 'acknowledgeMissedReveal',
+		functionName: 'reveal' | 'revealWithoutClosing' | 'acknowledgeMissedReveal',
 		chunk: OrderChunk,
 	) {
 		return env.execute(Stub, {

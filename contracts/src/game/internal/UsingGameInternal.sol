@@ -141,6 +141,7 @@ abstract contract UsingGameInternal is
         bytes32 secret,
         bytes24 furtherActions
     ) internal pure returns (bytes24) {
-        return bytes24(keccak256(abi.encode(secret, placements, furtherActions)));
+        return
+            bytes24(keccak256(abi.encode(secret, placements, furtherActions)));
     }
 }

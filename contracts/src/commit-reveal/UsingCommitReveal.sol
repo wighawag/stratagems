@@ -165,7 +165,13 @@ abstract contract UsingCommitReveal is
         uint256 bond
     ) internal {
         (uint64 cycleNumber, bool commiting) = _cycleNumber();
-        CommitReveal.commit(player, commitmentHash, bond, cycleNumber, commiting);
+        CommitReveal.commit(
+            player,
+            commitmentHash,
+            bond,
+            cycleNumber,
+            commiting
+        );
     }
 
     /// @notice Take a commitment back while its commit phase is still open.

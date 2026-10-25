@@ -276,7 +276,11 @@ library CommitReveal {
         emit Ev.CommitmentMade(player, cycleNumber, commitmentHash, bond);
     }
 
-    function cancel(uint256 player, uint64 cycleNumber, bool commiting) internal {
+    function cancel(
+        uint256 player,
+        uint64 cycleNumber,
+        bool commiting
+    ) internal {
         if (!commiting) {
             revert E.InRevealPhase(cycleNumber);
         }
@@ -503,15 +507,17 @@ library CommitReveal {
             revert E.GameNotStarted();
         }
 
-        uint256 cycleDuration = clock.commitPhaseDuration +
-            clock.revealPhaseDuration;
+        uint256 cycleDuration =
+            clock.commitPhaseDuration + clock.revealPhaseDuration;
         uint256 elapsed = time - anchoredAt;
-        result.cycleNumber = anchorCycleNumber + uint64(elapsed / cycleDuration);
-        result.commiting = (elapsed % cycleDuration) < clock.commitPhaseDuration;
+        result.cycleNumber =
+            anchorCycleNumber + uint64(elapsed / cycleDuration);
+        result.commiting =
+            (elapsed % cycleDuration) < clock.commitPhaseDuration;
 
-        uint256 cycleStart = anchoredAt +
-            uint256(result.cycleNumber - anchorCycleNumber) *
-            cycleDuration;
+        uint256 cycleStart =
+            anchoredAt +
+                uint256(result.cycleNumber - anchorCycleNumber) * cycleDuration;
 
         // AN EARLY OPEN MOVES THE START AND NOT THE DEADLINE. The reveal window
         // becomes "as soon as everyone has committed, until the nominal end",
@@ -519,9 +525,9 @@ library CommitReveal {
         // given: a reveal scheduled against the nominal time still lands inside
         // it. Shifting the deadline forward instead would lose exactly those
         // reveals, and lose them silently, at the cost of the stake.
-        bool openedEarly = clock.policy ==
-            T.CyclePolicy.TimedWithEarlyAdvance &&
-            state.earlyRevealCycleNumber == result.cycleNumber;
+        bool openedEarly =
+            clock.policy == T.CyclePolicy.TimedWithEarlyAdvance &&
+                state.earlyRevealCycleNumber == result.cycleNumber;
         if (openedEarly) {
             result.commiting = false;
         }
@@ -530,9 +536,10 @@ library CommitReveal {
             result.phaseStart = uint64(cycleStart);
             result.phaseEnd = uint64(cycleStart + clock.commitPhaseDuration);
         } else {
-            result.phaseStart = openedEarly
-                ? state.earlyRevealAt
-                : uint64(cycleStart + clock.commitPhaseDuration);
+            result.phaseStart =
+                openedEarly
+                    ? state.earlyRevealAt
+                    : uint64(cycleStart + clock.commitPhaseDuration);
             result.phaseEnd = uint64(cycleStart + cycleDuration);
         }
     }
