@@ -81,7 +81,7 @@ Candidates already visible, each to be judged when its step comes (not decided h
 - [x] **Step U2** (in the template tree): the game becomes a slot the framework compiles against, and the delegation registration is typed
 - [x] **Step 4**: the merge
 - [x] **Step 5**: stratagems becomes a node of the tree
-- [ ] **Step 10a-client** (in the template tree): the client skeleton every commit-reveal game repeats becomes one framework function in `game/core/`; the reference game is its first user, reveal-or-die its second
+- [x] **Step 10a-client** (in the template tree): the client skeleton every commit-reveal game repeats becomes one framework function in `game/core/`; the reference game is its first user, reveal-or-die its second
 - [ ] **Step 10a-contract** (in the template tree): a commit-reveal base contract that games keep and extend with an action type and a resolution hook, with a bond that may exceed the turn's cost and a settlement that returns the surplus when shown the chunks
 - [ ] **Step 10b**: stratagems' contracts rebuilt on that base as a new deployment, with its two rule defects fixed and `epoch` renamed; `common/` and the indexer follow; alpha1 tooling leaves `main`
 - [ ] **Step 6**: the template's shell, connection and app context, with stratagems composed on the skeleton (this takes in step 7's client half and the core of step 8)
@@ -688,7 +688,7 @@ A cascade reached stratagems `main` at 03:48 (`084238c6`, carrying jolly-roger's
 
 bomber-world: the user said on 2026-10-25 that it can be fanned out. It already has been: its `main` (`9f25bac4`, pushed, 03:49) is `offshoot-fanout: merge reveal-or-die@main into main`, level with `stem/main` (reveal-or-die `433d2f9c`), and it carries U2 (the `$app-specific` alias in `web/svelte.config.js`) and U (hardhat ^3.18.0, hardhat-deploy ^2.0.30, rocketh ^0.23.1). The "deferred" notes in the U and U2 entries are history; step 10a-client cascades into bomber-world like any other node. Its verify was not re-run here.
 
-### 2026-10-25, step 10a-client: the client skeleton (built and verified on preview branches, NOT landed: awaiting the user's approval of the pushes, and a decision on one criterion)
+### 2026-10-25, step 10a-client: the client skeleton
 
 Not ticked. Two things stand between this and the tick: every push is the user's (template-commit-reveal `main`, `with/pixi-js`, `with/nft-identity`, `with/all`, reveal-or-die `main`, bomber-world `main`, stratagems `main`), and the "unchanged body lines fall below 20" criterion is not met as written (42, see below). Everything is on local preview branches; nothing was pushed, in any repo.
 
@@ -725,3 +725,5 @@ Every node gained exactly the skeleton's 14 tests and lost none. The 2026-10-24 
 **Left behind on purpose, for the landing**: the preview branches above and their worktrees; fetch refs `refs/skeleton/*` in reveal-or-die, bomber-world and stratagems (delete with `git update-ref -d` after landing); the stub worktree. At landing, template-commit-reveal's `work` branch also needs `work/tasks/backlog/the-commit-reveal-skeleton.md` moved to `done/` with its outcome, and reveal-or-die's `work` branch a finding for the duplicate refresh.
 
 Surprises: that TypeScript could not infer the skeleton's type parameters through the factories (the fix, one record of the game's types, reads better than nine parameters would have); that the template's `with/nft-identity` line merged into a rewritten file cleanly; that the first `pnpm install` of a fresh template worktree failed in the contracts' `prepare` and the second passed; and that reveal-or-die's duplicate refresh had been hiding behind a comment that described the framework correctly.
+
+**Landed, 2026-10-25**: the user approved every push and accepted 42 unchanged body lines as meeting the criterion ("the idea is to keep low, not be dumbly strict"), so the reorganisation for the metric was not done. Every node fast-forwarded to its preview and pushed: template-commit-reveal `main` 2dd771d3, `with/pixi-js` 2b74563f, `with/nft-identity` 94e26196, `with/all` 50a65df2; reveal-or-die `main` 245f8c2d; bomber-world `main` 0051d863; stratagems `main` 4c2241ed. `offshoot-fanout --dry-run` from template-commit-reveal afterwards: every node up to date, stratagems and bomber-world included. template-commit-reveal `work` 101bbd3b moves the task to `done/` with its outcome; reveal-or-die `work` 9f0284d1 records the duplicate refresh as a finding (`work/notes/findings/the-board-refresh-policy-runs-twice.md`). stratagems' new `main` was merged into the integration branch with this entry, so the integration branch still contains `origin/main`.
