@@ -398,10 +398,19 @@ export type CommitRevealGameParts<T extends GameTypes> = {
 		acquisition: Parameters<typeof createAcquisition>[0]['acquisition'];
 		grant: Parameters<typeof createAcquisition>[0]['grant'];
 	};
-	planning: (params: {
-		submission: SubmissionStore<T['identity'], T['action']>;
-		maxOpenableActions: Readable<number | undefined>;
-	}) => T['planning'];
+	/**
+	 * The game's planning store. Handed the clock and the RAW board as well as
+	 * the submission, for a game whose legal moves depend on what the chain
+	 * holds this cycle (bomber-world's bombs): that is about the chain, not
+	 * about what the held board shows.
+	 */
+	planning: (
+		params: CycleClock & {
+			submission: SubmissionStore<T['identity'], T['action']>;
+			maxOpenableActions: Readable<number | undefined>;
+			onchainState: OnchainStateStore<T['board']>;
+		},
+	) => T['planning'];
 	/** What the resolving cycle may not show yet, and the display copy of the plan. */
 	hold: HoldResolvingCycle<T['board']>;
 	holdPlan: (params: {
@@ -643,7 +652,12 @@ export function createCommitRevealGame<T extends GameTypes>(
 					});
 				});
 
-	const planning = parts.planning({submission, maxOpenableActions});
+	const planning = parts.planning({
+		...clock,
+		submission,
+		maxOpenableActions,
+		onchainState,
+	});
 
 	// The chain says a commitment exists; this browser may not know it.
 	const recovery = createSubmissionRecovery<TIdentity, TAction>({
