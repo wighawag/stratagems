@@ -12,7 +12,7 @@ import {encodeAbiParameters, keccak256, zeroAddress, type Account} from 'viem';
 import type {Context} from '$lib/context/types';
 import type {CommitRevealAdapter} from '$lib/game/core/seams';
 import {onchainIdentity, type GameIdentity} from '$lib/game/identity';
-import {costOfPlacements, type PlacementConfig} from './config';
+import {bondFor, type PlacementConfig} from './config';
 import {receiptPollingInterval} from '$lib/game/core/reveal-window';
 import {isInsufficientFundsFailure} from '$lib/core/transaction';
 import {SignerOutOfFundsError} from './errors';
@@ -23,7 +23,7 @@ export type Placement = {cellID: bigint};
 /**
  * The ABI encoding the commitment hash is taken over.
  *
- * It must match `UsingGameInternal._checkHash` exactly - same types, same
+ * It must match `UsingGameInternal._digest` exactly - same types, same
  * order. A mismatch is not a compile error and not a failed read: the commit
  * succeeds, and the reveal reverts with `CommitmentHashNotMatching` once the
  * player's stake is already bonded. `contracts/test/js/Game.test.ts` computes
@@ -441,31 +441,29 @@ export function createPlacementCommitReveal(params: {
 			await params.beforeCommit?.();
 			const {executor, deployments} = await ready();
 
-			// The bond is the exact cost of what was planned. The contract only
-			// requires it to COVER the reveal, but bonding more would leave the
-			// surplus locked out of the reserve until the submission settles, and
-			// bonding less makes the reveal revert with `BondTooLow` after the
-			// commitment is already immovable.
+			// A WHOLE NUMBER OF CHUNKS, NOT THE EXACT COST. The bond is public -
+			// it is in `CommitmentMade` and in what `getCommitment` returns - so
+			// the exact cost would tell any observer how many placements the
+			// commitment hides, before anybody reveals anything. Rounding up to
+			// whole chunks discloses only how many reveal transactions the turn
+			// takes, which the reveals disclose anyway.
 			//
-			// AND IT LEAKS THE LENGTH OF THE TURN, which is a real hiding weakness
-			// and not merely a tidy choice. The bond is public - it is in
-			// `CommitmentMade` and in what `getCommitment` returns - so dividing it
-			// by `placementCost` gives any observer the exact number of actions
-			// hidden in the commitment, before anybody reveals anything. What that
-			// costs depends on the game: here a cell is claimed by accumulation and
-			// knowing a rival is placing six rather than one is worth something,
-			// while in a game where the count IS the move it would be most of the
-			// secret.
+			// THE SURPLUS IS NOT AT RISK, which is what made this a contract
+			// change rather than a client one: the last reveal releases it, and a
+			// missed reveal settled WITH the chunks forfeits only what the
+			// placements would have cost and returns the rest (see
+			// `missed-reveal.ts`, and `UsingGameInternal._acknowledgeMissedReveal`).
 			//
-			// The fix is to post MORE than the turn will cost - a fixed amount, or
-			// the plan rounded up to a whole number of chunks - and it is not free,
-			// which is why it is written down here rather than done. It moves the
-			// game into the case `_acknowledgeMissedReveal` cannot settle in one
-			// call: the contract would no longer be able to tell the surplus from
-			// the stake, so forfeiting the remainder would punish the hiding rather
-			// than the silence, and the settlement would have to take the chunks in
-			// order to give the surplus back. Both halves have to move together.
-			const bond = costOfPlacements(config, actions.length);
+			// The reserve is read for the cap (see `bondFor`), from the chain and
+			// not the store: it is one read against a commitment that is about
+			// to be immovable.
+			const reserve = (await deps.publicClient.readContract({
+				address: deployments.contracts.Game.address,
+				abi: deployments.contracts.Game.abi,
+				functionName: 'getReserve',
+				args: [onchainIdentity(identity)],
+			})) as bigint;
+			const bond = bondFor(config, actions.length, reserve);
 
 			return {
 				hash: await send(
@@ -666,7 +664,7 @@ export function createPlacementCommitReveal(params: {
 /**
  * Send a prepared request, for callers outside the adapter.
  *
- * Exported so the missed-reveal store can settle a forfeited commitment through
+ * Exported so the missed-reveal store can settle a missed commitment through
  * exactly the same wait-for-inclusion path, rather than growing its own.
  */
 export {send as sendPlacementTransaction};

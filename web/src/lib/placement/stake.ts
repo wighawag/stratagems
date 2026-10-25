@@ -68,9 +68,13 @@ export const STAKE = {
 	 * second clause is the framework's rule showing through - an unrevealed
 	 * commitment blocks the next one until it is settled - and every game has
 	 * it.
+	 *
+	 * The amount is what SETTLING will take, which is less than the bond when
+	 * this browser still has the turn's chunks: shown them, the contract keeps
+	 * only what the placements would have cost and returns the rest.
 	 */
-	forfeited(bond: bigint): string {
-		return `Your bond of ${this.amount(bond)} is forfeit, and you cannot commit again until you acknowledge it.`;
+	forfeited(forfeit: bigint): string {
+		return `${this.amount(forfeit)} of your bond is forfeit, and you cannot commit again until you acknowledge it.`;
 	},
 
 	/**

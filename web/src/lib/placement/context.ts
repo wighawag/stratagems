@@ -51,6 +51,7 @@ import {
 } from '$lib/placement/commit-reveal';
 import {
 	createSubmissionStorage,
+	loadCommittedTurn,
 	submissionStorageKey,
 } from '$lib/placement/storage';
 import {createPlanning, type PlanningStore} from '$lib/placement/planning';
@@ -288,7 +289,7 @@ export function createGameContext(core: CoreServices): GameContext {
 			}),
 			advance: createCycleAdvancer(core),
 			// YES, AND IT IS THIS GAME'S CONTRACT THAT SAYS SO, not the framework.
-			// `UsingGameInternal._advanceCycle` re-checks the policy, `waitedFor > 0`,
+			// `UsingCommitReveal._advanceCycle` re-checks the policy, `waitedFor > 0`,
 			// `committed >= waitedFor` in the commit phase and `revealed >= committed`
 			// in the reveal phase, and reverts with a named error for each - so the
 			// client's mirrored guard is an optimisation and nothing is riding on
@@ -306,11 +307,21 @@ export function createGameContext(core: CoreServices): GameContext {
 				emptyState: emptyBoard,
 			}),
 		// The forfeit comes out of the reserve, so the number on screen changes.
+		// The committed turn is what lets a missed reveal be settled WITH its
+		// chunks, which forfeits only what the placements would have cost.
 		missedReveal: () =>
 			createMissedReveal({
 				deps: core,
 				config,
 				identity: activeIdentity,
+				committedTurn: (player) =>
+					loadCommittedTurn(
+						submissionStorageKey({
+							chainID: deployments.chain.id,
+							gameAddress: deployments.contracts.Game.address,
+							player,
+						}),
+					),
 				onSettled: () => void reserve.update(),
 			}),
 		blocksCommitting,

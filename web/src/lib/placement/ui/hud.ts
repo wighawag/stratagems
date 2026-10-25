@@ -268,7 +268,7 @@ export function describeMissedReveal(
 	}
 	return {
 		headline,
-		detail: STAKE.forfeited(state.bond),
+		detail: STAKE.forfeited(state.forfeit),
 		busy: false,
 		canAcknowledge: true,
 	};

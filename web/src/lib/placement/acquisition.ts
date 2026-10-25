@@ -2,7 +2,7 @@
  * What this game acquires, and how: the seam the acquisition rail plugs into.
  *
  * The template gates on a token reserve bonded at commit time and forfeited by
- * `acknowledgeMissedReveal`, so what a new player has to get is a stake. That
+ * a missed reveal's settlement, so what a new player has to get is a stake. That
  * used to be three transactions they were never told about - mint, approve,
  * add to the reserve - each signed in the wallet, with nothing on screen saying
  * why there were three. `StakeSale.purchase` is one call that does all of it

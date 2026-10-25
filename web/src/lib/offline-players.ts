@@ -9,7 +9,11 @@ import {
 import {playedSeatSecret} from '$lib/game/core/secret';
 import {createCycleReader} from '$lib/placement/cycle';
 import {cellID} from '$lib/placement/cells';
-import {costOfPlacements, type PlacementConfig} from '$lib/placement/config';
+import {
+	bondFor,
+	costOfPlacements,
+	type PlacementConfig,
+} from '$lib/placement/config';
 import {
 	buildPlacementChain,
 	chunkDueNext,
@@ -65,8 +69,8 @@ import {
  * {@link turnFor} or `playedSeatSecret` can no longer open a commitment an
  * earlier build left on chain, which under the manual policy is not a lost turn
  * but a frozen world: no advance can close a cycle holding an unopened
- * commitment, and `acknowledgeMissedReveal` refuses a commitment from the
- * CURRENT cycle. {@link createOfflinePlayers} closes that hole from the only
+ * commitment, and neither settlement touches a commitment from the CURRENT
+ * cycle. {@link createOfflinePlayers} closes that hole from the only
  * side it can be closed from - it re-commits, in the commit phase, whenever the
  * head on chain is not one this build can open - so by the time a reveal phase
  * opens every played commitment is openable. The same care AGENTS.md asks for
@@ -258,10 +262,14 @@ export function createOfflinePlayers(params: {
 		cycleNumber: number,
 	): Promise<{actions: Placement[]; bond: bigint}> {
 		const [wanted] = candidateTurns(player, cycleNumber);
-		const bond = costOfPlacements(config, wanted.length);
-		if (bond === 0n) return {actions: wanted, bond};
+		const cost = costOfPlacements(config, wanted.length);
+		if (cost === 0n) return {actions: wanted, bond: 0n};
 		const reserve = await reserveOf(player);
-		if (reserve >= bond) return {actions: wanted, bond};
+		// Whole chunks, like the app's own client (see `bondFor`): the surplus
+		// comes back with the last reveal or a settlement shown the chunks.
+		if (reserve >= cost) {
+			return {actions: wanted, bond: bondFor(config, wanted.length, reserve)};
+		}
 		return {actions: [], bond: 0n};
 	}
 
@@ -348,8 +356,8 @@ export function createOfflinePlayers(params: {
 
 		// THE ONE STATE THIS FILE CANNOT GET OUT OF, said out loud rather than
 		// papered over. The chain is holding a turn no candidate reproduces, so
-		// it cannot be opened; it cannot be settled either, because
-		// `acknowledgeMissedReveal` refuses a commitment from the current cycle;
+		// it cannot be opened; it cannot be settled either, because a
+		// settlement refuses a commitment from the current cycle;
 		// and the cycle cannot advance past it. It takes a build that changed
 		// `turnFor` or `secretFor` between a commit and its reveal to reach, and
 		// the commit path above is what stops that happening in the ordinary
@@ -359,6 +367,54 @@ export function createOfflinePlayers(params: {
 			'an offline player is holding a commitment this build cannot open, so the cycle cannot close',
 			{identity: player.identity, cycleNumber},
 		);
+	}
+
+	/**
+	 * Settle a commitment from a past cycle, WITH ITS CHUNKS when this file can
+	 * rebuild the turn, which forfeits only what the placements would have cost
+	 * and gives the rest of the bond back. The derivation that let the reveal
+	 * be rebuilt lets the settlement be too: the secret is a function of the
+	 * seat and the cycle, and the candidates are the turns it could have
+	 * committed. Only a head no candidate reproduces falls back to forfeiting
+	 * the whole bond, which the seat may do because it sends as the player.
+	 */
+	async function settle(
+		player: OfflinePlayer,
+		onChain: Commitment,
+	): Promise<void> {
+		const cycleNumber = Number(onChain.cycleNumber);
+		const secret = playedSeatSecret({
+			chainId: records.chain.id,
+			contract: game.address,
+			identity: player.identity,
+			cycleNumber,
+		});
+		for (const actions of candidateTurns(player, cycleNumber)) {
+			const chain = buildPlacementChain({
+				actions,
+				secret,
+				actionsPerReveal: config.actionsPerReveal,
+			});
+			const from = chunkDueNext(chain, onChain.hash);
+			if (from === undefined) continue;
+			for (let i = from; i < chain.length; i++) {
+				await send(player, {
+					functionName: 'acknowledgeMissedReveal',
+					args: [
+						player.identity,
+						chain[i].actions as {cellID: bigint}[],
+						secret,
+						chain[i].furtherActions,
+					],
+					gas: config.gas.reveal,
+				});
+			}
+			return;
+		}
+		await send(player, {
+			functionName: 'forfeitMissedReveal',
+			args: [player.identity],
+		});
 	}
 
 	async function act(
@@ -379,10 +435,7 @@ export function createOfflinePlayers(params: {
 			onChain.cycleNumber !== 0n &&
 			Number(onChain.cycleNumber) < cycle.cycleNumber
 		) {
-			await send(player, {
-				functionName: 'acknowledgeMissedReveal',
-				args: [player.identity],
-			});
+			await settle(player, onChain);
 			return;
 		}
 

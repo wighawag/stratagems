@@ -7,6 +7,10 @@ import {
 } from '$lib/placement/missed-reveal';
 import {describeMissedReveal} from '$lib/placement/ui/hud';
 import type {GameIdentity} from '$lib/game/identity';
+import {
+	buildPlacementChain,
+	type Placement,
+} from '$lib/placement/commit-reveal';
 
 const PLAYER = '0x1111111111111111111111111111111111111111' as const;
 
@@ -18,7 +22,7 @@ const PLAYER = '0x1111111111111111111111111111111111111111' as const;
  * is usually that NOTHING was sent.
  */
 function fakeDeps(options: {
-	commitment: {cycleNumber: bigint; bond: bigint};
+	commitment: {cycleNumber: bigint; bond: bigint; hash?: `0x${string}`};
 	currentCycleNumber: bigint;
 	identity?: GameIdentity | undefined;
 	writeFails?: boolean;
@@ -92,7 +96,7 @@ function fakeDeps(options: {
 	return {deps, identity, writes, reads, sends};
 }
 
-const config = {placementCost: 10n ** 18n} as never;
+const config = {placementCost: 10n ** 18n, actionsPerReveal: 2} as never;
 
 describe('a commitment that was never revealed', () => {
 	it('is reported, with what it cost, when it is from a past cycle', async () => {
@@ -103,10 +107,12 @@ describe('a commitment that was never revealed', () => {
 		const store = createMissedReveal({deps, config, identity});
 		await store.check();
 
+		// With no turn to show, settling takes the whole bond, and it says so.
 		expect(store.value).toEqual({
 			step: 'Blocked',
 			cycleNumber: 10,
 			bond: 5n * 10n ** 18n,
+			forfeit: 5n * 10n ** 18n,
 		});
 		expect(blocksCommitting(store.value)).toBe(true);
 	});
@@ -138,9 +144,7 @@ describe('a commitment that was never revealed', () => {
 		expect(typeof commitmentRead?.args?.[0]).toBe('bigint');
 
 		// And the settlement, which spends the bond, names the same thing.
-		const settle = sends.find(
-			(s) => s.functionName === 'acknowledgeMissedReveal',
-		);
+		const settle = sends.find((s) => s.functionName === 'forfeitMissedReveal');
 		expect(typeof settle?.args?.[0]).toBe('bigint');
 	});
 
@@ -231,14 +235,124 @@ describe('a commitment that was never revealed', () => {
 	});
 });
 
+describe('a missed reveal this browser can still show', () => {
+	const SECRET = `0x${'5e'.repeat(32)}` as const;
+	const turn: Placement[] = [{cellID: 1n}, {cellID: 2n}, {cellID: 3n}];
+	const chain = buildPlacementChain({
+		actions: turn,
+		secret: SECRET,
+		actionsPerReveal: 2,
+	});
+
+	it('settles WITH the chunks, forfeiting only what the placements cost', async () => {
+		const {deps, identity, sends} = fakeDeps({
+			commitment: {
+				cycleNumber: 10n,
+				bond: 4n * 10n ** 18n,
+				hash: chain[0].hash,
+			},
+			currentCycleNumber: 12n,
+		});
+		const store = createMissedReveal({
+			deps,
+			config,
+			identity,
+			committedTurn: () => ({
+				cycleNumber: 10,
+				actions: turn,
+				secret: SECRET,
+				committed: true,
+			}),
+		});
+		await store.check();
+		// Three placements of the four bonded: one comes back.
+		expect(store.value).toEqual({
+			step: 'Blocked',
+			cycleNumber: 10,
+			bond: 4n * 10n ** 18n,
+			forfeit: 3n * 10n ** 18n,
+		});
+
+		await store.acknowledge();
+		expect(sends.map((s) => s.functionName)).toEqual([
+			'acknowledgeMissedReveal',
+			'acknowledgeMissedReveal',
+		]);
+		// Each call carries one chunk exactly as a reveal would.
+		expect(sends[0].args?.[1]).toEqual(chain[0].actions);
+		expect(sends[0].args?.[2]).toBe(SECRET);
+		expect(sends[1].args?.[3]).toBe(chain[1].furtherActions);
+		expect(store.value.step).toBe('Clear');
+	});
+
+	it('resumes from the head the chain holds, not from the start', async () => {
+		const {deps, identity, sends} = fakeDeps({
+			commitment: {
+				cycleNumber: 10n,
+				bond: 2n * 10n ** 18n,
+				hash: chain[1].hash,
+			},
+			currentCycleNumber: 12n,
+		});
+		const store = createMissedReveal({
+			deps,
+			config,
+			identity,
+			committedTurn: () => ({
+				cycleNumber: 10,
+				actions: turn,
+				secret: SECRET,
+				committed: true,
+			}),
+		});
+		await store.check();
+		expect(store.value.step === 'Blocked' && store.value.forfeit).toBe(
+			10n ** 18n,
+		);
+		await store.acknowledge();
+		expect(sends.length).toBe(1);
+		expect(sends[0].args?.[1]).toEqual(chain[1].actions);
+	});
+
+	it('forfeits the whole bond when the record is not the turn the chain holds', async () => {
+		const {deps, identity, sends} = fakeDeps({
+			commitment: {
+				cycleNumber: 10n,
+				bond: 4n * 10n ** 18n,
+				hash: `0x${'ab'.repeat(24)}`,
+			},
+			currentCycleNumber: 12n,
+		});
+		const store = createMissedReveal({
+			deps,
+			config,
+			identity,
+			committedTurn: () => ({
+				cycleNumber: 10,
+				actions: turn,
+				secret: SECRET,
+				committed: true,
+			}),
+		});
+		await store.check();
+		expect(store.value.step === 'Blocked' && store.value.forfeit).toBe(
+			4n * 10n ** 18n,
+		);
+		await store.acknowledge();
+		expect(sends.map((s) => s.functionName)).toEqual(['forfeitMissedReveal']);
+	});
+});
+
 describe('what the player is told', () => {
 	it('says what was lost and what to do about it', () => {
 		const described = describeMissedReveal({
 			step: 'Blocked',
 			cycleNumber: 10,
-			bond: 5n * 10n ** 18n,
+			bond: 8n * 10n ** 18n,
+			forfeit: 5n * 10n ** 18n,
 		});
 		expect(described?.headline).toContain('cycle 10');
+		// What SETTLING takes, not the bond: the rest comes back.
 		expect(described?.detail).toContain('5 TOK');
 		expect(described?.canAcknowledge).toBe(true);
 	});

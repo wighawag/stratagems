@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import {resolvePlacementConfig} from '$lib/placement/config';
+import {bondFor, resolvePlacementConfig} from '$lib/placement/config';
 import type {TypedDeployments} from '$lib/core/connection/types';
 
 /**
@@ -186,5 +186,33 @@ describe('the chunk size the client cuts a turn to', () => {
 		expect(() => resolvePlacementConfig(deploymentsDeclaring({}))).toThrow(
 			/actionsPerReveal/,
 		);
+	});
+});
+
+/**
+ * THE BOND IS PUBLIC, so the client rounds it up to whole chunks: a bond equal
+ * to the cost would tell everyone how many placements the commitment hides.
+ */
+describe('the bond the client posts', () => {
+	const config = {placementCost: 10n, actionsPerReveal: 4} as never;
+
+	it('is a whole number of chunks, so it does not say how many placements', () => {
+		expect(bondFor(config, 1)).toBe(40n);
+		expect(bondFor(config, 4)).toBe(40n);
+		expect(bondFor(config, 5)).toBe(80n);
+	});
+
+	it('is nothing for an empty turn', () => {
+		expect(bondFor(config, 0)).toBe(0n);
+	});
+
+	it('is capped at the reserve, and never below the cost', () => {
+		// Covers the cost and not the rounding: all of the reserve.
+		expect(bondFor(config, 5, 70n)).toBe(70n);
+		// Cannot cover the cost: the cost, which the contract will refuse anyway
+		// with numbers about the turn rather than about the rounding.
+		expect(bondFor(config, 5, 30n)).toBe(50n);
+		// Covers the rounding: the rounding.
+		expect(bondFor(config, 5, 1000n)).toBe(80n);
 	});
 });

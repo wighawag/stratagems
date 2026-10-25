@@ -375,7 +375,7 @@ describe('the other players in the offline world', () => {
 		// THE ONE WAY THIS WORLD COULD FREEZE, closed from the only side it can be
 		// closed from. A commitment nothing can open blocks every advance for
 		// ever: the contract refuses to close a cycle holding one, and
-		// `acknowledgeMissedReveal` refuses a commitment from the CURRENT cycle,
+		// a settlement refuses a commitment from the CURRENT cycle,
 		// so the cycle never becomes a past one. It takes a build that changed the
 		// derivation to reach, and the commit phase is the last moment anything
 		// can be done about it - so a played player compares the HEAD rather than
@@ -536,18 +536,18 @@ describe('the other players in the offline world', () => {
 
 	it('never lets an unopened commitment become a PAST one, which is what the acknowledge branch is insurance against', async () => {
 		// MEASURED RATHER THAN ASSUMED, because it decides whether a played
-		// player's `acknowledgeMissedReveal` can ever fire in this world. It
+		// player's settlement can ever fire in this world. It
 		// cannot: under the manual policy the cycle only moves when somebody
 		// pushes it, and the push refuses while any commitment in the cycle is
 		// unopened - so a commitment cannot survive into a LATER cycle, which is
-		// the only state `acknowledgeMissedReveal` will settle.
+		// the only state a settlement will touch.
 		//
 		// The branch stays, because it is insurance rather than dead weight: this
 		// file does not assume the policy, and on a TIMED deployment the clock
 		// moves past an unopened commitment without asking anybody. What it does
 		// mean is that the hazard worth guarding HERE is the other one - a
 		// commitment in the CURRENT cycle that this build cannot open, which
-		// `acknowledgeMissedReveal` refuses to touch and which the test above is
+		// neither settlement will touch and which the test above is
 		// about.
 		world = await buildWorld();
 		const {send, read, senderFor} = clientsOf(world);
@@ -579,15 +579,15 @@ describe('the other players in the offline world', () => {
 		expect(stuck.commiting).toBe(false);
 
 		// And a played player's commitment is therefore still a CURRENT one,
-		// which the contract refuses to settle.
+		// which the contract refuses to settle, even to the seat itself.
 		expect(
 			(await read<Commitment>('getCommitment', [first.identity])).cycleNumber,
 		).toBe(2n);
 		await expect(
-			send(human, {
-				functionName: 'acknowledgeMissedReveal',
+			send(senderFor(PLAYED[0].privateKey), {
+				functionName: 'forfeitMissedReveal',
 				args: [first.identity],
 			}),
-		).rejects.toThrow();
+		).rejects.toThrow(/CanStillReveal/);
 	});
 });
