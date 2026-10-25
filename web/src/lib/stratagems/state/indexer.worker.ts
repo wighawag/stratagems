@@ -92,6 +92,6 @@ hostIndexerInThisWorker({
 	// GraphQL, answered HERE where the store is (etherfold ADR-0099): the tab sends
 	// documents with `workerExecutor` (`stratagems-indexer`'s `StateFollower`). The
 	// IndexedDB scan refuses past 25,000 rows examined; alpha1's largest list, the
-	// cells, examines 1,956 (see `indexer/oracle/2026-09-29-alpha1/README.md`).
+	// cells, examines 1,956 (see `indexer/oracle/2026-09-29-alpha1/README.md` at the tag `alpha1-final`).
 	query: graphqlQueryHandler(),
 });

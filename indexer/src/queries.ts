@@ -8,11 +8,13 @@
  * - `web/` follows the state with a `StateFollower`: one full read, then, each time
  *   the worker says the state moved, a read of only the PARTS whose entities moved,
  *   pinned to the HASH of the block the signal names;
- * - `oracle/2026-09-29-alpha1/compare.ts` runs the same documents against the
- *   database `etherfold build` folded and against the publication, and compares the
- *   answers with the old processor's state; `web/verify/alpha1.spec.ts` checks, in a
- *   real browser, that the parts a tab re-read signal by signal while indexing
- *   alpha1 compose into the oracle's state;
+ * - alpha1's oracle (`oracle/2026-09-29-alpha1/compare.ts`, at the tag
+ *   `alpha1-final`: it left with alpha1's support in step 10b) ran the same
+ *   documents against the database `etherfold build` folded and against the
+ *   publication, and compared the answers with the old processor's state; and
+ *   `web/verify/alpha1.spec.ts` (same tag) checked, in a real browser, that the
+ *   parts a tab re-read signal by signal while indexing alpha1 compose into the
+ *   oracle's state;
  * - `contracts/` tests run them in process over a SQLite store.
  *
  * The questions, one PART each:

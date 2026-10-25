@@ -120,7 +120,8 @@ web/test/lib/context/setup-gate.test.ts
 # The reference game's e2e suite, its fixtures and its runner, and the unit test
 # that audits that suite's accounts. stratagems is a compile-only member of the
 # tree: the node's verify is check and unit, not e2e (decision 4 of the plan), and
-# stratagems' own browser test is web/verify (verify:alpha1).
+# stratagems' own browser test was web/verify (verify:alpha1), which left with
+# alpha1's support in step 10b (it is at the tag alpha1-final).
 web/e2e
 web/playwright.config.ts
 scripts/run-e2e-tests.sh

@@ -7,8 +7,9 @@
  * gone from etherfold (its ADR-0037). The handlers are etherfold's stratagems
  * conformance workload port (`packages/conformance-workload-stratagems/src/processor.ts`),
  * a derived work of this repository's previous `indexer/src/index.ts`, and the
- * proof that they compute what the old one did over alpha1 is in
- * `../oracle/2026-09-29-alpha1/`.
+ * proof that they computed what the old one did over alpha1 is in
+ * `../oracle/2026-09-29-alpha1/` at the tag `alpha1-final` (alpha1's support, and
+ * the oracle with it, ended in step 10b, when the game moved onto the commit-reveal base).
  *
  * The one handler that is not a line-for-line port is `onMovesRevealed` (alpha1's
  * `onCommitmentRevealed`, whose moves the base's event no longer carries): the

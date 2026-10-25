@@ -53,8 +53,8 @@ function handled(entry: AbiEntry): boolean {
  * handler folds. The old processor was handed every contract of the deployment and
  * ignored every event it had no handler for (`Transfer`, `Approval`,
  * `MoveProcessed`, ...), so leaving those out changes no answer and fetches and
- * stores a third fewer logs. The oracle comparison
- * (`oracle/2026-09-29-alpha1/`) is what says it changes no answer.
+ * stores a third fewer logs. alpha1's oracle comparison
+ * (`oracle/2026-09-29-alpha1/`, at the tag `alpha1-final`) is what said it changes no answer.
  */
 export function indexingSource(info: ContractsInfo): StratagemsIndexingSource {
 	return {
