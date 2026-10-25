@@ -1,99 +1,93 @@
 // SPDX-License-Identifier: AGPL-3.0
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.21;
 
 import "./UsingStratagemsState.sol";
 import "../interface/UsingStratagemsEvents.sol";
 import "./UsingStratagemsUtils.sol";
 import "../../utils/PositionUtils.sol";
 import "solidity-kit/solc_0_8/ERC721/interfaces/UsingERC721Events.sol";
+import {CommitReveal} from "../../commit-reveal/CommitReveal.sol";
 
+/// @dev THE RULES, AND THE ONE PROPERTY THEY KEEP: the board after a cycle's
+///      reveals does not depend on the order they arrive in (AGENTS.md,
+///      "Commit-reveal rules"; asserted by `test/Stratagems.order.test.ts`).
+///
+///      - A move is judged against the cell as it stood before any reveal of
+///        the cycle moved on it ({CellAtCycleStart}), never the current board.
+///      - A cell ALIVE at the cycle's start is its owner's alone to act on this
+///        cycle: they may re-place it at any life, or remove it at full life.
+///        Anyone else's move on it, and any move on a live Evil cell, is
+///        skipped (costs nothing, changes nothing).
+///      - A cell dead or empty at the cycle's start is free: anyone may place
+///        on it, and a second placement on it in the same cycle is a collision,
+///        which makes it Evil with one gem per placement (all kept).
+///      - Every payout of the cycle goes to the owners at its start, and an
+///        owner holds `NUM_TOKENS_PER_GEMS * stake` points in the generator
+///        exactly while their cell is alive with a positive effective delta.
 abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagemsUtils, UsingERC721Events {
     using PositionUtils for uint64;
 
     constructor(Config memory config) UsingStratagemsState(config) {}
 
-    function _makeCommitment(address player, bytes24 commitmentHash, uint256 inReserve) internal {
-        Commitment storage commitment = _commitments[player];
+    //-------------------------------------------------------------------------
+    // ON THE BASE
+    //-------------------------------------------------------------------------
 
-        (uint24 epoch, bool commiting) = _epoch();
-
-        if (!commiting) {
-            revert InRevealPhase();
-        }
-        if (commitment.epoch != 0 && commitment.epoch != epoch) {
-            revert PreviousCommitmentNotRevealed();
-        }
-
-        commitment.hash = commitmentHash;
-        commitment.epoch = epoch;
-
-        // for withdrawal, we still require a minimal reserve so player cannot change their mind without losing at least one token
-        // TODO we might want to increase that value to 10x as 10 moves might quite common, at least on some networks
-        // if (inReserve < NUM_TOKENS_PER_GEMS) {
-        //     // TODO? special error for this case ?
-        //     revert ReserveTooLow(inReserve, NUM_TOKENS_PER_GEMS);
-        // }
-
-        emit CommitmentMade(player, epoch, commitmentHash);
+    /// @notice One chunk of a reveal: checked by the base, resolved here, charged by the base.
+    /// @dev The chunk costs one gem per placed move, taken from the bond (and
+    ///      the reserve) by {_closeChunk}; a skipped move or a removal costs
+    ///      nothing, and a removal returns its gem to the player's wallet.
+    function _reveal(uint256 player, Move[] calldata moves, bytes32 secret, bytes24 furtherActions) internal {
+        CommitReveal.Chunk memory chunk = _openChunk(
+            player,
+            _digest(moves, secret, furtherActions),
+            moves.length,
+            furtherActions
+        );
+        emit MovesRevealed(player, chunk.cycleNumber, moves);
+        uint256 cost = _resolveMoves(address(uint160(player)), uint24(chunk.cycleNumber), moves);
+        _closeChunk(chunk, cost);
     }
 
-    function _resolveMoves(
-        address player,
-        uint24 epoch,
-        Move[] memory moves,
-        address tokenGiver
-    ) internal returns (uint256 newReserveAmount) {
+    /// @notice A missed reveal settled shown its chunk: one gem per committed move, burnt.
+    function _acknowledgeMissedReveal(
+        uint256 player,
+        Move[] calldata moves,
+        bytes32 secret,
+        bytes24 furtherActions
+    ) internal {
+        CommitReveal.Chunk memory chunk = _openMissedChunk(
+            player,
+            _digest(moves, secret, furtherActions),
+            moves.length,
+            furtherActions
+        );
+        _closeChunk(chunk, moves.length * NUM_TOKENS_PER_GEMS);
+    }
+
+    //-------------------------------------------------------------------------
+    // MOVES
+    //-------------------------------------------------------------------------
+
+    /// @return cost what the moves cost: one gem per placed move
+    function _resolveMoves(address player, uint24 cycle, Move[] memory moves) internal returns (uint256 cost) {
         // max number of transfer is (4+1) * moves.length
         // (for each move's cell's neighbours potentially being a different account)
-        // limiting the number of move per commitment reveal to 32 or, even more probably, should cover this unlikely scenario
         TokenTransferCollection memory transferCollection = TokenTransferCollection({
-            transfers: new TokenTransfer[](moves.length * 5),
+            transfers: new TokenTransfer[](moves.length * 5 + 1),
             numTransfers: 0
         });
         MoveTokens memory tokens;
         for (uint256 i = 0; i < moves.length; i++) {
-            (uint256 placed, uint256 burnt, uint256 returned) = _computeMove(
-                transferCollection,
-                player,
-                epoch,
-                moves[i]
-            );
-
+            (uint256 placed, uint256 returned) = _computeMove(transferCollection, player, cycle, moves[i]);
             tokens.tokensPlaced += placed;
-            tokens.tokensBurnt += burnt;
             tokens.tokensReturned += returned;
         }
-
-        // logger.logTransfers(0, "resolveMoves", transferCollection);
-
-        newReserveAmount = _tokensInReserve[player];
-
-        // Note: even if funds can comes from outside the reserve, we still check it
-        // This ensure player have to have a reserve and cannot escape the slash if not
-        if (newReserveAmount < tokens.tokensPlaced + tokens.tokensBurnt) {
-            // TODO add in the tokens.returned from Color.None move
-            revert ReserveTooLow(newReserveAmount, tokens.tokensPlaced + tokens.tokensBurnt);
-        }
-        if (tokenGiver == address(0)) {
-            newReserveAmount -= tokens.tokensPlaced + tokens.tokensBurnt;
-            _tokensInReserve[player] = newReserveAmount;
-        } else {
-            if (tokens.tokensPlaced != 0) {
-                TOKENS.transferFrom(tokenGiver, address(this), tokens.tokensPlaced);
-            }
-            if (tokens.tokensBurnt != 0) {
-                TOKENS.transferFrom(tokenGiver, BURN_ADDRESS, tokens.tokensBurnt);
-            }
-        }
-
-        // TODO option to return in reserve ?
         if (tokens.tokensReturned != 0) {
-            // console.log("tokensReturned");
-            // console.log(tokens.tokensReturned);
             _collectTransfer(transferCollection, TokenTransfer({to: payable(player), amount: tokens.tokensReturned}));
         }
-
         _multiTransfer(TOKENS, transferCollection);
+        cost = tokens.tokensPlaced;
     }
 
     function _countBits(uint8 n) internal pure returns (uint8 count) {
@@ -103,307 +97,247 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         }
     }
 
-    function _placeColor(
-        address player,
-        Cell memory currentState,
-        Move memory move,
-        uint24 epoch,
-        int8 newDelta,
-        uint8 newEnemyMap
-    ) internal {
-        int8 oldEffectiveDelta = _effectiveDelta(currentState.delta, currentState.enemyMap);
-        uint8 oldLife = currentState.life;
-
-        currentState.enemyMap = newEnemyMap;
-
-        if (currentState.color == Color.Evil && currentState.life != 0) {
-            unchecked {
-                currentState.stake += 1;
-                if (currentState.stake == 0) {
-                    // we cap it, losing stake there
-                    // TODO reevaluate
-                    // send it to special address ?
-                    currentState.stake = 255;
-                }
-            }
-        } else {
-            currentState.stake = 1;
-            currentState.producingEpochs = 0;
-        }
-
-        currentState.delta = newDelta;
-        currentState.life = 2;
-        currentState.lastEpochUpdate = epoch;
-
-        address oldOwner = _ownerOf(move.position);
-
-        int8 newEffectiveDelta = _effectiveDelta(currentState.delta, currentState.enemyMap);
-
-        if (currentState.color == Color.Evil) {
-            if (oldOwner != 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF) {
-                if (oldOwner == address(0)) {
-                    if (newEffectiveDelta > 0) {
-                        GENERATOR.add(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, NUM_TOKENS_PER_GEMS);
-                    }
-                } else {
-                    if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
-                        GENERATOR.add(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, NUM_TOKENS_PER_GEMS * 2);
-                    } else if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
-                        GENERATOR.remove(oldOwner, NUM_TOKENS_PER_GEMS);
-                    } else if (oldEffectiveDelta <= 0 && newEffectiveDelta <= 0) {} else if (
-                        oldEffectiveDelta > 0 && newEffectiveDelta > 0
-                    ) {
-                        if (oldLife > 0) {
-                            GENERATOR.remove(oldOwner, NUM_TOKENS_PER_GEMS);
-                            GENERATOR.add(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, NUM_TOKENS_PER_GEMS * 2);
-                        } else {
-                            GENERATOR.add(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, NUM_TOKENS_PER_GEMS * 1);
-                        }
-                    }
-                }
-
-                emit Transfer(oldOwner, 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, move.position);
-                _owners[move.position] = uint256(uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF));
-            } else if (newEffectiveDelta > 0) {
-                GENERATOR.add(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF, NUM_TOKENS_PER_GEMS);
-            }
-        } else {
-            if (currentState.epochWhenTokenIsAdded != epoch && oldEffectiveDelta > 0) {
-                // here we are dealing with a color replacement and so we need to consider points removal
-                GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
-            }
-            if (newEffectiveDelta > 0) {
-                GENERATOR.add(player, NUM_TOKENS_PER_GEMS);
-            }
-            emit Transfer(address(0), player, move.position);
-            _owners[move.position] = uint256(uint160(player));
-        }
-    }
-
-    // Note on COLLISION
-    // If one color was used more than other, we could consider the cell having N owner and N times the number of tokens
-    // such cells would be a good target for others
-    // On the other end, on winning agains other cells, owner of such cell would have to divide the winnings
-    // TODO revisit this
-    // we could also refund the part
-    // so if there is 3 green 2 blue and 1 red, then green win and the cell become green
-    // player who put blue or red get refunded their respective gems
-    // the players who put green get refunded 2/3 so that the cell still contains only 1
-    // if there was 3 green and 3 blue and 1 red then the cell becomes black
-    // every player get refunded 6/7 so that the black cell only has 1
-    // note that the issue with green winning above is that winnings need to be distributed to all 3 players who put green
-    // and since the number is technically unbounded, we have to use a splitter contract where player withdraw their winnings
-    // this add UX complexity and some cost for withdrawals
-    // it also remove the ability to transfer the cell unless agreement and implementation for this
-    // So the conclusion is to make it black in all cases and keep the amount
+    // Note on COLLISION: every placement on a cell free at the cycle's start
+    // after the first makes it Evil and adds one to its stake, all kept. Making
+    // it black in all cases avoids a cell with several owners sharing winnings.
     function _computeMove(
         TokenTransferCollection memory transferCollection,
         address player,
-        uint24 epoch,
+        uint24 cycle,
         Move memory move
-    ) internal returns (uint256 tokensPlaced, uint256 tokensBurnt, uint256 tokensReturned) {
-        (Cell memory currentState, bool justDied) = _getUpdatedCell(move.position, epoch);
+    ) internal returns (uint256 tokensPlaced, uint256 tokensReturned) {
+        (Cell memory currentState, bool justDied) = _getUpdatedCell(move.position, cycle);
 
-        // logger.logPosition("move", move.position);
-        // logger.logCell(0, string.concat("_computeMove at epoch ", Strings.toString(epoch)), move.position, currentState, address(uint160(_owners[move.position])));
+        CellAtCycleStart memory start = _cellsAtCycleStart[move.position];
+        bool firstMoveThisCycle = start.cycle != cycle;
+        if (firstMoveThisCycle) {
+            // no move of this cycle has touched it, so the current record is
+            // its state at the cycle's start (a neighbour's move changes
+            // neither its life at this cycle nor its owner)
+            start = CellAtCycleStart({owner: _ownerOf(move.position), cycle: cycle, life: currentState.life});
+        }
+
+        // the validity of the move, against the cycle's start
+        if (start.life != 0) {
+            // alive at the start: its owner's alone this cycle
+            if (start.owner != player) {
+                return (0, 0);
+            }
+            if (move.color == Color.None) {
+                if (start.life != MAX_LIFE || currentState.life == 0 || _ownerOf(move.position) != player) {
+                    // only a cell at full life at the start, and still the player's, can be removed
+                    return (0, 0);
+                }
+            }
+        } else {
+            // dead or empty at the start: free
+            if (move.color == Color.None) {
+                // nothing of the player's to remove
+                return (0, 0);
+            }
+            if (currentState.cycleWhenTokenIsAdded == cycle && currentState.life != 0) {
+                // already placed on in this cycle: a collision
+                move.color = Color.Evil;
+            }
+        }
+
+        if (firstMoveThisCycle) {
+            _cellsAtCycleStart[move.position] = start;
+        }
 
         // we might have distribution still to do
         uint8 distribution = currentState.distribution;
         if (justDied) {
-            // if we just died
-            // we have to distribute to all
+            // if we just died, we have to distribute to all
             distribution = (currentState.enemyMap << 4) + _countBits(currentState.enemyMap);
-
-            /// we are now dead for real
-            currentState.lastEpochUpdate = 0;
+            currentState.lastCycleUpdate = 0;
         }
 
-        // we then apply our move:
-
-        // first we do some validity checks
         if (move.color == Color.None) {
-            if (currentState.life != MAX_LIFE || _ownerOf(move.position) != player) {
-                // invalid move
-                // return (0, 0, NUM_TOKENS_PER_GEMS); // This is wrong ?
-                return (0, 0, 0); // TODO return tokens
-            }
+            tokensReturned = NUM_TOKENS_PER_GEMS;
+        }
 
-            _collectTransfer(transferCollection, TokenTransfer({to: payable(player), amount: NUM_TOKENS_PER_GEMS}));
-        }
-        // then we consider the case of collision and transform such move as Color Evil
-        else if (currentState.epochWhenTokenIsAdded == epoch) {
-            if (currentState.life != 0) {
-                move.color = Color.Evil;
-            } else {
-                if (currentState.life != MAX_LIFE || _ownerOf(move.position) != player) {
-                    // invalid move
-                    // return (0, 0, NUM_TOKENS_PER_GEMS); // This is wrong ?
-                    return (0, 0, 0); // TODO return tokens
-                }
-            }
-            // we keep currentState.epochWhenTokenIsAdded as we do not want to be overwritten by conflcit: black
-        }
         emit MoveProcessed(move.position, player, currentState.color, move.color);
 
-        return _completeMove(transferCollection, player, epoch, move, currentState, distribution);
-
-        // logger.logCell(0,string.concat("AFTER ", Strings.toString(epoch)),move.position,currentState,address(uint160(_owners[move.position])));
+        tokensPlaced = _completeMove(transferCollection, player, cycle, move, currentState, distribution, start.owner);
     }
 
     function _completeMove(
         TokenTransferCollection memory transferCollection,
         address player,
-        uint24 epoch,
+        uint24 cycle,
         Move memory move,
         Cell memory currentState,
-        uint8 distribution
-    ) internal returns (uint256 tokensPlaced, uint256 tokensBurnt, uint256 tokensReturned) {
+        uint8 distribution,
+        address ownerAtStart
+    ) internal returns (uint256 tokensPlaced) {
         unchecked {
-            // this is not so much newDelta than delta
             (int8 newDelta, uint8 newEnemyMap) = _propagate(
                 transferCollection,
                 move,
-                epoch,
+                cycle,
                 currentState.color,
                 distribution,
-                currentState.stake
+                currentState.stake,
+                ownerAtStart
             );
+
+            address currentOwner = _ownerOf(move.position);
+            uint8 oldLife = currentState.life;
+            uint8 oldStake = currentState.stake;
+            int8 oldEffectiveDelta = _effectiveDelta(currentState.delta, currentState.enemyMap);
 
             currentState.color = move.color;
             currentState.distribution = 0;
-            if (!(_ownerOf(move.position) == player && currentState.life > 0)) {
-                // we do not reset "epochWhenTokenIsAdded" when same player
-                // this prevent other player to place color while it replace color
-                currentState.epochWhenTokenIsAdded = epoch; // used to prevent overwriting, even Color.None
+            if (!(currentOwner == player && currentState.life > 0)) {
+                // an owner acting on their own live cell does not mark it placed:
+                // nobody else can act on it this cycle anyway
+                currentState.cycleWhenTokenIsAdded = cycle;
             }
 
             if (currentState.color == Color.None) {
-                int8 oldEffectiveDelta = _effectiveDelta(currentState.delta, currentState.enemyMap);
-                currentState.producingEpochs += epoch - currentState.lastEpochUpdate;
+                currentState.producingCycles += cycle - currentState.lastCycleUpdate;
                 currentState.life = 0;
                 currentState.stake = 0;
-                currentState.lastEpochUpdate = 0;
+                currentState.lastCycleUpdate = 0;
                 currentState.delta = 0;
                 currentState.enemyMap = 0;
-                emit Transfer(_ownerOf(move.position), address(0), move.position);
+                _setPoints(currentOwner, oldLife, oldStake, oldEffectiveDelta, address(0), 0, 0, 0);
+                emit Transfer(currentOwner, address(0), move.position);
                 _owners[move.position] = 0;
-                // tokensReturned = NUM_TOKENS_PER_GEMS; // TODO enable when we check reserve for this amount
-                if (oldEffectiveDelta > 0) {
-                    GENERATOR.remove(player, NUM_TOKENS_PER_GEMS);
-                }
             } else {
                 tokensPlaced = NUM_TOKENS_PER_GEMS;
-
-                _placeColor(player, currentState, move, epoch, newDelta, newEnemyMap);
+                _placeColor(player, currentOwner, currentState, move, cycle, newDelta, newEnemyMap);
             }
 
             _cells[move.position] = currentState;
         }
     }
 
-    // this can work like in conquest as even though the world works in epoch
-    //  we do not mind if a player could use another play moves to go further
-    //  they would just need to ensure their reveal is in order
-    //  In practise though player would not need this as the discovery gap should be big enough
-    // But an alternative to tracking the 4 discovery point, would be to ask player to provide land position
-    //  for the 4 direction. THey could also provide only one position for all 4 if that is enough
-    // NOTE: would need to set initial discovery:
-    // `_discovered = Discovered({
-    //         minX: _initialSpaceExpansion,
-    //         maxX: _initialSpaceExpansion,
-    //         minY: _initialSpaceExpansion,
-    //         maxY: _initialSpaceExpansion
-    //     });
-    //     emit Initialized(
-    //         _initialSpaceExpansion,
-    //     );`
-    // // solhint-disable-next-line code-complexity
-    // function _setDiscoveryAfterStaking(uint256 location) internal returns (bool invalid) {
-    //     Discovered memory discovered = _discovered;
-    //     uint32 _expansionDelta = 12;
+    function _placeColor(
+        address player,
+        address oldOwner,
+        Cell memory currentState,
+        Move memory move,
+        uint24 cycle,
+        int8 newDelta,
+        uint8 newEnemyMap
+    ) internal {
+        int8 oldEffectiveDelta = _effectiveDelta(currentState.delta, currentState.enemyMap);
+        uint8 oldLife = currentState.life;
+        uint8 oldStake = currentState.stake;
 
-    //     (int32 x32, int32 y32) = PositionUtils.toXY(uint64(location));
-    //     int256 x = (int40(x32));
-    //     int256 y = (int40(y32));
+        currentState.enemyMap = newEnemyMap;
 
-    //     int40 UINT32_MAX = 0xffffffff;
+        if (currentState.color == Color.Evil && oldLife != 0) {
+            // a collision (or one more on it): the cell keeps every gem placed
+            unchecked {
+                currentState.stake += 1;
+                if (currentState.stake == 0) {
+                    // capped, the gem beyond is kept
+                    currentState.stake = 255;
+                }
+            }
+        } else {
+            currentState.stake = 1;
+            currentState.producingCycles = 0;
+        }
 
-    //     bool changes = false;
-    //     if (x < 0) {
-    //         if (-x > int256(uint256(discovered.minX))) {
-    //             return false;
-    //         }
-    //         x = -x + int32(_expansionDelta);
-    //         if (x > UINT32_MAX) {
-    //             x = UINT32_MAX;
-    //         }
-    //         if (int256(uint256(discovered.minX)) < x) {
-    //             discovered.minX = uint32(uint256(x));
-    //             changes = true;
-    //         }
-    //     } else {
-    //         if (x > int256(uint256(discovered.maxX))) {
-    //             return false;
-    //         }
-    //         x = x + int32(_expansionDelta);
-    //         if (x > UINT32_MAX) {
-    //             x = UINT32_MAX;
-    //         }
-    //         if (discovered.maxX < uint32(uint256(x))) {
-    //             discovered.maxX = uint32(uint256(x));
-    //             changes = true;
-    //         }
-    //     }
+        currentState.delta = newDelta;
+        currentState.life = 2;
+        currentState.lastCycleUpdate = cycle;
 
-    //     if (y < 0) {
-    //         if (-y > int256(uint256(discovered.minY))) {
-    //             return false;
-    //         }
-    //         y = -y + int32(_expansionDelta);
-    //         if (y > UINT32_MAX) {
-    //             y = UINT32_MAX;
-    //         }
-    //         if (int256(uint256(discovered.minY)) < y) {
-    //             discovered.minY = uint32(uint256(y));
-    //             changes = true;
-    //         }
-    //     } else {
-    //         if (y > int256(uint256(discovered.maxY))) {
-    //             return false;
-    //         }
-    //         y = y + int32(_expansionDelta);
-    //         if (y > UINT32_MAX) {
-    //             y = UINT32_MAX;
-    //         }
-    //         if (int256(uint256(discovered.maxY)) < y) {
-    //             discovered.maxY = uint32(uint256(y));
-    //             changes = true;
-    //         }
-    //     }
-    //     if (changes) {
-    //         _discovered = discovered;
-    //     }
-    // }
+        address newOwner = currentState.color == Color.Evil ? EVIL_OWNER : player;
+        _setPoints(
+            oldOwner,
+            oldLife,
+            oldStake,
+            oldEffectiveDelta,
+            newOwner,
+            currentState.life,
+            currentState.stake,
+            _effectiveDelta(currentState.delta, currentState.enemyMap)
+        );
+
+        if (newOwner != oldOwner) {
+            emit Transfer(oldOwner, newOwner, move.position);
+        }
+        _owners[move.position] = uint256(uint160(newOwner));
+    }
+
+    /// @notice Move a cell's points from its old holding to its new one.
+    /// @dev An owner holds `NUM_TOKENS_PER_GEMS * stake` exactly while the cell
+    ///      is alive with a positive effective delta. alpha1 computed the
+    ///      difference case by case, and missed some (a third placement on an
+    ///      Evil cell whose delta changed in between).
+    function _setPoints(
+        address oldOwner,
+        uint8 oldLife,
+        uint8 oldStake,
+        int8 oldEffectiveDelta,
+        address newOwner,
+        uint8 newLife,
+        uint8 newStake,
+        int8 newEffectiveDelta
+    ) internal {
+        uint256 oldHolding = oldOwner != address(0) && oldLife > 0 && oldEffectiveDelta > 0
+            ? NUM_TOKENS_PER_GEMS * oldStake
+            : 0;
+        uint256 newHolding = newOwner != address(0) && newLife > 0 && newEffectiveDelta > 0
+            ? NUM_TOKENS_PER_GEMS * newStake
+            : 0;
+        if (oldOwner == newOwner) {
+            if (newHolding > oldHolding) {
+                GENERATOR.add(newOwner, newHolding - oldHolding);
+            } else if (oldHolding > newHolding) {
+                GENERATOR.remove(oldOwner, oldHolding - newHolding);
+            }
+        } else {
+            if (oldHolding != 0) {
+                GENERATOR.remove(oldOwner, oldHolding);
+            }
+            if (newHolding != 0) {
+                GENERATOR.add(newOwner, newHolding);
+            }
+        }
+    }
 
     function _propagate(
         TokenTransferCollection memory transferCollection,
         Move memory move,
-        uint24 epoch,
+        uint24 cycle,
         Color color,
         uint8 distribution,
-        uint8 stake
+        uint8 stake,
+        address ownerAtStart
     ) internal returns (int8 newDelta, uint8 newEnemyMap) {
         (
             int8 newComputedDelta,
             uint8 newComputedEnemyMap,
             uint16 numDue,
             address[4] memory ownersToPay
-        ) = _updateNeighbours(move.position, epoch, color, move.color, distribution);
+        ) = _updateNeighbours(move.position, cycle, color, move.color, distribution);
 
+        _payShares(transferCollection, ownerAtStart, numDue, ownersToPay, stake, distribution);
+        newDelta = newComputedDelta;
+        newEnemyMap = newComputedEnemyMap;
+    }
+
+    /// @dev `numDue` (twelfths of a gem, the shares of dying neighbours this
+    ///      cell was an enemy of) to the cell's owner at the cycle's start, and
+    ///      this cell's own stake, if it just died, to its enemies' owners.
+    function _payShares(
+        TokenTransferCollection memory transferCollection,
+        address owner,
+        uint16 numDue,
+        address[4] memory ownersToPay,
+        uint8 stake,
+        uint8 distribution
+    ) internal view {
         if (numDue > 0) {
             _collectTransfer(
                 transferCollection,
-                TokenTransfer({to: payable(_ownerOf(move.position)), amount: (numDue * NUM_TOKENS_PER_GEMS) / 12})
+                TokenTransfer({to: payable(owner), amount: (numDue * NUM_TOKENS_PER_GEMS) / 12})
             );
         }
         for (uint8 i = 0; i < 4; i++) {
@@ -417,194 +351,110 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
                 );
             }
         }
-        newDelta = newComputedDelta;
-        newEnemyMap = newComputedEnemyMap;
     }
 
-    function _poke(TokenTransferCollection memory transferCollection, uint64 position, uint24 epoch) internal {
-        (Cell memory currentState, bool justDied) = _getUpdatedCell(position, epoch);
-
-        // logger.logCell(0,string.concat("_poke at epoch ", Strings.toString(epoch)),position,currentState,address(uint160(_owners[position])));
+    function _poke(TokenTransferCollection memory transferCollection, uint64 position, uint24 cycle) internal {
+        (Cell memory currentState, bool justDied) = _getUpdatedCell(position, cycle);
 
         // we might have distribution still to do
         uint8 distribution = currentState.distribution;
         if (justDied) {
-            // if we just died
-            // we have to distribute to all
+            // if we just died, we have to distribute to all.
+            // Its lastCycleUpdate stays the cycle, as when a neighbour finds it
+            // dead: alpha1 zeroed it here, which stopped neighbours updating
+            // the dead cell, so its delta depended on whether a poke came first.
             distribution = (currentState.enemyMap << 4) + _countBits(currentState.enemyMap);
-
-            /// we are now dead for real
-            currentState.lastEpochUpdate = 0;
         }
 
         (, , uint16 numDue, address[4] memory ownersToPay) = _updateNeighbours(
             position,
-            epoch,
+            cycle,
             currentState.color,
             currentState.color,
             distribution
         );
 
-        if (numDue > 0) {
-            _collectTransfer(
-                transferCollection,
-                TokenTransfer({to: payable(_ownerOf(position)), amount: (numDue * NUM_TOKENS_PER_GEMS) / 12})
-            );
-        }
-        for (uint8 i = 0; i < 4; i++) {
-            if (ownersToPay[i] != address(0)) {
-                _collectTransfer(
-                    transferCollection,
-                    TokenTransfer({
-                        to: payable(ownersToPay[i]),
-                        amount: currentState.stake * (NUM_TOKENS_PER_GEMS / (distribution & 0x0f))
-                    })
-                );
-            }
-        }
-
-        // logger.logCell(0,string.concat("AFTER poke (before zeroed distribution) at epoch ", Strings.toString(epoch)),position,currentState,address(uint160(_owners[position])));
+        _payShares(
+            transferCollection,
+            _ownerAtCycleStart(position, cycle),
+            numDue,
+            ownersToPay,
+            currentState.stake,
+            distribution
+        );
 
         currentState.distribution = 0;
         _cells[position] = currentState;
     }
+
+    //-------------------------------------------------------------------------
+    // NEIGHBOURS
+    //-------------------------------------------------------------------------
 
     struct CellUpdate {
         int8 delta;
         uint8 enemymap;
         uint16 due;
     }
-    function _updateUP(
+
+    /// @param side 0 up, 1 left, 2 down, 3 right (the bit in the enemy map)
+    function _updateNeighbour(
         address[4] memory ownersToPay,
         CellUpdate memory cellUpdate,
         uint64 position,
-        uint24 epoch,
+        uint8 side,
+        uint24 cycle,
         uint8 distribution,
         Color oldColor,
         Color newColor
     ) internal {
-        uint64 upPosition = position.offset(0, -1);
+        uint64 neighbourPosition;
+        uint8 neighbourIndex; // this cell, from the neighbour's point of view
+        if (side == 0) {
+            neighbourPosition = position.offset(0, -1);
+            neighbourIndex = 2;
+        } else if (side == 1) {
+            neighbourPosition = position.offset(-1, 0);
+            neighbourIndex = 3;
+        } else if (side == 2) {
+            neighbourPosition = position.offset(0, 1);
+            neighbourIndex = 0;
+        } else {
+            neighbourPosition = position.offset(1, 0);
+            neighbourIndex = 1;
+        }
         (int8 enemyOrFriend, uint16 due) = _updateCell(
             CellUpdateData({
-                position: upPosition,
-                epoch: epoch,
-                neighbourIndex: 2,
+                position: neighbourPosition,
+                cycle: cycle,
+                neighbourIndex: neighbourIndex,
                 oldColor: oldColor,
                 newColor: newColor
             })
         );
+        uint8 bit = uint8(1 << side);
         if (enemyOrFriend < 0) {
-            cellUpdate.enemymap = cellUpdate.enemymap | 1;
+            cellUpdate.enemymap = cellUpdate.enemymap | bit;
         }
         cellUpdate.due += due;
         cellUpdate.delta += enemyOrFriend;
 
-        if ((distribution >> 4) & 1 == 1) {
-            ownersToPay[0] = _ownerOf(upPosition);
-        }
-    }
-    function _updateLEFT(
-        address[4] memory ownersToPay,
-        CellUpdate memory cellUpdate,
-        uint64 position,
-        uint24 epoch,
-        uint8 distribution,
-        Color oldColor,
-        Color newColor
-    ) internal {
-        uint64 leftPosition = position.offset(-1, 0);
-        (int8 enemyOrFriend, uint16 due) = _updateCell(
-            CellUpdateData({
-                position: leftPosition,
-                epoch: epoch,
-                neighbourIndex: 3,
-                oldColor: oldColor,
-                newColor: newColor
-            })
-        );
-        if (enemyOrFriend < 0) {
-            cellUpdate.enemymap = cellUpdate.enemymap | 2;
-        }
-        cellUpdate.due += due;
-        cellUpdate.delta += enemyOrFriend;
-
-        if ((distribution >> 4) & 2 == 2) {
-            ownersToPay[1] = _ownerOf(leftPosition);
-        }
-    }
-
-    function _updateDOWN(
-        address[4] memory ownersToPay,
-        CellUpdate memory cellUpdate,
-        uint64 position,
-        uint24 epoch,
-        uint8 distribution,
-        Color oldColor,
-        Color newColor
-    ) internal {
-        uint64 downPosition = position.offset(0, 1);
-        (int8 enemyOrFriend, uint16 due) = _updateCell(
-            CellUpdateData({
-                position: downPosition,
-                epoch: epoch,
-                neighbourIndex: 0,
-                oldColor: oldColor,
-                newColor: newColor
-            })
-        );
-        if (enemyOrFriend < 0) {
-            cellUpdate.enemymap = cellUpdate.enemymap | 4;
-        }
-        cellUpdate.due += due;
-        cellUpdate.delta += enemyOrFriend;
-
-        if ((distribution >> 4) & 4 == 4) {
-            ownersToPay[2] = _ownerOf(downPosition);
-        }
-    }
-
-    function _updateRIGHT(
-        address[4] memory ownersToPay,
-        CellUpdate memory cellUpdate,
-        uint64 position,
-        uint24 epoch,
-        uint8 distribution,
-        Color oldColor,
-        Color newColor
-    ) internal {
-        uint64 rightPosition = position.offset(1, 0);
-        (int8 enemyOrFriend, uint16 due) = _updateCell(
-            CellUpdateData({
-                position: rightPosition,
-                epoch: epoch,
-                neighbourIndex: 1,
-                oldColor: oldColor,
-                newColor: newColor
-            })
-        );
-        if (enemyOrFriend < 0) {
-            cellUpdate.enemymap = cellUpdate.enemymap | 8;
-        }
-        cellUpdate.due += due;
-        cellUpdate.delta += enemyOrFriend;
-
-        if ((distribution >> 4) & 8 == 8) {
-            ownersToPay[3] = _ownerOf(rightPosition);
+        if ((distribution >> 4) & bit == bit) {
+            ownersToPay[side] = _ownerAtCycleStart(neighbourPosition, cycle);
         }
     }
 
     function _updateNeighbours(
         uint64 position,
-        uint24 epoch,
+        uint24 cycle,
         Color oldColor,
         Color newColor,
         uint8 distribution
     ) internal returns (int8 newDelta, uint8 newEnemyMap, uint16 numDue, address[4] memory ownersToPay) {
         CellUpdate memory cellUpdate;
-        _updateUP(ownersToPay, cellUpdate, position, epoch, distribution, oldColor, newColor);
-        _updateLEFT(ownersToPay, cellUpdate, position, epoch, distribution, oldColor, newColor);
-        _updateDOWN(ownersToPay, cellUpdate, position, epoch, distribution, oldColor, newColor);
-        _updateRIGHT(ownersToPay, cellUpdate, position, epoch, distribution, oldColor, newColor);
+        for (uint8 side = 0; side < 4; side++) {
+            _updateNeighbour(ownersToPay, cellUpdate, position, side, cycle, distribution, oldColor, newColor);
+        }
         newDelta = cellUpdate.delta;
         newEnemyMap = cellUpdate.enemymap;
         numDue = cellUpdate.due;
@@ -612,30 +462,25 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
     struct CellUpdateData {
         uint64 position; // position to update
-        uint24 epoch;
+        uint24 cycle;
         uint8 neighbourIndex; // index from point of view of cell being updated
         Color oldColor; // old Color of the neighbor
         Color newColor; // new color of the neighbor
     }
+
     /// @dev This update the cell in storage
     function _updateCell(CellUpdateData memory data) internal returns (int8 enemyOrFriend, uint16 due) {
         Cell memory cell = _cells[data.position];
 
-        uint24 lastUpdate = cell.lastEpochUpdate;
+        uint24 lastUpdate = cell.lastCycleUpdate;
         Color color = cell.color;
         if (color != Color.None) {
-            // if the color of the cell being update is not Nome
-            // we then check the neighbor new color
-            // if it same as the cell color, then we report the cell as friendly to the neighbor
-            // else it is an enemy
-            // note that _updateCell should only be called if oldColor != newColor
+            // a coloured neighbour is a friend if it is the new colour, else an enemy
             enemyOrFriend = color == data.newColor ? int8(1) : int8(-1);
         }
         if (lastUpdate >= 1 && color != Color.None) {
-            // we only consider cell with color that are not dead
-            if (cell.life > 0 && lastUpdate < data.epoch) {
-                // of there is life to update we compute the new life
-                (uint8 newLife, ) = _computeNewLife(lastUpdate, cell.enemyMap, cell.delta, cell.life, data.epoch);
+            if (cell.life > 0 && lastUpdate < data.cycle) {
+                (uint8 newLife, ) = _computeNewLife(lastUpdate, cell.enemyMap, cell.delta, cell.life, data.cycle);
                 due = _updateCellFromNeighbor(data, cell, newLife);
             } else {
                 due = _updateCellFromNeighbor(data, cell, cell.life);
@@ -650,15 +495,11 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
     ) internal returns (uint16 due) {
         if (cell.life > 0 && newLife == 0) {
             // we just died, we establish the distributionMap and counts
-            // logger.logPosition("new distribution", position);
             cell.distribution = (cell.enemyMap << 4) + _countBits(cell.enemyMap);
-            // console.log("%i %i", cell.distribution >> 4, cell.distribution & 0x0F);
         }
 
-        // logger.logCell(0,string.concat("_updateCellFromNeighbor  index", Strings.toString(neighbourIndex)),position,cell,address(uint160(_owners[position])));
-
         if ((cell.distribution >> 4) & (2 ** data.neighbourIndex) == 2 ** data.neighbourIndex) {
-            due = (cell.stake * 12) / (cell.distribution & 0x0f); // TODO if stake too high we have a problem
+            due = (cell.stake * 12) / (cell.distribution & 0x0f);
 
             cell.distribution =
                 (uint8(uint256(cell.distribution >> 4) & (~(2 ** uint256(data.neighbourIndex)))) << 4) +
@@ -669,9 +510,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
         _handleColor(cell, data.neighbourIndex, data.oldColor, data.newColor);
 
-        _setCell(data.position, cell, newLife, data.epoch, oldEffectiveDelta);
-
-        // logger.logCell(0,string.concat("AFTER _updateCellFromNeighbor  index", Strings.toString(neighbourIndex)),position,cell,address(uint160(_owners[position])));
+        _setCell(data.position, cell, newLife, data.cycle, oldEffectiveDelta);
 
         _cells[data.position] = cell;
     }
@@ -680,7 +519,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         uint64 position, // position of the cell to be updated
         Cell memory cell, // cell to be updated
         uint8 newLife, // new life value for the celll
-        uint24 epoch, // epoch at which the update occured (epochUsed TODO: confirm its use)
+        uint24 cycle, // cycle at which the update occured
         int8 oldEffectiveDelta
     ) internal {
         address owner = _ownerOf(position);
@@ -694,10 +533,10 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         }
 
         if (oldEffectiveDelta > 0) {
-            cell.producingEpochs += epoch - cell.lastEpochUpdate;
+            cell.producingCycles += cycle - cell.lastCycleUpdate;
         }
 
-        cell.lastEpochUpdate = epoch;
+        cell.lastCycleUpdate = cycle;
         cell.life = newLife;
     }
 

@@ -1,103 +1,68 @@
 // SPDX-License-Identifier: AGPL-3.0
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.21;
 
 import "../interface/IStratagems.sol";
 import "../internal/UsingStratagemsSetters.sol";
-import "../internal/UsingStratagemsUtils.sol";
 
 contract StratagemsCommit is IStratagemsCommit, UsingStratagemsSetters {
     constructor(Config memory config) UsingStratagemsSetters(config) {}
 
     /// @inheritdoc IStratagemsCommit
-    function addToReserve(uint256 tokensAmountToAdd, Permit calldata permit) external {
+    function addToReserve(uint256 player, uint256 tokensAmountToAdd) external {
         if (tokensAmountToAdd > 0) {
-            uint256 newAmount = _tokensInReserve[msg.sender];
-            newAmount += tokensAmountToAdd;
-            _tokensInReserve[msg.sender] = newAmount;
-
-            if (permit.value > 0) {
-                TOKENS.permit(msg.sender, address(this), permit.value, permit.deadline, permit.v, permit.r, permit.s);
-            }
+            _addToReserve(player, tokensAmountToAdd);
             TOKENS.transferFrom(msg.sender, address(this), tokensAmountToAdd);
-            emit ReserveDeposited(msg.sender, tokensAmountToAdd, newAmount);
         }
     }
 
     /// @inheritdoc IStratagemsCommit
-    function makeCommitment(bytes24 commitmentHash, address payable payee) external payable {
-        _makeCommitment(msg.sender, commitmentHash, _tokensInReserve[msg.sender]);
-        if (payee != address(0)) {
+    function makeCommitment(
+        uint256 player,
+        bytes24 commitmentHash,
+        uint256 bond,
+        address payable payee
+    ) external payable {
+        _makeCommitment(_playerOf(msg.sender, player), commitmentHash, bond);
+        if (payee != address(0) && msg.value != 0) {
             payee.transfer(msg.value);
         }
     }
 
     /// @inheritdoc IStratagemsCommit
     function makeCommitmentWithExtraReserve(
+        uint256 player,
         bytes24 commitmentHash,
+        uint256 bond,
         uint256 tokensAmountToAdd,
-        Permit calldata permit,
         address payable payee
     ) external payable {
-        uint256 inReserve = _tokensInReserve[msg.sender];
-        inReserve += tokensAmountToAdd;
-        _tokensInReserve[msg.sender] = inReserve;
-
-        _makeCommitment(msg.sender, commitmentHash, inReserve);
-
-        if (permit.value > 0) {
-            TOKENS.permit(msg.sender, address(this), permit.value, permit.deadline, permit.v, permit.r, permit.s);
-        }
-
+        uint256 resolved = _playerOf(msg.sender, player);
         if (tokensAmountToAdd > 0) {
+            _addToReserve(resolved, tokensAmountToAdd);
             TOKENS.transferFrom(msg.sender, address(this), tokensAmountToAdd);
-            emit ReserveDeposited(msg.sender, tokensAmountToAdd, inReserve);
         }
-
-        if (payee != address(0)) {
+        _makeCommitment(resolved, commitmentHash, bond);
+        if (payee != address(0) && msg.value != 0) {
             payee.transfer(msg.value);
         }
     }
 
     /// @inheritdoc IStratagemsCommit
-    function cancelCommitment() external {
-        Commitment storage commitment = _commitments[msg.sender];
-        (uint24 epoch, bool commiting) = _epoch();
-        if (!commiting) {
-            revert InRevealPhase();
-        }
-        if (commitment.epoch != epoch) {
-            revert PreviousCommitmentNotRevealed();
-        }
-
-        // Note that we do not reset the hash
-        // This ensure the slot do not get reset and keep the gas cost consistent across execution
-        commitment.epoch = 0;
-
-        emit CommitmentCancelled(msg.sender, epoch);
+    function cancelCommitment(uint256 player) external {
+        _cancelCommitment(_playerOf(msg.sender, player));
     }
 
     /// @inheritdoc IStratagemsCommit
     function withdrawFromReserve(uint256 amount) external {
-        Commitment storage commitment = _commitments[msg.sender];
-
-        (uint24 epoch, bool commiting) = _epoch();
-
-        if (commitment.epoch != 0 && (!commiting || commitment.epoch != epoch)) {
-            revert PreviousCommitmentNotRevealed();
-        }
-
-        uint256 inReserve = _tokensInReserve[msg.sender];
+        uint256 player = uint256(uint160(msg.sender));
         if (amount == type(uint256).max) {
-            amount = inReserve;
-            inReserve = 0;
-        } else {
-            if (inReserve < amount) {
-                revert ReserveTooLow(inReserve, amount);
-            }
-            inReserve -= amount;
+            // everything no commitment bonds
+            Commitment memory commitment = _commitmentOf(player);
+            amount = _reserveOf(player) - (commitment.cycleNumber == 0 ? 0 : commitment.bond);
         }
-        _tokensInReserve[msg.sender] = inReserve;
-        TOKENS.transfer(msg.sender, amount);
-        emit ReserveWithdrawn(msg.sender, amount, inReserve);
+        if (amount > 0) {
+            _withdrawFromReserve(player, amount);
+            TOKENS.transfer(msg.sender, amount);
+        }
     }
 }

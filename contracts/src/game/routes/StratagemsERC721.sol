@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.21;
 
 import "../internal/UsingStratagemsSetters.sol";
+import "../../utils/StringUtils.sol";
 import "solidity-kit/solc_0_8/ERC721/interfaces/IERC721.sol";
 import "solidity-kit/solc_0_8/ERC721/interfaces/UsingERC721Errors.sol";
 import "solidity-kit/solc_0_8/ERC721/interfaces/IERC721Metadata.sol";
@@ -86,8 +87,8 @@ contract StratagemsERC721 is
 
     /// @inheritdoc IERC721Metadata
     function tokenURI(uint256 tokenID) external view returns (string memory) {
-        (uint24 epoch, ) = _epoch();
-        (Cell memory cell, ) = _getUpdatedCell(uint64(tokenID), epoch);
+        (uint24 cycle, ) = _currentCycle();
+        (Cell memory cell, ) = _getUpdatedCell(uint64(tokenID), cycle);
         (int32 x, int32 y) = PositionUtils.toXY(uint64(tokenID));
 
         (string memory factionName, string memory factionColor) = _factionDisplay(cell.color);
@@ -97,7 +98,7 @@ contract StratagemsERC721 is
             y: StringUtils.toString(y),
             life: StringUtils.toString(cell.life),
             delta: StringUtils.toString(_effectiveDelta(cell.delta, cell.enemyMap)),
-            creationEpoch: StringUtils.toString(cell.epochWhenTokenIsAdded),
+            creationCycle: StringUtils.toString(cell.cycleWhenTokenIsAdded),
             factionName: factionName,
             factionColor: factionColor
         });
@@ -345,8 +346,8 @@ contract StratagemsERC721 is
                 data.life,
                 "</tspan><tspan%2520x='256'%2520dy='1em'>Growth:%2520",
                 data.delta,
-                "</tspan><tspan%2520x='256'%2520dy='2.3em'>Epoch%20",
-                data.creationEpoch,
+                "</tspan><tspan%2520x='256'%2520dy='2.3em'>Cycle%20",
+                data.creationCycle,
                 "</tspan></text></svg>"
             );
     }

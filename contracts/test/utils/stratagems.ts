@@ -37,6 +37,8 @@ export type GridEnv = {
 		revealPhaseDuration: bigint;
 		maxLife: number;
 		numTokensPerGems: bigint;
+		actionsPerReveal: bigint;
+		cyclePolicy: number;
 	};
 	provider: EIP1193ProviderWithoutEvents;
 };
@@ -84,6 +86,7 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 		hash: `0x${string}`;
 		secret: `0x${string}`;
 		moves: ContractMove[];
+		furtherActions: `0x${string}`;
 	}[] = [];
 	for (const playerIndex of Object.keys(groupedActions)) {
 		const player = env.otherAccounts[parseInt(playerIndex) < 0 ? 0 : playerIndex];
@@ -92,13 +95,12 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 		const moves = actions.map((action) => ({position: xyToBigIntID(action.x, action.y), color: action.color}));
 		const commitment = prepareCommitment(moves, randomSecret());
 
-		// const amountOfTokens = parseEther(`${moves.filter((move) => move.color !== Color.None).length}`);
 		const amountOfTokens = parseEther(`${moves.length}`);
 
-		// await env.TestTokens.write.transfer([player, amountOfTokens], {account: env.tokensBeneficiary});
 		await env.TestTokens.write.approve([env.Stratagems.address, amountOfTokens], {account: player});
+		// deposit and commit in one transaction, the bond covering every move
 		await env.Stratagems.write.makeCommitmentWithExtraReserve(
-			[commitment.hash, amountOfTokens, {deadline: 0n, value: 0n, v: 0, r: zeroBytes32, s: zeroBytes32}, zeroAddress],
+			[BigInt(player), commitment.hash, amountOfTokens, amountOfTokens, zeroAddress],
 			{account: player},
 		);
 		commitments.push({...commitment, player});
@@ -107,7 +109,7 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 
 	for (const commitment of commitments) {
 		await env.Stratagems.write.reveal(
-			[commitment.player, commitment.secret, commitment.moves, zeroBytes24, true, zeroAddress],
+			[BigInt(commitment.player), commitment.moves, commitment.secret, zeroBytes24, zeroAddress],
 			{
 				account: env.stratagemsAdmin,
 			},

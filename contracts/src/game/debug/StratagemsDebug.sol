@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.21;
 
 import "../internal/UsingStratagemsSetters.sol";
 import "./IStratagemsWithDebug.sol";
@@ -26,15 +26,19 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
         if (msg.sender != _getOwner()) {
             revert UsingGenericErrors.NotAuthorized();
         }
-        (uint24 epoch, bool commiting) = _epoch();
+        (uint24 cycle, bool commiting) = _currentCycle();
         if (commiting) {
-            epoch--;
+            cycle--;
         }
 
+        // the caller pays for the moves, as if from the player's reserve: in
+        // first, then whatever the moves did not place back out
         uint256 numTokens = NUM_TOKENS_PER_GEMS * moves.length;
         TOKENS.transferFrom(msg.sender, address(this), numTokens);
-        _tokensInReserve[player] += numTokens;
-        _resolveMoves(player, epoch, moves, msg.sender);
+        uint256 cost = _resolveMoves(player, cycle, moves);
+        if (numTokens > cost) {
+            TOKENS.transfer(msg.sender, numTokens - cost);
+        }
     }
 
     // function forceCells(DebugCell[] memory cells) external {
@@ -51,8 +55,8 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
     //             }
     //         }
     //         Cell memory cell = Cell({
-    //             lastEpochUpdate: debugCell.lastEpochUpdate,
-    //             epochWhenTokenIsAdded: debugCell.epochWhenTokenIsAdded,
+    //             lastCycleUpdate: debugCell.lastCycleUpdate,
+    //             cycleWhenTokenIsAdded: debugCell.cycleWhenTokenIsAdded,
     //             color: debugCell.color,
     //             life: debugCell.life,
     //             delta: debugCell.delta,
@@ -74,21 +78,21 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
         if (msg.sender != _getOwner()) {
             revert UsingGenericErrors.NotAuthorized();
         }
-        (uint24 epoch, ) = _epoch();
+        (uint24 cycle, ) = _currentCycle();
 
         for (uint256 i = 0; i < cells.length; i++) {
             SimpleCell memory simpleCell = cells[i];
-            if (_cells[simpleCell.position].lastEpochUpdate != 0) {
+            if (_cells[simpleCell.position].lastCycleUpdate != 0) {
                 revert InvalidCellOverwrite();
             }
             TOKENS.transferFrom(msg.sender, address(this), NUM_TOKENS_PER_GEMS);
 
-            (int8 delta, uint8 enemyMap) = _updateNeighbosrDelta(simpleCell.position, simpleCell.color, epoch);
+            (int8 delta, uint8 enemyMap) = _updateNeighbosrDelta(simpleCell.position, simpleCell.color, cycle);
 
             Cell memory cell = Cell({
-                lastEpochUpdate: epoch,
-                epochWhenTokenIsAdded: epoch,
-                producingEpochs: 0, // THIS IS FALSE but we go with it
+                lastCycleUpdate: cycle,
+                cycleWhenTokenIsAdded: cycle,
+                producingCycles: 0, // THIS IS FALSE but we go with it
                 color: simpleCell.color,
                 life: simpleCell.life,
                 delta: delta,
@@ -112,7 +116,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
             uint256 position = cells[i].position;
             Cell memory cell = _cells[position];
 
-            // we act as if the token were added in previous epochs
+            // we act as if the token were added in previous cycles
             // this is so it does not affect the reveal phase
             int8 effectiveDelta = _effectiveDelta(cell.delta, cell.enemyMap);
             int256 potentialLife = int256(uint256(cell.life)) - effectiveDelta;
@@ -130,9 +134,9 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
             cell.life = uint8(uint256(potentialLife));
 
             Cell memory updatedCell = Cell({
-                lastEpochUpdate: epoch - 1,
-                epochWhenTokenIsAdded: epoch - 1,
-                producingEpochs: 0,
+                lastCycleUpdate: cycle - 1,
+                cycleWhenTokenIsAdded: cycle - 1,
+                producingCycles: 0,
                 color: cell.color,
                 life: cell.life,
                 delta: cell.delta,
@@ -142,14 +146,14 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
             });
 
             if (_effectiveDelta(updatedCell.delta, updatedCell.enemyMap) > 0) {
-                updatedCell.producingEpochs = 1;
+                updatedCell.producingCycles = 1;
             }
             _cells[position] = updatedCell;
 
-            // logger.logCell(0, string.concat("forceSimpleCells at epoch ", Strings.toString(epoch)), uint64(position), updatedCell, address(uint160(_owners[position])));
+            // logger.logCell(0, string.concat("forceSimpleCells at cycle ", Strings.toString(cycle)), uint64(position), updatedCell, address(uint160(_owners[position])));
         }
 
-        emit ForceSimpleCells(epoch, cells);
+        emit ForceSimpleCells(cycle, cells);
     }
 
     function isEnemyOrFriend(Color a, Color b) internal pure returns (int8) {
@@ -200,7 +204,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
     function _updateNeighbosrDelta(
         uint64 center,
         Color color,
-        uint24 epoch
+        uint24 cycle
     ) internal returns (int8 delta, uint8 enemyMap) {
         unchecked {
             {
@@ -215,7 +219,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                     _updateCellFromNeighbor(
                         CellUpdateData({
                             position: upPosition,
-                            epoch: epoch,
+                            cycle: cycle,
                             neighbourIndex: 2,
                             oldColor: Color.None,
                             newColor: color
@@ -237,7 +241,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                     _updateCellFromNeighbor(
                         CellUpdateData({
                             position: leftPosition,
-                            epoch: epoch,
+                            cycle: cycle,
                             neighbourIndex: 3,
                             oldColor: Color.None,
                             newColor: color
@@ -260,7 +264,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                     _updateCellFromNeighbor(
                         CellUpdateData({
                             position: downPosition,
-                            epoch: epoch,
+                            cycle: cycle,
                             neighbourIndex: 0,
                             oldColor: Color.None,
                             newColor: color
@@ -282,7 +286,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                     _updateCellFromNeighbor(
                         CellUpdateData({
                             position: rightPosition,
-                            epoch: epoch,
+                            cycle: cycle,
                             neighbourIndex: 1,
                             oldColor: Color.None,
                             newColor: color

@@ -82,6 +82,11 @@ contracts/js
 # The template's Solidity linter config. stratagems has no `lint` script and no
 # slippy; its contracts are formatted by prettier-plugin-solidity.
 contracts/slippy.config.js
+# The template's virtual-time mixin. stratagems' game is built on the
+# commit-reveal base since step 10b, and the base has its own TIME and
+# _timestamp(), so stratagems' own copy at this path went with its epoch clock.
+# The template keeps the file because reveal-or-die and bomber-world compile it.
+contracts/src/game/internal/UsingVirtualTime.sol
 
 # ---------------------------------------------------------------------------
 # 2. THE TEMPLATE'S GAME, CLIENT SIDE: `placement/` is template-commit-reveal's

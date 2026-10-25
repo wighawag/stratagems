@@ -1,142 +1,73 @@
 // SPDX-License-Identifier: AGPL-3.0
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.21;
 
 import "./UsingStratagemsStore.sol";
 import "../interface/UsingStratagemsEvents.sol";
 import "../interface/UsingStratagemsErrors.sol";
-import "./UsingVirtualTime.sol";
 import "../../utils/PositionUtils.sol";
+import {UsingCommitReveal} from "../../commit-reveal/UsingCommitReveal.sol";
+import {CommitReveal} from "../../commit-reveal/CommitReveal.sol";
 
-// TODO use hardhat-preprocessor
-import "hardhat/console.sol";
-import "../../utils/StringUtils.sol";
-
-library logger {
-    using PositionUtils for uint64;
-
-    address constant CONSOLE_ADDRESS = 0x000000000000000000636F6e736F6c652e6c6f67;
-
-    function _sendLogPayload(bytes memory payload) private view {
-        address consoleAddress = CONSOLE_ADDRESS;
-        /// @solidity memory-safe-assembly
-        assembly {
-            pop(staticcall(gas(), consoleAddress, add(payload, 32), mload(payload), 0, 0))
-        }
-    }
-
-    // _sendLogPayload(abi.encodeWithSignature('log(string,int256,int256)', 'cell %s', x, y));
-
-    function logPosition(string memory title, uint64 pos) internal view {
-        (int32 x, int32 y) = pos.toXY();
-        console.log("%s: (%s,%s)", title, StringUtils.toString(x), StringUtils.toString(y));
-    }
-
-    function logCell(
-        uint8 ii,
-        string memory title,
-        uint64 id,
-        UsingStratagemsTypes.Cell memory cell,
-        address owner
-    ) internal view {
-        string memory indent = ii == 0
-            ? ""
-            : ii == 1
-                ? "    "
-                : ii == 2
-                    ? "        "
-                    : "            ";
-        // string memory indent = '';
-        console.log("%s%s", indent, title);
-        (int32 x, int32 y) = id.toXY();
-        console.log("%s-------------------------------------------------------------", indent);
-        console.log("%scell (%s,%s)", indent, StringUtils.toString(x), StringUtils.toString(y));
-        console.log("%s-------------------------------------------------------------", indent);
-        console.log("%s - lastEpochUpdate:  %s", indent, cell.lastEpochUpdate);
-        console.log("%s - epochWhenTokenIsAdded:  %s", indent, cell.epochWhenTokenIsAdded);
-        console.log("%s - color:  %s", indent, uint8(cell.color));
-        console.log("%s - life:  %s", indent, cell.life);
-        console.log("%s - distribution:  %s", indent, cell.distribution);
-        console.log("%s - owner:  %s", indent, owner);
-        console.log("%s - delta: %s", indent, StringUtils.toString(cell.delta));
-        console.log("%s - enemyMap:  %s", indent, cell.enemyMap);
-        console.log("%s-------------------------------------------------------------", indent);
-    }
-
-    function logTransfers(
-        uint8 ii,
-        string memory title,
-        UsingStratagemsTypes.TokenTransferCollection memory transferCollection
-    ) internal pure {
-        string memory indent = ii == 0
-            ? ""
-            : ii == 1
-                ? "    "
-                : ii == 2
-                    ? "        "
-                    : "            ";
-        // string memory indent = '';
-        console.log("%s%s", indent, title);
-        console.log("%s-------------------------------------------------------------", indent);
-        for (uint256 i = 0; i < transferCollection.numTransfers; i++) {
-            console.log(
-                "%stransfer (%s,%s)",
-                indent,
-                transferCollection.transfers[i].to,
-                StringUtils.toString(transferCollection.transfers[i].amount)
-            );
-        }
-        console.log("%s-------------------------------------------------------------", indent);
-    }
-}
-
+/// @dev Stratagems on the commit-reveal base. The base holds the reserve, the
+///      bonded commitment and its chain of chunks, the cycle and both
+///      settlements of a missed reveal; this holds the board and the rules.
 abstract contract UsingStratagemsState is
     UsingStratagemsStore,
     UsingStratagemsEvents,
     UsingStratagemsErrors,
-    UsingVirtualTime
+    UsingCommitReveal
 {
-    /// @notice The token used for the game. Each gems on the board contains that token
-    IERC20WithIERC2612 internal immutable TOKENS;
-    /// @notice the timestamp (in seconds) at which the game start, it start in the commit phase
-    uint256 internal immutable START_TIME;
-    /// @notice the duration of the commit phase in seconds
-    uint256 internal immutable COMMIT_PHASE_DURATION;
-    /// @notice the duration of the reveal phase in seconds
-    uint256 internal immutable REVEAL_PHASE_DURATION;
-    /// @notice the max number of level a cell can reach in the game
+    /// @notice the token a gem is made of: the reserve, the stakes and the payouts
+    IERC20 internal immutable TOKENS;
     uint8 internal immutable MAX_LIFE;
-    /// @notice the number of tokens underlying each gems on the board.
     uint256 internal immutable NUM_TOKENS_PER_GEMS;
-    /// @notice the address to send the token to when burning
+    /// @notice where a forfeited bond goes
     address payable internal immutable BURN_ADDRESS;
-    /// @notice the generator that will be called whenever a player stake state change
     IOnStakeChange internal immutable GENERATOR;
 
-    /// @notice the number of moves a hash represent, after that players make use of furtherMoves
-    uint8 internal constant MAX_NUM_MOVES_PER_HASH = 32;
+    address internal constant EVIL_OWNER = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
 
-    /// @notice Create an instance of a Stratagems game
-    /// @param config configuration options for the game
-    constructor(Config memory config) UsingVirtualTime(config) {
+    constructor(
+        Config memory config
+    )
+        UsingCommitReveal(
+            CommitRevealConfig({
+                startTime: config.startTime,
+                commitPhaseDuration: config.commitPhaseDuration,
+                revealPhaseDuration: config.revealPhaseDuration,
+                time: config.time,
+                actionsPerReveal: config.actionsPerReveal,
+                cyclePolicy: config.cyclePolicy
+            })
+        )
+    {
         TOKENS = config.tokens;
         BURN_ADDRESS = config.burnAddress;
-        START_TIME = config.startTime;
-        COMMIT_PHASE_DURATION = config.commitPhaseDuration;
-        REVEAL_PHASE_DURATION = config.revealPhaseDuration;
         MAX_LIFE = config.maxLife;
         NUM_TOKENS_PER_GEMS = config.numTokensPerGems;
         GENERATOR = config.generator;
     }
 
-    function _epoch() internal view virtual returns (uint24 epoch, bool commiting) {
-        uint256 epochDuration = COMMIT_PHASE_DURATION + REVEAL_PHASE_DURATION;
-        uint256 time = _timestamp();
-        if (time < START_TIME) {
-            revert GameNotStarted();
+    /// @notice The current cycle, in the 24 bits a cell stores it in.
+    /// @dev Cycles start at 2, as alpha1's epochs did. 24 bits of 24-hour
+    ///      cycles is about 45,000 years; refused rather than wrapped.
+    function _currentCycle() internal view returns (uint24 cycle, bool commiting) {
+        (uint64 cycleNumber, bool isCommiting) = _cycleNumber();
+        if (cycleNumber > type(uint24).max) {
+            revert CycleTooFar(cycleNumber);
         }
-        uint256 timePassed = time - START_TIME;
-        epoch = uint24(timePassed / epochDuration + 2); // epoch start at 2, this make the hypothetical previous reveal phase's epoch to be 1
-        commiting = timePassed - ((epoch - 2) * epochDuration) < COMMIT_PHASE_DURATION;
+        return (uint24(cycleNumber), isCommiting);
+    }
+
+    /// @notice What not revealing costs: tokens out of the reserve, burnt.
+    /// @dev The base's default debits the reserve and keeps the tokens in the
+    ///      contract; stratagems burns them, as alpha1 did, so nobody (the
+    ///      settler least of all) receives any of it.
+    function _forfeit(uint256 player, uint256 amount) internal virtual override returns (uint256 forfeited) {
+        forfeited = CommitReveal.debit(player, amount);
+        if (forfeited != 0) {
+            TOKENS.transfer(BURN_ADDRESS, forfeited);
+        }
     }
 
     function _computeNewLife(
@@ -144,98 +75,93 @@ abstract contract UsingStratagemsState is
         uint8 enemyMap,
         int8 delta,
         uint8 life,
-        uint24 epoch
-    ) internal view returns (uint8 newLife, uint24 epochUsed) {
-        epochUsed = lastUpdate;
+        uint24 cycle
+    ) internal view returns (uint8 newLife, uint24 cycleUsed) {
+        cycleUsed = lastUpdate;
         if (lastUpdate >= 1 && life > 0) {
-            uint256 epochDelta = epoch - lastUpdate;
-            if (epochDelta > 0) {
+            uint256 cycleDelta = cycle - lastUpdate;
+            if (cycleDelta > 0) {
                 int8 effectiveDelta = _effectiveDelta(delta, enemyMap);
                 if (effectiveDelta > 0) {
-                    // if (life < MAX_LIFE) {
-                    uint8 maxEpoch = ((MAX_LIFE - life) + uint8(effectiveDelta) - 1) / uint8(effectiveDelta);
-                    if (epochDelta > maxEpoch) {
-                        epochDelta = maxEpoch;
+                    uint8 maxCycle = ((MAX_LIFE - life) + uint8(effectiveDelta) - 1) / uint8(effectiveDelta);
+                    if (cycleDelta > maxCycle) {
+                        cycleDelta = maxCycle;
                     }
 
-                    life += uint8(epochDelta) * uint8(effectiveDelta);
+                    life += uint8(cycleDelta) * uint8(effectiveDelta);
                     if (life > MAX_LIFE) {
                         life = MAX_LIFE;
                     }
                     newLife = life;
 
-                    // we don not use the following: lastUpdate + epochDelta;
-                    //   because no state change is foreseen with no life increase
-                    epochUsed = epoch;
-                    // } else {
-                    // 	newLife = life;
-                    // 	epochUsed = lastUpdate;
-                    // }
+                    cycleUsed = cycle;
                 } else if (effectiveDelta < 0) {
-                    uint8 numEpochBeforeDying = (life + uint8(-effectiveDelta) - 1) / uint8(-effectiveDelta);
-                    if (epochDelta > numEpochBeforeDying) {
-                        epochDelta = numEpochBeforeDying;
+                    uint8 numCycleBeforeDying = (life + uint8(-effectiveDelta) - 1) / uint8(-effectiveDelta);
+                    if (cycleDelta > numCycleBeforeDying) {
+                        cycleDelta = numCycleBeforeDying;
                     }
-                    uint8 lifeLoss = uint8(epochDelta) * uint8(-effectiveDelta);
+                    uint8 lifeLoss = uint8(cycleDelta) * uint8(-effectiveDelta);
                     if (lifeLoss > life) {
                         newLife = 0;
                     } else {
                         newLife = life - lifeLoss;
                     }
 
-                    // since we need to track when the cell died, we upate lastUpdate only to
-                    //   the corresponding epoch where life reached 0
-                    epochUsed = lastUpdate + uint24(epochDelta);
+                    cycleUsed = lastUpdate + uint24(cycleDelta);
                 } else {
                     newLife = life;
 
-                    // we don not use the following: lastUpdate + epochDelta;
-                    //   because no state change is foreseen with no life change
-                    epochUsed = epoch;
+                    cycleUsed = cycle;
                 }
             } else {
                 newLife = life;
 
-                // no change, no need to update lastUpdate either ?
-                epochUsed = lastUpdate;
+                cycleUsed = lastUpdate;
             }
         }
     }
 
     function _effectiveDelta(int8 delta, uint8 enemyMap) internal pure returns (int8 effectiveDelta) {
-        // effectiveDelta = delta != 0 ? delta : -1;
         effectiveDelta = delta > 0 ? int8(1) : -1;
         if (effectiveDelta < 0 && enemyMap == 0) {
             effectiveDelta = int8(1);
-            // effectiveDelta = int8(0);
         }
     }
 
     function _getUpdatedCell(
         uint64 position,
-        uint24 epoch
+        uint24 cycle
     ) internal view returns (Cell memory updatedCell, bool justDied) {
-        // load from state
         updatedCell = _cells[position];
-        uint24 lastUpdate = updatedCell.lastEpochUpdate;
+        uint24 lastUpdate = updatedCell.lastCycleUpdate;
         int8 delta = updatedCell.delta;
         uint8 life = updatedCell.life;
-        // logger.logCell(0, 'before update', position, updatedCell, address(uint160(_owners[position])));
         if (lastUpdate >= 1 && life > 0) {
-            (uint8 newLife, ) = _computeNewLife(lastUpdate, updatedCell.enemyMap, delta, life, epoch);
+            (uint8 newLife, ) = _computeNewLife(lastUpdate, updatedCell.enemyMap, delta, life, cycle);
             updatedCell.life = newLife;
-            updatedCell.lastEpochUpdate = epoch; // TODO check if this is useful to cap it to epoch where it died
+            updatedCell.lastCycleUpdate = cycle;
             justDied = newLife == 0;
         }
         int8 effectiveDelta = _effectiveDelta(updatedCell.delta, updatedCell.enemyMap);
         if (effectiveDelta > 0) {
-            updatedCell.producingEpochs += epoch - lastUpdate;
+            updatedCell.producingCycles += cycle - lastUpdate;
         }
     }
 
-    /// @dev Get the owner of a token.
-    /// @param tokenID The token to query.
     function _ownerOf(uint256 tokenID) internal view virtual returns (address owner) {
         owner = address(uint160(_owners[tokenID]));
+    }
+
+    /// @notice Who owned the cell before any reveal of `cycle` moved on it.
+    /// @dev Owners change only through a move on the cell (transfers are not
+    ///      implemented), and the first move of a cycle records the owner
+    ///      before it, so this is the owner every payout of the cycle goes to,
+    ///      whatever order the reveals arrive in.
+    function _ownerAtCycleStart(uint256 position, uint24 cycle) internal view returns (address) {
+        CellAtCycleStart memory start = _cellsAtCycleStart[position];
+        if (start.cycle == cycle) {
+            return start.owner;
+        }
+        return _ownerOf(position);
     }
 }

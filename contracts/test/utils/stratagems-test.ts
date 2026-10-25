@@ -85,15 +85,15 @@ async function indexedState(env: GridEnv): Promise<Data> {
 	}
 }
 
-export async function expectIndexedGridToMatch(env: GridEnv, resultGrid: string, epoch: number) {
+export async function expectIndexedGridToMatch(env: GridEnv, resultGrid: string, cycle: number) {
 	const state = await indexedState(env);
-	const grid = fromStateToGrid(env, state, epoch);
+	const grid = fromStateToGrid(env, state, cycle);
 	// console.log(grid);
 	// TODO reenable
 	await expect(renderGrid(grid)).to.equal(renderGrid(parseGrid(resultGrid)));
 }
 
-export function fromStateToGrid(env: GridEnv, state: Data, epoch: number): Grid {
+export function fromStateToGrid(env: GridEnv, state: Data, cycle: number): Grid {
 	const stratagemsContract = new StratagemsContract(state, 7); // TODO MAX_LIFE
 	const gridCells: Cell[] = [];
 	// let minX = 0;
@@ -105,7 +105,7 @@ export function fromStateToGrid(env: GridEnv, state: Data, epoch: number): Grid 
 
 	for (const positionString of Object.keys(state.cells)) {
 		const position = BigInt(positionString);
-		const {updatedCell: cell} = stratagemsContract.getUpdatedCell(position, epoch);
+		const {updatedCell: cell} = stratagemsContract.getUpdatedCell(position, cycle);
 
 		const {x, y} = bigIntIDToXY(position);
 		const ownerAddress = state.owners[positionString];
@@ -122,17 +122,17 @@ export function fromStateToGrid(env: GridEnv, state: Data, epoch: number): Grid 
 			owner,
 			color: cell.color,
 			life: cell.life,
-			lastEpochUpdate: cell.lastEpochUpdate,
-			epochWhenTokenIsAdded: cell.epochWhenTokenIsAdded,
+			lastCycleUpdate: cell.lastCycleUpdate,
+			cycleWhenTokenIsAdded: cell.cycleWhenTokenIsAdded,
 			delta: cell.delta,
 			enemyMap: cell.enemyMap,
 			stake: cell.stake,
 		};
 		gridCells.push(gridCell);
 
-		const epochDelta = epoch - cell.lastEpochUpdate;
-		if (epochDelta > 0 && gridCell.life > 0) {
-			gridCell.life += gridCell.delta * epochDelta;
+		const cycleDelta = cycle - cell.lastCycleUpdate;
+		if (cycleDelta > 0 && gridCell.life > 0) {
+			gridCell.life += gridCell.delta * cycleDelta;
 			if (gridCell.life > 7) {
 				// TODO MAX_LIFE
 				gridCell.life = 7;
@@ -169,7 +169,7 @@ export async function expectWallet(env: GridEnv, expectedWalletsAfter: {[playerI
 			expect(pointsTokenAmount, `player ${playerIndex} (${player}) points`).to.equal(expectedAmount.points);
 		}
 		if (expectedAmount.reserve !== undefined) {
-			const inReserve = await env.Stratagems.read.getTokensInReserve([player]);
+			const inReserve = await env.Stratagems.read.getReserve([BigInt(player)]);
 			expect(inReserve, `player ${playerIndex} (${player}) reserve`).to.equal(expectedAmount.reserve);
 		}
 	}
@@ -218,7 +218,7 @@ export async function deployStratagemsWithTestConfig() {
 	return result;
 }
 
-export async function pokeAll(env: GridEnv, resultGrid: string, epoch: number) {
+export async function pokeAll(env: GridEnv, resultGrid: string, cycle: number) {
 	const state = await indexedState(env);
 
 	const {accounts, walletClient, publicClient} = await getConnection();

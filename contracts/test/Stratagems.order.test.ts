@@ -315,6 +315,8 @@ describe('Stratagems: the order of reveals never matters', function () {
 		const trials = Number(process.env.REPLAY_TRIALS ?? 25);
 		const r = rng(Number(process.env.REPLAY_SEED ?? 1));
 		let differing = 0;
+		let numCalls = 0;
+		let reverted = 0;
 		const examples: string[] = [];
 		for (let trial = 0; trial < trials; trial++) {
 			const env = await loadFixture(deployWithPlayers);
@@ -340,13 +342,17 @@ describe('Stratagems: the order of reveals never matters', function () {
 				orders = drawn;
 			}
 			const states = await replay(env, plans, orders);
+			numCalls += orders.length * orders[0].length;
+			reverted += states.reduce((n, s) => n + JSON.parse(s).reverted.filter((r: boolean) => r).length, 0);
 			if (states.some((s) => s !== states[0])) {
 				differing++;
 				if (examples.length < 3) examples.push(`trial ${trial}: ${JSON.stringify(canonical(plans))}`);
 			}
 		}
-		console.log(`order replay: ${differing} of ${trials} trials depend on the order`);
+		console.log(`order replay: ${differing} of ${trials} trials depend on the order (${reverted} of ${numCalls} calls reverted)`);
 		for (const e of examples) console.log(e);
 		expect(differing, examples.join('\n')).to.equal(0);
+		// a revert is the same in every order, so a replay of reverts would pass: none may
+		expect(reverted, 'calls reverted in the replay').to.equal(0);
 	}, 60 * 60 * 1000 * 4);
 });

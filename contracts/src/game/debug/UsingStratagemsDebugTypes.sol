@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.21;
 
 import "../interface/UsingStratagemsTypes.sol";
 
@@ -7,8 +7,8 @@ interface UsingStratagemsDebugTypes is UsingStratagemsTypes {
     struct DebugCell {
         uint64 position;
         address owner;
-        uint24 lastEpochUpdate;
-        uint24 epochWhenTokenIsAdded;
+        uint24 lastCycleUpdate;
+        uint24 cycleWhenTokenIsAdded;
         Color color;
         uint8 life;
         int8 delta;

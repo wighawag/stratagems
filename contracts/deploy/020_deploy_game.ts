@@ -14,6 +14,8 @@ export type GameConfig = {
 	commitPhaseDuration: bigint;
 	revealPhaseDuration: bigint;
 	maxLife: number;
+	actionsPerReveal: bigint;
+	cyclePolicy: number;
 };
 
 export default deployScript(
@@ -67,6 +69,10 @@ export default deployScript(
 			commitPhaseDuration,
 			maxLife: 7, // 7 is a good number, because with 4 enemy neighbors, it take 2 turns to die, with 3 it takes 3, with 2 it takes 4, with 1 it takes 7
 			time,
+			// the commit-reveal base's: a reveal carries at most 32 moves (alpha1's
+			// MAX_NUM_MOVES_PER_HASH), and the cycle is timed (0: CyclePolicy.Timed)
+			actionsPerReveal: 32n,
+			cyclePolicy: 0,
 			...configOverride,
 			generator: generator.address,
 		};
@@ -77,6 +83,8 @@ export default deployScript(
 			{name: 'Reveal', artifact: artifacts.StratagemsReveal, args: [config]},
 			{name: 'Poke', artifact: artifacts.StratagemsPoke, args: [config]},
 			{name: 'ERC721', artifact: artifacts.StratagemsERC721 as any, args: [config]},
+			// who may act for whom (the base's `_playerOf`); takes no config
+			{name: 'Delegation', artifact: artifacts.StratagemsDelegation as any, args: []},
 		];
 		if (env.name === 'hardhat' || env.name === 'memory' || env.name === 'default') {
 			routes.push({name: 'Debug', artifact: artifacts.StratagemsDebug as any, args: [config]});

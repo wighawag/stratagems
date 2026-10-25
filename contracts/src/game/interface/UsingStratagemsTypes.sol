@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.21;
 
 import "solidity-kit/solc_0_8/ERC721/interfaces/IERC721.sol";
 import "solidity-kit/solc_0_8/ERC165/interfaces/IERC165.sol";
-import "solidity-kit/solc_0_8/ERC20/ERC2612/interfaces/IERC20WithIERC2612.sol";
+import "solidity-kit/solc_0_8/ERC20/interfaces/IERC20.sol";
 import "solidity-kit/solc_0_8/debug/time/interfaces/ITime.sol";
 import "../../token/interface/IOnStakeChange.sol";
+import {UsingCommitRevealTypes} from "../../commit-reveal/interfaces/UsingCommitRevealTypes.sol";
 
-interface UsingStratagemsTypes {
-    // --------------------------------------------------------------------------------------------
-    // EXTERNAL TYPES
-    // --------------------------------------------------------------------------------------------
-
-    /// @notice The set of possible color (None indicate the Cell is empty)
+/// @dev The game's types on top of the commit-reveal base's (`Cycle`,
+///      `Commitment`, `Attendance`, `CyclePolicy`), which this inherits so the
+///      game's ABI names them unqualified.
+interface UsingStratagemsTypes is UsingCommitRevealTypes {
     enum Color {
         None,
         Blue,
@@ -23,24 +22,13 @@ interface UsingStratagemsTypes {
         Evil
     }
 
-    /// @notice Move struct that define position and color
     struct Move {
-        uint64 position; // TODO make it bigger ? uint32 * uint32 is probably infinitely big enough
+        uint64 position;
         Color color;
     }
 
-    /// @notice Permit struct to authorize EIP2612 ERC20 contracts
-    struct Permit {
-        uint256 value;
-        uint256 deadline;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-    }
-
-    /// @notice Config struct to configure the game instance
     struct Config {
-        IERC20WithIERC2612 tokens;
+        IERC20 tokens;
         address payable burnAddress;
         uint256 startTime;
         uint256 commitPhaseDuration;
@@ -49,14 +37,15 @@ interface UsingStratagemsTypes {
         uint256 numTokensPerGems;
         ITime time;
         IOnStakeChange generator;
+        uint256 actionsPerReveal;
+        CyclePolicy cyclePolicy;
     }
 
-    /// @notice Cell struct representing the current state of a cell
     struct FullCell {
         address owner;
-        uint24 lastEpochUpdate;
-        uint24 epochWhenTokenIsAdded;
-        uint24 producingEpochs;
+        uint24 lastCycleUpdate;
+        uint24 cycleWhenTokenIsAdded;
+        uint24 producingCycles;
         Color color;
         uint8 life;
         int8 delta;
@@ -65,21 +54,10 @@ interface UsingStratagemsTypes {
         uint8 stake; // for Evil, else always 1
     }
 
-    // --------------------------------------------------------------------------------------------
-    // STORAGE TYPES
-    // --------------------------------------------------------------------------------------------
-
-    struct Discovered {
-        uint32 minX;
-        uint32 maxX;
-        uint32 minY;
-        uint32 maxY;
-    }
-
     struct Cell {
-        uint24 lastEpochUpdate;
-        uint24 epochWhenTokenIsAdded;
-        uint24 producingEpochs;
+        uint24 lastCycleUpdate;
+        uint24 cycleWhenTokenIsAdded;
+        uint24 producingCycles;
         Color color;
         uint8 life;
         int8 delta;
@@ -88,14 +66,19 @@ interface UsingStratagemsTypes {
         uint8 stake; // for Evil, else always 1
     }
 
-    struct Commitment {
-        bytes24 hash;
-        uint24 epoch;
+    /// @notice A cell as it stood before the first move on it in `cycle`.
+    /// @dev THE BOARD A MOVE IS JUDGED AGAINST. Reveals arrive in whatever
+    ///      order the mempool delivers them, so whether a move is allowed, and
+    ///      who a payout goes to, is read from the cell as it was before any
+    ///      reveal of the cycle touched it, never from the current board.
+    ///      Written by the first move on the cell in a cycle; until then the
+    ///      current record is that state (a neighbour's move cannot change a
+    ///      cell's life at the current cycle, nor its owner).
+    struct CellAtCycleStart {
+        address owner;
+        uint24 cycle;
+        uint8 life;
     }
-
-    // --------------------------------------------------------------------------------------------
-    // INTERNAL TYPES
-    // --------------------------------------------------------------------------------------------
 
     struct TokenTransfer {
         address payable to;
@@ -109,7 +92,6 @@ interface UsingStratagemsTypes {
 
     struct MoveTokens {
         uint256 tokensPlaced;
-        uint256 tokensBurnt;
         uint256 tokensReturned;
     }
 
@@ -118,7 +100,7 @@ interface UsingStratagemsTypes {
         string y;
         string life;
         string delta;
-        string creationEpoch;
+        string creationCycle;
         string factionName;
         string factionColor;
     }
