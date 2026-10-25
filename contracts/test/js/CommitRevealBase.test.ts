@@ -2,14 +2,15 @@ import {expect} from 'earl';
 import {describe, it} from 'node:test'; // using node:test as hardhat v3 do not support vitest
 import {network} from 'hardhat';
 import {encodeAbiParameters, keccak256, zeroAddress} from 'viem';
-import {artifacts} from '../../rocketh/environment.js';
 import {
-	setupFixtures,
-	idOf,
-	CYCLE_POLICY,
-	NO_FURTHER_ACTIONS,
-	cycleClock,
-} from './utils/index.js';
+	artifacts,
+	loadAndExecuteDeploymentsFromFiles,
+} from '../../rocketh/environment.js';
+
+// SELF-CONTAINED ON PURPOSE: nothing here comes from `./utils`, which is the
+// reference game's test helpers. The base and this suite arrive in every game
+// of the tree, whose `test/js/utils` are their own, so the suite must run on
+// the base alone. `idOf`, the chunk sentinel and the clock are restated below.
 
 /**
  * THE BASE, DRIVEN BY A GAME THAT IS NOT THE REFERENCE ONE.
@@ -25,7 +26,13 @@ import {
  */
 
 const {provider, networkHelpers} = await network.connect();
-const {deployAll} = setupFixtures(provider);
+
+const NO_FURTHER_ACTIONS =
+	'0x000000000000000000000000000000000000000000000000' as const;
+const TIMED = 0;
+function idOf(account: `0x${string}`): bigint {
+	return BigInt(account);
+}
 
 type Order = {kind: number; quantity: bigint};
 type OrderChunk = {orders: Order[]; furtherActions: `0x${string}`};
@@ -71,15 +78,23 @@ function orderChain(
 	return {head: next, chunks};
 }
 
-const clock = cycleClock({
-	startTime: 0,
-	commitPhaseDuration: COMMIT_PHASE,
-	revealPhaseDuration: REVEAL_PHASE,
-});
+/** The timed policy's arithmetic, from a start time of zero. */
+const clock = {
+	getCycleNumber(time: number): {cycleNumber: number} {
+		return {
+			cycleNumber: Math.floor(time / (COMMIT_PHASE + REVEAL_PHASE)) + 2,
+		};
+	},
+	cycleStartTime(cycleNumber: number): number {
+		return (cycleNumber - 2) * (COMMIT_PHASE + REVEAL_PHASE);
+	},
+	revealStartTime(cycleNumber: number): number {
+		return this.cycleStartTime(cycleNumber) + COMMIT_PHASE;
+	},
+};
 
 async function deployStub() {
-	const fixtures = await deployAll();
-	const {env} = fixtures;
+	const env = await loadAndExecuteDeploymentsFromFiles({provider});
 	const Stub = await env.deploy('CommitRevealStubGame', {
 		account: env.namedAccounts.deployer,
 		artifact: artifacts.CommitRevealStubGame,
@@ -90,13 +105,17 @@ async function deployStub() {
 				revealPhaseDuration: BigInt(REVEAL_PHASE),
 				time: zeroAddress,
 				actionsPerReveal: BigInt(ACTIONS_PER_REVEAL),
-				cyclePolicy: CYCLE_POLICY.Timed,
+				cyclePolicy: TIMED,
 			},
 			UNIT_COST,
 			PENALTY_PER_ORDER,
 		],
 	});
-	return {...fixtures, Stub};
+	return {
+		env,
+		Stub,
+		unnamedAccounts: env.unnamedAccounts as `0x${string}`[],
+	};
 }
 
 async function now(): Promise<number> {
