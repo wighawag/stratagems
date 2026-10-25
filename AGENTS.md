@@ -70,8 +70,9 @@ interval, `cycleNumber` is its index, one player's pass through a cycle is a
 is worth fixing.
 
 In a GAME repo built from this template, `epoch` is expected and means the game
-has not been ported yet. Contracts are not inherited here, so each game carries
-its own and is ported one at a time; a descendant full of `epoch` is a schedule,
+has not been ported yet. A game's contracts are its own (what it keeps from the
+template is the commit-reveal base, `contracts/src/commit-reveal/`, and only once
+it builds on it), so each game is ported one at a time; a descendant full of `epoch` is a schedule,
 not a stale glossary. reveal-or-die was ported on 2026-09-26, taking the
 template's names wherever the concept is the same (`getCycleNumber`,
 `_cycleNumber`, `InvalidCycle`, `lastCycleNumber`), and bomber-world follows it
@@ -81,9 +82,12 @@ is not the framework's interval.
 **AND THE SAME READING APPLIES TO A MECHANISM, NOT ONLY TO A WORD.** `CONTEXT.md`
 says a **commitment** is the head of a hash chain, each link holding one **chunk**
 and the hash of the next, because a turn may be bigger than a transaction and the
-framework owns that. A descendant's contracts may not have built it yet: its
-`reveal` takes one array and resolves all of it, and there is no `furtherActions`
-anywhere. That is the same schedule as `epoch`, for the same reason, and it is
+framework owns that, in its contracts too since 2026-10-25: the commit-reveal
+base (`contracts/src/commit-reveal/`) is the chain, the bond and both
+settlements, and a game keeps it. A descendant's contracts may not be built on it
+yet: its `reveal` takes one array and resolves all of it, and there is no
+`furtherActions` anywhere, while the base arrives beside them and compiles
+unused. That is the same schedule as `epoch`, for the same reason, and it is
 visible in the same way - grep the contracts, not the glossary. Nothing breaks
 while the two disagree, because the client half is a SEAM: `reveal` on the
 adapter is one call that may be several transactions, and an adapter that needs
@@ -117,13 +121,15 @@ satisfy a grep buys a conflict in every future merge. A sweep that rewrites it
 to `cycle` has made the comment false; that happened once already.
 
 **There used to be one more, and it is the lesson about citations.**
-`contracts/src/game/internal/UsingGameInternal.sol` cites bomber-world's cycle
+`contracts/src/game/internal/UsingGameInternal.sol` cited bomber-world's cycle
 function as the precedent for its identity seam. That is a DESCENDANT'S symbol,
 so the citation is only correct while it spells the name that repo actually
 uses. It said `_epoch()` until 2026-09-26, and a sweep once rewrote it to
-`_cycleNumber()` early, naming a function that then existed in no repo. It says
-`_cycleNumber()` now because bomber-world was ported that day: the citation
-followed the descendant, not the glossary.
+`_cycleNumber()` early, naming a function that then existed in no repo. It said
+`_cycleNumber()` from the day bomber-world was ported: the citation followed the
+descendant, not the glossary. It left with the seam on 2026-10-25, when
+`_playerOf` moved into the commit-reveal base, which every game keeps and which
+therefore names no game.
 
 `web/test/svelte-conventions-boundary.test.ts` cites `game/core/round.ts` and
 `RoundState` as a DESCENDANT'S file that failed a rune check. Same shape as the
@@ -170,8 +176,8 @@ that, and every one of them is easy to break by accident.
 
 - **Something must be at stake, or nobody has to reveal.** A player who dislikes
   what they committed to can simply go quiet. The template makes this concrete
-  with a token reserve bonded at commit time and forfeited by
-  `acknowledgeMissedReveal`. A game may gate differently (custody of an NFT, for
+  with a token reserve bonded at commit time and forfeited when a missed reveal
+  is settled (`_forfeit` in the commit-reveal base). A game may gate differently (custody of an NFT, for
   instance); what the framework needs is only that _something_ is lost by not
   revealing.
 
@@ -182,8 +188,8 @@ that, and every one of them is easy to break by accident.
   `world/storage.ts` in reveal-or-die and bomber-world), and nowhere else. `load()` discards
   any record it cannot read, so a record written by the previous build under
   the old name is not a migration problem, it is a player who can no longer
-  reveal: the commitment stands, the reveal never comes, and
-  `acknowledgeMissedReveal` takes what was bonded.
+  reveal: the commitment stands, the reveal never comes, and the settlement
+  takes what was bonded (all of it, since nothing can show the chunks).
 
   **Nothing catches this.** The tests are renamed alongside the code, no test
   reads a record written by an older build, and the type checker sees a rename

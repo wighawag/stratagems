@@ -56,7 +56,7 @@ export type GameIdentity = `0x${string}`;
  * THE SAME LINE, ON THE OTHER SIDE OF THE ABI.
  *
  * The contract keys every player by a `uint256` and never by an address (see
- * `IGame.sol` and `UsingGameInternal._playerOf`), because twenty bytes holds
+ * `IGame.sol` and `UsingCommitReveal._playerOf`), because twenty bytes holds
  * every account and does not hold every token id: reveal-or-die's are
  * `owner << 96 | subID` and conquest's are derived the same way, so a game
  * that truncated would alias two players onto one reserve with nothing raised

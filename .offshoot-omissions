@@ -76,6 +76,14 @@ contracts/js
 # The template's Solidity linter config. stratagems has no `lint` script and no
 # slippy; its contracts are formatted by prettier-plugin-solidity.
 contracts/slippy.config.js
+# The commit-reveal BASE (step 10a-contract, 2026-10-25): the mechanism the
+# template now keeps for every game, a library over namespaced storage plus a
+# convenience contract and a stub game for its tests (whose suite,
+# contracts/test/js/CommitRevealBase.test.ts, is covered by the entry above).
+# OMITTED UNTIL STEP 10b, which un-omits it and rebuilds stratagems' game on it.
+# Today it could not even compile here: alpha1 compiles with solc 0.8.24 and
+# viaIR, and stratagems has no @etherplay/delegation, which the base imports.
+contracts/src/commit-reveal
 
 # ---------------------------------------------------------------------------
 # 2. THE TEMPLATE'S GAME, CLIENT SIDE: `placement/` is template-commit-reveal's
