@@ -175,11 +175,11 @@ export class StratagemsContract {
 			updatedCell.life = newLife;
 			updatedCell.lastCycleUpdate = cycle;
 			justDied = newLife == 0;
-		}
-
-		const effectiveDelta = this._effectiveDelta(updatedCell.delta, updatedCell.enemyMap);
-		if (effectiveDelta > 0) {
-			updatedCell.producingCycles += cycle - lastUpdate;
+			// producing time accrues where lastCycleUpdate moves, and only there (see the contract's _getUpdatedCell)
+			const effectiveDelta = this._effectiveDelta(updatedCell.delta, updatedCell.enemyMap);
+			if (effectiveDelta > 0) {
+				updatedCell.producingCycles += cycle - lastUpdate;
+			}
 		}
 
 		return {updatedCell, justDied};

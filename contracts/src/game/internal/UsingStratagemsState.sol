@@ -141,10 +141,17 @@ abstract contract UsingStratagemsState is
             updatedCell.life = newLife;
             updatedCell.lastCycleUpdate = cycle;
             justDied = newLife == 0;
-        }
-        int8 effectiveDelta = _effectiveDelta(updatedCell.delta, updatedCell.enemyMap);
-        if (effectiveDelta > 0) {
-            updatedCell.producingCycles += cycle - lastUpdate;
+            // PRODUCING TIME ACCRUES WHERE lastCycleUpdate MOVES, and only there, so
+            // no span is counted twice. alpha1 accrued it here for every cell, dead
+            // ones included, without moving a dead cell's lastCycleUpdate: a poke
+            // stored the span and a neighbour's update in the same cycle counted it
+            // again, so the total depended on which came first (and an empty or
+            // removed cell, whose lastCycleUpdate is zero, accrued the whole cycle
+            // number). A dead cell accrues through `_setCell`, which moves it.
+            int8 effectiveDelta = _effectiveDelta(updatedCell.delta, updatedCell.enemyMap);
+            if (effectiveDelta > 0) {
+                updatedCell.producingCycles += cycle - lastUpdate;
+            }
         }
     }
 

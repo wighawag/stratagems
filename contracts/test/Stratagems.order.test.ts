@@ -347,6 +347,11 @@ describe('Stratagems: the order of reveals never matters', function () {
 			if (states.some((s) => s !== states[0])) {
 				differing++;
 				if (examples.length < 3) examples.push(`trial ${trial}: ${JSON.stringify(canonical(plans))}`);
+				if (process.env.REPLAY_DIFF && differing <= 20) {
+					const other = states.find((s) => s !== states[0])!;
+					console.log(`trial ${trial} orders:`, JSON.stringify(canonical(orders)));
+					console.log(`trial ${trial} differs at:`, diffPaths(JSON.parse(states[0]), JSON.parse(other)).join('\n'));
+				}
 			}
 		}
 		console.log(`order replay: ${differing} of ${trials} trials depend on the order (${reverted} of ${numCalls} calls reverted)`);

@@ -314,7 +314,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         (
             int8 newComputedDelta,
             uint8 newComputedEnemyMap,
-            uint16 numDue,
+            uint256 numDue,
             address[4] memory ownersToPay
         ) = _updateNeighbours(move.position, cycle, color, move.color, distribution);
 
@@ -323,22 +323,25 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         newEnemyMap = newComputedEnemyMap;
     }
 
-    /// @dev `numDue` (twelfths of a gem, the shares of dying neighbours this
-    ///      cell was an enemy of) to the cell's owner at the cycle's start, and
-    ///      this cell's own stake, if it just died, to its enemies' owners.
+    /// @dev `due` (tokens, the shares of dying neighbours this cell was an
+    ///      enemy of) to the cell's owner at the cycle's start, and this cell's
+    ///      own stake, if it just died, to its enemies' owners.
+    ///
+    ///      EVERY SHARE IS ROUNDED ON ITS OWN, as `stake * (NUM_TOKENS_PER_GEMS / count)`,
+    ///      whichever path pays it. alpha1 summed a move's shares in twelfths of
+    ///      a gem and divided once, while a poke divided per share, and which
+    ///      path pays a share depends on the order of the cycle's reveals: the
+    ///      rounding dust then moved between players with the order.
     function _payShares(
         TokenTransferCollection memory transferCollection,
         address owner,
-        uint16 numDue,
+        uint256 due,
         address[4] memory ownersToPay,
         uint8 stake,
         uint8 distribution
     ) internal view {
-        if (numDue > 0) {
-            _collectTransfer(
-                transferCollection,
-                TokenTransfer({to: payable(owner), amount: (numDue * NUM_TOKENS_PER_GEMS) / 12})
-            );
+        if (due > 0) {
+            _collectTransfer(transferCollection, TokenTransfer({to: payable(owner), amount: due}));
         }
         for (uint8 i = 0; i < 4; i++) {
             if (ownersToPay[i] != address(0)) {
@@ -366,7 +369,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             distribution = (currentState.enemyMap << 4) + _countBits(currentState.enemyMap);
         }
 
-        (, , uint16 numDue, address[4] memory ownersToPay) = _updateNeighbours(
+        (, , uint256 numDue, address[4] memory ownersToPay) = _updateNeighbours(
             position,
             cycle,
             currentState.color,
@@ -394,7 +397,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
     struct CellUpdate {
         int8 delta;
         uint8 enemymap;
-        uint16 due;
+        uint256 due;
     }
 
     /// @param side 0 up, 1 left, 2 down, 3 right (the bit in the enemy map)
@@ -423,7 +426,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             neighbourPosition = position.offset(1, 0);
             neighbourIndex = 1;
         }
-        (int8 enemyOrFriend, uint16 due) = _updateCell(
+        (int8 enemyOrFriend, uint256 due) = _updateCell(
             CellUpdateData({
                 position: neighbourPosition,
                 cycle: cycle,
@@ -450,7 +453,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         Color oldColor,
         Color newColor,
         uint8 distribution
-    ) internal returns (int8 newDelta, uint8 newEnemyMap, uint16 numDue, address[4] memory ownersToPay) {
+    ) internal returns (int8 newDelta, uint8 newEnemyMap, uint256 numDue, address[4] memory ownersToPay) {
         CellUpdate memory cellUpdate;
         for (uint8 side = 0; side < 4; side++) {
             _updateNeighbour(ownersToPay, cellUpdate, position, side, cycle, distribution, oldColor, newColor);
@@ -469,7 +472,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
     }
 
     /// @dev This update the cell in storage
-    function _updateCell(CellUpdateData memory data) internal returns (int8 enemyOrFriend, uint16 due) {
+    function _updateCell(CellUpdateData memory data) internal returns (int8 enemyOrFriend, uint256 due) {
         Cell memory cell = _cells[data.position];
 
         uint24 lastUpdate = cell.lastCycleUpdate;
@@ -492,14 +495,14 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         CellUpdateData memory data,
         Cell memory cell, // cell to be updated
         uint8 newLife // new life value for the cell
-    ) internal returns (uint16 due) {
+    ) internal returns (uint256 due) {
         if (cell.life > 0 && newLife == 0) {
             // we just died, we establish the distributionMap and counts
             cell.distribution = (cell.enemyMap << 4) + _countBits(cell.enemyMap);
         }
 
         if ((cell.distribution >> 4) & (2 ** data.neighbourIndex) == 2 ** data.neighbourIndex) {
-            due = (cell.stake * 12) / (cell.distribution & 0x0f);
+            due = cell.stake * (NUM_TOKENS_PER_GEMS / (cell.distribution & 0x0f));
 
             cell.distribution =
                 (uint8(uint256(cell.distribution >> 4) & (~(2 ** uint256(data.neighbourIndex)))) << 4) +
