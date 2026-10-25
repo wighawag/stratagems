@@ -10,8 +10,8 @@ export type Cell = {
 	color: Color; //0 | 1 | 2 | 3 | 4 | 5 | 6;
 	life: number;
 	// tokens
-	lastEpochUpdate?: number;
-	epochWhenTokenIsAdded?: number;
+	lastCycleUpdate?: number;
+	cycleWhenTokenIsAdded?: number;
 	delta?: number;
 	enemyMap?: number;
 	stake: number; // for Evil, else always 1
@@ -323,8 +323,8 @@ export function fromContractFullCellToCell(
 		const processedCell = {
 			x,
 			y,
-			lastEpochUpdate: cell.lastEpochUpdate,
-			epochWhenTokenIsAdded: cell.epochWhenTokenIsAdded,
+			lastCycleUpdate: cell.lastCycleUpdate,
+			cycleWhenTokenIsAdded: cell.cycleWhenTokenIsAdded,
 			color: cell.color,
 			life: cell.life,
 			delta: cell.delta,
@@ -358,8 +358,8 @@ export function fromContractFullCellToCell(
 // 				color: Color.Red,
 // 				delta: 0,
 // 				enemyMap: 0,
-// 				epochWhenTokenIsAdded: 1,
-// 				lastEpochUpdate: 1,
+// 				cycleWhenTokenIsAdded: 1,
+// 				lastCycleUpdate: 1,
 // 				life: 1,
 // 				owner: 1,
 // 			},
@@ -400,8 +400,8 @@ export function fromContractFullCellToCell(
 // 						color: Color.Red,
 // 						delta: 0,
 // 						enemyMap: 0,
-// 						epochWhenTokenIsAdded: 1,
-// 						lastEpochUpdate: 1,
+// 						cycleWhenTokenIsAdded: 1,
+// 						lastCycleUpdate: 1,
 // 						life: 1,
 // 						owner: 2,
 // 					},

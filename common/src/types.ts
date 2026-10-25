@@ -9,15 +9,15 @@ export enum Color {
 }
 
 export type ContractCell = {
-	lastEpochUpdate: number;
-	epochWhenTokenIsAdded: number;
+	lastCycleUpdate: number;
+	cycleWhenTokenIsAdded: number;
 	color: number;
 	life: number;
 	delta: number;
 	enemyMap: number;
 	distribution: number;
 	stake: number;
-	producingEpochs: number;
+	producingCycles: number;
 };
 
 export type ContractFullCell = ContractCell & {
@@ -28,7 +28,11 @@ export type StratagemsState = {
 	cells: {[position: string]: ContractCell};
 	owners: {[position: string]: `0x${string}`};
 	computedPoints: {[owner: string]: number};
+	/** each cell as it stood before the first move on it in a cycle (the contract's `_cellsAtCycleStart`) */
+	cellsAtCycleStart?: {[position: string]: CellAtCycleStart};
 };
+
+export type CellAtCycleStart = {owner: `0x${string}`; cycle: number; life: number};
 
 export type ContractMove = {position: bigint; color: Color};
 
