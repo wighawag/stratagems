@@ -176,6 +176,7 @@ type TestGame = {
 		commitment: Readable<undefined>;
 	};
 	stake: {step: 'stake'};
+	surface: unknown;
 };
 
 function compose(overrides: {stake?: {step: 'stake'} | undefined} = {}) {
@@ -223,6 +224,10 @@ function compose(overrides: {stake?: {step: 'stake'} | undefined} = {}) {
 			advance: async () => {},
 			contractIsTheJudge: true,
 		},
+		camera: {
+			initialVisible: {x: 0, y: 0, width: 10, height: 10},
+			limits: {},
+		} as never,
 		board: () => boardStore,
 		missedReveal: () => ({
 			value: {blocks: false},
@@ -255,6 +260,7 @@ function compose(overrides: {stake?: {step: 'stake'} | undefined} = {}) {
 		hold: ({latest}) => latest,
 		holdPlan: ({plan}) => plan,
 		merge: ({onchain}) => ({cells: onchain.cells}),
+		renderer: () => ({}) as never,
 		click: (position, {planning}) => planning.toggle(position.x),
 		start: startGame,
 	});
@@ -282,14 +288,14 @@ describe('the skeleton, wired', () => {
 	it('hands a click to the game only once the player could commit it', () => {
 		const ready = compose();
 		const stopReady = ready.crg.start();
-		ready.crg.eventEmitter.emit('clicked', {x: 7, y: 1});
+		ready.crg.render.eventEmitter.emit('clicked', {x: 7, y: 1});
 		expect(ready.toggle).toHaveBeenCalledWith(7);
 		stopReady();
 
 		const notReady = compose({stake: {step: 'stake'}});
 		const stopNotReady = notReady.crg.start();
 		expect(get(notReady.crg.game.setup)).toEqual({step: 'stake'});
-		notReady.crg.eventEmitter.emit('clicked', {x: 7, y: 1});
+		notReady.crg.render.eventEmitter.emit('clicked', {x: 7, y: 1});
 		expect(notReady.toggle).not.toHaveBeenCalled();
 		stopNotReady();
 	});

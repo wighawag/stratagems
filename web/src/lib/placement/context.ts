@@ -30,17 +30,10 @@ import {
 	type SetupNeeded as FrameworkSetupNeeded,
 } from '$lib/game/core/commit-reveal-game';
 import type {AcquisitionStore} from '$lib/game/acquire';
-import {
-	createCamera,
-	type CameraControl,
-	type CameraWatcher,
-} from '$lib/game/render/camera';
+import type {CameraControl, CameraWatcher} from '$lib/game/render/camera';
 import type {CanvasEventEmitter} from '$lib/game/render/events';
 import type {GameRenderer} from '$lib/game/core/seams';
-import {
-	createPollingOnchainState,
-	type OnchainStateStore,
-} from '$lib/onchain/state';
+import type {OnchainStateStore} from '$lib/onchain/state';
 import type {ViewStateStore} from '$lib/view';
 
 // ---------------------------------------------------------------------------
@@ -250,6 +243,7 @@ type PlacementGame = {
 	planning: PlanningStore;
 	missedReveal: MissedRevealStore;
 	stake: {step: 'stake'};
+	surface: GameSurface;
 };
 
 export function createGameContext(core: CoreServices): GameContext {
@@ -274,7 +268,6 @@ export function createGameContext(core: CoreServices): GameContext {
 	// readers need them synchronously at construction.
 	const deployments = core.deployments.get();
 	const config = resolvePlacementConfig(deployments);
-	const {camera, cameraControl} = createCamera(config.camera);
 
 	// The stake is filed under WHO PLAYS, not under who signed in.
 	const reserve = createReserve({deps: core, config, identity: activeIdentity});
@@ -305,18 +298,12 @@ export function createGameContext(core: CoreServices): GameContext {
 		// THE DEPLOYMENT'S CHUNK SIZE: it bounds how much of a turn can still be
 		// opened, and it is part of the commitment's hash (see `buildCommitment`).
 		actionsPerReveal: config.actionsPerReveal,
-		board: ({cycleInfo, chainTime}) =>
-			createPollingOnchainState<BoardState>({
-				publicClient: core.publicClient,
-				camera,
-				cycleInfo,
-				chainTime,
+		camera: config.camera,
+		board: ({poll}) =>
+			poll<BoardState>({
 				zonesForCamera,
-				cycleDuration:
-					config.cycle.commitPhaseDuration + config.cycle.revealPhaseDuration,
 				read: createBoardReader({publicClient: core.publicClient, deployments}),
 				emptyState: emptyBoard,
-				fetchGate: core.chainFetchGate,
 			}),
 		// The forfeit comes out of the reserve, so the number on screen changes.
 		missedReveal: () =>
@@ -365,6 +352,8 @@ export function createGameContext(core: CoreServices): GameContext {
 		hold: holdResolvingCycle,
 		holdPlan: holdPlanUntilBoardReleases,
 		merge: mergeBoardView,
+		renderer: ({viewState}) =>
+			createGameRenderer({viewState, cellSize: config.cellSize}),
 		// The canvas reports WHERE, in game units and unsnapped; which cell that
 		// is, is this game's rule. Rounded rather than floored because cells are
 		// centred on their integer coordinate (the cell at 3,4 spans 2.5..3.5).
@@ -377,11 +366,6 @@ export function createGameContext(core: CoreServices): GameContext {
 		},
 	});
 
-	const gameRenderer = createGameRenderer({
-		viewState: crg.viewState,
-		cellSize: config.cellSize,
-	});
-
 	const cost = derived(
 		crg.game.planning.count,
 		($count) => BigInt($count) * config.placementCost,
@@ -390,20 +374,8 @@ export function createGameContext(core: CoreServices): GameContext {
 	return {
 		onchainState: crg.onchainState,
 		viewState: crg.viewState,
-		game: {
-			...crg.game,
-			config,
-			identity: account,
-			activeIdentity,
-			reserve,
-			cost,
-		},
-		render: {
-			camera,
-			cameraControl,
-			gameRenderer,
-			eventEmitter: crg.eventEmitter,
-		},
+		game: {...crg.game, config, activeIdentity, reserve, cost},
+		render: crg.render,
 		start: crg.start,
 	};
 }

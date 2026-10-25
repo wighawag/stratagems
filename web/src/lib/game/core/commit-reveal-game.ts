@@ -75,6 +75,7 @@ import {
 } from './reveal-window';
 import type {
 	CommitRevealAdapter,
+	GameRenderer,
 	OnchainStateStore,
 	PlayerIdentity,
 	ViewStateStore,
@@ -88,7 +89,14 @@ import {
 	createCanvasEventEmitter,
 	type CanvasEventEmitter,
 } from '$lib/game/render/events';
+import {
+	createCamera,
+	type CameraConfig,
+	type CameraControl,
+	type CameraWatcher,
+} from '$lib/game/render/camera';
 import {createViewState, type ViewMerge} from '$lib/view';
+import {createPollingOnchainState} from '$lib/onchain/state';
 
 // ---------------------------------------------------------------------------
 // The pieces, each its own function so it can be tested without an app context.
@@ -279,6 +287,27 @@ export type CycleClock = {
 };
 
 /**
+ * What a board store is built from: the clock, and for a game that POLLS, the
+ * template's poller already wired to it.
+ *
+ * `poll` is an offer, not the board: the skeleton builds nothing until the game
+ * asks, so a game whose board comes from an indexer simply ignores it. What it
+ * saves a polling game is the wiring every one of them repeated (the client,
+ * the clock, the cycle's length for the log range, the fetch gate), leaving
+ * only what is the game's: the camera, the zones, the reader, the empty board.
+ */
+export type BoardSource = CycleClock & {
+	/** What the player is looking at, which a camera-scoped board reads. */
+	camera: CameraWatcher;
+	poll: <TState>(
+		params: Pick<
+			Parameters<typeof createPollingOnchainState<TState>>[0],
+			'zonesForCamera' | 'read' | 'emptyState' | 'config'
+		>,
+	) => OnchainStateStore<TState & {cycleNumber: number}>;
+};
+
+/**
  * THE GAME'S TYPES, named once.
  *
  * One record rather than nine type parameters, because a composition has
@@ -301,6 +330,8 @@ export type GameTypes = {
 	missedReveal: MissedRevealReader<unknown>;
 	/** The game's step of the setup gate. */
 	stake: {step: string};
+	/** The game's choice of rendering surface, named in its own render module. */
+	surface: unknown;
 };
 
 type LocalOf<T extends GameTypes> =
@@ -334,7 +365,9 @@ export type CommitRevealGameParts<T extends GameTypes> = {
 	 * The board store, built by the game: a poller, an indexer, anything that
 	 * satisfies the seam and stamps each loaded value with its cycle.
 	 */
-	board: (clock: CycleClock) => OnchainStateStore<T['board']>;
+	/** What the camera may show, in game units. */
+	camera: CameraConfig;
+	board: (source: BoardSource) => OnchainStateStore<T['board']>;
 	/** The game's missed-reveal reader, and whether its answer blocks a commit. */
 	missedReveal: (clock: CycleClock) => T['missedReveal'];
 	blocksCommitting: (value: MissedValueOf<T>) => boolean;
@@ -377,6 +410,10 @@ export type CommitRevealGameParts<T extends GameTypes> = {
 		holding: Readable<number | undefined>;
 	}) => Readable<LocalOf<T>>;
 	merge: ViewMerge<T['board'], LocalOf<T>, T['view']>;
+	/** The game's renderer, drawing the view. */
+	renderer: (params: {
+		viewState: ViewStateStore<T['view']>;
+	}) => GameRenderer<T['surface']>;
 	/** What a click means, in game units and unsnapped. Ignored until ready. */
 	click: (
 		position: {x: number; y: number},
@@ -394,6 +431,11 @@ export type CommitRevealGame<T extends GameTypes> = {
 	 * game's parts beside it.
 	 */
 	game: CycleClock & {
+		/**
+		 * WHO IS SIGNED IN: the account, which owns. Not who PLAYS, which is the
+		 * game's `activeIdentity`; not the local signer, which sends.
+		 */
+		identity: CoreServices['account'];
 		threePhase: Readable<ThreePhase>;
 		/** The four-part model the HUD draws: `threePhase` plus the board's lag. */
 		phase: Readable<CyclePhase>;
@@ -417,7 +459,16 @@ export type CommitRevealGame<T extends GameTypes> = {
 		identity: T['identity'];
 	}) => Promise<`0x${string}`>;
 	maxOpenableActions: Readable<number | undefined>;
-	eventEmitter: CanvasEventEmitter;
+	/**
+	 * The render seam: the camera, the game's renderer, and the canvas's events.
+	 * Nothing here names a rendering library; `T['surface']` is the game's.
+	 */
+	render: {
+		camera: CameraWatcher;
+		cameraControl: CameraControl;
+		gameRenderer: GameRenderer<T['surface']>;
+		eventEmitter: CanvasEventEmitter;
+	};
 	/** Begin the IO, the game's `start` included. Returns the teardown. */
 	start(): () => void;
 };
@@ -475,7 +526,22 @@ export function createCommitRevealGame<T extends GameTypes>(
 		contractIsTheJudge: parts.cycle.contractIsTheJudge,
 	});
 
-	const onchainState = parts.board(clock);
+	const {camera, cameraControl} = createCamera(parts.camera);
+	const {commitPhaseDuration, revealPhaseDuration} = parts.cycle.config;
+	const onchainState = parts.board({
+		...clock,
+		camera,
+		poll: (params) =>
+			createPollingOnchainState({
+				...params,
+				camera,
+				publicClient: core.publicClient,
+				cycleInfo,
+				chainTime,
+				cycleDuration: commitPhaseDuration + revealPhaseDuration,
+				fetchGate: core.chainFetchGate,
+			}),
+	});
 
 	// A comparison, not a state machine, so it cannot go stale: see
 	// `cycle-phase.ts` for the rule and the trap it avoids.
@@ -563,7 +629,6 @@ export function createCommitRevealGame<T extends GameTypes>(
 	// from the measured block time. Undefined bounds nothing: before the first
 	// sync, under a manual cycle (no deadline), or for a game with no chunks.
 	const {actionsPerReveal} = parts;
-	const {revealPhaseDuration} = parts.cycle.config;
 	const maxOpenableActions: Readable<number | undefined> =
 		actionsPerReveal === undefined
 			? readable(undefined)
@@ -630,6 +695,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 		canTakeTurnNow({setup: $setup, phase: $phase, onlyInPlayPhase}),
 	);
 
+	const gameRenderer = parts.renderer({viewState});
 	const eventEmitter = createCanvasEventEmitter();
 
 	function start() {
@@ -700,6 +766,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 
 	return {
 		game: {
+			identity: core.account,
 			chainTime,
 			cycleInfo,
 			twoPhase,
@@ -720,7 +787,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 		viewState,
 		makeSecret,
 		maxOpenableActions,
-		eventEmitter,
+		render: {camera, cameraControl, gameRenderer, eventEmitter},
 		start,
 	};
 }
