@@ -33,7 +33,6 @@
     "index": "tsx scripts/index.ts",
     "---- the read tier over what `index` folded: GraphQL at /graphql (etherfold serve) ----": "",
     "serve": "ldenv etherfold serve --db file:./data/@@MODE.db @@",
-    "compare:alpha1": "tsx oracle/2026-09-29-alpha1/compare.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "format:check": "prettier --check .",
     "format": "prettier --write ."

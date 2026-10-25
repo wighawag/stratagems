@@ -106,7 +106,6 @@
     "format": "prettier --write .",
     "svelte-check": "svelte-check",
     "serve": "ipfs-emulator --only -d build -p 8080",
-    "verify:alpha1": "playwright test -c verify/playwright.config.ts",
     "test": "npm run test:unit",
     "test:unit": "vitest run --project server && vitest run --project client",
     "test:unit:watch": "vitest"
