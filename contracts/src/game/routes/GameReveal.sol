@@ -24,8 +24,18 @@ contract GameReveal is IGameReveal, UsingGameInternal {
     }
 
     /// @inheritdoc IGameReveal
-    function acknowledgeMissedReveal(uint256 player) external {
-        _acknowledgeMissedReveal(player);
+    function acknowledgeMissedReveal(
+        uint256 player,
+        Placement[] calldata placements,
+        bytes32 secret,
+        bytes24 furtherActions
+    ) external {
+        _acknowledgeMissedReveal(player, placements, secret, furtherActions);
+    }
+
+    /// @inheritdoc IGameReveal
+    function forfeitMissedReveal(uint256 player) external {
+        _forfeitMissedReveal(msg.sender, player);
     }
 
     /// @inheritdoc IGameReveal

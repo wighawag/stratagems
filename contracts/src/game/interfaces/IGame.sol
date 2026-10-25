@@ -86,15 +86,37 @@ interface IGameReveal is UsingGameTypes {
         address payable payee
     ) external payable;
 
-    /// @notice Settle a player who never finished revealing, taking whatever
-    ///         this game puts at stake.
-    /// @dev ONE CALL, whatever the chain got to. It deliberately takes no chunk
-    ///      and no secret: what is forfeited here is the bond still earmarked
-    ///      for the part of the turn that was never opened, and the contract
-    ///      already knows that figure. See
-    ///      {UsingGameInternal-_acknowledgeMissedReveal} for why a game whose
-    ///      penalty is computed from the actions cannot do the same.
-    function acknowledgeMissedReveal(uint256 player) external;
+    /// @notice Settle one chunk of a missed reveal by showing it: the game's
+    ///         penalty for those placements is forfeited, and with the last
+    ///         chunk whatever the bond held beyond it goes back to the player.
+    /// @dev ANYONE MAY CALL IT, with the same arguments a reveal takes: the
+    ///      chain checks the chunk against the head exactly as a reveal does,
+    ///      so it can only ever cost the player what those placements would
+    ///      have cost, and nothing goes to the caller. A turn of several chunks
+    ///      is settled in as many calls, from wherever the head got to. Refused
+    ///      while the commitment's own cycle is still in progress: that is a
+    ///      reveal, not a settlement.
+    ///
+    ///      WHY IT TAKES THE CHUNKS. A bond may exceed what the turn costs,
+    ///      because a bond equal to the exact cost tells every observer how many
+    ///      placements the commitment hides. Without the chunks the contract
+    ///      cannot tell the surplus from the stake. See {forfeitMissedReveal}
+    ///      for the settlement that is not shown them.
+    function acknowledgeMissedReveal(
+        uint256 player,
+        Placement[] calldata placements,
+        bytes32 secret,
+        bytes24 furtherActions
+    ) external;
+
+    /// @notice Settle a missed reveal WITHOUT its chunks, forfeiting the whole
+    ///         bond still earmarked for it.
+    /// @param player The identity whose commitment it is; zero for the caller.
+    /// @dev ONLY THE PLAYER OR THEIR DELEGATE: a stranger could otherwise take
+    ///      a surplus the player could have recovered by settling with the
+    ///      chunks. It is the route for a player who no longer has their plan,
+    ///      and it always works: it needs nothing but the identity.
+    function forfeitMissedReveal(uint256 player) external;
 
     /// @notice Move the cycle on, if the rules already permit it.
     /// @return cycleNumber The cycle after the move.

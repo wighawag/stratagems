@@ -35,12 +35,12 @@ contract GameGetters is IGameGetters, UsingGameInternal {
     function getCommitment(
         uint256 player
     ) external view returns (Commitment memory commitment) {
-        return _commitments[player];
+        return _commitmentOf(player);
     }
 
     /// @inheritdoc IGameGetters
     function getReserve(uint256 player) external view returns (uint256 amount) {
-        return _reserve[player];
+        return _reserveOf(player);
     }
 
     /// @inheritdoc IGameGetters

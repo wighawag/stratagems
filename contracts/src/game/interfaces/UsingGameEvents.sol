@@ -2,97 +2,19 @@
 pragma solidity ^0.8.0;
 
 import "./UsingGameTypes.sol";
+import {UsingCommitRevealEvents} from "../../commit-reveal/interfaces/UsingCommitRevealEvents.sol";
 
-/// @dev `player` IS A `uint256` IN EVERY EVENT HERE, and it is the same
+/// @dev THE MECHANISM'S EVENTS ARE INHERITED from the commit-reveal base
+///      (`src/commit-reveal/`): reserve, commitment, reveal, settlement, cycle
+///      and attendance. Its reveal event carries no actions, because the base
+///      never sees them; what a reveal did to the board is {Placed}, one per
+///      placement, which is this game's.
+///
+///      `player` IS A `uint256` IN EVERY EVENT HERE, and it is the same
 ///      `uint256` the store keys by: whatever this game means by a player,
-///      never an address that a token game would have to truncate into. See
-///      {UsingGameStore} for why twenty bytes is not enough, and
-///      {UsingGameInternal-_playerOf} for where the meaning is decided.
-interface UsingGameEvents is UsingGameTypes {
-    /// @notice A player topped up the reserve they are willing to risk.
-    event ReserveDeposited(
-        uint256 indexed player,
-        uint256 amountAdded,
-        uint256 newAmount
-    );
-
-    /// @notice A player took tokens back out of their reserve.
-    event ReserveWithdrawn(
-        uint256 indexed player,
-        uint256 amountRemoved,
-        uint256 newAmount
-    );
-
-    /// @notice A player committed to a set of placements for this cycle.
-    event CommitmentMade(
-        uint256 indexed player,
-        uint64 indexed cycleNumber,
-        bytes24 commitmentHash,
-        uint256 bond
-    );
-
-    /// @notice A player withdrew their commitment before the reveal phase.
-    event CommitmentCancelled(
-        uint256 indexed player,
-        uint64 indexed cycleNumber
-    );
-
-    /// @notice A player revealed a chunk of what they had committed to.
-    /// @param commitmentHash The head this reveal opened, which for the second
-    ///        and later chunks of a turn is not the hash that was committed.
-    /// @param furtherActions The new head, or zero when this completed the turn.
-    ///        A reader that wants whole turns rather than transactions stitches
-    ///        on this: it is the only thing that distinguishes "that was all of
-    ///        it" from "there is more of this turn to come".
-    event CommitmentRevealed(
-        uint256 indexed player,
-        uint64 indexed cycleNumber,
-        bytes24 commitmentHash,
-        Placement[] placements,
-        bytes24 furtherActions,
-        uint256 cost
-    );
-
-    /// @notice A player never revealed, and lost whatever this game puts at
-    ///         stake for it.
-    /// @param forfeited How much of the BOND was taken, which is what this
-    ///        game's {UsingGameInternal-_forfeit} settles in. A game whose
-    ///        stake is not a bond reports zero here and says what it took in an
-    ///        event of its own.
-    ///
-    ///        For a turn that was PARTIALLY revealed this is what the rest of it
-    ///        would have cost, and not the whole bond: each chunk that landed
-    ///        took its own cost out of the bond as it went, so what is left to
-    ///        forfeit is exactly what was never opened.
-    event CommitmentVoid(
-        uint256 indexed player,
-        uint64 indexed cycleNumber,
-        uint256 forfeited
-    );
-
+///      never an address that a token game would have to truncate into.
+interface UsingGameEvents is UsingGameTypes, UsingCommitRevealEvents {
     /// @notice A player took a share of a cell. Cells are shared, so this does
     ///         not imply anyone lost it.
     event Placed(uint256 indexed player, uint64 indexed cellID, uint256 stake);
-
-    /// @notice The cycle moved because somebody pushed it, rather than because
-    ///         the clock said so.
-    /// @dev Emitted ONLY by {IGameReveal-advanceCycle}, which is its own
-    ///      transaction and never a rider on the last reveal. A clock-driven
-    ///      turnover emits nothing, because nothing happened on chain: that is
-    ///      the difference this event exists to make visible.
-    event CycleAdvanced(
-        uint64 indexed cycleNumber,
-        bool commiting,
-        address pushedBy
-    );
-
-    /// @notice The cycle started, or stopped, waiting for this player.
-    /// @param waitedFor Whether it now waits for them.
-    /// @param waitedForCount How many members it waits for in total, which is
-    ///        the denominator unanimity is measured against.
-    event WaitedForChanged(
-        uint256 indexed player,
-        bool waitedFor,
-        uint64 waitedForCount
-    );
 }
