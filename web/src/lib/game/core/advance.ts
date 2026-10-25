@@ -12,13 +12,13 @@
  *
  * ADVANCING IS ITS OWN TRANSACTION AND NEVER A RIDER ON THE LAST REVEAL (C5 in
  * the plan on the `work` branch, and the same three reasons are written at
- * `UsingGameInternal._advanceCycle`). It is PERMISSIONLESS AND STRICTLY
+ * `UsingCommitReveal._advanceCycle`). It is PERMISSIONLESS AND STRICTLY
  * CONDITIONAL: anyone may call it, and it may only ever do what the rules
  * already permit, so it is nobody's move. That is why this file sends it from
  * the same key that sends the player's moves and never asks them about it - it
  * spends gas on the player's behalf to keep the cycle turning, and it can never
  * spend the STAKE. (The rule it is on the right side of:
- * `acknowledgeMissedReveal` forfeits a bond and is therefore the player's to
+ * settling a missed reveal forfeits a stake and is therefore the player's to
  * press; an advance takes nothing from anyone.)
  *
  * THE CONDITIONS ARE MIRRORED HERE, AND WHETHER THAT IS SAFE DEPENDS ON A
