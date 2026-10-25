@@ -1,76 +1,75 @@
 #!/usr/bin/env node
 /**
- * Give a fresh clone of stratagems the generated files `pnpm --filter ./web check`
- * needs, from the COMMITTED alpha1 records, so the node's verify
- * (`pnpm install && pnpm --filter ./web check && pnpm --filter ./web run test:unit`)
- * passes in a worktree nobody has bootstrapped by hand.
+ * Generate what stratagems' workspaces type-check and test against, on a fresh
+ * clone or worktree, before anything is deployed: the root `prepare` runs this
+ * before the template's `ensure-deployments.mjs`.
  *
- * STRATAGEMS' OWN, not the template's: `scripts/ensure-deployments.mjs` (which
- * runs right after this, from the root `prepare`) does the same job for the
- * framework's `web/src/lib/deployments.ts` only. stratagems' app needs more than
- * that, all of it gitignored, and without it `check` reports about 30 errors
- * that name none of these files:
+ *   web/src/data/contracts.ts, web/src/lib/deployments.ts, indexer/src/contracts.ts,
+ *   helper-services/fuzd/contracts.json   (the export of the game's contracts)
+ *   common/dist, indexer/dist             (built from those)
  *
- * - `web/src/data/contracts.ts` and `indexer/src/contracts.ts`, exported from
- *   the deployment records (`pnpm contracts:export <mode>`);
- * - `common/dist` and `indexer/dist`, the two workspace packages the web app
- *   imports as `stratagems-common` and `stratagems-indexer`.
+ * FROM A THROWAWAY DEPLOY OF THE CURRENT CONTRACTS (step 10b, 2026-10-25). Until
+ * then this exported alpha1's committed records; the game is rebuilt on the
+ * commit-reveal base as a new deployment, and alpha1's ABI is not the one the code
+ * is written against any more. So it deploys the contracts to a chain that exists
+ * only for this process (`contracts/scripts/deploy-ephemeral.ts`, environment
+ * `ephemeral`), exports that, and throws the records away. Addresses are on no
+ * chain. Deploying for real (`pnpm contracts:deploy <mode>`) overwrites all four.
  *
- * `pnpm indexer:build alpha1` makes all of them, and it also writes
- * `web/src/lib/deployments.ts` (the root `contracts:export` names it), so the
- * framework is typed against the SAME chain as the app, and ensure-deployments
- * then finds the file and leaves it alone. Without this it would export whichever
- * network `readdir` returned first, and the framework would be typed against a
- * different deployment from stratagems' own code.
- *
- * WHAT IT DOES NOT DO: overwrite anything. A developer who has exported their own
- * chain (`pnpm start`, `pnpm contracts:export localhost`) keeps it. It only runs
- * when one of the files is missing, which on a developer's tree is never.
- *
- * It never fails the install, for the same reason ensure-deployments does not:
- * it says what is missing and how to make it.
+ * It does nothing when everything is already there, so a developer's own export
+ * is never replaced; and once it has written `web/src/lib/deployments.ts`,
+ * `ensure-deployments.mjs` finds it and does nothing either (it would otherwise
+ * export the first committed records it finds, which are alpha1's, kept as history).
  */
 import {execFileSync} from 'node:child_process';
-import {copyFileSync, existsSync} from 'node:fs';
+import {existsSync, rmSync} from 'node:fs';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const MODE = 'alpha1';
-
-const needed = [
+const EPHEMERAL = 'ephemeral';
+const EXPORTED = [
 	'web/src/data/contracts.ts',
 	'web/src/lib/deployments.ts',
 	'indexer/src/contracts.ts',
-	'common/dist',
-	'indexer/dist',
+	'helper-services/fuzd/contracts.json',
 ];
-const missing = needed.filter((path) => !existsSync(join(root, path)));
+const BUILT = ['common/dist', 'indexer/dist'];
+
+const missing = [...EXPORTED, ...BUILT].filter((path) => !existsSync(join(root, path)));
 if (missing.length === 0) process.exit(0);
 
-const exported = ['web/src/data/contracts.ts', 'indexer/src/contracts.ts'].every((path) =>
-	existsSync(join(root, path)),
-);
+const run = (args, timeout = 5 * 60 * 1000) => execFileSync('pnpm', args, {cwd: root, stdio: 'pipe', timeout});
 
 try {
-	if (exported) {
-		// The developer's own export stays; only the builds are missing. The
-		// framework's file is the same export of the same chain, so it is a copy.
-		if (!existsSync(join(root, 'web/src/lib/deployments.ts'))) {
-			copyFileSync(join(root, 'web/src/data/contracts.ts'), join(root, 'web/src/lib/deployments.ts'));
+	if (EXPORTED.some((path) => !existsSync(join(root, path)))) {
+		const ephemeralDir = join(root, 'contracts/deployments', EPHEMERAL);
+		try {
+			rmSync(ephemeralDir, {recursive: true, force: true});
+			// a compile on a fresh clone, then a few transactions on an instant chain
+			run(['--filter', './contracts', 'exec', 'hardhat', 'run', 'scripts/deploy-ephemeral.ts'], 10 * 60 * 1000);
+			run([
+				'--filter',
+				'./contracts',
+				'export',
+				'-e',
+				EPHEMERAL,
+				'--json',
+				'../helper-services/fuzd/contracts.json',
+				'--ts',
+				'../indexer/src/contracts.ts,../web/src/data/contracts.ts,../web/src/lib/deployments.ts',
+			]);
+		} finally {
+			rmSync(ephemeralDir, {recursive: true, force: true});
 		}
-		if (!existsSync(join(root, 'common/dist')) || !existsSync(join(root, 'indexer/dist'))) {
-			execFileSync('pnpm', ['--filter', './common', 'build'], {cwd: root, stdio: 'pipe'});
-			execFileSync('pnpm', ['--filter', './indexer', 'build'], {cwd: root, stdio: 'pipe'});
-		}
-	} else {
-		execFileSync('pnpm', ['indexer:build', MODE], {cwd: root, stdio: 'pipe', timeout: 5 * 60 * 1000});
 	}
-	const source = exported ? 'from the existing export' : `from the committed ${MODE} records`;
-	console.log(`[stratagems-generated] Generated ${missing.join(', ')} (${source}).`);
+	run(['--filter', './common', 'build']);
+	run(['--filter', './indexer', 'build']);
+	console.log(`[stratagems-generated] Generated ${missing.join(', ')} (from a throwaway deploy of the contracts).`);
 } catch (e) {
 	console.warn(
 		`[stratagems-generated] Could not generate ${missing.join(', ')}: ${e instanceof Error ? e.message : e}\n` +
-			`  Run \`pnpm indexer:build ${MODE}\` (or your own mode) before \`pnpm --filter ./web check\`.`,
+			`  Run \`pnpm --filter ./contracts exec hardhat run scripts/deploy-ephemeral.ts\` and the export by hand, ` +
+			`or deploy to your own mode, before \`pnpm --filter ./web check\`.`,
 	);
 }

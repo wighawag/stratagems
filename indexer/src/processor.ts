@@ -10,11 +10,12 @@
  * proof that they compute what the old one did over alpha1 is in
  * `../oracle/2026-09-29-alpha1/`.
  *
- * The one handler that is not a line-for-line port is `onCommitmentRevealed`: the
+ * The one handler that is not a line-for-line port is `onMovesRevealed` (alpha1's
+ * `onCommitmentRevealed`, whose moves the base's event no longer carries): the
  * old processor kept `state.placements` as an array it unshifted and popped past
  * 7. Here the window is `state.list('placement', {window}, 8)` (the only set read
  * a handler has, a bounded listing of an id prefix), keyed by the ARRIVAL of the
- * event that first saw an epoch, so the oldest arrival is the first row.
+ * event that first saw a cycle, so the oldest arrival is the first row.
  */
 import type {EntityProcessor, MutationContext} from '@etherfold/processor-entities';
 import {
@@ -29,8 +30,8 @@ import {
 import {StratagemsContractOnEntities} from './stratagems-contract.js';
 import type {StratagemsABI} from './abi.js';
 
-/** What a listed placement carries: its arrival key, and the epoch it is for. */
-type PlacementRow = {ordinal: string; epoch: number};
+/** What a listed placement carries: its arrival key, and the cycle it is for. */
+type PlacementRow = {ordinal: string; cycle: number};
 /** What a listed player carries: enough to delete it, and enough to project it. */
 type PlacementPlayerRow = {ordinal: string; position: string; moveOrdinal: string};
 
@@ -65,23 +66,52 @@ async function dropPlacement(state: MutationContext, ordinal: string): Promise<v
 	state.delete('placement', {window: WINDOW, ordinal});
 }
 
+const ZERO_BYTES24 = '0x000000000000000000000000000000000000000000000000';
+
+/** The base's identity is a `uint256`; stratagems' players are accounts, so it is an address. */
+function playerToAccount(player: bigint): `0x${string}` {
+	return `0x${player.toString(16).padStart(40, '0')}`;
+}
+
+/** The commitment after one chunk: the next head and what the bond still holds, or nothing after the last. */
+async function advanceCommitment(
+	state: MutationContext,
+	account: `0x${string}`,
+	furtherActions: `0x${string}`,
+	taken: bigint,
+): Promise<void> {
+	if (furtherActions.toLowerCase() === ZERO_BYTES24) {
+		state.delete('commitment', {account});
+		return;
+	}
+	const row = (await state.get('commitment', {account})) as {cycle: number; bond: bigint | string} | undefined;
+	if (!row) return;
+	const bond = BigInt(row.bond);
+	state.set('commitment', {account}, {cycle: Number(row.cycle), hash: furtherActions, bond: bond > taken ? bond - taken : 0n});
+}
+
 export const stratagemsProcessor: EntityProcessor<StratagemsABI> = {
 	entities: stratagemsEntities,
 
-	async onCommitmentRevealed(state, event) {
-		const epoch = Number(event.args.epoch);
-		const account = event.args.player.toLowerCase();
+	/**
+	 * The moves of one revealed chunk. The base's `CommitmentRevealed` carries no
+	 * actions (the base never sees them), so the game emits them in its own event,
+	 * between the chunk's open and its close.
+	 */
+	async onMovesRevealed(state, event) {
+		const cycle = Number(event.args.cycleNumber);
+		const account = playerToAccount(event.args.player);
 
-		// `state.placements.find(v => v.epoch === ...)`: the window is a DERIVED
-		// collection, so finding an epoch in it is one bounded listing of the seven
-		// it keeps -- no singleton remembering which epochs are in it, and no CSV.
+		// `state.placements.find(v => v.cycle === ...)`: the window is a DERIVED
+		// collection, so finding a cycle in it is one bounded listing of the seven
+		// it keeps -- no singleton remembering which cycles are in it, and no CSV.
 		const window = await state.list<PlacementRow>('placement', {window: WINDOW}, PLACEMENT_WINDOW + 1);
-		let ordinal = window.rows.find((row) => Number(row.epoch) === epoch)?.ordinal;
+		let ordinal = window.rows.find((row) => Number(row.cycle) === cycle)?.ordinal;
 		if (ordinal === undefined) {
 			// the original's `placements.unshift(...)`: appending is ONE row,
 			// because the key is the arrival rather than a dense array position.
 			ordinal = arrivalOrdinal(event);
-			state.set('placement', {window: WINDOW, ordinal}, {epoch});
+			state.set('placement', {window: WINDOW, ordinal}, {cycle});
 			if (window.rows.length >= PLACEMENT_WINDOW) {
 				// ... and its `placements.pop()`: the oldest arrival is `rows[0]`,
 				// because the ordering IS the key.
@@ -92,60 +122,62 @@ export const stratagemsProcessor: EntityProcessor<StratagemsABI> = {
 		const stratagemsContract = new StratagemsContractOnEntities(state, 7);
 		for (let moveIndex = 0; moveIndex < event.args.moves.length; moveIndex++) {
 			const move = event.args.moves[moveIndex];
-			await stratagemsContract.computeMove(event.args.player, epoch, move);
+			await stratagemsContract.computeMove(account, cycle, move);
 
-			// `cell.players.push({color, address})`, as one write. The old port's
-			// read-count / write-at-count / write-count-plus-one existed only because
-			// the child's id ended in an array index; keyed by the move's own arrival
-			// it is naturally unique, naturally ordered, and needs no count. The cell
-			// itself is not a row at all: in the original a cell is created only in
-			// order to push a player into it, so the set of cells is the set of
-			// positions among the players, derived when read.
+			// `cell.players.push({color, address})`, as one write, keyed by the
+			// move's own arrival, so it is naturally unique and ordered.
 			state.set(
 				'placementPlayer',
 				{window: WINDOW, ordinal, position: move.position.toString(), moveOrdinal: moveOrdinal(event, moveIndex)},
 				{color: move.color, address: account},
 			);
 		}
+	},
 
-		state.delete('commitment', {account});
+	/** A chunk revealed: the commitment moves to the next chunk, or is spent with the last. */
+	async onCommitmentRevealed(state, event) {
+		await advanceCommitment(state, playerToAccount(event.args.player), event.args.furtherActions, event.args.cost);
 	},
 
 	async onSinglePoke(state, event) {
 		const stratagemsContract = new StratagemsContractOnEntities(state, 7);
-		await stratagemsContract.poke(event.args.position, Number(event.args.epoch));
+		await stratagemsContract.poke(event.args.position, Number(event.args.cycleNumber));
 	},
 
 	async onMultiPoke(state, event) {
 		const stratagemsContract = new StratagemsContractOnEntities(state, 7);
 		for (const position of event.args.positions) {
-			await stratagemsContract.poke(position, Number(event.args.epoch));
+			await stratagemsContract.poke(position, Number(event.args.cycleNumber));
 		}
 	},
 
 	onCommitmentCancelled(state, event) {
-		const account = event.args.player.toLowerCase();
-		state.delete('commitment', {account});
+		state.delete('commitment', {account: playerToAccount(event.args.player)});
 	},
 
 	onCommitmentMade(state, event) {
-		const account = event.args.player.toLowerCase();
-		state.set('commitment', {account}, {epoch: Number(event.args.epoch), hash: event.args.commitmentHash});
+		state.set(
+			'commitment',
+			{account: playerToAccount(event.args.player)},
+			{cycle: Number(event.args.cycleNumber), hash: event.args.commitmentHash, bond: event.args.bond},
+		);
 	},
 
-	onCommitmentVoid(state, event) {
-		const account = event.args.player.toLowerCase();
-		state.delete('commitment', {account});
+	/** A missed reveal settled: shown a chunk (and maybe more to come), or the whole commitment at once. */
+	async onCommitmentVoid(state, event) {
+		await advanceCommitment(state, playerToAccount(event.args.player), event.args.furtherActions, event.args.forfeited);
 	},
 
 	onReserveDeposited() {},
 	onReserveWithdrawn() {},
+	onCycleAdvanced() {},
+	onWaitedForChanged() {},
 
 	// --------------------------
 
 	async onForceSimpleCells(state, event) {
 		const stratagemsContract = new StratagemsContractOnEntities(state, 7);
-		await stratagemsContract.forceSimpleCells(Number(event.args.epoch), event.args.cells as never);
+		await stratagemsContract.forceSimpleCells(Number(event.args.cycle), event.args.cells as never);
 	},
 
 	// The three reward handlers are the flat case and port one-to-one, the u256

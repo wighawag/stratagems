@@ -27,8 +27,8 @@ export type GlobalRate = {
 	totalPoints: bigint;
 };
 
-export type EpochPlacements = {
-	epoch: number;
+export type CyclePlacements = {
+	cycle: number;
 	cells: {
 		[position: string]: CellPlacements;
 	};
@@ -42,10 +42,10 @@ export type Data = {
 		[position: string]: `0x${string}`;
 	};
 	commitments: {
-		[address: string]: {epoch: number; hash: `0x${string}`};
+		[address: string]: {cycle: number; hash: `0x${string}`; bond: bigint};
 	};
 	/** Newest first, at most 7, as the old processor's array was. */
-	placements: EpochPlacements[];
+	placements: CyclePlacements[];
 	points: {
 		global: GlobalRate;
 		fixed: {

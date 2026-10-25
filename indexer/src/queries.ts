@@ -20,7 +20,7 @@
  *   Q1 every cell, with its nine fields                  `cells`          (`cell`)
  *   Q2 the owner of every cell                           `owners`         (`cellOwner`)
  *   Q3 the commitment of the connected account           `commitments`    (`commitment`, `where: {account: {eq}}`)
- *   Q4 the placements of the last 7 revealed epochs      `placements`     (`placement` + nested `players`)
+ *   Q4 the placements of the last 7 revealed cycles      `placements`     (`placement` + nested `players`)
  *   Q5 the reward state of every account, and the global `shared`, `global` (`sharedRate`, `globalRate`)
  *   Q6 the points the game logic accumulated per owner   `computedPoints` (`computedPoints`)
  *   (Q7 `fixed`, `fixedRate`: nothing in `web/` reads it; kept so the answer is the whole state)
@@ -42,7 +42,7 @@ export const LIST_LIMIT = 20_000;
 export const PLAYERS_LIMIT = 4_096;
 
 const CELL_FIELDS =
-	'position lastEpochUpdate epochWhenTokenIsAdded color life delta enemyMap distribution stake producingEpochs';
+	'position lastCycleUpdate cycleWhenTokenIsAdded color life delta enemyMap distribution stake producingCycles';
 
 /** A part of the state: one question, its root fields, and the entities whose moves invalidate it. */
 export type Part = 'cells' | 'owners' | 'commitments' | 'placements' | 'shared' | 'fixed' | 'global' | 'computedPoints';
@@ -94,12 +94,12 @@ function rootFields(part: Part, commitments: Commitments, pinned: boolean): stri
 			return `cellOwner(first: ${LIST_LIMIT}${at}) { position owner }`;
 		case 'commitments':
 			return commitments === 'one'
-				? `commitment(where: {account: {eq: $account}}, first: 1${at}) { account epoch hash }`
-				: `commitment(first: ${LIST_LIMIT}${at}) { account epoch hash }`;
+				? `commitment(where: {account: {eq: $account}}, first: 1${at}) { account cycle hash bond }`
+				: `commitment(first: ${LIST_LIMIT}${at}) { account cycle hash bond }`;
 		case 'placements':
 			return `placement(where: {window: {eq: "${WINDOW}"}}, orderBy: {field: ordinal, direction: desc}, first: ${PLACEMENT_WINDOW}${at}) {
 		ordinal
-		epoch
+		cycle
 		players(orderBy: {field: moveOrdinal, direction: asc}, first: ${PLAYERS_LIMIT}) { position moveOrdinal color address }
 	}`;
 		case 'shared':
@@ -204,15 +204,15 @@ function writeParts(data: Data, parts: ReadonlySet<Part>, answer: Record<string,
 		data.cells = {};
 		for (const row of list('cell')) {
 			data.cells[String(row.position)] = {
-				lastEpochUpdate: Number(row.lastEpochUpdate),
-				epochWhenTokenIsAdded: Number(row.epochWhenTokenIsAdded),
+				lastCycleUpdate: Number(row.lastCycleUpdate),
+				cycleWhenTokenIsAdded: Number(row.cycleWhenTokenIsAdded),
 				color: Number(row.color),
 				life: Number(row.life),
 				delta: Number(row.delta),
 				enemyMap: Number(row.enemyMap),
 				distribution: Number(row.distribution),
 				stake: Number(row.stake),
-				producingEpochs: Number(row.producingEpochs),
+				producingCycles: Number(row.producingCycles),
 			};
 		}
 	}
@@ -223,7 +223,11 @@ function writeParts(data: Data, parts: ReadonlySet<Part>, answer: Record<string,
 	if (parts.has('commitments')) {
 		data.commitments = {};
 		for (const row of list('commitment')) {
-			data.commitments[String(row.account)] = {epoch: Number(row.epoch), hash: row.hash as `0x${string}`};
+			data.commitments[String(row.account)] = {
+				cycle: Number(row.cycle),
+				hash: row.hash as `0x${string}`,
+				bond: BigInt(row.bond as string),
+			};
 		}
 	}
 	if (parts.has('placements')) {
@@ -236,7 +240,7 @@ function writeParts(data: Data, parts: ReadonlySet<Part>, answer: Record<string,
 				const cell = (cells[String(player.position)] ??= {players: []});
 				cell.players.push({color: Number(player.color), address: String(player.address)});
 			}
-			data.placements.push({epoch: Number(placement.epoch), cells});
+			data.placements.push({cycle: Number(placement.cycle), cells});
 		}
 	}
 	// a `u256` crosses as a decimal string (JSON has no bigint)

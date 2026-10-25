@@ -63,9 +63,9 @@ export function wide(value: number | bigint): string {
  * The arrival ordinal of an event: unique across the stream, ordered by arrival.
  *
  * This is the key that replaces the old port's singleton-holding-a-CSV. Arrival
- * order is NOT recoverable by sorting on `epoch` -- the original unshifts a new
- * epoch at the front and reuses an existing one in place, so the window's order
- * is the order epochs were first SEEN and epochs neither increase nor stay
+ * order is NOT recoverable by sorting on `cycle` -- the original unshifts a new
+ * cycle at the front and reuses an existing one in place, so the window's order
+ * is the order cycles were first SEEN and cycles neither increase nor stay
  * distinct across it -- which is precisely why the old port had to write the
  * order down.
  */
@@ -94,15 +94,15 @@ export const stratagemsEntities = declareEntities([
 		name: 'cell',
 		id: 'position',
 		fields: {
-			lastEpochUpdate: 'integer',
-			epochWhenTokenIsAdded: 'integer',
+			lastCycleUpdate: 'integer',
+			cycleWhenTokenIsAdded: 'integer',
 			color: 'integer',
 			life: 'integer',
 			delta: 'integer',
 			enemyMap: 'integer',
 			distribution: 'integer',
 			stake: 'integer',
-			producingEpochs: 'integer',
+			producingCycles: 'integer',
 		},
 	},
 
@@ -127,28 +127,40 @@ export const stratagemsEntities = declareEntities([
 	{
 		name: 'commitment',
 		id: 'account',
-		fields: {epoch: 'integer', hash: 'text'},
+		fields: {cycle: 'integer', hash: 'text', bond: {storage: 'blob', type: 'u256'}},
+	},
+
+	/**
+	 * The contract's `_cellsAtCycleStart`: a cell before the first move on it in
+	 * a cycle, which every move of that cycle is judged against (the rule that
+	 * makes the board independent of the order of reveals). Written by that
+	 * first move, read by the later ones.
+	 */
+	{
+		name: 'cellAtCycleStart',
+		id: 'position',
+		fields: {owner: 'text', cycle: 'integer', life: 'integer'},
 	},
 
 	/**
 	 * `state.placements[]`, an ORDERED, BOUNDED array (unshift, pop past 7).
 	 *
 	 * The child of a window, keyed by the ARRIVAL of the event that first
-	 * introduced its epoch. `{window: 'global'}` is the prefix, so the whole
+	 * introduced its cycle. `{window: 'global'}` is the prefix, so the whole
 	 * collection is one bounded listing and there is no stored array, no CSV of
 	 * positions and no singleton remembering the order. Eviction reads the
 	 * window one row wider than it keeps and drops `rows[0]`, which is the
 	 * oldest arrival: the ordering IS the key.
 	 *
-	 * `epoch` is a FIELD rather than the id, because the original's identity for
-	 * a placement is "the entry that was unshifted when this epoch was first
-	 * seen", and an epoch can leave the window and come back later as a NEW,
+	 * `cycle` is a FIELD rather than the id, because the original's identity for
+	 * a placement is "the entry that was unshifted when this cycle was first
+	 * seen", and a cycle can leave the window and come back later as a NEW,
 	 * later arrival.
 	 */
 	{
 		name: 'placement',
 		id: ['window', 'ordinal'],
-		fields: {epoch: 'integer'},
+		fields: {cycle: 'integer'},
 	},
 
 	/**
