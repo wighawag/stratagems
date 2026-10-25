@@ -1,5 +1,6 @@
 import {describe, it, expect} from 'vitest';
-import {setupNeeded} from '$lib/placement/context';
+import {setupNeeded as frameworkSetupNeeded} from '$lib/game/core/commit-reveal-game';
+import {stakeNeeded} from '$lib/placement/context';
 import type {DelegationValue} from '$lib/onchain/delegation';
 
 /**
@@ -30,6 +31,22 @@ const authorised: DelegationValue = {
 };
 
 const staked = {step: 'Loaded', amount: 100n};
+
+/**
+ * The gate as this game composes it: the framework's two ends (signed in,
+ * authorised) with the game's own stake step between them.
+ */
+function setupNeeded(params: {
+	identity: `0x${string}` | undefined;
+	delegation: DelegationValue;
+	reserve: {step: string; amount?: bigint};
+}) {
+	return frameworkSetupNeeded({
+		account: params.identity,
+		delegation: params.delegation,
+		stake: stakeNeeded(params.reserve),
+	});
+}
 
 describe('what stands between a player and their first move', () => {
 	it('asks to sign in before anything else', () => {
