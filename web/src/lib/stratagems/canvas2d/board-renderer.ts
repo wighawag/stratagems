@@ -12,23 +12,15 @@ import {createImmediateRenderer} from '$lib/game/render/immediate';
 import {visibleCells} from '$lib/game/render/view-transform';
 import type {ViewStateStore} from '$lib/view';
 import type {BoardView} from '../view';
+import {COLOURS as FACTION_COLOURS} from '../faction';
 
 /** The factions' colours, as the legacy renderer drew them (`Color` order). */
-export const COLOURS: readonly string[] = [
-	'#00000000', // None
-	'#5ab9bb', // Blue
-	'#c5836e', // Red
-	'#8bffcb', // Green
-	'#d3d66d', // Yellow
-	'#a9799d', // Purple
-	'#3d3d3d', // Evil
-];
+export const COLOURS: readonly string[] = FACTION_COLOURS.map(({hex}) => hex);
 
 export type GameSurface = CanvasRenderingContext2D;
 
 /** The canvas host this game draws on, loaded in the browser only. */
-export const loadCanvasComponent = () =>
-	import('$lib/game/render/canvas2d/Canvas2DCanvas.svelte');
+export const loadCanvasComponent = () => import('$lib/game/render/canvas2d/Canvas2DCanvas.svelte');
 
 export function createBoardRenderer(params: {
 	viewState: ViewStateStore<BoardView>;
