@@ -77,13 +77,6 @@ const config = {
 			// Not `$app`, which is SvelteKit's. An alias matches only itself or itself
 			// plus `/`, so `$app-specific` and `$app/navigation` never capture each other.
 			'$app-specific': 'src/lib/stratagems/game.ts',
-
-			// STRATAGEMS' OWN, for its legacy files only (`web/src/lib/stratagems`,
-			// which step 6c of work/plans/join-template-commit-reveal.md ports or
-			// deletes). They go with the last file that imports them.
-			'web-config': './src/web-config.json',
-			$data: './src/data',
-			$utils: './src/utils',
 		},
 		output: {
 			bundleStrategy: 'split', // code-split per route so the initial
