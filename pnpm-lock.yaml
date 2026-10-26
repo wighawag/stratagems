@@ -253,33 +253,6 @@ importers:
         specifier: ^3.60.1
         version: 3.60.1(@cloudflare/workers-types@4.20241022.0)
 
-  helper-services/missiv:
-    devDependencies:
-      ldenv:
-        specifier: ^0.3.10
-        version: 0.3.10
-      missiv-server:
-        specifier: ^0.0.11
-        version: 0.0.11(typescript@6.0.3)
-      set-defaults:
-        specifier: ^0.0.2
-        version: 0.0.2
-      wait-on:
-        specifier: ^7.2.0
-        version: 7.2.0
-      wrangler:
-        specifier: ^3.60.1
-        version: 3.60.1(@cloudflare/workers-types@4.20241022.0)
-
-  helper-services/secp256k1-db:
-    devDependencies:
-      secp256k1-db:
-        specifier: ^0.0.1
-        version: 0.0.1
-      wrangler:
-        specifier: ^3.60.1
-        version: 3.60.1(@cloudflare/workers-types@4.20241022.0)
-
   indexer:
     dependencies:
       '@etherfold/processor-entities':
@@ -1899,9 +1872,6 @@ packages:
   '@neon-rs/load@0.0.4':
     resolution: {integrity: sha512-kTPhdZyTQxB+2wpiRcFWrDcejc4JI6tkPuS7UZCG4l6Zvc5kU/gGQ/ozvHTh1XR5tS+UlfAfGuPajjzQjCiHCw==}
 
-  '@noble/ciphers@0.5.1':
-    resolution: {integrity: sha512-aNE06lbe36ifvMbbWvmmF/8jx6EQPu2HVg70V95T+iGjOuYwPpAccwAQc2HlXO2D0aiQ3zavbMga4jjWnrpiPA==}
-
   '@noble/ciphers@1.3.0':
     resolution: {integrity: sha512-2I0gnIVPtfnMw9ee9h1dJG7tp81+8Ob3OJb3Mv37rx5L40/b0i7djjCVvGOVqc9AEIQyvyu1i6ypKdFw8R8gQw==}
     engines: {node: ^14.21.3 || >=16}
@@ -1958,9 +1928,6 @@ packages:
   '@noble/hashes@2.2.0':
     resolution: {integrity: sha512-IYqDGiTXab6FniAgnSdZwgWbomxpy9FtYvLKs7wCUs2a8RkITG+DFGO1DM9cr+E3/RgADRpFjrKVaJ1z6sjtEg==}
     engines: {node: '>= 20.19.0'}
-
-  '@noble/secp256k1@2.0.0':
-    resolution: {integrity: sha512-rUGBd95e2a45rlmFTqQJYEFA4/gdIARFfuTuTqLglz0PZ6AKyzyXsEZZq7UZn8hZsvaBgpCzKKBJizT2cJERXw==}
 
   '@noble/secp256k1@2.1.0':
     resolution: {integrity: sha512-XLEQQNdablO0XZOIniFQimiXsZDNwaYgL96dZwC54Q30imSbAOFf3NKtepc+cXyuZf5Q1HCgbqgZ2UFFuHVcEw==}
@@ -4928,12 +4895,6 @@ packages:
   minisearch@6.3.0:
     resolution: {integrity: sha512-ihFnidEeU8iXzcVHy74dhkxh/dn8Dc08ERl0xwoMMGqp4+LvRSCgicb+zGqWthVokQKvCSxITlh3P08OzdTYCQ==}
 
-  missiv-server@0.0.11:
-    resolution: {integrity: sha512-Oqy3wM3k85bpMNV3gIZflPwJdLlgnOXvTfRBDW8wL07ZMpAtZE0kLSAqE16E9sjY/kFPPsBntPHeXk5Lr0Q5rg==}
-
-  missiv@0.0.9:
-    resolution: {integrity: sha512-sOOIwmK3N+23MOXmBEX/C/P7ber5zuB2H9mJ1DtvInZzw+e9nnUZY5rDmxGCjPQLJMFRNzXqhNI5lg/iiKyGRA==}
-
   mitt@3.0.1:
     resolution: {integrity: sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==}
 
@@ -5652,9 +5613,6 @@ packages:
   search-insights@2.17.2:
     resolution: {integrity: sha512-zFNpOpUO+tY2D85KrxJ+aqwnIfdEGi06UH2+xEb+Bp9Mwznmauqc9djbnBibJO5mpfUPPa8st6Sx65+vbeO45g==}
 
-  secp256k1-db@0.0.1:
-    resolution: {integrity: sha512-dckzfUEbf9EiXNSh6aSw6n5Ardh91r3mN23KK69eQYM4PnMAy8M5m0QIjgd7h9LmYXnZQl1seGCUjNWobgTxtg==}
-
   selfsigned@2.4.1:
     resolution: {integrity: sha512-th5B4L2U+eGLq1TVh7zNRGBapioSORUeymIydxgFpwww9d2qyKvtuPU2jJuHvYAwwqi2Y596QBL3eEqcPEYL8Q==}
     engines: {node: '>=10'}
@@ -6223,9 +6181,6 @@ packages:
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
     hasBin: true
-
-  valibot@0.28.1:
-    resolution: {integrity: sha512-zQnjwNJuXk6362Leu0+4eFa/SMwRom3/hEvH6s1EGf3oXIPbo2WFKDra9ymnbVh3clLRvd8hw4sKF5ruI2Lyvw==}
 
   validate-npm-package-name@5.0.1:
     resolution: {integrity: sha512-OljLrQ9SQdOUqTaQxqL5dEfZWrXExyyWsozYlAWFawPVNuD83igl7uJD2RTkNMbniIYgt8l81eCJGIdQF7avLQ==}
@@ -8371,8 +8326,6 @@ snapshots:
 
   '@neon-rs/load@0.0.4': {}
 
-  '@noble/ciphers@0.5.1': {}
-
   '@noble/ciphers@1.3.0': {}
 
   '@noble/ciphers@2.2.0': {}
@@ -8416,8 +8369,6 @@ snapshots:
   '@noble/hashes@1.8.0': {}
 
   '@noble/hashes@2.2.0': {}
-
-  '@noble/secp256k1@2.0.0': {}
 
   '@noble/secp256k1@2.1.0': {}
 
@@ -9729,10 +9680,6 @@ snapshots:
       typescript: 5.4.5
       zod: 3.25.76
 
-  abitype@1.2.3(typescript@6.0.3):
-    optionalDependencies:
-      typescript: 6.0.3
-
   abitype@1.2.3(typescript@6.0.3)(zod@3.25.76):
     optionalDependencies:
       typescript: 6.0.3
@@ -9742,10 +9689,6 @@ snapshots:
     optionalDependencies:
       typescript: 5.4.5
       zod: 3.25.76
-
-  abitype@1.3.0(typescript@6.0.3):
-    optionalDependencies:
-      typescript: 6.0.3
 
   abitype@1.3.0(typescript@6.0.3)(zod@3.25.76):
     optionalDependencies:
@@ -11756,25 +11699,6 @@ snapshots:
 
   minisearch@6.3.0: {}
 
-  missiv-server@0.0.11(typescript@6.0.3):
-    dependencies:
-      '@noble/ciphers': 0.5.1
-      '@noble/curves': 1.3.0
-      '@noble/hashes': 1.3.3
-      '@noble/secp256k1': 2.0.0
-      missiv: 0.0.9
-      valibot: 0.28.1
-      viem: 2.57.1(typescript@6.0.3)
-    transitivePeerDependencies:
-      - bufferutil
-      - typescript
-      - utf-8-validate
-      - zod
-
-  missiv@0.0.9:
-    dependencies:
-      valibot: 0.28.1
-
   mitt@3.0.1: {}
 
   mkdirp@0.5.1:
@@ -11942,21 +11866,6 @@ snapshots:
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.4.5
-    transitivePeerDependencies:
-      - zod
-
-  ox@0.14.45(typescript@6.0.3):
-    dependencies:
-      '@adraffy/ens-normalize': 1.11.0
-      '@noble/ciphers': 1.3.0
-      '@noble/curves': 1.9.1
-      '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.7.0
-      '@scure/bip39': 1.6.0
-      abitype: 1.3.0(typescript@6.0.3)
-      eventemitter3: 5.0.1
-    optionalDependencies:
-      typescript: 6.0.3
     transitivePeerDependencies:
       - zod
 
@@ -12522,10 +12431,6 @@ snapshots:
   scrypt-js@3.0.1: {}
 
   search-insights@2.17.2: {}
-
-  secp256k1-db@0.0.1:
-    dependencies:
-      '@ethersproject/wallet': 5.7.0
 
   selfsigned@2.4.1:
     dependencies:
@@ -13116,8 +13021,6 @@ snapshots:
 
   uuid@8.3.2: {}
 
-  valibot@0.28.1: {}
-
   validate-npm-package-name@5.0.1: {}
 
   vaul-svelte@1.0.0-next.7(svelte@5.57.1):
@@ -13161,23 +13064,6 @@ snapshots:
       ws: 8.21.0
     optionalDependencies:
       typescript: 5.4.5
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-      - zod
-
-  viem@2.57.1(typescript@6.0.3):
-    dependencies:
-      '@noble/curves': 1.9.1
-      '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.7.0
-      '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@6.0.3)
-      isows: 1.0.7(ws@8.21.0)
-      ox: 0.14.45(typescript@6.0.3)
-      ws: 8.21.0
-    optionalDependencies:
-      typescript: 6.0.3
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate

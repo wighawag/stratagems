@@ -41,8 +41,6 @@
 		"indexer:build": "ldenv pnpm run contracts:export @@MODE ~~ pnpm run --filter ./common build ~~ pnpm run --filter ./indexer build ~~ @@",
 		"indexer:index": "ldenv pnpm run indexer:build @@MODE ~~ pnpm --filter ./indexer index --mode @@MODE -n @@ETH_NODE_URI_:MODE,ETH_NODE_URI@:''@: ~~ @@",
 		"fuzd:dev": "pnpm --filter ./helper-services/fuzd dev",
-		"sync:dev": "pnpm --filter ./helper-services/secp256k1-db dev",
-		"missiv:dev": "pnpm --filter ./helper-services/missiv dev",
 		"---------------------- DOCS ----------------------": "",
 		"docs:dev": "pnpm contracts:docs && vitepress dev docs",
 		"docs:build": "pnpm contracts:docs && vitepress build docs",

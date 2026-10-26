@@ -77,7 +77,7 @@ export function extraPlugins(): PluginOption[] {
 		{
 			name: 'stratagems-config',
 			config: () => ({
-				// the indexer worker (src/lib/stratagems/state/indexer.worker.ts) is a MODULE worker
+				// the indexer worker (src/lib/stratagems/board/indexer.worker.ts) is a MODULE worker
 				worker: {format: 'es'},
 				// stratagems' build was unminified (the template's minifies); kept as it
 				// was by the merge, so the alpha1 build changes only by what the merge
