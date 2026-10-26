@@ -1,0 +1,573 @@
+import {expect, type Page} from '@playwright/test';
+import {
+	WRITE_FUNCTION,
+	executeButton,
+	selectContract,
+	writeForm,
+} from './contracts-page';
+
+/**
+ * A wallet that HOLDS a transaction request until the test lets it go.
+ *
+ * WHY THE SUITE NEEDED THIS. Every other e2e drives the burner wallet, which
+ * answers instantly and, worse, is deliberately suppressed from the "Wallet
+ * Action Required" prompt (see `isBurnerWalletInSelectionPhase` and
+ * `work/notes/observations/wallet-action-required-modal-not-seen.md`). So the
+ * entire window this app's in-flight machinery exists for, between dispatching
+ * `eth_sendTransaction` and hearing back, could not be entered by a test at all.
+ * A bug that lost a real transaction in that window shipped past 40 e2e tests
+ * and 581 unit tests because nothing could stand in it long enough to click.
+ *
+ * This is a real EIP-6963 wallet as far as the app is concerned: it announces
+ * itself, answers reads by forwarding them to the node, and signs nothing it
+ * does not have to. The one difference is that `eth_sendTransaction` parks until
+ * {@link approveTransaction} is called, and then really is forwarded, so the
+ * transaction genuinely lands on chain and everything downstream is real.
+ *
+ * The node's accounts are unlocked (hardhat), so forwarding is enough and the
+ * fixture needs no key material.
+ */
+
+export const STALLING_WALLET_NAME = 'Stalling Test Wallet';
+
+/**
+ * The accounts it can sign as, ONE PER SUITE.
+ *
+ * Hardhat's #9 and #8, chosen to sit well clear of both lists that matter:
+ * `e2e/impersonate-addresses.json` (what the burner offers, one per suite that
+ * sends) and anything in the env files. Two suites sending from one account race
+ * for its nonce, and that surfaces as an unrelated test failing on a transaction
+ * that never appeared.
+ *
+ * A POOL RATHER THAN ONE ADDRESS, because this fixture is the only way into the
+ * window between dispatch and answer, so more than one suite legitimately wants
+ * it. It was a single account while one suite used it, and the second suite
+ * turned that into a nonce race; `test/e2e-account-claims.test.ts` now checks
+ * the claims here the same way it checks `walletAccountIndex` for burners.
+ */
+export const STALLING_WALLET_ACCOUNTS = [
+	'0xa0Ee7A142d267C1f36714E4a8F75612F20a79720',
+	'0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f',
+] as const;
+
+/** The default account, for a suite that does not ask for a particular one. */
+export const STALLING_WALLET_ACCOUNT = STALLING_WALLET_ACCOUNTS[0];
+
+/**
+ * Install the wallet before any app code runs.
+ *
+ * Must be called before the page navigates: the app listens for
+ * `eip6963:announceProvider` during startup, and a wallet that announces itself
+ * after that is simply not there.
+ */
+export async function installStallingWallet(
+	page: Page,
+	options: {
+		nodeUrl: string;
+		/**
+		 * Which of {@link STALLING_WALLET_ACCOUNTS} this suite signs as. One suite
+		 * per index: the claim is checked by `test/e2e-account-claims.test.ts`,
+		 * which reads the call sites, so a second suite taking a claimed index fails
+		 * there rather than as a stranger's transaction going missing.
+		 */
+		stallingAccountIndex?: number;
+	},
+): Promise<void> {
+	const account = STALLING_WALLET_ACCOUNTS[options.stallingAccountIndex ?? 0];
+	if (!account) {
+		throw new Error(
+			`no stalling-wallet account ${options.stallingAccountIndex}: ` +
+				`${STALLING_WALLET_ACCOUNTS.length} are configured`,
+		);
+	}
+	await page.addInitScript(
+		({nodeUrl, account, name}) => {
+			const held: {resolve?: () => Promise<void>} = {};
+			// A REAL WALLET ANSWERS `eth_accounts` WITH NOTHING WHEN IT IS LOCKED, and
+			// tells listeners so. This used to be a constant and `on` was a no-op, which
+			// made one whole class of behaviour untestable: everything that happens when
+			// wallet state is REBUILT under a request that is still outstanding. That is
+			// the transition that erased `pendingRequests` in @etherplay/connect before
+			// 0.10.0, and the reason the bug reached real users is that no test could
+			// stand in it. See lockWallet/unlockWallet below.
+			let locked = false;
+			const listeners = new Map<string, Set<(payload: unknown) => void>>();
+			const emit = (event: string, payload: unknown) => {
+				for (const listener of listeners.get(event) ?? []) listener(payload);
+			};
+			// Node calls this wallet is waiting on RIGHT NOW, by method, with the
+			// moment each started. Everything except the parked send and the
+			// signatures is forwarded to the node with a bare `fetch`, so a node that
+			// is slow (four workers against one hardhat) or gone looks IDENTICAL from
+			// the outside to an app that never asked the wallet for anything: the
+			// modal is up, the page says it is sending, and nothing is held. Naming
+			// what it is waiting on is the difference between a five-minute mystery
+			// and a one-line answer.
+			const inFlight = new Map<number, {method: string; startedAt: number}>();
+			(window as any).__stallingWallet = {
+				/** Whether a transaction request is parked right now. */
+				isHolding: () => !!held.resolve,
+				/** What the wallet is waiting on the node for, oldest first. */
+				waitingOn: () =>
+					[...inFlight.values()]
+						.sort((a, b) => a.startedAt - b.startedAt)
+						.map((call) => ({
+							method: call.method,
+							forMs: Math.round(performance.now() - call.startedAt),
+						})),
+				/** Let the parked transaction through to the node. */
+				approve: async () => {
+					if (!held.resolve) throw new Error('no transaction is being held');
+					await held.resolve();
+				},
+				/**
+				 * The user locked their wallet. Accounts go away and listeners are told,
+				 * which is what makes the connection library rebuild its wallet state.
+				 *
+				 * Anything already parked STAYS PARKED, exactly as a real wallet does: a
+				 * request the wallet is holding does not evaporate because the user
+				 * locked the screen, and the whole point of the transition is that the
+				 * app must not forget it either.
+				 */
+				lock: () => {
+					locked = true;
+					emit('accountsChanged', []);
+				},
+				/** The user unlocked it again. */
+				unlock: () => {
+					locked = false;
+					emit('accountsChanged', [account]);
+				},
+				/** Hashes this wallet has actually broadcast. */
+				sent: [] as string[],
+			};
+
+			let id = 0;
+			async function rpc(method: string, params: unknown[]) {
+				const callId = ++id;
+				inFlight.set(callId, {method, startedAt: performance.now()});
+				try {
+					const res = await fetch(nodeUrl, {
+						method: 'POST',
+						headers: {'Content-Type': 'application/json'},
+						body: JSON.stringify({
+							id: callId,
+							jsonrpc: '2.0',
+							method,
+							params: params ?? [],
+						}),
+					});
+					const json = await res.json();
+					if (json.error) {
+						throw Object.assign(new Error(json.error.message), {
+							code: json.error.code,
+						});
+					}
+					return json.result;
+				} finally {
+					inFlight.delete(callId);
+				}
+			}
+
+			const provider = {
+				on(event: string, listener: (payload: unknown) => void) {
+					let set = listeners.get(event);
+					if (!set) listeners.set(event, (set = new Set()));
+					set.add(listener);
+				},
+				removeListener(event: string, listener: (payload: unknown) => void) {
+					listeners.get(event)?.delete(listener);
+				},
+				async request({method, params}: {method: string; params?: unknown[]}) {
+					if (method === 'eth_accounts') {
+						return locked ? [] : [account];
+					}
+					if (method === 'eth_requestAccounts') {
+						// Asking to connect is what unlocks a real wallet: the extension
+						// puts up its password prompt and the user answers it. Modelling
+						// that as "the request succeeds" is what makes the reconnect path
+						// reachable at all, and it is the honest behaviour rather than a
+						// shortcut: a locked wallet that refused forever could never be
+						// driven past this point by any test.
+						locked = false;
+						return [account];
+					}
+					if (method === 'wallet_switchEthereumChain') return null;
+					if (
+						method === 'personal_sign' ||
+						method === 'eth_sign' ||
+						method === 'eth_signTypedData_v4'
+					) {
+						// Never reached by a wallet-only target step, and a fake signature
+						// is safer than a real one: nothing here should be able to
+						// authenticate as this account anywhere else.
+						return '0x' + '11'.repeat(65);
+					}
+					if (method === 'eth_sendTransaction') {
+						return new Promise((resolve, reject) => {
+							held.resolve = async () => {
+								held.resolve = undefined;
+								try {
+									const hash = await rpc('eth_sendTransaction', params ?? []);
+									(window as any).__stallingWallet.sent.push(hash);
+									resolve(hash);
+								} catch (err) {
+									reject(err);
+								}
+							};
+						});
+					}
+					return rpc(method, params ?? []);
+				},
+			};
+
+			const detail = Object.freeze({
+				info: {
+					uuid: 'f1e2d3c4-b5a6-4978-8a9b-0c1d2e3f4a5b',
+					name,
+					icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciLz4=',
+					rdns: 'test.jollyroger.stalling',
+				},
+				provider,
+			});
+			const announce = () =>
+				window.dispatchEvent(
+					new CustomEvent('eip6963:announceProvider', {detail}),
+				);
+			window.addEventListener('eip6963:requestProvider', announce);
+			announce();
+		},
+		{
+			nodeUrl: options.nodeUrl,
+			account,
+			name: STALLING_WALLET_NAME,
+		},
+	);
+}
+
+/** Whether the wallet is currently holding a transaction request. */
+export function isHoldingTransaction(page: Page): Promise<boolean> {
+	return page.evaluate(() => (window as any).__stallingWallet.isHolding());
+}
+
+/** The user finally approves in their wallet. The transaction really is sent. */
+export async function approveHeldTransaction(page: Page): Promise<void> {
+	await page.evaluate(() => (window as any).__stallingWallet.approve());
+}
+
+/**
+ * The user locks their wallet, WITHOUT the wallet dropping what it is holding.
+ *
+ * The way into the transition that erased `pendingRequests` upstream. A send
+ * against a locked wallet raises the connection flow, so `connect()` runs while
+ * the wallet is still holding the transaction and rebuilds wallet state
+ * underneath it; every rebuild used to assert `pendingRequests: []`, and it
+ * erased the request permanently because the list is only written on request
+ * events and the next event for a request is the one that ends it.
+ *
+ * Nothing here is a mock of that bug: this drives a real wallet through a real
+ * lock, and what the app then believes is the library's answer.
+ */
+export async function lockStallingWallet(page: Page): Promise<void> {
+	await page.evaluate(() => (window as any).__stallingWallet.lock());
+}
+
+/** The user unlocks it again, still without dropping the parked request. */
+export async function unlockStallingWallet(page: Page): Promise<void> {
+	await page.evaluate(() => (window as any).__stallingWallet.unlock());
+}
+
+/** Hashes this wallet has broadcast, for asserting a transaction was real. */
+export function sentHashes(page: Page): Promise<string[]> {
+	return page.evaluate(() => (window as any).__stallingWallet.sent as string[]);
+}
+
+/** What the wallet is waiting on the node for, for a failure message. */
+export function walletWaitingOn(
+	page: Page,
+): Promise<{method: string; forMs: number}[]> {
+	return page.evaluate(() => (window as any).__stallingWallet.waitingOn());
+}
+
+/**
+ * What the transaction {@link sendAndStall} dispatches is CALLED, in the words
+ * the app puts on screen for it.
+ *
+ * Exported next to the walk that sends it, because it is the same fact: change
+ * which write the walk drives and this changes with it. A suite that asserts the
+ * app named what it is sending (the sending notice does) reads it from here
+ * rather than repeating a literal - `setMessage` is the template's
+ * GreetingsRegistry, and a descendant that does not deploy it inherited an
+ * assertion for a function it never calls, which is this app: it sends
+ * `addToReserve`, and the inherited literal made a passing notice look like a
+ * broken one.
+ *
+ * The same name as `WRITE_FUNCTION` in `./contracts-page`, minus the mutability
+ * the contracts page prints beside it, because the sending notice shows the
+ * function and the contracts page shows the signature.
+ */
+export const STALLED_SEND_NAME = 'addToReserve';
+
+/**
+ * Get this app to hand the stalling wallet a transaction, and leave it holding
+ * it. Call {@link installStallingWallet} first: the wallet has to be announced
+ * before the app starts looking.
+ *
+ * ONE PLACE, BECAUSE THE ROUTE TO THAT WINDOW IS AN APP'S OWN BUSINESS. Two
+ * suites need a wallet that is holding something (the escape hatch and the
+ * sending indicator), and both used to open-code the same walk: pick the page,
+ * fill it, submit, choose the wallet, wait. That is the shape `e2e/routes.ts`
+ * exists to prevent, and it rotted the same way: a descendant that sends through
+ * a LOCAL SIGNER has no wallet in the demo page's Send at all, so the walk has
+ * to change, and when only one of the two copies was adapted the other spent
+ * thirty seconds waiting for a wallet that was never going to be asked. It did
+ * not look like a stale test either; it looked like the indicator was broken.
+ *
+ * So a descendant overrides THIS function and inherits both suites. What it must
+ * end up in is the only part that is fixed: a wallet holding a request, with
+ * nothing else on screen waiting on the test.
+ *
+ * The two tolerances below are here for the same reason, and both are inert in
+ * this app:
+ *
+ * - the wallet LIST may be collapsed behind one button when the app also offers
+ *   email or social sign-in, so the picker is two clicks rather than one
+ *   (`walletEntryMode`).
+ * - the flow may stop at "Confirm sign in" before it asks the wallet for
+ *   anything, in an app that signs in rather than merely connecting. Skipping
+ *   that click leaves the connection parked there forever, no request ever
+ *   reaches the wallet, and the failure surfaces as a timeout three assertions
+ *   later.
+ *
+ * Both are written as "click it if it is there" rather than as a branch on which
+ * app this is, so this file stays the same in a descendant that only adds one of
+ * them. NEITHER MAY COST TIME IT DOES NOT NEED: a caller measures from the
+ * moment this returns, so a fixed "wait 2s in case a sign-in modal appears"
+ * spends the delay the sending notice is being timed against, and the suite
+ * fails claiming the app was too fast. See {@link waitUntilHolding}.
+ */
+export async function sendAndStall(
+	page: Page,
+	options?: {
+		/**
+		 * A distinctive value to send, for a caller that will later assert THEIR
+		 * input survived. Optional, and that is the interface working rather than
+		 * a convenience.
+		 *
+		 * WHAT IT IS HAS TO BE THE APP'S BUSINESS, not the caller's. This app
+		 * fills `addToReserve`'s PLAYER argument, which is a `uint256` (the
+		 * contract keys players by number and never by address - see
+		 * `IGame.sol`), so a caller that passes one must pass digits. It used to
+		 * be an address, and a suite that hardcoded 'sending indicator' there
+		 * filled an invalid field, so the form never submitted and nothing ever
+		 * reached the wallet - the same failure this whole helper exists to stop,
+		 * one layer in. A suite that does not care omits it and gets whatever this
+		 * app can send; a suite that does care is a suite already adapted per app,
+		 * and passes something valid here.
+		 */
+		input?: string;
+	},
+): Promise<void> {
+	// THROUGH /contracts AND THIS APP'S OWN WRITE, which is the override the
+	// template's version was written to receive, and it differs from the template
+	// in two ways rather than one.
+	//
+	// THE PAGE. This app posts through a LOCAL SIGNER: the demo page's Send is
+	// signed with a key the app already holds, so it never reaches the user's
+	// wallet and a stalling wallet cannot stand in that window, because for that
+	// page the window does not exist. The ACCOUNT executor still goes to the
+	// wallet, and `/contracts` calls it directly.
+	//
+	// THE FUNCTION. `addToReserve` is THIS app's contract, and the same write
+	// contracts.e2e.ts drives, for the same reason: it exists on the deployed
+	// Game and needs no set-up. It used to be `setMessage`, inherited from the
+	// template's GreetingsRegistry, which this app does not deploy - so the form
+	// was never found and the suite failed here rather than at anything it is
+	// about.
+	//
+	// Stated HERE rather than in a suite, because two suites need it and stating
+	// it in one of them is precisely how the other spent thirty seconds waiting
+	// for a wallet that was never going to be asked.
+	await page.goto('/contracts');
+
+	// This page's write only reaches a wallet once the app has hydrated;
+	// clicking through before that opens the connect modal instead of
+	// dispatching, and then there is no held transaction to stop waiting for.
+	//
+	// THE WEAK WAIT ON PURPOSE, not `waitForAppReady`. `data-connected` is FALSE
+	// here and stays false - nothing is connected yet, and this walk is what
+	// connects it, by choosing the stalling wallet below. All that is needed is
+	// that the navbar has an OPINION, i.e. it hydrated. Waiting for the
+	// connection to settle instead (which is what waitForAppReady is for, and
+	// what the offline tests genuinely need) costs this walk the whole
+	// connection round trip up front, and under a full parallel run against one
+	// node that pushed the first test of the escape-hatch suite past its
+	// two-minute budget while the app sat there saying "Executing...".
+	await expect(page.locator('[data-testid="wallet-status"]')).toHaveAttribute(
+		'data-connected',
+		/true|false/,
+		{timeout: 30_000},
+	);
+
+	// ASK FOR THE CONTRACT rather than trusting the page to open on it. It opens
+	// on whichever sorts first, which is `Game` here and is not a guarantee: a
+	// branch that adds a contract sorting before it moves the page, and the walk
+	// below would then look for a write on a contract nobody selected.
+	await selectContract(page);
+
+	const writeTab = page.getByRole('tab', {name: 'Write'});
+	await expect(writeTab).toBeVisible({timeout: 30_000});
+	await writeTab.click();
+
+	await expect(page.getByText(WRITE_FUNCTION)).toBeVisible({timeout: 30_000});
+
+	// BOTH inputs: `addToReserve(uint256 player, uint256 amount)`. Filling only
+	// the amount left the player undefined and viem threw before anything
+	// reached the wallet, so there was never a held transaction to stop waiting
+	// for.
+	//
+	// THE AMOUNT IS ALWAYS ZERO. A real amount reverts without a token allowance,
+	// and the app declines to send a call it can see will fail, so nothing ever
+	// reaches the wallet. The caller's distinctive value therefore goes in the
+	// PLAYER, which is not validated against anything: `options.input` is
+	// whatever the caller needs to recognise later, and here that is a number.
+	//
+	// BOTH ARGUMENTS ARE NUMBERS NOW, and the player used to be an address. The
+	// signature changed when the identity stopped being an account (see
+	// `game/identity.ts` and `_playerOf`), and this fixture is what noticed:
+	// nothing else in the tree looks at a form field's type.
+	const numbers = writeForm(page).getByPlaceholder('Enter number or 0x...');
+	// Zero when a caller does not care: `amount` is zero, so this call is
+	// harmless whoever it names, and it is never mined anyway.
+	await numbers.first().fill(options?.input ?? '0');
+	await numbers.nth(1).fill('0');
+	await executeButton(page).click();
+
+	await chooseStallingWallet(page);
+
+	// The wallet now has the transaction and is not answering, which is the state
+	// a user gets stuck in. `waitUntilHolding` also clicks through "Confirm sign
+	// in", which THIS app always shows: the flow parks at WalletConnected until
+	// the user says yes, and skipping it leaves the connection there forever with
+	// no request ever reaching the wallet.
+	await waitUntilHolding(page);
+}
+
+/**
+ * Pick this wallet out of however the app is offering wallets today.
+ *
+ * With several wallets and nothing else to sign in with, the list is shown
+ * directly; sharing the modal with email or social collapses it behind one
+ * button instead of drowning them. Waiting for EITHER and clicking through when
+ * the button is there keeps one helper correct for both.
+ */
+export async function chooseStallingWallet(page: Page): Promise<void> {
+	const walletEntry = page.getByRole('button', {name: /^connect a wallet$/i});
+	const stallingWallet = page.getByRole('button', {
+		name: new RegExp(STALLING_WALLET_NAME, 'i'),
+	});
+
+	await expect(walletEntry.or(stallingWallet).first()).toBeVisible({
+		timeout: 30_000,
+	});
+	if (await walletEntry.isVisible().catch(() => false)) {
+		await walletEntry.click();
+	}
+	await stallingWallet.click({timeout: 30_000});
+}
+
+/**
+ * How long ONE attempt at the sign-in click may run before it is abandoned.
+ *
+ * Generous, because it costs the caller nothing: the click does not block the
+ * poll (see {@link waitUntilHolding}), so this only bounds how long a doomed
+ * attempt lingers before another may be made.
+ */
+const SIGN_IN_CLICK_TIMEOUT = 5_000;
+
+/**
+ * Wait until the wallet is holding the request, confirming sign-in on the way if
+ * this app asks for it.
+ *
+ * RACED, NOT SEQUENCED, and that is the whole design of it. "Click Sign In if it
+ * shows up within 2s, then wait for the wallet" is the obvious version and it is
+ * wrong twice: it burns two seconds in an app that never asks, and two seconds
+ * is not obviously enough in one that does, under load. Watching for both
+ * outcomes at once costs nothing when the wallet is asked directly, and waits as
+ * long as it takes when a modal is in the way.
+ *
+ * An app that signs in parks at "Confirm sign in" until the user says yes, and
+ * the stalling wallet answers the sign-in signature with a fixed fake one
+ * (nothing verifies it locally: it is entropy for deriving a signer, and a real
+ * key here would let this fixture authenticate as that account elsewhere).
+ */
+async function waitUntilHolding(page: Page, timeout = 60_000): Promise<void> {
+	const signIn = page.getByRole('button', {name: /^sign in$/i});
+	const deadline = Date.now() + timeout;
+	/** Whether an attempt is already running, so they cannot pile up. */
+	let clickInFlight = false;
+
+	while (Date.now() < deadline) {
+		// Asked FIRST on every pass, so the loop returns the instant the wallet has
+		// it and a caller's clock starts as close to the dispatch as it can.
+		if (await isHoldingTransaction(page).catch(() => false)) return;
+		if (!clickInFlight && (await signIn.isVisible().catch(() => false))) {
+			// NOT AWAITED, AND BOUNDED, and it has to be both.
+			//
+			// BOUNDED, because an unbounded click does not lose a race, it WAITS for
+			// it. `isVisible` is a snapshot and the modal closes the moment sign-in
+			// succeeds, so the button is routinely gone by the time the click resolves
+			// its locator; Playwright then auto-waits for a "Sign in" button to come
+			// back, and with no timeout that wait has no end. Measured at `count=0,
+			// visible=false`, still waiting 117 seconds later, with the `catch` never
+			// firing because nothing ever rejected. The loop therefore never got back
+			// to its own `deadline`, the diagnostic below could never run, and the
+			// test died on Playwright's own timeout naming `waitForTimeout` and
+			// explaining nothing - which is what made both suites that come through
+			// here look like node contention for as long as they did.
+			//
+			// NOT AWAITED, because awaiting it spends the caller's clock. A bound
+			// alone fixed the hang and broke the sending indicator instead: the
+			// transaction is dispatched WHILE the doomed click is still timing out, so
+			// the loop noticed the wallet was holding several seconds late, by which
+			// time the notice under test had already appeared and the suite failed
+			// claiming it was up too early. That is the trap this file's header names
+			// ("NEITHER MAY COST TIME IT DOES NOT NEED"), reached from the other side.
+			// Left in flight, the poll above stays tight and returns on the very pass
+			// the wallet is handed the request.
+			//
+			// One at a time, so a button that never becomes clickable cannot pile up
+			// attempts. A click still running when this returns is harmless: nothing
+			// later in these suites renders a "Sign in" button, so it simply times out
+			// unobserved, and its rejection is already swallowed.
+			clickInFlight = true;
+			void signIn
+				.click({timeout: SIGN_IN_CLICK_TIMEOUT})
+				.catch(() => {})
+				.finally(() => {
+					clickInFlight = false;
+				});
+		}
+		await page.waitForTimeout(100);
+	}
+
+	// What the wallet itself was doing, because the three explanations look
+	// identical from the page: a flow parked on a step nobody answered, an app
+	// that does not send through the wallet here at all, and a wallet waiting on a
+	// node that is not keeping up. Only the last one names an RPC method.
+	const waiting = await walletWaitingOn(page).catch(() => []);
+	throw new Error(
+		`the stalling wallet was never handed a transaction within ${timeout}ms.\n` +
+			`The wallet is waiting on the node for: ${
+				waiting.length === 0
+					? 'nothing (so the app never got as far as asking it)'
+					: waiting.map((c) => `${c.method} (${c.forMs}ms)`).join(', ')
+			}.\n` +
+			`Nothing waiting means the flow is parked on a step this helper does ` +
+			`not know how to answer, or this app does not send through the user's ` +
+			`wallet here at all - a descendant that signs with a key of its own has ` +
+			`to point sendAndStall at a page that does. A method waiting for many ` +
+			`seconds means the node is the bottleneck, and the lever is the worker ` +
+			`count in playwright.config.ts, not this timeout.`,
+	);
+}

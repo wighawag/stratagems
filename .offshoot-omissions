@@ -122,15 +122,14 @@ web/test/lib/embedded/deployments.test.ts
 web/test/lib/game/render/canvas2d.svelte.test.ts
 web/test/lib/context/resume-on-gas.test.ts
 web/test/lib/context/setup-gate.test.ts
-# The reference game's e2e suite, its fixtures and its runner, and the unit test
-# that audits that suite's accounts. stratagems is a compile-only member of the
-# tree: the node's verify is check and unit, not e2e (decision 4 of the plan), and
-# stratagems' own browser test was web/verify (verify:alpha1), which left with
-# alpha1's support in step 10b (it is at the tag alpha1-final).
-web/e2e
-web/playwright.config.ts
-scripts/run-e2e-tests.sh
-web/test/e2e-account-claims.test.ts
+# The reference game's e2e suites and its fixture. Since step 6b (2026-10-26)
+# stratagems runs the template's harness and its framework suites, with its own
+# cycle suite (e2e/tests/stratagems.e2e.ts, e2e/fixtures/stratagems.ts) in place
+# of these, which play the reference game. FOR EVER, like the game.
+web/e2e/tests/game.e2e.ts
+web/e2e/tests/offline.e2e.ts
+web/e2e/tests/out-of-gas.e2e.ts
+web/e2e/fixtures/game.ts
 
 # ---------------------------------------------------------------------------
 # 3. THE TEMPLATE'S APP SHELL: EMPTY since step 6b (2026-10-26). Until then

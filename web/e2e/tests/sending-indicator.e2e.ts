@@ -1,0 +1,148 @@
+import {test, expect, describe} from '../fixtures/test';
+import {
+	approveHeldTransaction,
+	installStallingWallet,
+	sendAndStall,
+	STALLED_SEND_NAME,
+} from '../fixtures/stalling-wallet';
+
+/**
+ * The two rungs that explain the browser's unload prompt, driven through the
+ * only window they live in.
+ *
+ * WHY THIS NEEDS THE STALLING WALLET. Both surfaces exist between dispatching a
+ * transaction and hearing back, and the burner answers that in milliseconds, so
+ * with the burner there is nothing to stand in. This fixture parks the request
+ * until the test releases it, which is also the shape of the case the delayed
+ * rung is FOR: a wallet that is thinking.
+ *
+ * WHAT WOULD OTHERWISE ROT. The design rests on one property that no unit test
+ * can see, because it is about what is on the page: the wordless pulse is up
+ * IMMEDIATELY (a `beforeunload` dialog freezes the renderer, so anything painted
+ * later is never painted at all), and the sentence waits, so a routine send is
+ * silent. Timings are asserted as an ORDER and a floor rather than a window: a
+ * loaded CI box can be slow, and a test that fails then would be measuring the
+ * machine rather than the app.
+ */
+describe('Explaining a dispatch in flight', () => {
+	// Serial within the file, and on its OWN stalling account (index 1, claimed
+	// below and checked by test/e2e-account-claims.test.ts), so it races neither
+	// itself nor the escape-hatch suite for a nonce.
+	describe.configure({mode: 'serial'});
+
+	// SLOW BY NATURE IN THIS APP, so the budget is tripled rather than the run
+	// being made quieter.
+	//
+	// Every test here walks the whole way to a wallet holding a transaction:
+	// load `/contracts` (which in this app renders a large game contract and
+	// reads it), connect, sign in, then send. That is the heaviest walk in the
+	// suite, it is almost entirely chain round-trips, and it shares ONE hardhat
+	// node with every other worker (see the workers note in
+	// playwright.config.ts, which caps them for the same reason).
+	//
+	// WHAT THIS PARAGRAPH USED TO SAY WAS WRONG, and it is corrected in place
+	// because it was confident, detailed, and it sent the next person down a dead
+	// end. It read: whichever of the two stalling-wallet suites met the node at a
+	// bad moment ran past two minutes, sitting on "Executing..." with the send
+	// waiting on RPC; at 4 workers that was the escape hatch, at 3 the sending
+	// indicator; the signature of contention.
+	//
+	// It was not contention. `waitUntilHolding` in the shared fixture clicked
+	// "Sign in" with no timeout, and the sign-in modal closes the moment the
+	// signature lands, so the click routinely resolved against a button that had
+	// already gone - which Playwright waits out forever instead of failing. The
+	// loop never got back to its own deadline, so the send was never dispatched,
+	// nothing was ever held, and the test died on Playwright's own timeout. "The
+	// app sits on Executing... and nothing is held" is that bug's signature, not
+	// the node's. Worker count only moved the timing of the race, which is why
+	// fewer workers looked like a cure and why the failure wandered between the
+	// two suites that share the fixture. The full suite failed at ONE worker too.
+	//
+	// The budget below is therefore NOT what makes this suite pass - the fixture
+	// fix is - and it has not been re-derived since. It is kept only for the
+	// first paragraph's reason, that the walk really is heavy in this app.
+	//
+	// A budget is the right lever here because nothing being measured is a
+	// duration: this suite asserts an ORDER (pulse before words) and a floor
+	// (words not before their delay), both of which stay true on a slow box.
+	test.slow();
+
+	const nodeUrl =
+		(globalThis as any).process.env.E2E_RPC_URL ||
+		`http://127.0.0.1:${(globalThis as any).process.env.E2E_RPC_PORT || '8545'}`;
+
+	const PULSE = '[data-testid="sending-transaction"]';
+	const NOTICE = '[data-testid="sending-notice"]';
+
+	test('pulses at once, and only explains itself once it drags', async ({
+		page,
+	}) => {
+		await installStallingWallet(page, {nodeUrl, stallingAccountIndex: 1});
+		// The walk to a wallet that is holding something, shared with the escape
+		// hatch's suite and overridden as one piece by a descendant whose sends do
+		// not reach a wallet. This suite used to open-code it and was left behind
+		// when the other copy was adapted, which is what the fixture now prevents.
+		//
+		// NOTHING PASSED, deliberately: what is sent is this app's business, and
+		// nothing below asserts on it. Naming a value here would be this suite
+		// deciding what a descendant's write accepts, which is how it filled a
+		// greeting into an address field and hung.
+		await sendAndStall(page);
+
+		// The wordless rung: no delay, because this is the one that has to be on
+		// screen when the browser asks.
+		await expect(page.locator(PULSE)).toBeVisible({timeout: 10_000});
+		const pulseAt = Date.now();
+
+		// THE FLOOR, STATED WITHOUT A CLOCK. The app starts its delay when the
+		// dispatch starts, which happens inside `sendAndStall` and is invisible
+		// from out here. Timing from after that helper RETURNS measured the delay
+		// minus however long the helper took to come back, so the busier the node,
+		// the smaller the number: a 1s delay was measured at 757ms and failed a
+		// test that is about ordering, on a run where the app behaved perfectly.
+		//
+		// The pulse has no delay of its own, so it is on screen from the instant
+		// the timer started. "The words are not up yet when the pulse is" is
+		// therefore the same claim, with nothing to measure and nothing to drift.
+		//
+		// The DURATION is not this suite's to check, and duplicating it here is
+		// what made it flaky: `delayVisible` owns it, and
+		// `test/lib/ui/in-flight/sending.test.ts` pins it against a fake clock,
+		// where a millisecond means something.
+		await expect(page.locator(NOTICE)).toHaveCount(0);
+
+		// The words: only after the dispatch has gone on long enough to be worth
+		// them. Waiting for it to appear (rather than asserting it is absent now)
+		// keeps this from depending on how fast the assertion above ran.
+		await expect(page.locator(NOTICE)).toBeVisible({timeout: 30_000});
+		const noticeAt = Date.now();
+
+		expect(
+			pulseAt,
+			'the pulse must not wait for the notice',
+		).toBeLessThanOrEqual(noticeAt);
+
+		// It says what is being sent, in the words the transaction list uses, and
+		// what leaving would cost. That sentence is the whole reason it exists.
+		// Named from the fixture, not spelled out: what this app sends is the
+		// fixture's business (see sendAndStall), and a literal here is an
+		// assertion about a function a descendant may never call.
+		await expect(page.locator(NOTICE)).toContainText(STALLED_SEND_NAME);
+		await expect(page.locator(NOTICE)).toContainText('Leaving the page now');
+
+		// Above the wallet-action modal rather than under its backdrop: being
+		// dimmed exactly while a modal holds the user is what put it in the top
+		// layer (core/ui/layers.ts).
+		const layer = await page
+			.locator(NOTICE)
+			.evaluate((node) =>
+				node.closest('[data-layer]')?.getAttribute('data-layer'),
+			);
+		expect(layer).toBe('progress');
+
+		// And both go when the answer arrives.
+		await approveHeldTransaction(page);
+		await expect(page.locator(NOTICE)).toHaveCount(0, {timeout: 30_000});
+		await expect(page.locator(PULSE)).toHaveCount(0, {timeout: 30_000});
+	});
+});
