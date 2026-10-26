@@ -4,7 +4,7 @@
  * clone or worktree, before anything is deployed: the root `prepare` runs this
  * before the template's `ensure-deployments.mjs`.
  *
- *   web/src/data/contracts.ts, web/src/lib/deployments.ts, indexer/src/contracts.ts,
+ *   web/src/lib/deployments.ts, indexer/src/contracts.ts,
  *   helper-services/fuzd/contracts.json   (the export of the game's contracts)
  *   common/dist, indexer/dist             (built from those)
  *
@@ -29,7 +29,6 @@ import {fileURLToPath} from 'node:url';
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const EPHEMERAL = 'ephemeral';
 const EXPORTED = [
-	'web/src/data/contracts.ts',
 	'web/src/lib/deployments.ts',
 	'indexer/src/contracts.ts',
 	'helper-services/fuzd/contracts.json',
@@ -57,7 +56,7 @@ try {
 				'--json',
 				'../helper-services/fuzd/contracts.json',
 				'--ts',
-				'../indexer/src/contracts.ts,../web/src/data/contracts.ts,../web/src/lib/deployments.ts',
+				'../indexer/src/contracts.ts,../web/src/lib/deployments.ts',
 			]);
 		} finally {
 			rmSync(ephemeralDir, {recursive: true, force: true});

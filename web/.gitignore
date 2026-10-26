@@ -21,7 +21,6 @@ vite.config.ts.timestamp-*
 static/pwa
 
 # generated from contracts
-src/data/contracts.ts
 static/indexed-states/*
 
 # the processor bundle, copied from ../indexer/dist by scripts/processor-bundle.js

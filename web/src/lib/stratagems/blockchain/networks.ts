@@ -1,6 +1,7 @@
 import {derived, get, readable, type Readable} from 'svelte/store';
 
-import _exported from '$data/contracts';
+// the one generated deployment file, the framework's (step 6b)
+import _exported from '$lib/deployments';
 
 /** The chain description `rocketh-export` writes, as far as the app reads it. */
 type ChainInfo = {

@@ -90,7 +90,7 @@ async function refresh() {
 
 function initialize(provider: EIP1193Provider) {
 	indexer = connectToIndexerHost(
-		dedicatedWorkerHost(() => new Worker(new URL('./indexer.worker.ts', import.meta.url), {type: 'module'})),
+		dedicatedWorkerHost(() => new Worker(new URL('../board/indexer.worker.ts', import.meta.url), {type: 'module'})),
 		{
 			// the wallet's provider, served to the worker over a MessagePort
 			provider: provider as never,
