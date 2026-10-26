@@ -106,7 +106,10 @@ web/src/lib/ui/offline-world
 # `routes/play` and `routes/offline` are NOT listed since step 6b: stratagems has
 # its own at both paths (the game, and an "in construction" page until step O),
 # so a cascade that touches the template's arrives as a conflict on our file,
-# resolved to ours.
+# resolved to ours. The template's `routes/offline/+page.ts` stays omitted: it
+# declares the offline world's chrome from `$lib/offline-chrome` (omitted above),
+# and stratagems' "in construction" page is an ordinary page. Until step O.
+web/src/routes/offline/+page.ts
 # Their tests, and the tests of the framework that drive the reference game's
 # fixtures: the embedded-chain world and deployment tests deploy and name `Game`,
 # the canvas2d host test renders `placement/render`, and the two context tests
