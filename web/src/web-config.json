@@ -3,10 +3,13 @@
 	"title": "Stratagems",
 	"description": "Stratagems an Autonomous World being created by players",
 	"canonicalURL": "https://stratagems.world",
+	"repoURL": "https://github.com/wighawag/stratagems",
+	"communityURL": "",
 	"ENSName": "stratagems.eth",
 	"themeColor": "#000000",
 	"appleStatusBarStyle": "black-translucent",
 	"icon": "static/icon.png",
+	"logo": "static/icon.png",
 	"preview": "static/preview.png",
 	"maskableIcons": [
 		{

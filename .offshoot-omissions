@@ -128,44 +128,16 @@ scripts/run-e2e-tests.sh
 web/test/e2e-account-claims.test.ts
 
 # ---------------------------------------------------------------------------
-# 3. THE TEMPLATE'S APP SHELL, UNTIL STEP 6. stratagems keeps its own shell
-# (routes/+layout.*, +page.svelte, (pages)/) until step 6 mounts the template's
-# app context in it (decision 2 of the plan). These routes read that context, and
-# every route here prerenders, so with stratagems' shell they would fail the
-# build rather than just the page. They come back at step 6 and their entries go.
-web/src/routes/explorer
-web/src/routes/contracts
-web/src/routes/transactions
-web/src/routes/debug
-web/src/routes/+error.svelte
-web/test/routes
-# Two SvelteKit service-worker entries are ambiguous (src/service-worker.ts and
-# src/service-worker/index.ts both resolve), and stratagems' shell registers its
-# own (src/service-worker.ts, through lib/stratagems/ui/install). Until step 6.
-web/src/service-worker
-# The template's IPFS redirects name its explorer routes, and they shadow
-# stratagems' own `_redirects` route, which then fails the prerender ("marked as
-# prerenderable, but not found"). Until step 6 brings the explorer back.
-web/static/_redirects
+# 3. THE TEMPLATE'S APP SHELL: EMPTY since step 6b (2026-10-26). Until then
+# stratagems kept its own shell and these were omitted: the explorer, contracts,
+# transactions and debug routes, `+error.svelte`, `test/routes`, the template's
+# service worker and `static/_redirects`, and three framework tests omitted for
+# their premise (`layers`, `json`, `fatal`). Step 6b took the template's shell,
+# so all of them are back and this group lists nothing.
+
 # The template's brand icon (Commit Reveal). stratagems' is static/icon.png, and
-# its web-config.json names that one.
+# its web-config.json names that one. FOR EVER: a game has its own brand.
 web/static/icon.svg
-# Framework tests whose subject is fine here but whose PREMISE is the template's
-# shell or its fixture, measured 2026-10-24 (one failing test in each file; a file
-# is the unit of omission, so the passing ones go with it):
-#   layers.test.ts reads routes/+layout.svelte for `{#each LAYERS as layer`, which
-#     is the template's layout; until step 6.
-#   json.test.ts guards its own guard with "at least one stringify of args or
-#     metadata exists", and the two that do are the omitted explorer and
-#     transactions routes; until step 6.
-#   fatal.test.ts expects hosted sign-in with no PUBLIC_NODE_URL to be fatal, which
-#     holds only when the generated deployments' chain has no rpcUrl (the
-#     template's local export); stratagems' alpha1 export is Base, whose rpcUrl
-#     viem knows. A finding for the template: the test reads a generated file
-#     rather than stating its fixture. Until that is fixed upstream, or step 6.
-web/test/lib/core/ui/layers.test.ts
-web/test/lib/core/utils/format/json.test.ts
-web/test/lib/context/fatal.test.ts
 
 # ---------------------------------------------------------------------------
 # 4. BOUNDARY TESTS THAT GUARD A GAME'S USE OF THE FRAMEWORK, until stratagems

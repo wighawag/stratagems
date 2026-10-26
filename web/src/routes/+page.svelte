@@ -1,83 +1,61 @@
 <script lang="ts">
-	import {stratagemsView} from '$lib/stratagems/state/ViewState';
-	import WebGlCanvas from '$lib/stratagems/render/WebGLCanvas.svelte';
-	import ActionPanel from '$lib/stratagems/actions/ActionPanel.svelte';
-	import InfoBar from '$lib/stratagems/ui/components/InfoBar.svelte';
-	import FactionPicker from '$lib/stratagems/actions/FactionPicker.svelte';
-	import Header from '$lib/stratagems/ui/header/Header.svelte';
-	import TokenToCollect from '$lib/stratagems/ui/winnings/TokenToCollect.svelte';
-	import LandMenu from '$lib/stratagems/ui/landmenu/LandMenu.svelte';
+	import {route} from '$lib';
+	import {url} from '$lib/kit/paths';
+	import Button from '$lib/shadcn/ui/button/button.svelte';
+	import DefaultHead from '../lib/metadata/DefaultHead.svelte';
+	import {brand} from '$lib/metadata/brand';
 </script>
 
-<div style="position: absolute; z-index: 1; width: 100%; height: 100%; pointer-events: none;">
-	<Header>
-		<div class="info-bar">
-			<InfoBar></InfoBar>
-		</div>
-		<div class="faction-picker">
-			<FactionPicker />
-		</div>
-	</Header>
-	<LandMenu />
+<!-- THE GAME MENU, AND THE SAME FILE IN EVERY GAME. What differs between games is
+     the title, and that comes from `src/web-config.json` through
+     `$lib/metadata/brand`: a `logo` if the game has one, its `name` as text if
+     it does not. Rebrand there, not here, so that whatever improves this page
+     reaches every game without a conflict. -->
 
-	<div class="action-panel">
-		<ActionPanel />
-	</div>
+<DefaultHead />
 
-	<div class="claim-panel">
-		<TokenToCollect />
-	</div>
+<div class="flex flex-col items-center gap-10 px-4 pt-12 pb-12 md:pt-20">
+	<!-- The heading is the title either way, so it is named by `name` in both
+	     cases: the image's `alt` becomes the heading's accessible name. -->
+	<h1 class="text-center">
+		{#if brand.logo}
+			<img
+				src={url(brand.logo)}
+				alt={brand.name}
+				class="mx-auto max-h-56 w-auto max-w-[min(90vw,40rem)]"
+			/>
+		{:else}
+			<span class="text-5xl font-bold tracking-tight md:text-7xl"
+				>{brand.name}</span
+			>
+		{/if}
+	</h1>
+
+	<nav class="flex w-full max-w-sm flex-col gap-4" aria-label="Game menu">
+		<Button
+			href={route('/play/')}
+			size="lg"
+			class="h-14 w-full text-xl font-semibold">Online</Button
+		>
+		<!-- OFFLINE IS A WORLD, NOT A DEMO: a chain in this tab, which is a route of
+		     the game's own (`routes/offline/` and `$lib/offline.ts`), not the stem's
+		     `/offline-demo`.
+
+		     WHAT THE ENTRY PROMISES IS THAT CHAIN, and nothing about what is at
+		     stake in it. This file is identical in every game, and what a game
+		     risks is the one thing they are guaranteed to disagree about, so a
+		     word here naming one answer would be false somewhere downstream.
+
+		     A GAME INHERITS THIS ENTRY AND NOT THE WORLD BEHIND IT. `$lib/embedded`
+		     is the mechanism and cascades unchanged; `$lib/offline.ts` names the
+		     game's contracts, deploy scripts and stake, so a game that replaces the
+		     game replaces that too, and `offline.e2e.ts` is what says it can still
+		     finish a cycle. -->
+		<Button
+			href={route('/offline/')}
+			size="lg"
+			variant="outline"
+			class="h-14 w-full text-xl font-semibold">Offline</Button
+		>
+	</nav>
 </div>
-
-<div class="canvas">
-	<WebGlCanvas state={stratagemsView} />
-</div>
-
-<style>
-	.canvas {
-		pointer-events: none;
-		position: absolute;
-		top: 0;
-		left: 0;
-		height: 100%;
-		width: 100%;
-	}
-
-	.info-bar {
-		pointer-events: auto;
-		background-color: hsl(217 70% 20%); /*var(--color-surface-800);*/
-		box-shadow:
-			0 10px 15px -3px rgba(0, 0, 0, 0.1),
-			0 4px 6px -2px rgba(0, 0, 0, 0.05);
-		padding: 1rem;
-
-		width: 100%;
-	}
-
-	.action-panel {
-		pointer-events: auto;
-		margin: 0.5rem;
-		width: 300px;
-		max-width: 100%;
-		position: absolute;
-		bottom: 0;
-		right: 0;
-	}
-
-	.faction-picker {
-		pointer-events: auto;
-		margin: 0.5rem;
-
-		width: fit-content;
-	}
-
-	.claim-panel {
-		pointer-events: auto;
-		margin: 0.5rem;
-		width: 300px;
-		max-width: 100%;
-		position: absolute;
-		top: 1rem;
-		right: 0;
-	}
-</style>

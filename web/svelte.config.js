@@ -1,62 +1,95 @@
 import adapter from '@sveltejs/adapter-static';
+import {execSync} from 'node:child_process';
 import {vitePreprocess} from '@sveltejs/vite-plugin-svelte';
-import {execSync} from 'child_process';
 
-// stratagems' version id, kept as it was: a deterministic build needs a
-// deterministic version (the commit), with no `-dirty` suffix, because the alpha1
-// verification compares builds.
-export function getVersion() {
+let VERSION = `timestamp_${Date.now()}`;
+try {
+	VERSION = execSync('git rev-parse --short HEAD', {
+		stdio: ['ignore', 'pipe', 'ignore'],
+	})
+		.toString()
+		.trim();
 	try {
-		return execSync('git rev-parse --short HEAD').toString().trim();
-	} catch {
-		const timestamp = Date.now().toString();
-		console.error(`could not get commit-hash to set a version id, falling back on timestamp ${timestamp}`);
-		return timestamp;
+		// This command returns empty string if no changes
+		const output = execSync('git status --porcelain', {encoding: 'utf8'});
+		if (output.trim().length > 0) {
+			VERSION += '-dirty';
+			console.warn(`[!] repo has some uncommited changes...`);
+		}
+	} catch (error) {
+		console.error('Error checking git status:', error);
+		process.exit(1);
 	}
+} catch (e) {
+	console.error(e);
 }
-const VERSION = getVersion();
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	preprocess: [vitePreprocess()],
+	// Consult https://svelte.dev/docs/kit/integrations
+	// for more information about preprocessors
+	preprocess: vitePreprocess(),
 
 	kit: {
-		adapter: adapter(),
 		version: {
-			// we create a dertemrinistic building using a derterministic version (via git commit, see above)
 			name: VERSION,
 		},
-		alias: {
-			// stratagems' own aliases
-			// alias for web-config
-			'web-config': './src/web-config.json',
-			$data: './src/data',
-			$utils: './src/utils',
-
-			// FROM template-commit-reveal: the framework's two slots.
-			//
-			// WHICH UI KIT PAINTS THE BUILDING BLOCKS. Only `src/lib/core/ui/*` imports
-			// through this (see src/lib/core/ui/README.md); it resolves to where the
-			// shadcn CLI writes (components.json).
-			$ui: 'src/lib/shadcn/ui',
-
-			// WHICH APP THE FRAMEWORK IS COMPOSED WITH. The framework imports
-			// `$app-specific` and never the app's module by path; this points it at
-			// stratagems' module, which exports the same names as the template's
-			// `src/lib/placement/game.ts` (omitted here, see .offshoot-omissions).
-			// `test/alias-targets.test.ts` fails if this names a missing file.
-			//
-			// Not `$app`, which is SvelteKit's. An alias matches only itself or itself
-			// plus `/`, so `$app-specific` and `$app/navigation` never capture each other.
-			'$app-specific': 'src/lib/stratagems/game.ts',
-		},
+		adapter: adapter({
+			assets: 'build',
+			pages: 'build',
+			fallback: '404.html', // SPA fallback - serves as 404 page on IPFS/static hosts
+		}),
 		serviceWorker: {
-			// we handle it ourselves here : src/service-worker-handler.ts
+			// we handle it ourselves: the worker is src/service-worker/index.ts and
+			// registration is driven by src/lib/core/service-worker/index.ts
 			register: false,
 		},
 		paths: {
 			// this is to make it work on ipfs (on an unknown path)
 			relative: true,
+		},
+		alias: {
+			// WHICH UI KIT PAINTS THE BUILDING BLOCKS.
+			//
+			// Only `src/lib/core/ui/*` imports through this, and only for the small
+			// set of components listed in src/lib/core/ui/README.md. Point it at
+			// another directory and `core/` is painted by that instead, without
+			// editing a single file under `core/`.
+			//
+			// It resolves to the same place the shadcn CLI writes (see
+			// components.json), so `shadcn-svelte add` keeps working untouched.
+			//
+			// App code (`src/routes`, `src/lib/ui`) is deliberately NOT routed
+			// through here. An app owns its own look already; the point of the alias
+			// is that the INHERITED part speaks a narrow vocabulary somebody else can
+			// implement.
+			$ui: 'src/lib/shadcn/ui',
+
+			// WHICH APP THE FRAMEWORK IS COMPOSED WITH.
+			//
+			// The framework (`src/lib/context`, and through it everything that reads
+			// the app context) imports `$app-specific` and never the app's module by
+			// path. An app on this template points this at its own module, which
+			// exports the same names as the module named here, and every framework
+			// file compiles against it unedited. The same mechanism as `$ui` above,
+			// for the other thing a descendant replaces.
+			//
+			// Not `$app`, which is SvelteKit's. An alias matches only itself or itself
+			// plus `/`, so `$app-specific` and `$app/navigation` never capture each other.
+			'$app-specific': 'src/lib/stratagems/game.ts',
+
+			// STRATAGEMS' OWN, for its legacy files only (`web/src/lib/stratagems`,
+			// which step 6c of work/plans/join-template-commit-reveal.md ports or
+			// deletes). They go with the last file that imports them.
+			'web-config': './src/web-config.json',
+			$data: './src/data',
+			$utils: './src/utils',
+		},
+		output: {
+			bundleStrategy: 'split', // code-split per route so the initial
+			// bundle is small; a single large file stalls under slow /
+			// throttled connections (and 'single' is not required for IPFS
+			// since paths.relative is already true).
 		},
 	},
 };
