@@ -7,7 +7,11 @@
 		"strict": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
-		"noEmit": true,
+		"sourceMap": true,
+		"declaration": true,
+		"declarationMap": true,
+		"outDir": "dist",
+		"rootDir": ".",
 		"types": ["node"]
 	},
 	"include": ["deploy", "generated", "rocketh", "utils", "hardhat.config.ts"]

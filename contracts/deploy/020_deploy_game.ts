@@ -69,6 +69,24 @@ export default deployScript(
 			commitPhaseDuration = BigInt(minutes(8)) - revealPhaseDuration;
 		}
 
+		// the base's CyclePolicy: 0 Timed (the clock decides), 1 Manual (the cycle
+		// moves when everyone has acted and someone pushes it)
+		let cyclePolicy = 0;
+
+		// THE OFFLINE WORLD (`web/src/lib/offline.ts`, a chain in the player's tab):
+		// the Manual policy with both durations zero, one decision and not three,
+		// since the contract refuses durations that disagree with the policy. An
+		// automined chain in a tab has no clock between transactions, so a timed
+		// cycle there could not even estimate a reveal once its commit phase closed,
+		// and an offline game is the human's to pace. Its own environment rather than
+		// `localhost`, so that what an offline game is cannot change what a
+		// developer's local chain is.
+		if (env.name === 'offline') {
+			revealPhaseDuration = 0n;
+			commitPhaseDuration = 0n;
+			cyclePolicy = 1;
+		}
+
 		const config = {
 			tokens: testTokens.address,
 			numTokensPerGems,
@@ -80,9 +98,9 @@ export default deployScript(
 			maxLife: 7, // 7 is a good number, because with 4 enemy neighbors, it take 2 turns to die, with 3 it takes 3, with 2 it takes 4, with 1 it takes 7
 			time,
 			// the commit-reveal base's: a reveal carries at most 32 moves (alpha1's
-			// MAX_NUM_MOVES_PER_HASH), and the cycle is timed (0: CyclePolicy.Timed)
+			// MAX_NUM_MOVES_PER_HASH), and the cycle's policy (above)
 			actionsPerReveal: 32n,
-			cyclePolicy: 0,
+			cyclePolicy,
 			...configOverride,
 			generator: generator.address,
 		};

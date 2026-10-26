@@ -8,6 +8,7 @@ import {
 	custom,
 	defineChain,
 	getContract,
+	type GetContractReturnType,
 } from 'viem';
 
 import {network} from 'hardhat';
@@ -72,12 +73,23 @@ export async function getConnection(): Promise<Connection> {
 	});
 }
 
-export async function fetchContract<TAbi extends Abi>(contractInfo: {address: `0x${string}`; abi: TAbi}) {
+/**
+ * A contract bound to both clients. Named rather than inferred: since `tsc` emits
+ * declarations (the package's `dist`, for the web's offline world), an inferred
+ * viem contract type is too long to serialise (TS7056).
+ */
+export type ContractWithViemClient<TAbi extends Abi> = GetContractReturnType<
+	TAbi,
+	{public: Connection['publicClient']; wallet: Connection['walletClient']}
+>;
+
+export async function fetchContract<TAbi extends Abi>(contractInfo: {
+	address: `0x${string}`;
+	abi: TAbi;
+}): Promise<ContractWithViemClient<TAbi>> {
 	const {walletClient, publicClient} = await getConnection();
 	return getContract({
 		...contractInfo,
 		client: {wallet: walletClient, public: publicClient},
 	});
 }
-
-export type ContractWithViemClient<TAbi extends Abi> = Awaited<ReturnType<typeof fetchContract<TAbi>>>;

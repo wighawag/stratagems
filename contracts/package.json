@@ -3,6 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./deploy/*": "./dist/deploy/*",
+    "./rocketh/*": "./dist/rocketh/*",
+    "./artifacts/*": "./dist/generated/artifacts/*",
+    "./abis/*": "./dist/generated/abis/*",
+    "./deployments/*": "./deployments/*",
+    "./src/*": "./src/*"
+  },
   "dependencies": {
     "@etherplay/delegation": "^0.1.1"
   },
@@ -54,7 +62,8 @@
     "vitest": "^1.6.0"
   },
   "scripts": {
-    "prepare": "pnpm compile",
+    "prepare": "pnpm compile && tsc",
+    "_prepare": "`tsc` is part of prepare because `dist` is a BUILD INPUT for the web workspace, not just a publish artifact: web/src/lib/offline.ts imports this package's deploy scripts and rocketh config to run them in the browser (the offline world), and every one of those export paths resolves into dist. Without it a fresh clone or worktree fails `web check` with module-resolution errors that say nothing about this package. The template's contracts package does the same, for the same reason.",
     "docgen": "ldenv -m localhost pnpm rocketh-doc -e @@MODE --except-suffix _Implementation,_Proxy,_Router,_Route -t docs_templates/{{contracts}}.hbs @@",
     "local_node": "hardhat --network node node --hostname 0.0.0.0",
     "compile": "hardhat compile",
@@ -74,7 +83,7 @@
     "stop": "zellij kill-session $npm_package_name",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
-    "typecheck": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "typecheck:scripts": "tsc -p scripts/tsconfig.json",
     "_typecheck:scripts": "scripts/data/*.ts import scripts/data/contracts.ts, which `pnpm export-script-data <mode>` writes: run that first"
   }

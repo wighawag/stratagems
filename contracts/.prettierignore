@@ -24,3 +24,6 @@ docs
 deployments
 package.json
 pnpm-lock.yaml
+
+# the package build (`tsc` in prepare), for the web workspace
+dist
