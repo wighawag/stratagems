@@ -475,7 +475,7 @@ Branch `step-6b`, worktree `~/dev/worktrees/stratagems/step-6b`. Needs 10b and 6
 
 #### Step 6c: stratagems' own UI on the composition, and the legacy app leaves
 
-Branch `step-6c`, worktree `~/dev/worktrees/stratagems/step-6c`. Needs 6b and S. PROPOSED 2026-10-26 (the log entry "2026-10-26, step 6c specified" has the measurements and the questions): the P lines below are recommendations until the user answers them, and this step is not to be started until they are marked decided.
+Branch `step-6c`, worktree `~/dev/worktrees/stratagems/step-6c`. Needs 6b and S. Specified 2026-10-26 (the log entry "2026-10-26, step 6c specified" has the measurements and the questions). Every P line below was accepted by the user on 2026-10-26 as written, the recommendation of P4 included (the events list, the welcome and the tour are dropped and captured as ideas).
 
 **What decides the shape** (measured 2026-10-26 on the integration branch 621edffa, `stem/main` b31b8d53, with an import-graph walk from every route, `lib/index.ts` and the service worker; the script is `join-template-commit-reveal/reach.mjs` beside this file):
 
@@ -488,7 +488,7 @@ Branch `step-6c`, worktree `~/dev/worktrees/stratagems/step-6c`. Needs 6b and S.
 - **The theme is `app.css`, at the stem's bytes in every game**, reveal-or-die included: no game has a palette of its own yet, and the template has no seam for one (its `core/ui/README.md` says a theme owns the `bg-*`/`text-*` variables, but the variables live in the inherited `app.css`).
 - **What the indexer already holds for the ported panels**: `Data.points` (global rate, fixed and shared points per player) and `computedPoints` for the leaderboard; `placements` (per cycle, per cell) for an events list; the cells and owners for the info panel and winnings (`ViewState.ts`'s `tokensToCollect` is the derivation to port, `pokeMultiple` the call). `board/indexed-board.ts` exposes the worker's `progress` (`HostProgress`), which the composition does not pass on yet.
 
-**Questions, with the recommendation** (P lines; until answered they are proposals):
+**Decided** (the user, 2026-10-26, accepting each recommendation as written):
 
 - **P1, the twgl host**: delete `render/` with the rest, and step 9 restores its programs (`Colored2D`, `Blockies`, `Grid`, `Textured2D`, `TerrainLayer`, `tiles`, the sprite sheet under `src/data/assets`) from 6c's parent commit, named in the log, onto the template's render seam; `twgl.js` leaves `package.json` and step 9 brings it back. Rather than keeping 1,697 dead lines compiling by porting their `ViewState` and camera types now, which is step 9's work done early against a seam step 9 may change.
 - **P2, how a player gets gems**: a HUD action "Get test gems" calling `TestTokensDistributor.topup()` through the wallet, shown only when the deployment has that contract (every local deploy, the e2e's included); the claim-link screen is not ported, and step D decides how a live chain hands out gems (claim links, a faucet, a sale), and whether that is upstream's. Rather than porting the claim screen now for a chain that does not exist yet.
@@ -1236,3 +1236,5 @@ Premises re-derived first: the main checkout clean, `main` = `origin/main` = b59
 9. P9, the e2e grows by test gems through the HUD, a faction's colour on a planned move, a removal over a second cycle and a refused click's reason; winnings and the leaderboard judged by unit tests?
 10. P10, step 11 rewritten (or removed) after 6c measures what is left of it?
 11. P11, the leftovers: the three legacy aliases, `sync:dev` and `missiv:dev` with their zellij panes, only the missiv and sync variables in the alpha-era env files, and `vite.plugins.ts`'s stale comment?
+
+**Answered, 2026-10-26**: the user accepted all eleven recommendations ("I agree with all your points"), P4's included: the events list, the welcome and the tour are dropped and captured as ideas. The section's P lines are now marked decided. Landed: the integration branch fast-forwarded to `specify-6c` and pushed. Step 6c is next, unticked and specified.
