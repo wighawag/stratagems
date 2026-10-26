@@ -5,6 +5,7 @@ import {Abi_UsingStratagemsDebugEvents} from '../generated/abis/UsingStratagemsD
 import {days, hours, minutes} from '../utils/time.js';
 import {checksumAddress, parseEther, zeroAddress} from 'viem';
 import {getConfig} from './.config/index.js';
+import {CLIENT_GAS} from './.config/gas.js';
 
 export type GameConfig = {
 	tokens: `0x${string}`;
@@ -53,6 +54,15 @@ export default deployScript(
 		// TODO support more complex period to support a special weekend commit period ?
 		let revealPhaseDuration = BigInt(hours(1));
 		let commitPhaseDuration = BigInt(days(1)) - revealPhaseDuration;
+
+		// The local chain (`pnpm start`, and the e2e suite, whose waits are sized
+		// against it): the template's own local durations, a 40 s cycle. Ten seconds
+		// of reveal is the template's floor for one reveal on a local chain (its
+		// rocketh/config.ts says why); a turn here is one chunk.
+		if (env.name === 'localhost') {
+			revealPhaseDuration = 10n;
+			commitPhaseDuration = 30n;
+		}
 
 		if (env.name === 'fast') {
 			revealPhaseDuration = BigInt(minutes(3));
@@ -108,8 +118,11 @@ export default deployScript(
 			},
 			{
 				owner: admin,
+				// The client's gas figures beside the contract's config, not in it: the
+				// contract never reads them (see .config/gas.ts).
 				linkedData: {
 					...config,
+					...CLIENT_GAS,
 					currency: {
 						symbol,
 						name,
