@@ -7,7 +7,14 @@
  * it rendered.
  */
 import {expect, type Page} from '@playwright/test';
-import {encodeFunctionData, erc20Abi, parseEther} from 'viem';
+import {
+	encodeAbiParameters,
+	encodeFunctionData,
+	erc20Abi,
+	keccak256,
+	parseAbi,
+	parseEther,
+} from 'viem';
 
 const env = (globalThis as any).process.env;
 const RPC_URL =
@@ -42,9 +49,9 @@ async function rpc(method: string, params: unknown[]): Promise<any> {
 }
 
 /**
- * Give the signed-in account gems, from the deploy's token holder: the stake is
- * gems moved from the wallet into the reserve, and getting gems is the TestTokens
- * claim, which is step 6c's.
+ * Give the signed-in account gems, from the deploy's token holder, without the
+ * UI. The suite gets them through the HUD's "Get test gems" instead
+ * (`getTestGems`); this stays for a test that is about something else.
  */
 export async function giveGems(page: Page, amount = '100'): Promise<void> {
 	const {account, tokens} = (await page.evaluate(`(() => {
@@ -74,6 +81,74 @@ export async function giveGems(page: Page, amount = '100'): Promise<void> {
 			},
 		)
 		.toBe('0x1');
+}
+
+/** The wallet's gems and what a stake takes, as the app reads them. */
+export async function gems(
+	page: Page,
+): Promise<{wallet?: bigint; stake: bigint; perMove: bigint}> {
+	const found = (await page.evaluate(`(() => {
+		${READ}
+		const game = globalThis.context.game;
+		const reserve = read(game.reserve);
+		return {
+			wallet: reserve.step === 'Loaded' ? reserve.tokenBalance.toString() : undefined,
+			stake: game.config.stakeAmount.toString(),
+			perMove: game.config.numTokensPerGems.toString(),
+		};
+	})()`)) as {wallet?: string; stake: string; perMove: string};
+	return {
+		wallet: found.wallet === undefined ? undefined : BigInt(found.wallet),
+		stake: BigInt(found.stake),
+		perMove: BigInt(found.perMove),
+	};
+}
+
+/** The gems `address` holds, read off the chain rather than the app. */
+export async function walletGems(page: Page, address: string): Promise<bigint> {
+	const tokens = (await page.evaluate(
+		'globalThis.context.game.config.tokenAddress',
+	)) as `0x${string}`;
+	return BigInt(
+		await rpc('eth_call', [
+			{
+				to: tokens,
+				data: encodeFunctionData({
+					abi: erc20Abi,
+					functionName: 'balanceOf',
+					args: [address as `0x${string}`],
+				}),
+			},
+			'latest',
+		]),
+	);
+}
+
+/**
+ * Press the HUD's "Get test gems" (`TestTokensDistributor.topup()`, from the
+ * wallet) until the wallet holds enough to stake: a top-up is 15 gems and a
+ * stake a whole chunk of 32, so three presses on a fresh account.
+ */
+export async function getTestGems(page: Page): Promise<number> {
+	const button = page.locator('[data-testid="get-test-gems"]');
+	let presses = 0;
+	for (;;) {
+		const {wallet, stake} = await gems(page);
+		if (wallet !== undefined && wallet >= stake) return presses;
+		if (presses >= 5)
+			throw new Error(`still short of a stake after ${presses} top-ups`);
+		await expect(button, 'the HUD should offer test gems').toBeEnabled({
+			timeout: 30_000,
+		});
+		await button.click();
+		presses++;
+		await expect
+			.poll(async () => (await gems(page)).wallet ?? 0n, {
+				message: 'the top-up should reach the wallet',
+				timeout: 60_000,
+			})
+			.toBeGreaterThan(wallet ?? 0n);
+	}
 }
 
 export type GameStep = {
@@ -208,6 +283,119 @@ export async function clickCanvas(
 		box.x + box.width / 2 + offset.x,
 		box.y + box.height / 2 + offset.y,
 	);
+}
+
+/** Click the middle of the cell at x,y, through the app's own camera. */
+export async function clickCell(
+	page: Page,
+	cell: {x: number; y: number},
+): Promise<void> {
+	const offset = (await page.evaluate(`(() => {
+		const {transform} = globalThis.context.render.cameraControl.current;
+		return {
+			x: (${cell.x} - transform.centerX) * transform.scale,
+			y: (${cell.y} - transform.centerY) * transform.scale,
+		};
+	})()`)) as {x: number; y: number};
+	await clickCanvas(page, offset);
+}
+
+/** A cell's packed position, as `stratagems-common`'s `xyToBigIntID`. */
+export function positionOf(cell: {x: number; y: number}): bigint {
+	return (
+		(BigInt.asUintN(32, BigInt(cell.y)) << 32n) +
+		BigInt.asUintN(32, BigInt(cell.x))
+	);
+}
+
+/** The x,y of a packed position. */
+export function cellOf(position: string | bigint): {x: number; y: number} {
+	const p = BigInt(position);
+	return {
+		x: Number(BigInt.asIntN(32, p & 0xffffffffn)),
+		y: Number(BigInt.asIntN(32, p >> 32n)),
+	};
+}
+
+/** The cell the HUD's cell panel describes, read off the screen. */
+export function cellPanel(page: Page) {
+	return page.locator('[data-testid="cell-panel"]');
+}
+
+const STRATAGEMS_ABI = parseAbi([
+	'function makeCommitmentWithExtraReserve(uint256 player, bytes24 commitmentHash, uint256 bond, uint256 tokensAmountToAdd, address payee) payable',
+	'function reveal(uint256 player, (uint64 position, uint8 color)[] moves, bytes32 secret, bytes24 furtherActions, address payee) payable',
+]);
+const ZERO_BYTES24 = `0x${'00'.repeat(24)}` as const;
+const ZERO_ADDRESS = `0x${'00'.repeat(20)}` as const;
+
+async function send(from: string, to: string, data: `0x${string}`) {
+	const hash = await rpc('eth_sendTransaction', [{from, to, data}]);
+	await expect
+		.poll(
+			async () => (await rpc('eth_getTransactionReceipt', [hash]))?.status,
+			{message: `the rival's transaction should land`, timeout: 30_000},
+		)
+		.toBe('0x1');
+}
+
+/**
+ * ANOTHER PLAYER, played straight against the contract from the deploy's token
+ * holder (unlocked on the node): commit one move now, in the commit phase the
+ * page is in, and return the reveal to send once the reveal phase opens. The
+ * move is hashed in the base's one encoding (`common/`'s `prepareCommitment`).
+ */
+export async function rivalCommits(
+	page: Page,
+	cell: {x: number; y: number; color: number},
+): Promise<{reveal: () => Promise<void>; player: string}> {
+	const {game, perMove} = (await page.evaluate(`(() => ({
+		game: globalThis.context.deployments.get().contracts.Stratagems.address,
+		perMove: globalThis.context.game.config.numTokensPerGems.toString(),
+	}))()`)) as {game: `0x${string}`; perMove: string};
+	const player = BigInt(TOKENS_BENEFICIARY);
+	const moves = [{position: positionOf(cell), color: cell.color}];
+	const secret = keccak256(
+		encodeAbiParameters([{type: 'string'}], [`rival ${Date.now()}`]),
+	);
+	const hash = keccak256(
+		encodeAbiParameters(
+			[
+				{type: 'bytes32'},
+				{
+					type: 'tuple[]',
+					components: [
+						{name: 'position', type: 'uint64'},
+						{name: 'color', type: 'uint8'},
+					],
+				},
+				{type: 'bytes24'},
+			],
+			[secret, moves, ZERO_BYTES24],
+		),
+	).slice(0, 50) as `0x${string}`;
+	await send(
+		TOKENS_BENEFICIARY,
+		game,
+		encodeFunctionData({
+			abi: STRATAGEMS_ABI,
+			functionName: 'makeCommitmentWithExtraReserve',
+			args: [player, hash, BigInt(perMove), BigInt(perMove), ZERO_ADDRESS],
+		}),
+	);
+	return {
+		player: TOKENS_BENEFICIARY.toLowerCase(),
+		reveal: () =>
+			send(
+				TOKENS_BENEFICIARY,
+				game,
+				encodeFunctionData({
+					abi: STRATAGEMS_ABI,
+					functionName: 'reveal',
+					args: [player, moves, secret, ZERO_BYTES24, ZERO_ADDRESS],
+				}),
+			),
+	};
 }
 
 /**
