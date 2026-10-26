@@ -68,6 +68,14 @@ const config: HardhatUserConfig = {
 					chainType: 'l1',
 					allowUnlimitedContractSize: true,
 					initialBaseFeePerGas: 0n,
+					// WITHOUT THIS THE CHAIN RUNS AHEAD OF THE WALL CLOCK, as the template's
+					// `local` network says: every automined transaction needs a block with a
+					// timestamp later than the last, so a burst (the deploy, an e2e run's
+					// suites) pushes block time ahead one second per block. Measured
+					// 2026-10-26 on the e2e chain: 30 s ahead before the first test, and a
+					// reveal the client sent in what its clock called the reveal phase
+					// reverted, the chain's cycle having moved past it.
+					allowBlocksWithSameTimestamp: true,
 					...(blockTime ? {mining: {auto: true, interval: blockTime * 1000}} : {}),
 				},
 			}),
