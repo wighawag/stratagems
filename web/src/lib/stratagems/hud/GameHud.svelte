@@ -49,16 +49,22 @@
 </script>
 
 <!-- Stratagems' own panels, on the right so the board's middle stays clear. -->
-<div class="pointer-events-none absolute top-3 right-3 z-10 flex flex-col items-end gap-2">
+<div
+	class="pointer-events-none absolute top-3 right-3 z-10 flex flex-col items-end gap-2"
+>
 	<Leaderboard />
 	<FactionPicker />
 	<Winnings />
 	<CellPanel />
 </div>
 
-<div class="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-3">
+<div
+	class="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-3"
+>
 	<!-- Phase and cycle -->
-	<div class="pointer-events-auto w-fit rounded-lg bg-background/85 p-3 shadow-lg backdrop-blur">
+	<div
+		class="pointer-events-auto w-fit rounded-lg bg-background/85 p-3 shadow-lg backdrop-blur"
+	>
 		<!--
 			THE DIAL, not a dot and a bar. It is the one thing a player checks
 			constantly, and a pie reads faster than a bar because the answer is a
@@ -67,7 +73,12 @@
 			wants a different picture writes one against the same type.
 		-->
 		<div class="flex items-center gap-3">
-			<GameClock phase={$hud.phase} progress={$hud.progress} secondsLeft={$hud.secondsLeft} size={72} />
+			<GameClock
+				phase={$hud.phase}
+				progress={$hud.progress}
+				secondsLeft={$hud.secondsLeft}
+				size={72}
+			/>
 			<div>
 				<p class="text-sm font-semibold">{$hud.phaseLabel}</p>
 				<p class="text-xs text-muted-foreground">cycle {$hud.cycleNumber}</p>
@@ -79,13 +90,17 @@
 			</p>
 		{/if}
 		{#if $hud.planningForNextCycle}
-			<p class="mt-1 text-xs text-amber-400">This cycle is closed. New picks count for the next one.</p>
+			<p class="mt-1 text-xs text-amber-400">
+				This cycle is closed. New picks count for the next one.
+			</p>
 		{/if}
 		<Syncing />
 	</div>
 
 	<!-- The submission -->
-	<div class="pointer-events-auto w-fit max-w-md rounded-lg bg-background/85 p-3 shadow-lg backdrop-blur">
+	<div
+		class="pointer-events-auto w-fit max-w-md rounded-lg bg-background/85 p-3 shadow-lg backdrop-blur"
+	>
 		<!--
 			A missed reveal has already cost the player their bond, so it is stated
 			plainly and settled only on a deliberate press: acknowledging is what
@@ -106,7 +121,9 @@
 					disabled={!$hud.missedReveal.canAcknowledge}
 					onclick={() => missedReveal.acknowledge()}
 				>
-					{$hud.missedReveal.busy ? 'Acknowledging...' : 'Acknowledge missed reveal'}
+					{$hud.missedReveal.busy
+						? 'Acknowledging...'
+						: 'Acknowledge missed reveal'}
 				</Button>
 			</div>
 		{/if}
@@ -117,7 +134,9 @@
 			can be: the player re-enters the same turn and the hash decides.
 		-->
 		{#if $hud.recovery}
-			<div class="mb-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-2">
+			<div
+				class="mb-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-2"
+			>
 				<p class="text-sm font-semibold text-amber-400">
 					{$hud.recovery.headline}
 				</p>
@@ -169,7 +188,11 @@
 					A key that is authorised but has no gas is authorised in name only,
 					and that is a second dead end one step further on.
 				-->
-				<Button size="sm" class="mt-3" onclick={() => topUp.start(topUp.purposes.authorise)}>
+				<Button
+					size="sm"
+					class="mt-3"
+					onclick={() => topUp.start(topUp.purposes.authorise)}
+				>
 					Authorise and carry on
 				</Button>
 			{/if}
@@ -184,12 +207,19 @@
 					gas arrives, so this offers the top-up and says so, rather than
 					asking the player to also remember to press something after.
 				-->
-				<div class="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2">
+				<div
+					class="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2"
+				>
 					<p class="text-xs text-muted-foreground">{$hud.outOfGas.detail}</p>
 					<!-- The gas remedy, so the payment is a top-up even though the
 					     submission is what is blocked; the sentence above has already
 					     said why. -->
-					<Button size="sm" class="mt-2" onclick={() => topUp.start(topUp.purposes.topUp)}>Top up and carry on</Button>
+					<Button
+						size="sm"
+						class="mt-2"
+						onclick={() => topUp.start(topUp.purposes.topUp)}
+						>Top up and carry on</Button
+					>
 				</div>
 			{/if}
 
@@ -207,11 +237,24 @@
 			{/if}
 
 			<div class="mt-3 flex flex-wrap gap-2">
-				<Button size="sm" disabled={!$hud.canCommit} onclick={() => submission.commit()}>Commit now</Button>
+				<Button
+					size="sm"
+					disabled={!$hud.canCommit}
+					onclick={() => submission.commit()}>Commit now</Button
+				>
 				{#if $hud.canReveal}
-					<Button size="sm" variant="destructive" onclick={() => submission.reveal()}>Retry reveal</Button>
+					<Button
+						size="sm"
+						variant="destructive"
+						onclick={() => submission.reveal()}>Retry reveal</Button
+					>
 				{/if}
-				<Button size="sm" variant="outline" disabled={!$hud.canClear} onclick={() => planning.clear()}>Clear</Button>
+				<Button
+					size="sm"
+					variant="outline"
+					disabled={!$hud.canClear}
+					onclick={() => planning.clear()}>Clear</Button
+				>
 				<!-- The same rail as the setup gate, so a top-up is one transaction
 				     too and cannot be started twice. It refuses while a previous one is
 				     still settling, which is why the label follows the flow. -->
@@ -229,9 +272,10 @@
 			<div class="mt-3"><TestGems /></div>
 
 			<p class="mt-2 text-xs text-muted-foreground">
-				Click a cell to place a gem of your colour on it, and again to take the move back; click one of your own cells
-				at full life to remove it. A living cell of another player is theirs this cycle; two placements on one empty
-				cell in the same cycle collide into an Evil cell.
+				Click a cell to place a gem of your colour on it, and again to take the
+				move back; click one of your own cells at full life to remove it. A
+				living cell of another player is theirs this cycle; two placements on
+				one empty cell in the same cycle collide into an Evil cell.
 			</p>
 		{/if}
 	</div>

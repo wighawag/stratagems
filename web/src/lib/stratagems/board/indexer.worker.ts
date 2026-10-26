@@ -20,9 +20,17 @@
  *   history `none` and no seed), so a processor change waits for the job to
  *   republish.
  */
-import {createBrowserStateStore, hostIndexerInThisWorker, type InstantiatedProcessorBundle} from '@etherfold/browser';
+import {
+	createBrowserStateStore,
+	hostIndexerInThisWorker,
+	type InstantiatedProcessorBundle,
+} from '@etherfold/browser';
 import {graphqlQueryHandler} from '@etherfold/graphql/worker';
-import {EntityEventProcessor, stateFactoriesFrom, type EntityProcessor} from '@etherfold/processor-entities';
+import {
+	EntityEventProcessor,
+	stateFactoriesFrom,
+	type EntityProcessor,
+} from '@etherfold/processor-entities';
 import {STREAM_FINALITY, type StratagemsABI} from 'stratagems-indexer';
 import {logs} from 'named-logs';
 
@@ -40,12 +48,19 @@ function appRoot(): string {
 		const at = href.indexOf(marker);
 		if (at >= 0) return href.slice(0, at + 1);
 	}
-	throw new Error(`cannot tell where the app is served from, given this worker's URL ${href}`);
+	throw new Error(
+		`cannot tell where the app is served from, given this worker's URL ${href}`,
+	);
 }
 
 /** The bundle's processor is the authoring object its bytes made: name the type it was built from. */
-function definitionOf(bundle?: InstantiatedProcessorBundle): EntityProcessor<StratagemsABI> {
-	if (!bundle) throw new Error('the stratagems worker runs the published processor bundle, and none arrived');
+function definitionOf(
+	bundle?: InstantiatedProcessorBundle,
+): EntityProcessor<StratagemsABI> {
+	if (!bundle)
+		throw new Error(
+			'the stratagems worker runs the published processor bundle, and none arrived',
+		);
 	return bundle.processor as EntityProcessor<StratagemsABI>;
 }
 
@@ -68,7 +83,10 @@ hostIndexerInThisWorker({
 	// source never lands in the rows of the previous one. The declarations come from
 	// the published bundle's own processor.
 	...stateFactoriesFrom({
-		open: (context, entities) => createBrowserStateStore(entities, {databaseName: `stratagems-${context.stream}`}),
+		open: (context, entities) =>
+			createBrowserStateStore(entities, {
+				databaseName: `stratagems-${context.stream}`,
+			}),
 		// the finality the job published under: a snapshot inside the reorg window is refused
 		finalityDepth: STREAM_FINALITY,
 		onBootstrap: (outcome) => {
@@ -76,11 +94,14 @@ hostIndexerInThisWorker({
 			if (outcome.status === 'not-bootstrapped') {
 				// said out loud: the tab then indexes from the start block, which on alpha1 is
 				// ~40M blocks
-				console.warn(`the published snapshot was not installed (${outcome.reason}): indexing from the start block`);
+				console.warn(
+					`the published snapshot was not installed (${outcome.reason}): indexing from the start block`,
+				);
 			}
 		},
 	}),
-	createProcessor: (state, _context, bundle) => new EntityEventProcessor(state, definitionOf(bundle)),
+	createProcessor: (state, _context, bundle) =>
+		new EntityEventProcessor(state, definitionOf(bundle)),
 	// ONE TAB INDEXES, THE OTHERS READ (etherfold ADR-0097). Without this, every open
 	// stratagems tab fetches the chain through the wallet, and all but one then lose the
 	// writer claim. The election is one Web Lock per app: the worker holding it builds

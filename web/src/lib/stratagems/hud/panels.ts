@@ -44,7 +44,10 @@ export function describeCell(params: {
 	const {selected, view} = params;
 	if (!selected) return undefined;
 	const {x, y} = bigIntIDToXY(selected.position);
-	const cell = view.step === 'Loaded' ? view.cells.get(selected.position.toString()) : undefined;
+	const cell =
+		view.step === 'Loaded'
+			? view.cells.get(selected.position.toString())
+			: undefined;
 	// the cell as the board shows it, so with the planned turn played onto it
 	const shown = cell;
 	const alive = shown !== undefined && shown.life > 0 && shown.color > 0;
@@ -56,10 +59,19 @@ export function describeCell(params: {
 				? 'Planned: remove it (its gem comes back)'
 				: `Planned: a ${COLOURS[selected.planned]?.name ?? '?'} gem`;
 	return {
-		title: selected.planned === undefined ? `Cell ${x},${y}` : `Cell ${x},${y}, as planned`,
+		title:
+			selected.planned === undefined
+				? `Cell ${x},${y}`
+				: `Cell ${x},${y}, as planned`,
 		colour: alive ? COLOURS[shown.color] : undefined,
-		lifeLabel: alive ? `life ${shown.life} of ${params.maxLife}` : shown && shown.color > 0 ? 'dead' : 'empty',
-		stakeLabel: alive ? `${shown.stake} gem${shown.stake === 1 ? '' : 's'} at stake` : undefined,
+		lifeLabel: alive
+			? `life ${shown.life} of ${params.maxLife}`
+			: shown && shown.color > 0
+				? 'dead'
+				: 'empty',
+		stakeLabel: alive
+			? `${shown.stake} gem${shown.stake === 1 ? '' : 's'} at stake`
+			: undefined,
 		ownerLabel: alive
 			? shown.mine
 				? 'yours'
@@ -88,14 +100,18 @@ export type WinningsModel =
 			error?: string;
 	  };
 
-export function describeWinnings(state: WinningsState, currency: {symbol: string; decimals: number}): WinningsModel {
+export function describeWinnings(
+	state: WinningsState,
+	currency: {symbol: string; decimals: number},
+): WinningsModel {
 	if (state.total === 0n) return undefined;
 	const cells = new Set(state.shares.map((share) => share.position)).size;
 	return {
 		label: `${formatUnits(state.total, currency.decimals)} ${currency.symbol} to collect`,
 		cells,
 		busy: state.collecting.step === 'Sending',
-		error: state.collecting.step === 'Error' ? state.collecting.message : undefined,
+		error:
+			state.collecting.step === 'Error' ? state.collecting.message : undefined,
 	};
 }
 
@@ -144,7 +160,10 @@ export function describeTestGems(params: {
 	if (!('available' in state)) return undefined;
 	const gems = (value: bigint) => formatUnits(value, currency.decimals);
 	return {
-		label: state.step === 'Sending' ? 'Getting test gems...' : `Get ${TOPUP_GEMS} test gems`,
+		label:
+			state.step === 'Sending'
+				? 'Getting test gems...'
+				: `Get ${TOPUP_GEMS} test gems`,
 		busy: state.step === 'Sending',
 		// the distributor hands out less than a stake, so the numbers are said
 		hint:

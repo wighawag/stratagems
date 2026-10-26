@@ -15,7 +15,11 @@ import type {CoreServices} from '$lib/context/core';
 
 export type WalletDeps = Pick<
 	CoreServices,
-	'connection' | 'accountExecutor' | 'balanceCheck' | 'publicClient' | 'accountBalance'
+	| 'connection'
+	| 'accountExecutor'
+	| 'balanceCheck'
+	| 'publicClient'
+	| 'accountBalance'
 >;
 
 export type WalletCall = {
@@ -56,7 +60,8 @@ export function createWalletSend(deps: WalletDeps): WalletSend {
 }
 
 /** A wallet action's state, for a button that says what it is doing. */
-export type WalletActionState = {step: 'Idle'} | {step: 'Sending'} | {step: 'Error'; message: string};
+export type WalletActionState =
+	{step: 'Idle'} | {step: 'Sending'} | {step: 'Error'; message: string};
 
 export function errorMessage(error: unknown): string {
 	if (error && typeof error === 'object') {

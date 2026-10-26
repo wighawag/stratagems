@@ -15,8 +15,14 @@
 	const context = getAppContext();
 	const {game} = context;
 	const planning = game.planning;
-	const panel = derived([planning.selected, context.viewState], ([$selected, $view]) =>
-		describeCell({selected: $selected, view: $view, maxLife: game.config.maxLife}),
+	const panel = derived(
+		[planning.selected, context.viewState],
+		([$selected, $view]) =>
+			describeCell({
+				selected: $selected,
+				view: $view,
+				maxLife: game.config.maxLife,
+			}),
 	);
 	const selected = planning.selected;
 </script>
@@ -37,7 +43,10 @@
 		</div>
 		<div class="mt-1 flex items-center gap-2 text-xs">
 			{#if $panel.colour}
-				<span class="inline-block h-3 w-3 rounded-sm" style="background-color: {$panel.colour.hex}"></span>
+				<span
+					class="inline-block h-3 w-3 rounded-sm"
+					style="background-color: {$panel.colour.hex}"
+				></span>
 				<span>{$panel.colour.name}</span>
 			{/if}
 			<span class="text-muted-foreground">{$panel.lifeLabel}</span>
@@ -46,7 +55,9 @@
 			<p class="mt-1 text-xs text-muted-foreground">{$panel.stakeLabel}</p>
 		{/if}
 		{#if $panel.ownerLabel}
-			<p class="mt-1 text-xs text-muted-foreground">Owner: {$panel.ownerLabel}</p>
+			<p class="mt-1 text-xs text-muted-foreground">
+				Owner: {$panel.ownerLabel}
+			</p>
 		{/if}
 		{#if $panel.plannedLabel}
 			<p class="mt-1 text-xs text-amber-400">{$panel.plannedLabel}</p>

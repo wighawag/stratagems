@@ -22,7 +22,12 @@ import type {EIP1193Provider} from 'viem';
 import type {CoreServices} from '$lib/context/core';
 import {url} from '$lib/kit/paths';
 import type {SignerGrant} from '$lib/ui/delegation/grant';
-import {createActiveIdentity, onchainIdentity, type ActiveIdentityStore, type GameIdentity} from '$lib/game/identity';
+import {
+	createActiveIdentity,
+	onchainIdentity,
+	type ActiveIdentityStore,
+	type GameIdentity,
+} from '$lib/game/identity';
 import {
 	createCommitRevealGame,
 	type CommitRevealGame,
@@ -34,18 +39,42 @@ import type {CameraControl, CameraWatcher} from '$lib/game/render/camera';
 import type {CanvasEventEmitter} from '$lib/game/render/events';
 import type {GameRenderer} from '$lib/game/core/seams';
 import {createCycleReader} from '$lib/game/core/commit-reveal/cycle';
-import {createAttendanceReader, createCycleAdvancer} from '$lib/game/core/commit-reveal/advance';
-import {createReserve, type ReserveStore} from '$lib/game/core/commit-reveal/reserve';
-import {blocksCommitting, createMissedReveal, type MissedRevealStore} from '$lib/game/core/commit-reveal/missed-reveal';
+import {
+	createAttendanceReader,
+	createCycleAdvancer,
+} from '$lib/game/core/commit-reveal/advance';
+import {
+	createReserve,
+	type ReserveStore,
+} from '$lib/game/core/commit-reveal/reserve';
+import {
+	blocksCommitting,
+	createMissedReveal,
+	type MissedRevealStore,
+} from '$lib/game/core/commit-reveal/missed-reveal';
 import {SignerOutOfFundsError} from '$lib/game/core/commit-reveal/errors';
 import {xyToBigIntID} from 'stratagems-common';
 
 // ---------------------------------------------------------------------------
 // The game itself.
 // ---------------------------------------------------------------------------
-import {costOfMoves, resolveStratagemsConfig, type StratagemsConfig} from './game-config';
-import {buildMovesCommitment, createStratagemsCommitReveal, gameContract, MOVE_ENCODING, type Move} from './moves';
-import {createSubmissionStorage, loadCommittedTurn, submissionStorageKey} from './submission-storage';
+import {
+	costOfMoves,
+	resolveStratagemsConfig,
+	type StratagemsConfig,
+} from './game-config';
+import {
+	buildMovesCommitment,
+	createStratagemsCommitReveal,
+	gameContract,
+	MOVE_ENCODING,
+	type Move,
+} from './moves';
+import {
+	createSubmissionStorage,
+	loadCommittedTurn,
+	submissionStorageKey,
+} from './submission-storage';
 import {createIndexedBoard, type BoardState} from './board/indexed-board';
 import {createPlanning, type PlanningStore} from './planning';
 import {createFaction, type FactionStore} from './faction';
@@ -167,7 +196,9 @@ export function createGameContext(core: CoreServices): GameContext {
 			(indexedBoard = createIndexedBoard({
 				provider: core.connection.provider as unknown as EIP1193Provider,
 				publicClient: core.publicClient,
-				deployment: deployments as unknown as Parameters<typeof createIndexedBoard>[0]['deployment'],
+				deployment: deployments as unknown as Parameters<
+					typeof createIndexedBoard
+				>[0]['deployment'],
 				cycleConfig: config.cycle,
 				player: activeIdentity,
 				snapshotURI: env.PUBLIC_SNAPSHOT_URI || undefined,
@@ -188,7 +219,8 @@ export function createGameContext(core: CoreServices): GameContext {
 				onSettled: () => void reserve.update(),
 			}),
 		blocksCommitting,
-		adapter: ({beforeCommit}) => createStratagemsCommitReveal({deps: core, config, beforeCommit}),
+		adapter: ({beforeCommit}) =>
+			createStratagemsCommitReveal({deps: core, config, beforeCommit}),
 		buildCommitment: ({actions, secret}) =>
 			buildMovesCommitment({
 				actions,
@@ -215,9 +247,13 @@ export function createGameContext(core: CoreServices): GameContext {
 		hold: holdResolvingCycle,
 		holdPlan: holdPlanUntilBoardReleases,
 		merge: createBoardMerge(config.maxLife),
-		renderer: ({viewState}) => createBoardRenderer({viewState, maxLife: config.maxLife}),
+		renderer: ({viewState}) =>
+			createBoardRenderer({viewState, maxLife: config.maxLife}),
 		// Cells are centred on their integer coordinate.
-		click: (position, {planning}) => planning.click(xyToBigIntID(Math.round(position.x), Math.round(position.y))),
+		click: (position, {planning}) =>
+			planning.click(
+				xyToBigIntID(Math.round(position.x), Math.round(position.y)),
+			),
 		start: () => {
 			void reserve.update();
 			return activeIdentity.subscribe(() => void reserve.update());

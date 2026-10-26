@@ -20,7 +20,8 @@ export const COLOURS: readonly string[] = FACTION_COLOURS.map(({hex}) => hex);
 export type GameSurface = CanvasRenderingContext2D;
 
 /** The canvas host this game draws on, loaded in the browser only. */
-export const loadCanvasComponent = () => import('$lib/game/render/canvas2d/Canvas2DCanvas.svelte');
+export const loadCanvasComponent = () =>
+	import('$lib/game/render/canvas2d/Canvas2DCanvas.svelte');
 
 export function createBoardRenderer(params: {
 	viewState: ViewStateStore<BoardView>;

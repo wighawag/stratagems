@@ -19,7 +19,9 @@ export type SyncingModel =
 			failed?: boolean;
 	  };
 
-export function describeSyncing(progress: HostProgress | undefined): SyncingModel {
+export function describeSyncing(
+	progress: HostProgress | undefined,
+): SyncingModel {
 	if (!progress) return {label: 'Starting the indexer...'};
 	if (progress.failure) {
 		return {label: 'The indexer stopped. Reload to try again.', failed: true};
@@ -32,7 +34,10 @@ export function describeSyncing(progress: HostProgress | undefined): SyncingMode
 		case 'loading':
 			return {label: 'Loading the board...'};
 		case 'refused':
-			return {label: 'The indexer refused this tab. Reload to try again.', failed: true};
+			return {
+				label: 'The indexer refused this tab. Reload to try again.',
+				failed: true,
+			};
 		case 'catching-up': {
 			const percentage =
 				progress.syncPercentage === undefined
@@ -52,6 +57,8 @@ export function describeSyncing(progress: HostProgress | undefined): SyncingMode
 	}
 }
 
-export function createSyncing(progress: Readable<HostProgress | undefined>): Readable<SyncingModel> {
+export function createSyncing(
+	progress: Readable<HostProgress | undefined>,
+): Readable<SyncingModel> {
 	return derived(progress, describeSyncing);
 }

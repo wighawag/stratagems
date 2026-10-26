@@ -13,16 +13,26 @@
 
 	const {game} = getAppContext();
 	const winnings = game.winnings;
-	const model = derived(winnings, ($winnings) => describeWinnings($winnings, game.config.currency));
+	const model = derived(winnings, ($winnings) =>
+		describeWinnings($winnings, game.config.currency),
+	);
 </script>
 
 {#if $model}
-	<div class="pointer-events-auto w-64 rounded-lg bg-background/85 p-3 shadow-lg backdrop-blur" data-testid="winnings">
+	<div
+		class="pointer-events-auto w-64 rounded-lg bg-background/85 p-3 shadow-lg backdrop-blur"
+		data-testid="winnings"
+	>
 		<p class="text-sm font-semibold">{$model.label}</p>
 		<p class="mt-1 text-xs text-muted-foreground">
 			Owed to {$model.cells} of your cells by neighbours that died.
 		</p>
-		<Button size="sm" class="mt-2" disabled={$model.busy} onclick={() => winnings.collect()}>
+		<Button
+			size="sm"
+			class="mt-2"
+			disabled={$model.busy}
+			onclick={() => winnings.collect()}
+		>
 			{$model.busy ? 'Collecting...' : 'Collect'}
 		</Button>
 		{#if $model.error}

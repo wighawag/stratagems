@@ -21,7 +21,12 @@
  * offer it on a click either.
  */
 import {derived, get, writable, type Readable} from 'svelte/store';
-import {Color, EVIL_OWNER_ADDRESS, StratagemsContract, type ContractCell} from 'stratagems-common';
+import {
+	Color,
+	EVIL_OWNER_ADDRESS,
+	StratagemsContract,
+	type ContractCell,
+} from 'stratagems-common';
 import type {SubmissionState, SubmissionStore} from '$lib/game/core/submission';
 import type {OnchainStateStore, OnchainStateValue} from '$lib/game/core/seams';
 import type {GameIdentity} from '$lib/game/identity';
@@ -55,8 +60,10 @@ export type CellJudgement =
 	/** Not the player's to act on this cycle, and why. */
 	| {kind: 'refused'; reason: string};
 
-export const REFUSED_EVIL = 'An Evil cell. Nobody can play on it until it dies.';
-export const REFUSED_OTHERS = "Another player's living cell. It is theirs this cycle; it becomes free once it dies.";
+export const REFUSED_EVIL =
+	'An Evil cell. Nobody can play on it until it dies.';
+export const REFUSED_OTHERS =
+	"Another player's living cell. It is theirs this cycle; it becomes free once it dies.";
 
 /**
  * What `player` may do with the cell at `position`, judged on `board` (the
@@ -83,13 +90,18 @@ export function judgeCell(params: {
 	const {updatedCell} = simulation.getUpdatedCell(position, board.cycleNumber);
 	if (updatedCell.life === 0) return {kind: 'place'};
 	const owner = board.data.owners[key]?.toLowerCase();
-	if (updatedCell.color === Color.Evil || owner === EVIL_OWNER_ADDRESS.toLowerCase()) {
+	if (
+		updatedCell.color === Color.Evil ||
+		owner === EVIL_OWNER_ADDRESS.toLowerCase()
+	) {
 		return {kind: 'refused', reason: REFUSED_EVIL};
 	}
 	if (owner !== params.player.toLowerCase()) {
 		return {kind: 'refused', reason: REFUSED_OTHERS};
 	}
-	return updatedCell.life < params.maxLife ? {kind: 'replace'} : {kind: 'remove'};
+	return updatedCell.life < params.maxLife
+		? {kind: 'replace'}
+		: {kind: 'remove'};
 }
 
 /** Whether `player` may plan a coloured move on `position` (a click plans it). */
@@ -103,7 +115,8 @@ export function canPlaceOn(params: {
 	return kind === 'place' || kind === 'replace';
 }
 
-export const REFUSED_COMMITTED = 'Your turn is already committed. Plan again once it is revealed.';
+export const REFUSED_COMMITTED =
+	'Your turn is already committed. Plan again once it is revealed.';
 export const REFUSED_LIMIT = 'That is as many moves as one turn can hold.';
 
 /** The cell the player last clicked, and what may be done with it. */
@@ -150,19 +163,31 @@ export function createPlanning(params: {
 	};
 
 	const maxActions = derived(params.maxOpenableActions, ($max) =>
-		$max === undefined ? MAX_MOVES_PER_TURN : Math.min($max, MAX_MOVES_PER_TURN),
+		$max === undefined
+			? MAX_MOVES_PER_TURN
+			: Math.min($max, MAX_MOVES_PER_TURN),
 	);
 
 	const actions = derived(submission, ($submission) => movesOf($submission));
-	const plan = derived([actions, identity], ([$actions, $identity]): LocalPlan => ({
-		planned: $actions,
-		player: $identity,
-	}));
-	const canPlan = derived(submission, ($submission) => isPlannable($submission));
+	const plan = derived(
+		[actions, identity],
+		([$actions, $identity]): LocalPlan => ({
+			planned: $actions,
+			player: $identity,
+		}),
+	);
+	const canPlan = derived(submission, ($submission) =>
+		isPlannable($submission),
+	);
 	const count = derived(actions, ($actions) => $actions.length);
-	const atLimit = derived([count, maxActions], ([$count, $max]) => $count >= $max);
+	const atLimit = derived(
+		[count, maxActions],
+		([$count, $max]) => $count >= $max,
+	);
 
-	const selection = writable<{position: bigint; reason?: string} | undefined>(undefined);
+	const selection = writable<{position: bigint; reason?: string} | undefined>(
+		undefined,
+	);
 
 	function judge(
 		position: bigint,
@@ -170,22 +195,34 @@ export function createPlanning(params: {
 		player: GameIdentity | undefined,
 	): CellJudgement | undefined {
 		if (!player || $board.step !== 'Loaded') return undefined;
-		return judgeCell({board: $board, position, player, maxLife: params.maxLife});
+		return judgeCell({
+			board: $board,
+			position,
+			player,
+			maxLife: params.maxLife,
+		});
 	}
 
 	const selected = derived(
 		[selection, board, identity, submission, atLimit],
-		([$selection, $board, $identity, $submission, $atLimit]): SelectedCell | undefined => {
+		([$selection, $board, $identity, $submission, $atLimit]):
+			SelectedCell | undefined => {
 			if (!$selection) return undefined;
 			const {position} = $selection;
 			const judgement = judge(position, $board, $identity);
-			const planned = movesOf($submission).find((move) => move.position === position)?.color;
+			const planned = movesOf($submission).find(
+				(move) => move.position === position,
+			)?.color;
 			return {
 				position,
 				judgement,
 				reason: $selection.reason,
 				planned,
-				canRemove: judgement?.kind === 'remove' && planned === undefined && isPlannable($submission) && !$atLimit,
+				canRemove:
+					judgement?.kind === 'remove' &&
+					planned === undefined &&
+					isPlannable($submission) &&
+					!$atLimit,
 			};
 		},
 	);

@@ -16,7 +16,8 @@
 	const model = derived([testGems, game.reserve], ([$testGems, $reserve]) =>
 		describeTestGems({
 			state: $testGems,
-			tokenBalance: $reserve.step === 'Loaded' ? $reserve.tokenBalance : undefined,
+			tokenBalance:
+				$reserve.step === 'Loaded' ? $reserve.tokenBalance : undefined,
 			stakeAmount: game.config.stakeAmount,
 			currency: game.config.currency,
 		}),

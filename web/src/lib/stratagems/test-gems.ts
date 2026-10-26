@@ -20,12 +20,18 @@ export const TOPUP_GEMS = 15;
 type Distributor = {address: `0x${string}`; abi: Abi};
 
 /** The deployment's distributor, when it has one. */
-export function testGemsDistributor(deployments: TypedDeployments): Distributor | undefined {
-	const contracts = deployments.contracts as unknown as Record<string, Distributor | undefined>;
+export function testGemsDistributor(
+	deployments: TypedDeployments,
+): Distributor | undefined {
+	const contracts = deployments.contracts as unknown as Record<
+		string,
+		Distributor | undefined
+	>;
 	return contracts.TestTokensDistributor;
 }
 
-export type TestGemsState = {step: 'Unavailable'} | ({available: true} & WalletActionState);
+export type TestGemsState =
+	{step: 'Unavailable'} | ({available: true} & WalletActionState);
 
 export type TestGemsStore = Readable<TestGemsState> & {
 	get(): Promise<void>;

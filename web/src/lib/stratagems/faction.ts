@@ -43,7 +43,10 @@ export function defaultColorOf(player: `0x${string}`): number {
 }
 
 export function isFaction(color: unknown): color is number {
-	return typeof color === 'number' && FACTIONS.some((faction) => faction.color === color);
+	return (
+		typeof color === 'number' &&
+		FACTIONS.some((faction) => faction.color === color)
+	);
 }
 
 export function factionStorageKey(player: `0x${string}`): string {
@@ -63,7 +66,10 @@ function browserStorage(): FactionStorage | undefined {
 }
 
 /** What `player` picked, or their default. An unreadable record is ignored. */
-export function loadFaction(player: `0x${string}`, storage: FactionStorage | undefined = browserStorage()): number {
+export function loadFaction(
+	player: `0x${string}`,
+	storage: FactionStorage | undefined = browserStorage(),
+): number {
 	const stored = storage?.getItem(factionStorageKey(player));
 	if (stored) {
 		const color = Number(stored);

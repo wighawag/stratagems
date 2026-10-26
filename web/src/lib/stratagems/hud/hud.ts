@@ -14,10 +14,7 @@ export type StakeWords = ReturnType<typeof stakeWords>;
 import type {Context} from '$lib/context/types';
 import type {SubmissionState} from '$lib/game/core/submission';
 
-import {
-	opensAWallet,
-	type AcquisitionState,
-} from '$lib/game/acquire';
+import {opensAWallet, type AcquisitionState} from '$lib/game/acquire';
 import type {Move} from '../moves';
 import type {ReserveState} from '$lib/game/core/commit-reveal/reserve';
 import {
@@ -482,9 +479,13 @@ export function createHud(context: Context): Readable<HudModel> {
 			const playable = phase === 'play';
 
 			const acquisition = $acquisition as AcquisitionState;
-			const needsSetup = describeSetup($setup as SetupNeeded | undefined, STAKE, {
-				busyLabel: acquisitionBusyLabel(acquisition),
-			});
+			const needsSetup = describeSetup(
+				$setup as SetupNeeded | undefined,
+				STAKE,
+				{
+					busyLabel: acquisitionBusyLabel(acquisition),
+				},
+			);
 			if (needsSetup?.action === 'stake') {
 				needsSetup.busy = needsSetup.busyLabel !== undefined;
 				needsSetup.error =

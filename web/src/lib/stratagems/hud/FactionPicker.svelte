@@ -13,7 +13,10 @@
 </script>
 
 {#if $faction !== undefined}
-	<div class="pointer-events-auto rounded-lg bg-background/85 p-2 shadow-lg backdrop-blur" data-testid="faction-picker">
+	<div
+		class="pointer-events-auto rounded-lg bg-background/85 p-2 shadow-lg backdrop-blur"
+		data-testid="faction-picker"
+	>
 		<p class="mb-1 text-xs text-muted-foreground">Your colour</p>
 		<div class="flex gap-1">
 			{#each FACTIONS as option (option.color)}

@@ -22,7 +22,12 @@
 </script>
 
 <div class="pointer-events-auto flex flex-col items-end">
-	<Button size="sm" variant="outline" data-testid="leaderboard-toggle" onclick={() => (open = !open)}>
+	<Button
+		size="sm"
+		variant="outline"
+		data-testid="leaderboard-toggle"
+		onclick={() => (open = !open)}
+	>
 		{open ? 'Hide leaderboard' : 'Leaderboard'}
 	</Button>
 	{#if open}

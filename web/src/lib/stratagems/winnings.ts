@@ -24,7 +24,12 @@
  * hands in this very cycle, which a display can live with.
  */
 import {derived, get, writable, type Readable} from 'svelte/store';
-import {bigIntIDToXY, countBits, StratagemsContract, xyToBigIntID} from 'stratagems-common';
+import {
+	bigIntIDToXY,
+	countBits,
+	StratagemsContract,
+	xyToBigIntID,
+} from 'stratagems-common';
 import type {Abi} from 'viem';
 import type {OnchainStateStore, OnchainStateValue} from '$lib/game/core/seams';
 import type {GameIdentity} from '$lib/game/identity';
@@ -58,11 +63,17 @@ export function sharesOwed(params: {
 }): Share[] {
 	const {board, numTokensPerGems} = params;
 	const player = params.player.toLowerCase();
-	const simulation = new StratagemsContract({cells: board.data.cells, owners: {}, computedPoints: {}}, params.maxLife);
+	const simulation = new StratagemsContract(
+		{cells: board.data.cells, owners: {}, computedPoints: {}},
+		params.maxLife,
+	);
 	const shares: Share[] = [];
 	for (const key of Object.keys(board.data.cells)) {
 		const position = BigInt(key);
-		const {updatedCell, justDied} = simulation.getUpdatedCell(position, board.cycleNumber);
+		const {updatedCell, justDied} = simulation.getUpdatedCell(
+			position,
+			board.cycleNumber,
+		);
 		const distribution = justDied
 			? (updatedCell.enemyMap << 4) + countBits(updatedCell.enemyMap)
 			: updatedCell.distribution;
@@ -70,7 +81,8 @@ export function sharesOwed(params: {
 		if (count === 0 || distribution >> 4 === 0 || updatedCell.stake === 0) {
 			continue;
 		}
-		const amount = BigInt(updatedCell.stake) * (numTokensPerGems / BigInt(count));
+		const amount =
+			BigInt(updatedCell.stake) * (numTokensPerGems / BigInt(count));
 		for (let side = 0; side < 4; side++) {
 			if (((distribution >> 4) & (1 << side)) === 0) continue;
 			const neighbour = neighbourOn(position, side);
@@ -125,11 +137,14 @@ export function createWinnings(params: {
 				})
 			: [],
 	);
-	const state = derived([shares, collecting], ([$shares, $collecting]): WinningsState => ({
-		shares: $shares,
-		total: $shares.reduce((sum, share) => sum + share.amount, 0n),
-		collecting: $collecting,
-	}));
+	const state = derived(
+		[shares, collecting],
+		([$shares, $collecting]): WinningsState => ({
+			shares: $shares,
+			total: $shares.reduce((sum, share) => sum + share.amount, 0n),
+			collecting: $collecting,
+		}),
+	);
 
 	async function collect() {
 		if (get(collecting).step === 'Sending') return;

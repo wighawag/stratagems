@@ -155,7 +155,11 @@ export function createIndexedBoard(params: {
 				timestamp,
 				params.cycleConfig,
 			);
-			value.set({step: 'Loaded', data: read.data, cycleNumber: currentCycleNumber});
+			value.set({
+				step: 'Loaded',
+				data: read.data,
+				cycleNumber: currentCycleNumber,
+			});
 			status.set({
 				loading: !atTip,
 				lastSuccessfulFetch: Date.now(),
@@ -198,7 +202,10 @@ export function createIndexedBoard(params: {
 						logger.error(`the indexer worker refused this tab`, outcome.error);
 						status.set({
 							loading: false,
-							error: {message: 'the indexer refused this tab', cause: outcome.error},
+							error: {
+								message: 'the indexer refused this tab',
+								cause: outcome.error,
+							},
 						});
 					}
 				},

@@ -17,7 +17,8 @@
 			{$syncing.label}
 		</p>
 		{#if $syncing.percentage !== undefined}
-			<progress class="h-1 w-full" value={$syncing.percentage} max="100"></progress>
+			<progress class="h-1 w-full" value={$syncing.percentage} max="100"
+			></progress>
 		{/if}
 	</div>
 {/if}
