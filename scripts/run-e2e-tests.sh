@@ -372,12 +372,11 @@ echo -e "\n${GREEN}📋 Compiling contracts...${NC}"
 cd "$CONTRACTS_DIR"
 pnpm compile
 
-# STRATAGEMS: no contracts package to build. The template's web imports its
-# contracts' deploy scripts (the offline world); stratagems' does not, until step
-# O of work/plans/join-template-commit-reveal.md. What its web DOES need beside
-# the deployments is `common/` and the indexer, built (and gitignored) in the
-# main checkout and independent of any deployment: the processor bundle is
-# keyed by its own bytes, the indexing source is built from the export.
+# STRATAGEMS: what its web needs beside the deployments and the contracts
+# package is `common/` and the indexer, built (and gitignored) in the main
+# checkout and independent of any deployment: the processor bundle is keyed by
+# its own bytes, the indexing source is built from the export. Linked before
+# the package's `tsc`, which resolves the workspace's packages too.
 for built in common/dist indexer/dist; do
     if [ ! -d "$REPO_DIR/$built" ]; then
         echo -e "${RED}✗ ${REPO_DIR}/$built is missing. Run pnpm i first.${NC}"
@@ -385,6 +384,13 @@ for built in common/dist indexer/dist; do
     fi
     ln -s "$REPO_DIR/$built" "$WORKTREE_DIR/$built"
 done
+
+# Build the WORKTREE's contracts package: its exports (deploy scripts, rocketh
+# config, artifacts) resolve into `dist`, which a fresh worktree does not have,
+# and it must come from the artifacts just compiled. `tsc` and not
+# `pnpm typescript`, which also type-checks the tests.
+echo -e "\n${GREEN}📋 Building the contracts package...${NC}"
+pnpm exec tsc
 
 # Deploy contracts
 #
