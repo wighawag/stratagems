@@ -1,5 +1,6 @@
 /// <reference types="@sveltejs/kit" />
 import {build, version, prerendered, files} from '$service-worker';
+import {createFetchAndUpdateCache} from './service-worker/fetch-and-update-cache';
 // ------------------- CONFIG ---------------------------
 const DEV = true;
 const OFFLINE_CACHE = 'all';
@@ -85,43 +86,40 @@ self.addEventListener('activate', (event: any) => {
 	);
 });
 
-const update = (request: Request, cache?: Response) => {
-	return fetch(request)
-		.then((response) => {
-			return caches.open(CACHE_NAME).then((cache) => {
-				if (request.method === 'GET' && request.url.startsWith('http')) {
-					// only on http protocol to prevent chrome-extension request to error out
-					cache.put(request, response.clone());
-				}
-				return response;
-			});
-		})
-		.catch(() => {
-			return cache;
-		});
-};
+// shared with the template: never lets an HTTP error replace a cached asset
+const update = createFetchAndUpdateCache({
+	fetch: (request) => fetch(request),
+	put: async (request, response) => (await caches.open(CACHE_NAME)).put(request, response),
+	log,
+});
+
+type KeepAlive = (promise: Promise<unknown>) => void;
 
 const cacheFirst = {
-	method: (request: Request, cache?: Response) => {
+	method: (request: Request, cache?: Response, keepAlive?: KeepAlive) => {
 		log(`[Service Worker] Cache first: ${request.url}`);
-		const fun = update(request, cache);
+		const fun = update(request, cache, keepAlive);
+		if (cache) {
+			// served from cache: keep the worker up for the background refresh
+			keepAlive?.(fun);
+		}
 		return cache || fun;
 	},
 	regexes: regexesCacheFirst,
 };
 
 const cacheOnly = {
-	method: (request: Request, cache?: Response) => {
+	method: (request: Request, cache?: Response, keepAlive?: KeepAlive) => {
 		log(`[Service Worker] Cache only: ${request.url}`);
-		return cache || update(request, cache);
+		return cache || update(request, cache, keepAlive);
 	},
 	regexes: regexesCacheOnly,
 };
 
 const onlineFirst = {
-	method: (request: Request, cache?: Response) => {
+	method: (request: Request, cache?: Response, keepAlive?: KeepAlive) => {
 		log(`[Service Worker] Online first: ${request.url}`);
-		return update(request, cache);
+		return update(request, cache, keepAlive);
 	},
 	regexes: regexesOnlineFirst,
 };
@@ -134,7 +132,10 @@ const onlineOnly = {
 	regexes: regexesOnlineOnly,
 };
 
-async function getResponse(event: {request: Request}): Promise<Response | undefined> {
+async function getResponse(event: {
+	request: Request;
+	waitUntil: (promise: Promise<unknown>) => void;
+}): Promise<Response | undefined> {
 	const request = event.request;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const registration = (self as any).registration as ServiceWorkerRegistration;
@@ -152,6 +153,7 @@ async function getResponse(event: {request: Request}): Promise<Response | undefi
 	}
 
 	// TODO remove query param from matching, query param are used as config (why not use hashes then ?) const normalizedUrl = normalizeUrl(event.request.url);
+	const keepAlive: KeepAlive = (promise) => event.waitUntil(promise);
 	const response = await caches.match(request).then((cache) => {
 		// The order matters !
 		const patterns = [onlineFirst, onlineOnly, cacheFirst, cacheOnly];
@@ -159,12 +161,12 @@ async function getResponse(event: {request: Request}): Promise<Response | undefi
 		for (const pattern of patterns) {
 			for (const regex of pattern.regexes) {
 				if (RegExp(regex).test(request.url)) {
-					return pattern.method(request, cache);
+					return pattern.method(request, cache, keepAlive);
 				}
 			}
 		}
 
-		return onlineFirst.method(request, cache);
+		return onlineFirst.method(request, cache, keepAlive);
 	});
 	return response;
 }
