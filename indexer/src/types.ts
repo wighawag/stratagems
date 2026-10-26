@@ -56,6 +56,12 @@ export type Data = {
 		};
 	};
 	computedPoints: {[player: string]: number};
+	/**
+	 * The cycle as the last `CycleAdvanced` left it, absent before the first
+	 * one: under the Manual policy, the chain's cycle (`advancedCycle` in
+	 * `./entities.ts`).
+	 */
+	advancedCycle?: {cycleNumber: number; commiting: boolean};
 };
 
 export function emptyData(): Data {

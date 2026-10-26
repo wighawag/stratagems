@@ -23,10 +23,12 @@
  * a reveal at a cycle boundary: reveals land in their own cycle's reveal phase,
  * so their re-reads were asked for by earlier blocks.
  *
- * The cycle is computed from the block's timestamp with the deployment's timed
- * policy (`calculateCycleInfo`), which is exact while the contract's clock is the
- * block's (on a local chain stratagems reads a `Time` contract, whose offset is
- * zero unless someone moves it).
+ * The cycle is computed by `./board-cycle.ts`: from the block's timestamp under
+ * the timed policy, from the state's own `advancedCycle` under Manual (the
+ * offline world), and a hybrid deployment is refused when its board is made.
+ *
+ * AN OFFLINE WORLD IS INDEXED BY ITS OWN WORKER (`./worker-choice.ts`): no tab
+ * election, no publication, a database per world kept across reloads.
  */
 import {
 	connectToIndexerHost,
@@ -48,7 +50,13 @@ import {readable, writable, type Readable} from 'svelte/store';
 import type {EIP1193Provider} from 'viem';
 import {logs} from 'named-logs';
 import type {TypedPublicClient} from '$lib/core/connection/types';
-import {calculateCycleInfo, type CycleConfig} from '$lib/game/core/cycle';
+import type {CycleConfig} from '$lib/game/core/cycle';
+import {
+	assertStampable,
+	boardCycleNumber,
+	stampNeedsTimestamp,
+} from './board-cycle';
+import {boardWorkerFor} from './worker-choice';
 import type {
 	OnchainStateStatus,
 	OnchainStateStore,
@@ -109,6 +117,11 @@ export function createIndexedBoard(params: {
 	/** The worker's own progress, for a syncing indicator. */
 	progress: Readable<HostProgress | undefined>;
 } {
+	assertStampable(params.cycleConfig);
+	const worker = boardWorkerFor({
+		chain: params.deployment.chain,
+		gameAddress: params.deployment.contracts.Stratagems.address,
+	});
 	const value = writable<OnchainStateValue<BoardState>>({step: 'Unloaded'});
 	const status = writable<OnchainStateStatus>({loading: true});
 	const progressStore = writable<HostProgress | undefined>(undefined);
@@ -147,13 +160,16 @@ export function createIndexedBoard(params: {
 		);
 		if (block === 0) return;
 		try {
-			const timestamp = await timestampOf(block);
+			const timestamp = stampNeedsTimestamp(params.cycleConfig)
+				? await timestampOf(block)
+				: undefined;
 			// a later publish may have overtaken this one while the block was read
 			if (read !== lastRead || block < stampedBlock) return;
 			stampedBlock = block;
-			const {currentCycleNumber} = calculateCycleInfo(
-				timestamp,
+			const currentCycleNumber = boardCycleNumber(
 				params.cycleConfig,
+				read.data,
+				timestamp,
 			);
 			value.set({
 				step: 'Loaded',
@@ -175,42 +191,51 @@ export function createIndexedBoard(params: {
 
 	function start(provider: EIP1193Provider) {
 		const deployment = params.deployment;
-		indexer = connectToIndexerHost(
-			dedicatedWorkerHost(
-				() =>
-					new Worker(new URL('./indexer.worker.ts', import.meta.url), {
+		// Two literal `new Worker(new URL(...))` so the bundler sees both entries.
+		const host = dedicatedWorkerHost(() =>
+			worker.kind === 'embedded'
+				? new Worker(new URL('./indexer.embedded.worker.ts', import.meta.url), {
 						type: 'module',
+						name: worker.name,
+					})
+				: new Worker(new URL('./indexer.worker.ts', import.meta.url), {
+						type: 'module',
+						name: worker.name,
 					}),
-			),
-			{
-				provider: provider as never,
-				settings: {
-					source: indexingSource(deployment) as never,
-					// the finality the snapshot job published under: part of the
-					// stream digest the publication index is keyed by
-					config: {stream: {finality: STREAM_FINALITY}},
-					publication: {
-						locations: publicationLocations(
-							deployment.name,
-							params.appPath,
-							params.snapshotURI,
-						),
-					},
-				},
-				onConnect: (outcome) => {
-					if (!outcome.accepted) {
-						logger.error(`the indexer worker refused this tab`, outcome.error);
-						status.set({
-							loading: false,
-							error: {
-								message: 'the indexer refused this tab',
-								cause: outcome.error,
-							},
-						});
-					}
-				},
-			},
 		);
+		indexer = connectToIndexerHost(host, {
+			provider: provider as never,
+			settings: {
+				source: indexingSource(deployment) as never,
+				// the finality the snapshot job published under: part of the
+				// stream digest the publication index is keyed by
+				config: {stream: {finality: STREAM_FINALITY}},
+				// a world has no publication (nobody snapshots a chain in a tab)
+				...(worker.kind === 'online'
+					? {
+							publication: {
+								locations: publicationLocations(
+									deployment.name,
+									params.appPath,
+									params.snapshotURI,
+								),
+							},
+						}
+					: {}),
+			},
+			onConnect: (outcome) => {
+				if (!outcome.accepted) {
+					logger.error(`the indexer worker refused this tab`, outcome.error);
+					status.set({
+						loading: false,
+						error: {
+							message: 'the indexer refused this tab',
+							cause: outcome.error,
+						},
+					});
+				}
+			},
+		});
 		const following = new StateFollower(
 			workerExecutor(indexer),
 			'',

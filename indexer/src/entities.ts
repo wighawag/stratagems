@@ -17,6 +17,7 @@
  *   state.points.fixed[account]           -> `fixedRate`
  *   state.points.shared[account]          -> `sharedRate`
  *   state.computedPoints[owner]           -> `computedPoints`
+ *   (new, step O) the last pushed cycle   -> `advancedCycle` (one row, id `singleton`)
  *
  * `web/` reads them through GraphQL (`./queries.ts`), which is built from these
  * declarations, so a field renamed here is a query that stops validating there.
@@ -251,5 +252,24 @@ export const stratagemsEntities = declareEntities([
 		name: 'computedPoints',
 		id: 'owner',
 		fields: {points: 'integer'},
+	},
+
+	/**
+	 * THE CYCLE AS THE LAST PUSH LEFT IT (`CycleAdvanced`), a SINGLETON, absent
+	 * until the first push. Not in the old processor: added by step O of
+	 * work/plans/join-template-commit-reveal.md, for the offline world.
+	 *
+	 * Under the Manual policy this IS the cycle: there it moves only through a
+	 * successful `advance`, and every one emits the event (the commit-to-reveal
+	 * turn included, `commiting` false), so a board stamped with this row is
+	 * stamped with the chain's cycle as of the block it was read at, and no event
+	 * means the cycle has not moved. Under Timed the base never emits it (a
+	 * clock-driven turnover is nothing on chain), so the row stays absent and the
+	 * board keeps the timestamp. `commiting` is 0 or 1.
+	 */
+	{
+		name: 'advancedCycle',
+		id: 'id',
+		fields: {cycleNumber: 'integer', commiting: 'integer'},
 	},
 ]);

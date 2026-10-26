@@ -246,6 +246,9 @@ describe('the offline world, folded by etherfold', () => {
 		const position = xyToBigIntID(1, 1).toString();
 		expect(data.owners[position]?.toLowerCase()).toBe(player.toLowerCase());
 		expect(data.cells[position]?.color).toBe(1);
+		// P7: the cycle the last push left, which a manual board is stamped with
+		// (`board/board-cycle.ts`): two pushes from the first cycle, 2
+		expect(data.advancedCycle).toEqual({cycleNumber: 3, commiting: true});
 		port.close();
 	});
 });

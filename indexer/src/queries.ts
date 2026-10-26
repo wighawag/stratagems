@@ -26,6 +26,7 @@
  *   Q5 the reward state of every account, and the global `shared`, `global` (`sharedRate`, `globalRate`)
  *   Q6 the points the game logic accumulated per owner   `computedPoints` (`computedPoints`)
  *   (Q7 `fixed`, `fixedRate`: nothing in `web/` reads it; kept so the answer is the whole state)
+ *   Q8 the cycle the last push left, if any              `advancedCycle`  (`advancedCycle`, the board's stamp under Manual)
  *
  * No `orderBy` over a `u256` (the browser does not yet sort one numerically), and
  * none of these needs one: the leaderboard sorts its rows itself.
@@ -47,7 +48,16 @@ const CELL_FIELDS =
 	'position lastCycleUpdate cycleWhenTokenIsAdded color life delta enemyMap distribution stake producingCycles';
 
 /** A part of the state: one question, its root fields, and the entities whose moves invalidate it. */
-export type Part = 'cells' | 'owners' | 'commitments' | 'placements' | 'shared' | 'fixed' | 'global' | 'computedPoints';
+export type Part =
+	| 'cells'
+	| 'owners'
+	| 'commitments'
+	| 'placements'
+	| 'shared'
+	| 'fixed'
+	| 'global'
+	| 'computedPoints'
+	| 'advancedCycle';
 
 export const PARTS: readonly Part[] = [
 	'cells',
@@ -58,6 +68,7 @@ export const PARTS: readonly Part[] = [
 	'fixed',
 	'global',
 	'computedPoints',
+	'advancedCycle',
 ];
 
 /** Which part an entity's move invalidates (the state-moved signal names entities). */
@@ -71,6 +82,7 @@ const PART_OF_ENTITY: Record<string, Part> = {
 	fixedRate: 'fixed',
 	globalRate: 'global',
 	computedPoints: 'computedPoints',
+	advancedCycle: 'advancedCycle',
 };
 
 /** The parts the given entities' moves invalidate; an entity this module does not know invalidates everything. */
@@ -112,6 +124,8 @@ function rootFields(part: Part, commitments: Commitments, pinned: boolean): stri
 			return `globalRate(where: {id: {eq: "${SINGLETON.id}"}}, first: 1${at}) { lastUpdateTime totalRewardPerPointAtLastUpdate totalPoints }`;
 		case 'computedPoints':
 			return `computedPoints(first: ${LIST_LIMIT}${at}) { owner points }`;
+		case 'advancedCycle':
+			return `advancedCycle(where: {id: {eq: "${SINGLETON.id}"}}, first: 1${at}) { cycleNumber commiting }`;
 	}
 }
 
@@ -281,6 +295,12 @@ function writeParts(data: Data, parts: ReadonlySet<Part>, answer: Record<string,
 	if (parts.has('computedPoints')) {
 		data.computedPoints = {};
 		for (const row of list('computedPoints')) data.computedPoints[String(row.owner)] = Number(row.points);
+	}
+	if (parts.has('advancedCycle')) {
+		const row = answer.advancedCycle[0];
+		data.advancedCycle = row
+			? {cycleNumber: Number(row.cycleNumber), commiting: Number(row.commiting) === 1}
+			: undefined;
 	}
 }
 

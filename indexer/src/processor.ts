@@ -88,7 +88,11 @@ async function advanceCommitment(
 	const row = (await state.get('commitment', {account})) as {cycle: number; bond: bigint | string} | undefined;
 	if (!row) return;
 	const bond = BigInt(row.bond);
-	state.set('commitment', {account}, {cycle: Number(row.cycle), hash: furtherActions, bond: bond > taken ? bond - taken : 0n});
+	state.set(
+		'commitment',
+		{account},
+		{cycle: Number(row.cycle), hash: furtherActions, bond: bond > taken ? bond - taken : 0n},
+	);
 }
 
 export const stratagemsProcessor: EntityProcessor<StratagemsABI> = {
@@ -171,7 +175,13 @@ export const stratagemsProcessor: EntityProcessor<StratagemsABI> = {
 
 	onReserveDeposited() {},
 	onReserveWithdrawn() {},
-	onCycleAdvanced() {},
+	/** Only a push emits this, and under Manual only a push moves the cycle (see `advancedCycle`). */
+	onCycleAdvanced(state, event) {
+		state.set('advancedCycle', SINGLETON, {
+			cycleNumber: Number(event.args.cycleNumber),
+			commiting: event.args.commiting ? 1 : 0,
+		});
+	},
 	onWaitedForChanged() {},
 
 	// --------------------------

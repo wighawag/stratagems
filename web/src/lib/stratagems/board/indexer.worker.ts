@@ -109,7 +109,11 @@ hostIndexerInThisWorker({
 	// `openState` and answers its tab's queries from the rows the leader writes. It takes
 	// over when the leader's tab closes, or when its own tab is in front and the leader's
 	// is hidden.
-	tabElection: {name: 'stratagems'},
+	//
+	// NAMED PER DEPLOYMENT, by the name the tab gives this worker (`./worker-choice.ts`:
+	// chain and game address). It was the app's name, so an online tab and an offline
+	// world in another tab contended for one lease (step O, P8).
+	tabElection: {name: self.name || 'stratagems'},
 	// GraphQL, answered HERE where the store is (etherfold ADR-0099): the tab sends
 	// documents with `workerExecutor` (`stratagems-indexer`'s `StateFollower`). The
 	// IndexedDB scan refuses past 25,000 rows examined; alpha1's largest list, the
