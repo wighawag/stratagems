@@ -1285,7 +1285,7 @@ Branch `step-6c` (worktree `~/dev/worktrees/stratagems/step-6c`), from the integ
 - `KNOWN_LEAKS` empty; `check-omissions` covers all 76 paths dropped from b31b8d53; `check-dangling-imports` clean; `git diff --stat stem/main -- web/src/lib/{core,game,kit,context} web/src/routes/+layout.svelte web/src/routes/+page.svelte`: empty;
 - the reachability walk: **28 files, all live**, none dead under `lib/stratagems`, and `src/utils`, `src/css`, `src/data` no longer exist;
 - a local playthrough through the UI on the e2e's chain: test gems, stake, faction, plan, commit, reveal, and a removal (the e2e: once the test's own two mistakes were fixed, it passed alone and again in the full suite);
-- `prettier --check` clean on everything this step touched; contracts, `common/` and the indexer untouched (`git diff --stat 54cafc4d -- contracts common indexer` empty), so their suite was not re-run after the baseline.
+- `prettier --check` clean on everything this step touched but this plan, which was already off at 54cafc4d and is left as it was; contracts, `common/` and the indexer untouched (`git diff --stat 54cafc4d -- contracts common indexer` empty), so their suite was not re-run after the baseline.
 
 **Surprises**: the install after removing packages printed four unmet-peer warnings (vitest 1.6.0 and typescript in older workspace packages, `@types/node` for the indexer's vite), all about packages this step did not touch, printed because the lockfile re-resolved; a second install prints none. And the step is 2,883 lines added against 15,418 removed across 243 files, `web/src` 1,412 against 14,324.
 
