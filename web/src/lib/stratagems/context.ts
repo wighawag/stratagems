@@ -22,12 +22,7 @@ import type {EIP1193Provider} from 'viem';
 import type {CoreServices} from '$lib/context/core';
 import {url} from '$lib/kit/paths';
 import type {SignerGrant} from '$lib/ui/delegation/grant';
-import {
-	createActiveIdentity,
-	onchainIdentity,
-	type ActiveIdentityStore,
-	type GameIdentity,
-} from '$lib/game/identity';
+import {createActiveIdentity, onchainIdentity, type ActiveIdentityStore, type GameIdentity} from '$lib/game/identity';
 import {
 	createCommitRevealGame,
 	type CommitRevealGame,
@@ -39,51 +34,30 @@ import type {CameraControl, CameraWatcher} from '$lib/game/render/camera';
 import type {CanvasEventEmitter} from '$lib/game/render/events';
 import type {GameRenderer} from '$lib/game/core/seams';
 import {createCycleReader} from '$lib/game/core/commit-reveal/cycle';
-import {
-	createAttendanceReader,
-	createCycleAdvancer,
-} from '$lib/game/core/commit-reveal/advance';
-import {
-	createReserve,
-	type ReserveStore,
-} from '$lib/game/core/commit-reveal/reserve';
-import {
-	blocksCommitting,
-	createMissedReveal,
-	type MissedRevealStore,
-} from '$lib/game/core/commit-reveal/missed-reveal';
+import {createAttendanceReader, createCycleAdvancer} from '$lib/game/core/commit-reveal/advance';
+import {createReserve, type ReserveStore} from '$lib/game/core/commit-reveal/reserve';
+import {blocksCommitting, createMissedReveal, type MissedRevealStore} from '$lib/game/core/commit-reveal/missed-reveal';
 import {SignerOutOfFundsError} from '$lib/game/core/commit-reveal/errors';
 import {xyToBigIntID} from 'stratagems-common';
 
 // ---------------------------------------------------------------------------
 // The game itself.
 // ---------------------------------------------------------------------------
-import {
-	costOfMoves,
-	resolveStratagemsConfig,
-	type StratagemsConfig,
-} from './game-config';
-import {
-	buildMovesCommitment,
-	createStratagemsCommitReveal,
-	gameContract,
-	MOVE_ENCODING,
-	type Move,
-} from './moves';
-import {
-	createSubmissionStorage,
-	loadCommittedTurn,
-	submissionStorageKey,
-} from './submission-storage';
+import {costOfMoves, resolveStratagemsConfig, type StratagemsConfig} from './game-config';
+import {buildMovesCommitment, createStratagemsCommitReveal, gameContract, MOVE_ENCODING, type Move} from './moves';
+import {createSubmissionStorage, loadCommittedTurn, submissionStorageKey} from './submission-storage';
 import {createIndexedBoard, type BoardState} from './board/indexed-board';
 import {createPlanning, type PlanningStore} from './planning';
+import {createFaction, type FactionStore} from './faction';
+import {createWalletSend} from './wallet';
+import {createWinnings, type WinningsStore} from './winnings';
+import {createLeaderboard, type LeaderboardRow} from './leaderboard';
+import {createTestGems, type TestGemsStore} from './test-gems';
+import {createSyncing, type SyncingModel} from './syncing';
 import {holdResolvingCycle, holdPlanUntilBoardReleases} from './hold';
 import {createBoardMerge, type BoardView} from './view';
 import {createStakeAcquisition, stakeNeeded} from './stake';
-import {
-	createBoardRenderer,
-	type GameSurface,
-} from './canvas2d/board-renderer';
+import {createBoardRenderer, type GameSurface} from './canvas2d/board-renderer';
 
 /** What stands between the player and their first move. */
 export type SetupNeeded = FrameworkSetupNeeded<{step: 'stake'}>;
@@ -115,6 +89,15 @@ export type Game = CommitRevealGame<StratagemsGame>['game'] & {
 	/** What the planned turn would put on the board, at one gem a placement. */
 	cost: Readable<bigint>;
 	setup: Readable<SetupNeeded | undefined>;
+	/** The colour the player's placements take. */
+	faction: FactionStore;
+	/** The shares of dead cells owed to the player, and their collection. */
+	winnings: WinningsStore;
+	leaderboard: Readable<LeaderboardRow[]>;
+	/** Free gems from the deployment's distributor, where it has one. */
+	testGems: TestGemsStore;
+	/** What the indexer is doing while the board is behind the chain. */
+	syncing: Readable<SyncingModel>;
 };
 
 export type Render = {
@@ -151,6 +134,10 @@ export function createGameContext(core: CoreServices): GameContext {
 		identity: activeIdentity,
 	});
 
+	const faction = createFaction({player: activeIdentity});
+	const send = createWalletSend(core);
+	let indexedBoard: ReturnType<typeof createIndexedBoard> | undefined;
+
 	const keyFor = (player: GameIdentity) =>
 		submissionStorageKey({
 			chainID: deployments.chain.id,
@@ -177,17 +164,15 @@ export function createGameContext(core: CoreServices): GameContext {
 		camera: config.camera,
 		// THE INDEXER, not the poller the skeleton offers.
 		board: () =>
-			createIndexedBoard({
+			(indexedBoard = createIndexedBoard({
 				provider: core.connection.provider as unknown as EIP1193Provider,
 				publicClient: core.publicClient,
-				deployment: deployments as unknown as Parameters<
-					typeof createIndexedBoard
-				>[0]['deployment'],
+				deployment: deployments as unknown as Parameters<typeof createIndexedBoard>[0]['deployment'],
 				cycleConfig: config.cycle,
 				player: activeIdentity,
 				snapshotURI: env.PUBLIC_SNAPSHOT_URI || undefined,
 				appPath: url,
-			}),
+			})),
 		// Shown its chunks, a missed reveal costs one gem per committed move and
 		// the rest of the bond comes back; without them, the whole bond.
 		missedReveal: () =>
@@ -203,8 +188,7 @@ export function createGameContext(core: CoreServices): GameContext {
 				onSettled: () => void reserve.update(),
 			}),
 		blocksCommitting,
-		adapter: ({beforeCommit}) =>
-			createStratagemsCommitReveal({deps: core, config, beforeCommit}),
+		adapter: ({beforeCommit}) => createStratagemsCommitReveal({deps: core, config, beforeCommit}),
 		buildCommitment: ({actions, secret}) =>
 			buildMovesCommitment({
 				actions,
@@ -225,18 +209,15 @@ export function createGameContext(core: CoreServices): GameContext {
 				maxOpenableActions,
 				onchainState,
 				identity: activeIdentity,
+				faction,
 				maxLife: config.maxLife,
 			}),
 		hold: holdResolvingCycle,
 		holdPlan: holdPlanUntilBoardReleases,
 		merge: createBoardMerge(config.maxLife),
-		renderer: ({viewState}) =>
-			createBoardRenderer({viewState, maxLife: config.maxLife}),
+		renderer: ({viewState}) => createBoardRenderer({viewState, maxLife: config.maxLife}),
 		// Cells are centred on their integer coordinate.
-		click: (position, {planning}) =>
-			planning.toggle(
-				xyToBigIntID(Math.round(position.x), Math.round(position.y)),
-			),
+		click: (position, {planning}) => planning.click(xyToBigIntID(Math.round(position.x), Math.round(position.y))),
 		start: () => {
 			void reserve.update();
 			return activeIdentity.subscribe(() => void reserve.update());
@@ -249,10 +230,45 @@ export function createGameContext(core: CoreServices): GameContext {
 		costOfMoves(config, $moves.filter((move) => move.color !== 0).length),
 	);
 
+	if (!indexedBoard) throw new Error('the skeleton did not build the board');
+	const board = indexedBoard;
+
+	const winnings = createWinnings({
+		onchainState: crg.onchainState,
+		identity: activeIdentity,
+		numTokensPerGems: config.numTokensPerGems,
+		maxLife: config.maxLife,
+		game: contract,
+		send,
+		onCollected: () => void board.update(),
+	});
+	const leaderboard = createLeaderboard({
+		onchainState: crg.onchainState,
+		identity: activeIdentity,
+		maxLife: config.maxLife,
+	});
+	const testGems = createTestGems({
+		deployments,
+		send,
+		onReceived: () => void reserve.update(),
+	});
+	const syncing = createSyncing(board.progress);
+
 	return {
 		onchainState: crg.onchainState,
 		viewState: crg.viewState,
-		game: {...crg.game, config, activeIdentity, reserve, cost},
+		game: {
+			...crg.game,
+			config,
+			activeIdentity,
+			reserve,
+			cost,
+			faction,
+			winnings,
+			leaderboard,
+			testGems,
+			syncing,
+		},
 		render: crg.render,
 		start: crg.start,
 	};
