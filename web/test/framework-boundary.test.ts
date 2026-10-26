@@ -45,12 +45,6 @@ const KNOWN_LEAKS: Record<string, string> = {
 		'stratagems legacy, until the port: `dev` from $app/environment',
 	'src/lib/stratagems/state/State.ts':
 		'stratagems legacy, until the port: `browser` from $app/environment',
-	'src/lib/stratagems/ui/header/PageLink.svelte':
-		'stratagems legacy, until the port: `page` from $app/stores',
-	'src/lib/stratagems/ui/install/service-worker-handler.ts':
-		'stratagems legacy, until the port (step 6 adopts the core service worker): $app/environment, $app/paths',
-	'src/lib/stratagems/ui/loading/SplashScreen.svelte':
-		'stratagems legacy, until the port: $app/environment',
 };
 
 const root = new URL('..', import.meta.url).pathname;
