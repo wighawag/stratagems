@@ -337,93 +337,24 @@ importers:
       '@etherfold/processor-entities':
         specifier: ^0.4.1
         version: 0.4.1(typescript@6.0.3)(zod@3.25.76)
-      '@metamask/onboarding':
-        specifier: ^1.0.1
-        version: 1.0.1
-      '@noble/ciphers':
-        specifier: ^0.5.3
-        version: 0.5.3
-      '@scure/base':
-        specifier: ^1.1.6
-        version: 1.1.6
       '@sentry/vite-plugin':
         specifier: ^2.18.0
         version: 2.18.0
-      '@types/lodash-es':
-        specifier: ^4.17.12
-        version: 4.17.12
-      '@zerodevx/svelte-json-view':
-        specifier: ^1.0.9
-        version: 1.0.9(svelte@5.57.1)
-      driver.js:
-        specifier: ^1.3.1
-        version: 1.3.1
-      ethereum-tx-observer:
-        specifier: ^0.0.5
-        version: 0.0.5
-      focus-trap:
-        specifier: ^7.5.4
-        version: 7.5.4
-      fuzd-client:
-        specifier: ^0.7.1
-        version: 0.7.1(@types/node@26.6.5)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76)
-      immer:
-        specifier: ^10.1.1
-        version: 10.1.1
-      lodash-es:
-        specifier: ^4.17.21
-        version: 4.17.21
-      lucide-svelte:
-        specifier: ^0.394.0
-        version: 0.394.0(svelte@5.57.1)
-      lz-string:
-        specifier: ^1.5.0
-        version: 1.5.0
-      missiv-client:
-        specifier: ^0.0.13
-        version: 0.0.13(svelte@5.57.1)
       named-logs:
         specifier: ^0.4.1
         version: 0.4.1
-      pretty-ms:
-        specifier: ^9.0.0
-        version: 9.0.0
       radiate:
         specifier: ^0.3.2
         version: 0.3.2
-      radiate-legacy:
-        specifier: npm:radiate@^0.0.2
-        version: radiate@0.0.2
       stratagems-common:
         specifier: workspace:*
         version: link:../common
       stratagems-indexer:
         specifier: workspace:*
         version: link:../indexer
-      svelte-headless-table:
-        specifier: ^0.18.2
-        version: 0.18.2(svelte@5.57.1)
-      svelte-portal:
-        specifier: ^2.2.1
-        version: 2.2.1
-      theme-change:
-        specifier: ^2.5.0
-        version: 2.5.0
-      tippy.js:
-        specifier: ^6.3.7
-        version: 6.3.7
-      twgl.js:
-        specifier: ^5.5.4
-        version: 5.5.4
       viem:
         specifier: ^2.55.19
         version: 2.57.1(typescript@6.0.3)(zod@3.25.76)
-      web3-connection:
-        specifier: ^0.1.39
-        version: 0.1.39(svelte@5.57.1)
-      web3-connection-viem:
-        specifier: ^0.3.0
-        version: 0.3.0(viem@2.57.1(typescript@6.0.3)(zod@3.25.76))
     devDependencies:
       '@etherkit/burner-wallet':
         specifier: ^0.1.0
@@ -455,9 +386,6 @@ importers:
       '@playwright/test':
         specifier: ^1.62.1
         version: 1.62.1
-      '@rocketh/export':
-        specifier: ^0.19.30
-        version: 0.19.30(@rocketh/node@0.21.4(rocketh@0.23.1(typescript@6.0.3)(zod@3.25.76))(typescript@6.0.3)(zod@3.25.76))(rocketh@0.23.1(typescript@6.0.3)(zod@3.25.76))(typescript@6.0.3)(zod@3.25.76)
       '@rocketh/web':
         specifier: ^0.19.27
         version: 0.19.27(rocketh@0.23.1(typescript@6.0.3)(zod@3.25.76))(typescript@6.0.3)(zod@3.25.76)
@@ -485,9 +413,6 @@ importers:
       '@vitest/browser-playwright':
         specifier: ^4.1.11
         version: 4.1.12(playwright@1.62.1)(vite@8.3.1(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.4.5))(vitest@4.1.12)
-      abitype:
-        specifier: ^1.0.2
-        version: 1.0.2(typescript@6.0.3)(zod@3.25.76)
       bits-ui:
         specifier: ^2.18.2
         version: 2.20.2(@internationalized/date@3.12.4)(@sveltejs/kit@2.70.3(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.1)(vite@8.3.1(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.4.5)))(svelte@5.57.1)(typescript@6.0.3)(vite@8.3.1(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.4.5)))(svelte@5.57.1)
@@ -500,9 +425,6 @@ importers:
       faucet-client:
         specifier: ^0.1.0
         version: 0.1.0
-      fuzd-scheduler:
-        specifier: ^0.7.0
-        version: 0.7.0(@types/node@26.6.5)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76)
       ipfs-gateway-emulator:
         specifier: ^5.1.0
         version: 5.1.0
@@ -560,9 +482,6 @@ importers:
       tseep:
         specifier: ^1.3.1
         version: 1.3.1
-      tslib:
-        specifier: ^2.6.3
-        version: 2.6.3
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
@@ -1977,20 +1896,11 @@ packages:
     peerDependencies:
       svelte: ^5
 
-  '@metamask/onboarding@1.0.1':
-    resolution: {integrity: sha512-FqHhAsCI+Vacx2qa5mAFcWNSrTcVGMNjzxVgaX8ECSny/BJ9/vgXP9V7WF/8vb9DltPeQkxr+Fnfmm6GHfmdTQ==}
-
   '@neon-rs/load@0.0.4':
     resolution: {integrity: sha512-kTPhdZyTQxB+2wpiRcFWrDcejc4JI6tkPuS7UZCG4l6Zvc5kU/gGQ/ozvHTh1XR5tS+UlfAfGuPajjzQjCiHCw==}
 
-  '@noble/ciphers@0.4.1':
-    resolution: {integrity: sha512-QCOA9cgf3Rc33owG0AYBB9wszz+Ul2kramWN8tXG44Gyciud/tbkEqvxRF/IpqQaBpRBNi9f4jdNxqB2CQCIXg==}
-
   '@noble/ciphers@0.5.1':
     resolution: {integrity: sha512-aNE06lbe36ifvMbbWvmmF/8jx6EQPu2HVg70V95T+iGjOuYwPpAccwAQc2HlXO2D0aiQ3zavbMga4jjWnrpiPA==}
-
-  '@noble/ciphers@0.5.3':
-    resolution: {integrity: sha512-B0+6IIHiqEs3BPMT0hcRmHvEj2QHOLu+uwt+tqDDeVd0oyVzh7BPrDcPjRnV1PV/5LaknXJJQvOuRGR0zQJz+w==}
 
   '@noble/ciphers@1.3.0':
     resolution: {integrity: sha512-2I0gnIVPtfnMw9ee9h1dJG7tp81+8Ob3OJb3Mv37rx5L40/b0i7djjCVvGOVqc9AEIQyvyu1i6ypKdFw8R8gQw==}
@@ -2358,9 +2268,6 @@ packages:
 
   '@polka/url@1.0.0-next.25':
     resolution: {integrity: sha512-j7P6Rgr3mmtdkeDGTe0E/aYyWEWVtc5yFXtHCRHs28/jptDEWfaVOc5T7cblqy1XKPPfCxJc/8DwQ5YgLOZOVQ==}
-
-  '@popperjs/core@2.11.8':
-    resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
 
   '@pothos/core@4.15.1':
     resolution: {integrity: sha512-G0riOIbF6zer2SU7V1MmivkSdoKk+gYRf+Ru8JVcy3p9GhyJ8OzQj92RgCfCpEvkTgl6EdH8VueLe1Lm7lY4aA==}
@@ -3022,12 +2929,6 @@ packages:
   '@types/linkify-it@5.0.0':
     resolution: {integrity: sha512-sVDA58zAw4eWAffKOaQH5/5j3XeayukzDk+ewSsnv3p4yJEZHCCzMDiZM8e0OUrRvmpGZ85jf4yDHkHsgBNr9Q==}
 
-  '@types/lodash-es@4.17.12':
-    resolution: {integrity: sha512-0NgftHUcV4v34VhXm8QBSftKVXtbkBG3ViCjs6+eJ5a6y6Mi/jiFGPc1sC7QK+9BFhWrURE3EOggmWaSxL9OzQ==}
-
-  '@types/lodash@4.14.202':
-    resolution: {integrity: sha512-OvlIYQK9tNneDlS0VN54LLd5uiPCBOp7gS5Z0f1mjoJYBrtStzgmJBxONW3U6OZqdtNzZPmn9BS/7WI7BFFcFQ==}
-
   '@types/markdown-it@14.1.1':
     resolution: {integrity: sha512-4NpsnpYl2Gt1ljyBGrKMxFYAYvpqbnnkgP/i/g+NLpjEUa3obn1XJCur9YbEXKDAkaXqsR1LbDnGEJ0MmKFxfg==}
 
@@ -3263,24 +3164,8 @@ packages:
     resolution: {integrity: sha512-VSdkwnJRr8Yv9UgB2aXB3VUPWwd6Oqnn0hycFwhg9pZgWxJXb7JmhsiXe9tmpMwjHFxli12PGcz9aI63YYloGQ==}
     engines: {node: '>=18.0.0'}
 
-  '@zerodevx/svelte-json-view@1.0.9':
-    resolution: {integrity: sha512-2KKxBfDxEo7lM/kJSy+m1PdLAp5Q9c5nB6OYVBg7oWPdCLXB9JVH1Ytxn2hkqTn77m9MobqGI1fz9FFOTPONfA==}
-    peerDependencies:
-      svelte: ^3.57.0 || ^4.0.0
-
   abitype@1.0.0:
     resolution: {integrity: sha512-NMeMah//6bJ56H5XRj8QCV4AwuW6hB6zqz2LnhhLdcWVQOsXki6/Pn3APeqxCma62nXIcmZWdu1DlHWS74umVQ==}
-    peerDependencies:
-      typescript: '>=5.0.4'
-      zod: ^3 >=3.22.0
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-      zod:
-        optional: true
-
-  abitype@1.0.2:
-    resolution: {integrity: sha512-aFt4k2H+eiAKy/zxtnORa9iIb10BMBeWL18l8v4+QuwYEBXPxxjSB1bFZCzQmKPoj8m7j68K705l3uY+E2gAjg==}
     peerDependencies:
       typescript: '>=5.0.4'
       zod: ^3 >=3.22.0
@@ -3490,9 +3375,6 @@ packages:
 
   boolbase@1.0.0:
     resolution: {integrity: sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==}
-
-  bowser@2.11.0:
-    resolution: {integrity: sha512-AlcaJBi/pqqJBIQ8U9Mcpc9i8Aqxn88Skv5d+xBX006BY5u8N3mGLHa5Lgppa7L/HfwgwLgZ6NYs+Ag6uUmJRA==}
 
   brace-expansion@2.0.1:
     resolution: {integrity: sha512-XnAIvQ8eM+kC6aULx6wuQiwVsnzsi9d3WxzV3FpWTGA19F621kwdbsAcFKXgKUHZWsy+mY6iL1sHTxWEFCytDA==}
@@ -3917,9 +3799,6 @@ packages:
     resolution: {integrity: sha512-pYxfDYpued//QpnLIm4Avk7rsNtAtQkUES2cwAYSvD/wd2pKD71gN2Ebj3e7klzXwjocvE8c5vx/1fxwpqmSxA==}
     engines: {node: '>=4'}
 
-  driver.js@1.3.1:
-    resolution: {integrity: sha512-MvUdXbqSgEsgS/H9KyWb5Rxy0aE6BhOVT4cssi2x2XjmXea6qQfgdx32XKVLLSqTaIw7q/uxU5Xl3NV7+cN6FQ==}
-
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
     engines: {node: '>= 0.4'}
@@ -4084,9 +3963,6 @@ packages:
   ethereum-cryptography@3.2.0:
     resolution: {integrity: sha512-Urr5YVsalH+Jo0sYkTkv1MyI9bLYZwW8BENZCeE1QYaTHETEYx0Nv/SVsWkSqpYrzweg6d8KMY1wTjH/1m/BIg==}
     engines: {node: ^14.21.3 || >=16, npm: '>=9'}
-
-  ethereum-tx-observer@0.0.5:
-    resolution: {integrity: sha512-hNyosCVnoOWOFb0K455trH2fCqR2NDSAC/qYKyhr2aiSAZ6MGItyufAQ/Fa2NOaBwJLy6tij+FvIQERrbE/Q9g==}
 
   etherfold@0.11.0:
     resolution: {integrity: sha512-/ChbjjNwqyFSbXkCrmHxGvjgDIwLozkgZbWpHrXNKmkuuTsBcZKMycMZAur9fI3o8Xs9pVPH7MMoJR2XWmIO2Q==}
@@ -4261,30 +4137,11 @@ packages:
   function-bind@1.1.2:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
 
-  fuzd-chain-protocol@0.7.0:
-    resolution: {integrity: sha512-qYSAWZO9x40fg5TumeqJI0JgqK+llUjbgVJ31cZCgB6D7/4ChJKVnLHaClkJ6L5ofcICfxwAbx1bRodZ+6w6QA==}
-
-  fuzd-chain-protocol@0.7.1:
-    resolution: {integrity: sha512-THaW+ofrxCcvO35knDZ3+6x7BEPD+ktR/3Nqv9JKUco1SDIgAm5ub2/YklfILBFBLXRmgYCDICmDPtILUySu1w==}
-
   fuzd-chain-protocol@0.7.2:
     resolution: {integrity: sha512-2psD6hPtssnUYu+FiWfwNOrfINWM1T0GTKJleTsViLK7zHL6RxSs9uxrtTaC9xO2DhofCo09lr7Dvqja41l52g==}
 
-  fuzd-client@0.7.1:
-    resolution: {integrity: sha512-Q/oB3y+E6C2b5yUfcwWH8rm3axZn4NXU0VVw8AppqipyJXNg+4Q00WJRhtc+Mu5maRkMs4NrAiBRBCzPnSu7Gw==}
-    hasBin: true
-
-  fuzd-common@0.7.0:
-    resolution: {integrity: sha512-caiFETQxHVeDlr6sh3L9T080T+qL4h/N2Jrq1MI3tVv3MnmifoFZDHrqJLhdu8iRieCPJrJmPmoH488wyrHwvQ==}
-
-  fuzd-common@0.7.1:
-    resolution: {integrity: sha512-GHMijRcf0rqUYhTVNucpPqMDVowd3MowjzabtaoehXwYZRZDg4YOFhm708+bPKnUfjDnquVByEWYX0kDeO3kSA==}
-
   fuzd-common@0.7.2:
     resolution: {integrity: sha512-K2F+GtpM8s9289b7YV02FCKZRU29ck0Rr3npQCJWaE3699vRr6xpuCpdGp5FVuMEf/K7+3r7OW+7Bzakv32lKg==}
-
-  fuzd-executor@0.7.1:
-    resolution: {integrity: sha512-usH7fgRUi7FVw36wr+GQPeKLyttEf5LK/pwVSbrsnr7pTmCu2VF25eXpQ9MzjvCX0JGYKHr6acoT16jjsRhWtw==}
 
   fuzd-executor@0.7.2:
     resolution: {integrity: sha512-ERXtPN6Zz3+jPYAAkvmPLHmOf3D8V7/WtW5P0z+1grqkI/pm/DzxWIfBj6nIZDuLstyKTNLhxn/kq6wymtNVfA==}
@@ -4292,12 +4149,6 @@ packages:
   fuzd-nodejs@0.7.6:
     resolution: {integrity: sha512-CpQpHwrQAc3p/hkQ7IDQkmVDa0NC1zNCu6A6BSdGqDnfasAma2BKWArtlLKeuybvxbKuj7Ut6eSy6VIky/w78g==}
     hasBin: true
-
-  fuzd-scheduler@0.7.0:
-    resolution: {integrity: sha512-Utrwaa6mt4L/OmmEh+YjLxNIzNIYxYqlPfhA3jYdVMywLybRCRb47AN+JVMVHp2FnTK82XU3OHVbWJu17QRpHA==}
-
-  fuzd-scheduler@0.7.1:
-    resolution: {integrity: sha512-VpGZwHlOU4WbGBg+nxOaAV+iUurI+AKwmZ+84vRkhST7c1EzI3ukFPHqMRHBuB8aramJXcH2ndVgVya1kw6NXw==}
 
   fuzd-scheduler@0.7.2:
     resolution: {integrity: sha512-JHf0XeJXhqFOEuVmRWDKg7/wFeYff6ipSGQylftgTHklDS7Ee/ydUcqFeiPBlTWHVtqIxnZsJJGsh9IUv60zUg==}
@@ -4510,9 +4361,6 @@ packages:
     resolution: {integrity: sha512-6TDAlDPZxUFCv+fuOkIoXT/V/f3Qbq8e37p+YOiYrUv3v9cc3/6x78VdfPgFVaB9dZYeLUfKgHRebpkm/oP2VQ==}
     engines: {node: '>=0.10.0'}
     hasBin: true
-
-  immer@10.1.1:
-    resolution: {integrity: sha512-s2MPrmjovJcoMaHtx6K11Ra7oD05NT97w1IC5zpMkT6Atjr7H8LjaDd81iIxUYpMKSRRNMJE703M1Fhr/TctHw==}
 
   import-fresh@3.3.0:
     resolution: {integrity: sha512-veYYhQa+D1QBKznvhUHxb8faxlrwUnxseDAbAp457E0wLNio2bOSKnjYDhMj+YiAq61xrMGhQk9iXVk5FzgQMw==}
@@ -4955,11 +4803,6 @@ packages:
     resolution: {integrity: sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==}
     engines: {node: '>=10'}
 
-  lucide-svelte@0.394.0:
-    resolution: {integrity: sha512-txlzIrP/uTF5dIg0byuzbfYIwL/4lhkPOMukr/RoZsSeSExRdbGHq/i/oMiDx0XhaaJHQF6w04XpvBXrmObGVA==}
-    peerDependencies:
-      svelte: ^3 || ^4 || ^5.0.0-next.42
-
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
     hasBin: true
@@ -5084,11 +4927,6 @@ packages:
 
   minisearch@6.3.0:
     resolution: {integrity: sha512-ihFnidEeU8iXzcVHy74dhkxh/dn8Dc08ERl0xwoMMGqp4+LvRSCgicb+zGqWthVokQKvCSxITlh3P08OzdTYCQ==}
-
-  missiv-client@0.0.13:
-    resolution: {integrity: sha512-rsTyX+v5SYoG9GotA8DyVXF3nr7aB99u0ce6LIPColxml7o9Zsks0UFvdyuEa5WK4joWcw0maucLoeK4X1e3tQ==}
-    peerDependencies:
-      svelte: ^4.0.0
 
   missiv-server@0.0.11:
     resolution: {integrity: sha512-Oqy3wM3k85bpMNV3gIZflPwJdLlgnOXvTfRBDW8wL07ZMpAtZE0kLSAqE16E9sjY/kFPPsBntPHeXk5Lr0Q5rg==}
@@ -5315,10 +5153,6 @@ packages:
   parse-json@5.2.0:
     resolution: {integrity: sha512-ayCKvm/phCGxOkYRSCM82iDwct8/EonSEgCSxWxD7ve6jHggsFl4fZVQBPRNgQoKiuV/odhFrGzQXZwbifC8Rg==}
     engines: {node: '>=8'}
-
-  parse-ms@4.0.0:
-    resolution: {integrity: sha512-TXfryirbmq34y8QBwgqCVLi+8oA3oWx2eAnSn62ITyEhEYaWRlVZ2DvMM9eZbMs/RfxPu/PK/aBLyGj4IrqMHw==}
-    engines: {node: '>=18'}
 
   parse-png@1.1.2:
     resolution: {integrity: sha512-Ge6gDV9T5zhkWHmjvnNiyhPTCIoY7W+FC7qWPtuL2lIGZAFxxqTRG/ouEXsH9qkw+HzYiPEU/tFcxOCEDTP1Yw==}
@@ -5557,10 +5391,6 @@ packages:
     resolution: {integrity: sha512-byhRAPguVKMQIj4kjJwJ5lAskVhfuiSdiYl/aLTWpgkGEmic2jYhJh1yE9ih8Ox44Xg9ccCT11/S6QrzSJuNrg==}
     engines: {node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0}
 
-  pretty-ms@9.0.0:
-    resolution: {integrity: sha512-E9e9HJ9R9NasGOgPaPE8VMeiPKAyWR5jcFpNnwIejslIhWqdqOrb2wShBsncMPUb+BcCd2OPYfh7p2W6oemTng==}
-    engines: {node: '>=18'}
-
   printable-characters@1.0.42:
     resolution: {integrity: sha512-dKp+C4iXWK4vVYZmYSd0KBH5F/h1HoZRsbJ82AVKRO3PEo8L4lBS/vLwhVtpwwuYcoIsVY+1JYKR268yn480uQ==}
 
@@ -5613,12 +5443,6 @@ packages:
 
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
-
-  radiate@0.0.1:
-    resolution: {integrity: sha512-dGXMAln3P75QuWuPVSvS9+slFFoVY/RYcfZQN+bix1zay46v7iHPtZYBGpZpHPWh0zjFsPEipE1ym810RmcDJw==}
-
-  radiate@0.0.2:
-    resolution: {integrity: sha512-lFYsNq8TJMQXiY/ctSHKl+LQZox8maDgETqiW4DhD5SfQ5IQ+lSgR6Tg99QszQMQLSyALatsRW604bIE66Sm3Q==}
 
   radiate@0.3.2:
     resolution: {integrity: sha512-ANuZKiFcx4SNqgtxTazLcoPQK1Dr+ET0focgAJFZiLIukUt/k9AK+FgeUzEHmyUl18A4+S4Jt1GcoYuGHg9nwg==}
@@ -6066,33 +5890,10 @@ packages:
       svelte: ^4.0.0 || ^5.0.0-next.0
       typescript: ^5.0.0 || ^6.0.0
 
-  svelte-headless-table@0.18.2:
-    resolution: {integrity: sha512-dnDTaXW5CNzRUjHVbc/Hb0Zv80zU4VcIUnAja6OuZriXvim1AqcWYQCHPRzBGwqj1m3YEHHNvspSzY0o5HzA0A==}
-    peerDependencies:
-      svelte: ^4.0.0
-
-  svelte-keyed@2.0.0:
-    resolution: {integrity: sha512-7TeEn+QbJC2OJrHiuM0T8vMBkms3DNpTE+Ir+NtnVBnBMA78aL4f1ft9t0Hn/pBbD/TnIXi4YfjFRAgtN+DZ5g==}
-    peerDependencies:
-      svelte: ^4.0.0
-
-  svelte-portal@2.2.1:
-    resolution: {integrity: sha512-uF7is5sM4aq5iN7QF/67XLnTUvQCf2iiG/B1BHTqLwYVY1dsVmTeXZ/LeEyU6dLjApOQdbEG9lkqHzxiQtOLEQ==}
-
-  svelte-render@2.0.1:
-    resolution: {integrity: sha512-RpB0SurwXm4xhjvHHtjeqMmvd645FURb79GFOotScOSqnKK5vpqBgoBPGC0pp+E/eZgDSQ9rRAdn/+N4ys1mXQ==}
-    peerDependencies:
-      svelte: ^4.0.0
-
   svelte-sonner@1.2.1:
     resolution: {integrity: sha512-N00LOWb60fjKXULbpngku+7E9Krb16KpNq4/Eax5Vu7o1Dpbca55QpaLPsB+yp82JIEdFhfJuv5cVXLoe0ZtVA==}
     peerDependencies:
       svelte: ^5.0.0
-
-  svelte-subscribe@2.0.1:
-    resolution: {integrity: sha512-eKXIjLxB4C7eQWPqKEdxcGfNXm2g/qJ67zmEZK/GigCZMfrTR3m7DPY93R6MX+5uoqM1FRYxl8LZ1oy4URWi2A==}
-    peerDependencies:
-      svelte: ^4.0.0
 
   svelte-toolbelt@0.10.6:
     resolution: {integrity: sha512-YWuX+RE+CnWYx09yseAe4ZVMM7e7GRFZM6OYWpBKOb++s+SQ8RBIMMe+Bs/CznBMc0QPLjr+vDBxTAkozXsFXQ==}
@@ -6158,9 +5959,6 @@ packages:
     resolution: {integrity: sha512-uxc/zpqFg6x7C8vOE7lh6Lbda8eEL9zmVm/PLeTPBRhh1xCgdWaQ+J1CUieGpIfm2HdtsUpRv+HshiasBMcc6A==}
     engines: {node: '>=6'}
 
-  theme-change@2.5.0:
-    resolution: {integrity: sha512-B/UdsgdHAGhSKHTAQnxg/etN0RaMDpehuJmZIjLMDVJ6DGIliRHGD6pODi1CXLQAN9GV0GSyB3G6yCuK05PkPQ==}
-
   thenify-all@1.6.0:
     resolution: {integrity: sha512-RNxQH/qI8/t3thXJDwcstUO4zeqo64+Uy/+sNVRBx4Xn2OX+OZ9oP+iJnNFqplFra2ZUVeKCSa2oVWi3T4uVmA==}
     engines: {node: '>=0.8'}
@@ -6218,9 +6016,6 @@ packages:
   tinyspy@3.0.2:
     resolution: {integrity: sha512-n1cw8k1k0x4pgA2+9XrOkFydTerNcJ1zWCO5Nn9scWHTD+5tp8dghT2x1uduQePZTZgd3Tupf+x9BxJjeJi77Q==}
     engines: {node: '>=14.0.0'}
-
-  tippy.js@6.3.7:
-    resolution: {integrity: sha512-E1d3oP2emgJ9dRQZdf3Kkn0qJgI6ZLpyS5z6ZkY1DF3kaQaBsGZsndEpHwx+eC+tYM41HaSNvNtLx8tU57FzTQ==}
 
   tlock-js@0.9.0:
     resolution: {integrity: sha512-qxBJQ2mP/opLKjqFbbr64uCYs4Y/wQb8ogFRAhYuHE1AO/sIY0iU0PFV4hqZ0HTorMTpQgbjgdjmTUpigrGp3A==}
@@ -6319,9 +6114,6 @@ packages:
 
   tweetnacl@0.14.5:
     resolution: {integrity: sha512-KXXFFdAbFXY4geFIwoyNK+f5Z1b7swfXABfL7HXCmoIWMKU3dmS26672A4EeQtDzLKy7SXmfBu51JolvEKwtGA==}
-
-  twgl.js@5.5.4:
-    resolution: {integrity: sha512-6kFOmijOpmblTN9CCwOTCxK4lPg7rCyQjLuub6EMOlEp89Ex6yUcsMjsmH7andNPL2NE3XmHdqHeP5gVKKPhxw==}
 
   type-detect@4.0.8:
     resolution: {integrity: sha512-0fr/mIH1dlO+x7TlcMy+bIDqKPsw/70tVyeHW787goQjhmqaZe10uwLujubK9q9Lg6Fiho1KUKDYz0Z7k7g5/g==}
@@ -6701,16 +6493,6 @@ packages:
   web-streams-polyfill@3.3.3:
     resolution: {integrity: sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw==}
     engines: {node: '>= 8'}
-
-  web3-connection-viem@0.3.0:
-    resolution: {integrity: sha512-QhOzZKwPojFb907dMMpQhylaVjB1uM5tSyxPRj5vrh1GFKt0O/iPD6/Hp6GogeVmA1ed2lCn8C+e4LEhRbeiJw==}
-    peerDependencies:
-      viem: ^2.1.1
-
-  web3-connection@0.1.39:
-    resolution: {integrity: sha512-VpGOg0uJQ/Xp/rwV+QDTxOl5sloFBuSuIlfaSb60eLvaub3kW5ca2njqdDsuvh5/3H3KEd0cY88WiWXTifHCaQ==}
-    peerDependencies:
-      svelte: ^4.0.0
 
   webevm@0.6.0:
     resolution: {integrity: sha512-iqwUVv4P7NLR7gbg0cpGbeNQR+1dlXp3SrMVO70hXzF8zfBbH5rXV7fM53LrDOPpkO0l+QglXg8xy6rY3mxVNg==}
@@ -8587,17 +8369,9 @@ snapshots:
     dependencies:
       svelte: 5.57.1
 
-  '@metamask/onboarding@1.0.1':
-    dependencies:
-      bowser: 2.11.0
-
   '@neon-rs/load@0.0.4': {}
 
-  '@noble/ciphers@0.4.1': {}
-
   '@noble/ciphers@0.5.1': {}
-
-  '@noble/ciphers@0.5.3': {}
 
   '@noble/ciphers@1.3.0': {}
 
@@ -8919,8 +8693,6 @@ snapshots:
 
   '@polka/url@1.0.0-next.25': {}
 
-  '@popperjs/core@2.11.8': {}
-
   '@pothos/core@4.15.1(graphql@16.14.2)':
     dependencies:
       graphql: 16.14.2
@@ -8999,25 +8771,6 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@rocketh/export@0.19.30(@rocketh/node@0.21.4(rocketh@0.23.1(typescript@6.0.3)(zod@3.25.76))(typescript@6.0.3)(zod@3.25.76))(rocketh@0.23.1(typescript@6.0.3)(zod@3.25.76))(typescript@6.0.3)(zod@3.25.76)':
-    dependencies:
-      '@rocketh/core': 0.23.1(typescript@6.0.3)(zod@3.25.76)
-      '@rocketh/node': 0.21.4(rocketh@0.23.1(typescript@6.0.3)(zod@3.25.76))(typescript@6.0.3)(zod@3.25.76)
-      '@types/fs-extra': 11.0.4
-      abitype: 1.3.0(typescript@6.0.3)(zod@3.25.76)
-      chalk: 6.0.0
-      commander: 15.0.0
-      eip-1193: 0.6.6
-      eip-1193-jsonrpc-provider: 0.4.4
-      fs-extra: 11.4.1
-      named-logs: 0.4.1
-      rocketh: 0.23.1(typescript@6.0.3)(zod@3.25.76)
-    transitivePeerDependencies:
-      - bufferutil
-      - typescript
-      - utf-8-validate
-      - zod
-
   '@rocketh/node@0.21.4(rocketh@0.23.1(typescript@5.4.5)(zod@3.25.76))(typescript@5.4.5)(zod@3.25.76)':
     dependencies:
       '@rocketh/core': 0.23.1(typescript@5.4.5)(zod@3.25.76)
@@ -9032,26 +8785,6 @@ snapshots:
       rocketh: 0.23.1(typescript@5.4.5)(zod@3.25.76)
       tsx: 4.23.15
       viem: 2.57.1(typescript@5.4.5)(zod@3.25.76)
-    transitivePeerDependencies:
-      - bufferutil
-      - typescript
-      - utf-8-validate
-      - zod
-
-  '@rocketh/node@0.21.4(rocketh@0.23.1(typescript@6.0.3)(zod@3.25.76))(typescript@6.0.3)(zod@3.25.76)':
-    dependencies:
-      '@rocketh/core': 0.23.1(typescript@6.0.3)(zod@3.25.76)
-      '@types/prompts': 2.4.9
-      change-case: 5.4.4
-      commander: 15.0.0
-      eip-1193: 0.6.6
-      ldenv: 0.6.0
-      named-logs: 0.4.1
-      named-logs-console: 0.5.1
-      prompts: 2.4.2
-      rocketh: 0.23.1(typescript@6.0.3)(zod@3.25.76)
-      tsx: 4.23.15
-      viem: 2.57.1(typescript@6.0.3)(zod@3.25.76)
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -9626,12 +9359,6 @@ snapshots:
 
   '@types/linkify-it@5.0.0': {}
 
-  '@types/lodash-es@4.17.12':
-    dependencies:
-      '@types/lodash': 4.14.202
-
-  '@types/lodash@4.14.202': {}
-
   '@types/markdown-it@14.1.1':
     dependencies:
       '@types/linkify-it': 5.0.0
@@ -9992,18 +9719,9 @@ snapshots:
       '@whatwg-node/promise-helpers': 1.3.2
       tslib: 2.8.1
 
-  '@zerodevx/svelte-json-view@1.0.9(svelte@5.57.1)':
-    dependencies:
-      svelte: 5.57.1
-
   abitype@1.0.0(typescript@5.4.5)(zod@3.25.76):
     optionalDependencies:
       typescript: 5.4.5
-      zod: 3.25.76
-
-  abitype@1.0.2(typescript@6.0.3)(zod@3.25.76):
-    optionalDependencies:
-      typescript: 6.0.3
       zod: 3.25.76
 
   abitype@1.2.3(typescript@5.4.5)(zod@3.25.76):
@@ -10211,8 +9929,6 @@ snapshots:
   bn.js@5.2.1: {}
 
   boolbase@1.0.0: {}
-
-  bowser@2.11.0: {}
 
   brace-expansion@2.0.1:
     dependencies:
@@ -10602,8 +10318,6 @@ snapshots:
 
   drange@1.1.1: {}
 
-  driver.js@1.3.1: {}
-
   dunder-proto@1.0.1:
     dependencies:
       call-bind-apply-helpers: 1.0.2
@@ -10848,13 +10562,6 @@ snapshots:
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
 
-  ethereum-tx-observer@0.0.5:
-    dependencies:
-      lodash-es: 4.17.21
-      named-logs: 0.2.4
-      radiate: 0.0.1
-      sveltore: 0.0.2
-
   etherfold@0.11.0(@etherfold/browser@0.12.2(typescript@5.4.5)(vitest@4.1.12)(zod@3.25.76))(@libsql/core@0.17.4)(hono@4.13.11)(typescript@5.4.5)(vitest@4.1.12)(zod@3.25.76):
     dependencies:
       '@etherfold/core': 0.11.1(typescript@5.4.5)(zod@3.25.76)
@@ -11078,70 +10785,6 @@ snapshots:
 
   function-bind@1.1.2: {}
 
-  fuzd-chain-protocol@0.7.0(@types/node@26.6.5)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76):
-    dependencies:
-      '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.7.0
-      '@scure/starknet': 1.0.0
-      eip-1193-signer: 0.0.5(typescript@6.0.3)(zod@3.25.76)
-      fuzd-common: 0.7.0
-      remote-account: 0.2.1
-      remote-procedure-call: 0.0.15(@types/node@26.6.5)(lightningcss@1.33.0)
-      starknet-core: 0.0.3
-      strk: 0.0.15
-    transitivePeerDependencies:
-      - '@edge-runtime/vm'
-      - '@types/node'
-      - '@vitest/browser'
-      - '@vitest/ui'
-      - bufferutil
-      - happy-dom
-      - jsdom
-      - less
-      - lightningcss
-      - msw
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - typescript
-      - utf-8-validate
-      - zod
-
-  fuzd-chain-protocol@0.7.1(@types/node@26.6.5)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76):
-    dependencies:
-      '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.7.0
-      '@scure/starknet': 1.0.0
-      eip-1193-signer: 0.0.5(typescript@6.0.3)(zod@3.25.76)
-      fuzd-common: 0.7.1
-      remote-account: 0.2.1
-      remote-procedure-call: 0.0.15(@types/node@26.6.5)(lightningcss@1.33.0)
-      starknet-core: 0.0.3
-      strk: 0.0.15
-    transitivePeerDependencies:
-      - '@edge-runtime/vm'
-      - '@types/node'
-      - '@vitest/browser'
-      - '@vitest/ui'
-      - bufferutil
-      - happy-dom
-      - jsdom
-      - less
-      - lightningcss
-      - msw
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - typescript
-      - utf-8-validate
-      - zod
-
   fuzd-chain-protocol@0.7.2(@types/node@26.6.5)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76):
     dependencies:
       '@noble/hashes': 1.8.0
@@ -11174,75 +10817,9 @@ snapshots:
       - utf-8-validate
       - zod
 
-  fuzd-client@0.7.1(@types/node@26.6.5)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76):
-    dependencies:
-      commander: 12.1.0
-      fuzd-chain-protocol: 0.7.1(@types/node@26.6.5)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76)
-      fuzd-common: 0.7.1
-      fuzd-executor: 0.7.1(@types/node@26.6.5)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76)
-      fuzd-scheduler: 0.7.1(@types/node@26.6.5)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76)
-      named-logs: 0.3.2
-      remote-account: 0.2.1
-      tlock-js: 0.9.0
-      viem: 2.57.1(typescript@6.0.3)(zod@3.25.76)
-    transitivePeerDependencies:
-      - '@edge-runtime/vm'
-      - '@types/node'
-      - '@vitest/browser'
-      - '@vitest/ui'
-      - bufferutil
-      - happy-dom
-      - jsdom
-      - less
-      - lightningcss
-      - msw
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - typescript
-      - utf-8-validate
-      - zod
-
-  fuzd-common@0.7.0:
-    dependencies:
-      named-logs: named-logs-for-servers@0.0.1
-
-  fuzd-common@0.7.1:
-    dependencies:
-      named-logs: named-logs-for-servers@0.0.1
-
   fuzd-common@0.7.2:
     dependencies:
       named-logs: named-logs-for-servers@0.0.1
-
-  fuzd-executor@0.7.1(@types/node@26.6.5)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76):
-    dependencies:
-      fuzd-chain-protocol: 0.7.1(@types/node@26.6.5)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76)
-      fuzd-common: 0.7.1
-      named-logs: named-logs-for-servers@0.0.1
-    transitivePeerDependencies:
-      - '@edge-runtime/vm'
-      - '@types/node'
-      - '@vitest/browser'
-      - '@vitest/ui'
-      - bufferutil
-      - happy-dom
-      - jsdom
-      - less
-      - lightningcss
-      - msw
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - typescript
-      - utf-8-validate
-      - zod
 
   fuzd-executor@0.7.2(@types/node@26.6.5)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76):
     dependencies:
@@ -11300,58 +10877,6 @@ snapshots:
       - terser
       - typescript
       - typia
-      - utf-8-validate
-      - zod
-
-  fuzd-scheduler@0.7.0(@types/node@26.6.5)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76):
-    dependencies:
-      fuzd-chain-protocol: 0.7.0(@types/node@26.6.5)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76)
-      fuzd-common: 0.7.0
-      named-logs: named-logs-for-servers@0.0.1
-    transitivePeerDependencies:
-      - '@edge-runtime/vm'
-      - '@types/node'
-      - '@vitest/browser'
-      - '@vitest/ui'
-      - bufferutil
-      - happy-dom
-      - jsdom
-      - less
-      - lightningcss
-      - msw
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - typescript
-      - utf-8-validate
-      - zod
-
-  fuzd-scheduler@0.7.1(@types/node@26.6.5)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76):
-    dependencies:
-      fuzd-chain-protocol: 0.7.1(@types/node@26.6.5)(lightningcss@1.33.0)(typescript@6.0.3)(zod@3.25.76)
-      fuzd-common: 0.7.1
-      named-logs: named-logs-for-servers@0.0.1
-    transitivePeerDependencies:
-      - '@edge-runtime/vm'
-      - '@types/node'
-      - '@vitest/browser'
-      - '@vitest/ui'
-      - bufferutil
-      - happy-dom
-      - jsdom
-      - less
-      - lightningcss
-      - msw
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - typescript
       - utf-8-validate
       - zod
 
@@ -11695,8 +11220,6 @@ snapshots:
   ignore@5.3.1: {}
 
   image-size@0.5.5: {}
-
-  immer@10.1.1: {}
 
   import-fresh@3.3.0:
     dependencies:
@@ -12115,10 +11638,6 @@ snapshots:
     dependencies:
       yallist: 4.0.0
 
-  lucide-svelte@0.394.0(svelte@5.57.1):
-    dependencies:
-      svelte: 5.57.1
-
   lz-string@1.5.0: {}
 
   magic-string@0.25.9:
@@ -12236,14 +11755,6 @@ snapshots:
   minipass@7.1.2: {}
 
   minisearch@6.3.0: {}
-
-  missiv-client@0.0.13(svelte@5.57.1):
-    dependencies:
-      '@noble/ciphers': 0.4.1
-      '@noble/hashes': 1.3.3
-      '@noble/secp256k1': 2.0.0
-      '@scure/base': 1.1.6
-      svelte: 5.57.1
 
   missiv-server@0.0.11(typescript@6.0.3):
     dependencies:
@@ -12504,8 +12015,6 @@ snapshots:
       json-parse-even-better-errors: 2.3.1
       lines-and-columns: 1.2.4
 
-  parse-ms@4.0.0: {}
-
   parse-png@1.1.2:
     dependencies:
       pngjs: 3.4.0
@@ -12661,10 +12170,6 @@ snapshots:
       '@jest/schemas': 30.5.0
       ansi-styles: 5.2.0
 
-  pretty-ms@9.0.0:
-    dependencies:
-      parse-ms: 4.0.0
-
   printable-characters@1.0.42: {}
 
   proc-log@4.2.0: {}
@@ -12704,10 +12209,6 @@ snapshots:
   querystringify@2.2.0: {}
 
   queue-microtask@1.2.3: {}
-
-  radiate@0.0.1: {}
-
-  radiate@0.0.2: {}
 
   radiate@0.3.2: {}
 
@@ -13283,31 +12784,9 @@ snapshots:
     transitivePeerDependencies:
       - picomatch
 
-  svelte-headless-table@0.18.2(svelte@5.57.1):
-    dependencies:
-      svelte: 5.57.1
-      svelte-keyed: 2.0.0(svelte@5.57.1)
-      svelte-render: 2.0.1(svelte@5.57.1)
-      svelte-subscribe: 2.0.1(svelte@5.57.1)
-
-  svelte-keyed@2.0.0(svelte@5.57.1):
-    dependencies:
-      svelte: 5.57.1
-
-  svelte-portal@2.2.1: {}
-
-  svelte-render@2.0.1(svelte@5.57.1):
-    dependencies:
-      svelte: 5.57.1
-      svelte-subscribe: 2.0.1(svelte@5.57.1)
-
   svelte-sonner@1.2.1(svelte@5.57.1):
     dependencies:
       runed: 0.28.0(svelte@5.57.1)
-      svelte: 5.57.1
-
-  svelte-subscribe@2.0.1(svelte@5.57.1):
-    dependencies:
       svelte: 5.57.1
 
   svelte-toolbelt@0.10.6(@sveltejs/kit@2.70.3(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.1)(vite@8.3.1(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.4.5)))(svelte@5.57.1)(typescript@6.0.3)(vite@8.3.1(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.4.5)))(svelte@5.57.1):
@@ -13403,8 +12882,6 @@ snapshots:
 
   tapable@2.3.3: {}
 
-  theme-change@2.5.0: {}
-
   thenify-all@1.6.0:
     dependencies:
       thenify: 3.3.1
@@ -13443,10 +12920,6 @@ snapshots:
   tinyspy@2.2.1: {}
 
   tinyspy@3.0.2: {}
-
-  tippy.js@6.3.7:
-    dependencies:
-      '@popperjs/core': 2.11.8
 
   tlock-js@0.9.0:
     dependencies:
@@ -13552,8 +13025,6 @@ snapshots:
   tw-animate-css@1.4.0: {}
 
   tweetnacl@0.14.5: {}
-
-  twgl.js@5.5.4: {}
 
   type-detect@4.0.8: {}
 
@@ -14033,15 +13504,6 @@ snapshots:
       defaults: 1.0.4
 
   web-streams-polyfill@3.3.3: {}
-
-  web3-connection-viem@0.3.0(viem@2.57.1(typescript@6.0.3)(zod@3.25.76)):
-    dependencies:
-      viem: 2.57.1(typescript@6.0.3)(zod@3.25.76)
-
-  web3-connection@0.1.39(svelte@5.57.1):
-    dependencies:
-      named-logs: 0.2.4
-      svelte: 5.57.1
 
   webevm@0.6.0:
     dependencies:
