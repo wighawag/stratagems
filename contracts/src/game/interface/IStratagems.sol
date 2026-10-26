@@ -35,9 +35,19 @@ interface IStratagemsCommit is UsingStratagemsTypes, UsingStratagemsEvents, Usin
     /// @notice add tokens to the reserve of `player`, from the caller's wallet
     function addToReserve(uint256 player, uint256 tokensAmountToAdd) external;
 
+    /// @notice the same, and forward `msg.value` to `stipendTo`: one transaction that stakes for `player`
+    ///         and pays the gas of the key that will play for them (the template's acquisition rail)
+    /// @param stipendTo where `msg.value` goes; zero only when nothing is sent
+    function addToReserveAndFund(uint256 player, uint256 tokensAmountToAdd, address payable stipendTo) external payable;
+
     /// @notice commit `player` (resolved through delegation) to a turn, bonding part of their reserve
     /// @param payee an address paid `msg.value`, for a service that reveals on the player's behalf
-    function makeCommitment(uint256 player, bytes24 commitmentHash, uint256 bond, address payable payee) external payable;
+    function makeCommitment(
+        uint256 player,
+        bytes24 commitmentHash,
+        uint256 bond,
+        address payable payee
+    ) external payable;
 
     /// @notice the same, after adding `tokensAmountToAdd` from the caller's wallet: one transaction
     function makeCommitmentWithExtraReserve(

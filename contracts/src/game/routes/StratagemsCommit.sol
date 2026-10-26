@@ -16,6 +16,28 @@ contract StratagemsCommit is IStratagemsCommit, UsingStratagemsSetters {
     }
 
     /// @inheritdoc IStratagemsCommit
+    function addToReserveAndFund(
+        uint256 player,
+        uint256 tokensAmountToAdd,
+        address payable stipendTo
+    ) external payable {
+        if (tokensAmountToAdd > 0) {
+            _addToReserve(player, tokensAmountToAdd);
+            TOKENS.transferFrom(msg.sender, address(this), tokensAmountToAdd);
+        }
+        if (msg.value != 0) {
+            // a stipend with nowhere to go would stay here, where nobody can get it back
+            if (stipendTo == address(0)) {
+                revert StipendWithoutRecipient();
+            }
+            (bool sent, ) = stipendTo.call{value: msg.value}("");
+            if (!sent) {
+                revert StipendNotSent(stipendTo, msg.value);
+            }
+        }
+    }
+
+    /// @inheritdoc IStratagemsCommit
     function makeCommitment(
         uint256 player,
         bytes24 commitmentHash,
