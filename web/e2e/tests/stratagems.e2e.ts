@@ -57,7 +57,16 @@ describe('Stratagems: one cycle', () => {
 		// forwarded the stipend to the key (`addToReserveAndFund`), which
 		// registered itself out of it. Nothing asks to authorise, and the account
 		// sent exactly one transaction.
-		if (!registeredBefore) {
+		// Only a key not yet registered is sent a stipend (the rail's
+		// `stipendFor`), so a retry on the same chain, where the first attempt
+		// already registered it, cannot measure this and says so.
+		if (registeredBefore) {
+			test.info().annotations.push({
+				type: 'not measured',
+				description:
+					'the key was already registered: one-transaction stake not asserted',
+			});
+		} else {
 			await expect
 				.poll(() => isDelegateRegistered(page), {
 					message: 'the key should register itself out of the stipend',
