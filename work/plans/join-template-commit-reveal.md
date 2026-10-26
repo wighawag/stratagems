@@ -13,7 +13,7 @@ Paste this into a fresh session as it is. It picks the next step itself. To run 
 ```
 You are working in the stratagems repository, /home/wighawag/dev/github/wighawag/stratagems, on the plan in work/plans/join-template-commit-reveal.md. The live copy of the plan is on the integration branch `join-template-commit-reveal`, NOT on main. Fetch first (`git -C ~/dev/github/wighawag/stratagems fetch origin --prune`), make sure the local branch is not behind `origin/join-template-commit-reveal` (fast-forward it with `git fetch origin join-template-commit-reveal:join-template-commit-reveal` if it is, or create it from there if it is missing), then read the plan in full with `git -C ~/dev/github/wighawag/stratagems show join-template-commit-reveal:work/plans/join-template-commit-reveal.md`.
 
-Which step: if my message after this prompt names a step, do that one. Otherwise do the first step whose box is unticked in the plan's Steps list. If that step's section has no "Start here" block (only a paragraph), stop: it has to be specified first, so measure what it needs, bring me its decisions as questions, and propose its specification in the shape of the specified steps instead of doing it. Do ONE step and nothing else.
+Which step: if my message after this prompt names a step, do that one. Otherwise do the first step whose box is unticked in the plan's Steps list. If that step's section has no "Start here" block (only a paragraph), stop: it has to be specified first, so measure what it needs, propose its specification in the shape of the specified steps instead of doing it, and bring me each of its decisions as a numbered recommendation (what you recommend, and the alternative you rejected), so I can answer "go" or correct only the ones I disagree with. Do ONE step and nothing else.
 
 First:
 1. Check that the main checkout is clean (`git status`), that `main` is up to date with origin, and that the integration branch exists and contains origin/main (`git merge-base --is-ancestor origin/main join-template-commit-reveal`). If not, stop and tell me.
@@ -1367,16 +1367,16 @@ Premises re-derived first: the main checkout clean, `main` = `origin/main` = b59
 
 **Not measured, and the step's first item**: whether an etherfold host reaches the tip of an automined chain with `STREAM_FINALITY` 12, and whether `webevm` runs stratagems' deploy (six scripts, a proxy and a router of six routes) inside its block gas limit. Both are read-only questions only a run answers.
 
-**Questions for the user** (the recommendation is the P line of the same number in the section):
+**Recommendations for the user** (answer "go" to accept all, or correct by number; the detail is the P line of the same number in the section):
 
-1. P1, the game's offline files at the template's paths (`$lib/offline.ts`, `$lib/offline-players.ts`), as reveal-or-die, and the seven byte-identical files back at the stem's bytes? Or a thin `$lib/offline.ts` re-exporting from `$lib/stratagems/offline/`?
-2. P2, an `offline` environment branch in `020_deploy_game.ts` (Manual, both durations zero), beside `localhost` and `fast`? Or stratagems' deploy made `data`-driven like the template's?
-3. P3, the world deploys `001`, `002`, `010`, `011`, `020` (the distributor included, no `Time`), with hardhat's well-known keys for the three named accounts?
-4. P4, gas refilled on every boot, a stake of one chunk (32 gems) bonded by `tokensBeneficiary` with `addToReserve` only when the chain says the seat has none, and the browser's key authorised by the world after sign-in?
-5. P5, more gems from the distributor for everyone: the human through the HUD as on a local chain, and a played seat that cannot afford its placement tops up and restakes rather than playing empty turns for ever?
-6. P6, played seats as the template's: one derived placement a turn in the 13 by 13 block around the origin, in the seat's default faction colour, legality left to the contract, no removals, no reading of the board?
-7. P7, the board's cycle under Manual tracked by the indexer from `CycleAdvanced`, the timestamp kept for Timed, Hybrid refused?
-8. P8, a second worker entry for a world (in-memory store, no election, no publication, refolded on every boot), and the online worker's election made per stream through the worker's `name`?
-9. P9, the contracts package exported and built to `dist` in `prepare`, as the template's, with `web` depending on it and the e2e harness's contracts step back?
-10. P10, the tests: stratagems' own `offline-players` and `world` suites at the template's paths, a Manual cycle test in the contracts, a stratagems offline e2e in its own file with a reload, and `deployments.test.ts` left omitted with a template task drafted for its name-free fixture?
-11. P11, two tabs of one offline world left to the template, captured as a finding?
+1. P1: stratagems' own `$lib/offline.ts` and `$lib/offline-players.ts` at the template's paths, as reveal-or-die; the seven byte-identical files back at the stem's bytes. (Not a thin re-export from `$lib/stratagems/offline/`.)
+2. P2: an `offline` environment branch in `020_deploy_game.ts` (Manual, both durations zero), beside `localhost` and `fast`. (Not a `data`-driven rewrite of the deploy.)
+3. P3: the world deploys `001`, `002`, `010`, `011`, `020` (the distributor included, no `Time`), with hardhat's well-known keys for the three named accounts.
+4. P4: gas refilled on every boot; a one-chunk stake (32 gems) bonded by `tokensBeneficiary` with `addToReserve` only when the chain says the seat has none; the browser's key authorised by the world after sign-in.
+5. P5: more gems from the distributor for everyone: the human through the HUD, a played seat that cannot afford its placement tops up and restakes. (Not empty turns for ever, not a top-up for played seats only.)
+6. P6: played seats as the template's: one derived placement a turn in the 13 by 13 block around the origin, in the seat's default colour, legality left to the contract, no removals, no reading of the board.
+7. P7: the board's cycle under Manual tracked by the indexer from `CycleAdvanced`; Timed keeps the timestamp; Hybrid refused. (Not a historical `getCycle` call.)
+8. P8: a second worker entry for a world (in-memory store, no election, no publication, refolded on every boot); the online worker's election made per stream through the worker's `name`. (Not the online worker with an IndexedDB store for the world.)
+9. P9: the contracts package exported and built to `dist` in `prepare`, as the template's; `web` depends on it; the e2e harness's contracts step back.
+10. P10: stratagems' own `offline-players` and `world` suites at the template's paths; a Manual cycle test in the contracts; a stratagems offline e2e in its own file, with a reload; `deployments.test.ts` stays omitted and a template task is drafted for its name-free fixture.
+11. P11: two tabs of one offline world left to the template, captured as a finding.
