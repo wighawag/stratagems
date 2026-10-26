@@ -8,6 +8,8 @@
 	`HudModel` store, and every button calls straight into the game's stores. If
 	a decision has to be made about what to show, it belongs in `hud.ts`.
 -->
+<svelte:options runes={true} />
+
 <script lang="ts">
 	import {getAppContext} from '$lib';
 	import {createHud} from './hud';
