@@ -1,10 +1,11 @@
 import {test, expect, describe} from '../fixtures/test';
 import {
-	authoriseToPlay,
 	cellOnBoard,
 	gameStep,
 	giveGems,
+	onChain,
 	planMoves,
+	senders,
 	stake,
 } from '../fixtures/stratagems';
 
@@ -22,7 +23,7 @@ describe('Stratagems: one cycle', () => {
 
 	test('stakes, plans two moves, commits, reveals, and the board shows them', async ({
 		connectedPage,
-		authoriseBrowser,
+		isDelegateRegistered,
 	}) => {
 		// a commit phase, a reveal phase, and the indexer catching up
 		test.slow();
@@ -31,17 +32,50 @@ describe('Stratagems: one cycle', () => {
 		await giveGems(page);
 
 		const reserveBefore = BigInt((await gameStep(page)).reserve ?? '0');
+		const {account, signer, stipend} = await senders(page);
+		expect(
+			stipend,
+			'the local chain declares a gas price to size a stipend',
+		).toBeGreaterThan(0n);
+		const registeredBefore = await isDelegateRegistered(page);
+		const accountBefore = await onChain(account);
+		const signerBefore = await onChain(signer);
+
 		// The setup gate asks for the stake first (sign-in, stake, authorise). On
 		// an account that already holds a reserve from an earlier run it does not
 		// ask, and the HUD's "Add stake" goes through the same rail.
 		await stake(page);
 		await expect
 			.poll(
-				async () => BigInt((await gameStep(page)).reserve ?? '0') > reserveBefore,
+				async () =>
+					BigInt((await gameStep(page)).reserve ?? '0') > reserveBefore,
 				{message: 'the reserve should grow', timeout: 60_000},
 			)
 			.toBe(true);
-		await authoriseToPlay(page, authoriseBrowser);
+
+		// ONE WALLET TRANSACTION stakes AND lets this browser play: the stake
+		// forwarded the stipend to the key (`addToReserveAndFund`), which
+		// registered itself out of it. Nothing asks to authorise, and the account
+		// sent exactly one transaction.
+		if (!registeredBefore) {
+			await expect
+				.poll(() => isDelegateRegistered(page), {
+					message: 'the key should register itself out of the stipend',
+					timeout: 60_000,
+				})
+				.toBe(true);
+			expect(
+				(await onChain(account)).sent - accountBefore.sent,
+				'staking should be one transaction from the wallet',
+			).toBe(1);
+			expect(
+				(await onChain(signer)).balance - signerBefore.balance,
+				'the key should have received the stipend (less its registration)',
+			).toBeGreaterThan(stipend / 2n);
+		}
+		await expect(
+			page.getByRole('button', {name: /authorise and carry on/i}),
+		).toHaveCount(0);
 
 		await planMoves(page, 2);
 		const planned = await gameStep(page);
@@ -50,7 +84,9 @@ describe('Stratagems: one cycle', () => {
 
 		// the plan is drawn before anything is on chain
 		for (const move of moves) {
-			expect((await cellOnBoard(page, move.position))?.planned).toBe(move.color);
+			expect((await cellOnBoard(page, move.position))?.planned).toBe(
+				move.color,
+			);
 		}
 
 		const commit = page.getByRole('button', {name: /commit now/i});
@@ -73,7 +109,7 @@ describe('Stratagems: one cycle', () => {
 
 		// Once the cycle is over the board releases it, and each cell is what the
 		// indexer folded from the reveal: the player's colour, alive, theirs.
-		const account = planned.account?.toLowerCase();
+		const owner = account.toLowerCase();
 		for (const move of moves) {
 			await expect
 				.poll(
@@ -84,7 +120,7 @@ describe('Stratagems: one cycle', () => {
 							cell.planned === undefined &&
 							cell.color === move.color &&
 							cell.life > 0 &&
-							cell.owner === account
+							cell.owner === owner
 						);
 					},
 					{

@@ -66,10 +66,13 @@ export async function giveGems(page: Page, amount = '100'): Promise<void> {
 		},
 	]);
 	await expect
-		.poll(async () => (await rpc('eth_getTransactionReceipt', [hash]))?.status, {
-			message: 'the gems should reach the account',
-			timeout: 30_000,
-		})
+		.poll(
+			async () => (await rpc('eth_getTransactionReceipt', [hash]))?.status,
+			{
+				message: 'the gems should reach the account',
+				timeout: 30_000,
+			},
+		)
 		.toBe('0x1');
 }
 
@@ -109,14 +112,54 @@ export async function gameStep(page: Page): Promise<GameStep> {
 export async function cellOnBoard(
 	page: Page,
 	position: string,
-): Promise<{color: number; life: number; owner?: string; planned?: number} | undefined> {
+): Promise<
+	{color: number; life: number; owner?: string; planned?: number} | undefined
+> {
 	return page.evaluate(`(() => {
 		${READ}
 		const view = read(globalThis.context.viewState);
 		if (view.step !== 'Loaded') return undefined;
 		const cell = view.cells.get('${position}');
 		return cell ? {color: cell.color, life: cell.life, owner: cell.owner, planned: cell.planned} : undefined;
-	})()`) as Promise<{color: number; life: number; owner?: string; planned?: number} | undefined>;
+	})()`) as Promise<
+		{color: number; life: number; owner?: string; planned?: number} | undefined
+	>;
+}
+
+/**
+ * What the chain says about an address: its balance and how many transactions
+ * it has sent (its nonce), which is how a test counts wallet transactions.
+ */
+export async function onChain(
+	address: string,
+): Promise<{balance: bigint; sent: number}> {
+	const [balance, nonce] = await Promise.all([
+		rpc('eth_getBalance', [address, 'latest']),
+		rpc('eth_getTransactionCount', [address, 'latest']),
+	]);
+	return {balance: BigInt(balance), sent: Number(BigInt(nonce))};
+}
+
+/** The account that owns, and the browser's key that sends. */
+export async function senders(
+	page: Page,
+): Promise<{account: string; signer: string; stipend: bigint}> {
+	const found = (await page.evaluate(`(() => {
+		${READ}
+		const context = globalThis.context;
+		const signer = read(context.signerExecutor);
+		return {
+			account: read(context.account),
+			signer: signer && signer.status === 'ready' ? signer.address : undefined,
+			stipend: context.game.config.stipend.toString(),
+		};
+	})()`)) as {account?: string; signer?: string; stipend: string};
+	if (!found.account || !found.signer) throw new Error('not signed in');
+	return {
+		account: found.account,
+		signer: found.signer,
+		stipend: BigInt(found.stipend),
+	};
 }
 
 /** Press the stake button and answer what the rail asks. */
@@ -206,7 +249,9 @@ export async function planMoves(
 			},
 		)
 		.toBe(true);
-	await expect(page.locator('[role="dialog"]')).toHaveCount(0, {timeout: 15_000});
+	await expect(page.locator('[role="dialog"]')).toHaveCount(0, {
+		timeout: 15_000,
+	});
 	let planned = (await gameStep(page)).planned;
 	for (const offset of LADDER) {
 		if (planned >= count) break;

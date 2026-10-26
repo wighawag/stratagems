@@ -6,6 +6,8 @@ import type {EnhancedEnvironment, UnknownDeployments, UserConfig} from 'rocketh/
 // a private key as an account (`privateKey:0x...`)
 import {privateKey} from '@rocketh/signer';
 import {base} from 'viem/chains';
+import {parseEther} from 'viem';
+import {CLIENT_GAS} from '../deploy/.config/gas.js';
 
 // Base, as viem describes it, WITHOUT its formatters and serializers. Those are
 // functions, so `rocketh-export` writes them as `{"type": "block"}` residue, and
@@ -48,6 +50,20 @@ export const config = {
 		},
 	},
 	chains: {
+		// The local chain (`pnpm local_node`, the e2e), with the two properties the
+		// template's client prices the browser's key with, exported with the
+		// deployments and read by the web app (as the template's config declares
+		// them): `expectedWorstGasPrice` sizes the gas stipend the stake forwards
+		// to the key (`addToReserveAndFund`), and `creditsGasMultiplier`, the gas of
+		// one commit plus one reveal step, shows the key's balance as moves left
+		// rather than as ether. A live chain declares its own at step D.
+		31337: {
+			properties: {
+				expectedWorstGasPrice: parseEther('1', 'gwei'),
+				creditsGasMultiplier: CLIENT_GAS.commitGas + CLIENT_GAS.revealGas,
+				supportsSendRawTransactionSync: false,
+			},
+		},
 		8453: {info: {...baseWithoutFunctions, chainType: 'op-stack'}},
 	},
 	data: {},

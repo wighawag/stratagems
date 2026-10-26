@@ -432,7 +432,10 @@ export function describeRecovery(
 
 export function createHud(context: Context): Readable<HudModel> {
 	const {game} = context;
-	const STAKE = stakeWords(game.config);
+	const STAKE = stakeWords(
+		game.config,
+		context.deployments.get().chain.nativeCurrency,
+	);
 
 	return derived(
 		[

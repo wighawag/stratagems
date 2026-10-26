@@ -10,10 +10,15 @@ import type {TypedDeployments} from '$lib/core/connection/types';
 import {
 	bondForWholeChunks,
 	resolveCommitRevealConfig,
+	signerStipend,
 	type CommitRevealConfig,
 	type CommitRevealLinkedData,
 } from '$lib/game/core/commit-reveal/config';
-import {readBigInt, readNumber} from '$lib/game/core/linked-data';
+import {
+	optionalBigInt,
+	readBigInt,
+	readNumber,
+} from '$lib/game/core/linked-data';
 
 export type StratagemsConfig = CommitRevealConfig & {
 	/** One gem, in the token's units: what a placement puts on a cell. */
@@ -27,6 +32,13 @@ export type StratagemsConfig = CommitRevealConfig & {
 	 * of up to a chunk of placements is bonded without a second deposit.
 	 */
 	stakeAmount: bigint;
+	/**
+	 * What the stake forwards to the browser's key in the same transaction, so it
+	 * can register itself and play: sized in TURNS at the chain's worst gas price
+	 * (`signerStipend`), zero on a chain that declares no
+	 * `expectedWorstGasPrice`.
+	 */
+	stipend: bigint;
 	/** Pixels per cell at 1:1 zoom, for the canvas host's grid. */
 	cellSize: number;
 	/** What the camera may show, in CELLS. */
@@ -56,6 +68,8 @@ export function resolveStratagemsConfig(
 	};
 	const base = resolveCommitRevealConfig(linkedData);
 	const numTokensPerGems = readBigInt(linkedData, 'numTokensPerGems');
+	const worstGasPrice =
+		optionalBigInt(deployments.chain.properties, 'expectedWorstGasPrice') ?? 0n;
 	return {
 		...base,
 		numTokensPerGems,
@@ -65,6 +79,7 @@ export function resolveStratagemsConfig(
 			decimals: Number(linkedData.currency.decimals),
 		},
 		stakeAmount: numTokensPerGems * BigInt(base.actionsPerReveal),
+		stipend: signerStipend(base, worstGasPrice),
 		cellSize: 10,
 		camera: {
 			initialVisible: {width: 24, height: 24},

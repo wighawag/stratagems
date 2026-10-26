@@ -20,7 +20,7 @@
 
 	// The chain's own currency, for the figure the consent dialog restates.
 	const chain = context.deployments.get().chain;
-	const STAKE = stakeWords(game.config);
+	const STAKE = stakeWords(game.config, chain.nativeCurrency);
 
 	/**
 	 * The canvas is loaded dynamically, and only in the browser.
