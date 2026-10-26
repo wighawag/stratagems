@@ -80,15 +80,6 @@ async function bootWorld(): Promise<EmbeddedWorld> {
 			tokensBeneficiary: KEYS[1],
 			timeOwner: KEYS[0],
 		},
-		// the world deploys no `Time` (the manual policy reads no clock), which the
-		// build-time deployment has, so the expected set is named
-		expectedContracts: [
-			'TestTokens',
-			'TestTokensDistributor',
-			'Gems',
-			'GemsGenerator',
-			'Stratagems',
-		],
 		initialBalances: Object.fromEntries(
 			KEYS.map((key) => [privateKeyToAccount(key).address, 10n ** 24n]),
 		),

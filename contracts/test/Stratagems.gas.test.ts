@@ -22,6 +22,7 @@ import {encodeAbiParameters, keccak256, parseEther, zeroAddress} from 'viem';
 import {Color, xyToBigIntID, zeroBytes24} from 'stratagems-common';
 import {getConnection, loadFixture} from '../utils/connection.js';
 import {deployStratagemsWithTestConfig} from './utils/stratagems-test.js';
+import {increaseTime} from './utils/stratagems.js';
 import {CLIENT_GAS} from '../deploy/.config/gas.js';
 
 type Move = {position: bigint; color: Color};
@@ -89,12 +90,15 @@ describe('the declared gas budget', function () {
 		// a reserve, as the wallet adds it, then the first commit (cold)
 		await env.TestTokens.write.transfer([player, parseEther('100')], {account: env.tokensBeneficiary});
 		await S.write.addToReserve([BigInt(player), parseEther('100')], {account: player});
-		const commitHash = await S.write.makeCommitment([BigInt(player), hashOf(moves), parseEther(`${chunk}`), zeroAddress], {
-			account: player,
-		});
+		const commitHash = await S.write.makeCommitment(
+			[BigInt(player), hashOf(moves), parseEther(`${chunk}`), zeroAddress],
+			{
+				account: player,
+			},
+		);
 		const commitUsed = (await publicClient.getTransactionReceipt({hash: commitHash})).gasUsed;
 
-		await env.Time.write.increaseTime([env.config.commitPhaseDuration], {account: env.stratagemsAdmin});
+		await increaseTime(env.config.commitPhaseDuration);
 		const revealHash = await S.write.reveal([BigInt(player), moves, SECRET, zeroBytes24, zeroAddress], {
 			account: env.stratagemsAdmin,
 			gas: 16_000_000n,

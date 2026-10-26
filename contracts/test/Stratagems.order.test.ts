@@ -24,6 +24,7 @@ import {encodeAbiParameters, keccak256, parseEther, zeroAddress} from 'viem';
 import {Color, xyToBigIntID, zeroBytes24} from 'stratagems-common';
 import {getConnection, hardhatProvider, loadFixture} from '../utils/connection.js';
 import {deployStratagemsWithTestConfig} from './utils/stratagems-test.js';
+import {increaseTime} from './utils/stratagems.js';
 
 type Env = Awaited<ReturnType<typeof deployStratagemsWithTestConfig>>;
 type Move = {position: bigint; color: Color};
@@ -110,17 +111,15 @@ function revealArgs(env: Env, playerIndex: number, plan: Plan) {
 }
 
 async function toRevealPhase(env: Env) {
-	await env.Time.write.increaseTime([env.config.commitPhaseDuration], {account: env.stratagemsAdmin});
+	await increaseTime(env.config.commitPhaseDuration);
 }
 async function toNextCommitPhase(env: Env) {
-	await env.Time.write.increaseTime([env.config.revealPhaseDuration], {account: env.stratagemsAdmin});
+	await increaseTime(env.config.revealPhaseDuration);
 }
 /** From the start of a commit phase to the start of the commit phase `n` cycles later. */
 async function skipCycles(env: Env, n: number) {
 	if (n === 0) return;
-	await env.Time.write.increaseTime([BigInt(n) * (env.config.commitPhaseDuration + env.config.revealPhaseDuration)], {
-		account: env.stratagemsAdmin,
-	});
+	await increaseTime(BigInt(n) * (env.config.commitPhaseDuration + env.config.revealPhaseDuration));
 }
 
 /** One whole cycle, its reveals in the order given (each its own block). */
@@ -192,7 +191,12 @@ async function readState(env: Env, reverted: boolean[]) {
 	for (let y = -1; y <= BOARD; y++) for (let x = -1; x <= BOARD; x++) ids.push(xyToBigIntID(x, y));
 	const S = env.Stratagems as any;
 	const cells = await S.read.getCells([ids]);
-	const accounts = [...env.otherAccounts.slice(0, MAX_PLAYERS), env.Stratagems.address, BURN, '0xffffffffffffffffffffffffffffffffffffffff'];
+	const accounts = [
+		...env.otherAccounts.slice(0, MAX_PLAYERS),
+		env.Stratagems.address,
+		BURN,
+		'0xffffffffffffffffffffffffffffffffffffffff',
+	];
 	const balances = await Promise.all(accounts.map((a) => env.TestTokens.read.balanceOf([a as `0x${string}`])));
 	const reserves = await Promise.all(
 		env.otherAccounts
@@ -216,7 +220,12 @@ async function replay(env: Env, plans: {[player: number]: Plan}, orders: Call[][
 		// read in the original call order, so that the same call's revert lines up
 		const byCall = order.map((call, i) => ({key: JSON.stringify(canonical(call)), reverted: reverted[i]}));
 		byCall.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
-		results.push(await readState(env, byCall.map((c) => c.reverted)));
+		results.push(
+			await readState(
+				env,
+				byCall.map((c) => c.reverted),
+			),
+		);
 		await provider.request({method: 'evm_revert', params: [snapshot]});
 	}
 	return results;
@@ -295,7 +304,10 @@ describe('Stratagems: the order of reveals never matters', function () {
 	it("a dying cell's share, with its neighbour's owner changing in the same cycle", async function () {
 		const env = await loadFixture(deployWithPlayers);
 		// player 0's Blue at (1,1) is surrounded by player 1's Reds and dies; (2,1) dies first and is free
-		await playCycle(env, {0: plan(1, [1, 1, Color.Blue]), 1: plan(2, [0, 1, Color.Red], [1, 0, Color.Red], [1, 2, Color.Red])});
+		await playCycle(env, {
+			0: plan(1, [1, 1, Color.Blue]),
+			1: plan(2, [0, 1, Color.Red], [1, 0, Color.Red], [1, 2, Color.Red]),
+		});
 		await playCycle(env, {2: plan(3, [2, 1, Color.Green], [3, 1, Color.Red])});
 		await skipCycles(env, 5);
 		// player 3 takes the dead (2,1) while player 1 re-places a neighbour of the dead (1,1)
@@ -308,56 +320,64 @@ describe('Stratagems: the order of reveals never matters', function () {
 		const env = await loadFixture(deployWithPlayers);
 		await playCycle(env, {0: plan(1, [1, 1, Color.Blue]), 1: plan(2, [0, 1, Color.Red], [2, 1, Color.Red])});
 		await skipCycles(env, 4);
-		await expectOrderIndependent(env, {2: plan(3, [1, 0, Color.Green])}, [{kind: 'poke', position: xyToBigIntID(1, 1)}]);
+		await expectOrderIndependent(env, {2: plan(3, [1, 0, Color.Green])}, [
+			{kind: 'poke', position: xyToBigIntID(1, 1)},
+		]);
 	});
 
-	it('the randomized replay: random histories, then one cycle in every order', async function () {
-		const trials = Number(process.env.REPLAY_TRIALS ?? 25);
-		const r = rng(Number(process.env.REPLAY_SEED ?? 1));
-		let differing = 0;
-		let numCalls = 0;
-		let reverted = 0;
-		const examples: string[] = [];
-		for (let trial = 0; trial < trials; trial++) {
-			const env = await loadFixture(deployWithPlayers);
-			const numPlayers = 2 + r.int(MAX_PLAYERS - 1);
-			const historyCycles = r.int(4);
-			for (let c = 0; c < historyCycles; c++) {
+	it(
+		'the randomized replay: random histories, then one cycle in every order',
+		async function () {
+			const trials = Number(process.env.REPLAY_TRIALS ?? 25);
+			const r = rng(Number(process.env.REPLAY_SEED ?? 1));
+			let differing = 0;
+			let numCalls = 0;
+			let reverted = 0;
+			const examples: string[] = [];
+			for (let trial = 0; trial < trials; trial++) {
+				const env = await loadFixture(deployWithPlayers);
+				const numPlayers = 2 + r.int(MAX_PLAYERS - 1);
+				const historyCycles = r.int(4);
+				for (let c = 0; c < historyCycles; c++) {
+					const plans: {[p: number]: Plan} = {};
+					for (let p = 0; p < numPlayers; p++) if (r.int(3) > 0) plans[p] = randomPlan(r, 3, 1);
+					if (Object.keys(plans).length > 0) await playCycle(env, plans);
+					await skipCycles(env, r.int(4));
+				}
 				const plans: {[p: number]: Plan} = {};
-				for (let p = 0; p < numPlayers; p++) if (r.int(3) > 0) plans[p] = randomPlan(r, 3, 1);
-				if (Object.keys(plans).length > 0) await playCycle(env, plans);
-				await skipCycles(env, r.int(4));
-			}
-			const plans: {[p: number]: Plan} = {};
-			for (let p = 0; p < numPlayers; p++) plans[p] = randomPlan(r, 4, 1);
-			const calls: Call[] = Object.keys(plans).map((p) => ({kind: 'reveal', player: Number(p)}));
-			if (r.int(3) === 0) calls.push({kind: 'poke', position: xyToBigIntID(r.int(BOARD), r.int(BOARD))});
-			for (const p of Object.keys(plans)) await commit(env, Number(p), plans[Number(p)]);
-			await toRevealPhase(env);
-			let orders = permutations(calls);
-			if (orders.length > 6) {
-				// past three calls, the identity, its reverse and four drawn at random
-				const drawn = [orders[0], orders[orders.length - 1]];
-				while (drawn.length < 6) drawn.push(orders[r.int(orders.length)]);
-				orders = drawn;
-			}
-			const states = await replay(env, plans, orders);
-			numCalls += orders.length * orders[0].length;
-			reverted += states.reduce((n, s) => n + JSON.parse(s).reverted.filter((r: boolean) => r).length, 0);
-			if (states.some((s) => s !== states[0])) {
-				differing++;
-				if (examples.length < 3) examples.push(`trial ${trial}: ${JSON.stringify(canonical(plans))}`);
-				if (process.env.REPLAY_DIFF && differing <= 20) {
-					const other = states.find((s) => s !== states[0])!;
-					console.log(`trial ${trial} orders:`, JSON.stringify(canonical(orders)));
-					console.log(`trial ${trial} differs at:`, diffPaths(JSON.parse(states[0]), JSON.parse(other)).join('\n'));
+				for (let p = 0; p < numPlayers; p++) plans[p] = randomPlan(r, 4, 1);
+				const calls: Call[] = Object.keys(plans).map((p) => ({kind: 'reveal', player: Number(p)}));
+				if (r.int(3) === 0) calls.push({kind: 'poke', position: xyToBigIntID(r.int(BOARD), r.int(BOARD))});
+				for (const p of Object.keys(plans)) await commit(env, Number(p), plans[Number(p)]);
+				await toRevealPhase(env);
+				let orders = permutations(calls);
+				if (orders.length > 6) {
+					// past three calls, the identity, its reverse and four drawn at random
+					const drawn = [orders[0], orders[orders.length - 1]];
+					while (drawn.length < 6) drawn.push(orders[r.int(orders.length)]);
+					orders = drawn;
+				}
+				const states = await replay(env, plans, orders);
+				numCalls += orders.length * orders[0].length;
+				reverted += states.reduce((n, s) => n + JSON.parse(s).reverted.filter((r: boolean) => r).length, 0);
+				if (states.some((s) => s !== states[0])) {
+					differing++;
+					if (examples.length < 3) examples.push(`trial ${trial}: ${JSON.stringify(canonical(plans))}`);
+					if (process.env.REPLAY_DIFF && differing <= 20) {
+						const other = states.find((s) => s !== states[0])!;
+						console.log(`trial ${trial} orders:`, JSON.stringify(canonical(orders)));
+						console.log(`trial ${trial} differs at:`, diffPaths(JSON.parse(states[0]), JSON.parse(other)).join('\n'));
+					}
 				}
 			}
-		}
-		console.log(`order replay: ${differing} of ${trials} trials depend on the order (${reverted} of ${numCalls} calls reverted)`);
-		for (const e of examples) console.log(e);
-		expect(differing, examples.join('\n')).to.equal(0);
-		// a revert is the same in every order, so a replay of reverts would pass: none may
-		expect(reverted, 'calls reverted in the replay').to.equal(0);
-	}, 60 * 60 * 1000 * 4);
+			console.log(
+				`order replay: ${differing} of ${trials} trials depend on the order (${reverted} of ${numCalls} calls reverted)`,
+			);
+			for (const e of examples) console.log(e);
+			expect(differing, examples.join('\n')).to.equal(0);
+			// a revert is the same in every order, so a replay of reverts would pass: none may
+			expect(reverted, 'calls reverted in the replay').to.equal(0);
+		},
+		60 * 60 * 1000 * 4,
+	);
 });

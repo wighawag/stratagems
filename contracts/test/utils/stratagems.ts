@@ -1,6 +1,5 @@
 import * as abis from '../../generated/abis/index.js';
 import * as artifacts from '../../generated/artifacts/index.js';
-import solidityKitArtifacts from 'solidity-kit/generated/artifacts.js';
 import {
 	Action,
 	CellXYPosition,
@@ -16,7 +15,7 @@ import {
 	zeroBytes32,
 	zeroBytes24,
 } from 'stratagems-common';
-import {ContractWithViemClient} from '../../utils/connection.js';
+import {ContractWithViemClient, networkHelpers} from '../../utils/connection.js';
 import {parseEther, zeroAddress} from 'viem';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 
@@ -24,7 +23,6 @@ export type GridEnv = {
 	Stratagems: ContractWithViemClient<typeof abis.IStratagemsWithDebug>;
 	TestTokens: ContractWithViemClient<typeof abis.TestTokens>;
 	GemsGenerator: ContractWithViemClient<typeof abis.RewardsGenerator>;
-	Time: ContractWithViemClient<typeof solidityKitArtifacts.Time.abi>;
 	otherAccounts: `0x${string}`[];
 	stratagemsAdmin: `0x${string}`;
 	tokensBeneficiary: `0x${string}`;
@@ -43,6 +41,15 @@ export type GridEnv = {
 	provider: EIP1193ProviderWithoutEvents;
 };
 
+/**
+ * Moves the chain's own clock forward and mines a block there (Hardhat's
+ * `networkHelpers.time.increase`): the game reads `block.timestamp`, since no
+ * local deploy has a `Time` contract (`deploy/.config`).
+ */
+export async function increaseTime(seconds: bigint | number) {
+	await networkHelpers.time.increase(seconds);
+}
+
 export async function withGrid(env: GridEnv, gridString: string) {
 	const grid = parseGrid(gridString);
 	// console.log(gridString);
@@ -55,7 +62,7 @@ export async function withGrid(env: GridEnv, gridString: string) {
 	// TODO wait for receipt so the test work on real networks
 	if (grid.actions) {
 		const config = await env.Stratagems.read.getConfig();
-		await env.Time.write.increaseTime([config.commitPhaseDuration], {account: env.stratagemsAdmin});
+		await increaseTime(config.commitPhaseDuration);
 
 		for (const action of grid.actions) {
 			const player = env.otherAccounts[action.owner];
@@ -64,7 +71,7 @@ export async function withGrid(env: GridEnv, gridString: string) {
 				{account: env.stratagemsAdmin},
 			);
 		}
-		await env.Time.write.increaseTime([config.revealPhaseDuration], {account: env.stratagemsAdmin});
+		await increaseTime(config.revealPhaseDuration);
 	}
 }
 
@@ -105,7 +112,7 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 		);
 		commitments.push({...commitment, player});
 	}
-	await env.Time.write.increaseTime([config.commitPhaseDuration], {account: env.stratagemsAdmin});
+	await increaseTime(config.commitPhaseDuration);
 
 	for (const commitment of commitments) {
 		await env.Stratagems.write.reveal(
@@ -116,7 +123,7 @@ export async function performGridActions(env: GridEnv, actionGrids: string[]) {
 		);
 	}
 
-	await env.Time.write.increaseTime([config.revealPhaseDuration], {account: env.stratagemsAdmin});
+	await increaseTime(config.revealPhaseDuration);
 }
 
 export async function getGrid(

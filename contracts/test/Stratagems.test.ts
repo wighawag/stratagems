@@ -3,7 +3,7 @@ import {expect, describe, it} from 'vitest';
 import {parseGrid, renderGrid, toContractSimpleCell, xyToBigIntID} from 'stratagems-common';
 import {loadFixture} from '../utils/connection.js';
 
-import {getGrid, withGrid} from './utils/stratagems.js';
+import {getGrid, increaseTime, withGrid} from './utils/stratagems.js';
 import {
 	deployStratagemsWithTestConfig,
 	expectGridChange,
@@ -14,7 +14,7 @@ import {parseEther} from 'viem';
 describe('Stratagems', function () {
 	it('poking on a virtually dead cell sync its state accordingly', async function () {
 		const setup = await loadFixture(deployStratagemsWithTestConfig);
-		const {Stratagems, deployer, config, stratagemsAdmin, Time} = setup;
+		const {Stratagems, deployer, config} = setup;
 		await withGrid(
 			setup,
 			`
@@ -37,9 +37,7 @@ describe('Stratagems', function () {
 		`,
 		);
 		expect((await Stratagems.read.getRawCell([xyToBigIntID(1, 2)])).life).to.equal(2);
-		await Time.write.increaseTime([config.commitPhaseDuration + config.revealPhaseDuration], {
-			account: stratagemsAdmin,
-		});
+		await increaseTime(config.commitPhaseDuration + config.revealPhaseDuration);
 		await Stratagems.write.poke([xyToBigIntID(1, 2)], {account: deployer});
 		expect((await Stratagems.read.getRawCell([xyToBigIntID(1, 2)])).life).to.equal(0);
 	});
@@ -68,11 +66,7 @@ describe('Stratagems', function () {
 		-------------------------
 		`,
 			)
-				.then(() =>
-					setup.Time.write.increaseTime([setup.config.commitPhaseDuration + setup.config.revealPhaseDuration], {
-						account: setup.stratagemsAdmin,
-					}),
-				)
+				.then(() => increaseTime(setup.config.commitPhaseDuration + setup.config.revealPhaseDuration))
 				.then(() => getGrid(setup, {x: 0, y: 0, width: 5, height: 5}))
 				.then(renderGrid),
 		).to.equal(

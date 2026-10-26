@@ -1,5 +1,4 @@
 import {expect} from 'vitest';
-import solidityKitArtifacts from 'solidity-kit/generated/artifacts.js';
 
 import {
 	parseGrid,
@@ -187,7 +186,6 @@ async function deployStratagems(override?: Partial<GameConfig>) {
 	const Gems = await fetchContract(deployments['Gems'] as Deployment<typeof abis.Gems>);
 	const GemsGenerator = await fetchContract(deployments['GemsGenerator'] as Deployment<typeof abis.RewardsGenerator>);
 	const Stratagems = await fetchContract(deployments['Stratagems'] as Deployment<typeof abis.IStratagemsWithDebug>);
-	const Time = await fetchContract(deployments['Time'] as Deployment<typeof solidityKitArtifacts.Time.abi>);
 
 	const config = await Stratagems.read.getConfig();
 
@@ -204,7 +202,6 @@ async function deployStratagems(override?: Partial<GameConfig>) {
 		otherAccounts,
 		provider: provider as any,
 		Gems,
-		Time,
 		GemsGenerator,
 	};
 }
@@ -216,6 +213,15 @@ export async function deployStratagemsWithTestConfig() {
 	};
 	const result = await deployStratagems(override);
 	return result;
+}
+
+/**
+ * The deploy the offline world makes (`020_deploy_game`'s `offline` branch): the
+ * Manual policy with both durations zero, through the same override the tests
+ * use for the start time.
+ */
+export async function deployStratagemsWithManualCycle() {
+	return deployStratagems({cyclePolicy: 1, commitPhaseDuration: 0n, revealPhaseDuration: 0n});
 }
 
 export async function pokeAll(env: GridEnv, resultGrid: string, cycle: number) {

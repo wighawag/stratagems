@@ -7,6 +7,8 @@ const timeSalts = {
 	sepolia: '0x000000000000000000000000000000000000000000000000007365706F6C6961',
 };
 
+// Deploys only on an environment tagged `time-contract` (`deploy/.config`),
+// which none is today: without it the game reads `block.timestamp`.
 export default deployScript(
 	async (env) => {
 		const {deploy, namedAccounts} = env;
