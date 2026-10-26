@@ -5,8 +5,10 @@
 // THE MEASUREMENT STEP O's DESIGN RESTS ON (item 2 of the step, in
 // work/plans/join-template-commit-reveal.md): does an etherfold host, over the
 // node's provider, reach the tip of an automined chain after each transaction,
-// `CycleAdvanced` included, with the stream's finality at 12? It does, with two
-// findings, one per case below.
+// `CycleAdvanced` included, with the stream's finality at 12? It does. Two
+// findings came with it: webevm's logs carried no `blockTimestamp`, which
+// etherfold requires (fixed at its home, webevm 0.9.0, the first case below
+// pins it), and an in-memory etherfold store answers no query (the second).
 import 'fake-indexeddb/auto';
 import {describe, it, expect, afterEach} from 'vitest';
 import {
@@ -42,7 +44,6 @@ import {
 } from 'stratagems-indexer';
 import {prepareCommitment, xyToBigIntID} from 'stratagems-common';
 import {createEmbeddedWorld, type EmbeddedWorld} from '$lib/embedded';
-import {withLogTimestamps} from '$lib/stratagems/board/log-timestamps';
 
 // hardhat's well-known development keys: deployer, tokensBeneficiary, a player
 const KEYS = [
@@ -108,7 +109,7 @@ function contractsOf(w: EmbeddedWorld) {
 }
 
 describe('the offline world, folded by etherfold', () => {
-	it('deploys with the Manual policy, and webevm gives its logs no blockTimestamp, which the shim fills in', async () => {
+	it('deploys with the Manual policy, and every log carries its block\u2019s timestamp', async () => {
 		world = await bootWorld();
 		const deployments = contractsOf(world);
 		const linked = deployments.contracts.Stratagems.linkedData!;
@@ -116,29 +117,26 @@ describe('the offline world, folded by etherfold', () => {
 		expect(BigInt(linked.commitPhaseDuration as string)).toBe(0n);
 		expect(BigInt(linked.revealPhaseDuration as string)).toBe(0n);
 
-		const filter = {
-			address: deployments.contracts.Stratagems.address,
-			fromBlock: '0x0',
-			toBlock: 'latest',
-		};
-		const raw = (await world.provider.request({
+		const logs = (await world.provider.request({
 			method: 'eth_getLogs',
-			params: [filter],
+			params: [
+				{
+					address: deployments.contracts.Stratagems.address,
+					fromBlock: '0x0',
+					toBlock: 'latest',
+				},
+			],
 		})) as {blockHash: string; blockTimestamp?: string}[];
-		expect(raw.length).toBeGreaterThan(0);
-		// THE FINDING: execution-apis#639, which etherfold requires
-		// (`TimestamplessLogError`); absent from webevm 0.6.0, 0.7.0 and 0.8.0
-		expect(raw.every((log) => log.blockTimestamp === undefined)).toBe(true);
-
-		const filled = (await withLogTimestamps(world.provider).request({
-			method: 'eth_getLogs',
-			params: [filter],
-		})) as {blockHash: string; blockTimestamp: string}[];
-		const block = (await world.provider.request({
-			method: 'eth_getBlockByHash',
-			params: [filled[0].blockHash, false],
-		})) as {timestamp: string};
-		expect(filled[0].blockTimestamp).toBe(block.timestamp);
+		expect(logs.length).toBeGreaterThan(0);
+		// execution-apis#639, which etherfold requires (`TimestamplessLogError`):
+		// absent from webevm up to 0.8.0, served since 0.9.0
+		for (const log of logs) {
+			const block = (await world.provider.request({
+				method: 'eth_getBlockByHash',
+				params: [log.blockHash, false],
+			})) as {timestamp: string};
+			expect(log.blockTimestamp).toBe(block.timestamp);
+		}
 	});
 
 	it('an in-memory store folds, but cannot answer the GraphQL the board reads with', async () => {
@@ -151,7 +149,7 @@ describe('the offline world, folded by etherfold', () => {
 				fromEntityProcessor(stratagemsProcessor)(state),
 		});
 		await indexer.init({
-			provider: withLogTimestamps(world.provider) as never,
+			provider: world.provider as never,
 			source: indexingSource(contractsOf(world) as never) as never,
 			config: {stream: {finality: STREAM_FINALITY}},
 		});
@@ -192,7 +190,7 @@ describe('the offline world, folded by etherfold', () => {
 				fromEntityProcessor(stratagemsProcessor)(state),
 		});
 		await indexer.init({
-			provider: withLogTimestamps(world.provider) as never,
+			provider: world.provider as never,
 			source: indexingSource(deployments as never) as never,
 			config: {stream: {finality: STREAM_FINALITY}},
 		});
