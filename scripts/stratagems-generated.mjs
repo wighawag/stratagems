@@ -28,11 +28,7 @@ import {fileURLToPath} from 'node:url';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const EPHEMERAL = 'ephemeral';
-const EXPORTED = [
-	'web/src/lib/deployments.ts',
-	'indexer/src/contracts.ts',
-	'helper-services/fuzd/contracts.json',
-];
+const EXPORTED = ['web/src/lib/deployments.ts', 'indexer/src/contracts.ts', 'helper-services/fuzd/contracts.json'];
 const BUILT = ['common/dist', 'indexer/dist'];
 
 const missing = [...EXPORTED, ...BUILT].filter((path) => !existsSync(join(root, path)));
