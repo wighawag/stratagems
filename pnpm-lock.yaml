@@ -310,6 +310,9 @@ importers:
       '@etherfold/processor-entities':
         specifier: ^0.4.1
         version: 0.4.1(typescript@6.0.3)(zod@3.25.76)
+      '@etherfold/state-store':
+        specifier: ^0.5.1
+        version: 0.5.1
       '@sentry/vite-plugin':
         specifier: ^2.18.0
         version: 2.18.0
@@ -322,6 +325,9 @@ importers:
       stratagems-common:
         specifier: workspace:*
         version: link:../common
+      stratagems-contracts:
+        specifier: workspace:*
+        version: link:../contracts
       stratagems-indexer:
         specifier: workspace:*
         version: link:../indexer
@@ -395,6 +401,9 @@ importers:
       eip-1193:
         specifier: ^0.6.5
         version: 0.6.6
+      fake-indexeddb:
+        specifier: ^6.2.5
+        version: 6.2.5
       faucet-client:
         specifier: ^0.1.0
         version: 0.1.0
