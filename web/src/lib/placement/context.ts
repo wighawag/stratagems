@@ -47,6 +47,7 @@ import {
 import {
 	buildPlacementCommitment,
 	createPlacementCommitReveal,
+	gameContract,
 	type Placement,
 } from '$lib/placement/commit-reveal';
 import {
@@ -55,14 +56,14 @@ import {
 	submissionStorageKey,
 } from '$lib/placement/storage';
 import {createPlanning, type PlanningStore} from '$lib/placement/planning';
-import {createCycleReader} from '$lib/placement/cycle';
+import {createCycleReader} from '$lib/game/core/commit-reveal/cycle';
 import {
 	createAttendanceReader,
 	createCycleAdvancer,
-} from '$lib/placement/advance';
+} from '$lib/game/core/commit-reveal/advance';
 import {holdResolvingCycle, type HeldBoardState} from '$lib/placement/hold';
 import {holdPlanUntilBoardReleases} from '$lib/placement/display-plan';
-import {SignerOutOfFundsError} from '$lib/placement/errors';
+import {SignerOutOfFundsError} from '$lib/game/core/commit-reveal/errors';
 import {createReserve, type ReserveStore} from '$lib/placement/reserve';
 import {createStakeAcquisition} from '$lib/placement/acquisition';
 import {
@@ -269,6 +270,7 @@ export function createGameContext(core: CoreServices): GameContext {
 	// readers need them synchronously at construction.
 	const deployments = core.deployments.get();
 	const config = resolvePlacementConfig(deployments);
+	const contract = gameContract(deployments);
 
 	// The stake is filed under WHO PLAYS, not under who signed in.
 	const reserve = createReserve({deps: core, config, identity: activeIdentity});
@@ -279,15 +281,12 @@ export function createGameContext(core: CoreServices): GameContext {
 		contract: deployments.contracts.Game.address,
 		cycle: {
 			config: config.cycle,
-			readCycle: createCycleReader({
-				publicClient: core.publicClient,
-				deployments,
-			}),
+			readCycle: createCycleReader({publicClient: core.publicClient, contract}),
 			readAttendance: createAttendanceReader({
 				publicClient: core.publicClient,
-				deployments: core.deployments,
+				contract,
 			}),
-			advance: createCycleAdvancer(core),
+			advance: createCycleAdvancer({deps: core, contract}),
 			// YES, AND IT IS THIS GAME'S CONTRACT THAT SAYS SO, not the framework.
 			// `UsingCommitReveal._advanceCycle` re-checks the policy, `waitedFor > 0`,
 			// `committed >= waitedFor` in the commit phase and `revealed >= committed`

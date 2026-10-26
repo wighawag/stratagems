@@ -9,14 +9,16 @@ import {
 import {
 	buildPlacementChain,
 	buildPlacementCommitment,
-	chunkDueNext,
 	createPlacementCommitReveal,
-	sendPlacementTransaction,
-	NO_FURTHER_ACTIONS,
 	type CommitRevealDeps,
 	type Placement,
 } from '$lib/placement/commit-reveal';
-import {SignerOutOfFundsError} from '$lib/placement/errors';
+import {
+	chunkDueNext,
+	NO_FURTHER_ACTIONS,
+} from '$lib/game/core/commit-reveal/chain';
+import {sendMove as sendPlacementTransaction} from '$lib/game/core/commit-reveal/send';
+import {SignerOutOfFundsError} from '$lib/game/core/commit-reveal/errors';
 import {onchainIdentity} from '$lib/game/identity';
 import type {PlacementConfig} from '$lib/placement/config';
 
