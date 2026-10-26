@@ -143,12 +143,10 @@ web/static/icon.svg
 
 # ---------------------------------------------------------------------------
 # 4. BOUNDARY TESTS THAT GUARD A GAME'S USE OF THE FRAMEWORK, until stratagems
-# uses it. Neither is weakened; each is omitted until the step that gives it
+# uses it. It is not weakened; it is omitted until the step that gives it
 # something to check.
-#   identity-boundary refuses to pass when no module uses the submission
-#     machinery ("this suite is not checking anything"); until step 8 (commit
-#     and reveal onto the template's seams).
 #   render-host-boundary reads routes/play and placement/render by path; until
 #     step 9 (the twgl renderer behind the template's render seam).
-web/test/identity-boundary.test.ts
+# identity-boundary was here until step 6b (2026-10-26), whose composition
+# (lib/stratagems/context.ts) instantiates the identity generics it checks.
 web/test/render-host-boundary.test.ts
