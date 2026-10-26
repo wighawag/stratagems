@@ -1,5 +1,5 @@
 /**
- * The game's own name for the one failure a player can act on.
+ * The name for the one failure a player can act on.
  *
  * A move is signed by the local signer, which holds nothing until someone puts
  * gas in it. When it runs dry every commit and every reveal fails, and a reveal
@@ -15,15 +15,15 @@
  * say "insufficient funds" cannot send a player off to buy gas they already
  * have).
  *
- * What remains is the game's own type, which upstream cannot supply because
- * only the game knows WHOSE shortfall it is. The classifier answers "the
- * sending account could not pay"; this says "and that account was the signer we
+ * What remains is this module's own type, which upstream cannot supply because
+ * only a game on the commit-reveal base knows WHOSE shortfall it is. The
+ * classifier answers "the sending account could not pay"; this says "and that account was the signer we
  * play your moves with, so the remedy is to top IT up" - not the wallet, which
  * is what a player would otherwise reasonably assume.
  *
  * Classification happens ONCE, at the only boundary that sees a raw node error:
- * `send()` in ./commit-reveal.ts, the single funnel for every write this game
- * makes. Everywhere downstream asks `instanceof SignerOutOfFundsError`, because
+ * `broadcastMove()` in ./send.ts, the single funnel for every write a game on
+ * the base makes through this module. Everywhere downstream asks `instanceof SignerOutOfFundsError`, because
  * by then it is asking about an error the app itself constructed, not about
  * whatever the node said. That keeps the game's dependency on upstream's
  * classifier to one import.

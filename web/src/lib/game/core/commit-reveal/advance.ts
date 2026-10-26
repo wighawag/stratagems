@@ -1,11 +1,10 @@
 /**
- * The template game's half of pushing the cycle on.
+ * The base's half of pushing the cycle on.
  *
  * The framework owns WHEN an advance is worth sending and what the conditions
- * are (`$lib/game/core/advance`); what it cannot own is which contract to ask
- * and which contract to call, so this is the game's half: `getAttendance` read
- * into the framework's shape, and `advanceCycle` sent the way every other move
- * is sent.
+ * are (`$lib/game/core/advance`); this file is the call: the base's
+ * `getAttendance` read into the framework's shape, and `advanceCycle` sent the
+ * way every other move is sent. Which contract is the game's, passed in.
  *
  * NOTHING HERE IS A MOVE, which is the thing to keep in mind while reading it.
  * An advance is permissionless and strictly conditional: it may only ever do
@@ -13,12 +12,14 @@
  * to nobody. That is what makes it safe to send from the local signer without
  * asking the player - the framework may spend gas on their behalf to keep the
  * cycle turning, and may never spend the STAKE without being asked, which is
- * what `missed-reveal.ts` is careful about and this file has no equivalent of.
+ * what `./missed-reveal.ts` is careful about and this file has no equivalent
+ * of.
  */
 import {get} from 'svelte/store';
-import type {Context} from '$lib/context/types';
-import type {Attendance} from '$lib/game/core/advance';
-import {sendPlacementTransaction} from './commit-reveal';
+import type {CoreServices} from '$lib/context/core';
+import type {Attendance} from '../advance';
+import type {CommitRevealContract} from './contract';
+import {sendMove, type MoveDeps} from './send';
 
 /**
  * What the advance needs.
@@ -28,25 +29,18 @@ import {sendPlacementTransaction} from './commit-reveal';
  * cycle, and an account with no wallet provider at all can still keep the game
  * moving.
  */
-export type AdvanceDeps = Pick<
-	Context,
-	| 'connection'
-	| 'signerExecutor'
-	| 'deployments'
-	| 'publicClient'
-	| 'signerBalance'
->;
+export type AdvanceDeps = MoveDeps;
 
 /** Read who the cycle is waiting for, and how many have acted. */
 export function createAttendanceReader(deps: {
-	publicClient: Context['publicClient'];
-	deployments: Context['deployments'];
+	publicClient: CoreServices['publicClient'];
+	contract: CommitRevealContract;
 }): () => Promise<Attendance> {
+	const {contract} = deps;
 	return async () => {
-		const deployments = deps.deployments.get();
 		const attendance = (await deps.publicClient.readContract({
-			address: deployments.contracts.Game.address,
-			abi: deployments.contracts.Game.abi,
+			address: contract.address,
+			abi: contract.abi,
 			functionName: 'getAttendance',
 		})) as {waitedFor: bigint; committed: bigint; revealed: bigint};
 		return {
@@ -62,8 +56,8 @@ export function createAttendanceReader(deps: {
  *
  * NO DECLARED GAS LIMIT, and that is a deliberate exception to what commit and
  * reveal do rather than an omission. ADR-0003 has the deployment declare those
- * two because they are measured against THESE contracts and because an
- * `eth_estimateGas` round trip inside a reveal window is time a multi-chunk
+ * two because they are measured against the game's own contracts and because
+ * an `eth_estimateGas` round trip inside a reveal window is time a multi-chunk
  * turn cannot spare. Neither argument reaches here: an advance is one small
  * call, it is not racing a phase boundary (it IS the phase boundary), and a
  * figure measured for it would be a fourth number to keep in step for no
@@ -75,9 +69,11 @@ export function createAttendanceReader(deps: {
  * for the timed case, where it is a real problem and this file's reasoning
  * would not hold.)
  */
-export function createCycleAdvancer(
-	deps: AdvanceDeps,
-): () => Promise<`0x${string}`> {
+export function createCycleAdvancer(params: {
+	deps: AdvanceDeps;
+	contract: CommitRevealContract;
+}): () => Promise<`0x${string}`> {
+	const {deps, contract} = params;
 	return async () => {
 		await deps.connection.ensureConnected();
 		const executor = get(deps.signerExecutor);
@@ -90,13 +86,12 @@ export function createCycleAdvancer(
 				'No signing key yet, so the cycle cannot be advanced from this browser.',
 			);
 		}
-		const deployments = deps.deployments.get();
-		return sendPlacementTransaction(
+		return sendMove(
 			deps,
 			executor,
 			{
-				address: deployments.contracts.Game.address,
-				abi: deployments.contracts.Game.abi,
+				address: contract.address,
+				abi: contract.abi,
 				// Takes nothing and returns where the cycle landed. Anyone may call
 				// it; this browser is simply the one that noticed.
 				functionName: 'advanceCycle',

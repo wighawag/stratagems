@@ -6,7 +6,7 @@ import {
 	describeSubmission,
 } from '$lib/placement/ui/hud';
 import type {Context} from '$lib/context/types';
-import {SignerOutOfFundsError} from '$lib/placement/errors';
+import {SignerOutOfFundsError} from '$lib/game/core/commit-reveal/errors';
 import type {SubmissionState} from '$lib/game/core/submission';
 import type {Placement} from '$lib/placement/commit-reveal';
 

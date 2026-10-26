@@ -7,7 +7,7 @@ import {
 	type SerialisedLoop,
 } from '$lib/game/core/played';
 import {playedSeatSecret} from '$lib/game/core/secret';
-import {createCycleReader} from '$lib/placement/cycle';
+import {createCycleReader} from '$lib/game/core/commit-reveal/cycle';
 import {cellID} from '$lib/placement/cells';
 import {
 	bondFor,
@@ -16,9 +16,9 @@ import {
 } from '$lib/placement/config';
 import {
 	buildPlacementChain,
-	chunkDueNext,
 	type Placement,
 } from '$lib/placement/commit-reveal';
+import {chunkDueNext} from '$lib/game/core/commit-reveal/chain';
 
 /**
  * THE OTHER PLAYERS IN THE OFFLINE WORLD, because a commit-reveal game with one
@@ -194,7 +194,7 @@ export function createOfflinePlayers(params: {
 	// differed - `getCycle` against reveal-or-die's `getCycleNumber` - and both
 	// of them already ship a reader that answers it in the framework's own shape
 	// for the trackers. The played players were duplicating it instead of asking.
-	const readCycle = createCycleReader({publicClient, deployments: records});
+	const readCycle = createCycleReader({publicClient, contract: game});
 
 	function send(
 		player: OfflinePlayer,

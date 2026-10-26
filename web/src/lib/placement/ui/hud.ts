@@ -21,7 +21,7 @@ import type {Placement} from '../commit-reveal';
 import type {ReserveState} from '../reserve';
 import {blocksCommitting, type MissedRevealState} from '../missed-reveal';
 import type {RecoveryState} from '$lib/game/core/recovery';
-import {SignerOutOfFundsError} from '../errors';
+import {SignerOutOfFundsError} from '$lib/game/core/commit-reveal/errors';
 import type {SetupNeeded} from '$lib/placement/context';
 import type {CyclePhase} from '$lib/game/core/cycle-phase';
 

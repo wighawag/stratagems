@@ -1,7 +1,7 @@
 import {describe, it, expect, vi} from 'vitest';
 import {writable} from 'svelte/store';
 import {resumeWhenGasArrives as resumeWhen} from '$lib/game/core/commit-reveal-game';
-import {SignerOutOfFundsError} from '$lib/placement/errors';
+import {SignerOutOfFundsError} from '$lib/game/core/commit-reveal/errors';
 import type {SubmissionState} from '$lib/game/core/submission';
 import type {Placement} from '$lib/placement/commit-reveal';
 
