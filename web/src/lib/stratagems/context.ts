@@ -20,6 +20,7 @@ import {derived, type Readable} from 'svelte/store';
 import {env} from '$env/dynamic/public';
 import type {EIP1193Provider} from 'viem';
 import type {CoreServices} from '$lib/context/core';
+import {url} from '$lib/kit/paths';
 import type {SignerGrant} from '$lib/ui/delegation/grant';
 import {
 	createActiveIdentity,
@@ -185,6 +186,7 @@ export function createGameContext(core: CoreServices): GameContext {
 				cycleConfig: config.cycle,
 				player: activeIdentity,
 				snapshotURI: env.PUBLIC_SNAPSHOT_URI || undefined,
+				appPath: url,
 			}),
 		// Shown its chunks, a missed reveal costs one gem per committed move and
 		// the rest of the bond comes back; without them, the whole bond.

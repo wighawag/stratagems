@@ -77,11 +77,12 @@ type Deployment = Parameters<typeof indexingSource>[0] & {name: string};
  */
 function publicationLocations(
 	deploymentName: string,
+	appPath: (path: string) => string,
 	snapshotURI: string | undefined,
 ): string[] {
 	const embedded = new URL(
-		`indexed-states/${deploymentName}/publication.json`,
-		document.baseURI,
+		appPath(`/indexed-states/${deploymentName}/publication.json`),
+		location.href,
 	).href;
 	if (!snapshotURI) return [embedded];
 	const remote = `${snapshotURI.replace(/\/$/, '')}/${deploymentName}/`;
@@ -98,6 +99,12 @@ export function createIndexedBoard(params: {
 	player: Readable<`0x${string}` | undefined>;
 	/** `PUBLIC_SNAPSHOT_URI`, when this build names one. */
 	snapshotURI?: string;
+	/**
+	 * A path of the app as served (`$lib/kit/paths`' `url`): the app is deployed
+	 * under paths nobody knows in advance (IPFS gateways), so the embedded
+	 * publication is found relative to the app, not to the page.
+	 */
+	appPath: (path: string) => string;
 }): OnchainStateStore<BoardState> & {
 	/** The worker's own progress, for a syncing indicator. */
 	progress: Readable<HostProgress | undefined>;
@@ -179,7 +186,11 @@ export function createIndexedBoard(params: {
 					// stream digest the publication index is keyed by
 					config: {stream: {finality: STREAM_FINALITY}},
 					publication: {
-						locations: publicationLocations(deployment.name, params.snapshotURI),
+						locations: publicationLocations(
+							deployment.name,
+							params.appPath,
+							params.snapshotURI,
+						),
 					},
 				},
 				onConnect: (outcome) => {
