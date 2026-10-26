@@ -55,7 +55,7 @@
     "vitest": "^4.1.11",
     "vitest-browser-svelte": "^3.0.0",
     "wait-on": "^7.2.0",
-    "webevm": "^0.6.0"
+    "webevm": "^0.9.0"
   },
   "dependencies": {
     "@etherfold/browser": "^0.12.2",
