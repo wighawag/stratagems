@@ -34,18 +34,7 @@ import {execFileSync} from 'node:child_process';
  * inherited entry when the root's version merged down, which is the mechanism
  * working: a debt list that travels between repos has to be re-earned in each.
  */
-const KNOWN_LEAKS: Record<string, string> = {
-	// STRATAGEMS, NOT THE TEMPLATE: the "empty" above is template-commit-reveal's,
-	// and false here. stratagems' pre-template app, moved into src/lib/stratagems
-	// whole before it joined the template, reads SvelteKit directly. These end
-	// with the port (work/plans/join-template-commit-reveal.md, steps 6 to 11),
-	// which moves that app onto the framework, and not before: fixing them in
-	// code that the port then dissolves would be work done twice.
-	'src/lib/stratagems/config.ts':
-		'stratagems legacy, until the port: `dev` from $app/environment',
-	'src/lib/stratagems/state/State.ts':
-		'stratagems legacy, until the port: `browser` from $app/environment',
-};
+const KNOWN_LEAKS: Record<string, string> = {};
 
 const root = new URL('..', import.meta.url).pathname;
 
