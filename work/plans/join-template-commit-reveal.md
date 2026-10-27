@@ -619,7 +619,7 @@ git -C ~/dev/github/wighawag/stratagems show join-template-commit-reveal:web/src
 
 ### Step T1: one tab per offline world (in the template tree)
 
-Branches in the template tree, named by each repo's own work protocol; nothing in stratagems until the cascade. Needs O. PROPOSED 2026-10-27, awaiting the user's answers (the log entry "2026-10-27, step T1 specified" has the questions). It supersedes the "Proposed" of the draft beside this file (`join-template-commit-reveal/template-task-one-tab-per-offline-world.md`), which is rewritten from this section once answered and then filed on the home repos' `work` branches.
+Branches in the template tree, named by each repo's own work protocol; nothing in stratagems until the cascade. Needs O. **Decided** by the user on 2026-10-27: T1-1 to T1-7 as proposed (the log entry "2026-10-27, step T1 specified" has the questions). It supersedes the "Proposed" of the draft beside this file (`join-template-commit-reveal/template-task-one-tab-per-offline-world.md`), which is rewritten from this section once answered and then filed on the home repos' `work` branches.
 
 **What decides the shape** (measured 2026-10-27, read-only: template-commit-reveal `origin/main` e1378e3b, jolly-roger `origin/integration` 5b4567a4 and `origin/with/embedded-chain` 225bb258, webevm 0.9.1, Node 24.19):
 
@@ -630,7 +630,7 @@ Branches in the template tree, named by each repo's own work protocol; nothing i
 - **Unmounting the world stops its writers.** `$lib/context/Context.svelte` returns `context.start()`'s stop from `onMount`, and the world's `start` wraps the context, the played seats and the poke. stratagems' indexer worker only reads the chain, and its IndexedDB writes are transactions.
 - **Node 24.19 has `navigator.locks` and `BroadcastChannel`**, so the mechanism is unit-testable in the `server` project without a fake.
 
-**Proposed** (each with the alternative rejected; the numbers are the questions in the log entry):
+**Decided** (each with the alternative rejected; the numbers are the questions in the log entry):
 
 - **T1-1, where it lands**: the mechanism (`$lib/embedded/claim.ts` and its unit test) in jolly-roger `with/embedded-chain`, used there by `/offline-demo`; the wiring (the lobby, the route's refusal, the e2e) in template-commit-reveal `main`. Rather than all of it in template-commit-reveal (the draft), which leaves jolly-roger's demo with the hazard and makes a folder that is byte-identical to its home diverge below it.
 - **T1-2, what the lock is named by**: the app's world, one name (`offline-world`, the namespace of `CHAIN_ID_STORAGE_KEY`), not the chain id. CHANGES P11's "a Web Lock named by the world's chain id", for the measured reason above. Consequence: while one tab holds the world, a second tab can neither play it nor start a new one; it is told the offline world is open in another tab.
@@ -640,7 +640,7 @@ Branches in the template tree, named by each repo's own work protocol; nothing i
 - **T1-6, the tests**: jolly-roger `test/lib/embedded/claim.test.ts` on Node's own locks and channel (a second claim refused while the first holds, let-go asked over the channel, granted once released), the claim taking `locks` and `channel` as parameters with the globals as defaults; template `test/lib/offline-lobby.test.ts` (byte-identical, cascades) extended: a refused lobby never calls `startGame`. One e2e at the template, `web/e2e/tests/offline-one-tab.e2e.ts`, written against the byte-identical route and world bar only, so it is byte-identical in every game and runs there unchanged: two pages in one browser context, the second refused, take-over, the first now refused and the second playing the restored world (same chain id). Rather than adding the case to each game's own offline e2e (four copies).
 - **T1-7, the order and the approvals**: jolly-roger `with/embedded-chain` first (a task on its `work` branch, its protocol), fanned out to its `integration`; then template-commit-reveal `main` (the task filed on its `work` branch), fanned out to its `with/*`, reveal-or-die and bomber-world; then stratagems `main` by the ordinary fanout, and `main` into the integration branch as a between-steps merge. Every push outside this integration branch is asked for, per repo. Rather than bringing it into the integration branch ahead of `main` (stratagems' link to the tree is `main`, and an early copy becomes a duplicate on the next cascade).
 
-**Start here** (once answered).
+**Start here.**
 
 ```sh
 git -C ~/dev/github/wighawag/jolly-roger fetch origin --prune
@@ -1525,3 +1525,5 @@ Not a step: the step prompt found T1 the first unticked step, with no section an
 5. T1-5: take-over by a `let-go` message; the holder unmounts the world, disposes it, waits on a barrier request, reloads into the refusal; the new tab boots by the ordinary restore. (Not an in-process release, not a reload without the barrier.)
 6. T1-6: a claim unit test on Node's own locks at jolly-roger, a lobby case at the template, and one game-agnostic, byte-identical e2e that every game runs. (Not a case in each game's own offline e2e.)
 7. T1-7: jolly-roger, then the template and its descendants, then stratagems through `main` and a between-steps merge, each push asked for. (Not an early copy into the integration branch.)
+
+**Answered, 2026-10-27**: the user accepted T1-1 to T1-7 as written. Landed: the integration branch fast-forwarded to `specify-T1` and pushed. Step T1 is next, unticked and decided.
