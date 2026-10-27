@@ -34,8 +34,9 @@ export async function indexInProcess<ABI extends readonly unknown[]>(options: {
 	processor: EntityProcessor<any>;
 	/**
 	 * What etherfold reads the chain through. Since @etherfold/browser 0.13 its
-	 * slot is eip-1193 0.7's `EIP1193CoreProvider` (the node surface), which a
-	 * hardhat or rocketh provider satisfies, so it is passed without a cast.
+	 * slot is eip-1193 0.7's `EIP1193CoreProvider` (the methods wallet, node and
+	 * HTTP node providers all serve), which a hardhat or rocketh provider
+	 * satisfies, so it is passed without a cast.
 	 */
 	provider: EIP1193CoreProvider;
 	source: {
