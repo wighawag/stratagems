@@ -38,6 +38,15 @@ overrides:
   # @sveltejs/kit declares cookie ^0.6.0 and has no release past it; web is adapter-static, so
   # not reachable. A range key, so it disarms itself once SvelteKit moves past 0.6.x: delete it then.
   'cookie@<0.7.0': '^0.7.0'
+  # fuzd has no release on eip-1193 0.7: fuzd-server 0.7.3, the one in this tree
+  # (through helper-services/fuzd's fuzd-nodejs ^0.7.6), declares eip-1193
+  # ^0.6.1, and so does 0.11.0, the latest on npm (checked 2026-10-27). fuzd is
+  # deliberately not being migrated. eip-1193 is
+  # TYPES ONLY (one index.d.ts, no code), and helper-services/fuzd only runs the
+  # fuzd-nodejs CLI, which nothing here type-checks, so pointing fuzd-server at
+  # 0.7.4 changes no byte that runs. It keeps the tree on ONE eip-1193. Delete
+  # it once fuzd-server depends on eip-1193 ^0.7.
+  'fuzd-server>eip-1193': '^0.7.4'
 
 auditConfig:
   ignoreCves:
@@ -63,23 +72,3 @@ ignoredBuiltDependencies:
   - svelte-preprocess
   - vue-demi
   - workerd
-
-# Four packages the template's framework uses publish types that import 'eip-1193' but
-# declare it only as a devDependency, so those types resolve against whatever pnpm hoists.
-# In template-commit-reveal that is the only copy (0.6.5) and it works by luck; here the
-# hoisted copy is stratagems' 0.5.0, and the framework fails `check` in context/core.ts and
-# embedded/wallet.ts (measured 2026-10-24, work/plans/join-template-commit-reveal.md, step 4).
-# Delete an entry once its package declares the dependency.
-packageExtensions:
-  '@etherplay/wallet-connector-ethereum':
-    dependencies:
-      eip-1193: ^0.6.3
-  '@etherplay/connect':
-    dependencies:
-      eip-1193: ^0.6.3
-  '@etherplay/connect-core':
-    dependencies:
-      eip-1193: ^0.6.3
-  '@etherkit/tx-observer':
-    dependencies:
-      eip-1193: ^0.6.5

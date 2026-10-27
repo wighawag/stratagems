@@ -20,7 +20,7 @@ import {VersionedStateStore} from '@etherfold/state-store-sqlite';
 import {fromEntityProcessor, openForWriting, type EntityProcessor} from '@etherfold/processor-entities';
 import {createIndexerState} from '@etherfold/browser';
 import {buildQuerySchema, localExecutor, queryBlocksOf, type QueryExecutor} from '@etherfold/graphql';
-import type {EIP1193ProviderWithoutEvents} from 'eip-1193';
+import type {EIP1193CoreProvider} from 'eip-1193';
 
 export type IndexedInProcess = {
 	/** GraphQL over the indexed state, pinned to one block per operation. */
@@ -32,7 +32,13 @@ export type IndexedInProcess = {
 
 export async function indexInProcess<ABI extends readonly unknown[]>(options: {
 	processor: EntityProcessor<any>;
-	provider: EIP1193ProviderWithoutEvents | {request(args: {method: string; params?: unknown}): Promise<unknown>};
+	/**
+	 * What etherfold reads the chain through. Since @etherfold/browser 0.13 its
+	 * slot is eip-1193 0.7's `EIP1193CoreProvider` (the methods wallet, node and
+	 * HTTP node providers all serve), which a hardhat or rocketh provider
+	 * satisfies, so it is passed without a cast.
+	 */
+	provider: EIP1193CoreProvider;
 	source: {
 		chainId: string;
 		genesisHash?: `0x${string}`;
@@ -50,7 +56,7 @@ export async function indexInProcess<ABI extends readonly unknown[]>(options: {
 		createProcessor: (state) => fromEntityProcessor(options.processor)(state),
 	});
 	await indexer.init({
-		provider: options.provider as never,
+		provider: options.provider,
 		source: options.source as never,
 		...(options.finality !== undefined ? {config: {stream: {finality: options.finality}}} : {}),
 	});
