@@ -138,7 +138,11 @@ web/test/routes
 # Two SvelteKit service-worker entries are ambiguous (src/service-worker.ts and
 # src/service-worker/index.ts both resolve), and stratagems' shell registers its
 # own (src/service-worker.ts, through lib/stratagems/ui/install). Until step 6.
-web/src/service-worker
+# Only the template's ENTRY is dropped: src/service-worker.ts imports the
+# template's src/service-worker/fetch-and-update-cache.ts (it never caches an
+# HTTP error), and with no index there SvelteKit still resolves the entry to
+# src/service-worker.ts.
+web/src/service-worker/index.ts
 # The template's IPFS redirects name its explorer routes, and they shadow
 # stratagems' own `_redirects` route, which then fails the prerender ("marked as
 # prerenderable, but not found"). Until step 6 brings the explorer back.
