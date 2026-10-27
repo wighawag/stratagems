@@ -89,7 +89,7 @@ Candidates already visible, each to be judged when its step comes (not decided h
 - [x] **Step S** (asked for by the user after 6b): the one-transaction stake, `addToReserveAndFund` forwarding a stipend to the browser's key
 - [x] **Step 6c**: stratagems' own UI ported onto the composition or dropped, and the legacy app (`web3-connection`, its account data, the remote sync) leaves
 - [x] **Step O**: the offline world: stratagems' contracts on the in-tab chain, the indexer folding it (replaces 6b's "in construction" page)
-- [ ] **Step T1** (in the template tree, after O, not blocking it): one tab per offline world, a second tab refused (P11 of step O)
+- [x] **Step T1** (in the template tree, after O, not blocking it): one tab per offline world, a second tab refused (P11 of step O)
 - [ ] **Step 8**: fuzd's automatic reveal through the submission seam
 - [ ] **Step D**: the new deployment: which chain, and whether alpha1's TestTokens and GemsGenerator on Base are reused
 - [ ] **Step 9**: the renderer, twgl.js as stratagems' own render host
@@ -619,7 +619,7 @@ git -C ~/dev/github/wighawag/stratagems show join-template-commit-reveal:web/src
 
 ### Step T1: one tab per offline world (in the template tree)
 
-Branches in the template tree, named by each repo's own work protocol; nothing in stratagems until the cascade. Needs O. **Decided** by the user on 2026-10-27: T1-1 to T1-7 as proposed (the log entry "2026-10-27, step T1 specified" has the questions). It supersedes the "Proposed" of the draft beside this file (`join-template-commit-reveal/template-task-one-tab-per-offline-world.md`), which is rewritten from this section once answered and then filed on the home repos' `work` branches.
+Branches in the template tree, named by each repo's own work protocol; nothing in stratagems until the cascade. Needs O. **Decided** by the user on 2026-10-27: T1-1 to T1-7 as proposed (the log entry "2026-10-27, step T1 specified" has the questions). It supersedes the "Proposed" of the draft beside this file (`join-template-commit-reveal/template-task-one-tab-per-offline-world.md`, deleted once filed), which was rewritten from this section and filed on the home repos' `work` branches (jolly-roger `work/tasks/done/one-tab-per-world.md`, template-commit-reveal `work/tasks/done/one-tab-per-offline-world.md`).
 
 **What decides the shape** (measured 2026-10-27, read-only: template-commit-reveal `origin/main` e1378e3b, jolly-roger `origin/integration` 5b4567a4 and `origin/with/embedded-chain` 225bb258, webevm 0.9.1, Node 24.19):
 
@@ -651,7 +651,7 @@ git -C ~/dev/github/wighawag/template-commit-reveal fetch origin --prune
 git -C ~/dev/github/wighawag/template-commit-reveal show origin/main:web/src/lib/offline-lobby.ts
 git -C ~/dev/github/wighawag/template-commit-reveal show origin/main:web/src/lib/game/lobby/lobby.ts
 git -C ~/dev/github/wighawag/template-commit-reveal show origin/main:web/src/routes/offline/+page.svelte
-git -C ~/dev/github/wighawag/stratagems show join-template-commit-reveal:work/plans/join-template-commit-reveal/template-task-one-tab-per-offline-world.md
+git -C ~/dev/github/wighawag/template-commit-reveal show origin/work:work/tasks/done/one-tab-per-offline-world.md
 ```
 
 **Do**, one commit per item, each repo by its own AGENTS.md:
@@ -1528,7 +1528,7 @@ Not a step: the step prompt found T1 the first unticked step, with no section an
 
 **Answered, 2026-10-27**: the user accepted T1-1 to T1-7 as written. Landed: the integration branch fast-forwarded to `specify-T1` and pushed. Step T1 is next, unticked and decided.
 
-### 2026-10-27, step T1: one tab per offline world (built and verified on local preview branches in four repos, NOT landed: awaiting the user's approval of the pushes)
+### 2026-10-27, step T1: one tab per offline world (built and verified on local preview branches, then pushed with the user's approval, and landed)
 
 Branch `step-T1` (worktree `~/dev/worktrees/stratagems/step-T1`) from the integration branch at 94493343, and local preview branches `t1/<branch>` in every other repo, each under `~/dev/worktrees/<repo>/t1/<branch>`, branched from that branch's `origin` head. Premises re-derived first, all holding: the main checkout clean, `main` = `origin/main` = 33003325, the integration branch = its origin and containing `origin/main`; jolly-roger `origin/integration` 5b4567a4 and `origin/with/embedded-chain` 225bb258, template-commit-reveal `origin/main` e1378e3b (= `stem/main`), reveal-or-die `origin/main` edd25e9d, bomber-world 0bb7caa4; webevm 0.9.1 with `dispose` unchanged (it stops the timer and the served ports and cancels nothing queued; every public request is serialised behind the saves); every repo's `offline.ts` returns `Promise<OfflineWorldStatus>` from `startOfflineWorld` with `world` on `Ready`. O ticked.
 
@@ -1559,3 +1559,5 @@ Branch `step-T1` (worktree `~/dev/worktrees/stratagems/step-T1`) from the integr
 - The draft task beside this file stays until the template's `work` branch is pushed, since the filed copy exists only on a local branch until then.
 
 **Awaiting approval, all fast-forwards of their `origin` heads**: jolly-roger `with/embedded-chain` 225bb258..44076af7, `integration` 5b4567a4..b7b79fe4, `work` 0b185472..ff1034e5; template-commit-reveal `main` e1378e3b..de924635, `with/pixi-js` 5ebc070e..5c0bfbe3, `with/nft-identity` d64c8da3..b92cc012, `with/all` 974e8f3b..bc267e74, `work` bdeeb3a0..116a1b0e; reveal-or-die `main` edd25e9d..06f3e284; bomber-world `main` 0bb7caa4..7e81a363; stratagems `main` 33003325..f7d8b5c3. Once they are pushed, T1 is ticked, the draft deleted, and this branch lands.
+
+**Pushed, 2026-10-27, with the user's approval** ("yes push"), every one a fast-forward of the `origin` head fetched just before: the eleven branches listed above, at exactly those commits. The main checkout's `main` fast-forwarded to `origin/main` f7d8b5c3, and `stem/main` is de924635. The draft task beside this file is deleted, its filed copies being on both `work` branches now. Landed: T1 ticked, the integration branch fast-forwarded to `step-T1` and pushed. Next: step 8. The `t1/*` preview branches and their worktrees under `~/dev/worktrees/<repo>/t1/` are equal to their pushed branches and safe to remove.
