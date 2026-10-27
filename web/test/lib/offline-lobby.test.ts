@@ -67,6 +67,14 @@ async function lobby() {
 }
 
 /**
+ * The key the (mocked) world says it is remembered under, read rather than
+ * spelled, so these cases hold unchanged in a game that versions the key.
+ */
+async function chainIdKey(): Promise<string> {
+	return (await import('$lib/offline')).CHAIN_ID_STORAGE_KEY;
+}
+
+/**
  * Another tab holding the world: a claim of the same name, from the module the
  * lobby itself uses, whose reload releases the lock as closing a document does.
  */
@@ -138,7 +146,7 @@ describe('the offline world\u2019s lobby', () => {
 		// restore the same chain beside the first tab's and the two would diverge;
 		// offering the chooser would let it write a seat count over the world it
 		// cannot play. So it is refused before the lobby looks.
-		store.set('offline-world:chain-id', '9007199254740123');
+		store.set(await chainIdKey(), '9007199254740123');
 		store.set('offline-world:seats', '4');
 		await anotherTabHolds();
 
@@ -152,7 +160,7 @@ describe('the offline world\u2019s lobby', () => {
 	});
 
 	it('takes the world over, then boots it by the ordinary restore', async () => {
-		store.set('offline-world:chain-id', '9007199254740123');
+		store.set(await chainIdKey(), '9007199254740123');
 		store.set('offline-world:seats', '4');
 		const {reloaded} = await anotherTabHolds();
 
@@ -183,7 +191,7 @@ describe('the offline world\u2019s lobby', () => {
 				},
 			},
 		};
-		store.set('offline-world:chain-id', '9007199254740123');
+		store.set(await chainIdKey(), '9007199254740123');
 		store.set('offline-world:seats', '4');
 		vi.stubGlobal('location', {
 			reload: () => {
