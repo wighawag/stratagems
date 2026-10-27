@@ -44,19 +44,34 @@
 	import {
 		THE_KEY_THIS_BROWSER_PLAYS_WITH,
 		offlineLobby,
+		offlineWorldClaim,
+		takeTheWorldOver,
 	} from '$lib/offline-lobby';
+	import {route} from '$lib';
+	import WorldInAnotherTab from '$lib/ui/embedded-chain/WorldInAnotherTab.svelte';
 	import {Button} from '$lib/shadcn/ui/button';
 	import InWorld from '$lib/context/InWorld.svelte';
 	import Play from '../play/+page.svelte';
 
 	onMount(() => {
-		offlineLobby.enter();
+		void offlineLobby.enter();
 	});
 </script>
 
 <DefaultHead title={'Play Offline - a chain in this tab'} />
 
-{#if $offlineWorld.step === 'Ready'}
+<!-- ONE TAB PER WORLD, AND IT IS DECIDED ABOVE THE WORLD. While another tab has
+     this world, or while this tab is handing it to one, the world's branch must
+     not render: unmounting it is what stops its context and its seats before the
+     world is let go of. The rule is `$lib/embedded/claim`'s and the lobby takes
+     the claim (`$lib/offline-lobby`); this renders the answer. -->
+{#if $offlineWorldClaim.step === 'Refused' || $offlineWorldClaim.step === 'Waiting' || $offlineWorldClaim.step === 'LettingGo'}
+	<WorldInAnotherTab
+		claim={offlineWorldClaim}
+		onTakeOver={() => void takeTheWorldOver()}
+		home={route('/')}
+	/>
+{:else if $offlineWorld.step === 'Ready'}
 	<!-- A NESTED PROVIDER, which is the whole mechanism in one element.
 	     `setAppContext` is svelte's `setContext`, so this shadows the app's context
 	     for THIS SUBTREE only: the game below runs against the chain in the tab,
