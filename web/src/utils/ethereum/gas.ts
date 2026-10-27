@@ -1,16 +1,9 @@
-import type {EIP1193BlockTag, EIP1193ProviderWithoutEvents} from 'eip-1193';
+import type {EIP1193BlockTag, EIP1193CoreProvider} from 'eip-1193';
 
 function avg(arr: bigint[]) {
 	const sum = arr.reduce((a: bigint, v: bigint) => a + v);
 	return sum / BigInt(arr.length);
 }
-
-type EIP1193FeeHistory = {
-	oldestBlock: string;
-	reward: `0x${string}`[][];
-	baseFeePerGas: string[];
-	gasUsedRatio: string[];
-};
 
 export type EstimateGasPriceOptions = {
 	blockCount: number;
@@ -29,7 +22,7 @@ export type EstimateGasPriceResult = GasPrice[];
 export type RoughEstimateGasPriceResult = {slow: GasPrice; average: GasPrice; fast: GasPrice; gasPrice: bigint};
 
 export async function getGasPriceEstimate(
-	provider: EIP1193ProviderWithoutEvents,
+	provider: EIP1193CoreProvider,
 	options?: Partial<EstimateGasPriceOptions>,
 ): Promise<EstimateGasPriceResult> {
 	const defaultOptions: EstimateGasPriceOptions = {
@@ -41,13 +34,18 @@ export async function getGasPriceEstimate(
 
 	const historicalBlocks = optionsResolved.blockCount;
 
-	const rawFeeHistory: EIP1193FeeHistory = await provider.request({
+	const rawFeeHistory = await provider.request({
 		method: 'eth_feeHistory',
 		params: [`0x${historicalBlocks.toString(16)}`, optionsResolved.newestBlock, optionsResolved.rewardPercentiles],
 	});
+	// A node returns `reward` only when percentiles were asked for, which they always are here.
+	const reward = rawFeeHistory.reward;
+	if (!reward) {
+		throw new Error(`eth_feeHistory returned no reward for percentiles ${optionsResolved.rewardPercentiles}`);
+	}
 
 	let blockNum = Number(rawFeeHistory.oldestBlock);
-	const lastBlock = blockNum + rawFeeHistory.reward.length;
+	const lastBlock = blockNum + reward.length;
 	let index = 0;
 	const blocksHistory: {number: number; baseFeePerGas: bigint; gasUsedRatio: number; priorityFeePerGas: bigint[]}[] =
 		[];
@@ -56,7 +54,7 @@ export async function getGasPriceEstimate(
 			number: blockNum,
 			baseFeePerGas: BigInt(rawFeeHistory.baseFeePerGas[index]),
 			gasUsedRatio: Number(rawFeeHistory.gasUsedRatio[index]),
-			priorityFeePerGas: rawFeeHistory.reward[index].map((x) => BigInt(x)),
+			priorityFeePerGas: reward[index].map((x) => BigInt(x)),
 		});
 		blockNum += 1;
 		index += 1;
@@ -80,7 +78,7 @@ export async function getGasPriceEstimate(
 }
 
 export async function getRoughGasPriceEstimate(
-	provider: EIP1193ProviderWithoutEvents,
+	provider: EIP1193CoreProvider,
 	options?: Partial<RoughEstimateGasPriceOptions>,
 ): Promise<RoughEstimateGasPriceResult> {
 	const defaultOptions: EstimateGasPriceOptions = {
