@@ -38,6 +38,13 @@ overrides:
   # @sveltejs/kit declares cookie ^0.6.0 and has no release past it; web is adapter-static, so
   # not reachable. A range key, so it disarms itself once SvelteKit moves past 0.6.x: delete it then.
   'cookie@<0.7.0': '^0.7.0'
+  # fuzd has no release on eip-1193 0.7 (fuzd-server 0.11.0, the latest, still
+  # declares ^0.6.1), and fuzd is deliberately not being migrated. eip-1193 is
+  # TYPES ONLY (one index.d.ts, no code), and helper-services/fuzd only runs the
+  # fuzd-nodejs CLI, which nothing here type-checks, so pointing fuzd-server at
+  # 0.7.4 changes no byte that runs. It keeps the tree on ONE eip-1193. Delete
+  # it once fuzd-server depends on eip-1193 ^0.7.
+  'fuzd-server>eip-1193': '^0.7.4'
 
 auditConfig:
   ignoreCves:

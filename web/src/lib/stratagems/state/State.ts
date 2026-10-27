@@ -93,7 +93,7 @@ function initialize(provider: EIP1193Provider) {
 		dedicatedWorkerHost(() => new Worker(new URL('./indexer.worker.ts', import.meta.url), {type: 'module'})),
 		{
 			// the wallet's provider, served to the worker over a MessagePort
-			provider: provider as never,
+			provider,
 			settings: {
 				source: indexingSource(initialContractsInfos) as never,
 				// the finality the snapshot job published under: it is part of the stream
