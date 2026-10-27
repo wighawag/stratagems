@@ -18,20 +18,31 @@ import {get} from 'svelte/store';
  * against a chain.
  */
 const started: {table: {occupant: {kind: string}}[]}[] = [];
+/** What the mocked boot resolves to; a test may hand back a world. */
+let booted: unknown = {step: 'Booting', what: 'in a test'};
 
 vi.mock('$lib/offline', () => ({
 	CHAIN_ID_STORAGE_KEY: 'offline-world:chain-id',
 	startOfflineWorld: (params: {table: {occupant: {kind: string}}[]}) => {
 		started.push(params);
-		return Promise.resolve({step: 'Booting', what: 'in a test'});
+		return Promise.resolve(booted);
 	},
 }));
 
 const store = new Map<string, string>();
 let reloads = 0;
 
+/**
+ * The module each test imported, so its claim can be released after it. The
+ * lock is Node's own and process-wide, the way a browser's is origin-wide, so a
+ * claim one test left held would refuse the next test's lobby.
+ */
+let imported: typeof import('$lib/offline-lobby') | undefined;
+const releases: (() => Promise<void>)[] = [];
+
 beforeEach(async () => {
 	started.length = 0;
+	booted = {step: 'Booting', what: 'in a test'};
 	reloads = 0;
 	store.clear();
 	vi.stubGlobal('localStorage', {
@@ -43,12 +54,44 @@ beforeEach(async () => {
 	vi.resetModules();
 });
 
-afterEach(() => {
+afterEach(async () => {
+	await imported?.offlineWorldClaim.release();
+	imported = undefined;
+	await Promise.all(releases.splice(0).map((release) => release()));
 	vi.unstubAllGlobals();
 });
 
 async function lobby() {
-	return (await import('$lib/offline-lobby')).offlineLobby;
+	imported = await import('$lib/offline-lobby');
+	return imported.offlineLobby;
+}
+
+/**
+ * The key the (mocked) world says it is remembered under, read rather than
+ * spelled, so these cases hold unchanged in a game that versions the key.
+ */
+async function chainIdKey(): Promise<string> {
+	return (await import('$lib/offline')).CHAIN_ID_STORAGE_KEY;
+}
+
+/**
+ * Another tab holding the world: a claim of the same name, from the module the
+ * lobby itself uses, whose reload releases the lock as closing a document does.
+ */
+async function anotherTabHolds(letGo: () => Promise<void> = async () => {}) {
+	const {createWorldClaim} = await import('$lib/embedded/claim');
+	let reloaded = 0;
+	const other = createWorldClaim({
+		name: 'offline-world',
+		letGo,
+		reload: () => {
+			reloaded++;
+			void other.release();
+		},
+	});
+	expect(await other.claim()).toBe(true);
+	releases.push(() => other.release());
+	return {other, reloaded: () => reloaded};
 }
 
 describe('the offline world\u2019s lobby', () => {
@@ -76,7 +119,7 @@ describe('the offline world\u2019s lobby', () => {
 		store.set('offline-world:seats', '4');
 
 		const offlineLobby = await lobby();
-		offlineLobby.enter();
+		await offlineLobby.enter();
 
 		expect(get(offlineLobby)).toMatchObject({step: 'Sat', seats: 4});
 		expect(started[0].table).toHaveLength(4);
@@ -96,6 +139,82 @@ describe('the offline world\u2019s lobby', () => {
 		expect(store.has('offline-world:chain-id')).toBe(false);
 		expect(store.has('offline-world:seats')).toBe(false);
 		expect(reloads).toBe(1);
+	});
+
+	it('never starts a world, nor offers a table, while another tab has the world', async () => {
+		// The second tab of a browser that already holds a world. Booting would
+		// restore the same chain beside the first tab's and the two would diverge;
+		// offering the chooser would let it write a seat count over the world it
+		// cannot play. So it is refused before the lobby looks.
+		store.set(await chainIdKey(), '9007199254740123');
+		store.set('offline-world:seats', '4');
+		await anotherTabHolds();
+
+		const offlineLobby = await lobby();
+		await offlineLobby.enter();
+
+		expect(started).toHaveLength(0);
+		expect(get(offlineLobby).step).toBe('Opening');
+		expect(get(imported!.offlineWorldClaim).step).toBe('Refused');
+		expect(store.get('offline-world:seats')).toBe('4');
+	});
+
+	it('takes the world over, then boots it by the ordinary restore', async () => {
+		store.set(await chainIdKey(), '9007199254740123');
+		store.set('offline-world:seats', '4');
+		const {reloaded} = await anotherTabHolds();
+
+		const offlineLobby = await lobby();
+		await offlineLobby.enter();
+		expect(started).toHaveLength(0);
+
+		await imported!.takeTheWorldOver();
+
+		expect(reloaded()).toBe(1);
+		expect(get(imported!.offlineWorldClaim).step).toBe('Held');
+		expect(get(offlineLobby)).toMatchObject({step: 'Sat', seats: 4});
+		expect(started).toHaveLength(1);
+		expect(started[0].table).toHaveLength(4);
+	});
+
+	it('lets its world go when another tab asks: its boot awaited, the node disposed, one more request, then a reload', async () => {
+		const calls: string[] = [];
+		booted = {
+			step: 'Ready',
+			world: {
+				dispose: async () => void calls.push('dispose'),
+				provider: {
+					request: async (args: {method: string}) => {
+						calls.push(args.method);
+						return '0x1';
+					},
+				},
+			},
+		};
+		store.set(await chainIdKey(), '9007199254740123');
+		store.set('offline-world:seats', '4');
+		vi.stubGlobal('location', {
+			reload: () => {
+				reloads++;
+				calls.push('reload');
+				void imported?.offlineWorldClaim.release();
+			},
+		});
+
+		const offlineLobby = await lobby();
+		await offlineLobby.enter();
+		expect(started).toHaveLength(1);
+
+		const {createWorldClaim} = await import('$lib/embedded/claim');
+		const asking = createWorldClaim({
+			name: 'offline-world',
+			letGo: async () => {},
+		});
+		releases.push(() => asking.release());
+		await asking.takeOver();
+
+		expect(calls).toEqual(['dispose', 'eth_blockNumber', 'reload']);
+		expect(get(asking).step).toBe('Held');
 	});
 
 	// A COLD IMPORT OF THE WHOLE OFFLINE WORLD (a chain, the deploy scripts, the
