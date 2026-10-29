@@ -10,7 +10,9 @@ import {
 import type {CoreServices} from '$lib/context/core';
 import type {DelegationValue} from '$lib/onchain/delegation';
 import type {OnchainStateStore} from '$lib/game/core/seams';
+import type {AccountDataLifecycle} from '$lib/account/lifecycle';
 import * as submissionModule from '$lib/game/core/submission';
+import type {SubmissionStorage} from '$lib/game/core/submission';
 
 // The skeleton's wiring into the submission is observed at the call: what it
 // hands `createSubmission` is the whole of what a game can choose there.
@@ -197,8 +199,13 @@ function compose(
 		scheduler?: Parameters<
 			typeof createCommitRevealGame<TestGame>
 		>[1]['scheduler'];
+		lifecycle?: AccountDataLifecycle;
+		storage?: SubmissionStorage<number>;
 	} = {},
 ) {
+	const lifecycle = writable<AccountDataLifecycle>(
+		overrides.lifecycle ?? {status: 'ready', account: ACCOUNT},
+	);
 	const account = writable<`0x${string}` | undefined>(ACCOUNT);
 	const identity = writable<`0x${string}` | undefined>(ACCOUNT);
 	const delegation = writable<DelegationValue>(authorised);
@@ -209,7 +216,7 @@ function compose(
 		publicClient: {},
 		signerExecutor: readable({status: 'not-ready'}),
 		signerBalance: writable({step: 'Unloaded'}),
-		accountData: {watchField: () => readable({})},
+		accountData: {watchField: () => readable({}), lifecycle$: lifecycle},
 	} as unknown as CoreServices;
 
 	const board = writable({step: 'Loaded', cycleNumber: 0, cells: 0});
@@ -260,11 +267,12 @@ function compose(
 				reveal: async () => {},
 			}) as never,
 		buildCommitment: () => ({hash: '0x'}),
-		storageFor: () => ({
-			load: () => undefined,
-			save: () => {},
-			clear: () => {},
-		}),
+		storageFor: () =>
+			overrides.storage ?? {
+				load: () => undefined,
+				save: () => {},
+				clear: () => {},
+			},
 		isOutOfGas: () => false,
 		...(overrides.submission ? {submission: overrides.submission} : {}),
 		...(overrides.scheduler ? {scheduler: overrides.scheduler} : {}),
@@ -285,7 +293,7 @@ function compose(
 		click: (position, {planning}) => planning.toggle(position.x),
 		start: startGame,
 	});
-	return {crg, identity, check, toggle, startGame, stopGame};
+	return {crg, identity, check, toggle, startGame, stopGame, lifecycle};
 }
 
 describe('the skeleton, wired', () => {
@@ -354,6 +362,72 @@ describe('the skeleton, wired', () => {
 		createSubmission.mockClear();
 		compose();
 		expect(createSubmission.mock.calls[0][0].scheduler).toBeUndefined();
+	});
+
+	it('blocks play while the saved turn loads, and on a load error, never showing an empty turn', () => {
+		const {crg, lifecycle, toggle} = compose({
+			lifecycle: {status: 'loading', account: ACCOUNT},
+		});
+		const stop = crg.start();
+		const states: unknown[] = [];
+		const unsubscribe = crg.game.savedTurn.subscribe((v) => states.push(v));
+
+		expect(get(crg.game.savedTurn)).toEqual({status: 'loading'});
+		expect(get(crg.game.readyToPlay)).toBe(false);
+		crg.render.eventEmitter.emit('clicked', {x: 7, y: 1});
+		expect(toggle).not.toHaveBeenCalled();
+		// The rest of the app is not blocked: the setup gate still answers.
+		expect(get(crg.game.setup)).toBeUndefined();
+
+		const error = new Error('could not decrypt');
+		lifecycle.set({status: 'error', account: ACCOUNT, error});
+		expect(get(crg.game.savedTurn)).toEqual({status: 'error', error});
+		expect(get(crg.game.readyToPlay)).toBe(false);
+
+		lifecycle.set({status: 'ready', account: ACCOUNT});
+		expect(get(crg.game.savedTurn)).toEqual({status: 'ready'});
+		expect(get(crg.game.readyToPlay)).toBe(true);
+		crg.render.eventEmitter.emit('clicked', {x: 7, y: 1});
+		expect(toggle).toHaveBeenCalledWith(7);
+
+		unsubscribe();
+		stop();
+	});
+
+	it("follows the identity's storage readiness, and passes the durable write through", async () => {
+		const ready = writable(false);
+		const saved: unknown[] = [];
+		const createSubmission = vi.mocked(submissionModule.createSubmission);
+		createSubmission.mockClear();
+		const {identity} = compose({
+			storage: {
+				load: () => undefined,
+				save: () => {},
+				clear: () => {},
+				ready,
+				saveDurably: async (s) => void saved.push(s),
+			},
+		});
+		const storage = createSubmission.mock.calls[0][0].storage;
+		const seen: boolean[] = [];
+		const unsubscribe = storage.ready!.subscribe((v) => seen.push(v));
+		ready.set(true);
+		expect(seen).toEqual([false, true]);
+		ready.set(false);
+		expect(seen.at(-1)).toBe(false);
+		// Nobody playing: nothing to load, so nothing to wait for.
+		identity.set(undefined);
+		expect(seen.at(-1)).toBe(true);
+		unsubscribe();
+
+		identity.set(ACCOUNT);
+		await storage.saveDurably!({
+			cycleNumber: 1,
+			actions: [],
+			secret: '0x01',
+			committed: false,
+		});
+		expect(saved).toHaveLength(1);
 	});
 
 	it('shows the board through the held store and the game merge', () => {

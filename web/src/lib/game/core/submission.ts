@@ -78,6 +78,27 @@ export type SubmissionStorage<TAction, TExtensions extends object = {}> = {
 	load(): PersistedSubmission<TAction, TExtensions> | undefined;
 	save(submission: PersistedSubmission<TAction, TExtensions>): void;
 	clear(): void;
+	/**
+	 * Whether what is stored can be read yet. ABSENT MEANS ALWAYS READY, which is
+	 * what a synchronous storage (`localStorage`) is.
+	 *
+	 * A storage that loads asynchronously (the account data, Q8-1) says `false`
+	 * until it has loaded, and again while it loads another account's. The
+	 * submission restores on every transition to ready (the first, an account
+	 * switch), refuses `plan` and `commit` before it, makes a `reveal()` asked
+	 * for wait for it, and clears nothing while it is not: `load()` answering
+	 * `undefined` then means "not known yet", not "nothing stored".
+	 */
+	ready?: Readable<boolean>;
+	/**
+	 * Save, resolving once the record is ON STORAGE and rejecting when it could
+	 * not be put there. The commit awaits it before the commitment is sent, and a
+	 * rejection refuses the commit (the secret would not survive a reload).
+	 * Absent, `save` is taken to be durable when it returns.
+	 */
+	saveDurably?(
+		submission: PersistedSubmission<TAction, TExtensions>,
+	): Promise<void>;
 };
 
 export type SubmissionState<TAction> =
@@ -332,6 +353,41 @@ export function createSubmission<
 	let $state: SubmissionState<TAction> = {step: 'Idle'};
 	const store = writable<SubmissionState<TAction>>($state);
 
+	/**
+	 * Bumped whenever the storage stops being ready (an account switch, a load
+	 * error) or the identity changes: anything that awaited across one of those
+	 * belongs to a context that is gone, and must not write into the new one.
+	 */
+	let generation = 0;
+
+	/** Whether the storage can be read and written now. See `ready`. */
+	function isReady(): boolean {
+		return storage.ready ? get(storage.ready) : true;
+	}
+
+	/** Resolves once the storage is ready, or with `false` if stopped first. */
+	let releaseWaiters: (() => void) | undefined;
+	function whenReady(): Promise<boolean> {
+		if (isReady()) return Promise.resolve(true);
+		const ready = storage.ready!;
+		return new Promise<boolean>((resolve) => {
+			let unsubscribe: (() => void) | undefined;
+			const previous = releaseWaiters;
+			const done = (value: boolean) => {
+				unsubscribe?.();
+				unsubscribe = undefined;
+				resolve(value);
+			};
+			releaseWaiters = () => {
+				previous?.();
+				done(false);
+			};
+			unsubscribe = ready.subscribe(($ready) => {
+				if ($ready) queueMicrotask(() => done(true));
+			});
+		});
+	}
+
 	function set(next: SubmissionState<TAction>) {
 		$state = next;
 		store.set(next);
@@ -429,6 +485,9 @@ export function createSubmission<
 	}
 
 	function plan(actions: readonly TAction[]) {
+		// Not before the storage is ready: what it holds may be a committed turn,
+		// and a plan laid over it would be one the player cannot commit.
+		if (!isReady()) return;
 		// Once the commitment is sent the actions are fixed: they are what the
 		// hash is of, and what the reveal has to reproduce exactly.
 		if (
@@ -450,6 +509,9 @@ export function createSubmission<
 	}
 
 	async function commit() {
+		// Not before the storage is ready: the secret has to be stored first, and
+		// what is stored may already be this cycle's committed turn.
+		if (!isReady()) return;
 		// `Idle` is allowed only for a game that has asked for it: see
 		// `commitWhenIdle`. Everything below already copes with an empty action list
 		// (the commitment hashes it, the reveal discloses it, and a contract's action
@@ -473,15 +535,38 @@ export function createSubmission<
 			return;
 		}
 		const cycleNumber = info.currentCycleNumber;
+		const startedIn = generation;
 		const secret = await makeSecret({cycleNumber, identity: player});
+		if (generation !== startedIn) return;
 		const {hash} = adapter.buildCommitment({actions, secret});
 
 		// Persisted BEFORE the call, so a reload during the wallet prompt cannot
-		// leave a commitment nobody can open. See the file comment.
+		// leave a commitment nobody can open. See the file comment. DURABLY where
+		// the storage can say so: a write still in flight when the tab closes is a
+		// commitment nobody can open, so the commit waits for it, and a write that
+		// failed refuses the commit.
 		const record: Persisted = {cycleNumber, actions, secret, committed: false};
-		storage.save(record);
-
 		set({step: 'Committing', cycleNumber, actions});
+		if (storage.saveDurably) {
+			try {
+				await storage.saveDurably(record);
+			} catch (error) {
+				if (generation !== startedIn) return;
+				set({
+					step: 'Error',
+					cycleNumber,
+					during: 'commit',
+					message: messageOf(error),
+					error,
+					actions,
+				});
+				return;
+			}
+			if (generation !== startedIn) return;
+		} else {
+			storage.save(record);
+		}
+
 		try {
 			const outcome = await adapter.commit<TExtensions>({
 				identity: player,
@@ -499,6 +584,11 @@ export function createSubmission<
 				revealDueAt: info.type === 'manual' ? undefined : info.revealOpensAt,
 				...(scheduler ? {scheduler} : {}),
 			});
+			// THE CONTEXT MOVED ON while the commitment went out (an account
+			// switch): this turn is not the new identity's, so it is neither
+			// stored nor shown as theirs. Its secret is already stored for the
+			// identity that committed, and the chain's hash takes it back up there.
+			if (generation !== startedIn) return;
 			// ANYTHING BUT `true` IS NOT SCHEDULED: an adapter that ignored the
 			// scheduler reports nothing, and a turn nobody else will reveal must be
 			// revealed here.
@@ -516,6 +606,7 @@ export function createSubmission<
 			storage.save(committed);
 			set(committedState(committed));
 		} catch (error) {
+			if (generation !== startedIn) return;
 			// The commitment never went out, so nothing is at stake and the stored
 			// submission would only confuse the next load.
 			storage.clear();
@@ -531,6 +622,9 @@ export function createSubmission<
 	}
 
 	async function reveal() {
+		// ASKED FOR BEFORE THE STORAGE IS READY, IT WAITS: returning would look
+		// like "nothing to reveal" when the truth is "not read yet".
+		if (!isReady() && !(await whenReady())) return;
 		const pending = storage.load();
 		if (!pending || !pending.committed) return;
 		if ($state.step === 'Revealing' || $state.step === 'Revealed') return;
@@ -708,6 +802,9 @@ export function createSubmission<
 	 * reconstructed once is now an ordinary stored submission.
 	 */
 	function adopt(pending: Persisted): boolean {
+		// Not into a storage that has not loaded: the save below would be lost,
+		// or written over what it is still loading.
+		if (!isReady()) return false;
 		if (pending.cycleNumber !== cycleInfo.now().currentCycleNumber)
 			return false;
 		if ($state.step === 'Committing' || $state.step === 'Revealing')
@@ -728,6 +825,7 @@ export function createSubmission<
 
 	/** Adopt whatever was left behind by a previous page load. */
 	function restore() {
+		if (!isReady() || !hasIdentity(currentIdentity())) return;
 		const pending = storage.load();
 		if (!pending) return;
 
@@ -743,8 +841,46 @@ export function createSubmission<
 		}
 	}
 
+	/**
+	 * What this submission showed belongs to a context that is gone (another
+	 * identity, or an account whose data is reloading): forget it in MEMORY,
+	 * clearing nothing stored, and let anything in flight know.
+	 */
+	function leaveContext() {
+		generation++;
+		if ($state.step !== 'Idle') set({step: 'Idle'});
+	}
+
 	function start() {
-		restore();
+		// RESTORED ON EVERY TRANSITION TO READY, not once: the first ready after
+		// start, and each one after an account switch. A storage with no
+		// readiness is ready now, which is the old single restore.
+		let wasReady: boolean | undefined;
+		const unsubscribeReady = storage.ready
+			? storage.ready.subscribe(($ready) => {
+					const before = wasReady;
+					wasReady = $ready;
+					if ($ready && before !== true) restore();
+					else if (!$ready && before === true) leaveContext();
+				})
+			: (restore(), () => {});
+
+		// AN IDENTITY THAT CHANGES (or first arrives) after start is a different
+		// player's turn: before this, one arriving late was never restored, even
+		// from localStorage.
+		let previousIdentity: TIdentity | undefined;
+		let identitySeen = false;
+		const unsubscribeIdentity = identity.subscribe(($identity) => {
+			if (!identitySeen) {
+				identitySeen = true;
+				previousIdentity = $identity;
+				return;
+			}
+			if ($identity === previousIdentity) return;
+			previousIdentity = $identity;
+			leaveContext();
+			restore();
+		});
 
 		let previousCycleNumber: number | undefined;
 
@@ -754,7 +890,9 @@ export function createSubmission<
 				$info.currentCycleNumber !== previousCycleNumber;
 			previousCycleNumber = $info.currentCycleNumber;
 
-			if (cycleChanged) {
+			// NOTHING IS CLEARED WHILE LOADING. The state is `Idle` then anyway; a
+			// cycle that turns meanwhile is the restore's to handle once ready.
+			if (cycleChanged && isReady()) {
 				if ($state.step === 'Committed' || $state.step === 'Revealing') {
 					// The cycle turned over with a commitment still open here: the
 					// reveal window is gone, and the chain says whether somebody else
@@ -818,7 +956,14 @@ export function createSubmission<
 			}
 		});
 
-		return () => unsubscribeCycle();
+		return () => {
+			unsubscribeCycle();
+			unsubscribeIdentity();
+			unsubscribeReady();
+			const release = releaseWaiters;
+			releaseWaiters = undefined;
+			release?.();
+		};
 	}
 
 	return {

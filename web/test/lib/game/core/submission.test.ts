@@ -2,6 +2,7 @@ import {describe, expect, it, vi} from 'vitest';
 import {get, writable, type Readable} from 'svelte/store';
 import {
 	createSubmission,
+	type PersistedSubmission,
 	type SubmissionState,
 	type SubmissionStorage,
 } from '$lib/game/core/submission';
@@ -1464,6 +1465,229 @@ describe('a reveal somebody else sent is Revealed, not Missed (P9)', () => {
 			expect(submission.value).toEqual({step: 'Revealed', cycleNumber: 2}),
 		);
 		expect(onSettled).toHaveBeenCalledOnce();
+		stop();
+	});
+});
+
+describe('a storage that loads asynchronously (Q8-1, Q8-8)', () => {
+	const ALICE = '0x00000000000000000000000000000000000a11ce' as const;
+	const BOB = '0x0000000000000000000000000000000000000b0b' as const;
+
+	/**
+	 * One record per identity, like the skeleton's per-identity storage, behind
+	 * a readiness the test flips: the account data loading, loaded, switching.
+	 */
+	function loadingStorage(who: Readable<`0x${string}` | undefined>) {
+		const records = new Map<string, PersistedSubmission<Action>>();
+		const ready = writable(false);
+		const durable: {
+			gate?: Promise<void>;
+			error?: Error;
+			writes: PersistedSubmission<Action>[];
+		} = {writes: []};
+		const key = () => get(who) ?? 'nobody';
+		const storage: SubmissionStorage<Action> = {
+			ready: {subscribe: ready.subscribe},
+			load: () => records.get(key()),
+			save: (submission) => void records.set(key(), submission),
+			clear: () => void records.delete(key()),
+			saveDurably: async (submission) => {
+				const owner = key();
+				await durable.gate;
+				if (durable.error) throw durable.error;
+				durable.writes.push(submission);
+				records.set(owner, submission);
+			},
+		};
+		return {storage, records, ready, durable};
+	}
+
+	// `null` for nobody: a default parameter would swallow an explicit undefined.
+	function setup(initial: `0x${string}` | null = ALICE) {
+		const cycles = fakeCycles(0);
+		const who = writable<`0x${string}` | undefined>(initial ?? undefined);
+		const loading = loadingStorage(who);
+		const fake = fakeAdapter();
+		const submission = createSubmission({
+			cycleInfo: cycles.cycleInfo,
+			adapter: fake.adapter,
+			storage: loading.storage,
+			identity: who,
+		});
+		return {...cycles, who, ...loading, ...fake, submission};
+	}
+
+	const committedTurn = (cycleNumber = 2): PersistedSubmission<Action> => ({
+		cycleNumber,
+		actions: [{cellID: 9n}],
+		secret: '0x09',
+		committed: true,
+	});
+
+	it('refuses a plan and a commit before ready, and restores once ready', async () => {
+		const {records, ready, calls, submission} = setup();
+		records.set(ALICE, committedTurn());
+		const stop = submission.start();
+
+		// Loading: what is stored is not known yet, so nothing is shown in its
+		// place and nothing can be planned over it.
+		expect(submission.value.step).toBe('Idle');
+		submission.plan([{cellID: 1n}]);
+		expect(submission.value.step).toBe('Idle');
+		await submission.commit();
+		expect(calls.commit).toHaveLength(0);
+
+		ready.set(true);
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			cycleNumber: 2,
+			actions: [{cellID: 9n}],
+		});
+		stop();
+	});
+
+	it('makes a reveal asked for before ready wait, not return', async () => {
+		const {records, ready, calls, setTime, submission} = setup();
+		records.set(ALICE, committedTurn());
+		const stop = submission.start();
+		setTime(41); // reveal phase
+
+		const asked = submission.reveal();
+		await new Promise((r) => setTimeout(r, 20));
+		expect(calls.reveal).toHaveLength(0);
+
+		ready.set(true);
+		await asked;
+		expect(calls.reveal.length).toBeGreaterThanOrEqual(1);
+		await vi.waitFor(() => expect(submission.value.step).toBe('Revealed'));
+		stop();
+	});
+
+	it('clears nothing while loading: a cycle that turns is handled by the restore', async () => {
+		const {records, ready, setTime, submission} = setup();
+		records.set(ALICE, committedTurn(2));
+		const stop = submission.start();
+		setTime(44); // cycle 3, still loading
+		expect(records.get(ALICE)).toBeDefined();
+		expect(submission.value.step).toBe('Idle');
+
+		ready.set(true);
+		// The old reading, with no chain to ask: missed, and cleared now.
+		expect(submission.value).toEqual({step: 'Missed', cycleNumber: 2});
+		expect(records.get(ALICE)).toBeUndefined();
+		stop();
+	});
+
+	it('restores for an identity that arrives after start (a gap even with localStorage)', () => {
+		const {records, ready, who, submission} = setup(null);
+		records.set(ALICE, committedTurn());
+		ready.set(true);
+		const stop = submission.start();
+		expect(submission.value.step).toBe('Idle');
+
+		who.set(ALICE);
+		expect(submission.value).toMatchObject({step: 'Committed', cycleNumber: 2});
+		stop();
+	});
+
+	it('follows an account switch: nothing of one shown as the other, both restored', () => {
+		const {records, ready, who, submission} = setup();
+		records.set(ALICE, committedTurn());
+		ready.set(true);
+		const stop = submission.start();
+		expect(submission.value.step).toBe('Committed');
+
+		// The switch: the data goes back to loading, then the identity moves.
+		ready.set(false);
+		expect(submission.value.step).toBe('Idle');
+		who.set(BOB);
+		expect(submission.value.step).toBe('Idle');
+		ready.set(true);
+		expect(submission.value.step).toBe('Idle');
+		expect(records.get(ALICE)).toBeDefined();
+
+		ready.set(false);
+		who.set(ALICE);
+		ready.set(true);
+		expect(submission.value).toMatchObject({step: 'Committed', cycleNumber: 2});
+		stop();
+	});
+
+	it('writes nothing for one account into another when the switch lands mid-commit', async () => {
+		const cycles = fakeCycles(0);
+		const who = writable<`0x${string}` | undefined>(ALICE);
+		const {storage, records, ready} = loadingStorage(who);
+		let land!: () => void;
+		const {adapter} = fakeAdapter({
+			commit: () =>
+				new Promise((resolve) => {
+					land = () => resolve({hash: '0xcommit'});
+				}),
+		});
+		const submission = createSubmission({
+			cycleInfo: cycles.cycleInfo,
+			adapter,
+			storage,
+			identity: who,
+		});
+		ready.set(true);
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		const committing = submission.commit();
+		await vi.waitFor(() => expect(submission.value.step).toBe('Committing'));
+		// The secret went to ALICE's storage BEFORE the commit was sent.
+		expect(records.get(ALICE)).toMatchObject({committed: false});
+
+		ready.set(false);
+		who.set(BOB);
+		ready.set(true);
+		land();
+		await committing;
+
+		expect(submission.value.step).toBe('Idle');
+		expect(records.get(BOB)).toBeUndefined();
+		// ALICE's record still holds the secret for the commitment that landed;
+		// the chain's hash recovers it when she comes back (see recovery).
+		expect(records.get(ALICE)).toMatchObject({
+			committed: false,
+			secret: expect.any(String),
+		});
+		stop();
+	});
+
+	it('stores the secret DURABLY before sending the commit', async () => {
+		const {ready, durable, calls, submission} = setup();
+		let release!: () => void;
+		durable.gate = new Promise((r) => (release = r));
+		ready.set(true);
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		const committing = submission.commit();
+		await new Promise((r) => setTimeout(r, 20));
+		expect(calls.commit).toHaveLength(0);
+
+		release();
+		await committing;
+		expect(durable.writes[0]).toMatchObject({committed: false});
+		expect(calls.commit).toHaveLength(1);
+		expect(submission.value.step).toBe('Committed');
+		stop();
+	});
+
+	it('refuses the commit when the durable write fails', async () => {
+		const {ready, durable, calls, submission} = setup();
+		durable.error = new Error('account data could not be stored');
+		ready.set(true);
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+		expect(calls.commit).toHaveLength(0);
+		expect(submission.value).toMatchObject({
+			step: 'Error',
+			during: 'commit',
+			message: 'account data could not be stored',
+			actions: [{cellID: 1n}],
+		});
 		stop();
 	});
 });

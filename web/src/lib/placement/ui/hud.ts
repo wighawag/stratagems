@@ -24,6 +24,7 @@ import type {RecoveryState} from '$lib/game/core/recovery';
 import {SignerOutOfFundsError} from '$lib/game/core/commit-reveal/errors';
 import type {SetupNeeded} from '$lib/placement/context';
 import type {CyclePhase} from '$lib/game/core/cycle-phase';
+import type {SavedTurn} from '$lib/game/core/commit-reveal-game';
 
 export type HudModel = {
 	phaseLabel: string;
@@ -127,6 +128,14 @@ export type HudModel = {
 		busy: boolean;
 		canAcknowledge: boolean;
 	};
+
+	/**
+	 * Set while the player's saved turn is not readable yet: loading, or failed
+	 * to load. Play is blocked meanwhile, and on a failure it STAYS blocked: an
+	 * empty board in its place would invite a turn planned over one this browser
+	 * could not read.
+	 */
+	savedTurn?: {headline: string; detail: string; tone: 'busy' | 'bad'};
 
 	/**
 	 * Set when the chain holds a commitment for the cycle in progress that this
@@ -424,6 +433,26 @@ export function describeRecovery(
 	return {headline, detail, busy: false, canRecover: plannedCount > 0};
 }
 
+/** What to say about the saved turn, or nothing once it is loaded. */
+export function describeSavedTurn(state: SavedTurn): HudModel['savedTurn'] {
+	switch (state.status) {
+		case 'loading':
+			return {
+				headline: 'Loading your saved turn...',
+				detail: 'Planning opens once it is here.',
+				tone: 'busy',
+			};
+		case 'error':
+			return {
+				headline: 'Your saved turn could not be loaded.',
+				detail: `${state.error.message}. Play is paused so nothing is planned over it; reload to try again.`,
+				tone: 'bad',
+			};
+		default:
+			return undefined;
+	}
+}
+
 export function createHud(context: Context): Readable<HudModel> {
 	const {game} = context;
 
@@ -441,6 +470,7 @@ export function createHud(context: Context): Readable<HudModel> {
 			game.setup,
 			game.acquisition,
 			game.recovery,
+			game.savedTurn,
 		],
 		([
 			$twoPhase,
@@ -455,7 +485,9 @@ export function createHud(context: Context): Readable<HudModel> {
 			$setup,
 			$acquisition,
 			$recovery,
+			$savedTurn,
 		]): HudModel => {
+			const savedTurn = describeSavedTurn($savedTurn as SavedTurn);
 			const submission = describeSubmission($submission);
 			const reserve = $reserve as ReserveState;
 			const reserveAmount =
@@ -534,6 +566,7 @@ export function createHud(context: Context): Readable<HudModel> {
 				submissionTone: submission.tone,
 				missedReveal: describeMissedReveal($missedReveal as MissedRevealState),
 				recovery: describeRecovery($recovery as RecoveryState, $count),
+				savedTurn,
 				// Committing early is allowed the whole time the phase is open; the
 				// submission commits by itself if the player leaves it too late. An
 				// unrevealed commitment blocks it entirely: the contract would reject
@@ -542,6 +575,7 @@ export function createHud(context: Context): Readable<HudModel> {
 				// plan is still here and nothing was spent.
 				canCommit:
 					!blocked &&
+					!savedTurn &&
 					($submission.step === 'Planning' ||
 						($submission.step === 'Error' &&
 							$submission.during === 'commit')) &&

@@ -27,6 +27,7 @@ import type {RecoveryStore} from '$lib/game/core/recovery';
 import type {CyclePhase} from '$lib/game/core/cycle-phase';
 import {
 	createCommitRevealGame,
+	type SavedTurn,
 	type SetupNeeded as FrameworkSetupNeeded,
 } from '$lib/game/core/commit-reveal-game';
 import type {AcquisitionStore} from '$lib/game/acquire';
@@ -173,6 +174,8 @@ export type Game = {
 	readyToPlay: Readable<boolean>;
 	/** What is still missing before a turn can be taken, if anything. */
 	setup: Readable<SetupNeeded | undefined>;
+	/** Whether the saved turn has loaded, for the HUD to say while it has not. */
+	savedTurn: Readable<SavedTurn>;
 };
 
 /**

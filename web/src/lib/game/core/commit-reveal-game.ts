@@ -34,6 +34,7 @@
  */
 import {derived, get, readable, type Readable} from 'svelte/store';
 import type {CoreServices} from '$lib/context/core';
+import type {AccountDataLifecycle} from '$lib/account/lifecycle';
 import {isRegistered, type DelegationValue} from '$lib/onchain/delegation';
 import {createChainTime, type ChainTimeStore} from './chain-time';
 import {
@@ -269,6 +270,61 @@ function noStorage<TAction, TExtensions extends object>(): SubmissionStorage<
 	return {load: () => undefined, save: () => {}, clear: () => {}};
 }
 
+/**
+ * Where the player's SAVED TURN is: the account data it lives in, loading,
+ * loaded or failed (Q8-6). `none` while nobody is signed in, which the setup
+ * gate already answers.
+ *
+ * A load ERROR is its own state and blocks play: shown as an empty turn, it
+ * would invite the player to plan and commit over a committed turn this browser
+ * could not read, whose secret may be the only way to open it.
+ */
+export type SavedTurn =
+	| {status: 'none'}
+	| {status: 'loading'}
+	| {status: 'ready'}
+	| {status: 'error'; error: Error};
+
+export function savedTurnOf(lifecycle: AccountDataLifecycle): SavedTurn {
+	switch (lifecycle.status) {
+		case 'no-account':
+			return {status: 'none'};
+		case 'loading':
+			return {status: 'loading'};
+		case 'ready':
+			return {status: 'ready'};
+		case 'error':
+			return {status: 'error', error: lifecycle.error};
+	}
+}
+
+/**
+ * One storage's readiness, following whichever identity is playing: the
+ * submission is handed ONE storage that resolves to the current identity's at
+ * each call, so its readiness has to move with it. Nobody playing is ready:
+ * there is nothing to load.
+ */
+function readinessOfCurrentIdentity<TIdentity, TStorage>(
+	identity: Readable<TIdentity | undefined>,
+	storageFor: (identity: TIdentity) => TStorage & {ready?: Readable<boolean>},
+): Readable<boolean> {
+	return readable<boolean>(true, (set) => {
+		let inner: (() => void) | undefined;
+		const unsubscribe = identity.subscribe(($identity) => {
+			inner?.();
+			inner = undefined;
+			const ready =
+				$identity === undefined ? undefined : storageFor($identity).ready;
+			if (ready) inner = ready.subscribe(set);
+			else set(true);
+		});
+		return () => {
+			unsubscribe();
+			inner?.();
+		};
+	});
+}
+
 // ---------------------------------------------------------------------------
 // The skeleton.
 // ---------------------------------------------------------------------------
@@ -488,7 +544,13 @@ export type CommitRevealGame<T extends GameTypes> = {
 		recovery: RecoveryStore<T['action']>;
 		acquisition: AcquisitionStore;
 		setup: Readable<SetupNeeded<T['stake']> | undefined>;
+		/**
+		 * Setup done, the phase right, AND the saved turn loaded: while it loads
+		 * (or failed to) the board refuses plans and nothing can be committed.
+		 */
 		readyToPlay: Readable<boolean>;
+		/** Where the saved turn is, for the HUD to say: see {@link SavedTurn}. */
+		savedTurn: Readable<SavedTurn>;
 	};
 	/** The board as the chain says it. What FETCHES reads this. */
 	onchainState: OnchainStateStore<T['board']>;
@@ -625,6 +687,12 @@ export function createCommitRevealGame<T extends GameTypes>(
 		load: () => forCurrentIdentity().load(),
 		save: (submission) => forCurrentIdentity().save(submission),
 		clear: () => forCurrentIdentity().clear(),
+		ready: readinessOfCurrentIdentity(identity, parts.storageFor),
+		saveDurably: async (submission) => {
+			const target = forCurrentIdentity();
+			if (target.saveDurably) await target.saveDurably(submission);
+			else target.save(submission);
+		},
 	};
 
 	const missedReveal = parts.missedReveal(clock);
@@ -749,8 +817,12 @@ export function createCommitRevealGame<T extends GameTypes>(
 			}),
 	);
 	const onlyInPlayPhase = parts.onlyInPlayPhase ?? false;
-	const readyToPlay = derived([setup, phase], ([$setup, $phase]) =>
-		canTakeTurnNow({setup: $setup, phase: $phase, onlyInPlayPhase}),
+	const savedTurn = derived(core.accountData.lifecycle$, savedTurnOf);
+	const readyToPlay = derived(
+		[setup, phase, savedTurn],
+		([$setup, $phase, $savedTurn]) =>
+			$savedTurn.status === 'ready' &&
+			canTakeTurnNow({setup: $setup, phase: $phase, onlyInPlayPhase}),
 	);
 
 	const gameRenderer = parts.renderer({viewState});
@@ -839,6 +911,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 			acquisition,
 			setup,
 			readyToPlay,
+			savedTurn,
 		},
 		onchainState,
 		heldBoard,
