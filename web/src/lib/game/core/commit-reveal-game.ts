@@ -78,6 +78,7 @@ import type {
 	GameRenderer,
 	OnchainStateStore,
 	PlayerIdentity,
+	RevealScheduler,
 	ViewStateStore,
 } from './seams';
 import {
@@ -261,7 +262,10 @@ export function signWithLocalSigner(
 }
 
 /** Storage for nobody: what the submission gets while no identity is playing. */
-function noStorage<TAction>(): SubmissionStorage<TAction> {
+function noStorage<TAction, TExtensions extends object>(): SubmissionStorage<
+	TAction,
+	TExtensions
+> {
 	return {load: () => undefined, save: () => {}, clear: () => {}};
 }
 
@@ -332,7 +336,21 @@ export type GameTypes = {
 	stake: {step: string};
 	/** The game's choice of rendering surface, named in its own render module. */
 	surface: unknown;
+	/**
+	 * What the LAYERS this game uses keep with each turn, composed from the type
+	 * each layer exports for its own namespace (`{fuzd?: FuzdSchedule}`).
+	 * Optional: a game with no layer leaves it out, and gets `{}`. See
+	 * `PersistedSubmission['extensions']`.
+	 */
+	extensions?: object;
 };
+
+/** A game's composed extensions, `{}` when it declares none. */
+export type ExtensionsOf<T extends GameTypes> = T extends {
+	extensions: infer E extends object;
+}
+	? E
+	: {};
 
 type LocalOf<T extends GameTypes> =
 	T['planning']['plan'] extends Readable<infer L> ? L : never;
@@ -384,7 +402,15 @@ export type CommitRevealGameParts<T extends GameTypes> = {
 		secret: `0x${string}`;
 	}) => {hash: `0x${string}`};
 	/** Where one identity's submission persists. A wire: see AGENTS.md. */
-	storageFor: (identity: T['identity']) => SubmissionStorage<T['action']>;
+	storageFor: (
+		identity: T['identity'],
+	) => SubmissionStorage<T['action'], ExtensionsOf<T>>;
+	/**
+	 * Who else sends the reveal, when the game has one: handed to the adapter at
+	 * every commit (see `RevealScheduler`). A layer supplies it (`with/fuzd`);
+	 * without one, nothing is scheduled and nothing changes.
+	 */
+	scheduler?: RevealScheduler<T['identity'], ExtensionsOf<T>>;
 	/**
 	 * Passed through to `createSubmission`, each one only when the game chose it,
 	 * so a game that says nothing keeps the submission's own defaults
@@ -413,7 +439,7 @@ export type CommitRevealGameParts<T extends GameTypes> = {
 	 */
 	planning: (
 		params: CycleClock & {
-			submission: SubmissionStore<T['identity'], T['action']>;
+			submission: SubmissionStore<T['identity'], T['action'], ExtensionsOf<T>>;
 			maxOpenableActions: Readable<number | undefined>;
 			onchainState: OnchainStateStore<T['board']>;
 		},
@@ -456,7 +482,7 @@ export type CommitRevealGame<T extends GameTypes> = {
 		/** The four-part model the HUD draws: `threePhase` plus the board's lag. */
 		phase: Readable<CyclePhase>;
 		cycleAdvance: CycleAdvanceStore;
-		submission: SubmissionStore<T['identity'], T['action']>;
+		submission: SubmissionStore<T['identity'], T['action'], ExtensionsOf<T>>;
 		planning: T['planning'];
 		missedReveal: T['missedReveal'];
 		recovery: RecoveryStore<T['action']>;
@@ -499,6 +525,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 	type TLocal = LocalOf<T>;
 	type TView = T['view'];
 	type TStake = T['stake'];
+	type TExtensions = ExtensionsOf<T>;
 	const {identity} = parts;
 	const chainId = core.deployments.get().chain.id;
 
@@ -588,13 +615,13 @@ export function createCommitRevealGame<T extends GameTypes>(
 	// Resolved per call rather than captured: the identity can change while the
 	// app runs, and a pending submission filed under another one would fail to
 	// reveal and read as a contract bug.
-	function forCurrentIdentity(): SubmissionStorage<TAction> {
+	function forCurrentIdentity(): SubmissionStorage<TAction, TExtensions> {
 		const player = get(identity);
 		// `=== undefined`, not falsy: an identity that is a token id can be `0n`.
 		if (player === undefined) return noStorage();
 		return parts.storageFor(player);
 	}
-	const storage: SubmissionStorage<TAction> = {
+	const storage: SubmissionStorage<TAction, TExtensions> = {
 		load: () => forCurrentIdentity().load(),
 		save: (submission) => forCurrentIdentity().save(submission),
 		clear: () => forCurrentIdentity().clear(),
@@ -611,7 +638,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 		contract: parts.contract,
 	});
 
-	const submission = createSubmission<TIdentity, TAction>({
+	const submission = createSubmission<TIdentity, TAction, TExtensions>({
 		cycleInfo,
 		// DERIVED, not random, so a cleared browser does not cost the stake. What
 		// it does not recover is the ACTIONS: see `recovery.ts`.
@@ -631,6 +658,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 		}),
 		storage,
 		identity,
+		...(parts.scheduler ? {scheduler: parts.scheduler} : {}),
 		...(parts.submission?.commitWhenIdle
 			? {commitWhenIdle: parts.submission.commitWhenIdle}
 			: {}),

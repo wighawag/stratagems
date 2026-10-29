@@ -11,7 +11,11 @@ import {
 	type CycleInfo,
 	type CycleInfoStore,
 } from '$lib/game/core/cycle';
-import type {CommitRevealAdapter} from '$lib/game/core/seams';
+import type {
+	CommitOutcome,
+	CommitRevealAdapter,
+	RevealScheduler,
+} from '$lib/game/core/seams';
 
 const config: CycleConfig = {
 	commitPhaseDuration: 40,
@@ -50,10 +54,13 @@ function fakeCycles(initialTime: number, policy: 'timed' | 'hybrid' = 'timed') {
 	return {cycleInfo: store, setTime: (t: number) => time.set(t)};
 }
 
-function fakeStorage<TAction>(): SubmissionStorage<TAction> & {
+function fakeStorage<
+	TAction,
+	TExtensions extends object = {},
+>(): SubmissionStorage<TAction, TExtensions> & {
 	readonly current: unknown;
 } {
-	let stored: ReturnType<SubmissionStorage<TAction>['load']>;
+	let stored: ReturnType<SubmissionStorage<TAction, TExtensions>['load']>;
 	return {
 		get current() {
 			return stored;
@@ -71,7 +78,7 @@ function fakeStorage<TAction>(): SubmissionStorage<TAction> & {
 type Action = {cellID: bigint};
 
 function fakeAdapter(overrides?: {
-	commit?: () => Promise<{hash: `0x${string}`}>;
+	commit?: () => Promise<CommitOutcome<{test?: {slot: string}}>>;
 	reveal?: () => Promise<{hash: `0x${string}`}>;
 }) {
 	const calls = {commit: [] as unknown[], reveal: [] as unknown[]};
@@ -82,9 +89,13 @@ function fakeAdapter(overrides?: {
 		}),
 		commit: async (params) => {
 			calls.commit.push(params);
-			return overrides?.commit
-				? overrides.commit()
-				: {hash: '0xcommit' as `0x${string}`};
+			// The fake answers for one extension type whatever the caller's: the
+			// seam's commit is generic over it, and the test picks the answer.
+			return (
+				overrides?.commit
+					? await overrides.commit()
+					: {hash: '0xcommit' as `0x${string}`}
+			) as CommitOutcome<never>;
 		},
 		reveal: async (params) => {
 			calls.reveal.push(params);
@@ -1169,6 +1180,124 @@ describe('adopting a submission from somewhere other than storage', () => {
 		setTime(41);
 		await new Promise((r) => setTimeout(r, 10));
 		expect(calls.reveal).toEqual([]);
+		stop();
+	});
+});
+
+describe('a reveal handed to a scheduler (P3, P7)', () => {
+	type Extensions = {test?: {slot: string}};
+	const scheduler: RevealScheduler<`0x${string}`, Extensions> = {
+		prepare: async () => ({payee: player, value: 0n}),
+		submit: async () => ({test: {slot: 'x'}}),
+	};
+
+	function setup(outcome: CommitOutcome<Extensions>) {
+		const cycles = fakeCycles(0);
+		const storage = fakeStorage<Action, Extensions>();
+		const fake = fakeAdapter({commit: async () => outcome});
+		const submission = createSubmission({
+			cycleInfo: cycles.cycleInfo,
+			adapter: fake.adapter,
+			storage,
+			identity,
+			scheduler,
+			autoReveal: 'fallback',
+		});
+		return {...cycles, storage, ...fake, submission};
+	}
+
+	it('hands the scheduler to the commit, and keeps what it recorded with the turn', async () => {
+		const {storage, calls, submission} = setup({
+			hash: '0xcommit',
+			revealScheduled: true,
+			extensions: {test: {slot: 'cycle_2'}},
+		});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+
+		expect((calls.commit[0] as {scheduler?: unknown}).scheduler).toBe(
+			scheduler,
+		);
+		expect(storage.current).toMatchObject({
+			committed: true,
+			revealScheduled: true,
+			extensions: {test: {slot: 'cycle_2'}},
+		});
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			revealScheduled: true,
+		});
+		stop();
+	});
+
+	it('waits for the fallback point for a turn the scheduler holds', async () => {
+		const {setTime, calls, submission} = setup({
+			hash: '0xcommit',
+			revealScheduled: true,
+		});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+		setTime(41);
+		await new Promise((r) => setTimeout(r, 30));
+		expect(calls.reveal).toHaveLength(0);
+		stop();
+	});
+
+	it('reveals AT ONCE a turn whose scheduling failed, though the game chose fallback', async () => {
+		// The commit stands (P3), and nobody else is going to reveal it.
+		const {setTime, storage, calls, submission} = setup({
+			hash: '0xcommit',
+			revealScheduled: false,
+		});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			revealScheduled: false,
+		});
+		expect(storage.current).toMatchObject({revealScheduled: false});
+
+		setTime(41); // the reveal phase has only just opened
+		await vi.waitFor(() => expect(calls.reveal).toHaveLength(1));
+		stop();
+	});
+
+	it('reads an adapter that ignored the scheduler as NOT scheduled', async () => {
+		const {setTime, calls, submission} = setup({hash: '0xcommit'});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+		expect(submission.value).toMatchObject({revealScheduled: false});
+		setTime(41);
+		await vi.waitFor(() => expect(calls.reveal).toHaveLength(1));
+		stop();
+	});
+
+	it('keeps the per-turn answer across a reload', async () => {
+		const {cycleInfo, setTime} = fakeCycles(0);
+		const storage = fakeStorage<Action, Extensions>();
+		storage.save({
+			cycleNumber: 2,
+			actions: [{cellID: 1n}],
+			secret: '0x01',
+			committed: true,
+			revealScheduled: false,
+		});
+		const {adapter, calls} = fakeAdapter();
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity,
+			scheduler,
+			autoReveal: 'fallback',
+		});
+		const stop = submission.start();
+		setTime(41);
+		await vi.waitFor(() => expect(calls.reveal).toHaveLength(1));
 		stop();
 	});
 });

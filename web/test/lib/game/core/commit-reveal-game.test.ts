@@ -194,6 +194,9 @@ function compose(
 		submission?: Parameters<
 			typeof createCommitRevealGame<TestGame>
 		>[1]['submission'];
+		scheduler?: Parameters<
+			typeof createCommitRevealGame<TestGame>
+		>[1]['scheduler'];
 	} = {},
 ) {
 	const account = writable<`0x${string}` | undefined>(ACCOUNT);
@@ -264,6 +267,7 @@ function compose(
 		}),
 		isOutOfGas: () => false,
 		...(overrides.submission ? {submission: overrides.submission} : {}),
+		...(overrides.scheduler ? {scheduler: overrides.scheduler} : {}),
 		stake: {
 			refresh,
 			needed: readable('stake' in overrides ? overrides.stake : undefined),
@@ -335,6 +339,21 @@ describe('the skeleton, wired', () => {
 		const params = createSubmission.mock.calls[0][0];
 		expect(params.autoReveal).toBeUndefined();
 		expect(params.fallbackRevealAfter).toBeUndefined();
+	});
+
+	it("hands the game's reveal scheduler to the submission", () => {
+		const createSubmission = vi.mocked(submissionModule.createSubmission);
+		const scheduler = {
+			prepare: async () => ({payee: ACCOUNT, value: 0n}),
+			submit: async () => {},
+		};
+		createSubmission.mockClear();
+		compose({scheduler});
+		expect(createSubmission.mock.calls[0][0].scheduler).toBe(scheduler);
+
+		createSubmission.mockClear();
+		compose();
+		expect(createSubmission.mock.calls[0][0].scheduler).toBeUndefined();
 	});
 
 	it('shows the board through the held store and the game merge', () => {

@@ -29,7 +29,11 @@
  * is a stored secret for a commitment that never landed, which is harmless.
  */
 import {get, writable, type Readable} from 'svelte/store';
-import type {CommitRevealAdapter, PlayerIdentity} from './seams';
+import type {
+	CommitRevealAdapter,
+	PlayerIdentity,
+	RevealScheduler,
+} from './seams';
 import {revealPhaseStartTime, type CycleInfoStore} from './cycle';
 
 /**
@@ -39,12 +43,28 @@ import {revealPhaseStartTime, type CycleInfoStore} from './cycle';
  * the game hands over, in the middle of a phase, and anything clever here is a
  * way to lose a secret.
  */
-export type PersistedSubmission<TAction> = {
+export type PersistedSubmission<TAction, TExtensions extends object = {}> = {
 	cycleNumber: number;
 	actions: readonly TAction[];
 	secret: `0x${string}`;
 	/** Set once the commit transaction has been submitted. */
 	committed: boolean;
+	/**
+	 * Whether THIS turn's reveal was handed to a scheduler. Absent when the game
+	 * has no scheduler; `false` when it has one and scheduling this turn failed,
+	 * which is what makes the browser reveal it at once rather than wait for the
+	 * fallback point (P7).
+	 */
+	revealScheduled?: boolean;
+	/**
+	 * What LAYERS keep with this turn, each under its own namespace
+	 * (`{fuzd?: FuzdSchedule}`), round-tripped untouched: the framework never
+	 * reads it, stores it beside the turn it belongs to, and so it goes wherever
+	 * the turn goes (synced, encrypted, cleared). Each layer exports the type of
+	 * its own namespace, and a game composes them in its `GameTypes`, so nothing a
+	 * layer wrote comes back `unknown`. Must be JSON.
+	 */
+	extensions?: TExtensions;
 };
 
 /**
@@ -54,9 +74,9 @@ export type PersistedSubmission<TAction> = {
  * constructed during SSR too, and a game with an account system may want the
  * submission scoped to the signed-in player rather than to the browser.
  */
-export type SubmissionStorage<TAction> = {
-	load(): PersistedSubmission<TAction> | undefined;
-	save(submission: PersistedSubmission<TAction>): void;
+export type SubmissionStorage<TAction, TExtensions extends object = {}> = {
+	load(): PersistedSubmission<TAction, TExtensions> | undefined;
+	save(submission: PersistedSubmission<TAction, TExtensions>): void;
 	clear(): void;
 };
 
@@ -67,7 +87,17 @@ export type SubmissionState<TAction> =
 	| {step: 'Planning'; cycleNumber: number; actions: readonly TAction[]}
 	| {step: 'Committing'; cycleNumber: number; actions: readonly TAction[]}
 	/** The commitment is in; the reveal is owed this cycle. */
-	| {step: 'Committed'; cycleNumber: number; actions: readonly TAction[]}
+	| {
+			step: 'Committed';
+			cycleNumber: number;
+			actions: readonly TAction[];
+			/**
+			 * Whether a scheduler holds this turn's reveal: absent without one,
+			 * `false` when scheduling it failed (so this browser reveals it
+			 * itself as soon as the phase opens). See `PersistedSubmission`.
+			 */
+			revealScheduled?: boolean;
+	  }
 	| {
 			step: 'Revealing';
 			cycleNumber: number;
@@ -115,6 +145,7 @@ export type SubmissionState<TAction> =
 export type SubmissionStore<
 	TIdentity extends PlayerIdentity,
 	TAction,
+	TExtensions extends object = {},
 > = Readable<SubmissionState<TAction>> & {
 	readonly value: SubmissionState<TAction>;
 	/** Replace what is planned for this cycle. Ignored once committed. */
@@ -140,7 +171,7 @@ export type SubmissionStore<
 	 * the framework adds for this, deliberately: see {@link
 	 * SubmissionStore.adopt}'s implementation for what it refuses and why.
 	 */
-	adopt(submission: PersistedSubmission<TAction>): boolean;
+	adopt(submission: PersistedSubmission<TAction, TExtensions>): boolean;
 	/** Begin watching the cycle. Returns the teardown. */
 	start(): () => void;
 };
@@ -170,10 +201,18 @@ function randomSecret(): `0x${string}` {
 export function createSubmission<
 	TIdentity extends PlayerIdentity,
 	TAction,
+	TExtensions extends object = {},
 >(params: {
 	cycleInfo: CycleInfoStore;
 	adapter: CommitRevealAdapter<TIdentity, TAction>;
-	storage: SubmissionStorage<TAction>;
+	storage: SubmissionStorage<TAction, TExtensions>;
+	/**
+	 * Who else sends the reveal, when the game has one (see `RevealScheduler`).
+	 * Handed to the adapter at each commit; the outcome is recorded per turn, so
+	 * a turn whose scheduling failed is revealed by this browser at once even
+	 * under `autoReveal: 'fallback'`.
+	 */
+	scheduler?: RevealScheduler<TIdentity, TExtensions>;
 	/** Who is playing, or undefined when nobody is connected. */
 	identity: Readable<TIdentity | undefined>;
 	/**
@@ -240,6 +279,10 @@ export function createSubmission<
 	 * keyboard for the reveal hour, which is why stratagems and catacombs schedule
 	 * it; a game whose cycle is minutes long can just do it here. Both remain the
 	 * player's to trigger by hand.
+	 *
+	 * `fallback` is PER TURN where a `scheduler` is given: a turn whose scheduling
+	 * failed (`revealScheduled: false`) is revealed `immediately`, because nobody
+	 * else is going to.
 	 */
 	autoReveal?: 'immediately' | 'fallback' | 'never';
 	/**
@@ -276,13 +319,15 @@ export function createSubmission<
 	 * chain at this point, so there is no reason to show a gap.
 	 */
 	onSettled?: () => void | Promise<void>;
-}): SubmissionStore<TIdentity, TAction> {
+}): SubmissionStore<TIdentity, TAction, TExtensions> {
 	const {cycleInfo, adapter, storage, identity} = params;
 	const autoCommit = params.autoCommit ?? true;
 	const commitWhenIdle = params.commitWhenIdle ?? (() => false);
 	const autoReveal = params.autoReveal ?? 'immediately';
 	const fallbackRevealAfter = params.fallbackRevealAfter ?? 0.5;
 	const makeSecret = params.makeSecret ?? (() => randomSecret());
+	const {scheduler} = params;
+	type Persisted = PersistedSubmission<TAction, TExtensions>;
 
 	let $state: SubmissionState<TAction> = {step: 'Idle'};
 	const store = writable<SubmissionState<TAction>>($state);
@@ -290,6 +335,34 @@ export function createSubmission<
 	function set(next: SubmissionState<TAction>) {
 		$state = next;
 		store.set(next);
+	}
+
+	function committedState(record: Persisted): SubmissionState<TAction> {
+		return {
+			step: 'Committed',
+			cycleNumber: record.cycleNumber,
+			actions: record.actions,
+			...(record.revealScheduled === undefined
+				? {}
+				: {revealScheduled: record.revealScheduled}),
+		};
+	}
+
+	/**
+	 * When this browser reveals THIS turn: the game's `autoReveal`, except that a
+	 * turn a scheduler was supposed to hold and does not is revealed at once.
+	 */
+	function revealModeFor(
+		state: SubmissionState<TAction>,
+	): 'immediately' | 'fallback' | 'never' {
+		if (
+			autoReveal === 'fallback' &&
+			state.step === 'Committed' &&
+			state.revealScheduled === false
+		) {
+			return 'immediately';
+		}
+		return autoReveal;
 	}
 
 	/** The actions of whatever submission is currently in play, if any. */
@@ -405,11 +478,12 @@ export function createSubmission<
 
 		// Persisted BEFORE the call, so a reload during the wallet prompt cannot
 		// leave a commitment nobody can open. See the file comment.
-		storage.save({cycleNumber, actions, secret, committed: false});
+		const record: Persisted = {cycleNumber, actions, secret, committed: false};
+		storage.save(record);
 
 		set({step: 'Committing', cycleNumber, actions});
 		try {
-			await adapter.commit({
+			const outcome = await adapter.commit<TExtensions>({
 				identity: player,
 				hash,
 				actions,
@@ -423,9 +497,24 @@ export function createSubmission<
 				// for a grid the chain has left behind - and a scheduled reveal is
 				// the one thing that cannot be re-asked later.
 				revealDueAt: info.type === 'manual' ? undefined : info.revealOpensAt,
+				...(scheduler ? {scheduler} : {}),
 			});
-			storage.save({cycleNumber, actions, secret, committed: true});
-			set({step: 'Committed', cycleNumber, actions});
+			// ANYTHING BUT `true` IS NOT SCHEDULED: an adapter that ignored the
+			// scheduler reports nothing, and a turn nobody else will reveal must be
+			// revealed here.
+			const revealScheduled = scheduler
+				? outcome?.revealScheduled === true
+				: undefined;
+			const committed: Persisted = {
+				...record,
+				committed: true,
+				...(revealScheduled === undefined ? {} : {revealScheduled}),
+				...(outcome?.extensions
+					? {extensions: outcome.extensions as TExtensions}
+					: {}),
+			};
+			storage.save(committed);
+			set(committedState(committed));
 		} catch (error) {
 			// The commitment never went out, so nothing is at stake and the stored
 			// submission would only confuse the next load.
@@ -540,7 +629,7 @@ export function createSubmission<
 	 * IT SAVES ON THE WAY THROUGH, so a second reload costs nothing: what was
 	 * reconstructed once is now an ordinary stored submission.
 	 */
-	function adopt(pending: PersistedSubmission<TAction>): boolean {
+	function adopt(pending: Persisted): boolean {
 		if (pending.cycleNumber !== cycleInfo.now().currentCycleNumber)
 			return false;
 		if ($state.step === 'Committing' || $state.step === 'Revealing')
@@ -549,11 +638,7 @@ export function createSubmission<
 		storage.save(pending);
 		set(
 			pending.committed
-				? {
-						step: 'Committed',
-						cycleNumber: pending.cycleNumber,
-						actions: pending.actions,
-					}
+				? committedState(pending)
 				: {
 						step: 'Planning',
 						cycleNumber: pending.cycleNumber,
@@ -610,7 +695,8 @@ export function createSubmission<
 			// page loaded (or a wallet connected) part-way through that phase has no
 			// transition to observe, and owes a reveal just the same.
 			if (!$info.isCommitPhase && $state.step === 'Committed') {
-				if (autoReveal === 'immediately') {
+				const mode = revealModeFor($state);
+				if (mode === 'immediately') {
 					void reveal();
 					// `!== 'manual'`, NOT `=== 'timed'`: every policy with a clock
 					// behind it can answer "how much of the reveal window is left",
@@ -618,7 +704,7 @@ export function createSubmission<
 					// for one named policy instead of for the PROPERTY being used
 					// is how a third policy silently turned this off - and what it
 					// turns off is the reveal that protects the stake.
-				} else if (autoReveal === 'fallback' && $info.type !== 'manual') {
+				} else if (mode === 'fallback' && $info.type !== 'manual') {
 					// Whoever was supposed to do this has had most of the phase. The
 					// submission is still open, so try: a duplicate reveal costs one
 					// reverted transaction, a missed one costs the stake.
