@@ -299,30 +299,72 @@ export function savedTurnOf(lifecycle: AccountDataLifecycle): SavedTurn {
 }
 
 /**
- * One storage's readiness, following whichever identity is playing: the
- * submission is handed ONE storage that resolves to the current identity's at
- * each call, so its readiness has to move with it. Nobody playing is ready:
- * there is nothing to load.
+ * A readable of the CURRENT identity's storage, switching with the identity:
+ * the submission is handed ONE storage that resolves to the current
+ * identity's at each call, so what it subscribes to has to move with it too.
  */
-function readinessOfCurrentIdentity<TIdentity, TStorage>(
+function followIdentity<TIdentity, TValue>(
 	identity: Readable<TIdentity | undefined>,
-	storageFor: (identity: TIdentity) => TStorage & {ready?: Readable<boolean>},
-): Readable<boolean> {
-	return readable<boolean>(true, (set) => {
+	pick: (identity: TIdentity) => Readable<TValue> | undefined,
+	otherwise: TValue,
+): Readable<TValue> {
+	return readable<TValue>(otherwise, (set) => {
 		let inner: (() => void) | undefined;
 		const unsubscribe = identity.subscribe(($identity) => {
 			inner?.();
 			inner = undefined;
-			const ready =
-				$identity === undefined ? undefined : storageFor($identity).ready;
-			if (ready) inner = ready.subscribe(set);
-			else set(true);
+			const source = $identity === undefined ? undefined : pick($identity);
+			if (source) inner = source.subscribe(set);
+			else set(otherwise);
 		});
 		return () => {
 			unsubscribe();
 			inner?.();
 		};
 	});
+}
+
+/**
+ * THE SUBMISSION'S STORAGE: whichever identity is playing, resolved at each
+ * call (the identity can change while the app runs, and a pending submission
+ * filed under another one would fail to reveal and read as a contract bug),
+ * with every member of the port passed through, its readiness and changes
+ * following the identity. Nobody playing stores nothing and is ready: there is
+ * nothing to load.
+ */
+export function currentIdentityStorage<
+	TIdentity extends PlayerIdentity,
+	TAction,
+	TExtensions extends object,
+>(
+	identity: Readable<TIdentity | undefined>,
+	storageFor: (identity: TIdentity) => SubmissionStorage<TAction, TExtensions>,
+): SubmissionStorage<TAction, TExtensions> {
+	function current(): SubmissionStorage<TAction, TExtensions> {
+		const player = get(identity);
+		// `=== undefined`, not falsy: an identity that is a token id can be `0n`.
+		if (player === undefined) return noStorage();
+		return storageFor(player);
+	}
+	return {
+		load: () => current().load(),
+		save: (submission) => current().save(submission),
+		clear: () => current().clear(),
+		ready: followIdentity(identity, (who) => storageFor(who).ready, true),
+		saveDurably: async (submission) => {
+			const target = current();
+			if (target.saveDurably) await target.saveDurably(submission);
+			else target.save(submission);
+		},
+		committedTurns: (cycleNumber) =>
+			current().committedTurns?.(cycleNumber) ?? [],
+		changes: followIdentity<TIdentity, unknown>(
+			identity,
+			(who) => storageFor(who).changes,
+			undefined,
+		),
+		settled: (cycleNumber) => current().settled?.(cycleNumber),
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -674,26 +716,10 @@ export function createCommitRevealGame<T extends GameTypes>(
 		onAcquired: () => void parts.stake.refresh(),
 	});
 
-	// Resolved per call rather than captured: the identity can change while the
-	// app runs, and a pending submission filed under another one would fail to
-	// reveal and read as a contract bug.
-	function forCurrentIdentity(): SubmissionStorage<TAction, TExtensions> {
-		const player = get(identity);
-		// `=== undefined`, not falsy: an identity that is a token id can be `0n`.
-		if (player === undefined) return noStorage();
-		return parts.storageFor(player);
-	}
-	const storage: SubmissionStorage<TAction, TExtensions> = {
-		load: () => forCurrentIdentity().load(),
-		save: (submission) => forCurrentIdentity().save(submission),
-		clear: () => forCurrentIdentity().clear(),
-		ready: readinessOfCurrentIdentity(identity, parts.storageFor),
-		saveDurably: async (submission) => {
-			const target = forCurrentIdentity();
-			if (target.saveDurably) await target.saveDurably(submission);
-			else target.save(submission);
-		},
-	};
+	const storage = currentIdentityStorage<TIdentity, TAction, TExtensions>(
+		identity,
+		parts.storageFor,
+	);
 
 	const missedReveal = parts.missedReveal(clock);
 
