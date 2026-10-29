@@ -34,6 +34,7 @@
  */
 import {derived, get, readable, type Readable} from 'svelte/store';
 import type {CoreServices} from '$lib/context/core';
+import type {AccountDataLifecycle} from '$lib/account/lifecycle';
 import {isRegistered, type DelegationValue} from '$lib/onchain/delegation';
 import {createChainTime, type ChainTimeStore} from './chain-time';
 import {
@@ -78,6 +79,7 @@ import type {
 	GameRenderer,
 	OnchainStateStore,
 	PlayerIdentity,
+	RevealScheduler,
 	ViewStateStore,
 } from './seams';
 import {
@@ -261,8 +263,108 @@ export function signWithLocalSigner(
 }
 
 /** Storage for nobody: what the submission gets while no identity is playing. */
-function noStorage<TAction>(): SubmissionStorage<TAction> {
+function noStorage<TAction, TExtensions extends object>(): SubmissionStorage<
+	TAction,
+	TExtensions
+> {
 	return {load: () => undefined, save: () => {}, clear: () => {}};
+}
+
+/**
+ * Where the player's SAVED TURN is: the account data it lives in, loading,
+ * loaded or failed (Q8-6). `none` while nobody is signed in, which the setup
+ * gate already answers.
+ *
+ * A load ERROR is its own state and blocks play: shown as an empty turn, it
+ * would invite the player to plan and commit over a committed turn this browser
+ * could not read, whose secret may be the only way to open it.
+ */
+export type SavedTurn =
+	| {status: 'none'}
+	| {status: 'loading'}
+	| {status: 'ready'}
+	| {status: 'error'; error: Error};
+
+export function savedTurnOf(lifecycle: AccountDataLifecycle): SavedTurn {
+	switch (lifecycle.status) {
+		case 'no-account':
+			return {status: 'none'};
+		case 'loading':
+			return {status: 'loading'};
+		case 'ready':
+			return {status: 'ready'};
+		case 'error':
+			return {status: 'error', error: lifecycle.error};
+	}
+}
+
+/**
+ * A readable of the CURRENT identity's storage, switching with the identity:
+ * the submission is handed ONE storage that resolves to the current
+ * identity's at each call, so what it subscribes to has to move with it too.
+ */
+function followIdentity<TIdentity, TValue>(
+	identity: Readable<TIdentity | undefined>,
+	pick: (identity: TIdentity) => Readable<TValue> | undefined,
+	otherwise: TValue,
+): Readable<TValue> {
+	return readable<TValue>(otherwise, (set) => {
+		let inner: (() => void) | undefined;
+		const unsubscribe = identity.subscribe(($identity) => {
+			inner?.();
+			inner = undefined;
+			const source = $identity === undefined ? undefined : pick($identity);
+			if (source) inner = source.subscribe(set);
+			else set(otherwise);
+		});
+		return () => {
+			unsubscribe();
+			inner?.();
+		};
+	});
+}
+
+/**
+ * THE SUBMISSION'S STORAGE: whichever identity is playing, resolved at each
+ * call (the identity can change while the app runs, and a pending submission
+ * filed under another one would fail to reveal and read as a contract bug),
+ * with every member of the port passed through, its readiness and changes
+ * following the identity. Nobody playing stores nothing and is ready: there is
+ * nothing to load.
+ */
+export function currentIdentityStorage<
+	TIdentity extends PlayerIdentity,
+	TAction,
+	TExtensions extends object,
+>(
+	identity: Readable<TIdentity | undefined>,
+	storageFor: (identity: TIdentity) => SubmissionStorage<TAction, TExtensions>,
+): SubmissionStorage<TAction, TExtensions> {
+	function current(): SubmissionStorage<TAction, TExtensions> {
+		const player = get(identity);
+		// `=== undefined`, not falsy: an identity that is a token id can be `0n`.
+		if (player === undefined) return noStorage();
+		return storageFor(player);
+	}
+	return {
+		load: () => current().load(),
+		save: (submission) => current().save(submission),
+		clear: () => current().clear(),
+		ready: followIdentity(identity, (who) => storageFor(who).ready, true),
+		saveDurably: async (submission) => {
+			const target = current();
+			if (target.saveDurably) await target.saveDurably(submission);
+			else target.save(submission);
+		},
+		committedTurns: (cycleNumber) =>
+			current().committedTurns?.(cycleNumber) ?? [],
+		changes: followIdentity<TIdentity, unknown>(
+			identity,
+			(who) => storageFor(who).changes,
+			undefined,
+		),
+		settled: (cycleNumber) => current().settled?.(cycleNumber),
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -332,7 +434,21 @@ export type GameTypes = {
 	stake: {step: string};
 	/** The game's choice of rendering surface, named in its own render module. */
 	surface: unknown;
+	/**
+	 * What the LAYERS this game uses keep with each turn, composed from the type
+	 * each layer exports for its own namespace (`{fuzd?: FuzdSchedule}`).
+	 * Optional: a game with no layer leaves it out, and gets `{}`. See
+	 * `PersistedSubmission['extensions']`.
+	 */
+	extensions?: object;
 };
+
+/** A game's composed extensions, `{}` when it declares none. */
+export type ExtensionsOf<T extends GameTypes> = T extends {
+	extensions: infer E extends object;
+}
+	? E
+	: {};
 
 type LocalOf<T extends GameTypes> =
 	T['planning']['plan'] extends Readable<infer L> ? L : never;
@@ -384,9 +500,24 @@ export type CommitRevealGameParts<T extends GameTypes> = {
 		secret: `0x${string}`;
 	}) => {hash: `0x${string}`};
 	/** Where one identity's submission persists. A wire: see AGENTS.md. */
-	storageFor: (identity: T['identity']) => SubmissionStorage<T['action']>;
-	/** Passed through to `createSubmission`. */
-	submission?: {commitWhenIdle?: () => boolean};
+	storageFor: (
+		identity: T['identity'],
+	) => SubmissionStorage<T['action'], ExtensionsOf<T>>;
+	/**
+	 * Who else sends the reveal, when the game has one: handed to the adapter at
+	 * every commit (see `RevealScheduler`). A layer supplies it (`with/fuzd`);
+	 * without one, nothing is scheduled and nothing changes.
+	 */
+	scheduler?: RevealScheduler<T['identity'], ExtensionsOf<T>>;
+	/**
+	 * Passed through to `createSubmission`, each one only when the game chose it,
+	 * so a game that says nothing keeps the submission's own defaults
+	 * (`autoReveal: 'immediately'`, `fallbackRevealAfter: 0.5`).
+	 */
+	submission?: Pick<
+		Parameters<typeof createSubmission>[0],
+		'commitWhenIdle' | 'autoReveal' | 'fallbackRevealAfter'
+	>;
 	/** Whether a failed move failed for want of the signer's gas. */
 	isOutOfGas: (error: unknown) => boolean;
 	stake: {
@@ -406,7 +537,7 @@ export type CommitRevealGameParts<T extends GameTypes> = {
 	 */
 	planning: (
 		params: CycleClock & {
-			submission: SubmissionStore<T['identity'], T['action']>;
+			submission: SubmissionStore<T['identity'], T['action'], ExtensionsOf<T>>;
 			maxOpenableActions: Readable<number | undefined>;
 			onchainState: OnchainStateStore<T['board']>;
 		},
@@ -449,13 +580,19 @@ export type CommitRevealGame<T extends GameTypes> = {
 		/** The four-part model the HUD draws: `threePhase` plus the board's lag. */
 		phase: Readable<CyclePhase>;
 		cycleAdvance: CycleAdvanceStore;
-		submission: SubmissionStore<T['identity'], T['action']>;
+		submission: SubmissionStore<T['identity'], T['action'], ExtensionsOf<T>>;
 		planning: T['planning'];
 		missedReveal: T['missedReveal'];
 		recovery: RecoveryStore<T['action']>;
 		acquisition: AcquisitionStore;
 		setup: Readable<SetupNeeded<T['stake']> | undefined>;
+		/**
+		 * Setup done, the phase right, AND the saved turn loaded: while it loads
+		 * (or failed to) the board refuses plans and nothing can be committed.
+		 */
 		readyToPlay: Readable<boolean>;
+		/** Where the saved turn is, for the HUD to say: see {@link SavedTurn}. */
+		savedTurn: Readable<SavedTurn>;
 	};
 	/** The board as the chain says it. What FETCHES reads this. */
 	onchainState: OnchainStateStore<T['board']>;
@@ -492,6 +629,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 	type TLocal = LocalOf<T>;
 	type TView = T['view'];
 	type TStake = T['stake'];
+	type TExtensions = ExtensionsOf<T>;
 	const {identity} = parts;
 	const chainId = core.deployments.get().chain.id;
 
@@ -578,20 +716,10 @@ export function createCommitRevealGame<T extends GameTypes>(
 		onAcquired: () => void parts.stake.refresh(),
 	});
 
-	// Resolved per call rather than captured: the identity can change while the
-	// app runs, and a pending submission filed under another one would fail to
-	// reveal and read as a contract bug.
-	function forCurrentIdentity(): SubmissionStorage<TAction> {
-		const player = get(identity);
-		// `=== undefined`, not falsy: an identity that is a token id can be `0n`.
-		if (player === undefined) return noStorage();
-		return parts.storageFor(player);
-	}
-	const storage: SubmissionStorage<TAction> = {
-		load: () => forCurrentIdentity().load(),
-		save: (submission) => forCurrentIdentity().save(submission),
-		clear: () => forCurrentIdentity().clear(),
-	};
+	const storage = currentIdentityStorage<TIdentity, TAction, TExtensions>(
+		identity,
+		parts.storageFor,
+	);
 
 	const missedReveal = parts.missedReveal(clock);
 
@@ -604,7 +732,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 		contract: parts.contract,
 	});
 
-	const submission = createSubmission<TIdentity, TAction>({
+	const submission = createSubmission<TIdentity, TAction, TExtensions>({
 		cycleInfo,
 		// DERIVED, not random, so a cleared browser does not cost the stake. What
 		// it does not recover is the ACTIONS: see `recovery.ts`.
@@ -624,8 +752,22 @@ export function createCommitRevealGame<T extends GameTypes>(
 		}),
 		storage,
 		identity,
+		// The chain's commitment for the cycle in progress, which the
+		// missed-reveal reader already reads: it decides between two stored
+		// turns for one cycle, and takes up a commit that was never recorded.
+		liveCommitment: missedReveal.commitment,
+		...(parts.scheduler ? {scheduler: parts.scheduler} : {}),
 		...(parts.submission?.commitWhenIdle
 			? {commitWhenIdle: parts.submission.commitWhenIdle}
+			: {}),
+		// WHEN THIS BROWSER REVEALS is the game's choice (P7): `fallback` where a
+		// scheduler is expected to reveal, `immediately` otherwise. Before this the
+		// skeleton passed only `commitWhenIdle`, so no game could choose.
+		...(parts.submission?.autoReveal
+			? {autoReveal: parts.submission.autoReveal}
+			: {}),
+		...(parts.submission?.fallbackRevealAfter !== undefined
+			? {fallbackRevealAfter: parts.submission.fallbackRevealAfter}
 			: {}),
 		// Awaited before the submission reports itself revealed, so the confirmed
 		// moves are on the board by the time the planned ones stop being drawn.
@@ -705,8 +847,12 @@ export function createCommitRevealGame<T extends GameTypes>(
 			}),
 	);
 	const onlyInPlayPhase = parts.onlyInPlayPhase ?? false;
-	const readyToPlay = derived([setup, phase], ([$setup, $phase]) =>
-		canTakeTurnNow({setup: $setup, phase: $phase, onlyInPlayPhase}),
+	const savedTurn = derived(core.accountData.lifecycle$, savedTurnOf);
+	const readyToPlay = derived(
+		[setup, phase, savedTurn],
+		([$setup, $phase, $savedTurn]) =>
+			$savedTurn.status === 'ready' &&
+			canTakeTurnNow({setup: $setup, phase: $phase, onlyInPlayPhase}),
 	);
 
 	const gameRenderer = parts.renderer({viewState});
@@ -795,6 +941,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 			acquisition,
 			setup,
 			readyToPlay,
+			savedTurn,
 		},
 		onchainState,
 		heldBoard,

@@ -29,8 +29,13 @@
  * is a stored secret for a commitment that never landed, which is harmless.
  */
 import {get, writable, type Readable} from 'svelte/store';
-import type {CommitRevealAdapter, PlayerIdentity} from './seams';
+import type {
+	CommitRevealAdapter,
+	PlayerIdentity,
+	RevealScheduler,
+} from './seams';
 import {revealPhaseStartTime, type CycleInfoStore} from './cycle';
+import type {LiveCommitment} from './recovery';
 
 /**
  * What has to survive a reload.
@@ -39,12 +44,34 @@ import {revealPhaseStartTime, type CycleInfoStore} from './cycle';
  * the game hands over, in the middle of a phase, and anything clever here is a
  * way to lose a secret.
  */
-export type PersistedSubmission<TAction> = {
+export type PersistedSubmission<TAction, TExtensions extends object = {}> = {
 	cycleNumber: number;
 	actions: readonly TAction[];
 	secret: `0x${string}`;
 	/** Set once the commit transaction has been submitted. */
 	committed: boolean;
+	/**
+	 * The commitment's hash, set by the commit. What the chain is asked about:
+	 * where two records claim one cycle (two devices that both committed), the
+	 * one whose hash the chain holds is the turn.
+	 */
+	commitmentHash?: `0x${string}`;
+	/**
+	 * Whether THIS turn's reveal was handed to a scheduler. Absent when the game
+	 * has no scheduler; `false` when it has one and scheduling this turn failed,
+	 * which is what makes the browser reveal it at once rather than wait for the
+	 * fallback point (P7).
+	 */
+	revealScheduled?: boolean;
+	/**
+	 * What LAYERS keep with this turn, each under its own namespace
+	 * (`{fuzd?: FuzdSchedule}`), round-tripped untouched: the framework never
+	 * reads it, stores it beside the turn it belongs to, and so it goes wherever
+	 * the turn goes (synced, encrypted, cleared). Each layer exports the type of
+	 * its own namespace, and a game composes them in its `GameTypes`, so nothing a
+	 * layer wrote comes back `unknown`. Must be JSON.
+	 */
+	extensions?: TExtensions;
 };
 
 /**
@@ -54,10 +81,51 @@ export type PersistedSubmission<TAction> = {
  * constructed during SSR too, and a game with an account system may want the
  * submission scoped to the signed-in player rather than to the browser.
  */
-export type SubmissionStorage<TAction> = {
-	load(): PersistedSubmission<TAction> | undefined;
-	save(submission: PersistedSubmission<TAction>): void;
+export type SubmissionStorage<TAction, TExtensions extends object = {}> = {
+	load(): PersistedSubmission<TAction, TExtensions> | undefined;
+	save(submission: PersistedSubmission<TAction, TExtensions>): void;
 	clear(): void;
+	/**
+	 * Whether what is stored can be read yet. ABSENT MEANS ALWAYS READY, which is
+	 * what a synchronous storage (`localStorage`) is.
+	 *
+	 * A storage that loads asynchronously (the account data, Q8-1) says `false`
+	 * until it has loaded, and again while it loads another account's. The
+	 * submission restores on every transition to ready (the first, an account
+	 * switch), refuses `plan` and `commit` before it, makes a `reveal()` asked
+	 * for wait for it, and clears nothing while it is not: `load()` answering
+	 * `undefined` then means "not known yet", not "nothing stored".
+	 */
+	ready?: Readable<boolean>;
+	/**
+	 * Save, resolving once the record is ON STORAGE and rejecting when it could
+	 * not be put there. The commit awaits it before the commitment is sent, and a
+	 * rejection refuses the commit (the secret would not survive a reload).
+	 * Absent, `save` is taken to be durable when it returns.
+	 */
+	saveDurably?(
+		submission: PersistedSubmission<TAction, TExtensions>,
+	): Promise<void>;
+	/**
+	 * Every COMMITTED turn stored for a cycle: kept apart from the plan, never
+	 * overwritten or cleared by the submission, and possibly more than one where
+	 * two devices committed in one cycle (the chain's hash decides). Restore
+	 * looks here first. Absent, the plan's record is all there is.
+	 */
+	committedTurns?(
+		cycleNumber: number,
+	): readonly PersistedSubmission<TAction, TExtensions>[];
+	/**
+	 * Emits when what is stored changes from ELSEWHERE too (another device by
+	 * sync, another tab): the submission then adopts a record that arrived after
+	 * it was ready, under `adopt()`'s own guard.
+	 */
+	changes?: Readable<unknown>;
+	/**
+	 * This cycle's turn is closed on chain (revealed or settled): what is kept
+	 * of it may be pruned.
+	 */
+	settled?(cycleNumber: number): void;
 };
 
 export type SubmissionState<TAction> =
@@ -67,7 +135,17 @@ export type SubmissionState<TAction> =
 	| {step: 'Planning'; cycleNumber: number; actions: readonly TAction[]}
 	| {step: 'Committing'; cycleNumber: number; actions: readonly TAction[]}
 	/** The commitment is in; the reveal is owed this cycle. */
-	| {step: 'Committed'; cycleNumber: number; actions: readonly TAction[]}
+	| {
+			step: 'Committed';
+			cycleNumber: number;
+			actions: readonly TAction[];
+			/**
+			 * Whether a scheduler holds this turn's reveal: absent without one,
+			 * `false` when scheduling it failed (so this browser reveals it
+			 * itself as soon as the phase opens). See `PersistedSubmission`.
+			 */
+			revealScheduled?: boolean;
+	  }
 	| {
 			step: 'Revealing';
 			cycleNumber: number;
@@ -115,6 +193,7 @@ export type SubmissionState<TAction> =
 export type SubmissionStore<
 	TIdentity extends PlayerIdentity,
 	TAction,
+	TExtensions extends object = {},
 > = Readable<SubmissionState<TAction>> & {
 	readonly value: SubmissionState<TAction>;
 	/** Replace what is planned for this cycle. Ignored once committed. */
@@ -140,7 +219,7 @@ export type SubmissionStore<
 	 * the framework adds for this, deliberately: see {@link
 	 * SubmissionStore.adopt}'s implementation for what it refuses and why.
 	 */
-	adopt(submission: PersistedSubmission<TAction>): boolean;
+	adopt(submission: PersistedSubmission<TAction, TExtensions>): boolean;
 	/** Begin watching the cycle. Returns the teardown. */
 	start(): () => void;
 };
@@ -170,10 +249,25 @@ function randomSecret(): `0x${string}` {
 export function createSubmission<
 	TIdentity extends PlayerIdentity,
 	TAction,
+	TExtensions extends object = {},
 >(params: {
 	cycleInfo: CycleInfoStore;
 	adapter: CommitRevealAdapter<TIdentity, TAction>;
-	storage: SubmissionStorage<TAction>;
+	storage: SubmissionStorage<TAction, TExtensions>;
+	/**
+	 * Who else sends the reveal, when the game has one (see `RevealScheduler`).
+	 * Handed to the adapter at each commit; the outcome is recorded per turn, so
+	 * a turn whose scheduling failed is revealed by this browser at once even
+	 * under `autoReveal: 'fallback'`.
+	 */
+	scheduler?: RevealScheduler<TIdentity, TExtensions>;
+	/**
+	 * The commitment the chain holds for the cycle in progress, when the game
+	 * reads it (the skeleton passes the missed-reveal reader's). It decides
+	 * between two committed records for one cycle, and takes up a plan whose
+	 * commit went out but was never recorded as committed.
+	 */
+	liveCommitment?: Readable<LiveCommitment | undefined>;
 	/** Who is playing, or undefined when nobody is connected. */
 	identity: Readable<TIdentity | undefined>;
 	/**
@@ -240,6 +334,10 @@ export function createSubmission<
 	 * keyboard for the reveal hour, which is why stratagems and catacombs schedule
 	 * it; a game whose cycle is minutes long can just do it here. Both remain the
 	 * player's to trigger by hand.
+	 *
+	 * `fallback` is PER TURN where a `scheduler` is given: a turn whose scheduling
+	 * failed (`revealScheduled: false`) is revealed `immediately`, because nobody
+	 * else is going to.
 	 */
 	autoReveal?: 'immediately' | 'fallback' | 'never';
 	/**
@@ -276,20 +374,91 @@ export function createSubmission<
 	 * chain at this point, so there is no reason to show a gap.
 	 */
 	onSettled?: () => void | Promise<void>;
-}): SubmissionStore<TIdentity, TAction> {
+}): SubmissionStore<TIdentity, TAction, TExtensions> {
 	const {cycleInfo, adapter, storage, identity} = params;
 	const autoCommit = params.autoCommit ?? true;
 	const commitWhenIdle = params.commitWhenIdle ?? (() => false);
 	const autoReveal = params.autoReveal ?? 'immediately';
 	const fallbackRevealAfter = params.fallbackRevealAfter ?? 0.5;
 	const makeSecret = params.makeSecret ?? (() => randomSecret());
+	const {scheduler} = params;
+	type Persisted = PersistedSubmission<TAction, TExtensions>;
 
 	let $state: SubmissionState<TAction> = {step: 'Idle'};
 	const store = writable<SubmissionState<TAction>>($state);
 
+	/**
+	 * Bumped whenever the storage stops being ready (an account switch, a load
+	 * error) or the identity changes: anything that awaited across one of those
+	 * belongs to a context that is gone, and must not write into the new one.
+	 */
+	let generation = 0;
+
+	/** Whether the storage can be read and written now. See `ready`. */
+	function isReady(): boolean {
+		return storage.ready ? get(storage.ready) : true;
+	}
+
+	/** Resolves once the storage is ready, or with `false` if stopped first. */
+	let releaseWaiters: (() => void) | undefined;
+	function whenReady(): Promise<boolean> {
+		if (isReady()) return Promise.resolve(true);
+		const ready = storage.ready!;
+		return new Promise<boolean>((resolve) => {
+			let unsubscribe: (() => void) | undefined;
+			const previous = releaseWaiters;
+			const done = (value: boolean) => {
+				unsubscribe?.();
+				unsubscribe = undefined;
+				resolve(value);
+			};
+			releaseWaiters = () => {
+				previous?.();
+				done(false);
+			};
+			unsubscribe = ready.subscribe(($ready) => {
+				if ($ready) queueMicrotask(() => done(true));
+			});
+		});
+	}
+
 	function set(next: SubmissionState<TAction>) {
 		$state = next;
 		store.set(next);
+	}
+
+	/** The committed turn the state shows, and its hash: what reveal opens. */
+	let shownTurn: Persisted | undefined;
+	let shownHash: `0x${string}` | undefined;
+
+	function committedState(record: Persisted): SubmissionState<TAction> {
+		shownTurn = record;
+		shownHash = record.commitmentHash;
+		return {
+			step: 'Committed',
+			cycleNumber: record.cycleNumber,
+			actions: record.actions,
+			...(record.revealScheduled === undefined
+				? {}
+				: {revealScheduled: record.revealScheduled}),
+		};
+	}
+
+	/**
+	 * When this browser reveals THIS turn: the game's `autoReveal`, except that a
+	 * turn a scheduler was supposed to hold and does not is revealed at once.
+	 */
+	function revealModeFor(
+		state: SubmissionState<TAction>,
+	): 'immediately' | 'fallback' | 'never' {
+		if (
+			autoReveal === 'fallback' &&
+			state.step === 'Committed' &&
+			state.revealScheduled === false
+		) {
+			return 'immediately';
+		}
+		return autoReveal;
 	}
 
 	/** The actions of whatever submission is currently in play, if any. */
@@ -356,6 +525,9 @@ export function createSubmission<
 	}
 
 	function plan(actions: readonly TAction[]) {
+		// Not before the storage is ready: what it holds may be a committed turn,
+		// and a plan laid over it would be one the player cannot commit.
+		if (!isReady()) return;
 		// Once the commitment is sent the actions are fixed: they are what the
 		// hash is of, and what the reveal has to reproduce exactly.
 		if (
@@ -377,6 +549,9 @@ export function createSubmission<
 	}
 
 	async function commit() {
+		// Not before the storage is ready: the secret has to be stored first, and
+		// what is stored may already be this cycle's committed turn.
+		if (!isReady()) return;
 		// `Idle` is allowed only for a game that has asked for it: see
 		// `commitWhenIdle`. Everything below already copes with an empty action list
 		// (the commitment hashes it, the reveal discloses it, and a contract's action
@@ -400,16 +575,46 @@ export function createSubmission<
 			return;
 		}
 		const cycleNumber = info.currentCycleNumber;
+		const startedIn = generation;
 		const secret = await makeSecret({cycleNumber, identity: player});
+		if (generation !== startedIn) return;
 		const {hash} = adapter.buildCommitment({actions, secret});
 
 		// Persisted BEFORE the call, so a reload during the wallet prompt cannot
-		// leave a commitment nobody can open. See the file comment.
-		storage.save({cycleNumber, actions, secret, committed: false});
-
+		// leave a commitment nobody can open. See the file comment. DURABLY where
+		// the storage can say so: a write still in flight when the tab closes is a
+		// commitment nobody can open, so the commit waits for it, and a write that
+		// failed refuses the commit.
+		const record: Persisted = {
+			cycleNumber,
+			actions,
+			secret,
+			committed: false,
+			commitmentHash: hash,
+		};
 		set({step: 'Committing', cycleNumber, actions});
+		if (storage.saveDurably) {
+			try {
+				await storage.saveDurably(record);
+			} catch (error) {
+				if (generation !== startedIn) return;
+				set({
+					step: 'Error',
+					cycleNumber,
+					during: 'commit',
+					message: messageOf(error),
+					error,
+					actions,
+				});
+				return;
+			}
+			if (generation !== startedIn) return;
+		} else {
+			storage.save(record);
+		}
+
 		try {
-			await adapter.commit({
+			const outcome = await adapter.commit<TExtensions>({
 				identity: player,
 				hash,
 				actions,
@@ -423,10 +628,31 @@ export function createSubmission<
 				// for a grid the chain has left behind - and a scheduled reveal is
 				// the one thing that cannot be re-asked later.
 				revealDueAt: info.type === 'manual' ? undefined : info.revealOpensAt,
+				...(scheduler ? {scheduler} : {}),
 			});
-			storage.save({cycleNumber, actions, secret, committed: true});
-			set({step: 'Committed', cycleNumber, actions});
+			// THE CONTEXT MOVED ON while the commitment went out (an account
+			// switch): this turn is not the new identity's, so it is neither
+			// stored nor shown as theirs. Its secret is already stored for the
+			// identity that committed, and the chain's hash takes it back up there.
+			if (generation !== startedIn) return;
+			// ANYTHING BUT `true` IS NOT SCHEDULED: an adapter that ignored the
+			// scheduler reports nothing, and a turn nobody else will reveal must be
+			// revealed here.
+			const revealScheduled = scheduler
+				? outcome?.revealScheduled === true
+				: undefined;
+			const committed: Persisted = {
+				...record,
+				committed: true,
+				...(revealScheduled === undefined ? {} : {revealScheduled}),
+				...(outcome?.extensions
+					? {extensions: outcome.extensions as TExtensions}
+					: {}),
+			};
+			storage.save(committed);
+			set(committedState(committed));
 		} catch (error) {
+			if (generation !== startedIn) return;
 			// The commitment never went out, so nothing is at stake and the stored
 			// submission would only confuse the next load.
 			storage.clear();
@@ -442,7 +668,18 @@ export function createSubmission<
 	}
 
 	async function reveal() {
-		const pending = storage.load();
+		// ASKED FOR BEFORE THE STORAGE IS READY, IT WAITS: returning would look
+		// like "nothing to reveal" when the truth is "not read yet".
+		if (!isReady() && !(await whenReady())) return;
+		// The turn the state shows, which may have come from the committed
+		// turns rather than the plan's record; then whatever storage holds.
+		const pending =
+			shownTurn &&
+			($state.step === 'Committed' || $state.step === 'Error') &&
+			$state.cycleNumber === shownTurn.cycleNumber
+				? shownTurn
+				: (storedTurnFor(cycleInfo.now().currentCycleNumber)?.turn ??
+					storage.load());
 		if (!pending || !pending.committed) return;
 		if ($state.step === 'Revealing' || $state.step === 'Revealed') return;
 
@@ -452,9 +689,9 @@ export function createSubmission<
 		const info = cycleInfo.now();
 		if (info.currentCycleNumber !== pending.cycleNumber) {
 			// Too late: the contract only accepts a reveal in the cycle that was
-			// committed to.
-			storage.clear();
-			set({step: 'Missed', cycleNumber: pending.cycleNumber});
+			// committed to. Whether it is MISSED is the chain's to say: somebody
+			// else may have revealed it in time.
+			closeEarlierTurn(pending, player);
 			return;
 		}
 
@@ -464,6 +701,8 @@ export function createSubmission<
 			actions: pending.actions,
 		});
 		try {
+			// `alreadyRevealed` is somebody else's reveal of this very turn, which
+			// is the same outcome as ours: the turn is open on chain.
 			await adapter.reveal({
 				identity: player,
 				actions: pending.actions,
@@ -482,16 +721,18 @@ export function createSubmission<
 					}
 				},
 			});
-			// Refresh FIRST, then report revealed: see the note on onSettled.
-			try {
-				await params.onSettled?.();
-			} catch {
-				// A failed refresh is not a failed reveal. The reveal is on chain
-				// either way, and the poller will catch up on its own interval.
-			}
-			storage.clear();
-			set({step: 'Revealed', cycleNumber: pending.cycleNumber});
+			await reportRevealed(pending.cycleNumber);
 		} catch (error) {
+			// A REVEAL THAT FAILED BECAUSE THE TURN IS ALREADY OPEN is a revealed
+			// turn: a game's adapter may throw where the base's reports it, so the
+			// chain is asked before the failure is believed.
+			if (
+				(await statusOnChain(pending, player)) === 'revealed' &&
+				isRevealing(pending.cycleNumber)
+			) {
+				await reportRevealed(pending.cycleNumber);
+				return;
+			}
 			// The stored submission is deliberately KEPT: the reveal can be retried for
 			// as long as the phase lasts, and dropping the secret here would
 			// forfeit the stake over a rejected wallet prompt.
@@ -504,6 +745,82 @@ export function createSubmission<
 				actions: pending.actions,
 			});
 		}
+	}
+
+	/**
+	 * Read through a function so TypeScript does not carry a narrowing of
+	 * `$state` across an await, which the state may well have changed under.
+	 */
+	function isRevealing(cycleNumber: number): boolean {
+		return $state.step === 'Revealing' && $state.cycleNumber === cycleNumber;
+	}
+
+	/** Refresh FIRST, then report revealed: see the note on onSettled. */
+	async function reportRevealed(cycleNumber: number) {
+		try {
+			await params.onSettled?.();
+		} catch {
+			// A failed refresh is not a failed reveal. The reveal is on chain
+			// either way, and the poller will catch up on its own interval.
+		}
+		storage.clear();
+		storage.settled?.(cycleNumber);
+		set({step: 'Revealed', cycleNumber});
+	}
+
+	/** What the chain says about a turn, `unknown` when it cannot be asked. */
+	async function statusOnChain(
+		turn: Persisted,
+		player: TIdentity,
+	): Promise<'open' | 'revealed' | 'unknown'> {
+		if (!adapter.commitmentStatus) return 'unknown';
+		try {
+			return await adapter.commitmentStatus({
+				identity: player,
+				actions: turn.actions,
+				secret: turn.secret,
+				cycleNumber: turn.cycleNumber,
+			});
+		} catch {
+			return 'unknown';
+		}
+	}
+
+	/**
+	 * A committed turn whose cycle has gone by: MISSED, unless the chain says
+	 * somebody revealed it (P9). A scheduler that did its job leaves this
+	 * browser `Committed` with nothing sent, and before this the player was told
+	 * they had missed a reveal that had in fact gone out.
+	 *
+	 * The stored record is cleared at once, as before; the state is `Idle` while
+	 * the chain is asked, and the answer is written only if nothing has happened
+	 * since (a new plan is the player moving on, and the missed-reveal reader
+	 * asks the chain on its own).
+	 */
+	function closeEarlierTurn(turn: Persisted, player: TIdentity | undefined) {
+		storage.clear();
+		if (!adapter.commitmentStatus || !hasIdentity(player)) {
+			// Nothing to ask: the old reading.
+			set({step: 'Missed', cycleNumber: turn.cycleNumber});
+			return;
+		}
+		set({step: 'Idle'});
+		void (async () => {
+			const status = await statusOnChain(turn, player);
+			if ($state.step !== 'Idle') return;
+			if (status === 'revealed') {
+				try {
+					await params.onSettled?.();
+				} catch {
+					// See reportRevealed.
+				}
+				if ($state.step !== 'Idle') return;
+				storage.settled?.(turn.cycleNumber);
+				set({step: 'Revealed', cycleNumber: turn.cycleNumber});
+			} else {
+				set({step: 'Missed', cycleNumber: turn.cycleNumber});
+			}
+		})();
 	}
 
 	function dismiss() {
@@ -540,20 +857,28 @@ export function createSubmission<
 	 * IT SAVES ON THE WAY THROUGH, so a second reload costs nothing: what was
 	 * reconstructed once is now an ordinary stored submission.
 	 */
-	function adopt(pending: PersistedSubmission<TAction>): boolean {
+	function adopt(pending: Persisted): boolean {
+		return take(pending, {save: true});
+	}
+
+	/**
+	 * `adopt`'s guard and state change, saving only when asked: a record that
+	 * came FROM storage is already there, and writing it back would only be a
+	 * change for every other device to merge.
+	 */
+	function take(pending: Persisted, options: {save: boolean}): boolean {
+		// Not into a storage that has not loaded: the save below would be lost,
+		// or written over what it is still loading.
+		if (!isReady()) return false;
 		if (pending.cycleNumber !== cycleInfo.now().currentCycleNumber)
 			return false;
 		if ($state.step === 'Committing' || $state.step === 'Revealing')
 			return false;
 
-		storage.save(pending);
+		if (options.save) storage.save(pending);
 		set(
 			pending.committed
-				? {
-						step: 'Committed',
-						cycleNumber: pending.cycleNumber,
-						actions: pending.actions,
-					}
+				? committedState(pending)
 				: {
 						step: 'Planning',
 						cycleNumber: pending.cycleNumber,
@@ -563,23 +888,169 @@ export function createSubmission<
 		return true;
 	}
 
+	/** The hash a turn was committed with: recorded, or rebuilt. */
+	function hashOf(turn: Persisted): `0x${string}` {
+		return (
+			turn.commitmentHash ??
+			adapter.buildCommitment({actions: turn.actions, secret: turn.secret}).hash
+		);
+	}
+
+	/**
+	 * THIS CYCLE'S TURN AS STORAGE HOLDS IT: a committed turn first, then the
+	 * plan (Q8-9).
+	 *
+	 * Where the chain's commitment for the cycle is known, IT DECIDES (Q8-8):
+	 * of two committed records (two devices that both committed) the one whose
+	 * hash it holds is the turn; a plan whose hash it holds is a commit that went
+	 * out and was never recorded as committed (the tab closed between the two,
+	 * or the account switched), and is taken up as committed; and a record the
+	 * chain does NOT hold is not offered at all, so the recovery says what it
+	 * should rather than a reveal that cannot land.
+	 */
+	function storedTurnFor(
+		cycleNumber: number,
+	): {turn: Persisted; recovered: boolean} | undefined {
+		const live = params.liveCommitment ? get(params.liveCommitment) : undefined;
+		const liveHash =
+			live && live.cycleNumber === cycleNumber ? live.hash : undefined;
+		const holds = (turn: Persisted) =>
+			liveHash === undefined || sameHash(hashOf(turn), liveHash);
+
+		const plan = storage.load();
+		const committed = (storage.committedTurns?.(cycleNumber) ?? []).filter(
+			holds,
+		);
+		if (committed.length > 0) {
+			// Without the chain's word, the one the plan's record names, else the
+			// first: they are all this player's turns for this cycle.
+			const named =
+				plan && plan.committed
+					? committed.find((turn) => sameHash(hashOf(turn), hashOf(plan)))
+					: undefined;
+			return {turn: named ?? committed[0], recovered: false};
+		}
+		if (!plan || plan.cycleNumber !== cycleNumber) return undefined;
+		if (
+			!plan.committed &&
+			liveHash !== undefined &&
+			plan.commitmentHash !== undefined &&
+			sameHash(plan.commitmentHash, liveHash)
+		) {
+			return {turn: {...plan, committed: true}, recovered: true};
+		}
+		if (plan.committed && !holds(plan)) return undefined;
+		return {turn: plan, recovered: false};
+	}
+
 	/** Adopt whatever was left behind by a previous page load. */
 	function restore() {
-		const pending = storage.load();
-		if (!pending) return;
+		if (!isReady() || !hasIdentity(currentIdentity())) return;
+		const cycleNumber = cycleInfo.now().currentCycleNumber;
+		const current = storedTurnFor(cycleNumber);
+		if (current && take(current.turn, {save: current.recovered})) return;
 
-		if (adopt(pending)) return;
+		const pending = storage.load();
+		if (!pending || pending.cycleNumber === cycleNumber) return;
 
 		// An older cycle. A committed submission that was never revealed has already
-		// cost the player; an uncommitted one costs nothing and is just dropped.
-		storage.clear();
+		// cost the player, unless somebody else revealed it; an uncommitted one
+		// costs nothing and is just dropped.
 		if (pending.committed) {
-			set({step: 'Missed', cycleNumber: pending.cycleNumber});
+			closeEarlierTurn(pending, currentIdentity());
+		} else {
+			storage.clear();
 		}
 	}
 
+	/**
+	 * A record that arrived AFTER ready (another device, by sync; another tab),
+	 * or a chain commitment that now tells two records apart (Q8-2).
+	 *
+	 * Under `adopt()`'s own guard (not while committing or revealing, only for
+	 * the current cycle), so a COMMITTED record replaces an uncommitted local plan
+	 * or a failed commit, and the chain's choice replaces a committed turn it
+	 * does not hold. A synced PLAN is taken only into an idle submission: it does
+	 * not replace one being made here. A cycle already revealed or missed here is
+	 * left alone.
+	 */
+	function adoptLate() {
+		if (!isReady() || !hasIdentity(currentIdentity())) return;
+		if ($state.step === 'Committing' || $state.step === 'Revealing') return;
+		const cycleNumber = cycleInfo.now().currentCycleNumber;
+		if (
+			($state.step === 'Revealed' || $state.step === 'Missed') &&
+			$state.cycleNumber === cycleNumber
+		) {
+			return;
+		}
+		const current = storedTurnFor(cycleNumber);
+		if (!current) return;
+		const {turn} = current;
+		if (turn.committed) {
+			if (
+				$state.step === 'Committed' &&
+				$state.cycleNumber === cycleNumber &&
+				shownHash !== undefined &&
+				sameHash(shownHash, hashOf(turn))
+			) {
+				return;
+			}
+		} else if ($state.step !== 'Idle') {
+			return;
+		}
+		take(turn, {save: current.recovered});
+	}
+
+	/**
+	 * What this submission showed belongs to a context that is gone (another
+	 * identity, or an account whose data is reloading): forget it in MEMORY,
+	 * clearing nothing stored, and let anything in flight know.
+	 */
+	function leaveContext() {
+		generation++;
+		if ($state.step !== 'Idle') set({step: 'Idle'});
+	}
+
 	function start() {
-		restore();
+		// RESTORED ON EVERY TRANSITION TO READY, not once: the first ready after
+		// start, and each one after an account switch. A storage with no
+		// readiness is ready now, which is the old single restore.
+		let wasReady: boolean | undefined;
+		const unsubscribeReady = storage.ready
+			? storage.ready.subscribe(($ready) => {
+					const before = wasReady;
+					wasReady = $ready;
+					if ($ready && before !== true) restore();
+					else if (!$ready && before === true) leaveContext();
+				})
+			: (restore(), () => {});
+
+		// AN IDENTITY THAT CHANGES (or first arrives) after start is a different
+		// player's turn: before this, one arriving late was never restored, even
+		// from localStorage.
+		let previousIdentity: TIdentity | undefined;
+		let identitySeen = false;
+		const unsubscribeIdentity = identity.subscribe(($identity) => {
+			if (!identitySeen) {
+				identitySeen = true;
+				previousIdentity = $identity;
+				return;
+			}
+			if ($identity === previousIdentity) return;
+			previousIdentity = $identity;
+			leaveContext();
+			restore();
+		});
+
+		// Records arriving from elsewhere, and the chain's word on which turn it
+		// holds: both may change which turn this cycle's is.
+		const unsubscribeChanges = storage.changes
+			? storage.changes.subscribe(() => adoptLate())
+			: () => {};
+		const unsubscribeLive = params.liveCommitment
+			? params.liveCommitment.subscribe(() => adoptLate())
+			: () => {};
 
 		let previousCycleNumber: number | undefined;
 
@@ -589,12 +1060,23 @@ export function createSubmission<
 				$info.currentCycleNumber !== previousCycleNumber;
 			previousCycleNumber = $info.currentCycleNumber;
 
-			if (cycleChanged) {
+			// NOTHING IS CLEARED WHILE LOADING. The state is `Idle` then anyway; a
+			// cycle that turns meanwhile is the restore's to handle once ready.
+			if (cycleChanged && isReady()) {
 				if ($state.step === 'Committed' || $state.step === 'Revealing') {
-					// The cycle turned over with a commitment still open: the reveal
-					// window is gone.
-					storage.clear();
-					set({step: 'Missed', cycleNumber: $state.cycleNumber});
+					// The cycle turned over with a commitment still open here: the
+					// reveal window is gone, and the chain says whether somebody else
+					// used it.
+					const turn =
+						shownTurn && shownTurn.cycleNumber === $state.cycleNumber
+							? shownTurn
+							: storage.load();
+					if (turn && turn.cycleNumber === $state.cycleNumber) {
+						closeEarlierTurn(turn, currentIdentity());
+					} else {
+						storage.clear();
+						set({step: 'Missed', cycleNumber: $state.cycleNumber});
+					}
 				} else if ($state.step === 'Planning' || $state.step === 'Error') {
 					// A plan made during the reveal phase was stamped for THIS cycle,
 					// which has just begun, so it is not stale and must survive. Only
@@ -610,7 +1092,8 @@ export function createSubmission<
 			// page loaded (or a wallet connected) part-way through that phase has no
 			// transition to observe, and owes a reveal just the same.
 			if (!$info.isCommitPhase && $state.step === 'Committed') {
-				if (autoReveal === 'immediately') {
+				const mode = revealModeFor($state);
+				if (mode === 'immediately') {
 					void reveal();
 					// `!== 'manual'`, NOT `=== 'timed'`: every policy with a clock
 					// behind it can answer "how much of the reveal window is left",
@@ -618,7 +1101,7 @@ export function createSubmission<
 					// for one named policy instead of for the PROPERTY being used
 					// is how a third policy silently turned this off - and what it
 					// turns off is the reveal that protects the stake.
-				} else if (autoReveal === 'fallback' && $info.type !== 'manual') {
+				} else if (mode === 'fallback' && $info.type !== 'manual') {
 					// Whoever was supposed to do this has had most of the phase. The
 					// submission is still open, so try: a duplicate reveal costs one
 					// reverted transaction, a missed one costs the stake.
@@ -646,7 +1129,16 @@ export function createSubmission<
 			}
 		});
 
-		return () => unsubscribeCycle();
+		return () => {
+			unsubscribeCycle();
+			unsubscribeIdentity();
+			unsubscribeReady();
+			unsubscribeChanges();
+			unsubscribeLive();
+			const release = releaseWaiters;
+			releaseWaiters = undefined;
+			release?.();
+		};
 	}
 
 	return {
@@ -661,6 +1153,11 @@ export function createSubmission<
 		adopt,
 		start,
 	};
+}
+
+/** Two hashes as the chain means them: hex case is not a difference. */
+function sameHash(a: string, b: string): boolean {
+	return a.toLowerCase() === b.toLowerCase();
 }
 
 function messageOf(error: unknown): string {

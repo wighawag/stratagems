@@ -146,8 +146,13 @@ export type CommitRevealAdapter<TIdentity extends PlayerIdentity, TAction> = {
 	 * Handing over the secret is not a leak: this runs in the player's own
 	 * client, and the adapter is the code that will disclose it a phase later
 	 * regardless.
+	 *
+	 * The scheduler itself arrives as `scheduler` (see {@link RevealScheduler}):
+	 * an adapter that supports it calls `prepare` before sending, carries the
+	 * payment in the commit, calls `submit` once it is broadcast, and reports
+	 * `revealScheduled`; scheduling never makes this throw.
 	 */
-	commit(params: {
+	commit<TExtensions extends object = {}>(params: {
 		identity: TIdentity;
 		hash: `0x${string}`;
 		actions: readonly TAction[];
@@ -158,8 +163,45 @@ export type CommitRevealAdapter<TIdentity extends PlayerIdentity, TAction> = {
 		 * Undefined on a manually advanced chain, which has no clock to predict.
 		 */
 		revealDueAt?: number;
-	}): Promise<{hash: `0x${string}`}>;
+		/**
+		 * Who else will send the reveal, when the game has one: see
+		 * {@link RevealScheduler}. An adapter that cannot schedule ignores it and
+		 * reports nothing, which the submission reads as NOT scheduled.
+		 */
+		scheduler?: RevealScheduler<TIdentity, TExtensions>;
+	}): Promise<CommitOutcome<TExtensions>>;
 
+	/**
+	 * The reveal of a turn as the transactions that send it, one per chunk, in
+	 * the order they must land: what a scheduler is handed to send later.
+	 * Optional: an adapter that cannot express its reveal this way cannot be
+	 * scheduled, and says so by not having it.
+	 */
+	revealTransactions?(params: {
+		identity: TIdentity;
+		actions: readonly TAction[];
+		secret: `0x${string}`;
+	}): readonly RevealTransaction[];
+
+	/**
+	 * What the chain says about this cycle's turn, asked before the submission
+	 * calls it missed: a reveal by SOMEBODY ELSE (a scheduler, another device, a
+	 * stranger: anyone may reveal) leaves this browser `Committed` with nothing
+	 * to send, and that is not a missed reveal.
+	 *
+	 * - `open`: the chain still holds this turn for `cycleNumber`, unrevealed or
+	 *   partly revealed.
+	 * - `revealed`: the chain closed this turn, its last chunk opened.
+	 * - `unknown`: neither can be said (another turn, or the read failed).
+	 *
+	 * Optional: a game's adapter without it keeps the old reading, `Missed`.
+	 */
+	commitmentStatus?(params: {
+		identity: TIdentity;
+		actions: readonly TAction[];
+		secret: `0x${string}`;
+		cycleNumber: number;
+	}): Promise<CommitmentStatus>;
 	/**
 	 * Open the commitment, in however many transactions that takes.
 	 *
@@ -187,7 +229,95 @@ export type CommitRevealAdapter<TIdentity extends PlayerIdentity, TAction> = {
 		actions: readonly TAction[];
 		secret: `0x${string}`;
 		onProgress?: (progress: {done: number; total: number}) => void;
-	}): Promise<{hash: `0x${string}`}>;
+	}): Promise<RevealOutcome>;
+};
+
+/**
+ * How a reveal ended: the transaction that completed the turn, or the finding
+ * that somebody else had already completed it (the turn is open on chain, by
+ * someone who is not this browser), which is a REVEALED turn and not a failure.
+ */
+export type RevealOutcome =
+	{hash: `0x${string}`} | {hash?: undefined; alreadyRevealed: true};
+
+/** See {@link CommitRevealAdapter.commitmentStatus}. */
+export type CommitmentStatus = 'open' | 'revealed' | 'unknown';
+
+// ----------------------------------------------------------------------------
+// Scheduled reveal
+// ----------------------------------------------------------------------------
+
+/**
+ * One transaction of a reveal, ready for anyone to send: the contract's
+ * `reveal` takes the player as an argument and checks the hash, not the
+ * sender.
+ */
+export type RevealTransaction = {
+	to: `0x${string}`;
+	data: `0x${string}`;
+	/** The deployment's declared limit for one reveal step. */
+	gas: bigint;
+};
+
+/** What a scheduler is paid, which the commit carries as `payee` and `value`. */
+export type SchedulerPayment = {payee: `0x${string}`; value: bigint};
+
+/** What a scheduler is told about the turn it is to reveal. */
+export type RevealScheduleRequest<TIdentity extends PlayerIdentity> = {
+	identity: TIdentity;
+	cycleNumber: number;
+	/** Chain time, in seconds, at which the reveal phase opens. */
+	revealDueAt: number;
+	/** The reveal, one transaction per chunk, in the order they must land. */
+	transactions: readonly RevealTransaction[];
+};
+
+/**
+ * THE SCHEDULER PART: someone other than this browser who will send the
+ * reveal (a service holding it timelocked until the phase opens), so a player
+ * who closes the tab still reveals.
+ *
+ * TWO HALVES AROUND THE COMMIT, in alpha1's order: `prepare` BEFORE it (who to
+ * pay and how much, which the commit carries as `payee` and `value`, so the
+ * payment and the commitment are one transaction), `submit` once the commit is
+ * BROADCAST (the reveal's transactions, for the scheduler to time). Never
+ * before: a schedule for a commitment that may not land is a reveal that
+ * reverts at the scheduler's expense.
+ *
+ * A SCHEDULING FAILURE NEVER FAILS THE COMMIT. Either half throwing leaves the
+ * turn committed, and recorded as NOT scheduled, and the submission then reveals
+ * THIS turn itself as soon as the phase opens (P7) instead of waiting for a
+ * scheduler that is not coming.
+ *
+ * `submit` may return the layer's record of what it scheduled, under its own
+ * namespace of the submission's `extensions` (see `PersistedSubmission`); the
+ * framework stores it beside the turn and never reads it.
+ */
+export type RevealScheduler<
+	TIdentity extends PlayerIdentity,
+	TExtensions extends object = {},
+> = {
+	prepare(request: RevealScheduleRequest<TIdentity>): Promise<SchedulerPayment>;
+	submit(
+		request: RevealScheduleRequest<TIdentity> & {
+			/** The commit's transaction hash, broadcast. */
+			commitTransaction: `0x${string}`;
+			/** What `prepare` asked for, which the commit carried. */
+			payment: SchedulerPayment;
+		},
+	): Promise<Partial<TExtensions> | void>;
+};
+
+/** What a commit reports back to the submission. */
+export type CommitOutcome<TExtensions extends object = {}> = {
+	hash: `0x${string}`;
+	/**
+	 * Whether THIS turn's reveal is scheduled. Reported only when a scheduler was
+	 * handed in; anything but `true` is read as not scheduled.
+	 */
+	revealScheduled?: boolean;
+	/** What the scheduler recorded, to be stored with the turn. */
+	extensions?: Partial<TExtensions>;
 };
 
 // ----------------------------------------------------------------------------
