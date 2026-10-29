@@ -1,192 +1,320 @@
 /**
- * Where a pending submission is kept between page loads, for any action type.
+ * Where a submission is kept between page loads, for any action type: in the
+ * ACCOUNT DATA (P8 b), so the secret, the actions and whatever a layer keeps
+ * with the turn are synced and encrypted wherever the account data is, rather
+ * than sitting in plain `localStorage` on one browser.
  *
- * The stake is real, so losing this file's contents costs the player money:
- * without the secret, a commitment cannot be opened, and a missed reveal that
- * cannot be shown its chunks forfeits the whole bond (`forfeitMissedReveal`).
- * Everything here is written with that in mind.
+ * The stake is real, so losing what is stored here costs the player money:
+ * without the secret a commitment cannot be opened, and a missed reveal that
+ * cannot be shown its chunks forfeits the whole bond. Everything here is
+ * written with that in mind.
  *
- * THE KEY AND THE RECORD ARE A WIRE (see `AGENTS.md`, "Commit-reveal rules").
- * The record's fields are fixed here, and every game on the base shares them;
- * the PREFIXES and how one action is written are the game's, passed in as a
- * {@link SubmissionStorageFormat}, so a game that already has players keeps the
- * names its records were written under. Once a game has users, changing either
- * prefix, a field below, or its codec makes `load()` discard every record a
- * previous build wrote, with the secret in it.
+ * TWO FIELDS, SPLIT BY WHAT THEY ARE WORTH (Q8-9). The account data merges a
+ * map item by its timestamp, the later write winning, on device clocks:
+ *
+ * - `submissions` holds PLANS, one record per chain, contract and identity.
+ *   The later write winning is harmless for a plan.
+ * - `committedTurns` holds COMMITTED turns, keyed by identity, cycle AND
+ *   commitment hash, written once at commit and never overwritten or cleared
+ *   by the submission. Nothing ever competes for a key, so clock skew does not
+ *   matter, and two devices that both committed in one cycle each keep their
+ *   own record: the chain's commitment hash decides which is the turn.
+ *
+ * A committed turn is pruned once its cycle is revealed or settled on chain
+ * (`settled`), keeping the latest few; there is no automatic expiry, because a
+ * settlement shown the chunks may come weeks later.
+ *
+ * A PLAN IS NEVER REMOVED, ONLY EMPTIED. A removed map item leaves a tombstone
+ * that outlives it (until the item's own `deleteAt`), and a tombstoned key
+ * drops every later write to it at the next merge: removing the one key a plan
+ * lives under would lose every later plan on every other device. So a cleared
+ * plan is the record `{turn: null}`.
+ *
+ * THE KEYS AND THE RECORD ARE A WIRE (see `AGENTS.md`, "Commit-reveal
+ * rules"): once a game has users, renaming a field, a key's shape, or the
+ * game's action codec makes `load()` miss every record a previous build wrote.
  */
+import {derived} from 'svelte/store';
+import {defineSchema, map} from 'synqable';
 import type {PersistedSubmission, SubmissionStorage} from '../submission';
 import type {PlayerIdentity} from '../seams';
+import type {AccountDataStore} from '$lib/account/AccountData';
 
 /**
- * How one game names and writes its records. A WIRE once the game has users.
- *
- * `prefix` keys the submission, `committedPrefix` the committed turn copied
- * aside beside it (see {@link committedTurnKey}); they must differ, so that
- * clearing the one cannot take the other. `encode` and `decode` turn one action
- * into JSON and back: bigint has no JSON representation, so a game whose action
- * holds one writes it as a string.
+ * How one game writes its actions. A WIRE once the game has users: bigint has
+ * no JSON representation, so a game whose action holds one writes it as a
+ * string.
  */
 export type SubmissionStorageFormat<TAction> = {
-	prefix: string;
-	committedPrefix: string;
 	encode: (action: TAction) => unknown;
 	decode: (stored: unknown) => TAction;
 };
 
 /**
- * THE ON-DISK SHAPE, and renaming anything in it is a decision rather than a
- * tidy-up: see the file comment. It is the reference game's shape, kept field
- * for field when this moved out of `placement/storage.ts`, because the
- * reference game's records are written in it.
+ * ONE TURN, AS STORED. Every field of `PersistedSubmission`, the actions in the
+ * game's encoding and the extensions as the layers wrote them (JSON).
  */
-type StoredSubmission = {
+export type StoredTurn = {
 	cycleNumber: number;
-	actions: unknown[];
+	actions: readonly unknown[];
 	secret: `0x${string}`;
 	committed: boolean;
+	commitmentHash?: `0x${string}`;
+	revealScheduled?: boolean;
+	extensions?: Readonly<Record<string, unknown>>;
 };
+
+/** A plan's slot: the plan, or `null` once cleared (never removed). */
+export type StoredPlan = {turn: StoredTurn | null};
+
+/**
+ * The two fields the commit-reveal framework adds to the account data, beside
+ * `operations`, through `createAccountData({fields})`. Typed through
+ * `defineSchema`, so the account data's type carries them.
+ */
+export const SUBMISSION_FIELDS = {
+	schema: defineSchema({
+		submissions: map<StoredPlan>(),
+		committedTurns: map<StoredTurn>(),
+	}),
+	defaults: () => ({submissions: {}, committedTurns: {}}),
+};
+export type SubmissionFields = typeof SUBMISSION_FIELDS.schema;
+
+/** The account data with the submission's fields. */
+export type SubmissionAccountData = Pick<
+	AccountDataStore<SubmissionFields>,
+	'lifecycle$' | 'read' | 'writer' | 'writeDurably' | 'watchField'
+>;
+
+/** No automatic expiry: see the file comment. */
+const NEVER = Number.MAX_SAFE_INTEGER;
+
+/** How many committed turns are kept, settled or not, per identity. */
+export const COMMITTED_TURNS_KEPT = 3;
 
 /**
  * Scoped to chain + contract + WHO PLAYS.
  *
- * Scoped so that switching account or network cannot surface someone else's
- * pending submission (which would then fail to reveal and look like a bug in
- * the contract). The last part is the identity rather than the account, which
- * is the whole difference between one pending submission per account and one
- * per thing the account plays with. A game that keys by a token and scoped this
- * by the account instead would load the previous token's planned actions and
- * commit them for the next one.
+ * Scoped so that switching network or deployment cannot surface someone
+ * else's pending submission. The last part is the identity rather than the
+ * account, which is the whole difference between one pending submission per
+ * account and one per thing the account plays with.
  */
-export function submissionStorageKey<TIdentity extends PlayerIdentity>(params: {
-	prefix: string;
-	chainID: string | number;
-	gameAddress: string;
-	player: TIdentity;
+export function submissionKey<TIdentity extends PlayerIdentity>(params: {
+	chainId: string | number;
+	contract: string;
+	identity: TIdentity;
 }): string {
-	return `${params.prefix}${params.chainID}_${params.gameAddress}_${params.player}`.toLowerCase();
+	return `${params.chainId}_${params.contract}_${params.identity}`.toLowerCase();
 }
 
-/**
- * Where the last COMMITTED turn is copied aside, beside a submission's key.
- *
- * Its own prefix rather than a suffix on the submission's key, so that
- * clearing the submission (which the framework does when a reveal is missed)
- * cannot take it too. Same shape as the submission record, and the same wire.
- */
-export function committedTurnKey<TAction>(
-	format: SubmissionStorageFormat<TAction>,
-	submissionKey: string,
+/** A committed turn's key: the submission's, its cycle, and its hash. */
+export function committedTurnKey(
+	key: string,
+	cycleNumber: number,
+	commitmentHash: string | undefined,
 ): string {
-	return submissionKey.replace(
-		format.prefix.toLowerCase(),
-		format.committedPrefix.toLowerCase(),
-	);
+	return `${key}_${cycleNumber}_${commitmentHash ?? 'unknown'}`.toLowerCase();
 }
 
 /**
- * A `SubmissionStorage` backed by localStorage.
+ * The submission storage of one identity, in the account data.
  *
- * Every operation is defensive: storage can be full, disabled, or hold
- * something from an older version of the app. A throw from here during a commit
- * would be the worst possible time for one, so failures degrade to "no pending
- * submission" instead. The one case that is NOT swallowed is a failed write,
- * which is surfaced through `onWriteFailure` so the game can refuse to commit
- * rather than commit something it will not be able to open.
+ * Synchronous over a store that loads asynchronously: `ready` says when what
+ * it answers is real (the account data's lifecycle), and the submission waits
+ * on it (Q8-1). Before ready, `load` answers `undefined` and writes are
+ * dropped, which the submission never asks for.
  */
-export function createSubmissionStorage<TAction>(params: {
-	key: string;
+export function createAccountDataSubmissionStorage<
+	TAction,
+	TExtensions extends object = {},
+	TIdentity extends PlayerIdentity = PlayerIdentity,
+>(params: {
+	accountData: SubmissionAccountData;
 	format: SubmissionStorageFormat<TAction>;
-	onWriteFailure?: (error: unknown) => void;
-}): SubmissionStorage<TAction> {
-	const {key, format} = params;
+	chainId: string | number;
+	contract: `0x${string}`;
+	identity: TIdentity;
+}): AccountDataSubmissionStorage<TAction, TExtensions> {
+	const {accountData, format} = params;
+	const key = submissionKey(params);
+	const committedPrefix = `${key}_`;
+	type Persisted = PersistedSubmission<TAction, TExtensions>;
+	type Writer = NonNullable<ReturnType<SubmissionAccountData['writer']>>;
 
-	return {
-		load() {
-			return readStored(format, key);
-		},
+	function encode(submission: Persisted): StoredTurn {
+		return {
+			cycleNumber: submission.cycleNumber,
+			actions: submission.actions.map(format.encode),
+			secret: submission.secret,
+			committed: submission.committed,
+			...(submission.commitmentHash
+				? {commitmentHash: submission.commitmentHash}
+				: {}),
+			...(submission.revealScheduled === undefined
+				? {}
+				: {revealScheduled: submission.revealScheduled}),
+			...(submission.extensions
+				? {extensions: submission.extensions as Record<string, unknown>}
+				: {}),
+		};
+	}
 
-		save(submission) {
-			if (typeof localStorage === 'undefined') return;
-			const stored: StoredSubmission = {
-				cycleNumber: submission.cycleNumber,
-				actions: submission.actions.map(format.encode),
-				secret: submission.secret,
-				committed: submission.committed,
-			};
-			try {
-				localStorage.setItem(key, JSON.stringify(stored));
-				// THE COMMITTED TURN OUTLIVES THE SUBMISSION. The submission clears
-				// its record when the cycle turns over with the turn still unopened,
-				// and that is exactly when the chunks are worth the most: shown them,
-				// the contract forfeits only the game's penalty and gives back the
-				// rest of a bond that was rounded up to hide the turn. So a committed
-				// turn is copied aside, and `./missed-reveal.ts` reads it.
-				if (submission.committed) {
-					localStorage.setItem(
-						committedTurnKey(format, key),
-						JSON.stringify(stored),
-					);
-				}
-			} catch (error) {
-				params.onWriteFailure?.(error);
-			}
-		},
-
-		clear() {
-			if (typeof localStorage === 'undefined') return;
-			try {
-				localStorage.removeItem(key);
-			} catch {
-				// Nothing useful to do; a stale entry is handled on load by the
-				// submission, which discards anything from a past cycle.
-			}
-		},
-	};
-}
-
-function readStored<TAction>(
-	format: SubmissionStorageFormat<TAction>,
-	storageKey: string,
-): PersistedSubmission<TAction> | undefined {
-	if (typeof localStorage === 'undefined') return undefined;
-	try {
-		const raw = localStorage.getItem(storageKey);
-		if (!raw) return undefined;
-		const stored = JSON.parse(raw) as StoredSubmission;
+	function decode(
+		stored: StoredTurn | null | undefined,
+	): Persisted | undefined {
 		if (
-			typeof stored?.cycleNumber !== 'number' ||
+			!stored ||
+			typeof stored.cycleNumber !== 'number' ||
 			!Array.isArray(stored.actions) ||
 			typeof stored.secret !== 'string'
 		) {
 			return undefined;
 		}
-		return {
-			cycleNumber: stored.cycleNumber,
-			actions: stored.actions.map(format.decode),
-			secret: stored.secret,
-			committed: !!stored.committed,
-		} satisfies PersistedSubmission<TAction>;
-	} catch {
-		// Unparseable is indistinguishable from absent as far as what can be
-		// done about it, and throwing here would break the whole game.
-		return undefined;
+		try {
+			return {
+				cycleNumber: stored.cycleNumber,
+				actions: stored.actions.map(format.decode),
+				secret: stored.secret,
+				committed: !!stored.committed,
+				...(stored.commitmentHash
+					? {commitmentHash: stored.commitmentHash}
+					: {}),
+				...(stored.revealScheduled === undefined
+					? {}
+					: {revealScheduled: stored.revealScheduled}),
+				// ROUND-TRIPPED UNTOUCHED: the framework stores what the layers
+				// wrote and hands it back typed as the game composed it.
+				...(stored.extensions
+					? {extensions: stored.extensions as TExtensions}
+					: {}),
+			};
+		} catch {
+			// A record this build cannot decode is as good as absent, and
+			// throwing here would break the whole game.
+			return undefined;
+		}
 	}
+
+	/** What a save writes: the plan's slot, and a committed turn once. */
+	function write(writer: Writer, submission: Persisted) {
+		const stored = encode(submission);
+		writer.addItem('submissions', key, {turn: stored}, {deleteAt: NEVER});
+		if (submission.committed) {
+			const turnKey = committedTurnKey(
+				key,
+				submission.cycleNumber,
+				submission.commitmentHash,
+			);
+			// WRITTEN ONCE, never overwritten: see the file comment.
+			if (!writer.read().committedTurns[turnKey]) {
+				writer.addItem('committedTurns', turnKey, stored, {deleteAt: NEVER});
+			}
+		}
+	}
+
+	function committedTurnsOf(cycleNumber?: number): [string, Persisted][] {
+		const turns = accountData.read()?.committedTurns ?? {};
+		const found: [string, Persisted][] = [];
+		for (const [turnKey, stored] of Object.entries(turns)) {
+			if (!turnKey.startsWith(committedPrefix)) continue;
+			const turn = decode(stored);
+			if (!turn) continue;
+			if (cycleNumber !== undefined && turn.cycleNumber !== cycleNumber) {
+				continue;
+			}
+			found.push([turnKey, turn]);
+		}
+		return found;
+	}
+
+	const ready = derived(
+		accountData.lifecycle$,
+		($lifecycle) => $lifecycle.status === 'ready',
+	);
+
+	// Any change to either field, a merge from another device or tab included.
+	const changes = derived(
+		[
+			accountData.watchField('submissions'),
+			accountData.watchField('committedTurns'),
+		],
+		([$submissions, $committed]) => [$submissions[key], $committed] as const,
+	);
+
+	return {
+		ready,
+		changes,
+
+		load() {
+			return decode(accountData.read()?.submissions[key]?.turn);
+		},
+
+		save(submission) {
+			const writer = accountData.writer();
+			if (!writer) return;
+			write(writer, submission);
+		},
+
+		async saveDurably(submission) {
+			await accountData.writeDurably((writer) => write(writer, submission));
+		},
+
+		clear() {
+			const writer = accountData.writer();
+			if (!writer || !writer.read().submissions[key]?.turn) return;
+			writer.addItem('submissions', key, {turn: null}, {deleteAt: NEVER});
+		},
+
+		committedTurns(cycleNumber) {
+			return committedTurnsOf(cycleNumber).map(([, turn]) => turn);
+		},
+
+		settled(cycleNumber) {
+			const writer = accountData.writer();
+			if (!writer) return;
+			const all = committedTurnsOf().sort(
+				([, a], [, b]) => b.cycleNumber - a.cycleNumber,
+			);
+			for (const [turnKey, turn] of all.slice(COMMITTED_TURNS_KEPT)) {
+				if (turn.cycleNumber <= cycleNumber) {
+					writer.removeItem('committedTurns', turnKey, {ignoreMissing: true});
+				}
+			}
+		},
+	};
 }
 
-/**
- * The last turn this browser committed for the player, if it still has it:
- * the actions and the secret, which is everything a settlement shown the
- * chunks needs. Whether it is the turn the chain is holding is the chain's to
- * say: the caller rebuilds the chain and matches the head.
- */
-export function loadCommittedTurn<TAction>(
-	format: SubmissionStorageFormat<TAction>,
-	submissionKey: string,
-): PersistedSubmission<TAction> | undefined {
-	return readStored(format, committedTurnKey(format, submissionKey));
-}
+/** What the account-data storage offers beyond the submission's port. */
+export type AccountDataSubmissionStorage<
+	TAction,
+	TExtensions extends object = {},
+> = SubmissionStorage<TAction, TExtensions> &
+	Required<
+		Pick<
+			SubmissionStorage<TAction, TExtensions>,
+			'ready' | 'saveDurably' | 'changes' | 'committedTurns' | 'settled'
+		>
+	>;
 
 /** A storage that keeps nothing, for SSR and for a disconnected player. */
-export function noSubmissionStorage<TAction>(): SubmissionStorage<TAction> {
+export function noSubmissionStorage<
+	TAction,
+	TExtensions extends object = {},
+>(): SubmissionStorage<TAction, TExtensions> {
 	return {load: () => undefined, save: () => {}, clear: () => {}};
+}
+
+/** Every committed turn stored for a cycle and its plan, for a settlement. */
+export function storedTurnsFor<TAction, TExtensions extends object>(
+	storage: SubmissionStorage<TAction, TExtensions>,
+	cycleNumber: number,
+): PersistedSubmission<TAction, TExtensions>[] {
+	const turns = [...(storage.committedTurns?.(cycleNumber) ?? [])];
+	// A plan whose commit went out but whose committed record was never
+	// written (the tab closed between the two) still holds the secret.
+	const plan = storage.load();
+	if (plan && plan.cycleNumber === cycleNumber) turns.push(plan);
+	return turns;
 }

@@ -2,6 +2,7 @@ import {describe, expect, it, vi} from 'vitest';
 import {get, writable, type Readable} from 'svelte/store';
 import {
 	createSubmission,
+	type PersistedSubmission,
 	type SubmissionState,
 	type SubmissionStorage,
 } from '$lib/game/core/submission';
@@ -11,7 +12,14 @@ import {
 	type CycleInfo,
 	type CycleInfoStore,
 } from '$lib/game/core/cycle';
-import type {CommitRevealAdapter} from '$lib/game/core/seams';
+import type {
+	CommitmentStatus,
+	CommitOutcome,
+	CommitRevealAdapter,
+	RevealOutcome,
+	RevealScheduler,
+} from '$lib/game/core/seams';
+import type {LiveCommitment} from '$lib/game/core/recovery';
 
 const config: CycleConfig = {
 	commitPhaseDuration: 40,
@@ -50,10 +58,13 @@ function fakeCycles(initialTime: number, policy: 'timed' | 'hybrid' = 'timed') {
 	return {cycleInfo: store, setTime: (t: number) => time.set(t)};
 }
 
-function fakeStorage<TAction>(): SubmissionStorage<TAction> & {
+function fakeStorage<
+	TAction,
+	TExtensions extends object = {},
+>(): SubmissionStorage<TAction, TExtensions> & {
 	readonly current: unknown;
 } {
-	let stored: ReturnType<SubmissionStorage<TAction>['load']>;
+	let stored: ReturnType<SubmissionStorage<TAction, TExtensions>['load']>;
 	return {
 		get current() {
 			return stored;
@@ -71,8 +82,8 @@ function fakeStorage<TAction>(): SubmissionStorage<TAction> & {
 type Action = {cellID: bigint};
 
 function fakeAdapter(overrides?: {
-	commit?: () => Promise<{hash: `0x${string}`}>;
-	reveal?: () => Promise<{hash: `0x${string}`}>;
+	commit?: () => Promise<CommitOutcome<{test?: {slot: string}}>>;
+	reveal?: () => Promise<RevealOutcome>;
 }) {
 	const calls = {commit: [] as unknown[], reveal: [] as unknown[]};
 	const adapter: CommitRevealAdapter<`0x${string}`, Action> = {
@@ -82,9 +93,13 @@ function fakeAdapter(overrides?: {
 		}),
 		commit: async (params) => {
 			calls.commit.push(params);
-			return overrides?.commit
-				? overrides.commit()
-				: {hash: '0xcommit' as `0x${string}`};
+			// The fake answers for one extension type whatever the caller's: the
+			// seam's commit is generic over it, and the test picks the answer.
+			return (
+				overrides?.commit
+					? await overrides.commit()
+					: {hash: '0xcommit' as `0x${string}`}
+			) as CommitOutcome<never>;
 		},
 		reveal: async (params) => {
 			calls.reveal.push(params);
@@ -1052,11 +1067,14 @@ describe('adopting a submission from somewhere other than storage', () => {
 			committed: true,
 		});
 
+		// With the hash it was committed under, which the adopted record did not
+		// carry: the key a committed turn is filed under.
 		expect(storage.current).toEqual({
 			cycleNumber: 2,
 			actions: [{cellID: 7n}],
 			secret: '0xsecret',
 			committed: true,
+			commitmentHash: '0xhashsecr',
 		});
 		stop();
 	});
@@ -1169,6 +1187,889 @@ describe('adopting a submission from somewhere other than storage', () => {
 		setTime(41);
 		await new Promise((r) => setTimeout(r, 10));
 		expect(calls.reveal).toEqual([]);
+		stop();
+	});
+});
+
+describe('a reveal handed to a scheduler (P3, P7)', () => {
+	type Extensions = {test?: {slot: string}};
+	const scheduler: RevealScheduler<`0x${string}`, Extensions> = {
+		prepare: async () => ({payee: player, value: 0n}),
+		submit: async () => ({test: {slot: 'x'}}),
+	};
+
+	function setup(outcome: CommitOutcome<Extensions>) {
+		const cycles = fakeCycles(0);
+		const storage = fakeStorage<Action, Extensions>();
+		const fake = fakeAdapter({commit: async () => outcome});
+		const submission = createSubmission({
+			cycleInfo: cycles.cycleInfo,
+			adapter: fake.adapter,
+			storage,
+			identity,
+			scheduler,
+			autoReveal: 'fallback',
+		});
+		return {...cycles, storage, ...fake, submission};
+	}
+
+	it('hands the scheduler to the commit, and keeps what it recorded with the turn', async () => {
+		const {storage, calls, submission} = setup({
+			hash: '0xcommit',
+			revealScheduled: true,
+			extensions: {test: {slot: 'cycle_2'}},
+		});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+
+		expect((calls.commit[0] as {scheduler?: unknown}).scheduler).toBe(
+			scheduler,
+		);
+		expect(storage.current).toMatchObject({
+			committed: true,
+			revealScheduled: true,
+			extensions: {test: {slot: 'cycle_2'}},
+		});
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			revealScheduled: true,
+		});
+		stop();
+	});
+
+	it('waits for the fallback point for a turn the scheduler holds', async () => {
+		const {setTime, calls, submission} = setup({
+			hash: '0xcommit',
+			revealScheduled: true,
+		});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+		setTime(41);
+		await new Promise((r) => setTimeout(r, 30));
+		expect(calls.reveal).toHaveLength(0);
+		stop();
+	});
+
+	it('reveals AT ONCE a turn whose scheduling failed, though the game chose fallback', async () => {
+		// The commit stands (P3), and nobody else is going to reveal it.
+		const {setTime, storage, calls, submission} = setup({
+			hash: '0xcommit',
+			revealScheduled: false,
+		});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			revealScheduled: false,
+		});
+		expect(storage.current).toMatchObject({revealScheduled: false});
+
+		setTime(41); // the reveal phase has only just opened
+		await vi.waitFor(() => expect(calls.reveal).toHaveLength(1));
+		stop();
+	});
+
+	it('reads an adapter that ignored the scheduler as NOT scheduled', async () => {
+		const {setTime, calls, submission} = setup({hash: '0xcommit'});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+		expect(submission.value).toMatchObject({revealScheduled: false});
+		setTime(41);
+		await vi.waitFor(() => expect(calls.reveal).toHaveLength(1));
+		stop();
+	});
+
+	it('keeps the per-turn answer across a reload', async () => {
+		const {cycleInfo, setTime} = fakeCycles(0);
+		const storage = fakeStorage<Action, Extensions>();
+		storage.save({
+			cycleNumber: 2,
+			actions: [{cellID: 1n}],
+			secret: '0x01',
+			committed: true,
+			revealScheduled: false,
+		});
+		const {adapter, calls} = fakeAdapter();
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity,
+			scheduler,
+			autoReveal: 'fallback',
+		});
+		const stop = submission.start();
+		setTime(41);
+		await vi.waitFor(() => expect(calls.reveal).toHaveLength(1));
+		stop();
+	});
+});
+
+describe('a reveal somebody else sent is Revealed, not Missed (P9)', () => {
+	function adapterAnswering(
+		status: CommitmentStatus,
+		overrides?: Parameters<typeof fakeAdapter>[0],
+	) {
+		const fake = fakeAdapter(overrides);
+		const asked: unknown[] = [];
+		const adapter: CommitRevealAdapter<`0x${string}`, Action> = {
+			...fake.adapter,
+			commitmentStatus: async (params) => {
+				asked.push(params);
+				return status;
+			},
+		};
+		return {...fake, adapter, asked};
+	}
+
+	it('asks the chain at the cycle turn, and reports a turn it closed as revealed', async () => {
+		const {cycleInfo, setTime} = fakeCycles(0);
+		const storage = fakeStorage<Action>();
+		const {adapter, asked, calls} = adapterAnswering('revealed');
+		const onSettled = vi.fn();
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity,
+			// A scheduler holds the reveal; this browser never reached its fallback.
+			autoReveal: 'never',
+			onSettled,
+		});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+
+		setTime(44); // the next cycle
+		await vi.waitFor(() =>
+			expect(submission.value).toEqual({step: 'Revealed', cycleNumber: 2}),
+		);
+		expect(asked[0]).toMatchObject({
+			identity: player,
+			actions: [{cellID: 1n}],
+			cycleNumber: 2,
+		});
+		expect(onSettled).toHaveBeenCalledOnce();
+		expect(calls.reveal).toHaveLength(0);
+		expect(storage.current).toBeUndefined();
+		stop();
+	});
+
+	it('still reports MISSED a turn the chain is still holding', async () => {
+		const {cycleInfo, setTime} = fakeCycles(0);
+		const storage = fakeStorage<Action>();
+		const {adapter} = adapterAnswering('open');
+		const onSettled = vi.fn();
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity,
+			autoReveal: 'never',
+			onSettled,
+		});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+		setTime(44);
+		await vi.waitFor(() =>
+			expect(submission.value).toEqual({step: 'Missed', cycleNumber: 2}),
+		);
+		expect(onSettled).not.toHaveBeenCalled();
+		stop();
+	});
+
+	it('asks the chain on restore before calling an older turn missed', async () => {
+		for (const [status, step] of [
+			['revealed', 'Revealed'],
+			['open', 'Missed'],
+			['unknown', 'Missed'],
+		] as const) {
+			const {cycleInfo} = fakeCycles(50); // cycle 3; the record is cycle 2's
+			const storage = fakeStorage<Action>();
+			storage.save({
+				cycleNumber: 2,
+				actions: [{cellID: 1n}],
+				secret: '0x01',
+				committed: true,
+			});
+			const {adapter} = adapterAnswering(status);
+			const onSettled = vi.fn();
+			const submission = createSubmission({
+				cycleInfo,
+				adapter,
+				storage,
+				identity,
+				onSettled,
+			});
+			const stop = submission.start();
+			await vi.waitFor(() =>
+				expect(submission.value).toEqual({step, cycleNumber: 2}),
+			);
+			expect(onSettled).toHaveBeenCalledTimes(step === 'Revealed' ? 1 : 0);
+			expect(storage.current).toBeUndefined();
+			stop();
+		}
+	});
+
+	it('reports Revealed when the reveal finds the turn already opened', async () => {
+		const {cycleInfo, setTime} = fakeCycles(0);
+		const storage = fakeStorage<Action>();
+		const {adapter} = fakeAdapter({
+			reveal: async () => ({alreadyRevealed: true}),
+		});
+		const onSettled = vi.fn();
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity,
+			onSettled,
+		});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+		setTime(41);
+		await vi.waitFor(() =>
+			expect(submission.value).toEqual({step: 'Revealed', cycleNumber: 2}),
+		);
+		expect(onSettled).toHaveBeenCalledOnce();
+		expect(storage.current).toBeUndefined();
+		stop();
+	});
+
+	it('reports Revealed when a fallback reveal fails because the turn was opened meanwhile', async () => {
+		// A game's own adapter may still throw on a closed commitment: the chain,
+		// asked, says what happened.
+		const {cycleInfo, setTime} = fakeCycles(0);
+		const storage = fakeStorage<Action>();
+		const {adapter} = adapterAnswering('revealed', {
+			reveal: async () => {
+				throw new Error('There is no commitment on chain left to reveal.');
+			},
+		});
+		const onSettled = vi.fn();
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity,
+			autoReveal: 'fallback',
+			onSettled,
+		});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+		setTime(43); // past the fallback point
+		await vi.waitFor(() =>
+			expect(submission.value).toEqual({step: 'Revealed', cycleNumber: 2}),
+		);
+		expect(onSettled).toHaveBeenCalledOnce();
+		stop();
+	});
+});
+
+describe('a storage that loads asynchronously (Q8-1, Q8-8)', () => {
+	const ALICE = '0x00000000000000000000000000000000000a11ce' as const;
+	const BOB = '0x0000000000000000000000000000000000000b0b' as const;
+
+	/**
+	 * One record per identity, like the skeleton's per-identity storage, behind
+	 * a readiness the test flips: the account data loading, loaded, switching.
+	 */
+	function loadingStorage(who: Readable<`0x${string}` | undefined>) {
+		const records = new Map<string, PersistedSubmission<Action>>();
+		const ready = writable(false);
+		const durable: {
+			gate?: Promise<void>;
+			error?: Error;
+			writes: PersistedSubmission<Action>[];
+		} = {writes: []};
+		const key = () => get(who) ?? 'nobody';
+		const storage: SubmissionStorage<Action> = {
+			ready: {subscribe: ready.subscribe},
+			load: () => records.get(key()),
+			save: (submission) => void records.set(key(), submission),
+			clear: () => void records.delete(key()),
+			saveDurably: async (submission) => {
+				const owner = key();
+				await durable.gate;
+				if (durable.error) throw durable.error;
+				durable.writes.push(submission);
+				records.set(owner, submission);
+			},
+		};
+		return {storage, records, ready, durable};
+	}
+
+	// `null` for nobody: a default parameter would swallow an explicit undefined.
+	function setup(initial: `0x${string}` | null = ALICE) {
+		const cycles = fakeCycles(0);
+		const who = writable<`0x${string}` | undefined>(initial ?? undefined);
+		const loading = loadingStorage(who);
+		const fake = fakeAdapter();
+		const submission = createSubmission({
+			cycleInfo: cycles.cycleInfo,
+			adapter: fake.adapter,
+			storage: loading.storage,
+			identity: who,
+		});
+		return {...cycles, who, ...loading, ...fake, submission};
+	}
+
+	const committedTurn = (cycleNumber = 2): PersistedSubmission<Action> => ({
+		cycleNumber,
+		actions: [{cellID: 9n}],
+		secret: '0x09',
+		committed: true,
+	});
+
+	it('refuses a plan and a commit before ready, and restores once ready', async () => {
+		const {records, ready, calls, submission} = setup();
+		records.set(ALICE, committedTurn());
+		const stop = submission.start();
+
+		// Loading: what is stored is not known yet, so nothing is shown in its
+		// place and nothing can be planned over it.
+		expect(submission.value.step).toBe('Idle');
+		submission.plan([{cellID: 1n}]);
+		expect(submission.value.step).toBe('Idle');
+		await submission.commit();
+		expect(calls.commit).toHaveLength(0);
+
+		ready.set(true);
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			cycleNumber: 2,
+			actions: [{cellID: 9n}],
+		});
+		stop();
+	});
+
+	it('makes a reveal asked for before ready wait, not return', async () => {
+		const {records, ready, calls, setTime, submission} = setup();
+		records.set(ALICE, committedTurn());
+		const stop = submission.start();
+		setTime(41); // reveal phase
+
+		const asked = submission.reveal();
+		await new Promise((r) => setTimeout(r, 20));
+		expect(calls.reveal).toHaveLength(0);
+
+		ready.set(true);
+		await asked;
+		expect(calls.reveal.length).toBeGreaterThanOrEqual(1);
+		await vi.waitFor(() => expect(submission.value.step).toBe('Revealed'));
+		stop();
+	});
+
+	it('clears nothing while loading: a cycle that turns is handled by the restore', async () => {
+		const {records, ready, setTime, submission} = setup();
+		records.set(ALICE, committedTurn(2));
+		const stop = submission.start();
+		setTime(44); // cycle 3, still loading
+		expect(records.get(ALICE)).toBeDefined();
+		expect(submission.value.step).toBe('Idle');
+
+		ready.set(true);
+		// The old reading, with no chain to ask: missed, and cleared now.
+		expect(submission.value).toEqual({step: 'Missed', cycleNumber: 2});
+		expect(records.get(ALICE)).toBeUndefined();
+		stop();
+	});
+
+	it('restores for an identity that arrives after start (a gap even with localStorage)', () => {
+		const {records, ready, who, submission} = setup(null);
+		records.set(ALICE, committedTurn());
+		ready.set(true);
+		const stop = submission.start();
+		expect(submission.value.step).toBe('Idle');
+
+		who.set(ALICE);
+		expect(submission.value).toMatchObject({step: 'Committed', cycleNumber: 2});
+		stop();
+	});
+
+	it('follows an account switch: nothing of one shown as the other, both restored', () => {
+		const {records, ready, who, submission} = setup();
+		records.set(ALICE, committedTurn());
+		ready.set(true);
+		const stop = submission.start();
+		expect(submission.value.step).toBe('Committed');
+
+		// The switch: the data goes back to loading, then the identity moves.
+		ready.set(false);
+		expect(submission.value.step).toBe('Idle');
+		who.set(BOB);
+		expect(submission.value.step).toBe('Idle');
+		ready.set(true);
+		expect(submission.value.step).toBe('Idle');
+		expect(records.get(ALICE)).toBeDefined();
+
+		ready.set(false);
+		who.set(ALICE);
+		ready.set(true);
+		expect(submission.value).toMatchObject({step: 'Committed', cycleNumber: 2});
+		stop();
+	});
+
+	it('writes nothing for one account into another when the switch lands mid-commit', async () => {
+		const cycles = fakeCycles(0);
+		const who = writable<`0x${string}` | undefined>(ALICE);
+		const {storage, records, ready} = loadingStorage(who);
+		let land!: () => void;
+		const {adapter} = fakeAdapter({
+			commit: () =>
+				new Promise((resolve) => {
+					land = () => resolve({hash: '0xcommit'});
+				}),
+		});
+		const submission = createSubmission({
+			cycleInfo: cycles.cycleInfo,
+			adapter,
+			storage,
+			identity: who,
+		});
+		ready.set(true);
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		const committing = submission.commit();
+		await vi.waitFor(() => expect(submission.value.step).toBe('Committing'));
+		// The secret went to ALICE's storage BEFORE the commit was sent.
+		expect(records.get(ALICE)).toMatchObject({committed: false});
+
+		ready.set(false);
+		who.set(BOB);
+		ready.set(true);
+		land();
+		await committing;
+
+		expect(submission.value.step).toBe('Idle');
+		expect(records.get(BOB)).toBeUndefined();
+		// ALICE's record still holds the secret for the commitment that landed;
+		// the chain's hash recovers it when she comes back (see recovery).
+		expect(records.get(ALICE)).toMatchObject({
+			committed: false,
+			secret: expect.any(String),
+		});
+		stop();
+	});
+
+	it('stores the secret DURABLY before sending the commit', async () => {
+		const {ready, durable, calls, submission} = setup();
+		let release!: () => void;
+		durable.gate = new Promise((r) => (release = r));
+		ready.set(true);
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		const committing = submission.commit();
+		await new Promise((r) => setTimeout(r, 20));
+		expect(calls.commit).toHaveLength(0);
+
+		release();
+		await committing;
+		expect(durable.writes[0]).toMatchObject({committed: false});
+		expect(calls.commit).toHaveLength(1);
+		expect(submission.value.step).toBe('Committed');
+		stop();
+	});
+
+	it('refuses the commit when the durable write fails', async () => {
+		const {ready, durable, calls, submission} = setup();
+		durable.error = new Error('account data could not be stored');
+		ready.set(true);
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+		expect(calls.commit).toHaveLength(0);
+		expect(submission.value).toMatchObject({
+			step: 'Error',
+			during: 'commit',
+			message: 'account data could not be stored',
+			actions: [{cellID: 1n}],
+		});
+		stop();
+	});
+});
+
+describe('committed turns kept apart, late records and two devices (Q8-2, Q8-9)', () => {
+	const H1 = `0x${'11'.repeat(24)}` as const;
+	const H2 = `0x${'22'.repeat(24)}` as const;
+
+	/** A storage with the committed turns kept apart, as the account data's. */
+	function splitStorage() {
+		let plan: PersistedSubmission<Action> | undefined;
+		const committed = new Map<string, PersistedSubmission<Action>>();
+		const changes = writable(0);
+		const settled: number[] = [];
+		const storage: SubmissionStorage<Action> = {
+			load: () => plan,
+			save: (s) => {
+				plan = s;
+				const key = `${s.cycleNumber}_${s.commitmentHash}`;
+				if (s.committed && !committed.has(key)) committed.set(key, s);
+			},
+			clear: () => (plan = undefined),
+			committedTurns: (cycle) =>
+				[...committed.values()].filter((t) => t.cycleNumber === cycle),
+			changes,
+			settled: (cycle) => void settled.push(cycle),
+		};
+		/** What another device's write looks like once it has synced. */
+		function arrives(turn: PersistedSubmission<Action>) {
+			committed.set(`${turn.cycleNumber}_${turn.commitmentHash}`, turn);
+			changes.update((n) => n + 1);
+		}
+		return {
+			storage,
+			committed,
+			settled,
+			arrives,
+			get plan() {
+				return plan;
+			},
+			setPlan(p: PersistedSubmission<Action>) {
+				plan = p;
+			},
+		};
+	}
+
+	const theirs = (
+		hash: `0x${string}`,
+		cellID = 7n,
+	): PersistedSubmission<Action> => ({
+		cycleNumber: 2,
+		actions: [{cellID}],
+		secret: '0x07',
+		committed: true,
+		commitmentHash: hash,
+	});
+
+	function setup(live?: LiveCommitment) {
+		const cycles = fakeCycles(0);
+		const split = splitStorage();
+		const fake = fakeAdapter();
+		const liveCommitment = writable<LiveCommitment | undefined>(live);
+		const submission = createSubmission({
+			cycleInfo: cycles.cycleInfo,
+			adapter: fake.adapter,
+			storage: split.storage,
+			identity,
+			liveCommitment,
+			autoCommit: false,
+		});
+		return {...cycles, ...split, ...fake, liveCommitment, submission};
+	}
+
+	it("restores this cycle's committed turn first, then the plan", () => {
+		const {setPlan, arrives, submission} = setup();
+		setPlan({
+			cycleNumber: 2,
+			actions: [{cellID: 1n}],
+			secret: '0x01',
+			committed: false,
+		});
+		arrives(theirs(H1));
+		const stop = submission.start();
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			actions: [{cellID: 7n}],
+		});
+		stop();
+	});
+
+	it('adopts a committed record that arrives after ready, over a local plan', () => {
+		const {arrives, submission} = setup();
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		expect(submission.value.step).toBe('Planning');
+
+		arrives(theirs(H1));
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			cycleNumber: 2,
+			actions: [{cellID: 7n}],
+		});
+		stop();
+	});
+
+	it('does not take a synced record while a commit is in flight', async () => {
+		const cycles = fakeCycles(0);
+		const split = splitStorage();
+		let land!: () => void;
+		const {adapter} = fakeAdapter({
+			commit: () =>
+				new Promise((resolve) => (land = () => resolve({hash: '0xcommit'}))),
+		});
+		const submission = createSubmission({
+			cycleInfo: cycles.cycleInfo,
+			adapter,
+			storage: split.storage,
+			identity,
+		});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		const committing = submission.commit();
+		await vi.waitFor(() => expect(submission.value.step).toBe('Committing'));
+		split.arrives(theirs(H1));
+		expect(submission.value.step).toBe('Committing');
+		land();
+		await committing;
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			actions: [{cellID: 1n}],
+		});
+		stop();
+	});
+
+	it('takes a synced PLAN only into an idle submission', () => {
+		const {storage, setPlan, submission} = setup();
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		setPlan({
+			cycleNumber: 2,
+			actions: [{cellID: 3n}],
+			secret: '0x03',
+			committed: false,
+		});
+		(storage.changes as ReturnType<typeof writable<number>>).update(
+			(n) => n + 1,
+		);
+		expect(submission.value).toMatchObject({actions: [{cellID: 1n}]});
+
+		submission.plan([]);
+		setPlan({
+			cycleNumber: 2,
+			actions: [{cellID: 3n}],
+			secret: '0x03',
+			committed: false,
+		});
+		(storage.changes as ReturnType<typeof writable<number>>).update(
+			(n) => n + 1,
+		);
+		expect(submission.value).toMatchObject({
+			step: 'Planning',
+			actions: [{cellID: 3n}],
+		});
+		stop();
+	});
+
+	it('decides between two devices that both committed by the hash the chain holds', async () => {
+		const {arrives, liveCommitment, setTime, calls, submission} = setup({
+			cycleNumber: 2,
+			hash: H2,
+		});
+		arrives(theirs(H1, 1n));
+		arrives(theirs(H2, 2n));
+		const stop = submission.start();
+		expect(submission.value).toMatchObject({actions: [{cellID: 2n}]});
+
+		// The chain's word changes (the laptop's commitment replaced the
+		// phone's): the turn follows it.
+		liveCommitment.set({cycleNumber: 2, hash: H1});
+		expect(submission.value).toMatchObject({actions: [{cellID: 1n}]});
+
+		setTime(41);
+		await vi.waitFor(() => expect(calls.reveal).toHaveLength(1));
+		expect(calls.reveal[0]).toMatchObject({actions: [{cellID: 1n}]});
+		stop();
+	});
+
+	it('takes up as COMMITTED a plan whose hash the chain holds', () => {
+		// The commit went out and the tab closed (or the account switched) before
+		// the committed record was written: the plan still holds the secret.
+		const {setPlan, committed, submission} = setup({cycleNumber: 2, hash: H1});
+		setPlan({
+			cycleNumber: 2,
+			actions: [{cellID: 4n}],
+			secret: '0x04',
+			committed: false,
+			commitmentHash: H1,
+		});
+		const stop = submission.start();
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			actions: [{cellID: 4n}],
+		});
+		expect(committed.size).toBe(1);
+		stop();
+	});
+
+	it('offers nothing the chain does not hold, so recovery can say so', () => {
+		const {arrives, submission} = setup({cycleNumber: 2, hash: H2});
+		arrives(theirs(H1));
+		const stop = submission.start();
+		expect(submission.value.step).toBe('Idle');
+		stop();
+	});
+
+	it('records the commitment hash with the turn, and lets a revealed turn be pruned', async () => {
+		const {setTime, settled, submission, committed} = setup();
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+		expect([...committed.values()][0].commitmentHash).toMatch(/^0xhash/);
+		setTime(41);
+		await vi.waitFor(() => expect(submission.value.step).toBe('Revealed'));
+		expect(settled).toEqual([2]);
+		stop();
+	});
+});
+
+describe('the review of step 8 item 4: a partly revealed turn, and a reveal across an identity switch', () => {
+	const HEAD0 = `0x${'a0'.repeat(24)}` as const;
+	const HEAD1 = `0x${'a1'.repeat(24)}` as const;
+
+	it('restores a turn the chain holds at a LATER chunk, so the reveal resumes', () => {
+		// After chunk i lands, the chain's head is chunk i+1's hash, not the
+		// turn's first. A reload mid-reveal must still recognise the turn.
+		const {cycleInfo} = fakeCycles(41); // reveal phase of cycle 2
+		const storage = fakeStorage<Action>();
+		storage.save({
+			cycleNumber: 2,
+			actions: [{cellID: 1n}, {cellID: 2n}],
+			secret: '0x01',
+			committed: true,
+			commitmentHash: HEAD0,
+		});
+		const {adapter} = fakeAdapter({reveal: () => new Promise(() => {})});
+		const withHeads: CommitRevealAdapter<`0x${string}`, Action> = {
+			...adapter,
+			isHeadOf: ({head}) => head === HEAD0 || head === HEAD1,
+		};
+		const submission = createSubmission({
+			cycleInfo,
+			adapter: withHeads,
+			storage,
+			identity,
+			liveCommitment: writable<LiveCommitment | undefined>({
+				cycleNumber: 2,
+				hash: HEAD1,
+			}),
+		});
+		const stop = submission.start();
+		expect(['Committed', 'Revealing']).toContain(submission.value.step);
+		stop();
+	});
+
+	it("does not let one identity's finishing reveal touch the next identity's turn", async () => {
+		const ALICE = '0x00000000000000000000000000000000000a11ce' as const;
+		const BOB = '0x0000000000000000000000000000000000000b0b' as const;
+		const who = writable<`0x${string}` | undefined>(ALICE);
+		const records = new Map<string, PersistedSubmission<Action>>();
+		const key = () => get(who) ?? 'nobody';
+		const storage: SubmissionStorage<Action> = {
+			load: () => records.get(key()),
+			save: (s) => void records.set(key(), s),
+			clear: () => void records.delete(key()),
+		};
+		const turnOf = (cellID: bigint): PersistedSubmission<Action> => ({
+			cycleNumber: 2,
+			actions: [{cellID}],
+			secret: '0x01',
+			committed: true,
+		});
+		records.set(ALICE, turnOf(1n));
+		records.set(BOB, turnOf(2n));
+		const {cycleInfo, setTime} = fakeCycles(0);
+		let land!: () => void;
+		const {adapter, calls} = fakeAdapter({
+			reveal: () =>
+				new Promise((resolve) => (land = () => resolve({hash: '0xreveal'}))),
+		});
+		const onSettled = vi.fn();
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity: who,
+			onSettled,
+			autoReveal: 'never',
+		});
+		const stop = submission.start();
+		setTime(41);
+		const revealing = submission.reveal();
+		await vi.waitFor(() => expect(calls.reveal).toHaveLength(1));
+
+		who.set(BOB);
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			actions: [{cellID: 2n}],
+		});
+		land();
+		await revealing;
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			actions: [{cellID: 2n}],
+		});
+		expect(records.get(BOB)).toBeDefined();
+		stop();
+	});
+
+	it('files an adopted turn under its own commitment hash', () => {
+		const {cycleInfo} = fakeCycles(0);
+		const storage = fakeStorage<Action>();
+		const {adapter} = fakeAdapter();
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity,
+		});
+		const stop = submission.start();
+		submission.adopt({
+			cycleNumber: 2,
+			actions: [{cellID: 1n}],
+			secret: '0x0123',
+			committed: true,
+		});
+		expect(storage.current).toMatchObject({commitmentHash: '0xhash0123'});
+		stop();
+	});
+
+	it("forgets the shown turn on a context change, so a later reveal cannot take the previous identity's", async () => {
+		const ALICE = '0x00000000000000000000000000000000000a11ce' as const;
+		const BOB = '0x0000000000000000000000000000000000000b0b' as const;
+		const who = writable<`0x${string}` | undefined>(ALICE);
+		const records = new Map<string, PersistedSubmission<Action>>();
+		const key = () => get(who) ?? 'nobody';
+		const storage: SubmissionStorage<Action> = {
+			load: () => records.get(key()),
+			save: (s) => void records.set(key(), s),
+			clear: () => void records.delete(key()),
+		};
+		records.set(ALICE, {
+			cycleNumber: 2,
+			actions: [{cellID: 1n}],
+			secret: '0x01',
+			committed: true,
+		});
+		const {cycleInfo} = fakeCycles(0);
+		const {adapter, calls} = fakeAdapter({
+			commit: async () => {
+				throw new Error('rejected');
+			},
+		});
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity: who,
+			autoCommit: false,
+		});
+		const stop = submission.start();
+		expect(submission.value).toMatchObject({step: 'Committed'});
+
+		who.set(BOB);
+		submission.plan([{cellID: 2n}]);
+		await submission.commit();
+		expect(submission.value).toMatchObject({step: 'Error', during: 'commit'});
+		await submission.reveal();
+		expect(calls.reveal).toHaveLength(0);
 		stop();
 	});
 });

@@ -9,8 +9,17 @@
  * bond for a turn.
  */
 import {get} from 'svelte/store';
-import {zeroAddress} from 'viem';
-import type {CommitRevealAdapter, PlayerIdentity} from '../seams';
+import {encodeFunctionData, zeroAddress} from 'viem';
+import type {
+	CommitmentStatus,
+	CommitOutcome,
+	CommitRevealAdapter,
+	PlayerIdentity,
+	RevealScheduleRequest,
+	RevealScheduler,
+	RevealTransaction,
+	SchedulerPayment,
+} from '../seams';
 import {receiptPollingInterval} from '../reveal-window';
 import {
 	buildChainedCommitment,
@@ -23,7 +32,53 @@ import type {
 	CommitRevealContract,
 	OnchainIdentity,
 } from './contract';
-import {broadcastMove, confirmMove, sendMove, type MoveDeps} from './send';
+import {broadcastMove, confirmMove, type MoveDeps} from './send';
+
+/** Two heads as the chain means them: hex case is not a difference. */
+function sameHead(a: string, b: string): boolean {
+	return a.toLowerCase() === b.toLowerCase();
+}
+
+/** Nobody to pay: what the commit carries without a scheduler. */
+const NO_PAYMENT: SchedulerPayment = {payee: zeroAddress, value: 0n};
+
+/**
+ * The reveal of a turn as transactions anyone may send, one per chunk, in the
+ * order they must land. The same call the adapter's own reveal makes, at the
+ * same declared gas limit, with nobody paid (`payee` zero, no value): it is
+ * what a scheduler is handed to broadcast later.
+ */
+export function buildRevealTransactions<TAction>(params: {
+	contract: CommitRevealContract;
+	encoding: ActionEncoding;
+	actionsPerReveal: number;
+	revealGas: bigint;
+	player: bigint;
+	actions: readonly TAction[];
+	secret: `0x${string}`;
+}): RevealTransaction[] {
+	const chain = buildCommitmentChain({
+		actions: params.actions,
+		secret: params.secret,
+		actionsPerReveal: params.actionsPerReveal,
+		encoding: params.encoding,
+	});
+	return chain.map((chunk) => ({
+		to: params.contract.address,
+		data: encodeFunctionData({
+			abi: params.contract.abi,
+			functionName: 'reveal',
+			args: [
+				params.player,
+				chunk.actions,
+				params.secret,
+				chunk.furtherActions,
+				zeroAddress,
+			],
+		}),
+		gas: params.revealGas,
+	}));
+}
 
 export type CommitRevealAdapterParams<
 	TIdentity extends PlayerIdentity,
@@ -120,9 +175,68 @@ export function createCommitRevealContractAdapter<
 		buildCommitment: ({actions, secret}) =>
 			buildChainedCommitment({actions, secret, actionsPerReveal, encoding}),
 
-		async commit({identity, hash, actions}) {
+		isHeadOf: ({actions, secret, head}) =>
+			chunkDueNext(
+				buildCommitmentChain({actions, secret, actionsPerReveal, encoding}),
+				head,
+			) !== undefined,
+
+		revealTransactions: ({identity, actions, secret}) =>
+			buildRevealTransactions({
+				contract,
+				encoding,
+				actionsPerReveal,
+				revealGas: gas.reveal,
+				player: params.onchainIdentity(identity),
+				actions,
+				secret,
+			}),
+
+		async commit<TExtensions extends object = {}>({
+			identity,
+			hash,
+			actions,
+			secret,
+			cycleNumber,
+			revealDueAt,
+			scheduler,
+		}: Parameters<CommitRevealAdapter<TIdentity, TAction>['commit']>[0] & {
+			scheduler?: RevealScheduler<TIdentity, TExtensions>;
+		}): Promise<CommitOutcome<TExtensions>> {
 			await params.beforeCommit?.();
 			const executor = await ready();
+
+			// THE SCHEDULER IS ASKED FIRST, and only for the payment: who to pay
+			// and how much, which the commitment then carries, so paying and
+			// committing are one transaction. Its failure fails nothing: the turn
+			// commits unpaid and is reported unscheduled. A manually advanced chain
+			// has no reveal time to schedule for, so nothing is asked.
+			const request: RevealScheduleRequest<TIdentity> | undefined =
+				scheduler && revealDueAt !== undefined
+					? {
+							identity,
+							cycleNumber,
+							revealDueAt,
+							transactions: buildRevealTransactions({
+								contract,
+								encoding,
+								actionsPerReveal,
+								revealGas: gas.reveal,
+								player: params.onchainIdentity(identity),
+								actions,
+								secret,
+							}),
+						}
+					: undefined;
+			let payment: SchedulerPayment | undefined;
+			if (scheduler && request) {
+				try {
+					payment = await scheduler.prepare(request);
+				} catch {
+					payment = undefined;
+				}
+			}
+			const paid = payment ?? NO_PAYMENT;
 
 			// The reserve is read for the bond's cap, from the chain and not a
 			// store: it is one read against a commitment that is about to be
@@ -136,31 +250,100 @@ export function createCommitRevealContractAdapter<
 			})) as bigint;
 			const bond = params.bondFor(actions, reserve);
 
+			const commitTransaction = await broadcastMove(deps, executor, {
+				address: contract.address,
+				abi: contract.abi,
+				functionName: 'makeCommitment',
+				// `identity` is WHO PLAYS; the executor sending this is the signer
+				// acting for it. The contract checks the pair, so a signer that has
+				// not been authorised (or has been revoked) reverts here rather than
+				// quietly bonding its own empty reserve. The commitment, the bond
+				// and what it wins all belong to the identity, so losing this
+				// browser costs a key and nothing else.
+				//
+				// `payee` and `value` are the scheduler's payment, forwarded by the
+				// contract; zero and nothing without one.
+				args: [params.onchainIdentity(identity), hash, bond, paid.payee],
+				...(paid.value > 0n ? {value: paid.value} : {}),
+				account: executor.account,
+				chain: null,
+				// THE LIMIT, DECLARED BY THE DEPLOYMENT. See the reveal below
+				// for why this is passed rather than estimated.
+				gas: gas.commit,
+			});
+
+			// THE SCHEDULE GOES OUT ONCE THE COMMIT IS BROADCAST, beside the wait
+			// for its receipt rather than after it: the tab is most likely to be
+			// closed right after the player commits, and every second the reveal
+			// is not scheduled is a second in which closing it costs the stake.
+			// It cannot fail the commit, so its error is caught here.
+			const scheduled: Promise<{
+				revealScheduled: boolean;
+				extensions?: Partial<TExtensions>;
+			}> =
+				scheduler && request && payment
+					? scheduler.submit({...request, commitTransaction, payment}).then(
+							(extensions) => ({
+								revealScheduled: true,
+								...(extensions ? {extensions} : {}),
+							}),
+							() => ({revealScheduled: false}),
+						)
+					: Promise.resolve({revealScheduled: false});
+
+			await confirmMove(deps, commitTransaction, 'The commitment', receiptPoll);
+			const schedule = await scheduled;
 			return {
-				hash: await sendMove(
-					deps,
-					executor,
-					{
-						address: contract.address,
-						abi: contract.abi,
-						functionName: 'makeCommitment',
-						// `identity` is WHO PLAYS; the executor sending this is the signer
-						// acting for it. The contract checks the pair, so a signer that has
-						// not been authorised (or has been revoked) reverts here rather than
-						// quietly bonding its own empty reserve. The commitment, the bond
-						// and what it wins all belong to the identity, so losing this
-						// browser costs a key and nothing else.
-						args: [params.onchainIdentity(identity), hash, bond, zeroAddress],
-						account: executor.account,
-						chain: null,
-						// THE LIMIT, DECLARED BY THE DEPLOYMENT. See the reveal below
-						// for why this is passed rather than estimated.
-						gas: gas.commit,
-					},
-					'The commitment',
-					receiptPoll,
-				),
+				hash: commitTransaction,
+				...(scheduler ? schedule : {}),
 			};
+		},
+
+		/**
+		 * What the chain says about this cycle's turn (P9), from one read of the
+		 * head:
+		 *
+		 * - still held for `cycleNumber`, from whichever chunk: `open`;
+		 * - closed (cycle zero) on this turn's LAST chunk: `revealed`;
+		 * - anything else, a failed read included: `unknown`.
+		 *
+		 * TWO CLOSINGS LOOK THE SAME AS A REVEAL, and both need the player's own
+		 * other device acting against this one: a cancellation of a ONE-chunk turn
+		 * (cancelling keeps the committed head, which for one chunk is the last),
+		 * and a settlement shown the chunks in a later cycle. Neither is anything
+		 * the framework sends, and the missed-reveal reader still asks the chain
+		 * whether anything is owed.
+		 */
+		async commitmentStatus({
+			identity,
+			actions,
+			secret,
+			cycleNumber,
+		}): Promise<CommitmentStatus> {
+			let onChain: CommitmentOnChain;
+			try {
+				onChain = await headOnChain(identity);
+			} catch {
+				return 'unknown';
+			}
+			const chain = buildCommitmentChain({
+				actions,
+				secret,
+				actionsPerReveal,
+				encoding,
+			});
+			if (onChain.cycleNumber === BigInt(cycleNumber)) {
+				return chunkDueNext(chain, onChain.hash) === undefined
+					? 'unknown'
+					: 'open';
+			}
+			if (
+				onChain.cycleNumber === 0n &&
+				sameHead(onChain.hash, chain[chain.length - 1].hash)
+			) {
+				return 'revealed';
+			}
+			return 'unknown';
 		},
 
 		/**
@@ -187,6 +370,14 @@ export function createCommitRevealContractAdapter<
 			});
 			const onChain = await headOnChain(identity);
 			if (onChain.cycleNumber === 0n) {
+				// SOMEBODY ELSE MAY HAVE OPENED IT, and anyone may: a scheduler, the
+				// player's other device, a stranger. A completed reveal zeroes the
+				// cycle and leaves the head at the last chunk it opened, so a head
+				// equal to this turn's last chunk is this turn, revealed, and not a
+				// failure to report.
+				if (sameHead(onChain.hash, chain[chain.length - 1].hash)) {
+					return {alreadyRevealed: true};
+				}
 				throw new Error('There is no commitment on chain left to reveal.');
 			}
 			const from = chunkDueNext(chain, onChain.hash);
