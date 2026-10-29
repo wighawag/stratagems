@@ -10,7 +10,7 @@
 
 	let expanded = $state(false);
 
-	let accountDataState = $derived(accountData.state$);
+	const lifecycle = accountData.lifecycle$;
 	let operationIds = $derived(accountData.watchItemIds('operations'));
 	let sortedOperationIds = $derived(sortOperationIdsDescending($operationIds));
 	let operationCount = $derived($operationIds?.length || 0);
@@ -47,11 +47,15 @@
 		<!-- Expanded list -->
 		{#if expanded}
 			<div class="max-h-75 overflow-y-auto border-t">
-				{#if $accountDataState.status === 'idle'}
+				{#if $lifecycle.status === 'no-account'}
 					<div class="px-3 py-2 text-xs text-muted-foreground">
 						No account connected
 					</div>
-				{:else if $accountDataState.isLoading}
+				{:else if $lifecycle.status === 'error'}
+					<div class="px-3 py-2 text-xs text-destructive">
+						Could not load: {$lifecycle.error.message}
+					</div>
+				{:else if $lifecycle.status === 'loading'}
 					<div class="px-3 py-2 text-xs text-muted-foreground">Loading...</div>
 				{:else if operationCount == 0}
 					<div class="px-3 py-2 text-xs text-muted-foreground">

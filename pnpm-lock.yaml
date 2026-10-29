@@ -449,8 +449,8 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1(svelte@5.57.1)
       synqable:
-        specifier: ^0.0.13
-        version: 0.0.13
+        specifier: ^0.3.1
+        version: 0.3.1
       tailwind-merge:
         specifier: ^3.6.0
         version: 3.7.0
@@ -5894,8 +5894,8 @@ packages:
     engines: {node: '>=16'}
     hasBin: true
 
-  synqable@0.0.13:
-    resolution: {integrity: sha512-NVccel/juJ3ygpM4iT8Llkwv+DW4MHexa43Kyvhdwk0L0frt3S6xyXF7nrtZ9oj+a1E4iDOdK+I7+UR5NCGrbg==}
+  synqable@0.3.1:
+    resolution: {integrity: sha512-hq56RyOrDdiObF8araov/bv1ItQWZq1wT98FrqlNPZ4grrY/PYi5LLoaI4L+RHj2Ce0q0AxBfqMF2A7giDYZcg==}
 
   tabbable@6.2.0:
     resolution: {integrity: sha512-Cat63mxsVJlzYvN51JmVXIgNoUokrIaT2zLclCXjRd8boZ0004U4KCs/sToJ75C6sdlByWxpYnb5Boif1VSFew==}
@@ -12781,7 +12781,7 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  synqable@0.0.13:
+  synqable@0.3.1:
     dependencies:
       named-logs: 0.4.1
       object-hash: 3.0.0
