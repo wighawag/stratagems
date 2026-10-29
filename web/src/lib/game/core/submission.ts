@@ -718,6 +718,7 @@ export function createSubmission<
 				// player their turn was still going out when the window had shut.
 				onProgress: (progress) => {
 					if (
+						generation === startedIn &&
 						$state.step === 'Revealing' &&
 						$state.cycleNumber === pending.cycleNumber
 					) {
@@ -1044,6 +1045,10 @@ export function createSubmission<
 	 */
 	function leaveContext() {
 		generation++;
+		// The turn it showed is the previous identity's: a later reveal from an
+		// error state must not pick it up.
+		shownTurn = undefined;
+		shownHash = undefined;
 		if ($state.step !== 'Idle') set({step: 'Idle'});
 	}
 

@@ -2030,4 +2030,46 @@ describe('the review of step 8 item 4: a partly revealed turn, and a reveal acro
 		expect(storage.current).toMatchObject({commitmentHash: '0xhash0123'});
 		stop();
 	});
+
+	it("forgets the shown turn on a context change, so a later reveal cannot take the previous identity's", async () => {
+		const ALICE = '0x00000000000000000000000000000000000a11ce' as const;
+		const BOB = '0x0000000000000000000000000000000000000b0b' as const;
+		const who = writable<`0x${string}` | undefined>(ALICE);
+		const records = new Map<string, PersistedSubmission<Action>>();
+		const key = () => get(who) ?? 'nobody';
+		const storage: SubmissionStorage<Action> = {
+			load: () => records.get(key()),
+			save: (s) => void records.set(key(), s),
+			clear: () => void records.delete(key()),
+		};
+		records.set(ALICE, {
+			cycleNumber: 2,
+			actions: [{cellID: 1n}],
+			secret: '0x01',
+			committed: true,
+		});
+		const {cycleInfo} = fakeCycles(0);
+		const {adapter, calls} = fakeAdapter({
+			commit: async () => {
+				throw new Error('rejected');
+			},
+		});
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity: who,
+			autoCommit: false,
+		});
+		const stop = submission.start();
+		expect(submission.value).toMatchObject({step: 'Committed'});
+
+		who.set(BOB);
+		submission.plan([{cellID: 2n}]);
+		await submission.commit();
+		expect(submission.value).toMatchObject({step: 'Error', during: 'commit'});
+		await submission.reveal();
+		expect(calls.reveal).toHaveLength(0);
+		stop();
+	});
 });
