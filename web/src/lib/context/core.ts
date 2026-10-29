@@ -18,6 +18,7 @@ import {
 	type Writable,
 } from 'svelte/store';
 import {createAccountData} from '$lib/account/AccountData.js';
+import {SUBMISSION_FIELDS} from '$lib/game/core/commit-reveal/storage';
 import type {TransactionMetadata} from '$lib/account/AccountData.js';
 import {establishRemoteConnection} from '$lib/core/connection';
 import {
@@ -543,6 +544,12 @@ function buildChainConfig(params: {
 		deployments: deployments.get(),
 		clock,
 		scopeAddress: operationScopeAddress(deployments.get()),
+		// THE COMMIT-REVEAL SUBMISSION LIVES IN THE ACCOUNT DATA (step 8, P8):
+		// every app on this template is a commit-reveal game, so the framework's
+		// two fields (`submissions`, `committedTurns`) are added here, beside
+		// `operations`, and a game's storage is built over them. Synced and
+		// encrypted wherever the account data is.
+		fields: SUBMISSION_FIELDS,
 	});
 
 	return {

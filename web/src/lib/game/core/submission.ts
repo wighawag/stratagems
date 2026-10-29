@@ -35,6 +35,7 @@ import type {
 	RevealScheduler,
 } from './seams';
 import {revealPhaseStartTime, type CycleInfoStore} from './cycle';
+import type {LiveCommitment} from './recovery';
 
 /**
  * What has to survive a reload.
@@ -49,6 +50,12 @@ export type PersistedSubmission<TAction, TExtensions extends object = {}> = {
 	secret: `0x${string}`;
 	/** Set once the commit transaction has been submitted. */
 	committed: boolean;
+	/**
+	 * The commitment's hash, set by the commit. What the chain is asked about:
+	 * where two records claim one cycle (two devices that both committed), the
+	 * one whose hash the chain holds is the turn.
+	 */
+	commitmentHash?: `0x${string}`;
 	/**
 	 * Whether THIS turn's reveal was handed to a scheduler. Absent when the game
 	 * has no scheduler; `false` when it has one and scheduling this turn failed,
@@ -99,6 +106,26 @@ export type SubmissionStorage<TAction, TExtensions extends object = {}> = {
 	saveDurably?(
 		submission: PersistedSubmission<TAction, TExtensions>,
 	): Promise<void>;
+	/**
+	 * Every COMMITTED turn stored for a cycle: kept apart from the plan, never
+	 * overwritten or cleared by the submission, and possibly more than one where
+	 * two devices committed in one cycle (the chain's hash decides). Restore
+	 * looks here first. Absent, the plan's record is all there is.
+	 */
+	committedTurns?(
+		cycleNumber: number,
+	): readonly PersistedSubmission<TAction, TExtensions>[];
+	/**
+	 * Emits when what is stored changes from ELSEWHERE too (another device by
+	 * sync, another tab): the submission then adopts a record that arrived after
+	 * it was ready, under `adopt()`'s own guard.
+	 */
+	changes?: Readable<unknown>;
+	/**
+	 * This cycle's turn is closed on chain (revealed or settled): what is kept
+	 * of it may be pruned.
+	 */
+	settled?(cycleNumber: number): void;
 };
 
 export type SubmissionState<TAction> =
@@ -234,6 +261,13 @@ export function createSubmission<
 	 * under `autoReveal: 'fallback'`.
 	 */
 	scheduler?: RevealScheduler<TIdentity, TExtensions>;
+	/**
+	 * The commitment the chain holds for the cycle in progress, when the game
+	 * reads it (the skeleton passes the missed-reveal reader's). It decides
+	 * between two committed records for one cycle, and takes up a plan whose
+	 * commit went out but was never recorded as committed.
+	 */
+	liveCommitment?: Readable<LiveCommitment | undefined>;
 	/** Who is playing, or undefined when nobody is connected. */
 	identity: Readable<TIdentity | undefined>;
 	/**
@@ -393,7 +427,13 @@ export function createSubmission<
 		store.set(next);
 	}
 
+	/** The committed turn the state shows, and its hash: what reveal opens. */
+	let shownTurn: Persisted | undefined;
+	let shownHash: `0x${string}` | undefined;
+
 	function committedState(record: Persisted): SubmissionState<TAction> {
+		shownTurn = record;
+		shownHash = record.commitmentHash;
 		return {
 			step: 'Committed',
 			cycleNumber: record.cycleNumber,
@@ -545,7 +585,13 @@ export function createSubmission<
 		// the storage can say so: a write still in flight when the tab closes is a
 		// commitment nobody can open, so the commit waits for it, and a write that
 		// failed refuses the commit.
-		const record: Persisted = {cycleNumber, actions, secret, committed: false};
+		const record: Persisted = {
+			cycleNumber,
+			actions,
+			secret,
+			committed: false,
+			commitmentHash: hash,
+		};
 		set({step: 'Committing', cycleNumber, actions});
 		if (storage.saveDurably) {
 			try {
@@ -625,7 +671,15 @@ export function createSubmission<
 		// ASKED FOR BEFORE THE STORAGE IS READY, IT WAITS: returning would look
 		// like "nothing to reveal" when the truth is "not read yet".
 		if (!isReady() && !(await whenReady())) return;
-		const pending = storage.load();
+		// The turn the state shows, which may have come from the committed
+		// turns rather than the plan's record; then whatever storage holds.
+		const pending =
+			shownTurn &&
+			($state.step === 'Committed' || $state.step === 'Error') &&
+			$state.cycleNumber === shownTurn.cycleNumber
+				? shownTurn
+				: (storedTurnFor(cycleInfo.now().currentCycleNumber)?.turn ??
+					storage.load());
 		if (!pending || !pending.committed) return;
 		if ($state.step === 'Revealing' || $state.step === 'Revealed') return;
 
@@ -710,6 +764,7 @@ export function createSubmission<
 			// either way, and the poller will catch up on its own interval.
 		}
 		storage.clear();
+		storage.settled?.(cycleNumber);
 		set({step: 'Revealed', cycleNumber});
 	}
 
@@ -760,6 +815,7 @@ export function createSubmission<
 					// See reportRevealed.
 				}
 				if ($state.step !== 'Idle') return;
+				storage.settled?.(turn.cycleNumber);
 				set({step: 'Revealed', cycleNumber: turn.cycleNumber});
 			} else {
 				set({step: 'Missed', cycleNumber: turn.cycleNumber});
@@ -802,6 +858,15 @@ export function createSubmission<
 	 * reconstructed once is now an ordinary stored submission.
 	 */
 	function adopt(pending: Persisted): boolean {
+		return take(pending, {save: true});
+	}
+
+	/**
+	 * `adopt`'s guard and state change, saving only when asked: a record that
+	 * came FROM storage is already there, and writing it back would only be a
+	 * change for every other device to merge.
+	 */
+	function take(pending: Persisted, options: {save: boolean}): boolean {
 		// Not into a storage that has not loaded: the save below would be lost,
 		// or written over what it is still loading.
 		if (!isReady()) return false;
@@ -810,7 +875,7 @@ export function createSubmission<
 		if ($state.step === 'Committing' || $state.step === 'Revealing')
 			return false;
 
-		storage.save(pending);
+		if (options.save) storage.save(pending);
 		set(
 			pending.committed
 				? committedState(pending)
@@ -823,13 +888,70 @@ export function createSubmission<
 		return true;
 	}
 
+	/** The hash a turn was committed with: recorded, or rebuilt. */
+	function hashOf(turn: Persisted): `0x${string}` {
+		return (
+			turn.commitmentHash ??
+			adapter.buildCommitment({actions: turn.actions, secret: turn.secret}).hash
+		);
+	}
+
+	/**
+	 * THIS CYCLE'S TURN AS STORAGE HOLDS IT: a committed turn first, then the
+	 * plan (Q8-9).
+	 *
+	 * Where the chain's commitment for the cycle is known, IT DECIDES (Q8-8):
+	 * of two committed records (two devices that both committed) the one whose
+	 * hash it holds is the turn; a plan whose hash it holds is a commit that went
+	 * out and was never recorded as committed (the tab closed between the two,
+	 * or the account switched), and is taken up as committed; and a record the
+	 * chain does NOT hold is not offered at all, so the recovery says what it
+	 * should rather than a reveal that cannot land.
+	 */
+	function storedTurnFor(
+		cycleNumber: number,
+	): {turn: Persisted; recovered: boolean} | undefined {
+		const live = params.liveCommitment ? get(params.liveCommitment) : undefined;
+		const liveHash =
+			live && live.cycleNumber === cycleNumber ? live.hash : undefined;
+		const holds = (turn: Persisted) =>
+			liveHash === undefined || sameHash(hashOf(turn), liveHash);
+
+		const plan = storage.load();
+		const committed = (storage.committedTurns?.(cycleNumber) ?? []).filter(
+			holds,
+		);
+		if (committed.length > 0) {
+			// Without the chain's word, the one the plan's record names, else the
+			// first: they are all this player's turns for this cycle.
+			const named =
+				plan && plan.committed
+					? committed.find((turn) => sameHash(hashOf(turn), hashOf(plan)))
+					: undefined;
+			return {turn: named ?? committed[0], recovered: false};
+		}
+		if (!plan || plan.cycleNumber !== cycleNumber) return undefined;
+		if (
+			!plan.committed &&
+			liveHash !== undefined &&
+			plan.commitmentHash !== undefined &&
+			sameHash(plan.commitmentHash, liveHash)
+		) {
+			return {turn: {...plan, committed: true}, recovered: true};
+		}
+		if (plan.committed && !holds(plan)) return undefined;
+		return {turn: plan, recovered: false};
+	}
+
 	/** Adopt whatever was left behind by a previous page load. */
 	function restore() {
 		if (!isReady() || !hasIdentity(currentIdentity())) return;
-		const pending = storage.load();
-		if (!pending) return;
+		const cycleNumber = cycleInfo.now().currentCycleNumber;
+		const current = storedTurnFor(cycleNumber);
+		if (current && take(current.turn, {save: current.recovered})) return;
 
-		if (adopt(pending)) return;
+		const pending = storage.load();
+		if (!pending || pending.cycleNumber === cycleNumber) return;
 
 		// An older cycle. A committed submission that was never revealed has already
 		// cost the player, unless somebody else revealed it; an uncommitted one
@@ -839,6 +961,45 @@ export function createSubmission<
 		} else {
 			storage.clear();
 		}
+	}
+
+	/**
+	 * A record that arrived AFTER ready (another device, by sync; another tab),
+	 * or a chain commitment that now tells two records apart (Q8-2).
+	 *
+	 * Under `adopt()`'s own guard (not while committing or revealing, only for
+	 * the current cycle), so a COMMITTED record replaces an uncommitted local plan
+	 * or a failed commit, and the chain's choice replaces a committed turn it
+	 * does not hold. A synced PLAN is taken only into an idle submission: it does
+	 * not replace one being made here. A cycle already revealed or missed here is
+	 * left alone.
+	 */
+	function adoptLate() {
+		if (!isReady() || !hasIdentity(currentIdentity())) return;
+		if ($state.step === 'Committing' || $state.step === 'Revealing') return;
+		const cycleNumber = cycleInfo.now().currentCycleNumber;
+		if (
+			($state.step === 'Revealed' || $state.step === 'Missed') &&
+			$state.cycleNumber === cycleNumber
+		) {
+			return;
+		}
+		const current = storedTurnFor(cycleNumber);
+		if (!current) return;
+		const {turn} = current;
+		if (turn.committed) {
+			if (
+				$state.step === 'Committed' &&
+				$state.cycleNumber === cycleNumber &&
+				shownHash !== undefined &&
+				sameHash(shownHash, hashOf(turn))
+			) {
+				return;
+			}
+		} else if ($state.step !== 'Idle') {
+			return;
+		}
+		take(turn, {save: current.recovered});
 	}
 
 	/**
@@ -882,6 +1043,15 @@ export function createSubmission<
 			restore();
 		});
 
+		// Records arriving from elsewhere, and the chain's word on which turn it
+		// holds: both may change which turn this cycle's is.
+		const unsubscribeChanges = storage.changes
+			? storage.changes.subscribe(() => adoptLate())
+			: () => {};
+		const unsubscribeLive = params.liveCommitment
+			? params.liveCommitment.subscribe(() => adoptLate())
+			: () => {};
+
 		let previousCycleNumber: number | undefined;
 
 		const unsubscribeCycle = cycleInfo.subscribe(($info) => {
@@ -897,7 +1067,10 @@ export function createSubmission<
 					// The cycle turned over with a commitment still open here: the
 					// reveal window is gone, and the chain says whether somebody else
 					// used it.
-					const turn = storage.load();
+					const turn =
+						shownTurn && shownTurn.cycleNumber === $state.cycleNumber
+							? shownTurn
+							: storage.load();
 					if (turn && turn.cycleNumber === $state.cycleNumber) {
 						closeEarlierTurn(turn, currentIdentity());
 					} else {
@@ -960,6 +1133,8 @@ export function createSubmission<
 			unsubscribeCycle();
 			unsubscribeIdentity();
 			unsubscribeReady();
+			unsubscribeChanges();
+			unsubscribeLive();
 			const release = releaseWaiters;
 			releaseWaiters = undefined;
 			release?.();
@@ -978,6 +1153,11 @@ export function createSubmission<
 		adopt,
 		start,
 	};
+}
+
+/** Two hashes as the chain means them: hex case is not a difference. */
+function sameHash(a: string, b: string): boolean {
+	return a.toLowerCase() === b.toLowerCase();
 }
 
 function messageOf(error: unknown): string {

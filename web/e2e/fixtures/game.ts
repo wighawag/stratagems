@@ -361,3 +361,42 @@ export async function clickCanvas(
 		box.y + box.height / 2 + offset.y,
 	);
 }
+
+/**
+ * Lose everything this browser knows about the submission, without losing WHO
+ * the player is, and reload.
+ *
+ * The submission lives in the ACCOUNT DATA (step 8, P8): the `submissions` and
+ * `committedTurns` fields of every `__private__` record in `localStorage`.
+ * They are emptied by a script that runs BEFORE the app on the reload, once:
+ * emptied from the running page instead, the account data still holds them in
+ * memory and its next save (any transaction update) would write them back.
+ */
+export async function forgetSubmissionAndReload(page: Page): Promise<void> {
+	const once = `__e2e_forget_submission_${Date.now()}`;
+	await page.addInitScript((flag) => {
+		if (sessionStorage.getItem(flag)) return;
+		sessionStorage.setItem(flag, '1');
+		for (let i = 0; i < localStorage.length; i++) {
+			const key = localStorage.key(i);
+			if (!key?.startsWith('__private__')) continue;
+			try {
+				const blob = JSON.parse(localStorage.getItem(key) ?? '') as {
+					data?: Record<string, unknown>;
+					$itemTimestamps?: Record<string, unknown>;
+				};
+				if (!blob?.data) continue;
+				blob.data.submissions = {};
+				blob.data.committedTurns = {};
+				if (blob.$itemTimestamps) {
+					blob.$itemTimestamps.submissions = {};
+					blob.$itemTimestamps.committedTurns = {};
+				}
+				localStorage.setItem(key, JSON.stringify(blob));
+			} catch {
+				// Other things share the prefix; only account data parses this way.
+			}
+		}
+	}, once);
+	await page.reload();
+}

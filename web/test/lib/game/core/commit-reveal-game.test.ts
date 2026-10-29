@@ -1,4 +1,4 @@
-import {describe, it, expect, vi} from 'vitest';
+import {describe, it, expect, expectTypeOf, vi} from 'vitest';
 import {get, readable, writable, type Readable} from 'svelte/store';
 import {
 	canTakeTurnNow,
@@ -188,7 +188,12 @@ type TestGame = {
 	};
 	stake: {step: 'stake'};
 	surface: unknown;
+	/** A layer's namespace, as a layer would export it and a game compose it. */
+	extensions: TestLayer;
 };
+
+/** What a layer keeps with each turn, under its own namespace. */
+type TestLayer = {test?: {slot: string; batch: number}};
 
 function compose(
 	overrides: {
@@ -428,6 +433,50 @@ describe('the skeleton, wired', () => {
 			committed: false,
 		});
 		expect(saved).toHaveLength(1);
+	});
+
+	it("keeps a game's composed extension type end to end, with no cast", () => {
+		type Persisted = submissionModule.PersistedSubmission<number, TestLayer>;
+		// What the scheduler part may return is the layer's namespace...
+		type Scheduler = NonNullable<
+			Parameters<typeof createCommitRevealGame<TestGame>>[1]['scheduler']
+		>;
+		expectTypeOf<
+			Awaited<ReturnType<Scheduler['submit']>>
+		>().toEqualTypeOf<Partial<TestLayer> | void>();
+		// ...what the game's storage stores and loads carries it...
+		type Storage = ReturnType<
+			Parameters<typeof createCommitRevealGame<TestGame>>[1]['storageFor']
+		>;
+		expectTypeOf<ReturnType<Storage['load']>>().toEqualTypeOf<
+			Persisted | undefined
+		>();
+		// ...and the submission hands it to the game typed.
+		const {crg} = compose();
+		expectTypeOf(crg.game.submission.adopt)
+			.parameter(0)
+			.toEqualTypeOf<Persisted>();
+		const loaded: Persisted = {
+			cycleNumber: 1,
+			actions: [1],
+			secret: '0x01',
+			committed: true,
+			extensions: {test: {slot: 'cycle_1', batch: 2}},
+		};
+		expectTypeOf(loaded.extensions!.test!.batch).toEqualTypeOf<number>();
+		// The type assertions above are checked by `pnpm check`; this one runs.
+		expect(loaded.extensions?.test?.batch).toBe(2);
+		// And a game with no layer gets `{}`, not `unknown`.
+		type NoLayer = Omit<TestGame, 'extensions'>;
+		expectTypeOf<
+			ReturnType<
+				ReturnType<
+					Parameters<typeof createCommitRevealGame<NoLayer>>[1]['storageFor']
+				>['load']
+			>
+		>().toEqualTypeOf<
+			submissionModule.PersistedSubmission<number, {}> | undefined
+		>();
 	});
 
 	it('shows the board through the held store and the game merge', () => {

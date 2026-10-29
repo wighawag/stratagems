@@ -19,6 +19,7 @@ import type {
 	RevealOutcome,
 	RevealScheduler,
 } from '$lib/game/core/seams';
+import type {LiveCommitment} from '$lib/game/core/recovery';
 
 const config: CycleConfig = {
 	commitPhaseDuration: 40,
@@ -1688,6 +1689,230 @@ describe('a storage that loads asynchronously (Q8-1, Q8-8)', () => {
 			message: 'account data could not be stored',
 			actions: [{cellID: 1n}],
 		});
+		stop();
+	});
+});
+
+describe('committed turns kept apart, late records and two devices (Q8-2, Q8-9)', () => {
+	const H1 = `0x${'11'.repeat(24)}` as const;
+	const H2 = `0x${'22'.repeat(24)}` as const;
+
+	/** A storage with the committed turns kept apart, as the account data's. */
+	function splitStorage() {
+		let plan: PersistedSubmission<Action> | undefined;
+		const committed = new Map<string, PersistedSubmission<Action>>();
+		const changes = writable(0);
+		const settled: number[] = [];
+		const storage: SubmissionStorage<Action> = {
+			load: () => plan,
+			save: (s) => {
+				plan = s;
+				const key = `${s.cycleNumber}_${s.commitmentHash}`;
+				if (s.committed && !committed.has(key)) committed.set(key, s);
+			},
+			clear: () => (plan = undefined),
+			committedTurns: (cycle) =>
+				[...committed.values()].filter((t) => t.cycleNumber === cycle),
+			changes,
+			settled: (cycle) => void settled.push(cycle),
+		};
+		/** What another device's write looks like once it has synced. */
+		function arrives(turn: PersistedSubmission<Action>) {
+			committed.set(`${turn.cycleNumber}_${turn.commitmentHash}`, turn);
+			changes.update((n) => n + 1);
+		}
+		return {
+			storage,
+			committed,
+			settled,
+			arrives,
+			get plan() {
+				return plan;
+			},
+			setPlan(p: PersistedSubmission<Action>) {
+				plan = p;
+			},
+		};
+	}
+
+	const theirs = (
+		hash: `0x${string}`,
+		cellID = 7n,
+	): PersistedSubmission<Action> => ({
+		cycleNumber: 2,
+		actions: [{cellID}],
+		secret: '0x07',
+		committed: true,
+		commitmentHash: hash,
+	});
+
+	function setup(live?: LiveCommitment) {
+		const cycles = fakeCycles(0);
+		const split = splitStorage();
+		const fake = fakeAdapter();
+		const liveCommitment = writable<LiveCommitment | undefined>(live);
+		const submission = createSubmission({
+			cycleInfo: cycles.cycleInfo,
+			adapter: fake.adapter,
+			storage: split.storage,
+			identity,
+			liveCommitment,
+			autoCommit: false,
+		});
+		return {...cycles, ...split, ...fake, liveCommitment, submission};
+	}
+
+	it("restores this cycle's committed turn first, then the plan", () => {
+		const {setPlan, arrives, submission} = setup();
+		setPlan({
+			cycleNumber: 2,
+			actions: [{cellID: 1n}],
+			secret: '0x01',
+			committed: false,
+		});
+		arrives(theirs(H1));
+		const stop = submission.start();
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			actions: [{cellID: 7n}],
+		});
+		stop();
+	});
+
+	it('adopts a committed record that arrives after ready, over a local plan', () => {
+		const {arrives, submission} = setup();
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		expect(submission.value.step).toBe('Planning');
+
+		arrives(theirs(H1));
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			cycleNumber: 2,
+			actions: [{cellID: 7n}],
+		});
+		stop();
+	});
+
+	it('does not take a synced record while a commit is in flight', async () => {
+		const cycles = fakeCycles(0);
+		const split = splitStorage();
+		let land!: () => void;
+		const {adapter} = fakeAdapter({
+			commit: () =>
+				new Promise((resolve) => (land = () => resolve({hash: '0xcommit'}))),
+		});
+		const submission = createSubmission({
+			cycleInfo: cycles.cycleInfo,
+			adapter,
+			storage: split.storage,
+			identity,
+		});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		const committing = submission.commit();
+		await vi.waitFor(() => expect(submission.value.step).toBe('Committing'));
+		split.arrives(theirs(H1));
+		expect(submission.value.step).toBe('Committing');
+		land();
+		await committing;
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			actions: [{cellID: 1n}],
+		});
+		stop();
+	});
+
+	it('takes a synced PLAN only into an idle submission', () => {
+		const {storage, setPlan, submission} = setup();
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		setPlan({
+			cycleNumber: 2,
+			actions: [{cellID: 3n}],
+			secret: '0x03',
+			committed: false,
+		});
+		(storage.changes as ReturnType<typeof writable<number>>).update(
+			(n) => n + 1,
+		);
+		expect(submission.value).toMatchObject({actions: [{cellID: 1n}]});
+
+		submission.plan([]);
+		setPlan({
+			cycleNumber: 2,
+			actions: [{cellID: 3n}],
+			secret: '0x03',
+			committed: false,
+		});
+		(storage.changes as ReturnType<typeof writable<number>>).update(
+			(n) => n + 1,
+		);
+		expect(submission.value).toMatchObject({
+			step: 'Planning',
+			actions: [{cellID: 3n}],
+		});
+		stop();
+	});
+
+	it('decides between two devices that both committed by the hash the chain holds', async () => {
+		const {arrives, liveCommitment, setTime, calls, submission} = setup({
+			cycleNumber: 2,
+			hash: H2,
+		});
+		arrives(theirs(H1, 1n));
+		arrives(theirs(H2, 2n));
+		const stop = submission.start();
+		expect(submission.value).toMatchObject({actions: [{cellID: 2n}]});
+
+		// The chain's word changes (the laptop's commitment replaced the
+		// phone's): the turn follows it.
+		liveCommitment.set({cycleNumber: 2, hash: H1});
+		expect(submission.value).toMatchObject({actions: [{cellID: 1n}]});
+
+		setTime(41);
+		await vi.waitFor(() => expect(calls.reveal).toHaveLength(1));
+		expect(calls.reveal[0]).toMatchObject({actions: [{cellID: 1n}]});
+		stop();
+	});
+
+	it('takes up as COMMITTED a plan whose hash the chain holds', () => {
+		// The commit went out and the tab closed (or the account switched) before
+		// the committed record was written: the plan still holds the secret.
+		const {setPlan, committed, submission} = setup({cycleNumber: 2, hash: H1});
+		setPlan({
+			cycleNumber: 2,
+			actions: [{cellID: 4n}],
+			secret: '0x04',
+			committed: false,
+			commitmentHash: H1,
+		});
+		const stop = submission.start();
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			actions: [{cellID: 4n}],
+		});
+		expect(committed.size).toBe(1);
+		stop();
+	});
+
+	it('offers nothing the chain does not hold, so recovery can say so', () => {
+		const {arrives, submission} = setup({cycleNumber: 2, hash: H2});
+		arrives(theirs(H1));
+		const stop = submission.start();
+		expect(submission.value.step).toBe('Idle');
+		stop();
+	});
+
+	it('records the commitment hash with the turn, and lets a revealed turn be pruned', async () => {
+		const {setTime, settled, submission, committed} = setup();
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+		expect([...committed.values()][0].commitmentHash).toMatch(/^0xhash/);
+		setTime(41);
+		await vi.waitFor(() => expect(submission.value.step).toBe('Revealed'));
+		expect(settled).toEqual([2]);
 		stop();
 	});
 });

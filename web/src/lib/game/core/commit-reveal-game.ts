@@ -726,6 +726,10 @@ export function createCommitRevealGame<T extends GameTypes>(
 		}),
 		storage,
 		identity,
+		// The chain's commitment for the cycle in progress, which the
+		// missed-reveal reader already reads: it decides between two stored
+		// turns for one cycle, and takes up a commit that was never recorded.
+		liveCommitment: missedReveal.commitment,
 		...(parts.scheduler ? {scheduler: parts.scheduler} : {}),
 		...(parts.submission?.commitWhenIdle
 			? {commitWhenIdle: parts.submission.commitWhenIdle}

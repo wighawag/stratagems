@@ -51,11 +51,8 @@ import {
 	gameContract,
 	type Placement,
 } from '$lib/placement/commit-reveal';
-import {
-	createSubmissionStorage,
-	loadCommittedTurn,
-	submissionStorageKey,
-} from '$lib/placement/storage';
+import {createSubmissionStorage} from '$lib/placement/storage';
+import {storedTurnsFor} from '$lib/game/core/commit-reveal/storage';
 import {createPlanning, type PlanningStore} from '$lib/placement/planning';
 import {createCycleReader} from '$lib/game/core/commit-reveal/cycle';
 import {
@@ -278,6 +275,16 @@ export function createGameContext(core: CoreServices): GameContext {
 	// The stake is filed under WHO PLAYS, not under who signed in.
 	const reserve = createReserve({deps: core, config, identity: activeIdentity});
 
+	// Keyed by WHO PLAYS, which is what the contract's commitment is keyed by,
+	// in the account data, so it is synced and encrypted with it.
+	const storageFor = (player: GameIdentity) =>
+		createSubmissionStorage({
+			accountData: core.accountData,
+			chainId: deployments.chain.id,
+			contract: deployments.contracts.Game.address,
+			player,
+		});
+
 	// The commit-reveal wiring is the framework's; what follows is this game.
 	const crg = createCommitRevealGame<PlacementGame>(core, {
 		identity: activeIdentity,
@@ -316,15 +323,13 @@ export function createGameContext(core: CoreServices): GameContext {
 				deps: core,
 				config,
 				identity: activeIdentity,
-				committedTurn: (player) =>
-					loadCommittedTurn(
-						submissionStorageKey({
-							chainID: deployments.chain.id,
-							gameAddress: deployments.contracts.Game.address,
-							player,
-						}),
-					),
-				onSettled: () => void reserve.update(),
+				committedTurn: (player, cycleNumber) =>
+					storedTurnsFor(storageFor(player), cycleNumber),
+				// Settled on chain: what is kept of that turn may now be pruned.
+				onSettled: ({player, cycleNumber}) => {
+					storageFor(player).settled(cycleNumber);
+					void reserve.update();
+				},
 			}),
 		blocksCommitting,
 		adapter: ({beforeCommit}) =>
@@ -340,15 +345,7 @@ export function createGameContext(core: CoreServices): GameContext {
 				secret,
 				actionsPerReveal: config.actionsPerReveal,
 			}),
-		// Keyed by WHO PLAYS, which is what the contract's commitment is keyed by.
-		storageFor: (player) =>
-			createSubmissionStorage({
-				key: submissionStorageKey({
-					chainID: deployments.chain.id,
-					gameAddress: deployments.contracts.Game.address,
-					player,
-				}),
-			}),
+		storageFor,
 		// The type this game constructs at its own boundary, not a fresh look at
 		// the node's wording: retrying any other failure would burn the top-up.
 		isOutOfGas: (error) => error instanceof SignerOutOfFundsError,

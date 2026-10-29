@@ -20,9 +20,10 @@ import type {SenderRegistry} from '$lib/core/connection/senders';
 import type {TxSource} from '$lib/core/connection/tx-source';
 import type {TrackedWalletClientAutoPopulate} from '@etherkit/viem-tx-tracker';
 import type {
-	MultiAccountDataStore,
+	AccountDataStore,
 	TransactionMetadata,
 } from '$lib/account/AccountData';
+import type {SubmissionFields} from '$lib/game/core/commit-reveal/storage';
 import type {DelegationStore} from '$lib/onchain/delegation';
 import type {AppMembers} from '$app-specific';
 import type {ClockStore} from '$lib/core/clock';
@@ -246,7 +247,11 @@ export type CoreContext = {
 	publicClient: TypedPublicClient;
 	account: AccountStore;
 	deployments: DeploymentsStore;
-	accountData: MultiAccountDataStore;
+	/**
+	 * With the commit-reveal submission's fields (`SUBMISSION_FIELDS`) beside
+	 * `operations`: see `buildChainConfig` in `./core.ts`.
+	 */
+	accountData: AccountDataStore<SubmissionFields>;
 	/**
 	 * Whether this browser's signer may act for the account, read from the chain
 	 * and kept live.
