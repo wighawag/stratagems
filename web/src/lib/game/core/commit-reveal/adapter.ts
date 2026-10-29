@@ -175,6 +175,12 @@ export function createCommitRevealContractAdapter<
 		buildCommitment: ({actions, secret}) =>
 			buildChainedCommitment({actions, secret, actionsPerReveal, encoding}),
 
+		isHeadOf: ({actions, secret, head}) =>
+			chunkDueNext(
+				buildCommitmentChain({actions, secret, actionsPerReveal, encoding}),
+				head,
+			) !== undefined,
+
 		revealTransactions: ({identity, actions, secret}) =>
 			buildRevealTransactions({
 				contract,

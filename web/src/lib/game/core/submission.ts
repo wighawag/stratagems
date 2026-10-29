@@ -671,6 +671,10 @@ export function createSubmission<
 		// ASKED FOR BEFORE THE STORAGE IS READY, IT WAITS: returning would look
 		// like "nothing to reveal" when the truth is "not read yet".
 		if (!isReady() && !(await whenReady())) return;
+		// Everything below awaits the chain; an identity or account change
+		// meanwhile makes this reveal another context's, and it must then touch
+		// neither the new context's storage nor its state.
+		const startedIn = generation;
 		// The turn the state shows, which may have come from the committed
 		// turns rather than the plan's record; then whatever storage holds.
 		const pending =
@@ -721,18 +725,22 @@ export function createSubmission<
 					}
 				},
 			});
-			await reportRevealed(pending.cycleNumber);
+			if (generation !== startedIn) return;
+			await reportRevealed(pending.cycleNumber, startedIn);
 		} catch (error) {
+			if (generation !== startedIn) return;
 			// A REVEAL THAT FAILED BECAUSE THE TURN IS ALREADY OPEN is a revealed
 			// turn: a game's adapter may throw where the base's reports it, so the
 			// chain is asked before the failure is believed.
 			if (
 				(await statusOnChain(pending, player)) === 'revealed' &&
+				generation === startedIn &&
 				isRevealing(pending.cycleNumber)
 			) {
-				await reportRevealed(pending.cycleNumber);
+				await reportRevealed(pending.cycleNumber, startedIn);
 				return;
 			}
+			if (generation !== startedIn) return;
 			// The stored submission is deliberately KEPT: the reveal can be retried for
 			// as long as the phase lasts, and dropping the secret here would
 			// forfeit the stake over a rejected wallet prompt.
@@ -756,13 +764,14 @@ export function createSubmission<
 	}
 
 	/** Refresh FIRST, then report revealed: see the note on onSettled. */
-	async function reportRevealed(cycleNumber: number) {
+	async function reportRevealed(cycleNumber: number, startedIn: number) {
 		try {
 			await params.onSettled?.();
 		} catch {
 			// A failed refresh is not a failed reveal. The reveal is on chain
 			// either way, and the poller will catch up on its own interval.
 		}
+		if (generation !== startedIn) return;
 		storage.clear();
 		storage.settled?.(cycleNumber);
 		set({step: 'Revealed', cycleNumber});
@@ -805,16 +814,17 @@ export function createSubmission<
 			return;
 		}
 		set({step: 'Idle'});
+		const startedIn = generation;
 		void (async () => {
 			const status = await statusOnChain(turn, player);
-			if ($state.step !== 'Idle') return;
+			if (generation !== startedIn || $state.step !== 'Idle') return;
 			if (status === 'revealed') {
 				try {
 					await params.onSettled?.();
 				} catch {
 					// See reportRevealed.
 				}
-				if ($state.step !== 'Idle') return;
+				if (generation !== startedIn || $state.step !== 'Idle') return;
 				storage.settled?.(turn.cycleNumber);
 				set({step: 'Revealed', cycleNumber: turn.cycleNumber});
 			} else {
@@ -875,7 +885,15 @@ export function createSubmission<
 		if ($state.step === 'Committing' || $state.step === 'Revealing')
 			return false;
 
-		if (options.save) storage.save(pending);
+		// Filed under its own hash, which a turn adopted from recovery does not
+		// carry: two adoptions for one cycle must not share a key.
+		if (options.save) {
+			storage.save(
+				pending.commitmentHash
+					? pending
+					: {...pending, commitmentHash: hashOf(pending)},
+			);
+		}
 		set(
 			pending.committed
 				? committedState(pending)
@@ -886,6 +904,23 @@ export function createSubmission<
 					},
 		);
 		return true;
+	}
+
+	/**
+	 * Whether the chain's head `head` is this turn's, at ANY of its chunks: after
+	 * a chunk lands the head is the next chunk's hash, so a turn part way through
+	 * its reveal is still this turn. Only the adapter knows how a turn is cut;
+	 * without `isHeadOf` the committed hash is all that is recognised.
+	 */
+	function isHeldAt(turn: Persisted, head: `0x${string}`): boolean {
+		if (adapter.isHeadOf) {
+			return adapter.isHeadOf({
+				actions: turn.actions,
+				secret: turn.secret,
+				head,
+			});
+		}
+		return sameHash(hashOf(turn), head);
 	}
 
 	/** The hash a turn was committed with: recorded, or rebuilt. */
@@ -915,7 +950,7 @@ export function createSubmission<
 		const liveHash =
 			live && live.cycleNumber === cycleNumber ? live.hash : undefined;
 		const holds = (turn: Persisted) =>
-			liveHash === undefined || sameHash(hashOf(turn), liveHash);
+			liveHash === undefined || isHeldAt(turn, liveHash);
 
 		const plan = storage.load();
 		const committed = (storage.committedTurns?.(cycleNumber) ?? []).filter(
@@ -935,7 +970,7 @@ export function createSubmission<
 			!plan.committed &&
 			liveHash !== undefined &&
 			plan.commitmentHash !== undefined &&
-			sameHash(plan.commitmentHash, liveHash)
+			isHeldAt(plan, liveHash)
 		) {
 			return {turn: {...plan, committed: true}, recovered: true};
 		}

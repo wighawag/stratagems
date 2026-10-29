@@ -184,6 +184,19 @@ export type CommitRevealAdapter<TIdentity extends PlayerIdentity, TAction> = {
 	}): readonly RevealTransaction[];
 
 	/**
+	 * Whether `head`, a head the chain holds, belongs to this turn: its first
+	 * hash OR any later chunk's. A turn of several chunks moves the chain's head
+	 * as each lands, so a reload in the middle of a reveal finds a head that is
+	 * not the committed hash, and only the adapter knows how the turn is cut.
+	 * Optional: without it, only the committed hash is recognised.
+	 */
+	isHeadOf?(params: {
+		actions: readonly TAction[];
+		secret: `0x${string}`;
+		head: `0x${string}`;
+	}): boolean;
+
+	/**
 	 * What the chain says about this cycle's turn, asked before the submission
 	 * calls it missed: a reveal by SOMEBODY ELSE (a scheduler, another device, a
 	 * stranger: anyone may reveal) leaves this browser `Committed` with nothing

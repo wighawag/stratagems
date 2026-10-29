@@ -1067,11 +1067,14 @@ describe('adopting a submission from somewhere other than storage', () => {
 			committed: true,
 		});
 
+		// With the hash it was committed under, which the adopted record did not
+		// carry: the key a committed turn is filed under.
 		expect(storage.current).toEqual({
 			cycleNumber: 2,
 			actions: [{cellID: 7n}],
 			secret: '0xsecret',
 			committed: true,
+			commitmentHash: '0xhashsecr',
 		});
 		stop();
 	});
@@ -1913,6 +1916,118 @@ describe('committed turns kept apart, late records and two devices (Q8-2, Q8-9)'
 		setTime(41);
 		await vi.waitFor(() => expect(submission.value.step).toBe('Revealed'));
 		expect(settled).toEqual([2]);
+		stop();
+	});
+});
+
+describe('the review of step 8 item 4: a partly revealed turn, and a reveal across an identity switch', () => {
+	const HEAD0 = `0x${'a0'.repeat(24)}` as const;
+	const HEAD1 = `0x${'a1'.repeat(24)}` as const;
+
+	it('restores a turn the chain holds at a LATER chunk, so the reveal resumes', () => {
+		// After chunk i lands, the chain's head is chunk i+1's hash, not the
+		// turn's first. A reload mid-reveal must still recognise the turn.
+		const {cycleInfo} = fakeCycles(41); // reveal phase of cycle 2
+		const storage = fakeStorage<Action>();
+		storage.save({
+			cycleNumber: 2,
+			actions: [{cellID: 1n}, {cellID: 2n}],
+			secret: '0x01',
+			committed: true,
+			commitmentHash: HEAD0,
+		});
+		const {adapter} = fakeAdapter({reveal: () => new Promise(() => {})});
+		const withHeads: CommitRevealAdapter<`0x${string}`, Action> = {
+			...adapter,
+			isHeadOf: ({head}) => head === HEAD0 || head === HEAD1,
+		};
+		const submission = createSubmission({
+			cycleInfo,
+			adapter: withHeads,
+			storage,
+			identity,
+			liveCommitment: writable<LiveCommitment | undefined>({
+				cycleNumber: 2,
+				hash: HEAD1,
+			}),
+		});
+		const stop = submission.start();
+		expect(['Committed', 'Revealing']).toContain(submission.value.step);
+		stop();
+	});
+
+	it("does not let one identity's finishing reveal touch the next identity's turn", async () => {
+		const ALICE = '0x00000000000000000000000000000000000a11ce' as const;
+		const BOB = '0x0000000000000000000000000000000000000b0b' as const;
+		const who = writable<`0x${string}` | undefined>(ALICE);
+		const records = new Map<string, PersistedSubmission<Action>>();
+		const key = () => get(who) ?? 'nobody';
+		const storage: SubmissionStorage<Action> = {
+			load: () => records.get(key()),
+			save: (s) => void records.set(key(), s),
+			clear: () => void records.delete(key()),
+		};
+		const turnOf = (cellID: bigint): PersistedSubmission<Action> => ({
+			cycleNumber: 2,
+			actions: [{cellID}],
+			secret: '0x01',
+			committed: true,
+		});
+		records.set(ALICE, turnOf(1n));
+		records.set(BOB, turnOf(2n));
+		const {cycleInfo, setTime} = fakeCycles(0);
+		let land!: () => void;
+		const {adapter, calls} = fakeAdapter({
+			reveal: () =>
+				new Promise((resolve) => (land = () => resolve({hash: '0xreveal'}))),
+		});
+		const onSettled = vi.fn();
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity: who,
+			onSettled,
+			autoReveal: 'never',
+		});
+		const stop = submission.start();
+		setTime(41);
+		const revealing = submission.reveal();
+		await vi.waitFor(() => expect(calls.reveal).toHaveLength(1));
+
+		who.set(BOB);
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			actions: [{cellID: 2n}],
+		});
+		land();
+		await revealing;
+		expect(submission.value).toMatchObject({
+			step: 'Committed',
+			actions: [{cellID: 2n}],
+		});
+		expect(records.get(BOB)).toBeDefined();
+		stop();
+	});
+
+	it('files an adopted turn under its own commitment hash', () => {
+		const {cycleInfo} = fakeCycles(0);
+		const storage = fakeStorage<Action>();
+		const {adapter} = fakeAdapter();
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity,
+		});
+		const stop = submission.start();
+		submission.adopt({
+			cycleNumber: 2,
+			actions: [{cellID: 1n}],
+			secret: '0x0123',
+			committed: true,
+		});
+		expect(storage.current).toMatchObject({commitmentHash: '0xhash0123'});
 		stop();
 	});
 });
