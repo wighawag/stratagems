@@ -70,11 +70,8 @@ import {
 	MOVE_ENCODING,
 	type Move,
 } from './moves';
-import {
-	createSubmissionStorage,
-	loadCommittedTurn,
-	submissionStorageKey,
-} from './submission-storage';
+import {createSubmissionStorage} from './submission-storage';
+import {storedTurnsFor} from '$lib/game/core/commit-reveal/storage';
 import {createIndexedBoard, type BoardState} from './board/indexed-board';
 import {createPlanning, type PlanningStore} from './planning';
 import {createFaction, type FactionStore} from './faction';
@@ -167,10 +164,12 @@ export function createGameContext(core: CoreServices): GameContext {
 	const send = createWalletSend(core);
 	let indexedBoard: ReturnType<typeof createIndexedBoard> | undefined;
 
-	const keyFor = (player: GameIdentity) =>
-		submissionStorageKey({
-			chainID: deployments.chain.id,
-			gameAddress,
+	// Keyed by WHO PLAYS, in the account data, so it is synced and encrypted with it.
+	const storageFor = (player: GameIdentity) =>
+		createSubmissionStorage({
+			accountData: core.accountData,
+			chainId: deployments.chain.id,
+			contract: gameAddress,
 			player,
 		});
 
@@ -215,8 +214,13 @@ export function createGameContext(core: CoreServices): GameContext {
 				actionsPerReveal: config.actionsPerReveal,
 				penaltyFor: (count) => costOfMoves(config, count),
 				identity: activeIdentity,
-				committedTurn: (player) => loadCommittedTurn(keyFor(player)),
-				onSettled: () => void reserve.update(),
+				committedTurn: (player, cycleNumber) =>
+					storedTurnsFor(storageFor(player), cycleNumber),
+				// Settled on chain: what is kept of that turn may now be pruned.
+				onSettled: ({player, cycleNumber}) => {
+					storageFor(player).settled(cycleNumber);
+					void reserve.update();
+				},
 			}),
 		blocksCommitting,
 		adapter: ({beforeCommit}) =>
@@ -227,7 +231,7 @@ export function createGameContext(core: CoreServices): GameContext {
 				secret,
 				actionsPerReveal: config.actionsPerReveal,
 			}),
-		storageFor: (player) => createSubmissionStorage({key: keyFor(player)}),
+		storageFor,
 		isOutOfGas: (error) => error instanceof SignerOutOfFundsError,
 		stake: {
 			refresh: () => reserve.update(),
