@@ -182,6 +182,26 @@ export type CommitRevealAdapter<TIdentity extends PlayerIdentity, TAction> = {
 		actions: readonly TAction[];
 		secret: `0x${string}`;
 	}): readonly RevealTransaction[];
+
+	/**
+	 * What the chain says about this cycle's turn, asked before the submission
+	 * calls it missed: a reveal by SOMEBODY ELSE (a scheduler, another device, a
+	 * stranger: anyone may reveal) leaves this browser `Committed` with nothing
+	 * to send, and that is not a missed reveal.
+	 *
+	 * - `open`: the chain still holds this turn for `cycleNumber`, unrevealed or
+	 *   partly revealed.
+	 * - `revealed`: the chain closed this turn, its last chunk opened.
+	 * - `unknown`: neither can be said (another turn, or the read failed).
+	 *
+	 * Optional: a game's adapter without it keeps the old reading, `Missed`.
+	 */
+	commitmentStatus?(params: {
+		identity: TIdentity;
+		actions: readonly TAction[];
+		secret: `0x${string}`;
+		cycleNumber: number;
+	}): Promise<CommitmentStatus>;
 	/**
 	 * Open the commitment, in however many transactions that takes.
 	 *
@@ -209,8 +229,19 @@ export type CommitRevealAdapter<TIdentity extends PlayerIdentity, TAction> = {
 		actions: readonly TAction[];
 		secret: `0x${string}`;
 		onProgress?: (progress: {done: number; total: number}) => void;
-	}): Promise<{hash: `0x${string}`}>;
+	}): Promise<RevealOutcome>;
 };
+
+/**
+ * How a reveal ended: the transaction that completed the turn, or the finding
+ * that somebody else had already completed it (the turn is open on chain, by
+ * someone who is not this browser), which is a REVEALED turn and not a failure.
+ */
+export type RevealOutcome =
+	{hash: `0x${string}`} | {hash?: undefined; alreadyRevealed: true};
+
+/** See {@link CommitRevealAdapter.commitmentStatus}. */
+export type CommitmentStatus = 'open' | 'revealed' | 'unknown';
 
 // ----------------------------------------------------------------------------
 // Scheduled reveal

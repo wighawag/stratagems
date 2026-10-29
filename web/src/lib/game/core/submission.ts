@@ -541,9 +541,9 @@ export function createSubmission<
 		const info = cycleInfo.now();
 		if (info.currentCycleNumber !== pending.cycleNumber) {
 			// Too late: the contract only accepts a reveal in the cycle that was
-			// committed to.
-			storage.clear();
-			set({step: 'Missed', cycleNumber: pending.cycleNumber});
+			// committed to. Whether it is MISSED is the chain's to say: somebody
+			// else may have revealed it in time.
+			closeEarlierTurn(pending, player);
 			return;
 		}
 
@@ -553,6 +553,8 @@ export function createSubmission<
 			actions: pending.actions,
 		});
 		try {
+			// `alreadyRevealed` is somebody else's reveal of this very turn, which
+			// is the same outcome as ours: the turn is open on chain.
 			await adapter.reveal({
 				identity: player,
 				actions: pending.actions,
@@ -571,16 +573,18 @@ export function createSubmission<
 					}
 				},
 			});
-			// Refresh FIRST, then report revealed: see the note on onSettled.
-			try {
-				await params.onSettled?.();
-			} catch {
-				// A failed refresh is not a failed reveal. The reveal is on chain
-				// either way, and the poller will catch up on its own interval.
-			}
-			storage.clear();
-			set({step: 'Revealed', cycleNumber: pending.cycleNumber});
+			await reportRevealed(pending.cycleNumber);
 		} catch (error) {
+			// A REVEAL THAT FAILED BECAUSE THE TURN IS ALREADY OPEN is a revealed
+			// turn: a game's adapter may throw where the base's reports it, so the
+			// chain is asked before the failure is believed.
+			if (
+				(await statusOnChain(pending, player)) === 'revealed' &&
+				isRevealing(pending.cycleNumber)
+			) {
+				await reportRevealed(pending.cycleNumber);
+				return;
+			}
 			// The stored submission is deliberately KEPT: the reveal can be retried for
 			// as long as the phase lasts, and dropping the secret here would
 			// forfeit the stake over a rejected wallet prompt.
@@ -593,6 +597,80 @@ export function createSubmission<
 				actions: pending.actions,
 			});
 		}
+	}
+
+	/**
+	 * Read through a function so TypeScript does not carry a narrowing of
+	 * `$state` across an await, which the state may well have changed under.
+	 */
+	function isRevealing(cycleNumber: number): boolean {
+		return $state.step === 'Revealing' && $state.cycleNumber === cycleNumber;
+	}
+
+	/** Refresh FIRST, then report revealed: see the note on onSettled. */
+	async function reportRevealed(cycleNumber: number) {
+		try {
+			await params.onSettled?.();
+		} catch {
+			// A failed refresh is not a failed reveal. The reveal is on chain
+			// either way, and the poller will catch up on its own interval.
+		}
+		storage.clear();
+		set({step: 'Revealed', cycleNumber});
+	}
+
+	/** What the chain says about a turn, `unknown` when it cannot be asked. */
+	async function statusOnChain(
+		turn: Persisted,
+		player: TIdentity,
+	): Promise<'open' | 'revealed' | 'unknown'> {
+		if (!adapter.commitmentStatus) return 'unknown';
+		try {
+			return await adapter.commitmentStatus({
+				identity: player,
+				actions: turn.actions,
+				secret: turn.secret,
+				cycleNumber: turn.cycleNumber,
+			});
+		} catch {
+			return 'unknown';
+		}
+	}
+
+	/**
+	 * A committed turn whose cycle has gone by: MISSED, unless the chain says
+	 * somebody revealed it (P9). A scheduler that did its job leaves this
+	 * browser `Committed` with nothing sent, and before this the player was told
+	 * they had missed a reveal that had in fact gone out.
+	 *
+	 * The stored record is cleared at once, as before; the state is `Idle` while
+	 * the chain is asked, and the answer is written only if nothing has happened
+	 * since (a new plan is the player moving on, and the missed-reveal reader
+	 * asks the chain on its own).
+	 */
+	function closeEarlierTurn(turn: Persisted, player: TIdentity | undefined) {
+		storage.clear();
+		if (!adapter.commitmentStatus || !hasIdentity(player)) {
+			// Nothing to ask: the old reading.
+			set({step: 'Missed', cycleNumber: turn.cycleNumber});
+			return;
+		}
+		set({step: 'Idle'});
+		void (async () => {
+			const status = await statusOnChain(turn, player);
+			if ($state.step !== 'Idle') return;
+			if (status === 'revealed') {
+				try {
+					await params.onSettled?.();
+				} catch {
+					// See reportRevealed.
+				}
+				if ($state.step !== 'Idle') return;
+				set({step: 'Revealed', cycleNumber: turn.cycleNumber});
+			} else {
+				set({step: 'Missed', cycleNumber: turn.cycleNumber});
+			}
+		})();
 	}
 
 	function dismiss() {
@@ -656,10 +734,12 @@ export function createSubmission<
 		if (adopt(pending)) return;
 
 		// An older cycle. A committed submission that was never revealed has already
-		// cost the player; an uncommitted one costs nothing and is just dropped.
-		storage.clear();
+		// cost the player, unless somebody else revealed it; an uncommitted one
+		// costs nothing and is just dropped.
 		if (pending.committed) {
-			set({step: 'Missed', cycleNumber: pending.cycleNumber});
+			closeEarlierTurn(pending, currentIdentity());
+		} else {
+			storage.clear();
 		}
 	}
 
@@ -676,10 +756,16 @@ export function createSubmission<
 
 			if (cycleChanged) {
 				if ($state.step === 'Committed' || $state.step === 'Revealing') {
-					// The cycle turned over with a commitment still open: the reveal
-					// window is gone.
-					storage.clear();
-					set({step: 'Missed', cycleNumber: $state.cycleNumber});
+					// The cycle turned over with a commitment still open here: the
+					// reveal window is gone, and the chain says whether somebody else
+					// used it.
+					const turn = storage.load();
+					if (turn && turn.cycleNumber === $state.cycleNumber) {
+						closeEarlierTurn(turn, currentIdentity());
+					} else {
+						storage.clear();
+						set({step: 'Missed', cycleNumber: $state.cycleNumber});
+					}
 				} else if ($state.step === 'Planning' || $state.step === 'Error') {
 					// A plan made during the reveal phase was stamped for THIS cycle,
 					// which has just begun, so it is not stale and must survive. Only

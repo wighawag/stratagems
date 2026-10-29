@@ -412,3 +412,77 @@ describe("the base's adapter, with a reveal scheduler (P3)", () => {
 		expect(outcome).toEqual({hash: '0xtx'});
 	});
 });
+
+describe("the base's adapter, when somebody else revealed (P9)", () => {
+	const chain = buildCommitmentChain({
+		actions: turn,
+		secret: SECRET,
+		actionsPerReveal: 2,
+		encoding: MOVE,
+	});
+	const last = chain[chain.length - 1].hash;
+
+	it('reports a turn the chain has closed on its last chunk as revealed, sending nothing', async () => {
+		// A completed reveal zeroes the cycle and leaves the head at the last
+		// chunk it opened: that is what a scheduler's (or anyone's) reveal leaves.
+		const {deps, sends} = fakeDeps({
+			commitment: {hash: last, cycleNumber: 0n, bond: 0n},
+		});
+		const outcome = await adapterFor(deps).reveal({
+			identity: TOKEN,
+			actions: turn,
+			secret: SECRET,
+		});
+		expect(outcome).toEqual({alreadyRevealed: true});
+		expect(sends).toHaveLength(0);
+	});
+
+	it('still refuses when the chain holds nothing that is this turn', async () => {
+		const {deps} = fakeDeps({
+			commitment: {hash: chain[0].hash, cycleNumber: 0n, bond: 0n},
+		});
+		await expect(
+			adapterFor(deps).reveal({identity: TOKEN, actions: turn, secret: SECRET}),
+		).rejects.toThrow(/no commitment on chain left to reveal/i);
+	});
+
+	it("answers what the chain says about this cycle's turn", async () => {
+		const ask = (commitment: {
+			hash: `0x${string}`;
+			cycleNumber: bigint;
+			bond: bigint;
+		}) =>
+			adapterFor(fakeDeps({commitment}).deps).commitmentStatus!({
+				identity: TOKEN,
+				actions: turn,
+				secret: SECRET,
+				cycleNumber: 4,
+			});
+		// Still held for its cycle, from any chunk on: owed.
+		expect(await ask({hash: chain[1].hash, cycleNumber: 4n, bond: 1n})).toBe(
+			'open',
+		);
+		// Closed on its last chunk: revealed, by whoever.
+		expect(await ask({hash: last, cycleNumber: 0n, bond: 0n})).toBe('revealed');
+		// Another turn altogether, or a later cycle's: nothing can be said.
+		expect(await ask({hash: chain[0].hash, cycleNumber: 0n, bond: 0n})).toBe(
+			'unknown',
+		);
+		expect(await ask({hash: last, cycleNumber: 5n, bond: 1n})).toBe('unknown');
+	});
+
+	it('answers unknown, not revealed, when the read fails', async () => {
+		const {deps} = fakeDeps({});
+		(deps.publicClient as {readContract: unknown}).readContract = async () => {
+			throw new Error('node down');
+		};
+		expect(
+			await adapterFor(deps).commitmentStatus!({
+				identity: TOKEN,
+				actions: turn,
+				secret: SECRET,
+				cycleNumber: 4,
+			}),
+		).toBe('unknown');
+	});
+});

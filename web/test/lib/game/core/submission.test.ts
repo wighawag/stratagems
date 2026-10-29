@@ -12,8 +12,10 @@ import {
 	type CycleInfoStore,
 } from '$lib/game/core/cycle';
 import type {
+	CommitmentStatus,
 	CommitOutcome,
 	CommitRevealAdapter,
+	RevealOutcome,
 	RevealScheduler,
 } from '$lib/game/core/seams';
 
@@ -79,7 +81,7 @@ type Action = {cellID: bigint};
 
 function fakeAdapter(overrides?: {
 	commit?: () => Promise<CommitOutcome<{test?: {slot: string}}>>;
-	reveal?: () => Promise<{hash: `0x${string}`}>;
+	reveal?: () => Promise<RevealOutcome>;
 }) {
 	const calls = {commit: [] as unknown[], reveal: [] as unknown[]};
 	const adapter: CommitRevealAdapter<`0x${string}`, Action> = {
@@ -1298,6 +1300,170 @@ describe('a reveal handed to a scheduler (P3, P7)', () => {
 		const stop = submission.start();
 		setTime(41);
 		await vi.waitFor(() => expect(calls.reveal).toHaveLength(1));
+		stop();
+	});
+});
+
+describe('a reveal somebody else sent is Revealed, not Missed (P9)', () => {
+	function adapterAnswering(
+		status: CommitmentStatus,
+		overrides?: Parameters<typeof fakeAdapter>[0],
+	) {
+		const fake = fakeAdapter(overrides);
+		const asked: unknown[] = [];
+		const adapter: CommitRevealAdapter<`0x${string}`, Action> = {
+			...fake.adapter,
+			commitmentStatus: async (params) => {
+				asked.push(params);
+				return status;
+			},
+		};
+		return {...fake, adapter, asked};
+	}
+
+	it('asks the chain at the cycle turn, and reports a turn it closed as revealed', async () => {
+		const {cycleInfo, setTime} = fakeCycles(0);
+		const storage = fakeStorage<Action>();
+		const {adapter, asked, calls} = adapterAnswering('revealed');
+		const onSettled = vi.fn();
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity,
+			// A scheduler holds the reveal; this browser never reached its fallback.
+			autoReveal: 'never',
+			onSettled,
+		});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+
+		setTime(44); // the next cycle
+		await vi.waitFor(() =>
+			expect(submission.value).toEqual({step: 'Revealed', cycleNumber: 2}),
+		);
+		expect(asked[0]).toMatchObject({
+			identity: player,
+			actions: [{cellID: 1n}],
+			cycleNumber: 2,
+		});
+		expect(onSettled).toHaveBeenCalledOnce();
+		expect(calls.reveal).toHaveLength(0);
+		expect(storage.current).toBeUndefined();
+		stop();
+	});
+
+	it('still reports MISSED a turn the chain is still holding', async () => {
+		const {cycleInfo, setTime} = fakeCycles(0);
+		const storage = fakeStorage<Action>();
+		const {adapter} = adapterAnswering('open');
+		const onSettled = vi.fn();
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity,
+			autoReveal: 'never',
+			onSettled,
+		});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+		setTime(44);
+		await vi.waitFor(() =>
+			expect(submission.value).toEqual({step: 'Missed', cycleNumber: 2}),
+		);
+		expect(onSettled).not.toHaveBeenCalled();
+		stop();
+	});
+
+	it('asks the chain on restore before calling an older turn missed', async () => {
+		for (const [status, step] of [
+			['revealed', 'Revealed'],
+			['open', 'Missed'],
+			['unknown', 'Missed'],
+		] as const) {
+			const {cycleInfo} = fakeCycles(50); // cycle 3; the record is cycle 2's
+			const storage = fakeStorage<Action>();
+			storage.save({
+				cycleNumber: 2,
+				actions: [{cellID: 1n}],
+				secret: '0x01',
+				committed: true,
+			});
+			const {adapter} = adapterAnswering(status);
+			const onSettled = vi.fn();
+			const submission = createSubmission({
+				cycleInfo,
+				adapter,
+				storage,
+				identity,
+				onSettled,
+			});
+			const stop = submission.start();
+			await vi.waitFor(() =>
+				expect(submission.value).toEqual({step, cycleNumber: 2}),
+			);
+			expect(onSettled).toHaveBeenCalledTimes(step === 'Revealed' ? 1 : 0);
+			expect(storage.current).toBeUndefined();
+			stop();
+		}
+	});
+
+	it('reports Revealed when the reveal finds the turn already opened', async () => {
+		const {cycleInfo, setTime} = fakeCycles(0);
+		const storage = fakeStorage<Action>();
+		const {adapter} = fakeAdapter({
+			reveal: async () => ({alreadyRevealed: true}),
+		});
+		const onSettled = vi.fn();
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity,
+			onSettled,
+		});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+		setTime(41);
+		await vi.waitFor(() =>
+			expect(submission.value).toEqual({step: 'Revealed', cycleNumber: 2}),
+		);
+		expect(onSettled).toHaveBeenCalledOnce();
+		expect(storage.current).toBeUndefined();
+		stop();
+	});
+
+	it('reports Revealed when a fallback reveal fails because the turn was opened meanwhile', async () => {
+		// A game's own adapter may still throw on a closed commitment: the chain,
+		// asked, says what happened.
+		const {cycleInfo, setTime} = fakeCycles(0);
+		const storage = fakeStorage<Action>();
+		const {adapter} = adapterAnswering('revealed', {
+			reveal: async () => {
+				throw new Error('There is no commitment on chain left to reveal.');
+			},
+		});
+		const onSettled = vi.fn();
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity,
+			autoReveal: 'fallback',
+			onSettled,
+		});
+		const stop = submission.start();
+		submission.plan([{cellID: 1n}]);
+		await submission.commit();
+		setTime(43); // past the fallback point
+		await vi.waitFor(() =>
+			expect(submission.value).toEqual({step: 'Revealed', cycleNumber: 2}),
+		);
+		expect(onSettled).toHaveBeenCalledOnce();
 		stop();
 	});
 });

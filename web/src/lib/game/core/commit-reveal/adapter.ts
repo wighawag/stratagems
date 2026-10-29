@@ -11,6 +11,7 @@
 import {get} from 'svelte/store';
 import {encodeFunctionData, zeroAddress} from 'viem';
 import type {
+	CommitmentStatus,
 	CommitOutcome,
 	CommitRevealAdapter,
 	PlayerIdentity,
@@ -32,6 +33,11 @@ import type {
 	OnchainIdentity,
 } from './contract';
 import {broadcastMove, confirmMove, type MoveDeps} from './send';
+
+/** Two heads as the chain means them: hex case is not a difference. */
+function sameHead(a: string, b: string): boolean {
+	return a.toLowerCase() === b.toLowerCase();
+}
 
 /** Nobody to pay: what the commit carries without a scheduler. */
 const NO_PAYMENT: SchedulerPayment = {payee: zeroAddress, value: 0n};
@@ -288,6 +294,53 @@ export function createCommitRevealContractAdapter<
 		},
 
 		/**
+		 * What the chain says about this cycle's turn (P9), from one read of the
+		 * head:
+		 *
+		 * - still held for `cycleNumber`, from whichever chunk: `open`;
+		 * - closed (cycle zero) on this turn's LAST chunk: `revealed`;
+		 * - anything else, a failed read included: `unknown`.
+		 *
+		 * TWO CLOSINGS LOOK THE SAME AS A REVEAL, and both need the player's own
+		 * other device acting against this one: a cancellation of a ONE-chunk turn
+		 * (cancelling keeps the committed head, which for one chunk is the last),
+		 * and a settlement shown the chunks in a later cycle. Neither is anything
+		 * the framework sends, and the missed-reveal reader still asks the chain
+		 * whether anything is owed.
+		 */
+		async commitmentStatus({
+			identity,
+			actions,
+			secret,
+			cycleNumber,
+		}): Promise<CommitmentStatus> {
+			let onChain: CommitmentOnChain;
+			try {
+				onChain = await headOnChain(identity);
+			} catch {
+				return 'unknown';
+			}
+			const chain = buildCommitmentChain({
+				actions,
+				secret,
+				actionsPerReveal,
+				encoding,
+			});
+			if (onChain.cycleNumber === BigInt(cycleNumber)) {
+				return chunkDueNext(chain, onChain.hash) === undefined
+					? 'unknown'
+					: 'open';
+			}
+			if (
+				onChain.cycleNumber === 0n &&
+				sameHead(onChain.hash, chain[chain.length - 1].hash)
+			) {
+				return 'revealed';
+			}
+			return 'unknown';
+		},
+
+		/**
 		 * Open the turn, in as many transactions as the chunk size demands.
 		 *
 		 * IT RESUMES RATHER THAN RESTARTS. Which chunk is due is read off the
@@ -311,6 +364,14 @@ export function createCommitRevealContractAdapter<
 			});
 			const onChain = await headOnChain(identity);
 			if (onChain.cycleNumber === 0n) {
+				// SOMEBODY ELSE MAY HAVE OPENED IT, and anyone may: a scheduler, the
+				// player's other device, a stranger. A completed reveal zeroes the
+				// cycle and leaves the head at the last chunk it opened, so a head
+				// equal to this turn's last chunk is this turn, revealed, and not a
+				// failure to report.
+				if (sameHead(onChain.hash, chain[chain.length - 1].hash)) {
+					return {alreadyRevealed: true};
+				}
 				throw new Error('There is no commitment on chain left to reveal.');
 			}
 			const from = chunkDueNext(chain, onChain.hash);
