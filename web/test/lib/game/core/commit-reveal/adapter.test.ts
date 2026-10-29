@@ -486,3 +486,27 @@ describe("the base's adapter, when somebody else revealed (P9)", () => {
 		).toBe('unknown');
 	});
 });
+
+describe("the base's adapter, recognising its turn at any chunk", () => {
+	it('knows every head of the chain as this turn, and nothing else', () => {
+		const chain = buildCommitmentChain({
+			actions: turn,
+			secret: SECRET,
+			actionsPerReveal: 2,
+			encoding: MOVE,
+		});
+		const adapter = adapterFor(fakeDeps({}).deps);
+		for (const chunk of chain) {
+			expect(
+				adapter.isHeadOf!({actions: turn, secret: SECRET, head: chunk.hash}),
+			).toBe(true);
+		}
+		expect(
+			adapter.isHeadOf!({
+				actions: turn,
+				secret: SECRET,
+				head: `0x${'ee'.repeat(24)}`,
+			}),
+		).toBe(false);
+	});
+});
