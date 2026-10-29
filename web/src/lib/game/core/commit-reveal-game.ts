@@ -385,8 +385,15 @@ export type CommitRevealGameParts<T extends GameTypes> = {
 	}) => {hash: `0x${string}`};
 	/** Where one identity's submission persists. A wire: see AGENTS.md. */
 	storageFor: (identity: T['identity']) => SubmissionStorage<T['action']>;
-	/** Passed through to `createSubmission`. */
-	submission?: {commitWhenIdle?: () => boolean};
+	/**
+	 * Passed through to `createSubmission`, each one only when the game chose it,
+	 * so a game that says nothing keeps the submission's own defaults
+	 * (`autoReveal: 'immediately'`, `fallbackRevealAfter: 0.5`).
+	 */
+	submission?: Pick<
+		Parameters<typeof createSubmission>[0],
+		'commitWhenIdle' | 'autoReveal' | 'fallbackRevealAfter'
+	>;
 	/** Whether a failed move failed for want of the signer's gas. */
 	isOutOfGas: (error: unknown) => boolean;
 	stake: {
@@ -626,6 +633,15 @@ export function createCommitRevealGame<T extends GameTypes>(
 		identity,
 		...(parts.submission?.commitWhenIdle
 			? {commitWhenIdle: parts.submission.commitWhenIdle}
+			: {}),
+		// WHEN THIS BROWSER REVEALS is the game's choice (P7): `fallback` where a
+		// scheduler is expected to reveal, `immediately` otherwise. Before this the
+		// skeleton passed only `commitWhenIdle`, so no game could choose.
+		...(parts.submission?.autoReveal
+			? {autoReveal: parts.submission.autoReveal}
+			: {}),
+		...(parts.submission?.fallbackRevealAfter !== undefined
+			? {fallbackRevealAfter: parts.submission.fallbackRevealAfter}
 			: {}),
 		// Awaited before the submission reports itself revealed, so the confirmed
 		// moves are on the board by the time the planned ones stop being drawn.

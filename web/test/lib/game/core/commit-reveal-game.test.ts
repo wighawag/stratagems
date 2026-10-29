@@ -10,6 +10,15 @@ import {
 import type {CoreServices} from '$lib/context/core';
 import type {DelegationValue} from '$lib/onchain/delegation';
 import type {OnchainStateStore} from '$lib/game/core/seams';
+import * as submissionModule from '$lib/game/core/submission';
+
+// The skeleton's wiring into the submission is observed at the call: what it
+// hands `createSubmission` is the whole of what a game can choose there.
+vi.mock('$lib/game/core/submission', async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import('$lib/game/core/submission')>();
+	return {...actual, createSubmission: vi.fn(actual.createSubmission)};
+});
 
 /**
  * The skeleton is WIRING: which store asks what of the chain, and when. Most of
@@ -179,7 +188,14 @@ type TestGame = {
 	surface: unknown;
 };
 
-function compose(overrides: {stake?: {step: 'stake'} | undefined} = {}) {
+function compose(
+	overrides: {
+		stake?: {step: 'stake'} | undefined;
+		submission?: Parameters<
+			typeof createCommitRevealGame<TestGame>
+		>[1]['submission'];
+	} = {},
+) {
 	const account = writable<`0x${string}` | undefined>(ACCOUNT);
 	const identity = writable<`0x${string}` | undefined>(ACCOUNT);
 	const delegation = writable<DelegationValue>(authorised);
@@ -247,6 +263,7 @@ function compose(overrides: {stake?: {step: 'stake'} | undefined} = {}) {
 			clear: () => {},
 		}),
 		isOutOfGas: () => false,
+		...(overrides.submission ? {submission: overrides.submission} : {}),
 		stake: {
 			refresh,
 			needed: readable('stake' in overrides ? overrides.stake : undefined),
@@ -298,6 +315,26 @@ describe('the skeleton, wired', () => {
 		notReady.crg.render.eventEmitter.emit('clicked', {x: 7, y: 1});
 		expect(notReady.toggle).not.toHaveBeenCalled();
 		stopNotReady();
+	});
+
+	it("hands the game's reveal mode to the submission, and today's when it chose none", () => {
+		const createSubmission = vi.mocked(submissionModule.createSubmission);
+
+		createSubmission.mockClear();
+		compose({submission: {autoReveal: 'fallback', fallbackRevealAfter: 0.25}});
+		expect(createSubmission).toHaveBeenCalledOnce();
+		expect(createSubmission.mock.calls[0][0]).toMatchObject({
+			autoReveal: 'fallback',
+			fallbackRevealAfter: 0.25,
+		});
+
+		// Nothing chosen: nothing passed, so the submission's own defaults
+		// (`immediately`, half the phase) are what runs, as before.
+		createSubmission.mockClear();
+		compose();
+		const params = createSubmission.mock.calls[0][0];
+		expect(params.autoReveal).toBeUndefined();
+		expect(params.fallbackRevealAfter).toBeUndefined();
 	});
 
 	it('shows the board through the held store and the game merge', () => {
