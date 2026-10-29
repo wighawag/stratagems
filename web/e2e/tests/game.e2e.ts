@@ -4,6 +4,7 @@ import {
 	authoriseToPlay,
 	clearAnyMissedReveal,
 	clickCanvas,
+	forgetSubmissionAndReload,
 	planManyOnCanvas,
 	plannedCellIDs,
 	planOnCanvas,
@@ -440,17 +441,11 @@ describe('A missed reveal', () => {
 		// from those, so a clean context is a different player altogether and would
 		// prove nothing.
 		//
-		// The COMMITTED TURN the game copies aside (`__placement_committed_turn__`)
-		// is left, so the settlement below is the one shown the chunks: the route
-		// a stranger may take too, and the one that returns the bond's surplus.
-		await page.evaluate(() => {
-			for (const key of Object.keys(localStorage)) {
-				if (key.startsWith('__placement_submission__'))
-					localStorage.removeItem(key);
-			}
-		});
-
-		await page.reload();
+		// The committed turn goes too: since step 8 it is what restore takes the
+		// turn back from (it is kept apart from the plan, in the account data),
+		// so leaving it would not lose the submission at all. The settlement
+		// below is then the one without the chunks, which forfeits the bond.
+		await forgetSubmissionAndReload(page);
 		await expect(page.locator('canvas')).toBeVisible({timeout: 30_000});
 		const later = page;
 
@@ -569,13 +564,7 @@ describe('A submission the chain holds and this browser has lost', () => {
 		// Lose everything this browser knew about the submission, without losing WHO
 		// the player is. The commitment stays on chain; the secret is derived from
 		// the signer and comes back with it; only the PLAN is gone.
-		await page.evaluate(() => {
-			for (const key of Object.keys(localStorage)) {
-				if (key.startsWith('__placement_submission__'))
-					localStorage.removeItem(key);
-			}
-		});
-		await page.reload();
+		await forgetSubmissionAndReload(page);
 		await expect(page.locator('canvas')).toBeVisible({timeout: 30_000});
 
 		expect(

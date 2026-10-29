@@ -1,4 +1,5 @@
 import {describe, it, expect} from 'vitest';
+import type {SavedTurn} from '$lib/game/core/commit-reveal-game';
 import {get, writable, type Writable} from 'svelte/store';
 import {
 	createHud,
@@ -124,7 +125,11 @@ describe('what the HUD says about a failed submission', () => {
 });
 
 /** A context with only the parts `createHud` reads. */
-function fakeContext(submission: State, hasLocalSigner = true) {
+function fakeContext(
+	submission: State,
+	hasLocalSigner = true,
+	savedTurn: SavedTurn = {status: 'ready'},
+) {
 	return {
 		hasLocalSigner,
 		// The setup gate's button carries the price, so the HUD reads the chain's
@@ -151,6 +156,7 @@ function fakeContext(submission: State, hasLocalSigner = true) {
 			setup: writable(undefined),
 			acquisition: writable({step: 'Idle'}),
 			recovery: writable({step: 'Idle'}),
+			savedTurn: writable(savedTurn),
 		},
 	} as unknown as Context;
 }
@@ -343,5 +349,42 @@ describe('what the HUD says about a turn too long to open', () => {
 		// Both are true. The one that is reported is the one that would cost the
 		// stake rather than a reverted transaction.
 		expect(get(createHud(context)).warning).toMatch(/forfeit/i);
+	});
+});
+
+describe('what the HUD says while the saved turn is not there yet (Q8-6)', () => {
+	const planning = {
+		step: 'Planning',
+		cycleNumber: 3,
+		actions: [{cellID: 1n}],
+	} as unknown as State;
+
+	it('says it is loading, and offers no commit', () => {
+		const model = get(
+			createHud(fakeContext(planning, true, {status: 'loading'})),
+		);
+		expect(model.savedTurn?.headline).toMatch(/loading your saved turn/i);
+		expect(model.canCommit).toBe(false);
+	});
+
+	it('shows a load error, and blocks play, rather than an empty turn', () => {
+		const model = get(
+			createHud(
+				fakeContext(planning, true, {
+					status: 'error',
+					error: new Error('could not decrypt'),
+				}),
+			),
+		);
+		expect(model.savedTurn?.headline).toMatch(/could not be loaded/i);
+		expect(model.savedTurn?.detail).toMatch(/could not decrypt/);
+		expect(model.savedTurn?.tone).toBe('bad');
+		expect(model.canCommit).toBe(false);
+	});
+
+	it('says nothing once it is loaded', () => {
+		const model = get(createHud(fakeContext(planning)));
+		expect(model.savedTurn).toBeUndefined();
+		expect(model.canCommit).toBe(true);
 	});
 });

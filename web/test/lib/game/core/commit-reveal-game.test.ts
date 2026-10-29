@@ -1,4 +1,4 @@
-import {describe, it, expect, vi} from 'vitest';
+import {describe, it, expect, expectTypeOf, vi} from 'vitest';
 import {get, readable, writable, type Readable} from 'svelte/store';
 import {
 	canTakeTurnNow,
@@ -10,6 +10,17 @@ import {
 import type {CoreServices} from '$lib/context/core';
 import type {DelegationValue} from '$lib/onchain/delegation';
 import type {OnchainStateStore} from '$lib/game/core/seams';
+import type {AccountDataLifecycle} from '$lib/account/lifecycle';
+import * as submissionModule from '$lib/game/core/submission';
+import type {SubmissionStorage} from '$lib/game/core/submission';
+
+// The skeleton's wiring into the submission is observed at the call: what it
+// hands `createSubmission` is the whole of what a game can choose there.
+vi.mock('$lib/game/core/submission', async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import('$lib/game/core/submission')>();
+	return {...actual, createSubmission: vi.fn(actual.createSubmission)};
+});
 
 /**
  * The skeleton is WIRING: which store asks what of the chain, and when. Most of
@@ -177,9 +188,29 @@ type TestGame = {
 	};
 	stake: {step: 'stake'};
 	surface: unknown;
+	/** A layer's namespace, as a layer would export it and a game compose it. */
+	extensions: TestLayer;
 };
 
-function compose(overrides: {stake?: {step: 'stake'} | undefined} = {}) {
+/** What a layer keeps with each turn, under its own namespace. */
+type TestLayer = {test?: {slot: string; batch: number}};
+
+function compose(
+	overrides: {
+		stake?: {step: 'stake'} | undefined;
+		submission?: Parameters<
+			typeof createCommitRevealGame<TestGame>
+		>[1]['submission'];
+		scheduler?: Parameters<
+			typeof createCommitRevealGame<TestGame>
+		>[1]['scheduler'];
+		lifecycle?: AccountDataLifecycle;
+		storage?: SubmissionStorage<number>;
+	} = {},
+) {
+	const lifecycle = writable<AccountDataLifecycle>(
+		overrides.lifecycle ?? {status: 'ready', account: ACCOUNT},
+	);
 	const account = writable<`0x${string}` | undefined>(ACCOUNT);
 	const identity = writable<`0x${string}` | undefined>(ACCOUNT);
 	const delegation = writable<DelegationValue>(authorised);
@@ -190,7 +221,7 @@ function compose(overrides: {stake?: {step: 'stake'} | undefined} = {}) {
 		publicClient: {},
 		signerExecutor: readable({status: 'not-ready'}),
 		signerBalance: writable({step: 'Unloaded'}),
-		accountData: {watchField: () => readable({})},
+		accountData: {watchField: () => readable({}), lifecycle$: lifecycle},
 	} as unknown as CoreServices;
 
 	const board = writable({step: 'Loaded', cycleNumber: 0, cells: 0});
@@ -241,12 +272,15 @@ function compose(overrides: {stake?: {step: 'stake'} | undefined} = {}) {
 				reveal: async () => {},
 			}) as never,
 		buildCommitment: () => ({hash: '0x'}),
-		storageFor: () => ({
-			load: () => undefined,
-			save: () => {},
-			clear: () => {},
-		}),
+		storageFor: () =>
+			overrides.storage ?? {
+				load: () => undefined,
+				save: () => {},
+				clear: () => {},
+			},
 		isOutOfGas: () => false,
+		...(overrides.submission ? {submission: overrides.submission} : {}),
+		...(overrides.scheduler ? {scheduler: overrides.scheduler} : {}),
 		stake: {
 			refresh,
 			needed: readable('stake' in overrides ? overrides.stake : undefined),
@@ -264,7 +298,7 @@ function compose(overrides: {stake?: {step: 'stake'} | undefined} = {}) {
 		click: (position, {planning}) => planning.toggle(position.x),
 		start: startGame,
 	});
-	return {crg, identity, check, toggle, startGame, stopGame};
+	return {crg, identity, check, toggle, startGame, stopGame, lifecycle};
 }
 
 describe('the skeleton, wired', () => {
@@ -298,6 +332,151 @@ describe('the skeleton, wired', () => {
 		notReady.crg.render.eventEmitter.emit('clicked', {x: 7, y: 1});
 		expect(notReady.toggle).not.toHaveBeenCalled();
 		stopNotReady();
+	});
+
+	it("hands the game's reveal mode to the submission, and today's when it chose none", () => {
+		const createSubmission = vi.mocked(submissionModule.createSubmission);
+
+		createSubmission.mockClear();
+		compose({submission: {autoReveal: 'fallback', fallbackRevealAfter: 0.25}});
+		expect(createSubmission).toHaveBeenCalledOnce();
+		expect(createSubmission.mock.calls[0][0]).toMatchObject({
+			autoReveal: 'fallback',
+			fallbackRevealAfter: 0.25,
+		});
+
+		// Nothing chosen: nothing passed, so the submission's own defaults
+		// (`immediately`, half the phase) are what runs, as before.
+		createSubmission.mockClear();
+		compose();
+		const params = createSubmission.mock.calls[0][0];
+		expect(params.autoReveal).toBeUndefined();
+		expect(params.fallbackRevealAfter).toBeUndefined();
+	});
+
+	it("hands the game's reveal scheduler to the submission", () => {
+		const createSubmission = vi.mocked(submissionModule.createSubmission);
+		const scheduler = {
+			prepare: async () => ({payee: ACCOUNT, value: 0n}),
+			submit: async () => {},
+		};
+		createSubmission.mockClear();
+		compose({scheduler});
+		expect(createSubmission.mock.calls[0][0].scheduler).toBe(scheduler);
+
+		createSubmission.mockClear();
+		compose();
+		expect(createSubmission.mock.calls[0][0].scheduler).toBeUndefined();
+	});
+
+	it('blocks play while the saved turn loads, and on a load error, never showing an empty turn', () => {
+		const {crg, lifecycle, toggle} = compose({
+			lifecycle: {status: 'loading', account: ACCOUNT},
+		});
+		const stop = crg.start();
+		const states: unknown[] = [];
+		const unsubscribe = crg.game.savedTurn.subscribe((v) => states.push(v));
+
+		expect(get(crg.game.savedTurn)).toEqual({status: 'loading'});
+		expect(get(crg.game.readyToPlay)).toBe(false);
+		crg.render.eventEmitter.emit('clicked', {x: 7, y: 1});
+		expect(toggle).not.toHaveBeenCalled();
+		// The rest of the app is not blocked: the setup gate still answers.
+		expect(get(crg.game.setup)).toBeUndefined();
+
+		const error = new Error('could not decrypt');
+		lifecycle.set({status: 'error', account: ACCOUNT, error});
+		expect(get(crg.game.savedTurn)).toEqual({status: 'error', error});
+		expect(get(crg.game.readyToPlay)).toBe(false);
+
+		lifecycle.set({status: 'ready', account: ACCOUNT});
+		expect(get(crg.game.savedTurn)).toEqual({status: 'ready'});
+		expect(get(crg.game.readyToPlay)).toBe(true);
+		crg.render.eventEmitter.emit('clicked', {x: 7, y: 1});
+		expect(toggle).toHaveBeenCalledWith(7);
+
+		unsubscribe();
+		stop();
+	});
+
+	it("follows the identity's storage readiness, and passes the durable write through", async () => {
+		const ready = writable(false);
+		const saved: unknown[] = [];
+		const createSubmission = vi.mocked(submissionModule.createSubmission);
+		createSubmission.mockClear();
+		const {identity} = compose({
+			storage: {
+				load: () => undefined,
+				save: () => {},
+				clear: () => {},
+				ready,
+				saveDurably: async (s) => void saved.push(s),
+			},
+		});
+		const storage = createSubmission.mock.calls[0][0].storage;
+		const seen: boolean[] = [];
+		const unsubscribe = storage.ready!.subscribe((v) => seen.push(v));
+		ready.set(true);
+		expect(seen).toEqual([false, true]);
+		ready.set(false);
+		expect(seen.at(-1)).toBe(false);
+		// Nobody playing: nothing to load, so nothing to wait for.
+		identity.set(undefined);
+		expect(seen.at(-1)).toBe(true);
+		unsubscribe();
+
+		identity.set(ACCOUNT);
+		await storage.saveDurably!({
+			cycleNumber: 1,
+			actions: [],
+			secret: '0x01',
+			committed: false,
+		});
+		expect(saved).toHaveLength(1);
+	});
+
+	it("keeps a game's composed extension type end to end, with no cast", () => {
+		type Persisted = submissionModule.PersistedSubmission<number, TestLayer>;
+		// What the scheduler part may return is the layer's namespace...
+		type Scheduler = NonNullable<
+			Parameters<typeof createCommitRevealGame<TestGame>>[1]['scheduler']
+		>;
+		expectTypeOf<
+			Awaited<ReturnType<Scheduler['submit']>>
+		>().toEqualTypeOf<Partial<TestLayer> | void>();
+		// ...what the game's storage stores and loads carries it...
+		type Storage = ReturnType<
+			Parameters<typeof createCommitRevealGame<TestGame>>[1]['storageFor']
+		>;
+		expectTypeOf<ReturnType<Storage['load']>>().toEqualTypeOf<
+			Persisted | undefined
+		>();
+		// ...and the submission hands it to the game typed.
+		const {crg} = compose();
+		expectTypeOf(crg.game.submission.adopt)
+			.parameter(0)
+			.toEqualTypeOf<Persisted>();
+		const loaded: Persisted = {
+			cycleNumber: 1,
+			actions: [1],
+			secret: '0x01',
+			committed: true,
+			extensions: {test: {slot: 'cycle_1', batch: 2}},
+		};
+		expectTypeOf(loaded.extensions!.test!.batch).toEqualTypeOf<number>();
+		// The type assertions above are checked by `pnpm check`; this one runs.
+		expect(loaded.extensions?.test?.batch).toBe(2);
+		// And a game with no layer gets `{}`, not `unknown`.
+		type NoLayer = Omit<TestGame, 'extensions'>;
+		expectTypeOf<
+			ReturnType<
+				ReturnType<
+					Parameters<typeof createCommitRevealGame<NoLayer>>[1]['storageFor']
+				>['load']
+			>
+		>().toEqualTypeOf<
+			submissionModule.PersistedSubmission<number, {}> | undefined
+		>();
 	});
 
 	it('shows the board through the held store and the game merge', () => {

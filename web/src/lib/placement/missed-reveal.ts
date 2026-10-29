@@ -36,14 +36,19 @@ export function createMissedReveal(params: {
 	/** WHO PLAYS, and so whose commitment this is. */
 	identity: Readable<GameIdentity | undefined>;
 	/**
-	 * The last turn this browser committed for a player, if it still has it.
-	 * Absent, every settlement goes without the chunks.
+	 * What is stored of the turn a player committed in a cycle (one record or
+	 * several); the chain's head decides which, if any, is the turn. Absent,
+	 * every settlement goes without the chunks.
 	 */
 	committedTurn?: (
 		player: GameIdentity,
-	) => PersistedSubmission<Placement> | undefined;
-	/** Called once a forfeit settles, so the reserve can be re-read. */
-	onSettled?: () => void;
+		cycleNumber: number,
+	) =>
+		| PersistedSubmission<Placement>
+		| readonly PersistedSubmission<Placement>[]
+		| undefined;
+	/** Called once a forfeit settles: whose turn of which cycle it closed. */
+	onSettled?: (settled: {player: GameIdentity; cycleNumber: number}) => void;
 }): MissedRevealStore {
 	const {deps, config} = params;
 	return createBaseMissedReveal<GameIdentity, Placement>({

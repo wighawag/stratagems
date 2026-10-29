@@ -124,14 +124,23 @@ export function createMissedReveal<
 	/** WHO PLAYS, and so whose commitment this is. */
 	identity: Readable<TIdentity | undefined>;
 	/**
-	 * The last turn this browser committed for a player, if it still has it.
-	 * Absent, every settlement goes without the chunks.
+	 * What is stored of the turn a player committed in `cycleNumber`: one
+	 * record, several (two devices that both committed), or none. Each is tried
+	 * against the head the chain holds, which is what decides. Absent, every
+	 * settlement goes without the chunks.
 	 */
 	committedTurn?: (
 		player: TIdentity,
-	) => PersistedSubmission<TAction> | undefined;
-	/** Called once a forfeit settles, so the reserve can be re-read. */
-	onSettled?: () => void;
+		cycleNumber: number,
+	) =>
+		| PersistedSubmission<TAction, object>
+		| readonly PersistedSubmission<TAction, object>[]
+		| undefined;
+	/**
+	 * Called once a forfeit settles, so the reserve can be re-read, with whose
+	 * turn of which cycle it closed, so what is kept of it can be pruned.
+	 */
+	onSettled?: (settled: {player: TIdentity; cycleNumber: number}) => void;
 }): MissedRevealStore {
 	const {deps, contract, encoding} = params;
 
@@ -149,19 +158,22 @@ export function createMissedReveal<
 		player: TIdentity,
 		onChain: CommitmentOnChain,
 	): typeof owed {
-		const turn = params.committedTurn?.(player);
-		if (!turn || BigInt(turn.cycleNumber) !== onChain.cycleNumber) {
-			return undefined;
+		const stored = params.committedTurn?.(player, Number(onChain.cycleNumber));
+		const turns =
+			stored === undefined ? [] : Array.isArray(stored) ? stored : [stored];
+		for (const turn of turns as PersistedSubmission<TAction, object>[]) {
+			if (BigInt(turn.cycleNumber) !== onChain.cycleNumber) continue;
+			const chain = buildCommitmentChain({
+				actions: turn.actions,
+				secret: turn.secret,
+				actionsPerReveal: params.actionsPerReveal,
+				encoding,
+			});
+			const from = chunkDueNext(chain, onChain.hash);
+			if (from === undefined) continue;
+			return {chunks: chain.slice(from), secret: turn.secret};
 		}
-		const chain = buildCommitmentChain({
-			actions: turn.actions,
-			secret: turn.secret,
-			actionsPerReveal: params.actionsPerReveal,
-			encoding,
-		});
-		const from = chunkDueNext(chain, onChain.hash);
-		if (from === undefined) return undefined;
-		return {chunks: chain.slice(from), secret: turn.secret};
+		return undefined;
 	}
 
 	let $state: MissedRevealState = {step: 'Unknown'};
@@ -292,7 +304,7 @@ export function createMissedReveal<
 			owed = undefined;
 			commitment.set(undefined);
 			set({step: 'Clear'});
-			params.onSettled?.();
+			params.onSettled?.({player, cycleNumber});
 		} catch (error) {
 			set({
 				step: 'Failed',

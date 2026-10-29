@@ -86,6 +86,30 @@
 			plainly and settled only on a deliberate press: acknowledging is what
 			makes the forfeit final on chain, and it is not ours to do for them.
 		-->
+		<!--
+			The saved turn is not readable yet (loading) or could not be read: play
+			waits, and a failure is said rather than shown as an empty turn.
+		-->
+		{#if $hud.savedTurn}
+			<div
+				class="mb-3 rounded-md border p-2 {$hud.savedTurn.tone === 'bad'
+					? 'border-red-500/40 bg-red-500/10'
+					: 'border-border bg-muted/40'}"
+				data-testid="saved-turn"
+			>
+				<p
+					class="text-sm font-semibold {$hud.savedTurn.tone === 'bad'
+						? 'text-red-400'
+						: ''}"
+				>
+					{$hud.savedTurn.headline}
+				</p>
+				<p class="mt-1 text-xs text-muted-foreground">
+					{$hud.savedTurn.detail}
+				</p>
+			</div>
+		{/if}
+
 		{#if $hud.missedReveal}
 			<div class="mb-3 rounded-md border border-red-500/40 bg-red-500/10 p-2">
 				<p class="text-sm font-semibold text-red-400">
