@@ -71,8 +71,18 @@ export const CYCLE_POLICY = {
  *
  *   first commit (cold slots)                116,898
  *   later commit (warm slots)                 82,698
+ *   first commit PAYING A FRESH PAYEE        152,154
  *   full fresh chunk, four zones, final      535,561
  *   the same chunk, non-final                534,756
+ *
+ * THE COMMIT'S WORST CASE IS A PAID ONE. A game that hands the skeleton a
+ * reveal scheduler (`RevealScheduler`, stratagems' plan step 8, P3) makes the
+ * commit carry the scheduler's payment, which `makeCommitment` forwards to
+ * `payee`; the first payment goes to an account that holds nothing, which
+ * costs the value transfer, the cold account and creating it. Measured
+ * 2026-10-30 at 152,154 against the 150,000 this declared, so every player's
+ * first scheduled commit ran out of gas (found by `with/fuzd`'s e2e). It is
+ * now 175,000: the paid case plus 15%, and the GasBudget test measures it.
  *
  * Both carry a margin over the reading, because they size a RESERVATION: over
  * reserving costs a slightly larger first payment, under reserving costs a
@@ -87,7 +97,7 @@ export const CYCLE_POLICY = {
  * half is an explicit EXPECTATION of actions per turn, because a limit bounds a
  * transaction and nothing bounds a turn wherever an action is free.
  */
-const COMMIT_GAS = 150_000n;
+const COMMIT_GAS = 175_000n;
 const REVEAL_GAS = 600_000n;
 
 /**
@@ -165,7 +175,11 @@ export const config = {
 				//
 				// So one commit plus one reveal step is 652,459 worst case, and this
 				// is that plus about 15%, kept a round number because it is a policy
-				// figure with a margin rather than a reading. The margin is what
+				// figure with a margin rather than a reading. (Since 2026-10-30 the
+				// commit's share is sized for a PAID first commit, 152,154: see
+				// COMMIT_GAS. A player with a reveal scheduler pays the reveal's gas
+				// to the scheduler in the commit instead of sending the reveal, so
+				// a credit still prices one action.) The margin is what
 				// keeps the credit count a FLOOR when a contract edit moves the gas a
 				// little; if one moves it a lot, this is measured again rather than
 				// nudged.

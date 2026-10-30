@@ -191,6 +191,81 @@ describe('the declared gas budget', function () {
 		);
 	});
 
+	it('covers a first commit that pays a reveal scheduler a fresh account', async function () {
+		// THE COMMIT CARRIES A PAYMENT when a game hands the skeleton a reveal
+		// scheduler (`RevealScheduler`, P3): `makeCommitment` forwards `msg.value`
+		// to `payee`, the scheduler's account for this player (fuzd's remote
+		// account on `with/fuzd`). The first time, that account holds nothing, and
+		// sending value to an empty account is the dearest call there is (the
+		// value transfer, the cold account, and creating it). It is the first
+		// commit a scheduled player makes, so a budget measured without it makes
+		// every player's first scheduled turn run out of gas: measured at 152,154
+		// against the 150,000 this used to declare.
+		const fixtures = await networkHelpers.loadFixture(deployAll);
+		const {
+			env,
+			Game,
+			GameToken,
+			linkedData,
+			actionsPerReveal,
+			unnamedAccounts,
+			advanceToCycleNumber,
+			getCycleNumber,
+			getTimestamp,
+		} = fixtures;
+		const declaredCommit = BigInt(linkedData.commitGas);
+
+		const player = unnamedAccounts[0];
+		const {cycleNumber: start} = getCycleNumber(await getTimestamp());
+		await advanceToCycleNumber(start + 2, true);
+		const identity = await enterGame({env, Game, GameToken}, player, {
+			amount: parseEther('100'),
+		});
+		const turn: Placement[] = Array.from(
+			{length: actionsPerReveal},
+			(_, i) => ({cellID: cellAt(i * 40, 100)}),
+		);
+
+		// An address nothing has ever touched: the scheduler's account before its
+		// first payment.
+		const freshPayee = '0x00000000000000000000000000000000000f00d1';
+		const balanceBefore = await provider.request({
+			method: 'eth_getBalance',
+			params: [freshPayee, 'latest'],
+		});
+		assert.strictEqual(BigInt(balanceBefore as string), 0n);
+
+		const receipt = await env.execute(Game, {
+			account: player,
+			functionName: 'makeCommitment',
+			args: [
+				identity,
+				commitmentHashFor(turn, SECRET, actionsPerReveal),
+				parseEther('10'),
+				freshPayee,
+			],
+			value: parseEther('0.0012'),
+		});
+		const used = BigInt(receipt.gasUsed);
+		const balanceAfter = await provider.request({
+			method: 'eth_getBalance',
+			params: [freshPayee, 'latest'],
+		});
+		assert.strictEqual(
+			BigInt(balanceAfter as string),
+			parseEther('0.0012'),
+			'the payment should reach the payee',
+		);
+
+		assert.ok(
+			declaredCommit >= (used * (100n + MINIMUM_HEADROOM_PERCENT)) / 100n,
+			`a first commit paying a fresh payee costs ${used} gas and the deployment declares commitGas ${declaredCommit}, ` +
+				`which is less than ${MINIMUM_HEADROOM_PERCENT}% of headroom. It is the gas LIMIT of every commit, ` +
+				`so a scheduled player's first turn would run out of gas. Raise it in contracts/rocketh/config.ts.`,
+		);
+		console.log(`gas budget: paid first commit ${used}/${declaredCommit}`);
+	});
+
 	it('is what the credits multiplier is derived from, so the two cannot drift apart', async function () {
 		const fixtures = await networkHelpers.loadFixture(deployAll);
 		const {linkedData} = fixtures;
