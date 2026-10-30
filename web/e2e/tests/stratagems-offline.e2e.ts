@@ -145,8 +145,14 @@ describe('Stratagems offline', () => {
 		);
 		const account = staked.account!.toLowerCase();
 
-		// TWO MOVES, planned on the canvas.
+		// TWO MOVES, planned on the canvas, once the board they are judged against
+		// has loaded (a click before then is dropped).
 		await expect(page.locator('canvas')).toBeVisible({timeout: 30_000});
+		await expect
+			.poll(async () => (await worldState(page))?.cycleNumber, {
+				timeout: 60_000,
+			})
+			.toBeDefined();
 		for (const cell of HUMAN_CELLS) {
 			await clickCell(page, cell);
 			await page.waitForTimeout(200);

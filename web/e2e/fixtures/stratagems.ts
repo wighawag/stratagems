@@ -183,6 +183,31 @@ export async function gameStep(page: Page): Promise<GameStep> {
 	})()`) as Promise<GameStep>;
 }
 
+/**
+ * Wait until the board the planning judges a click against is loaded.
+ *
+ * A click before then is dropped without a word (`planning.ts` judges nothing
+ * against an `Unloaded` board), and the indexed board loads on its own clock,
+ * after the cycle is already showing: clicking as soon as the HUD is up lost a
+ * click in about one run in two (measured 2026-10-29, step 8).
+ */
+export async function boardLoaded(
+	page: Page,
+	scope = 'globalThis.context',
+): Promise<void> {
+	await expect
+		.poll(
+			() =>
+				page.evaluate(`(() => {
+					${READ}
+					const context = ${scope};
+					return !!context && read(context.onchainState).step === 'Loaded';
+				})()`),
+			{message: 'the board loaded', timeout: 60_000},
+		)
+		.toBe(true);
+}
+
 /** A cell as the board (the held view) shows it, or undefined. */
 export async function cellOnBoard(
 	page: Page,
@@ -440,6 +465,7 @@ export async function planMoves(
 	await expect(page.locator('[role="dialog"]')).toHaveCount(0, {
 		timeout: 15_000,
 	});
+	await boardLoaded(page);
 	let planned = (await gameStep(page)).planned;
 	for (const offset of LADDER) {
 		if (planned >= count) break;
