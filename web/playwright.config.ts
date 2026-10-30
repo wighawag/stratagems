@@ -38,13 +38,16 @@ env.PUBLIC_IMPERSONATE_ADDRESSES =
  * THE FUZD SUITE (`with/fuzd`), when this run has a fuzd to start: the port is
  * picked by scripts/run-e2e-tests.sh, which also built the app against it.
  *
- * fuzd runs ONLY for that suite, started by its setup project and stopped by
- * its teardown, which come AFTER every other suite (`dependencies`). Everything
- * else therefore runs against a scheduler that is configured and absent, which
- * is the layer degrading to its absence (R2), and is `main`'s behaviour: those
- * suites assert what the browser reveals, and a fuzd revealing their turns
- * first would be a different test. The fuzd suite in turn stops fuzd to test
- * the fallback, which nothing else may see.
+ * The suites therefore run in three stages:
+ *
+ * 1. `chromium`: every suite of `main`, against a scheduler that is configured
+ *    and NOT running, which is the layer degrading to its absence (R2) and is
+ *    `main`'s behaviour, byte for byte.
+ * 2. `fuzd` (after `fuzd-up` starts it): the fuzd suite, and the template's
+ *    game suite again with fuzd LIVE, less the two suites whose claim is the
+ *    browser's own reveal.
+ * 3. `fuzd-fallback`: fuzd frozen, which nothing else may see. Then
+ *    `fuzd-down` stops it.
  */
 const FUZD_SUITE = !!env.E2E_FUZD_PORT;
 
@@ -181,7 +184,7 @@ export default defineConfig({
 		{
 			name: 'chromium',
 			use: {...devices['Desktop Chrome']},
-			testIgnore: /fuzd\.e2e\.ts$/,
+			testIgnore: /fuzd(-fallback)?\.e2e\.ts$/,
 		},
 		...(FUZD_SUITE
 			? [
@@ -200,10 +203,25 @@ export default defineConfig({
 						testMatch: /stop\.teardown\.ts$/,
 					},
 					{
+						// The fuzd suite, AND the template's own game suite run again with
+						// fuzd live: the same turns, now paid for and revealed by fuzd as
+						// the phase opens, with the browser as the fallback. Less the two
+						// suites whose claim is the BROWSER'S own reveal, which a live fuzd
+						// beats to it: the progress of a multi-chunk reveal this browser
+						// sends, and a reveal missed because the tab went away (with fuzd
+						// it is not missed, which is `fuzd.e2e.ts`'s claim).
 						name: 'fuzd',
 						use: {...devices['Desktop Chrome']},
-						testMatch: /fuzd\.e2e\.ts$/,
+						testMatch: /(fuzd|game)\.e2e\.ts$/,
+						grepInvert: /A turn bigger than one transaction|A missed reveal/,
 						dependencies: ['fuzd-up'],
+					},
+					{
+						// fuzd frozen, which nothing else may see: after every other suite.
+						name: 'fuzd-fallback',
+						use: {...devices['Desktop Chrome']},
+						testMatch: /fuzd-fallback\.e2e\.ts$/,
+						dependencies: ['fuzd-up', 'fuzd'],
 					},
 				]
 			: []),
