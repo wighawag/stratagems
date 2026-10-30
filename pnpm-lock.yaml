@@ -95,7 +95,7 @@ importers:
         version: 0.1.0
       faucet-server:
         specifier: ^0.2.0
-        version: 0.2.0(@libsql/core@0.17.4)(hono@4.13.3)(typescript@6.0.3)(zod@3.25.76)
+        version: 0.2.0(@libsql/core@0.18.0)(hono@4.13.3)(typescript@6.0.3)(zod@3.25.76)
       forge-std:
         specifier: github:foundry-rs/forge-std#v1.9.4
         version: https://codeload.github.com/foundry-rs/forge-std/tar.gz/1eea5bae12ae557d589f9f0f0edae2faa47cb262
@@ -119,7 +119,7 @@ importers:
         version: 2.4.1(prettier@3.9.6)
       purgatory:
         specifier: ^0.0.8
-        version: 0.0.8(@libsql/core@0.17.4)(hono@4.13.3)(typescript@6.0.3)(zod@3.25.76)
+        version: 0.0.8(@libsql/core@0.18.0)(hono@4.13.3)(typescript@6.0.3)(zod@3.25.76)
       rocketh:
         specifier: ^0.25.0
         version: 0.25.0(typescript@6.0.3)(zod@3.25.76)
@@ -147,6 +147,12 @@ importers:
       zellij-launcher:
         specifier: ^0.0.1
         version: 0.0.1
+
+  helper-services/fuzd:
+    devDependencies:
+      fuzd:
+        specifier: ^0.12.0
+        version: 0.12.0(@libsql/core@0.18.0)(hono@4.13.3)(lightningcss@1.33.0)(typescript@6.0.3)
 
   web:
     devDependencies:
@@ -783,6 +789,12 @@ packages:
   '@fuzd/scheduler@0.11.1':
     resolution: {integrity: sha512-e9iyr0VhsJrCj8C+mkE3ObqosPysJk+V6CtDVXJ1cfR858JuGCJ/5QWi//AMxN0OLEH/VUmbuGC+AXBD0/ip2w==}
 
+  '@fuzd/server@0.12.1':
+    resolution: {integrity: sha512-NrnXJSNimOojHE+TyG5o+N7LoM2U2kBFJm/czQP36NgFXuePmW+ftKo/y5pN0JdHVcz8EqGCQgXbBUIXUB1/hg==}
+
+  '@fuzd/tlock-decrypter@0.11.1':
+    resolution: {integrity: sha512-vi1BPYfA0N5xgZDI5C86tdifY80vzvsS0fCxo8cKu+rKayV7du84suO2CKusYMS8hhF4n8iPjs/f3BV0c186wg==}
+
   '@hapi/address@5.1.1':
     resolution: {integrity: sha512-A+po2d/dVoY7cYajycYI43ZbYMXukuopIsqCjh5QzsBCipDtdofHntljDlpccMjIfTy6UOkg+5KPriwYch2bXA==}
     engines: {node: '>=14.0.0'}
@@ -803,11 +815,28 @@ packages:
   '@hapi/topo@6.0.2':
     resolution: {integrity: sha512-KR3rD5inZbGMrHmgPxsJ9dbi6zEK+C3ZwUwTa+eMwWLz7oijWUTWD2pMSNNYJAU6Qq+65NkxXjqHr/7LM2Xkqg==}
 
+  '@hono/node-server@1.19.17':
+    resolution: {integrity: sha512-dSneS5qhiauZWGDCeK4o695Xd9nUNjviSZCMQrj10eetr8Uln1ucn6bbphOM6UynAMMtNIzZNSpL9vnASJwrPQ==}
+    engines: {node: '>=18.14.1'}
+    peerDependencies:
+      hono: ^4
+
   '@hono/node-server@2.1.1':
     resolution: {integrity: sha512-ELuehkj5VCBdgEw9zs+ivkKwyzzUCSQuE96YmiPvn1ECBoZCczbFXJLeEGMTYjphP6gydh4pHMqEYPVMYUVgQg==}
     engines: {node: '>=20'}
     peerDependencies:
       hono: ^4
+
+  '@hono/standard-validator@0.4.1':
+    resolution: {integrity: sha512-Q0+1dgMKAXEvsmJ5FNoamwnfrf/I5JNnKn7WzfynH8nJlNe1lNOW1+vlKpEQZbrBLEgmxIeys6HjRotDvZzq+A==}
+    peerDependencies:
+      '@standard-schema/spec': ^1.0.0
+      hono: '>=4.11.2'
+
+  '@hono/swagger-ui@0.5.3':
+    resolution: {integrity: sha512-Hn90DOOJ62ICJQplQvCDVpi9Jcn6EhtRaiffyJIS53wA5RmRLtMCDQGVc0bor8vQD7JIwpkweWjs+3cycp+IvA==}
+    peerDependencies:
+      hono: '>=4.0.0'
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -992,8 +1021,14 @@ packages:
   '@libsql/client@0.17.4':
     resolution: {integrity: sha512-lYayFWasDV78A+TjlEhr6ubb3odBV6OHjb+wdp8VQcyWWAEIjuwbCHaraEUS4m4yWoo0BvZo96It4VdzZRmRWw==}
 
+  '@libsql/client@0.18.0':
+    resolution: {integrity: sha512-zMCCo58vv7w27j7+cnt/GW+X6/Rih6cHZ86PKi0AxCMOqMfrVgG9OZ5lW2bDMJhSeOjsv2szH2nJF3A9l36UmA==}
+
   '@libsql/core@0.17.4':
     resolution: {integrity: sha512-LqF9gIvnJ38nmAH1y/ChizHqDO/MO1wLgA96XrraulEEbqXxLjleSH92YWTolbuJKgPUmGu4aJk9W3UnAcxLOQ==}
+
+  '@libsql/core@0.18.0':
+    resolution: {integrity: sha512-N8RR2CIpcgtbKZnXs2KVpw2lJQfinUj3I56e7qRDRpK18Hty0Rr8nr00VmFb4R/DsqOanPB/TaP3+QAQLZeXMg==}
 
   '@libsql/darwin-arm64@0.5.29':
     resolution: {integrity: sha512-K+2RIB1OGFPYQbfay48GakLhqf3ArcbHqPFu7EZiaUcRgFcdw8RoltsMyvbj5ix2fY0HV3Q3Ioa/ByvQdaSM0A==}
@@ -1675,6 +1710,66 @@ packages:
   '@stablelib/wipe@1.0.1':
     resolution: {integrity: sha512-WfqfX/eXGiAd3RJe4VU2snh/ZPwtSjLG4ynQ/vYzvghTh7dHFcI1wl+nrkWG6lGhukOxOsUHfv8dUXr58D0ayg==}
 
+  '@standard-community/standard-json@0.3.7':
+    resolution: {integrity: sha512-9reHaeW6k99yMHCgqMnLZgrKGT/fxfwYCdzd8nM4gHL4ez8MO0AlC9seGXoJNVEaO5LiE7DVCKl46wNE4wVFRA==}
+    peerDependencies:
+      '@standard-schema/spec': ^1.0.0
+      '@types/json-schema': ^7.0.15
+      '@valibot/to-json-schema': ^1.3.0
+      arktype: ^2.1.20
+      effect: ^3.20.0
+      sury: ^10.0.0
+      typebox: ^1.0.17
+      valibot: ^1.4.2
+      zod: ^3.25.0 || ^4.0.0
+      zod-to-json-schema: ^3.24.5
+    peerDependenciesMeta:
+      '@valibot/to-json-schema':
+        optional: true
+      arktype:
+        optional: true
+      effect:
+        optional: true
+      sury:
+        optional: true
+      typebox:
+        optional: true
+      valibot:
+        optional: true
+      zod:
+        optional: true
+      zod-to-json-schema:
+        optional: true
+
+  '@standard-community/standard-openapi@0.2.11':
+    resolution: {integrity: sha512-Fz+2K6JMJZwf4QoyZrq1smK+YeEwDGXqz2j8Y77rOHgmrk9StcEyTKkMf3n/4xOmEup5WZ2eOp0xiC7Slxx9gg==}
+    peerDependencies:
+      '@standard-community/standard-json': ^0.3.5
+      '@standard-schema/spec': ^1.0.0
+      arktype: ^2.1.20
+      effect: ^3.20.0
+      openapi-types: ^12.1.3
+      sury: ^10.0.0
+      typebox: ^1.0.0
+      valibot: ^1.4.2
+      zod: ^3.25.0 || ^4.0.0
+      zod-openapi: ^4
+    peerDependenciesMeta:
+      arktype:
+        optional: true
+      effect:
+        optional: true
+      sury:
+        optional: true
+      typebox:
+        optional: true
+      valibot:
+        optional: true
+      zod:
+        optional: true
+      zod-openapi:
+        optional: true
+
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
@@ -1853,6 +1948,9 @@ packages:
 
   '@types/fs-extra@11.0.4':
     resolution: {integrity: sha512-yTbItCNreRooED33qjunPthRcSjERP1r4MqCZc7wv0u2sUkzTFp45tgUfS5+r7FrZPdmCCNflLhVSP/o+SemsQ==}
+
+  '@types/json-schema@7.0.15':
+    resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
   '@types/jsonfile@6.1.4':
     resolution: {integrity: sha512-D5qGUYwjvnNNextdU59/+fI+spnwtTFmyQP0h+PfIOSkNfpU6AOICUOkm4i0OnSk+NyjdPJrxCDro0sJsWlRpQ==}
@@ -2230,9 +2328,16 @@ packages:
   eip-1193-accounts-wrapper@0.3.0:
     resolution: {integrity: sha512-9HT8cs5djo8Xm9xfsdJRmCGnDEhCWpoIONEVKARQtr/ldMpHanyoqB3cRX/WgwcFUGkHWGQN7CTOtAARp5l2MQ==}
 
+  eip-1193-jsonrpc-provider@0.4.4:
+    resolution: {integrity: sha512-gm766zo9ir190Q/V3d7yZRnQNzfaFgdLysGj1MWJiwuJsmPevBDmVEWSjTdbAGEVrq1syoN22AacDCkfbGDyEg==}
+    deprecated: Renamed to @eip-1193/jsonrpc-provider.
+
   eip-1193-signer@0.1.1:
     resolution: {integrity: sha512-dEMgcibZnOccQDDQ5zA6hVvDSNCce7tfzu/E08cCd3fBhcX7Sh8P83YJKfd7f0XNUXJBQ0aJSO31eZ5Cic/Qpg==}
     deprecated: Renamed to @eip-1193/signer.
+
+  eip-1193@0.6.6:
+    resolution: {integrity: sha512-pnEP5TRFfK0v0EbPsrOuJ1RvKDh8Ykh5OyvB+jlIgkJGdUt0nhC3fM/k2TsrOq6Qk+q1E0dpaikfdRzJ6/fi5g==}
 
   eip-1193@0.7.4:
     resolution: {integrity: sha512-NYtXIpM8dwiMmeJjdRkCzIdpTXU7ANdeO4fW+SpZE3Pia4ljnfXCyY40TZrQ5iJtaUMcJ1aSUsKxtdh0iwFiyw==}
@@ -2393,6 +2498,10 @@ packages:
   function-bind@1.1.2:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
 
+  fuzd@0.12.0:
+    resolution: {integrity: sha512-3JXBRMq5iuzO53wAbXARqwZZZWJbRROuocCru1yREOWhZKFOTCjxIoulrOaSZ/Nmhd27cJyTsoXe2pzzwaHq+A==}
+    hasBin: true
+
   get-intrinsic@1.3.0:
     resolution: {integrity: sha512-9fSjSaos/fRIVIp+xSJlE6lfwhES7LNtKaCBIamHsjr2na1BiABJPo0mOjjz8GJDURarmCPGqaiVg5mfjb98CQ==}
     engines: {node: '>= 0.4'}
@@ -2454,6 +2563,11 @@ packages:
   hasown@2.0.4:
     resolution: {integrity: sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==}
     engines: {node: '>= 0.4'}
+
+  hono-openapi@1.5.0:
+    resolution: {integrity: sha512-7pRGQbFLBSy+SmCKHIZB3a8pzalnsYflvGRXyS1P7vucEGlkL23QitQ++wNCuMT25Q3TbGH2JUuTdYnWMY/GIw==}
+    peerDependencies:
+      hono: ^4.11.2
 
   hono@4.13.3:
     resolution: {integrity: sha512-r8AO2mYHoLxSHkgafNeC/BXyb2vWRxD3jem4Ts+ptav8oTG5FIRifAjuJEmZI4bSvvc2ns0GxmIYiZnHqN3mMw==}
@@ -2839,6 +2953,9 @@ packages:
     resolution: {integrity: sha512-4a+OsYv9UktOJKE+l1A4OufDgdRF9PifWj+tJnHURo/P+WOxpG4GzUFL9qCalmWauao6ogiG+QvnCovwPoyAWA==}
     engines: {node: '>=12.20.0'}
 
+  openapi-types@12.1.3:
+    resolution: {integrity: sha512-N4YtSYJqghVu4iek2ZUvcN/0aqH1kRDuNqzcycDxhOUpg7GdvLa2F3DgS6yBNhInhv2r/6I0Flkn7CqL8+nIcw==}
+
   ox@0.14.34:
     resolution: {integrity: sha512-12seOIk7dv8eAoGQhcWaeKZxNz304IVcDvb9U5Y7JZAEVe21Nm1YMxLjhWah+su5BD4Omx4Zz0z5x3ij9M4GYQ==}
     peerDependencies:
@@ -3006,6 +3123,9 @@ packages:
     resolution: {integrity: sha512-knN8fvto6KY8LKbbPqoZT6atsoMVyKumoR9ZiV7JfdNPfuifASw4zkpBHjU1R2oONL4H2wgmwhOwJjEjblVk4w==}
     engines: {node: '>= 16'}
     hasBin: true
+
+  quansync@0.2.11:
+    resolution: {integrity: sha512-AifT7QEbW9Nri4tAwR5M/uzpBuqfZf+zwaEM/QkzEjj7NBuFD2rBuy0K3dE+8wltbezDV7JMA0WfnCPYRSYbXA==}
 
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
@@ -3650,6 +3770,11 @@ packages:
   zimmerframe@1.1.4:
     resolution: {integrity: sha512-B58NGBEoc8Y9MWWCQGl/gq9xBCe4IiKM0a2x7GZdQKOW5Exr8S1W24J6OgM1njK8xCRGvAJIL/MxXHf6SkmQKQ==}
 
+  zod-schema-for@0.1.1:
+    resolution: {integrity: sha512-/TwYsR1cae5xoCr01B7689iAyeyyX8zYHoojJHJCz/RvpVYNYAxaBD7mV0wArfSHFDqwRX5lyPkPI32MNK1eOg==}
+    peerDependencies:
+      zod: ^4
+
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
@@ -4186,6 +4311,84 @@ snapshots:
       - utf-8-validate
       - zod
 
+  '@fuzd/server@0.12.1(lightningcss@1.33.0)(typescript@6.0.3)':
+    dependencies:
+      '@fuzd/chain-protocol': 0.11.1(@types/node@26.2.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@4.4.3)
+      '@fuzd/common': 0.11.1
+      '@fuzd/executor': 0.11.1(@types/node@26.2.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@4.4.3)
+      '@fuzd/scheduler': 0.11.1(@types/node@26.2.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@4.4.3)
+      '@fuzd/tlock-decrypter': 0.11.1(lightningcss@1.33.0)(typescript@6.0.3)(zod@4.4.3)
+      '@hono/swagger-ui': 0.5.3(hono@4.13.3)
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
+      '@standard-schema/spec': 1.1.0
+      eip-1193: 0.6.6
+      eip-1193-jsonrpc-provider: 0.4.4
+      eip-1193-signer: 0.1.1(typescript@6.0.3)(zod@4.4.3)
+      hono: 4.13.3
+      hono-openapi: 1.5.0(hono@4.13.3)(zod@4.4.3)
+      named-logs: 0.3.2
+      remote-account: 0.2.2
+      remote-sql: 0.0.7
+      tlock-js: 0.9.0
+      viem: 2.55.19(typescript@6.0.3)(zod@4.4.3)
+      zod: 4.4.3
+      zod-schema-for: 0.1.1(zod@4.4.3)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@types/node'
+      - '@valibot/to-json-schema'
+      - '@vitest/browser'
+      - '@vitest/ui'
+      - arktype
+      - bufferutil
+      - effect
+      - happy-dom
+      - jsdom
+      - less
+      - lightningcss
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - supports-color
+      - sury
+      - terser
+      - typebox
+      - typescript
+      - utf-8-validate
+      - valibot
+      - zod-openapi
+      - zod-to-json-schema
+
+  '@fuzd/tlock-decrypter@0.11.1(lightningcss@1.33.0)(typescript@6.0.3)(zod@4.4.3)':
+    dependencies:
+      '@fuzd/common': 0.11.1
+      '@fuzd/scheduler': 0.11.1(@types/node@26.2.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@4.4.3)
+      named-logs: 0.3.2
+      tlock-js: 0.9.0
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@types/node'
+      - '@vitest/browser'
+      - '@vitest/ui'
+      - bufferutil
+      - happy-dom
+      - jsdom
+      - less
+      - lightningcss
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+      - typescript
+      - utf-8-validate
+      - zod
+
   '@hapi/address@5.1.1':
     dependencies:
       '@hapi/hoek': 11.0.7
@@ -4202,7 +4405,20 @@ snapshots:
     dependencies:
       '@hapi/hoek': 11.0.7
 
+  '@hono/node-server@1.19.17(hono@4.13.3)':
+    dependencies:
+      hono: 4.13.3
+
   '@hono/node-server@2.1.1(hono@4.13.3)':
+    dependencies:
+      hono: 4.13.3
+
+  '@hono/standard-validator@0.4.1(@standard-schema/spec@1.1.0)(hono@4.13.3)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      hono: 4.13.3
+
+  '@hono/swagger-ui@0.5.3(hono@4.13.3)':
     dependencies:
       hono: 4.13.3
 
@@ -4356,7 +4572,22 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
+  '@libsql/client@0.18.0':
+    dependencies:
+      '@libsql/core': 0.18.0
+      '@libsql/hrana-client': 0.10.0
+      js-base64: 3.9.3
+      libsql: 0.5.29
+      promise-limit: 2.7.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
   '@libsql/core@0.17.4':
+    dependencies:
+      js-base64: 3.9.3
+
+  '@libsql/core@0.18.0':
     dependencies:
       js-base64: 3.9.3
 
@@ -5056,6 +5287,22 @@ snapshots:
 
   '@stablelib/wipe@1.0.1': {}
 
+  '@standard-community/standard-json@0.3.7(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(zod@4.4.3)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      '@types/json-schema': 7.0.15
+      quansync: 0.2.11
+    optionalDependencies:
+      zod: 4.4.3
+
+  '@standard-community/standard-openapi@0.2.11(@standard-community/standard-json@0.3.7(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(zod@4.4.3))(@standard-schema/spec@1.1.0)(openapi-types@12.1.3)(zod@4.4.3)':
+    dependencies:
+      '@standard-community/standard-json': 0.3.7(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(zod@4.4.3)
+      '@standard-schema/spec': 1.1.0
+      openapi-types: 12.1.3
+    optionalDependencies:
+      zod: 4.4.3
+
   '@standard-schema/spec@1.1.0': {}
 
   '@starknet-io/types-js@0.7.10': {}
@@ -5212,6 +5459,8 @@ snapshots:
     dependencies:
       '@types/jsonfile': 6.1.4
       '@types/node': 26.2.0
+
+  '@types/json-schema@7.0.15': {}
 
   '@types/jsonfile@6.1.4':
     dependencies:
@@ -5618,6 +5867,11 @@ snapshots:
       - utf-8-validate
       - zod
 
+  eip-1193-jsonrpc-provider@0.4.4:
+    dependencies:
+      named-logs: 0.3.2
+      promise-throttle: 1.1.2
+
   eip-1193-signer@0.1.1(typescript@6.0.3)(zod@4.4.3):
     dependencies:
       viem: 2.55.19(typescript@6.0.3)(zod@4.4.3)
@@ -5626,6 +5880,8 @@ snapshots:
       - typescript
       - utf-8-validate
       - zod
+
+  eip-1193@0.6.6: {}
 
   eip-1193@0.7.4: {}
 
@@ -5786,7 +6042,7 @@ snapshots:
       - utf-8-validate
       - zod
 
-  faucet-server@0.2.0(@libsql/core@0.17.4)(hono@4.13.3)(typescript@6.0.3)(zod@3.25.76):
+  faucet-server@0.2.0(@libsql/core@0.18.0)(hono@4.13.3)(typescript@6.0.3)(zod@3.25.76):
     dependencies:
       '@hono/node-server': 2.1.1(hono@4.13.3)
       '@libsql/client': 0.17.4
@@ -5794,7 +6050,7 @@ snapshots:
       faucet-server-app: 0.2.0(typescript@6.0.3)(zod@3.25.76)
       ldenv: 0.5.0
       named-logs-context: 0.1.1
-      remote-sql-libsql: 0.0.7(@libsql/core@0.17.4)
+      remote-sql-libsql: 0.0.7(@libsql/core@0.18.0)
     transitivePeerDependencies:
       - '@libsql/core'
       - bufferutil
@@ -5836,6 +6092,45 @@ snapshots:
     optional: true
 
   function-bind@1.1.2: {}
+
+  fuzd@0.12.0(@libsql/core@0.18.0)(hono@4.13.3)(lightningcss@1.33.0)(typescript@6.0.3):
+    dependencies:
+      '@fuzd/server': 0.12.1(lightningcss@1.33.0)(typescript@6.0.3)
+      '@hono/node-server': 1.19.17(hono@4.13.3)
+      '@libsql/client': 0.18.0
+      commander: 12.1.0
+      ldenv: 0.3.16
+      named-logs-context: 0.1.1
+      remote-sql-libsql: 0.0.7(@libsql/core@0.18.0)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@libsql/core'
+      - '@types/node'
+      - '@valibot/to-json-schema'
+      - '@vitest/browser'
+      - '@vitest/ui'
+      - arktype
+      - bufferutil
+      - effect
+      - happy-dom
+      - hono
+      - jsdom
+      - less
+      - lightningcss
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - supports-color
+      - sury
+      - terser
+      - typebox
+      - typescript
+      - utf-8-validate
+      - valibot
+      - zod-openapi
+      - zod-to-json-schema
 
   get-intrinsic@1.3.0:
     dependencies:
@@ -5934,6 +6229,26 @@ snapshots:
   hasown@2.0.4:
     dependencies:
       function-bind: 1.1.2
+
+  hono-openapi@1.5.0(hono@4.13.3)(zod@4.4.3):
+    dependencies:
+      '@hono/standard-validator': 0.4.1(@standard-schema/spec@1.1.0)(hono@4.13.3)
+      '@standard-community/standard-json': 0.3.7(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(zod@4.4.3)
+      '@standard-community/standard-openapi': 0.2.11(@standard-community/standard-json@0.3.7(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(zod@4.4.3))(@standard-schema/spec@1.1.0)(openapi-types@12.1.3)(zod@4.4.3)
+      '@standard-schema/spec': 1.1.0
+      '@types/json-schema': 7.0.15
+      hono: 4.13.3
+      openapi-types: 12.1.3
+    transitivePeerDependencies:
+      - '@valibot/to-json-schema'
+      - arktype
+      - effect
+      - sury
+      - typebox
+      - valibot
+      - zod
+      - zod-openapi
+      - zod-to-json-schema
 
   hono@4.13.3: {}
 
@@ -6261,6 +6576,8 @@ snapshots:
 
   obug@2.1.4: {}
 
+  openapi-types@12.1.3: {}
+
   ox@0.14.34(typescript@6.0.3)(zod@3.25.76):
     dependencies:
       '@adraffy/ens-normalize': 1.11.1
@@ -6382,7 +6699,7 @@ snapshots:
       - utf-8-validate
       - zod
 
-  purgatory@0.0.8(@libsql/core@0.17.4)(hono@4.13.3)(typescript@6.0.3)(zod@3.25.76):
+  purgatory@0.0.8(@libsql/core@0.18.0)(hono@4.13.3)(typescript@6.0.3)(zod@3.25.76):
     dependencies:
       '@hono/node-server': 2.1.1(hono@4.13.3)
       '@libsql/client': 0.17.4
@@ -6390,7 +6707,7 @@ snapshots:
       ldenv: 0.3.16
       named-logs-context: 0.1.1
       purgatory-core: 0.0.7(typescript@6.0.3)(zod@3.25.76)
-      remote-sql-libsql: 0.0.7(@libsql/core@0.17.4)
+      remote-sql-libsql: 0.0.7(@libsql/core@0.18.0)
     transitivePeerDependencies:
       - '@libsql/core'
       - bufferutil
@@ -6406,6 +6723,8 @@ snapshots:
       svgo: 3.3.4
     transitivePeerDependencies:
       - '@types/node'
+
+  quansync@0.2.11: {}
 
   queue-microtask@1.2.3: {}
 
@@ -6453,9 +6772,9 @@ snapshots:
       named-logs: 0.2.4
       promise-throttle: 1.1.2
 
-  remote-sql-libsql@0.0.7(@libsql/core@0.17.4):
+  remote-sql-libsql@0.0.7(@libsql/core@0.18.0):
     dependencies:
-      '@libsql/core': 0.17.4
+      '@libsql/core': 0.18.0
       remote-sql: 0.0.7
 
   remote-sql@0.0.7: {}
@@ -7123,6 +7442,10 @@ snapshots:
   zellij-launcher@0.0.1: {}
 
   zimmerframe@1.1.4: {}
+
+  zod-schema-for@0.1.1(zod@4.4.3):
+    dependencies:
+      zod: 4.4.3
 
   zod@3.25.76: {}
 

@@ -40,6 +40,27 @@ export PUBLIC_NODE_URL="$RPC_URL"
 # that were definitely just deployed.
 export PUBLIC_CHAIN_INFO_NODE_URL="$RPC_URL"
 
+# THE REVEAL SCHEDULER (`with/fuzd`), on a port of its own. Picked free unless
+# E2E_FUZD_PORT says otherwise, so it can never land on 8545 or 8546 (another
+# project's on some machines) or on whatever else this machine is running.
+#
+# The app is BUILT pointing at it (PUBLIC_FUZD_URI), but fuzd is not running
+# for most of the suite: playwright.config.ts starts it only for the fuzd
+# project (e2e/fuzd/), which runs after every other suite. So `main`'s suites
+# run here as they do on `main`, against a scheduler that is configured and
+# absent, which is the layer degrading to its absence (R2): every commit is
+# recorded as not scheduled and revealed by the browser at once.
+if [ -z "${E2E_FUZD_PORT:-}" ]; then
+    E2E_FUZD_PORT="$(node -e 'const s=require("net").createServer();s.listen(0,"127.0.0.1",()=>{process.stdout.write(String(s.address().port));s.close()})')"
+fi
+if [ "$E2E_FUZD_PORT" = "8545" ] || [ "$E2E_FUZD_PORT" = "8546" ]; then
+    echo -e "${RED}✗ E2E_FUZD_PORT may not be 8545 or 8546.${NC}"
+    exit 1
+fi
+export E2E_FUZD_PORT
+export E2E_FUZD_URL="http://127.0.0.1:${E2E_FUZD_PORT}"
+export PUBLIC_FUZD_URI="$E2E_FUZD_URL"
+
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -118,6 +139,14 @@ NODE_PGID=""
 # the opposite of what it is for, and worthless the moment two runs overlap.
 NODE_LOG="${TMPDIR:-/tmp}/$(basename "$REPO_DIR")-e2e-node.log"
 
+# Where the fuzd project's setup records the process group of the fuzd it
+# starts (and its teardown removes it), and where fuzd logs. Read by cleanup
+# below as a BACKSTOP: a run interrupted between the two would otherwise leave
+# fuzd running, re-parented to PID 1, holding its port.
+export E2E_FUZD_PGID_FILE="${TMPDIR:-/tmp}/$(basename "$REPO_DIR")-e2e-fuzd.pgid"
+export E2E_FUZD_LOG="${TMPDIR:-/tmp}/$(basename "$REPO_DIR")-e2e-fuzd.log"
+rm -f "$E2E_FUZD_PGID_FILE"
+
 # Cleanup function to kill background processes
 #
 # Only ever stops what THIS run started. Port 8545 (and 4173) may belong to a
@@ -141,6 +170,20 @@ cleanup() {
         kill "$NODE_PID" 2>/dev/null || true
         sleep 1
         kill -9 "$NODE_PID" 2>/dev/null || true
+    fi
+
+    # fuzd, if the fuzd project's setup started it and its teardown did not get
+    # to stop it. Only the group it recorded, which is its own (`detached`).
+    if [ -f "$E2E_FUZD_PGID_FILE" ]; then
+        FUZD_PGID="$(cat "$E2E_FUZD_PGID_FILE")"
+        if [ -n "$FUZD_PGID" ] && [ "$FUZD_PGID" != "$(ps -o pgid= -p $$ 2>/dev/null | tr -d ' ')" ]; then
+            echo "Stopping the fuzd this run started (PGID: $FUZD_PGID)..."
+            kill -CONT -- "-$FUZD_PGID" 2>/dev/null || true
+            kill -- "-$FUZD_PGID" 2>/dev/null || true
+            sleep 1
+            kill -9 -- "-$FUZD_PGID" 2>/dev/null || true
+        fi
+        rm -f "$E2E_FUZD_PGID_FILE"
     fi
 
     # The preview server is started and stopped by Playwright's `webServer`, so
@@ -240,7 +283,7 @@ fi
 # with the same lockfile, so a second install would spend a minute reproducing
 # a tree that already exists. pnpm's layout survives this - every link inside
 # node_modules is relative to its real path, which is still the main checkout.
-for pkg in . web contracts; do
+for pkg in . web contracts helper-services/fuzd; do
     if [ ! -d "$REPO_DIR/$pkg/node_modules" ]; then
         echo -e "${RED}✗ ${REPO_DIR}/$pkg/node_modules is missing. Run pnpm i first.${NC}"
         exit 1
@@ -248,6 +291,9 @@ for pkg in . web contracts; do
 done
 ln -s "$REPO_DIR/node_modules" "$WORKTREE_DIR/node_modules"
 ln -s "$REPO_DIR/contracts/node_modules" "$WORKTREE_DIR/contracts/node_modules"
+# The fuzd CLI the fuzd project starts, from the worktree's own package.
+ln -s "$REPO_DIR/helper-services/fuzd/node_modules" "$WORKTREE_DIR/helper-services/fuzd/node_modules"
+export E2E_FUZD_DIR="$WORKTREE_DIR/helper-services/fuzd"
 
 # EXCEPT the one package the worktree itself provides. When the web workspace
 # depends on the contracts package (`workspace:*`, as it does wherever the app

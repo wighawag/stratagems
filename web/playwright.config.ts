@@ -35,6 +35,20 @@ env.PUBLIC_IMPERSONATE_ADDRESSES =
 	).join(',');
 
 /**
+ * THE FUZD SUITE (`with/fuzd`), when this run has a fuzd to start: the port is
+ * picked by scripts/run-e2e-tests.sh, which also built the app against it.
+ *
+ * fuzd runs ONLY for that suite, started by its setup project and stopped by
+ * its teardown, which come AFTER every other suite (`dependencies`). Everything
+ * else therefore runs against a scheduler that is configured and absent, which
+ * is the layer degrading to its absence (R2), and is `main`'s behaviour: those
+ * suites assert what the browser reveals, and a fuzd revealing their turns
+ * first would be a different test. The fuzd suite in turn stops fuzd to test
+ * the fallback, which nothing else may see.
+ */
+const FUZD_SUITE = !!env.E2E_FUZD_PORT;
+
+/**
  * Playwright configuration for E2E tests.
  *
  * Tests run against a local Ethereum node with deployed contracts.
@@ -167,7 +181,30 @@ export default defineConfig({
 		{
 			name: 'chromium',
 			use: {...devices['Desktop Chrome']},
+			testIgnore: /fuzd\.e2e\.ts$/,
 		},
+		...(FUZD_SUITE
+			? [
+					{
+						name: 'fuzd-up',
+						testDir: './e2e/fuzd',
+						testMatch: /start\.setup\.ts$/,
+						dependencies: ['chromium'],
+						teardown: 'fuzd-down',
+					},
+					{
+						name: 'fuzd-down',
+						testDir: './e2e/fuzd',
+						testMatch: /stop\.teardown\.ts$/,
+					},
+					{
+						name: 'fuzd',
+						use: {...devices['Desktop Chrome']},
+						testMatch: /fuzd\.e2e\.ts$/,
+						dependencies: ['fuzd-up'],
+					},
+				]
+			: []),
 		// Uncomment to add more browsers
 		// {
 		// 	name: 'firefox',

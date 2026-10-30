@@ -41,6 +41,8 @@
     "web:serve": "pnpm --filter ./web serve",
     "web:check": "pnpm --filter ./web check",
     "web:check:watch": "pnpm --filter ./web check:watch",
+    "---------------------- SERVICES ----------------------": "",
+    "fuzd:dev": "pnpm --filter ./helper-services/fuzd dev",
     "---------------------- DEPLOY ----------------------": "",
     "test": "pnpm contracts:test",
     "build": "ldenv --git -d localhost pnpm contracts:build @@MODE ~~ pnpm web:build @@MODE ~~ @@",

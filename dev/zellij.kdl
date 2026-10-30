@@ -22,6 +22,11 @@ layout {
 		pane name="faucet" command="pnpm"  {
 			args "contracts:faucet"
 		}
+		// The reveal scheduler (`with/fuzd`): on 34002, which web/.env.localhost
+		// points PUBLIC_FUZD_URI at, against the local chain on 8545.
+		pane name="fuzd" command="pnpm"  {
+			args "fuzd:dev"
+		}
 	}
 
 	pane split_direction="vertical" {

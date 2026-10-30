@@ -1,0 +1,12 @@
+{
+	"name": "template-commit-reveal-fuzd",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"devDependencies": {
+		"fuzd": "^0.12.0"
+	},
+	"scripts": {
+		"dev": "fuzd --port \"${FUZD_PORT:-34002}\" --chain \"31337=${FUZD_CHAIN_RPC:-http://127.0.0.1:8545}#finality=1&worstCaseBlockTime=2\" --mnemonic \"${FUZD_MNEMONIC:-test test test test test test test test test test test junk}\" --time-lock-decryption false --process-interval 1"
+	}
+}
