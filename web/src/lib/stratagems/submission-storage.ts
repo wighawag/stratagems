@@ -30,14 +30,20 @@ export const STRATAGEMS_STORAGE: SubmissionStorageFormat<Move> = {
 	},
 };
 
-/** Keyed by WHO PLAYS, which is what the contract's commitment is keyed by. */
-export function createSubmissionStorage(params: {
+/**
+ * Keyed by WHO PLAYS, which is what the contract's commitment is keyed by.
+ * `TExtensions` is what the layers keep with a turn (`with/fuzd`'s schedule),
+ * round-tripped untouched: the composition names it.
+ */
+export function createSubmissionStorage<
+	TExtensions extends object = {},
+>(params: {
 	accountData: SubmissionAccountData;
 	chainId: string | number;
 	contract: `0x${string}`;
 	player: GameIdentity;
-}): AccountDataSubmissionStorage<Move> {
-	return createAccountDataSubmissionStorage<Move, {}, GameIdentity>({
+}): AccountDataSubmissionStorage<Move, TExtensions> {
+	return createAccountDataSubmissionStorage<Move, TExtensions, GameIdentity>({
 		accountData: params.accountData,
 		format: STRATAGEMS_STORAGE,
 		chainId: params.chainId,

@@ -25,6 +25,7 @@ import type {RecoveryState} from '$lib/game/core/recovery';
 import {SignerOutOfFundsError} from '$lib/game/core/commit-reveal/errors';
 import type {SetupNeeded} from '../context';
 import type {CyclePhase} from '$lib/game/core/cycle-phase';
+import type {ScheduledReveal} from '$lib/fuzd';
 
 export type HudModel = {
 	phaseLabel: string;
@@ -127,6 +128,24 @@ export type HudModel = {
 		detail: string;
 		busy: boolean;
 		canAcknowledge: boolean;
+	};
+
+	/**
+	 * Who reveals this turn, when fuzd (`with/fuzd`) is configured: that it will
+	 * be revealed for the player once scheduled, fuzd's status in the reveal
+	 * phase, or that it is NOT scheduled and this browser has to be here.
+	 * `step` is for a test to read; the label is for the player.
+	 */
+	revealSchedule?: {
+		step:
+			| 'scheduled'
+			| 'broadcast'
+			| 'confirmed'
+			| 'failed'
+			| 'unreachable'
+			| 'not-scheduled';
+		label: string;
+		tone: 'idle' | 'busy' | 'good' | 'bad';
 	};
 
 	/**
@@ -427,6 +446,73 @@ export function describeRecovery(
 	return {headline, detail, busy: false, canRecover: plannedCount > 0};
 }
 
+/**
+ * What to say about who reveals the turn in hand, or nothing without a
+ * scheduler (R2) or a committed turn.
+ *
+ * Said only while the turn is still owed, or once fuzd has a word on it: a
+ * turn this browser revealed itself is not dressed up as revealed "for you".
+ *
+ * The reference game's own (`placement/ui/hud.ts` on template-commit-reveal
+ * `with/fuzd`), word for word: it lives in that game's HUD rather than in
+ * `$lib/fuzd`, and stratagems omits that game, so it is written here again.
+ */
+export function describeRevealSchedule(
+	reveal: ScheduledReveal | undefined,
+	submission: SubmissionState<Move>,
+): HudModel['revealSchedule'] {
+	if (!reveal) return undefined;
+	const owed =
+		(submission.step === 'Committed' || submission.step === 'Revealing') &&
+		submission.cycleNumber === reveal.cycleNumber;
+	if (reveal.revealScheduled === false || !reveal.schedule) {
+		return owed && reveal.revealScheduled === false
+			? {
+					step: 'not-scheduled',
+					label:
+						'Not scheduled: keep this page open (or come back during the reveal phase) so this browser can reveal it.',
+					tone: 'bad',
+				}
+			: undefined;
+	}
+	const status = reveal.status;
+	if (!owed && !status) return undefined;
+	switch (status?.step) {
+		case undefined:
+		case 'scheduled':
+			return {
+				step: 'scheduled',
+				label:
+					'Scheduled: this turn will be revealed for you, even if you close this page.',
+				tone: 'good',
+			};
+		case 'broadcast':
+			return {
+				step: 'broadcast',
+				label:
+					status.total > 1
+						? `Being revealed for you (${status.sent} of ${status.total} sent)...`
+						: 'Being revealed for you...',
+				tone: 'busy',
+			};
+		case 'confirmed':
+			return {step: 'confirmed', label: 'Revealed for you.', tone: 'good'};
+		case 'failed':
+			return {
+				step: 'failed',
+				label: `The scheduled reveal failed (${status.reason}), so this browser is revealing it.`,
+				tone: 'bad',
+			};
+		case 'unreachable':
+			return {
+				step: 'unreachable',
+				label:
+					'The reveal service cannot be reached from here. If it has not revealed by half the phase, this browser will.',
+				tone: 'busy',
+			};
+	}
+}
+
 export function createHud(context: Context): Readable<HudModel> {
 	const {game} = context;
 	const STAKE = stakeWords(
@@ -448,6 +534,7 @@ export function createHud(context: Context): Readable<HudModel> {
 			game.setup,
 			game.acquisition,
 			game.recovery,
+			game.revealSchedule,
 		],
 		([
 			$twoPhase,
@@ -462,6 +549,7 @@ export function createHud(context: Context): Readable<HudModel> {
 			$setup,
 			$acquisition,
 			$recovery,
+			$revealSchedule,
 		]): HudModel => {
 			const submission = describeSubmission($submission);
 			const reserve = $reserve as ReserveState;
@@ -541,6 +629,10 @@ export function createHud(context: Context): Readable<HudModel> {
 					STAKE,
 				),
 				recovery: describeRecovery($recovery as RecoveryState, $count),
+				revealSchedule: describeRevealSchedule(
+					$revealSchedule as ScheduledReveal | undefined,
+					$submission as SubmissionState<Move>,
+				),
 				// Committing early is allowed the whole time the phase is open; the
 				// submission commits by itself if the player leaves it too late. An
 				// unrevealed commitment blocks it entirely: the contract would reject
