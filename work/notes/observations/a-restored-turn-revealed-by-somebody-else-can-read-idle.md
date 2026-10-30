@@ -20,16 +20,25 @@ const who = writable<`0x${string}` | undefined>(player);
 const ready = writable(true);
 const base = fakeStorage<Action>();
 base.save({cycleNumber: 2, actions: [{cellID: 1n}], secret: '0x01', committed: true});
-const storage = {...base, load: () => base.load(), save: base.save, clear: base.clear, ready: {subscribe: ready.subscribe}};
+const storage = {
+	...base,
+	load: () => base.load(),
+	save: base.save,
+	clear: base.clear,
+	ready: {subscribe: ready.subscribe},
+};
 let answer!: (s: CommitmentStatus) => void;
 const adapter = {...fakeAdapter().adapter, commitmentStatus: () => new Promise<CommitmentStatus>((r) => (answer = r))};
 const submission = createSubmission({cycleInfo, adapter, storage, identity: who});
 const stop = submission.start();
 await new Promise((r) => setTimeout(r, 0));
-ready.set(false); ready.set(true); // or: who.set(undefined); who.set(player);
+ready.set(false);
+ready.set(true); // or: who.set(undefined); who.set(player);
 answer('revealed');
 await new Promise((r) => setTimeout(r, 20));
 expect(submission.value).toEqual({step: 'Revealed', cycleNumber: 2}); // is {step: 'Idle'}
 ```
 
 **Its home is template-commit-reveal `main`** (the submission is the framework's, item 4's code), then the cascade to `with/fuzd` and stratagems. Candidate fixes, for that session to choose: clear the record only once the chain has answered (so a restore after `leaveContext` finds it again and asks again), or let the answer land when the context it was asked for (identity, cycle) is still the current one rather than when `generation` is unchanged. Any game is exposed whenever a third party reveals: fuzd, a friend, or the fallback of another tab.
+
+**Corrected, 2026-10-30, after the fix landed**: the race above is real (the unit tests reproduce it, and template-commit-reveal `main` f8623416 fixed it), but it was NOT what failed the e2e. With the fix merged the e2e failed the same way, and a probe of `localStorage` before the first page closed showed the committed record had never reached disk: see `the-committed-turn-is-written-durably-only-before-the-commit.md`. This diagnosis inferred the cause from a symptom and a reproducible mechanism without checking the stored state the failing page actually read, which is the step that would have told them apart.
