@@ -802,36 +802,74 @@ export function createSubmission<
 	 * browser `Committed` with nothing sent, and before this the player was told
 	 * they had missed a reveal that had in fact gone out.
 	 *
-	 * The stored record is cleared at once, as before; the state is `Idle` while
-	 * the chain is asked, and the answer is written only if nothing has happened
-	 * since (a new plan is the player moving on, and the missed-reveal reader
-	 * asks the chain on its own).
+	 * The state is `Idle` while the chain is asked, and the answer is written
+	 * only if nothing has happened since (a new plan is the player moving on,
+	 * and the missed-reveal reader asks the chain on its own).
+	 *
+	 * THE STORED RECORD IS CLEARED ONLY ONCE THE CHAIN HAS ANSWERED, in the
+	 * context that asked. A context left meanwhile (the account data reloading,
+	 * the identity flickering or changing) drops the answer, as every await in
+	 * this file does, and the record is what lets the next `restore()` ask again.
+	 * Cleared at once, as it was, a flicker during the question left nothing to
+	 * restore and the turn read `Idle` for good: a turn somebody else revealed
+	 * (a scheduler, another tab) was reported neither revealed nor missed. Found
+	 * by stratagems' step 8 e2e, one run in five.
 	 */
 	function closeEarlierTurn(turn: Persisted, player: TIdentity | undefined) {
-		storage.clear();
 		if (!adapter.commitmentStatus || !hasIdentity(player)) {
 			// Nothing to ask: the old reading.
+			storage.clear();
 			set({step: 'Missed', cycleNumber: turn.cycleNumber});
 			return;
 		}
-		set({step: 'Idle'});
+		// Already being asked about in this context (a `reveal()` finds the record
+		// the question keeps): one question, one report.
+		if (
+			closing &&
+			closing.generation === generation &&
+			sameTurn(closing.turn, turn)
+		) {
+			return;
+		}
 		const startedIn = generation;
+		closing = {generation: startedIn, turn};
+		set({step: 'Idle'});
 		void (async () => {
 			const status = await statusOnChain(turn, player);
-			if (generation !== startedIn || $state.step !== 'Idle') return;
-			if (status === 'revealed') {
+			if (generation !== startedIn) return;
+			const stillIdle = $state.step === 'Idle';
+			if (status === 'revealed' && stillIdle) {
 				try {
 					await params.onSettled?.();
 				} catch {
 					// See reportRevealed.
 				}
-				if (generation !== startedIn || $state.step !== 'Idle') return;
+				if (generation !== startedIn) return;
+			}
+			// Answered: the record is done with, whatever the state now shows.
+			forgetEarlierTurn(turn);
+			if (closing?.turn === turn) closing = undefined;
+			if ($state.step !== 'Idle') return;
+			if (status === 'revealed') {
 				storage.settled?.(turn.cycleNumber);
 				set({step: 'Revealed', cycleNumber: turn.cycleNumber});
 			} else {
 				set({step: 'Missed', cycleNumber: turn.cycleNumber});
 			}
 		})();
+	}
+
+	/** The earlier turn `closeEarlierTurn` is asking the chain about, if any. */
+	let closing: {generation: number; turn: Persisted} | undefined;
+
+	/**
+	 * Clear the stored record if it is still the closed turn's cycle or older:
+	 * a turn planned or committed for a later cycle while the chain was asked is
+	 * the player's next one, and stays.
+	 */
+	function forgetEarlierTurn(turn: Persisted) {
+		const held = storage.load();
+		if (held && held.cycleNumber <= turn.cycleNumber) storage.clear();
 	}
 
 	function dismiss() {
@@ -1193,6 +1231,14 @@ export function createSubmission<
 		adopt,
 		start,
 	};
+}
+
+/** One turn, whichever copy of its record: its cycle and its secret. */
+function sameTurn(
+	a: {cycleNumber: number; secret: string},
+	b: {cycleNumber: number; secret: string},
+): boolean {
+	return a.cycleNumber === b.cycleNumber && sameHash(a.secret, b.secret);
 }
 
 /** Two hashes as the chain means them: hex case is not a difference. */
