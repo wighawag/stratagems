@@ -189,7 +189,9 @@ export default defineConfig({
 						name: 'fuzd-up',
 						testDir: './e2e/fuzd',
 						testMatch: /start\.setup\.ts$/,
-						dependencies: ['chromium'],
+						// `E2E_FUZD_ONLY=1 pnpm test:e2e --project fuzd` runs the fuzd
+						// suite alone, without waiting out every other suite first.
+						dependencies: env.E2E_FUZD_ONLY ? [] : ['chromium'],
 						teardown: 'fuzd-down',
 					},
 					{
