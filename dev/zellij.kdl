@@ -24,18 +24,17 @@ layout {
 			}
 		}
 		pane name="helper-services"  split_direction="vertical" {
-			// pane name="FUZD"  command="bash"  {
-			// 	args "-c" "pnpm fuzd:dev; cd helper-services/fuzd; ${SHELL-bash}"
-			// }
-			pane name="FUZD"  command="bash"  {
-				args "-c" "pnpm fuzd:dev; cd helper-services/fuzd; ${SHELL-bash}"
-			}
 			pane name="SYNC"  command="bash"  {
 				args "-c" "pnpm sync:dev; cd helper-services/secp256k1-db; ${SHELL-bash}"
 			}
 			pane name="MISSIV"  command="bash"  {
 				args "-c" "pnpm missiv:dev; cd helper-services/missiv; ${SHELL-bash}"
 			}
+		}
+		// The reveal scheduler (`with/fuzd`): on 34002, which web/.env.localhost
+		// points PUBLIC_FUZD_URI at, against the local chain on 8545.
+		pane name="fuzd" command="pnpm"  {
+			args "fuzd:dev"
 		}
 	}
 

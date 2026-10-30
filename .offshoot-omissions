@@ -94,6 +94,9 @@ contracts/src/commit-reveal
 # framework compiles without these. A directory entry, so the next file the
 # template adds under it is covered in advance. FOR EVER: a game replaces the
 # template's game.
+# Since stratagems stems from `with/fuzd` (step 8 of the plan, 2026-10-30) the
+# reference game's fuzd composition and HUD line arrive under placement/ too and
+# are covered by this entry; the layer's own module, web/src/lib/fuzd, is kept.
 web/src/lib/placement
 web/src/lib/offline.ts
 web/src/lib/offline-chrome.ts
@@ -118,6 +121,8 @@ web/test/lib/context/setup-gate.test.ts
 # that audits that suite's accounts. stratagems is a compile-only member of the
 # tree: the node's verify is check and unit, not e2e (decision 4 of the plan), and
 # stratagems' own browser test is web/verify (verify:alpha1).
+# `with/fuzd`'s e2e (fuzd.e2e.ts, fuzd-fallback.e2e.ts, the fuzd setup and
+# teardown, their fixtures) plays the reference game and is covered here too.
 web/e2e
 web/playwright.config.ts
 scripts/run-e2e-tests.sh

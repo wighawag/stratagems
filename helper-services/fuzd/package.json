@@ -1,18 +1,12 @@
 {
-    "name": "fuzd-service",
-    "devDependencies": {
-        "@libsql/core": "^0.14.0",
-        "fuzd-nodejs": "^0.7.6",
-        "ldenv": "^0.3.10",
-        "node-cron": "^3.0.3",
-        "set-defaults": "^0.0.2",
-        "toml": "^3.0.0",
-        "wait-on": "^7.2.0",
-        "wrangler": "^3.60.1"
-    },
-    "scripts": {
-        "prepare": "set-defaults .",
-        "dev": "echo 'waiting for contracts.json...'; wait-on contracts.json && node generate-env.js && fuzd-nodejs --port 34002",
-        "wrangler": "wrangler"
-    }
+	"name": "template-commit-reveal-fuzd",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"devDependencies": {
+		"fuzd": "^0.12.0"
+	},
+	"scripts": {
+		"dev": "fuzd --port \"${FUZD_PORT:-34002}\" --chain \"31337=${FUZD_CHAIN_RPC:-http://127.0.0.1:8545}#finality=1&worstCaseBlockTime=2\" --mnemonic \"${FUZD_MNEMONIC:-test test test test test test test test test test test junk}\" --time-lock-decryption false --process-interval 1"
+	}
 }

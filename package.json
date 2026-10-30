@@ -25,8 +25,8 @@
 		"format": "prettier --write . && pnpm -r format",
 		"format:check": "prettier --check . && pnpm -r format:check",
 		"---------------------- INTERNAL ----------------------": "",
-		"_contracts:deploy:watch": "pnpm --filter ./contracts deploy:watch $MODE ~~ pnpm run export -e $MODE --json ../helper-services/fuzd/contracts.json --ts ../indexer/src/contracts.ts,../web/src/data/contracts.ts,../web/src/lib/deployments.ts ~~",
-		"_contracts:deploy": "pnpm run --filter ./contracts deploy $MODE  ~~ pnpm run export -e $MODE --json ../helper-services/fuzd/contracts.json --ts ../indexer/src/contracts.ts,../web/src/data/contracts.ts,../web/src/lib/deployments.ts ~~",
+		"_contracts:deploy:watch": "pnpm --filter ./contracts deploy:watch $MODE ~~ pnpm run export -e $MODE --ts ../indexer/src/contracts.ts,../web/src/data/contracts.ts,../web/src/lib/deployments.ts ~~",
+		"_contracts:deploy": "pnpm run --filter ./contracts deploy $MODE  ~~ pnpm run export -e $MODE --ts ../indexer/src/contracts.ts,../web/src/data/contracts.ts,../web/src/lib/deployments.ts ~~",
 		"---------------------- UTILITIES ----------------------": "",
 		"local_node": "ldenv pnpm --filter ./contracts local_node",
 		"contracts:compile": "pnpm --filter ./contracts compile",
@@ -34,7 +34,7 @@
 		"web:dev": "pnpm --filter ./web dev",
 		"indexer:dev": "pnpm --filter ./indexer dev",
 		"common:dev": "pnpm --filter ./common dev",
-		"contracts:export": "ldenv -d localhost pnpm run --filter ./contracts export -e @@MODE --json ../helper-services/fuzd/contracts.json --ts ../indexer/src/contracts.ts,../web/src/data/contracts.ts,../web/src/lib/deployments.ts @@",
+		"contracts:export": "ldenv -d localhost pnpm run --filter ./contracts export -e @@MODE --ts ../indexer/src/contracts.ts,../web/src/data/contracts.ts,../web/src/lib/deployments.ts @@",
 		"contracts:test": "pnpm --filter ./contracts test",
 		"contracts:execute": "pnpm --filter ./contracts execute",
 		"contracts:docs": "ldenv -d localhost pnpm run --filter ./contracts docgen @@MODE -o ../docs/contracts",
@@ -51,7 +51,7 @@
 		"zellij-attach": "zellij --layout dev/zellij-attach.kdl a ${npm_package_name}-attach-$MODE || zellij --layout dev/zellij-attach.kdl -s ${npm_package_name}-attach-$MODE",
 		"attach": "ldenv -d localhost pnpm run indexer:index @@MODE ~~ pnpm run zellij-attach ~~ @@",
 		"---------------------- FULL AGAINST AN EXISTING NETWORK WITH LOCAL SERVICES ----------------------": "",
-		"zellij-remote-chain": "rm helper-services/fuzd/contracts.json && zellij --layout dev/zellij-remote-chain.kdl a ${npm_package_name}-remote-chain-$MODE || zellij --layout dev/zellij-remote-chain.kdl -s ${npm_package_name}-remote-chain-$MODE",
+		"zellij-remote-chain": "zellij --layout dev/zellij-remote-chain.kdl a ${npm_package_name}-remote-chain-$MODE || zellij --layout dev/zellij-remote-chain.kdl -s ${npm_package_name}-remote-chain-$MODE",
 		"remote-chain": "ldenv pnpm run zellij-remote-chain @@",
 		"---------------------- FULL AGAINST AN EXISTING NETWORK + SERVICES ----------------------": "",
 		"zellij-remote": "zellij --layout dev/zellij-remote.kdl a ${npm_package_name}-remote-$MODE || zellij --layout dev/zellij-remote.kdl -s ${npm_package_name}-remote-$MODE",
@@ -66,7 +66,7 @@
 		"---------------------- RUN FULL LOCAL SETUP ----------------------": "",
 		"start:wezterm": "wezterm --config-file dev/wezterm.lua start $PWD",
 		"stop": "zellij kill-session $npm_package_name",
-		"start": "rm -Rf helper-services/fuzd/.wrangler && rm helper-services/fuzd/contracts.json; zellij-launcher --layout dev/zellij.kdl a $npm_package_name || zellij --layout dev/zellij.kdl -s $npm_package_name",
+		"start": "zellij-launcher --layout dev/zellij.kdl a $npm_package_name || zellij --layout dev/zellij.kdl -s $npm_package_name",
 		"clean:start": "rm -Rf contracts/deployments/localhost && pnpm start"
 	}
 }
