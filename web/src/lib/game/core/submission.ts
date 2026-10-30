@@ -99,8 +99,10 @@ export type SubmissionStorage<TAction, TExtensions extends object = {}> = {
 	ready?: Readable<boolean>;
 	/**
 	 * Save, resolving once the record is ON STORAGE and rejecting when it could
-	 * not be put there. The commit awaits it before the commitment is sent, and a
-	 * rejection refuses the commit (the secret would not survive a reload).
+	 * not be put there. The commit awaits it twice: before the commitment is
+	 * sent, where a rejection refuses the commit (the secret would not survive a
+	 * reload), and once it is on chain, before `Committed` is reported, where a
+	 * rejection is reported on the state (`notStored`) and undoes nothing.
 	 * Absent, `save` is taken to be durable when it returns.
 	 */
 	saveDurably?(
@@ -145,6 +147,14 @@ export type SubmissionState<TAction> =
 			 * itself as soon as the phase opens). See `PersistedSubmission`.
 			 */
 			revealScheduled?: boolean;
+			/**
+			 * The commitment is on chain but its committed record could not be
+			 * stored (the durable write failed). The turn stands and this page
+			 * still reveals it; what is at risk is a reload, which finds only the
+			 * pre-commit record (the secret, which the chain's hash takes back up
+			 * in this cycle). Absent when the record was stored.
+			 */
+			notStored?: {message: string; error: unknown};
 	  }
 	| {
 			step: 'Revealing';
@@ -431,7 +441,10 @@ export function createSubmission<
 	let shownTurn: Persisted | undefined;
 	let shownHash: `0x${string}` | undefined;
 
-	function committedState(record: Persisted): SubmissionState<TAction> {
+	function committedState(
+		record: Persisted,
+		notStored?: {message: string; error: unknown},
+	): SubmissionState<TAction> {
 		shownTurn = record;
 		shownHash = record.commitmentHash;
 		return {
@@ -441,6 +454,7 @@ export function createSubmission<
 			...(record.revealScheduled === undefined
 				? {}
 				: {revealScheduled: record.revealScheduled}),
+			...(notStored ? {notStored} : {}),
 		};
 	}
 
@@ -649,8 +663,17 @@ export function createSubmission<
 					? {extensions: outcome.extensions as TExtensions}
 					: {}),
 			};
-			storage.save(committed);
-			set(committedState(committed));
+			// DURABLY TOO, and before `Committed` is reported: the HUD then tells
+			// the player the turn is safe to leave ("revealed for you, even if you
+			// close this page"), and a tab closed while this record sat behind the
+			// storage's debounce kept only the pre-commit one, which the next page
+			// in a later cycle drops as an uncommitted plan (and, in the account
+			// data, without the `committedTurns` entry a missed-reveal settlement
+			// is shown the chunks from, so the whole bond goes). Measured by
+			// stratagems' step 8.
+			const notStored = await storeCommitted(committed);
+			if (generation !== startedIn) return;
+			set(committedState(committed, notStored));
 		} catch (error) {
 			if (generation !== startedIn) return;
 			// The commitment never went out, so nothing is at stake and the stored
@@ -667,10 +690,37 @@ export function createSubmission<
 		}
 	}
 
+	/**
+	 * Store the record of a commitment that is ON CHAIN, durably where the
+	 * storage can, and say what went wrong rather than throw: the commitment
+	 * stands whatever happens here, and its secret was durable before it was
+	 * sent (a reload recovers it through the chain's hash), so a failure is
+	 * reported beside the turn, never as a failed commit, and nothing is cleared.
+	 */
+	async function storeCommitted(
+		committed: Persisted,
+	): Promise<{message: string; error: unknown} | undefined> {
+		if (!storage.saveDurably) {
+			storage.save(committed);
+			return undefined;
+		}
+		try {
+			await storage.saveDurably(committed);
+			return undefined;
+		} catch (error) {
+			return {message: messageOf(error), error};
+		}
+	}
+
 	async function reveal() {
 		// ASKED FOR BEFORE THE STORAGE IS READY, IT WAITS: returning would look
 		// like "nothing to reveal" when the truth is "not read yet".
 		if (!isReady() && !(await whenReady())) return;
+		// NOT WHILE A COMMIT IS STILL RECORDING ITS TURN: storage may already hold
+		// the committed record (its durable write is in flight), but the commit
+		// owns the turn until it has reported it, and would overwrite a reveal's
+		// state with `Committed`. The cycle reveals it once it is `Committed`.
+		if ($state.step === 'Committing') return;
 		// Everything below awaits the chain; an identity or account change
 		// meanwhile makes this reveal another context's, and it must then touch
 		// neither the new context's storage nor its state.
