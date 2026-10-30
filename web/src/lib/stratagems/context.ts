@@ -14,7 +14,7 @@
  * Constructed synchronously and off-browser, like the core half: nothing here
  * starts IO, which belongs to `start()` and to the board's first subscriber.
  */
-import {derived, type Readable} from 'svelte/store';
+import {derived, get, type Readable} from 'svelte/store';
 // dynamic, not static: the framework's own tests mock `$env/static/public` with
 // the framework's names only (test/lib/context/fatal.test.ts)
 import {env} from '$env/dynamic/public';
@@ -53,7 +53,25 @@ import {
 	type MissedRevealStore,
 } from '$lib/game/core/commit-reveal/missed-reveal';
 import {SignerOutOfFundsError} from '$lib/game/core/commit-reveal/errors';
+import {isEmbeddedChainId} from '$lib/embedded/chain-id';
+import {resolveURLForThisPage} from '$lib/core/env/same-host';
 import {xyToBigIntID} from 'stratagems-common';
+
+// ---------------------------------------------------------------------------
+// The `with/fuzd` layer: the reveal sent by fuzd, so it happens without this
+// tab. A dependency composed here and nowhere else (R1), absent when not
+// configured (R2). See `$lib/fuzd`.
+// ---------------------------------------------------------------------------
+import {
+	createFuzdScheduler,
+	createScheduledReveal,
+	fuzdSettings,
+	revealModeFor,
+	revealOnScheduleFailure,
+	scheduledTurn,
+	type FuzdExtensions,
+	type ScheduledReveal,
+} from '$lib/fuzd';
 
 // ---------------------------------------------------------------------------
 // The game itself.
@@ -104,6 +122,8 @@ export type StratagemsGame = {
 	missedReveal: MissedRevealStore;
 	stake: {step: 'stake'};
 	surface: GameSurface;
+	/** What the layers keep with a turn: `with/fuzd`'s schedule. */
+	extensions: FuzdExtensions;
 };
 
 export type Game = CommitRevealGame<StratagemsGame>['game'] & {
@@ -124,6 +144,12 @@ export type Game = CommitRevealGame<StratagemsGame>['game'] & {
 	testGems: TestGemsStore;
 	/** What the indexer is doing while the board is behind the chain. */
 	syncing: Readable<SyncingModel>;
+	/**
+	 * Whether the committed turn's reveal is handed to fuzd, and what fuzd says
+	 * about it in the reveal phase. Undefined without a committed turn, and
+	 * always without a scheduler (R2).
+	 */
+	revealSchedule: Readable<ScheduledReveal | undefined>;
 };
 
 export type Render = {
@@ -164,14 +190,45 @@ export function createGameContext(core: CoreServices): GameContext {
 	const send = createWalletSend(core);
 	let indexedBoard: ReturnType<typeof createIndexedBoard> | undefined;
 
-	// Keyed by WHO PLAYS, in the account data, so it is synced and encrypted with it.
+	// Keyed by WHO PLAYS, in the account data, so it is synced and encrypted with
+	// it, and typed with the layers' extensions (`with/fuzd`'s schedule).
 	const storageFor = (player: GameIdentity) =>
-		createSubmissionStorage({
+		createSubmissionStorage<FuzdExtensions>({
 			accountData: core.accountData,
 			chainId: deployments.chain.id,
 			contract: gameAddress,
 			player,
 		});
+
+	// WHO REVEALS (P7). With fuzd configured, fuzd sends the reveal as the phase
+	// opens and this browser falls back at half of it; without it (no
+	// `PUBLIC_FUZD_URI`, a chain with no `expectedWorstGasPrice`, or the offline
+	// world, whose chain a service cannot reach), it reveals at once.
+	const fuzd = fuzdSettings({
+		uri: env.PUBLIC_FUZD_URI,
+		chain: deployments.chain,
+		embedded: isEmbeddedChainId(deployments.chain.id),
+	});
+	const fuzdEndpoint = () =>
+		fuzd ? resolveURLForThisPage(fuzd.uri) : undefined;
+	const scheduler = fuzd
+		? createFuzdScheduler<GameIdentity>({
+				schedulerEndPoint: fuzdEndpoint,
+				chainId: fuzd.chainId,
+				maxFeePerGasAuthorized: fuzd.maxFeePerGasAuthorized,
+				expiryDelta: config.cycle.revealPhaseDuration,
+				// fuzd's requests are signed with the browser key, which is what its
+				// remote account is derived from: the key that commits, not the
+				// account that owns.
+				signerKey: () => {
+					const connection = get(core.connection);
+					return connection.step === 'SignedIn'
+						? connection.account.signer.privateKey
+						: undefined;
+				},
+				balanceOf: (address) => core.publicClient.getBalance({address}),
+			})
+		: undefined;
 
 	const crg = createCommitRevealGame<StratagemsGame>(core, {
 		identity: activeIdentity,
@@ -232,6 +289,8 @@ export function createGameContext(core: CoreServices): GameContext {
 				actionsPerReveal: config.actionsPerReveal,
 			}),
 		storageFor,
+		...(scheduler ? {scheduler} : {}),
+		submission: revealModeFor(scheduler !== undefined),
 		isOutOfGas: (error) => error instanceof SignerOutOfFundsError,
 		stake: {
 			refresh: () => reserve.update(),
@@ -294,6 +353,20 @@ export function createGameContext(core: CoreServices): GameContext {
 	});
 	const syncing = createSyncing(board.progress);
 
+	// What the HUD says about the scheduled reveal, read from the record stored
+	// with the turn, and fuzd's word on it in the reveal phase.
+	const revealSchedule = createScheduledReveal({
+		turn: scheduledTurn({
+			identity: activeIdentity,
+			submission: crg.game.submission,
+			storageFor,
+		}),
+		cycleInfo: crg.game.cycleInfo,
+		endpoint: fuzdEndpoint,
+		// The local chain's reveal phase is seconds long.
+		intervalMs: deployments.chain.id === 31337 ? 1_000 : 5_000,
+	});
+
 	return {
 		onchainState: crg.onchainState,
 		viewState: crg.viewState,
@@ -308,8 +381,22 @@ export function createGameContext(core: CoreServices): GameContext {
 			leaderboard,
 			testGems,
 			syncing,
+			revealSchedule,
 		},
 		render: crg.render,
-		start: crg.start,
+		start: () => {
+			const stop = crg.start();
+			// fuzd says it will not reveal: this browser does, at once (P7).
+			const stopFallback = scheduler
+				? revealOnScheduleFailure({
+						reveal: revealSchedule,
+						submission: crg.game.submission,
+					})
+				: () => {};
+			return () => {
+				stopFallback();
+				stop();
+			};
+		},
 	};
 }

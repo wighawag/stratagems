@@ -20,13 +20,25 @@
  *   a full chunk of 32 placements, each on an empty cell with
  *   four living enemy neighbours of four other players, cold        6,019,419
  *
+ * and (2026-10-30, step 8, the `with/fuzd` layer) the first commit that PAYS the
+ * reveal scheduler: `makeCommitment` forwarding `msg.value` to the player's fuzd
+ * remote account while it holds nothing (the value transfer, the cold account,
+ * and creating it), which is every scheduled player's first commit:
+ *
+ *   first commit paying a fresh payee                                  147,123
+ *   (the unpaid first commit, measured the same day                    112,716)
+ *
  * Each declared figure carries a margin over its reading, because it sizes a
  * reservation and is a limit: over-reserving costs a slightly larger stipend,
  * under-reserving costs a player their bond.
  */
 export const CLIENT_GAS = {
-	/** 27% over the reading. */
-	commitGas: 150_000n,
+	/**
+	 * The paid first commit plus 15%, rounded up (169,191): the template's rule
+	 * for its own game (175,000 from 152,154). It was 150,000, 27% over the
+	 * unpaid reading, which left a paid first commit under 2% of headroom.
+	 */
+	commitGas: 170_000n,
 	/**
 	 * 16% over the reading. About 188k gas a move: a placement updates four
 	 * neighbours and up to five owners' points in the generator. A chunk of 32 is
