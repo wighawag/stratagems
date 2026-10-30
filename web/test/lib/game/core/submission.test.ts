@@ -2254,3 +2254,219 @@ describe('an earlier turn whose context is left while the chain is asked about i
 		stop();
 	});
 });
+
+describe('the committed record is durable before Committed is reported', () => {
+	// Found by stratagems' step 8 (`stratagems-fuzd.e2e.ts`): the record written
+	// once the commitment was on chain went through a plain `save`, behind the
+	// account data's debounce, and `Committed` was reported at once. The HUD then
+	// says the turn is scheduled "even if you close this page", and a tab closed
+	// in that window kept only the PRE-commit record: the next page, in a later
+	// cycle, dropped it as an uncommitted plan.
+	type Extensions = {test?: {slot: string}};
+	type Persisted = PersistedSubmission<Action, Extensions>;
+
+	/**
+	 * A storage with a MEMORY (what `load` reads, what `save` writes) and a DISK
+	 * (what a reload would find): only a durable write reaches the disk, and
+	 * each one is held until the test settles it.
+	 */
+	function diskStorage() {
+		const state: {memory?: Persisted; disk?: Persisted} = {};
+		const held: {
+			submission: Persisted;
+			release(): void;
+			fail(error: Error): void;
+		}[] = [];
+		const storage: SubmissionStorage<Action, Extensions> = {
+			load: () => state.memory,
+			save: (submission) => void (state.memory = submission),
+			clear: () => void (state.memory = undefined),
+			saveDurably: (submission) => {
+				state.memory = submission;
+				return new Promise<void>((resolve, reject) => {
+					held.push({
+						submission,
+						release() {
+							state.disk = submission;
+							resolve();
+						},
+						fail: reject,
+					});
+				});
+			},
+		};
+		return {storage, state, held};
+	}
+
+	/** A reload: a new page over whatever reached the disk. */
+	function reloadFrom(disk: Persisted | undefined) {
+		return {
+			load: () => disk,
+			save: (submission: Persisted) => void (disk = submission),
+			clear: () => void (disk = undefined),
+		} satisfies SubmissionStorage<Action, Extensions>;
+	}
+
+	const scheduler: RevealScheduler<`0x${string}`, Extensions> = {
+		prepare: async () => ({payee: player, value: 0n}),
+		submit: async () => ({test: {slot: 'x'}}),
+	};
+	const outcome: CommitOutcome<Extensions> = {
+		hash: '0xcommit',
+		revealScheduled: true,
+		extensions: {test: {slot: 'cycle_2'}},
+	};
+
+	function setup(storage: SubmissionStorage<Action, Extensions>) {
+		const cycles = fakeCycles(0);
+		const fake = fakeAdapter({commit: async () => outcome});
+		const submission = createSubmission({
+			cycleInfo: cycles.cycleInfo,
+			adapter: fake.adapter,
+			storage,
+			identity,
+			scheduler,
+			autoCommit: false,
+		});
+		return {...cycles, ...fake, submission};
+	}
+
+	const tick = () => new Promise((r) => setTimeout(r, 20));
+
+	/** Plan and commit, releasing the pre-commit write: the commitment lands. */
+	async function commitOnChain(
+		t: ReturnType<typeof setup>,
+		disk: ReturnType<typeof diskStorage>,
+	) {
+		t.submission.plan([{cellID: 1n}]);
+		const committing = t.submission.commit();
+		await vi.waitFor(() => expect(disk.held).toHaveLength(1));
+		expect(disk.held[0].submission).toMatchObject({committed: false});
+		disk.held[0].release();
+		await vi.waitFor(() => expect(t.calls.commit).toHaveLength(1));
+		await tick();
+		// Wrapped: an async function returning the promise would await it.
+		return {committing};
+	}
+
+	it('does not report Committed while the committed record is still being written', async () => {
+		const disk = diskStorage();
+		const t = setup(disk.storage);
+		const stop = t.submission.start();
+		const {committing} = await commitOnChain(t, disk);
+
+		// On chain, but not yet on disk: not Committed.
+		expect(t.submission.value.step).toBe('Committing');
+		expect(disk.state.disk).toMatchObject({committed: false});
+		expect(disk.held).toHaveLength(2);
+		expect(disk.held[1].submission).toMatchObject({
+			committed: true,
+			revealScheduled: true,
+			extensions: {test: {slot: 'cycle_2'}},
+		});
+
+		disk.held[1].release();
+		await committing;
+		expect(t.submission.value).toMatchObject({
+			step: 'Committed',
+			revealScheduled: true,
+		});
+		expect(t.submission.value).not.toHaveProperty('notStored');
+		stop();
+	});
+
+	it('leaves a committed turn on disk for a reload once Committed is reported', async () => {
+		const disk = diskStorage();
+		const t = setup(disk.storage);
+		const stop = t.submission.start();
+		const {committing} = await commitOnChain(t, disk);
+		// Closed NOW, the next page has only the secret; once the write lands it
+		// has the committed turn, its schedule included.
+		expect(disk.state.disk).toMatchObject({committed: false});
+		disk.held[1]?.release();
+		await committing;
+		expect(t.submission.value.step).toBe('Committed');
+		stop();
+
+		// The same cycle: the turn is Committed again, scheduled as before.
+		const same = setup(reloadFrom(disk.state.disk));
+		const stopSame = same.submission.start();
+		expect(same.submission.value).toMatchObject({
+			step: 'Committed',
+			cycleNumber: 2,
+			revealScheduled: true,
+		});
+		stopSame();
+
+		// A later cycle: the turn is closed as an earlier COMMITTED turn, not
+		// dropped as an uncommitted plan (which is what showed `Idle`).
+		const later = setup(reloadFrom(disk.state.disk));
+		later.setTime(50);
+		const stopLater = later.submission.start();
+		await tick();
+		expect(later.submission.value).toEqual({step: 'Missed', cycleNumber: 2});
+		stopLater();
+	});
+
+	it('reports a committed record that could not be stored, without undoing the commitment', async () => {
+		const disk = diskStorage();
+		const t = setup(disk.storage);
+		const stop = t.submission.start();
+		const {committing} = await commitOnChain(t, disk);
+		await vi.waitFor(() => expect(disk.held).toHaveLength(2));
+		disk.held[1].fail(new Error('quota exceeded'));
+		// Reported, not thrown.
+		await expect(committing).resolves.toBeUndefined();
+
+		// The commitment is on chain and its secret was durable before the send:
+		// the turn is Committed, the failure said beside it, and nothing cleared.
+		expect(t.submission.value).toMatchObject({
+			step: 'Committed',
+			cycleNumber: 2,
+			revealScheduled: true,
+			notStored: {message: 'quota exceeded'},
+		});
+		expect(disk.state.memory).toMatchObject({committed: true});
+		expect(disk.state.disk).toMatchObject({committed: false});
+
+		// And it is still revealed.
+		t.setTime(41);
+		await vi.waitFor(() => expect(t.calls.reveal).toHaveLength(1));
+		stop();
+	});
+
+	it('sends no reveal while the committed record is being written', async () => {
+		const disk = diskStorage();
+		const t = setup(disk.storage);
+		const stop = t.submission.start();
+		const {committing} = await commitOnChain(t, disk);
+		// Memory already holds the committed record; the commit owns the turn
+		// until it has reported it.
+		await t.submission.reveal();
+		expect(t.calls.reveal).toHaveLength(0);
+		disk.held[1]?.release();
+		await committing;
+		expect(t.submission.value.step).toBe('Committed');
+		stop();
+	});
+
+	it('keeps the plain save for a storage that cannot write durably', async () => {
+		const storage = fakeStorage<Action, Extensions>();
+		const save = vi.spyOn(storage, 'save');
+		const t = setup(storage);
+		const stop = t.submission.start();
+		t.submission.plan([{cellID: 1n}]);
+		await t.submission.commit();
+		expect(save).toHaveBeenCalledTimes(2);
+		expect(storage.current).toMatchObject({
+			committed: true,
+			revealScheduled: true,
+			extensions: {test: {slot: 'cycle_2'}},
+		});
+		expect(t.submission.value).toMatchObject({
+			step: 'Committed',
+			revealScheduled: true,
+		});
+		stop();
+	});
+});
