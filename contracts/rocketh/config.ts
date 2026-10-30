@@ -90,12 +90,17 @@ export const CYCLE_POLICY = {
  * contract change outgrows either, which is what stops the margin being a
  * guess that rots.
  *
- * THEY ARE STILL NOT PASSED AS GAS LIMITS. A limit that is too low is not a slow
- * turn, it is a missed reveal, which takes the stake and blocks the next cycle
- * until it is acknowledged. Declaring them per deployment and pinning them with
- * a test is the half of that work which makes a limit possible later; the other
- * half is an explicit EXPECTATION of actions per turn, because a limit bounds a
- * transaction and nothing bounds a turn wherever an action is free.
+ * THEY ARE THE GAS LIMITS. The client passes `commitGas` as the limit of every
+ * commit and `revealGas` as the limit of every reveal step (the base's adapter,
+ * `web/src/lib/game/core/commit-reveal/adapter.ts`: "THE LIMIT, DECLARED BY THE
+ * DEPLOYMENT"), rather than estimating. So a figure that is too low is not a
+ * slow turn or a smaller stipend: it is a transaction that runs out of gas. On a
+ * commit that is a turn not taken; on a reveal it is a missed reveal, which
+ * takes the stake and blocks the next cycle until it is acknowledged. That is
+ * why each covers the WORST case of its transaction, the paid commit included,
+ * with headroom, and why `GasBudget.test.ts` pins both. A turn of several chunks
+ * is bounded per transaction by this, and as a whole by `expectedActionsPerTurn`
+ * below.
  */
 const COMMIT_GAS = 175_000n;
 const REVEAL_GAS = 600_000n;
