@@ -82,11 +82,47 @@ export async function selectContract(
 	// routed proxy publishes a dozen of them: `Game`, but also `Game_Proxy`,
 	// `Game_Implementation` and one entry per route. A substring match on "Game"
 	// is ambiguous between all of them.
-	await page
+	const option = page
 		.locator('[data-slot="select-item"]')
 		.filter({hasText: new RegExp(`^\\s*${name}\\s*$`)})
-		.first()
-		.click({timeout: 30_000});
+		.first();
+	// LET THE OPEN LIST COME TO REST BEFORE CLICKING IN IT, or the click can be
+	// dropped. The list opens with an animation, so a click started at once finds
+	// the option "not stable", and Playwright's THIRD attempt scrolls it to the
+	// top of the list before pressing. That scroll is programmatic: its `scroll`
+	// event, and bits-ui's answer to it (the scroll-up button mounts and pushes
+	// every item 24px down), come in the next frame. When that frame falls
+	// between the press and the release, the release lands on the scroll button,
+	// and bits-ui, which selects on the release of an ITEM, drops the click: the
+	// list stays open on the old contract. Found in stratagems (2026-10-30): a
+	// press, a frame, a release reproduce it every time. So the list is left to
+	// finish opening, the option is brought into view here, and the list is left
+	// to settle again, after which the click needs neither a retry nor a scroll.
+	await option.evaluate(async (el) => {
+		const list = el.closest('[data-slot="select-content"]') ?? el;
+		const still = () =>
+			new Promise<void>((resolve) => {
+				const started = performance.now();
+				let last = '';
+				let frames = 0;
+				const frame = () => {
+					const r = el.getBoundingClientRect();
+					const at = `${r.x},${r.y},${r.width},${r.height}`;
+					const moving = list
+						.getAnimations({subtree: true})
+						.some((a) => a.playState === 'running');
+					frames = at === last && !moving ? frames + 1 : 0;
+					last = at;
+					if (frames >= 3 || performance.now() - started > 5_000) resolve();
+					else requestAnimationFrame(frame);
+				};
+				requestAnimationFrame(frame);
+			});
+		await still();
+		el.scrollIntoView({block: 'nearest'});
+		await still();
+	});
+	await option.click({timeout: 30_000});
 	await expect.poll(selected, {timeout: 30_000}).toBe(name);
 }
 
