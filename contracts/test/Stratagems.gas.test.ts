@@ -128,4 +128,50 @@ describe('the declared gas budget', function () {
 			).to.equal(true);
 		}
 	});
+
+	it('covers a first commit that pays a reveal scheduler a fresh account', async function () {
+		// THE COMMIT CARRIES A PAYMENT when the composition hands the skeleton a
+		// reveal scheduler (`with/fuzd`, step 8): `makeCommitment` forwards
+		// `msg.value` to `payee`, the player's fuzd remote account. The first time
+		// that account holds nothing, and sending value to an empty account is the
+		// dearest call there is (the value transfer, the cold account, and creating
+		// it). It is the first commit a scheduled player makes, so a budget measured
+		// without it makes every player's first scheduled turn run out of gas, as
+		// the template measured on its own game (152,154 against its 150,000).
+		const env = await loadFixture(deployStratagemsWithTestConfig);
+		const {publicClient} = await getConnection();
+		const S = env.Stratagems as any;
+		const chunk = Number(env.config.actionsPerReveal);
+		const player = env.otherAccounts[4];
+
+		const moves: Move[] = Array.from({length: chunk}, (_, i) => ({
+			position: xyToBigIntID(i * 4, 0),
+			color: Color.Blue,
+		}));
+
+		// An address nothing has ever touched: the remote account before its first payment.
+		const freshPayee = '0x00000000000000000000000000000000000f00d1';
+		expect(await publicClient.getBalance({address: freshPayee})).to.equal(0n);
+
+		await env.TestTokens.write.transfer([player, parseEther('100')], {account: env.tokensBeneficiary});
+		await S.write.addToReserve([BigInt(player), parseEther('100')], {account: player});
+		const commitHash = await S.write.makeCommitment(
+			[BigInt(player), hashOf(moves), parseEther(`${chunk}`), freshPayee],
+			{account: player, value: parseEther('0.0012')},
+		);
+		const receipt = await publicClient.getTransactionReceipt({hash: commitHash});
+		expect(receipt.status).to.equal('success');
+		expect(await publicClient.getBalance({address: freshPayee}), 'the payment should reach the payee').to.equal(
+			parseEther('0.0012'),
+		);
+		const used = receipt.gasUsed;
+		console.log(`gas: paid first commit ${used}`);
+
+		expect(
+			used * (100n + MINIMUM_HEADROOM_PERCENT) <= CLIENT_GAS.commitGas * 100n,
+			`a first commit paying a fresh payee costs ${used} gas and commitGas is ${CLIENT_GAS.commitGas}, ` +
+				`which is less than ${MINIMUM_HEADROOM_PERCENT}% above it. It is the gas LIMIT of every commit, so a ` +
+				`scheduled player's first turn would run out of gas. Raise it in contracts/deploy/.config/gas.ts.`,
+		).to.equal(true);
+	});
 });
