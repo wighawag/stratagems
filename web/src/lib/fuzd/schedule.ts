@@ -18,7 +18,8 @@
  *   schedule by the account that signed it (`/scheduledExecution/:chainId/
  *   :account/:slot`), NOT by the remote account that will broadcast it.
  * - `remoteAccount`: the account fuzd broadcasts from, which the commit paid.
- * - `slot`: `cycle_<n>`, one per signing account and cycle.
+ * - `slot`: `cycle_<n>_<game contract>`, one per signing account, cycle and
+ *   game (fuzd keys it by chain and signing account already).
  * - `batchSize`: how many transactions the reveal is, one per chunk, in order.
  * - `scheduledAt`: when it was scheduled, in seconds (wall clock).
  */
@@ -48,9 +49,17 @@ export type FuzdExtensions = {fuzd?: FuzdSchedule};
 /** The local chain, which schedules in clear: see `createFuzdScheduler`. */
 export const LOCAL_CHAIN_ID = 31337;
 
-/** One slot per cycle: a later schedule in the same slot replaces it. */
-export function slotFor(cycleNumber: number): string {
-	return `cycle_${cycleNumber}`;
+/**
+ * One slot per cycle and game contract: a later schedule in the same slot
+ * replaces it while it is queued (and is silently dropped once it has been
+ * broadcast, a fuzd 0.12 behaviour recorded on `work`).
+ *
+ * fuzd already keys a slot by chain and SIGNING account, and the signing key
+ * is the browser key, which plays one identity. What could still collide is
+ * one key playing two games on one chain in one cycle, hence the contract.
+ */
+export function slotFor(cycleNumber: number, contract: `0x${string}`): string {
+	return `cycle_${cycleNumber}_${contract.toLowerCase()}`;
 }
 
 /** The schedule recorded with any of these turns, if one was. */

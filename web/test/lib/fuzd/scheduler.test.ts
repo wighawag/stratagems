@@ -128,11 +128,17 @@ function schedulerWith(
 const BATCH_COST = 3n * 600_000n * GWEI;
 
 describe('the payment (P5)', () => {
-	it('is what fuzd requires less what the remote account holds, never negative', () => {
-		expect(paymentFor({balanceRequired: 100n, balance: 0n})).toBe(100n);
-		expect(paymentFor({balanceRequired: 100n, balance: 40n})).toBe(60n);
-		expect(paymentFor({balanceRequired: 100n, balance: 100n})).toBe(0n);
-		expect(paymentFor({balanceRequired: 100n, balance: 250n})).toBe(0n);
+	it("is the batch's cost less the free balance, never negative, never more than the batch", () => {
+		const pay = (balance: bigint, amountReserved = 0n) =>
+			paymentFor({totalMaxCost: 100n, amountReserved, balance});
+		expect(pay(0n)).toBe(100n);
+		expect(pay(40n)).toBe(60n);
+		expect(pay(100n)).toBe(0n);
+		expect(pay(250n)).toBe(0n);
+		// Held but reserved for other slots is not free.
+		expect(pay(140n, 100n)).toBe(60n);
+		// Over-reserved: still only this batch.
+		expect(pay(10n, 500n)).toBe(100n);
 	});
 
 	it("pays the batch's worst cost to the remote account, an unfunded one", async () => {
@@ -145,7 +151,7 @@ describe('the payment (P5)', () => {
 			maxFeePerGasAuthorized: GWEI,
 			transactions: TRANSACTIONS.map((t) => ({gas: t.gas})),
 			chainId: '31337',
-			slot: 'cycle_7',
+			slot: 'cycle_7_0x00000000000000000000000000000000000000c0',
 		});
 	});
 
@@ -165,14 +171,23 @@ describe('the payment (P5)', () => {
 		expect(payment.value).toBe(0n);
 	});
 
-	it('tops up an over-reserved remote account for its other schedules too', async () => {
+	it('pays no more than this reveal requires, even to an over-reserved remote account', async () => {
 		// fuzd holds 1000 reserved for this account's other slots and it holds
-		// only 400: the batch comes after those, from the same balance.
+		// only 400: this turn pays for its own batch, not for the others.
 		const stub = stubClient({reservedForOtherSlots: 1000n});
 		const payment = await schedulerWith(stub, {balance: 400n}).prepare(
 			request(),
 		);
-		expect(payment.value).toBe(BATCH_COST + 600n);
+		expect(payment.value).toBe(BATCH_COST);
+	});
+
+	it("counts only the balance beyond the account's other reservations", async () => {
+		// 1000 reserved, 1300 held: 300 is free, so the batch needs 300 less.
+		const stub = stubClient({reservedForOtherSlots: 1000n});
+		const payment = await schedulerWith(stub, {balance: 1300n}).prepare(
+			request(),
+		);
+		expect(payment.value).toBe(BATCH_COST - 300n);
 	});
 });
 
@@ -204,7 +219,9 @@ describe('the schedule (P4 to P6)', () => {
 			scheduledTime: 1_800_000_000,
 			expiryDelta: 10,
 		});
-		expect(submission.slot).toBe('cycle_7');
+		expect(submission.slot).toBe(
+			'cycle_7_0x00000000000000000000000000000000000000c0',
+		);
 		expect(submission.chainId).toBe('31337');
 		expect(submission.maxFeePerGasAuthorized).toBe(GWEI);
 		// Reserved against the remote account, for later schedules to count.
@@ -225,9 +242,15 @@ describe('the schedule (P4 to P6)', () => {
 		expect(remote.calls.scheduled[0].chainId).toBe('8453');
 	});
 
-	it('takes one slot per cycle', () => {
-		expect(slotFor(0)).toBe('cycle_0');
-		expect(slotFor(12)).toBe('cycle_12');
+	it('takes one slot per cycle AND game contract, fuzd keying it by chain and signer', () => {
+		// The same key playing two games on one chain in one cycle must not have
+		// the second schedule replace the first.
+		expect(slotFor(0, GAME)).toBe(
+			'cycle_0_0x00000000000000000000000000000000000000c0',
+		);
+		expect(slotFor(12, '0x00000000000000000000000000000000000000AB')).toBe(
+			'cycle_12_0x00000000000000000000000000000000000000ab',
+		);
 	});
 
 	it('records the schedule under its namespace, with what the status routes are keyed by', async () => {
@@ -238,7 +261,7 @@ describe('the schedule (P4 to P6)', () => {
 				chainId: '31337',
 				account: SIGNER,
 				remoteAccount: REMOTE.toLowerCase(),
-				slot: 'cycle_7',
+				slot: 'cycle_7_0x00000000000000000000000000000000000000c0',
 				cycleNumber: 7,
 				batchSize: 3,
 				scheduledAt: 1_799_999_000,

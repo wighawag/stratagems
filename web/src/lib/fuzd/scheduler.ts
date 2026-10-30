@@ -12,11 +12,11 @@
  * - `prepare`, BEFORE the commit: the player's remote account (fuzd derives one
  *   per signing key), and what to pay it, which the commit carries as `payee`
  *   and `value` so the payment and the commitment are one transaction. The
- *   payment is the batch's worst cost (each transaction's declared gas at the
- *   chain's `expectedWorstGasPrice`, fuzd's fees per transaction), plus what
- *   fuzd already holds reserved for this account's OTHER slots, less what the
- *   remote account already has: `computeBalanceRequired` minus the balance,
- *   never negative.
+ *   payment is what THIS reveal requires: the batch's worst cost (every
+ *   transaction's declared gas at the chain's `expectedWorstGasPrice`, fuzd's
+ *   fees per transaction), less what the remote account already holds beyond
+ *   fuzd's reservations for its other slots, never negative and never more
+ *   than the batch.
  * - `submit`, once the commit is BROADCAST: the whole reveal as ONE batch,
  *   which fuzd broadcasts in order from the one remote account, at
  *   `revealDueAt`, with the reveal phase as its expiry. Timelocked to drand
@@ -97,22 +97,22 @@ export class FuzdSchedulingError extends Error {
 }
 
 /**
- * What the commit sends the remote account: what fuzd needs it to hold for
- * every unfinished schedule of this account, this one included, less what it
- * already holds. Never negative: a funded account is sent nothing.
+ * What the commit sends the remote account: what THIS reveal requires.
  *
- * NOT CAPPED at this batch's own cost. An account holding less than its other
- * reservations (an earlier cycle not yet finalised, a balance spent) is topped
- * up for those too: fuzd broadcasts them before this one, from the same
- * balance, so a payment that covered only this batch would leave it short.
+ * The batch's worst cost (`totalMaxCost`), less the balance the account holds
+ * beyond what fuzd has reserved for its other schedules (`amountReserved`).
+ * Never negative (a funded account is sent nothing) and NEVER MORE THAN THE
+ * BATCH: an account short of its other reservations is not topped up for them
+ * by this turn, which pays for its own reveal only.
  */
 export function paymentFor(params: {
-	balanceRequired: bigint;
+	totalMaxCost: bigint;
+	amountReserved: bigint;
 	balance: bigint;
 }): bigint {
-	return params.balanceRequired > params.balance
-		? params.balanceRequired - params.balance
-		: 0n;
+	const free = params.balance - params.amountReserved;
+	if (free <= 0n) return params.totalMaxCost;
+	return params.totalMaxCost > free ? params.totalMaxCost - free : 0n;
 }
 
 const defaultFactory: FuzdClientFactory = (config) =>
@@ -196,19 +196,24 @@ export function createFuzdScheduler<TIdentity extends PlayerIdentity>(
 		};
 	}
 
+	// The game contract is what the reveal calls: every transaction's target.
+	function slotOf(request: RevealScheduleRequest<TIdentity>): string {
+		return slotFor(request.cycleNumber, request.transactions[0].to);
+	}
+
 	async function prepare(
 		request: RevealScheduleRequest<TIdentity>,
 	): Promise<SchedulerPayment> {
 		const client = clientFor();
 		const remote = await client.assignRemoteAccount(chainId);
 		const payee = remote.address.toLowerCase() as `0x${string}`;
-		const {balanceRequired} = await client.computeBalanceRequired({
+		const {totalMaxCost, amountReserved} = await client.computeBalanceRequired({
 			...costed(request),
 			chainId,
-			slot: slotFor(request.cycleNumber),
+			slot: slotOf(request),
 		});
 		const balance = await params.balanceOf(payee);
-		return {payee, value: paymentFor({balanceRequired, balance})};
+		return {payee, value: paymentFor({totalMaxCost, amountReserved, balance})};
 	}
 
 	async function submit(
@@ -218,7 +223,7 @@ export function createFuzdScheduler<TIdentity extends PlayerIdentity>(
 		},
 	): Promise<{fuzd: FuzdSchedule}> {
 		const client = clientFor();
-		const slot = slotFor(request.cycleNumber);
+		const slot = slotOf(request);
 		const totalMaxCost = client.computeTotalMaxCost(costed(request));
 		const submission: BatchSubmission = {
 			slot,

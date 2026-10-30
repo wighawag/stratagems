@@ -140,7 +140,7 @@ describe('the fuzd scheduler, through the commit-reveal adapter', () => {
 		expect(sends[0].value).toBe(30n);
 		expect(outcome.revealScheduled).toBe(true);
 		expect(outcome.extensions?.fuzd).toMatchObject({
-			slot: 'cycle_3',
+			slot: 'cycle_3_0x00000000000000000000000000000000000000c0',
 			batchSize: 2,
 		});
 	});
