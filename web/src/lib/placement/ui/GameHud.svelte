@@ -204,6 +204,17 @@
 				{$hud.submissionLabel}
 			</p>
 
+			{#if $hud.revealSchedule}
+				<!-- Who reveals this turn (`with/fuzd`): decided in hud.ts. -->
+				<p
+					class="mt-1 text-xs {toneClass[$hud.revealSchedule.tone]}"
+					data-testid="reveal-schedule"
+					data-step={$hud.revealSchedule.step}
+				>
+					{$hud.revealSchedule.label}
+				</p>
+			{/if}
+
 			{#if $hud.outOfGas}
 				<!--
 					The one failure with a remedy. The submission retries itself once the
