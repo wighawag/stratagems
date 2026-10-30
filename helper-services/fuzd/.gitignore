@@ -1,5 +1,0 @@
-.env
-!.default
-.wrangler
-/node_modules
-contracts.json

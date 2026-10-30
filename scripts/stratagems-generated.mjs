@@ -4,8 +4,7 @@
  * clone or worktree, before anything is deployed: the root `prepare` runs this
  * before the template's `ensure-deployments.mjs`.
  *
- *   web/src/lib/deployments.ts, indexer/src/contracts.ts,
- *   helper-services/fuzd/contracts.json   (the export of the game's contracts)
+ *   web/src/lib/deployments.ts, indexer/src/contracts.ts   (the export of the game's contracts)
  *   common/dist, indexer/dist             (built from those)
  *
  * FROM A THROWAWAY DEPLOY OF THE CURRENT CONTRACTS (step 10b, 2026-10-25). Until
@@ -14,7 +13,7 @@
  * is written against any more. So it deploys the contracts to a chain that exists
  * only for this process (`contracts/scripts/deploy-ephemeral.ts`, environment
  * `ephemeral`), exports that, and throws the records away. Addresses are on no
- * chain. Deploying for real (`pnpm contracts:deploy <mode>`) overwrites all four.
+ * chain. Deploying for real (`pnpm contracts:deploy <mode>`) overwrites both exports.
  *
  * It does nothing when everything is already there, so a developer's own export
  * is never replaced; and once it has written `web/src/lib/deployments.ts`,
@@ -28,7 +27,7 @@ import {fileURLToPath} from 'node:url';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const EPHEMERAL = 'ephemeral';
-const EXPORTED = ['web/src/lib/deployments.ts', 'indexer/src/contracts.ts', 'helper-services/fuzd/contracts.json'];
+const EXPORTED = ['web/src/lib/deployments.ts', 'indexer/src/contracts.ts'];
 const BUILT = ['common/dist', 'indexer/dist'];
 
 const missing = [...EXPORTED, ...BUILT].filter((path) => !existsSync(join(root, path)));
@@ -49,8 +48,6 @@ try {
 				'export',
 				'-e',
 				EPHEMERAL,
-				'--json',
-				'../helper-services/fuzd/contracts.json',
 				'--ts',
 				'../indexer/src/contracts.ts,../web/src/lib/deployments.ts',
 			]);

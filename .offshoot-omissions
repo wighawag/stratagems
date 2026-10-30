@@ -105,6 +105,10 @@ contracts/src/game/internal/UsingVirtualTime.sol
 # the template's `offline-chrome.ts`, `offline-lobby.ts`, `ui/offline-world/`,
 # `routes/offline/` and `test/lib/offline-lobby.test.ts` at the stem's bytes,
 # since they import only `$lib/offline`'s names.
+#
+# Since stratagems stems from `with/fuzd` (step 8 of the plan, 2026-10-30) the
+# reference game's fuzd composition and HUD line arrive under placement/ too and
+# are covered by this entry; the layer's own module, web/src/lib/fuzd, is kept.
 web/src/lib/placement
 # Their tests, and the tests of the framework that drive the reference game's
 # fixtures: the canvas2d host test renders `placement/render`, and the two
@@ -130,6 +134,15 @@ web/e2e/tests/game.e2e.ts
 web/e2e/tests/offline.e2e.ts
 web/e2e/tests/out-of-gas.e2e.ts
 web/e2e/fixtures/game.ts
+# `with/fuzd`'s two suites play the reference game: its closed-page reveal and
+# its fallback, with their fixture. stratagems' own are
+# e2e/tests/stratagems-fuzd.e2e.ts and stratagems-fuzd-fallback.e2e.ts (step 8),
+# in the layer's `fuzd` and `fuzd-fallback` stages; the layer's harness
+# (e2e/fuzd/, e2e/fixtures/fuzd.ts, the stages in playwright.config.ts) is kept
+# at the stem's bytes. FOR EVER, like the game.
+web/e2e/tests/fuzd.e2e.ts
+web/e2e/tests/fuzd-fallback.e2e.ts
+web/e2e/fixtures/fuzd-game.ts
 
 # ---------------------------------------------------------------------------
 # 3. THE TEMPLATE'S APP SHELL: EMPTY since step 6b (2026-10-26). Until then

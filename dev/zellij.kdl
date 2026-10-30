@@ -23,13 +23,10 @@ layout {
 				args "-c" "pnpm web:dev; cd web; ${SHELL-bash}"
 			}
 		}
-		pane name="helper-services"  split_direction="vertical" {
-			// pane name="FUZD"  command="bash"  {
-			// 	args "-c" "pnpm fuzd:dev; cd helper-services/fuzd; ${SHELL-bash}"
-			// }
-			pane name="FUZD"  command="bash"  {
-				args "-c" "pnpm fuzd:dev; cd helper-services/fuzd; ${SHELL-bash}"
-			}
+		// The reveal scheduler (`with/fuzd`): on 34002, which web/.env.localhost
+		// points PUBLIC_FUZD_URI at, against the local chain on 8545.
+		pane name="fuzd" command="pnpm"  {
+			args "fuzd:dev"
 		}
 	}
 
