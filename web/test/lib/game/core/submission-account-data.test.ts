@@ -334,3 +334,155 @@ describe('the submission over the real account data (Q8-8)', () => {
 		}
 	});
 });
+
+describe('the committed turn on storage before Committed is reported', () => {
+	// stratagems' step 8: the committed record (the plan's slot at
+	// `committed: true` and the `committedTurns` entry, written once) went out
+	// with a plain save, behind the account data's debounce, and a tab closed
+	// right after `Committed` kept only the pre-commit record.
+	function landing() {
+		let land!: () => void;
+		const commit = () =>
+			new Promise<{hash: `0x${string}`}>(
+				(resolve) => (land = () => resolve({hash: '0xcommit'})),
+			);
+		return {commit, land: () => land()};
+	}
+
+	/** Plan and commit until the commitment is on chain's doorstep. */
+	async function untilSent(
+		t: ReturnType<typeof setup>,
+		backing: ReturnType<typeof controlledStorage>,
+	) {
+		await vi.waitFor(() =>
+			expect(get(t.accountData.lifecycle$).status).toBe('ready'),
+		);
+		t.submission.plan([{cellID: 4n}]);
+		const committing = t.submission.commit();
+		await vi.waitFor(() => expect(t.calls.commit).toBe(1));
+		expect(
+			Object.values(storedFor(backing, ALICE)!.data.submissions)[0].turn,
+		).toMatchObject({committed: false});
+		// Wrapped: an async function returning the promise would await it.
+		return {committing};
+	}
+
+	it('has the committed turn on storage, committedTurns included, the moment Committed is reported', async () => {
+		const backing = controlledStorage();
+		const chain = landing();
+		const t = setup({storage: backing, commit: chain.commit});
+		try {
+			const {committing} = await untilSent(t, backing);
+			backing.holdSaves();
+			chain.land();
+			await new Promise((r) => setTimeout(r, 30));
+			// On chain, its record not yet on storage: not Committed.
+			expect(t.submission.value.step).toBe('Committing');
+
+			backing.releaseSaves();
+			await committing;
+			expect(t.submission.value.step).toBe('Committed');
+			// Read straight off storage, with no `persisted()` awaited: what a
+			// page closed now leaves behind.
+			const stored = storedFor(backing, ALICE)!.data;
+			expect(Object.values(stored.submissions)[0].turn).toMatchObject({
+				committed: true,
+			});
+			expect(Object.values(stored.committedTurns)).toEqual([
+				expect.objectContaining({committed: true}),
+			]);
+		} finally {
+			t.stop();
+		}
+	});
+
+	it('leaves a page opened in a later cycle the committed turn, not an uncommitted plan', async () => {
+		const backing = controlledStorage();
+		const first = setup({storage: backing});
+		await vi.waitFor(() =>
+			expect(get(first.accountData.lifecycle$).status).toBe('ready'),
+		);
+		first.submission.plan([{cellID: 5n}]);
+		await first.submission.commit();
+		expect(first.submission.value.step).toBe('Committed');
+		// Closed at once: nothing awaited after Committed.
+		first.stop();
+
+		const second = setup({storage: backing});
+		second.setTime(50);
+		try {
+			await vi.waitFor(() =>
+				expect(get(second.accountData.lifecycle$).status).toBe('ready'),
+			);
+			// Asked about as a committed turn (this adapter cannot be asked, so
+			// it reads Missed), and kept for the settlement, not dropped.
+			await vi.waitFor(() =>
+				expect(second.submission.value).toEqual({
+					step: 'Missed',
+					cycleNumber: 2,
+				}),
+			);
+			expect(
+				Object.keys(second.accountData.read()!.committedTurns),
+			).toHaveLength(1);
+		} finally {
+			second.stop();
+		}
+	});
+
+	it('reports a committed record the account data could not store, and keeps the turn', async () => {
+		const backing = controlledStorage();
+		const chain = landing();
+		const t = setup({storage: backing, commit: chain.commit});
+		try {
+			const {committing} = await untilSent(t, backing);
+			backing.saveError = new Error('quota exceeded');
+			chain.land();
+			await expect(committing).resolves.toBeUndefined();
+			expect(t.submission.value).toMatchObject({
+				step: 'Committed',
+				actions: [{cellID: 4n}],
+			});
+			expect(
+				(t.submission.value as {notStored?: {message: string}}).notStored
+					?.message,
+			).toMatch(/quota exceeded/);
+			// In memory still, for a later save to take.
+			expect(Object.keys(t.accountData.read()!.committedTurns)).toHaveLength(1);
+		} finally {
+			t.stop();
+		}
+	});
+
+	it('writes nothing into the next account when it switches during the write', async () => {
+		const backing = controlledStorage();
+		const chain = landing();
+		const t = setup({storage: backing, commit: chain.commit});
+		try {
+			const {committing} = await untilSent(t, backing);
+			backing.holdSaves();
+			chain.land();
+			await new Promise((r) => setTimeout(r, 30));
+			t.account.set(BOB);
+			await vi.waitFor(() =>
+				expect(get(t.accountData.lifecycle$)).toMatchObject({
+					status: 'ready',
+					account: BOB,
+				}),
+			);
+			backing.releaseSaves();
+			await committing;
+			expect(t.submission.value.step).toBe('Idle');
+			// ALICE's turn reached HER storage, and BOB's holds nothing.
+			await vi.waitFor(() =>
+				expect(
+					Object.keys(storedFor(backing, ALICE)!.data.committedTurns),
+				).toHaveLength(1),
+			);
+			const bob = storedFor(backing, BOB);
+			expect(Object.keys(bob?.data.committedTurns ?? {})).toEqual([]);
+		} finally {
+			t.stop();
+		}
+	});
+});
