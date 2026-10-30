@@ -2073,3 +2073,184 @@ describe('the review of step 8 item 4: a partly revealed turn, and a reveal acro
 		stop();
 	});
 });
+
+describe('an earlier turn whose context is left while the chain is asked about it', () => {
+	// Found by stratagems' step 8 e2e (a turn fuzd revealed, read on a new page
+	// after the cycle turned): the account data reloading, or the identity
+	// flickering, while the chain was asked dropped the answer, and the record
+	// had already been cleared, so nothing was left to ask again: `Idle` for good.
+	const ALICE = '0x00000000000000000000000000000000000a11ce' as const;
+	const BOB = '0x0000000000000000000000000000000000000b0b' as const;
+
+	const earlierTurn = (cellID = 1n): PersistedSubmission<Action> => ({
+		cycleNumber: 2,
+		actions: [{cellID}],
+		secret: '0x01',
+		committed: true,
+	});
+
+	/**
+	 * A record per identity behind a readiness, as the skeleton's per-identity
+	 * account data; the clock in cycle 3 and the chain's answers held until the
+	 * test gives them.
+	 */
+	function setup() {
+		const {cycleInfo} = fakeCycles(50); // cycle 3; the records are cycle 2's
+		const who = writable<`0x${string}` | undefined>(ALICE);
+		const ready = writable(true);
+		const records = new Map<string, PersistedSubmission<Action>>();
+		const key = () => get(who) ?? 'nobody';
+		const settled: [string, number][] = [];
+		const storage: SubmissionStorage<Action> = {
+			ready: {subscribe: ready.subscribe},
+			load: () => records.get(key()),
+			save: (s) => void records.set(key(), s),
+			clear: () => void records.delete(key()),
+			settled: (cycleNumber) => void settled.push([key(), cycleNumber]),
+		};
+		const asked: {identity: unknown; answer: (s: CommitmentStatus) => void}[] =
+			[];
+		const adapter: CommitRevealAdapter<`0x${string}`, Action> = {
+			...fakeAdapter().adapter,
+			commitmentStatus: ({identity}) =>
+				new Promise<CommitmentStatus>((answer) =>
+					asked.push({identity, answer}),
+				),
+		};
+		const onSettled = vi.fn();
+		const submission = createSubmission({
+			cycleInfo,
+			adapter,
+			storage,
+			identity: who,
+			onSettled,
+		});
+		return {who, ready, records, settled, asked, onSettled, submission};
+	}
+
+	const tick = () => new Promise((r) => setTimeout(r, 0));
+
+	const flickers = {
+		'the account data reloading': (t: ReturnType<typeof setup>) => {
+			t.ready.set(false);
+			t.ready.set(true);
+		},
+		'the identity flickering': (t: ReturnType<typeof setup>) => {
+			t.who.set(undefined);
+			t.who.set(ALICE);
+		},
+	};
+
+	for (const [flicker, leave] of Object.entries(flickers)) {
+		for (const [status, step] of [
+			['revealed', 'Revealed'],
+			['open', 'Missed'],
+		] as const) {
+			for (const order of ['in the order asked', 'last asked first'] as const) {
+				it(`reports ${step} after ${flicker}, the chain answering ${order}`, async () => {
+					const t = setup();
+					t.records.set(ALICE, earlierTurn());
+					const stop = t.submission.start();
+					await tick();
+					expect(t.asked).toHaveLength(1);
+
+					leave(t);
+					await tick();
+					const answers =
+						order === 'in the order asked'
+							? [...t.asked]
+							: [...t.asked].reverse();
+					for (const {answer} of answers) {
+						answer(status);
+						await tick();
+					}
+
+					await vi.waitFor(() =>
+						expect(t.submission.value).toEqual({step, cycleNumber: 2}),
+					);
+					// Answered once: reported once, and nothing left to ask again.
+					expect(t.onSettled).toHaveBeenCalledTimes(
+						step === 'Revealed' ? 1 : 0,
+					);
+					expect(t.settled).toEqual(step === 'Revealed' ? [[ALICE, 2]] : []);
+					expect(t.records.get(ALICE)).toBeUndefined();
+					stop();
+				});
+			}
+		}
+	}
+
+	it("drops the answer when the identity CHANGES, and asks again for the turn's own player", async () => {
+		const t = setup();
+		t.records.set(ALICE, earlierTurn(1n));
+		t.records.set(BOB, {...earlierTurn(2n), cycleNumber: 3, committed: false});
+		const stop = t.submission.start();
+		await tick();
+		expect(t.asked).toHaveLength(1);
+
+		t.who.set(BOB);
+		t.asked[0].answer('revealed');
+		await tick();
+		await tick();
+		// BOB's plan, untouched; ALICE's answer written nowhere.
+		expect(t.submission.value).toMatchObject({
+			step: 'Planning',
+			cycleNumber: 3,
+		});
+		expect(t.records.get(BOB)).toMatchObject({cycleNumber: 3});
+		expect(t.onSettled).not.toHaveBeenCalled();
+		expect(t.settled).toEqual([]);
+		// ALICE's turn was not answered in her context, so it is still hers to ask.
+		expect(t.records.get(ALICE)).toMatchObject({
+			cycleNumber: 2,
+			committed: true,
+		});
+
+		t.who.set(ALICE);
+		await tick();
+		expect(t.asked).toHaveLength(2);
+		expect(t.asked[1].identity).toBe(ALICE);
+		t.asked[1].answer('revealed');
+		await vi.waitFor(() =>
+			expect(t.submission.value).toEqual({step: 'Revealed', cycleNumber: 2}),
+		);
+		expect(t.settled).toEqual([[ALICE, 2]]);
+		expect(t.records.get(ALICE)).toBeUndefined();
+		stop();
+	});
+
+	it('asks once for a turn already being asked about, a reveal() meanwhile included', async () => {
+		const t = setup();
+		t.records.set(ALICE, earlierTurn());
+		const stop = t.submission.start();
+		await tick();
+		await t.submission.reveal();
+		await tick();
+		expect(t.asked).toHaveLength(1);
+
+		t.asked[0].answer('revealed');
+		await vi.waitFor(() =>
+			expect(t.submission.value).toEqual({step: 'Revealed', cycleNumber: 2}),
+		);
+		expect(t.onSettled).toHaveBeenCalledOnce();
+		expect(t.settled).toEqual([[ALICE, 2]]);
+		stop();
+	});
+
+	it('keeps a newer turn stored while an earlier one was asked about', async () => {
+		// The cycle-turn path: the earlier turn closes, the player commits the next
+		// one, and only then does the chain answer about the earlier.
+		const t = setup();
+		t.records.set(ALICE, earlierTurn());
+		const stop = t.submission.start();
+		await tick();
+		const next = {...earlierTurn(5n), cycleNumber: 3, secret: '0x05' as const};
+		t.records.set(ALICE, next);
+		t.asked[0].answer('revealed');
+		await vi.waitFor(() =>
+			expect(t.submission.value).toEqual({step: 'Revealed', cycleNumber: 2}),
+		);
+		expect(t.records.get(ALICE)).toEqual(next);
+		stop();
+	});
+});
