@@ -44,6 +44,8 @@ import {
 } from 'stratagems-indexer';
 import {prepareCommitment, xyToBigIntID} from 'stratagems-common';
 import {createEmbeddedWorld, type EmbeddedWorld} from '$lib/embedded';
+import {createBytecodeSandbox} from '$lib/game/simulation';
+import {createNode} from 'webevm';
 
 // hardhat's well-known development keys: deployer, tokensBeneficiary, a player
 const KEYS = [
@@ -250,5 +252,40 @@ describe('the offline world, folded by etherfold', () => {
 		// (`board/board-cycle.ts`): two pushes from the first cycle, 2
 		expect(data.advancedCycle).toEqual({cycleNumber: 3, commiting: true});
 		port.close();
+	});
+
+	it('previews a move with the contract code the offline world deployed (step X2)', async () => {
+		world = await bootWorld();
+		const deployments = contractsOf(world);
+		const Simulation = deployments.contracts.StratagemsSimulation as Contract;
+		const sandbox = createBytecodeSandbox({
+			provider: world.provider as never,
+			contracts: {simulation: {address: Simulation.address}},
+			node: () => createNode({}),
+		});
+		const player = privateKeyToAccount(KEYS[2]).address;
+		const outcome = (await sandbox.call({
+			contract: 'simulation',
+			abi: Simulation.abi as never,
+			functionName: 'resolveMoves' as never,
+			args: [
+				[],
+				player,
+				2,
+				[{position: xyToBigIntID(0, 0), color: 1}],
+			] as never,
+		})) as {
+			cells: {
+				position: bigint;
+				owner: string;
+				cell: {color: number; life: number};
+			}[];
+			cost: bigint;
+		};
+		sandbox.dispose();
+		const placed = outcome.cells.find((c) => c.position === xyToBigIntID(0, 0));
+		expect(placed?.owner.toLowerCase()).toBe(player.toLowerCase());
+		expect(placed?.cell).toMatchObject({color: 1, life: 2});
+		expect(outcome.cost).toBe(parseEther('1'));
 	});
 });
