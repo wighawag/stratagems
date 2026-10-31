@@ -177,6 +177,53 @@ export async function stakeOnCell(page: Page, cellID: string): Promise<string> {
 	) as Promise<string>;
 }
 
+/** How many players hold a stake on a cell, as the board shows it. */
+export async function claimantsOnCell(
+	page: Page,
+	cellID: string,
+): Promise<number> {
+	return page.evaluate(
+		`(() => {
+			${READ}
+			const view = read(globalThis.context.viewState);
+			if (view.step !== 'Loaded') return 0;
+			const cell = view.cells.get(BigInt('${cellID}'));
+			return cell ? cell.numClaimants : 0;
+		})()`,
+	) as Promise<number>;
+}
+
+/**
+ * What the board shows a planned cell will hold once the turn is revealed, or
+ * undefined while the sandbox has not answered. This is the contract's own rule
+ * run from its bytecode (`$lib/placement/preview`), so a test can hold it to
+ * what the reveal then does.
+ */
+export async function previewOfCell(
+	page: Page,
+	cellID: string,
+): Promise<
+	{totalStake: string; numClaimants: number; playerStake: string} | undefined
+> {
+	return page.evaluate(
+		`(() => {
+			${READ}
+			const view = read(globalThis.context.viewState);
+			if (view.step !== 'Loaded') return undefined;
+			const next = view.cells.get(BigInt('${cellID}'))?.next;
+			return next
+				? {
+						totalStake: next.totalStake.toString(),
+						numClaimants: next.numClaimants,
+						playerStake: next.playerStake.toString(),
+					}
+				: undefined;
+		})()`,
+	) as Promise<
+		{totalStake: string; numClaimants: number; playerStake: string} | undefined
+	>;
+}
+
 /**
  * Let this browser play for the account, if the board is asking.
  *
