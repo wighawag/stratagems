@@ -18,6 +18,8 @@ A pure function may not read an immutable, so a deployment constant the rule nee
 
 ## The worked example: the template's game
 
+These paths are the reference game's, in `template-commit-reveal`. A game built from the template replaces that game wholesale, so in its repo they do not exist: it writes its own route over its own pure core, and keeps this module.
+
 - the rule is `_placementOutcome` in `contracts/src/game/internal/UsingGameInternal.sol`, between `_loadPlayerCell` and `_applyPlacement`; the per-zone index stays in apply, which is why the order-independence argument written beside it is unchanged;
 - the route is `contracts/src/game/routes/GameSimulation.sol` (`resolvePlacements`), deployed as `Game_Implementation_Router_Simulation_Route`;
 - `contracts/test/js/Simulation.test.ts` compares its answers with what the reveal does;
