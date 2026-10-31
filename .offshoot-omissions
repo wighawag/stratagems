@@ -127,6 +127,14 @@ web/e2e
 web/playwright.config.ts
 scripts/run-e2e-tests.sh
 web/test/e2e-account-claims.test.ts
+# `with/pixi-js`'s one sprite, which the reference game's pixi board draws (that
+# board is under web/src/lib/placement, above). stratagems draws its board in
+# code (step 9, P9-4), so it has no art. The sprite pipeline itself is KEPT
+# (web/vite.assetpack.ts, its test, the plugin line in web/vite.plugins.ts): the
+# pixi host's assets.ts imports the manifest only that plugin writes, an empty
+# bundle when there is no ../assets, which loads without a word (measured in
+# step 9, item 1). Since 2026-10-31, when main moved to with/fuzd-pixi.
+assets/sprites/cell.png
 
 # ---------------------------------------------------------------------------
 # 3. THE TEMPLATE'S APP SHELL, UNTIL STEP 6. stratagems keeps its own shell

@@ -5,6 +5,7 @@
   "type": "module",
   "private": true,
   "devDependencies": {
+    "@assetpack/core": "^1.7.0",
     "@etherkit/burner-wallet": "^0.2.2",
     "@etherkit/tx-observer": "0.3.0",
     "@etherkit/viem-tx-tracker": "0.2.1",
@@ -39,6 +40,7 @@
     "ldenv": "^0.6.0",
     "mode-watcher": "^1.1.0",
     "observator": "^0.3.0",
+    "pixi.js": "^8.19.0",
     "playwright": "^1.62.1",
     "prettier": "^3.9.6",
     "prettier-plugin-svelte": "^4.1.1",
