@@ -5,6 +5,10 @@ import {establishRemoteConnection} from '$lib/core/connection';
 import type {EstablishedConnection} from '$lib/core/connection/types';
 import {resolveConnectionConfig, TARGET_STEP} from '$lib/core/connection/mode';
 import {PUBLIC_WALLET_HOST} from '$env/static/public';
+import {writable} from 'svelte/store';
+import {deployments as buildTimeDeployments} from '$lib/deployments-store';
+import {delegationRegistryAddress} from '$lib/context/config';
+import type {DeploymentsStore, TypedDeployments} from '$lib/deployments-store';
 
 // No `.svelte.` infix, so this runs in the `server` project: Node, no DOM. That
 // is deliberate and not merely inherited from the SSR test next door - the
@@ -72,5 +76,46 @@ describe('the context describes the world it is given', () => {
 		const {context} = createContext();
 		expect(context.connection).toBeDefined();
 		expect(context.deployments).toBeDefined();
+	});
+
+	// THE DELEGATION PAIR IS THE WORLD'S. Measured in stratagems (2026-10-30,
+	// its plan's step D): an offline world whose contracts sat one nonce off the
+	// build's had its browser key registered at the BUILD's address, so the
+	// world's game refused every move with `NotDelegate`, while the UI said the
+	// key was authorised (the read was scoped to the same wrong address). The
+	// e2e never saw it because its build is the same deploy sequence as the
+	// world's. Every published build is not: its deployment is a live chain's.
+	it('reads and writes delegation at the world\u2019s contract, on the world\u2019s chain', () => {
+		const app = buildTimeDeployments.get();
+		const appRegistry = delegationRegistryAddress(app);
+		const elsewhere = '0x00000000000000000000000000000000000d1e60' as const;
+		const world = {
+			...app,
+			chain: {...app.chain, id: app.chain.id + 1},
+			contracts: Object.fromEntries(
+				Object.entries(app.contracts).map(([name, record]) => [
+					name,
+					(record as {address: string}).address.toLowerCase() ===
+					appRegistry.toLowerCase()
+						? {...(record as object), address: elsewhere}
+						: record,
+				]),
+			),
+		} as unknown as TypedDeployments;
+		const store = writable(world);
+		const worldDeployments: DeploymentsStore = {
+			subscribe: store.subscribe,
+			get: () => world,
+		};
+		const establishConnection: ConnectionFactory = (request) => ({
+			...establishRemoteConnection(request),
+			deployments: worldDeployments,
+		});
+
+		const {context} = createContext({establishConnection});
+
+		expect(delegationRegistryAddress(world)).toBe(elsewhere);
+		expect(context.delegation.registry.address).toBe(elsewhere);
+		expect(context.delegation.registry.chainId).toBe(app.chain.id + 1);
 	});
 });

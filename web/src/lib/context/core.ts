@@ -362,8 +362,9 @@ function buildConnection(params: {
 		walletOnly,
 		// WHAT THIS APP ASKS FOR, declared where the user can still say no: the
 		// authority to act in their name at one contract on one chain, and nowhere
-		// else. The pair is the same one the chain read and every writer use, from
-		// the same place (see `delegationTarget` above).
+		// else. For the remote world this is the pair the chain read and every
+		// writer use; an embedded world reads and writes at its own (see
+		// `delegationTarget` above).
 		//
 		// OPTIONAL, deliberately. Required would make a refusal a wall at the door
 		// for something the user cannot evaluate yet; optional keeps the app
@@ -830,7 +831,6 @@ function buildWalletClient(params: {
 
 /** Who signs, what watches the result, and the connectors that file it. */
 function buildExecution(params: {
-	delegationTarget: {chainId: number; contract: `0x${string}`};
 	signer: ReturnType<typeof buildConnection>['signer'];
 	account: ReturnType<typeof buildConnection>['account'];
 	deployments: ReturnType<typeof buildConnection>['deployments'];
@@ -863,7 +863,6 @@ function buildExecution(params: {
 		signerRpcUrl,
 		chainFetchGate,
 		signerTrackerBuilder,
-		delegationTarget,
 	} = params;
 
 	// ----------------------------------------------------------------------------
@@ -1040,14 +1039,18 @@ function buildExecution(params: {
 	const delegation = createDelegationState({
 		publicClient,
 		// The one delegation fact this app owns: which of its contracts adopted
-		// the library. Same pair the connection declares its permission for, from
-		// the same place, because a credential is bound to the PAIR: the same
-		// address on another chain is another contract entirely.
-		registry: delegationTarget.contract,
-		// And the chain it is on, because a credential is bound to the PAIR: the
-		// same address on another chain is another contract entirely. Same value
-		// the connection declares its permission for, from the same place.
-		chainId: delegationTarget.chainId,
+		// the library, read off the CONNECTION's deployments, the world this
+		// context describes. A credential is bound to the PAIR (the same address
+		// on another chain is another contract entirely), and the pair that
+		// matters is the one the moves are sent to. Read off the app's build-time
+		// records instead, an embedded world whose contracts sit anywhere else
+		// registered the browser's key at the BUILD's address and its game then
+		// refused every move (`NotDelegate`) while this read said the key was
+		// authorised: measured in stratagems, 2026-10-30. The e2e never sees it,
+		// because its build is the same deploy sequence as its world; a published
+		// build's records are a live chain's. jolly-roger reads it here too.
+		registry: delegationRegistryAddress(deployments.get()),
+		chainId: deployments.get().chain.id,
 		account,
 		signer: signerAddress,
 		fetchGate: chainFetchGate,
@@ -1227,15 +1230,15 @@ export function createCoreContext<App extends AppContext>(params: {
 	 * THE PAIR, not the address, and that is why the chain id travels with it:
 	 * the contract's own address and the chain id are both inside the message the
 	 * owner signs, so the same address on another chain is another contract
-	 * entirely. Three consumers have to mean the same pair - the chain read, every
-	 * writer, and the permission declared at connect time - and three independent
-	 * lookups is three chances to disagree. The disagreement would be invisible in
-	 * the worst way: a UI stating the browser may play while every move reverts.
+	 * entirely.
 	 *
-	 * Read from the deployments store directly rather than from the connection,
-	 * because the permission has to be declared BEFORE the connection is built.
-	 * It is the same store, and it is typed, so pointing this at a contract that
-	 * does not exist is a compile error rather than a read that answers nothing.
+	 * THIS PAIR IS ONLY THE CONNECT-TIME PERMISSION, read from the build-time
+	 * deployments store because the permission has to be declared BEFORE the
+	 * connection is built. The chain read and every writer use the pair of the
+	 * CONNECTION's deployments instead (`buildExecution`), which is the same
+	 * pair for the remote world and NOT for an embedded one, whose contracts sit
+	 * wherever its own deploy put them: there, a registration at this pair is a
+	 * registration at a contract the world's moves are never sent to.
 	 *
 	 * WHICH contract is the game's to say, in `delegationRegistry` in its own
 	 * module (`$app-specific`), which `config.ts`'s `delegationRegistryAddress` asks.
@@ -1425,7 +1428,6 @@ export function createCoreContext<App extends AppContext>(params: {
 		signerRpcUrl,
 		chainFetchGate,
 		signerTrackerBuilder,
-		delegationTarget,
 		chain,
 		finality,
 		inFlight,
