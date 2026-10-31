@@ -17,6 +17,15 @@ import type {ViewMerge} from '$lib/view';
 import type {BoardState} from './board/indexed-board';
 import type {Move} from './moves';
 
+/**
+ * Where a cell's life goes at the next cycle, by the contract's rule: a living
+ * cell moves by one, up when it has more friends than enemies or no enemy at
+ * all, otherwise down; `full` is growing at the maximum, `dead` is life 0 (a
+ * dead cell stays on the board, keeps its colour, and keeps counting as a
+ * friend or an enemy for its neighbours).
+ */
+export type Trend = 'grow' | 'shrink' | 'full' | 'dead';
+
 /** One cell as drawn. */
 export type CellView = {
 	position: bigint;
@@ -27,6 +36,12 @@ export type CellView = {
 	/** Life at the board's cycle (0 is dead). */
 	life: number;
 	stake: number;
+	/** Where its life goes at the next cycle. */
+	trend: Trend;
+	/** Same-colour neighbours, dead ones included (the contract counts them). */
+	friends: number;
+	/** Other-colour neighbours, dead ones included. */
+	enemies: number;
 	owner: `0x${string}` | undefined;
 	/** Owned by the player viewing. */
 	mine: boolean;
@@ -54,6 +69,29 @@ function copyState(data: BoardState['data']): StratagemsState {
 		owners: {...data.owners},
 		computedPoints: {...data.computedPoints},
 	};
+}
+
+function countBits(map: number): number {
+	let count = 0;
+	for (let bits = map; bits > 0; bits >>= 1) count += bits & 1;
+	return count;
+}
+
+/**
+ * The trend of a cell already brought to the board's cycle, from the stored
+ * `delta` (friends minus enemies) and `enemyMap` (one bit per enemy
+ * neighbour), through the contract copy's own `_effectiveDelta`: the board can
+ * never draw a rule the contract does not apply.
+ */
+export function trendOf(
+	simulation: StratagemsContract,
+	cell: Pick<ContractCell, 'life' | 'delta' | 'enemyMap'>,
+	maxLife: number,
+): Trend {
+	if (cell.life <= 0) return 'dead';
+	if (simulation._effectiveDelta(cell.delta, cell.enemyMap) < 0)
+		return 'shrink';
+	return cell.life >= maxLife ? 'full' : 'grow';
 }
 
 /** The merge, for a deployment's `maxLife`. */
@@ -90,6 +128,7 @@ export function mergeBoardView(params: {
 		const {x, y} = bigIntIDToXY(position);
 		const {updatedCell} = simulation.getUpdatedCell(position, cycleNumber);
 		const owner = state.owners[key]?.toLowerCase() as `0x${string}` | undefined;
+		const enemies = countBits(updatedCell.enemyMap);
 		cells.set(key, {
 			position,
 			x,
@@ -97,6 +136,9 @@ export function mergeBoardView(params: {
 			color: updatedCell.color,
 			life: updatedCell.life,
 			stake: updatedCell.stake,
+			trend: trendOf(simulation, updatedCell, params.maxLife),
+			friends: updatedCell.delta + enemies,
+			enemies,
 			owner,
 			mine: owner !== undefined && owner === player,
 			planned: planned.get(key),
