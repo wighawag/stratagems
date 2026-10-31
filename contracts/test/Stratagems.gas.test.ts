@@ -13,9 +13,8 @@
  * a full chunk of `actionsPerReveal` (32) placements, each on an empty cell with
  * four living neighbours of four other players in enemy colours, every
  * neighbourhood its own so no slot is warm: each move updates four cells, their
- * owners' points, and its own. NOT MEASURED, and a finding for the deployment
- * step: neighbours that die in the reveal's own cycle, whose share is paid out
- * then (token transfers to the owners at the cycle's start).
+ * owners' points, and its own. The chunk whose every neighbour is found dead
+ * (step D) is measured too, and costs less.
  */
 import {expect, describe, it} from 'vitest';
 import {encodeAbiParameters, keccak256, parseEther, zeroAddress} from 'viem';
@@ -127,6 +126,88 @@ describe('the declared gas budget', function () {
 				`${name}: declared ${declared} is more than ${GENEROSITY_CEILING}x the measured ${used}; measure again and lower it.`,
 			).to.equal(true);
 		}
+	});
+
+	it('covers a chunk whose every neighbour dies in its cycle', async function () {
+		// THE PATH THE FIRST CASE LEAVES OUT (step D, PD5): each of the chunk's
+		// placements is ringed by four cells of four other players at one life,
+		// each with two enemy cells of a fifth player on its corners, and two
+		// cycles have passed, so every ring cell is found dead when the placement
+		// touches it: its life computed over the elapsed cycles, its distribution
+		// set, its owner's points taken back: 128 deaths in one reveal, every
+		// neighbourhood its own.
+		const env = await loadFixture(deployStratagemsWithTestConfig);
+		const {publicClient} = await getConnection();
+		const S = env.Stratagems as any;
+		const chunk = Number(env.config.actionsPerReveal);
+
+		const player = env.otherAccounts[4];
+		const ringOwners = env.otherAccounts.slice(0, 4);
+		const cornerOwner = env.otherAccounts[5];
+		const ringColors = [Color.Red, Color.Green, Color.Yellow, Color.Purple];
+
+		const moves: Move[] = [];
+		const cells = [];
+		for (let i = 0; i < chunk; i++) {
+			const x = (i % 8) * 4;
+			const y = Math.floor(i / 8) * 4;
+			moves.push({position: xyToBigIntID(x, y), color: Color.Blue});
+			const ring = [
+				[x, y - 1],
+				[x + 1, y],
+				[x, y + 1],
+				[x - 1, y],
+			];
+			ring.forEach(([nx, ny], k) =>
+				cells.push({position: xyToBigIntID(nx, ny), owner: ringOwners[k], color: ringColors[k], life: 1, stake: 1}),
+			);
+			for (const [cx, cy] of [
+				[x - 1, y - 1],
+				[x + 1, y - 1],
+				[x + 1, y + 1],
+				[x - 1, y + 1],
+			]) {
+				cells.push({position: xyToBigIntID(cx, cy), owner: cornerOwner, color: Color.Blue, life: 5, stake: 1});
+			}
+		}
+		await env.TestTokens.write.transfer([env.stratagemsAdmin, parseEther(`${cells.length}`)], {
+			account: env.tokensBeneficiary,
+		});
+		await env.TestTokens.write.approve([env.Stratagems.address, parseEther('100000')], {account: env.stratagemsAdmin});
+		for (let i = 0; i < cells.length; i += 32) {
+			await S.write.forceSimpleCells([cells.slice(i, i + 32)], {account: env.stratagemsAdmin});
+		}
+
+		// two whole cycles: every ring cell's life (1, two enemies) runs out
+		const cycle = env.config.commitPhaseDuration + env.config.revealPhaseDuration;
+		await increaseTime(cycle * 2n);
+
+		await env.TestTokens.write.transfer([player, parseEther('100')], {account: env.tokensBeneficiary});
+		await S.write.addToReserve([BigInt(player), parseEther('100')], {account: player});
+		await S.write.makeCommitment([BigInt(player), hashOf(moves), parseEther(`${chunk}`), zeroAddress], {
+			account: player,
+		});
+		await increaseTime(env.config.commitPhaseDuration);
+		const revealHash = await S.write.reveal([BigInt(player), moves, SECRET, zeroBytes24, zeroAddress], {
+			account: env.stratagemsAdmin,
+			gas: 16_000_000n,
+		});
+		const receipt = await publicClient.getTransactionReceipt({hash: revealHash});
+		expect(receipt.status).to.equal('success');
+		const used = receipt.gasUsed;
+
+		// every ring cell found dead, every move placed: the path measured is the one intended
+		const placed = await S.read.getCells([moves.map((m) => m.position)]);
+		for (const cell of placed) expect(Number(cell.color)).to.equal(Color.Blue);
+		const [aboveTheFirst] = await S.read.getCells([[xyToBigIntID(0, -1)]]);
+		expect(Number(aboveTheFirst.life)).to.equal(0);
+
+		console.log(`gas: a chunk of ${chunk} placements, every neighbour dying ${used}`);
+		expect(
+			used * (100n + MINIMUM_HEADROOM_PERCENT) <= CLIENT_GAS.revealGas * 100n,
+			`a chunk whose neighbours die costs ${used} gas and revealGas is ${CLIENT_GAS.revealGas}, which is less than ` +
+				`${MINIMUM_HEADROOM_PERCENT}% above it: a missed reveal. Raise it in contracts/deploy/.config/gas.ts.`,
+		).to.equal(true);
 	});
 
 	it('covers a first commit that pays a reveal scheduler a fresh account', async function () {

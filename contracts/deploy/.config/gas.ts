@@ -28,6 +28,18 @@
  *   first commit paying a fresh payee                                  147,123
  *   (the unpaid first commit, measured the same day                    112,716)
  *
+ * and (2026-10-30, step D, PD5) the two paths still open before a live chain:
+ *
+ *   a full chunk of 32 placements whose every neighbour (four per move,
+ *   128 cells) is found dead in the reveal's own cycle               4,287,945
+ *   (CHEAPER than the living case: a dead neighbour is not re-scored
+ *   in the generator; the case of the living neighbours, re-measured
+ *   the same day                                                    6,013,873)
+ *   the first commit paying a fresh payee, on a fork of BASE
+ *   (`scripts/dry-run-alpha2.ts`, the `alpha2` deploy, chain type op) 149,589
+ *
+ * so both figures below stand for Base as declared.
+ *
  * Each declared figure carries a margin over its reading, because it sizes a
  * reservation and is a limit: over-reserving costs a slightly larger stipend,
  * under-reserving costs a player their bond.
@@ -42,10 +54,9 @@ export const CLIENT_GAS = {
 	/**
 	 * 16% over the reading. About 188k gas a move: a placement updates four
 	 * neighbours and up to five owners' points in the generator. A chunk of 32 is
-	 * well under the 16,777,216 a transaction may carry since Osaka (EIP-7825),
-	 * but neighbours dying in the reveal's own cycle (not measured, see the test)
-	 * add token transfers, so the deployment step measures that before a live
-	 * chain trusts this.
+	 * well under the 16,777,216 a transaction may carry since Osaka (EIP-7825).
+	 * Neighbours dying in the reveal's own cycle cost LESS (measured in step D,
+	 * above), so the living case is the worst and this stands for Base.
 	 */
 	revealGas: 7_000_000n,
 	/**
