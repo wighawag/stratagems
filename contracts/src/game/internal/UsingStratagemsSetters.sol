@@ -107,66 +107,82 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
     ///      when it holds a colour, since a resolution writes no other
     ///      ({_updateCell}). Every slot read is warm by then.
     ///
-    ///      THE LOG IS WRITTEN IN PLACE, in its ABI encoding (the two offsets,
-    ///      then each array's length and words), and logged as it is. Measured on
-    ///      the 32-move chunk (2026-10-31): through `emit`, one array of two
-    ///      words per cell cost 310,205 gas (5.2%), two thirds of it a memory
-    ///      array of struct pointers and its copy into the encoding; the same
-    ///      words in place, 213,047 (3.5%); this, one word per cell and the owner
-    ///      only for the moved cells, less again (the log entry of step X2).
+    ///      IN ASSEMBLY, AND THE LOG WRITTEN IN PLACE, in its ABI encoding (the
+    ///      two offsets, then each array's length and words). Measured on the
+    ///      32-move chunk (2026-10-31): through `emit`, one array of two words
+    ///      per cell cost 310,205 gas (5.2%), two thirds of it a memory array of
+    ///      struct pointers and its copy into the encoding; the same words in
+    ///      place, 213,047; one word per cell and the owner only for the moved
+    ///      cells, 159,866; that in assembly, 138,474 (2.3%): about 50,000 of it
+    ///      the log's bytes, the rest the reads and the memory, which is dear by
+    ///      then because the resolution's own allocations are never freed (the
+    ///      log entry of step X2 in work/plans/join-template-commit-reveal.md).
     function _emitCellsWritten(uint24 cycle, uint64[] memory centres) internal {
-        uint256 numCentres = centres.length;
-        uint256 data;
-        uint256 cellsAt;
+        bytes32 topic = CellsWritten.selector;
+        uint256 cellsSlot;
+        uint256 ownersSlot;
         // solhint-disable-next-line no-inline-assembly
         assembly ("memory-safe") {
-            data := mload(0x40)
+            cellsSlot := _cells.slot
+            ownersSlot := _owners.slot
+        }
+        // solhint-disable-next-line no-inline-assembly
+        assembly ("memory-safe") {
+            let numCentres := mload(centres)
+            let data := mload(0x40)
             mstore(data, 0x40)
             mstore(add(data, 0x20), add(0x60, mul(numCentres, 0x20)))
             mstore(add(data, 0x40), numCentres)
             // the cells' length, then their words
-            cellsAt := add(add(data, 0x60), mul(numCentres, 0x20))
+            let cellsAt := add(add(data, 0x60), mul(numCentres, 0x20))
             // reserved before any is written: the most the centres can list
             mstore(0x40, add(add(cellsAt, 0x20), mul(mul(numCentres, 5), 0x20)))
-        }
-        uint256 n = 0;
-        for (uint256 i = 0; i < numCentres; i++) {
-            uint64 centre = centres[i];
-            uint256 ownerAndPosition = (_owners[centre] << 64) | centre;
-            // solhint-disable-next-line no-inline-assembly
-            assembly ("memory-safe") {
-                mstore(add(add(data, 0x60), mul(i, 0x20)), ownerAndPosition)
+            let n := 0
+            for {
+                let i := 0
+            } lt(i, numCentres) {
+                i := add(i, 1)
+            } {
+                let centre := mload(add(add(centres, 0x20), mul(i, 0x20)))
+                // the owner of the moved cell (scratch space for the slot's hash)
+                mstore(0, centre)
+                mstore(0x20, ownersSlot)
+                mstore(add(add(data, 0x60), mul(i, 0x20)), or(shl(64, sload(keccak256(0, 0x40))), centre))
+                let x := and(centre, 0xffffffff)
+                let y := shr(32, centre)
+                // the centre, then up, left, down, right ({PositionUtils.offset}: 32 bits each, wrapping)
+                for {
+                    let k := 0
+                } lt(k, 5) {
+                    k := add(k, 1)
+                } {
+                    let position := centre
+                    switch k
+                    case 1 {
+                        position := or(shl(32, and(sub(y, 1), 0xffffffff)), x)
+                    }
+                    case 2 {
+                        position := or(shl(32, y), and(sub(x, 1), 0xffffffff))
+                    }
+                    case 3 {
+                        position := or(shl(32, and(add(y, 1), 0xffffffff)), x)
+                    }
+                    case 4 {
+                        position := or(shl(32, y), and(add(x, 1), 0xffffffff))
+                    }
+                    mstore(0, position)
+                    mstore(0x20, cellsSlot)
+                    let word := sload(keccak256(0, 0x40))
+                    // a neighbour without a colour (bits 72 to 79) was not written
+                    if or(iszero(k), and(shr(72, word), 0xff)) {
+                        mstore(add(add(cellsAt, 0x20), mul(n, 0x20)), or(shl(128, position), word))
+                        n := add(n, 1)
+                    }
+                }
             }
-            n = _packCell(cellsAt, n, centre, true);
-            n = _packCell(cellsAt, n, centre.offset(0, -1), false);
-            n = _packCell(cellsAt, n, centre.offset(-1, 0), false);
-            n = _packCell(cellsAt, n, centre.offset(0, 1), false);
-            n = _packCell(cellsAt, n, centre.offset(1, 0), false);
-        }
-        bytes32 topic = CellsWritten.selector;
-        // solhint-disable-next-line no-inline-assembly
-        assembly ("memory-safe") {
             mstore(cellsAt, n)
             log2(data, sub(add(add(cellsAt, 0x20), mul(n, 0x20)), data), topic, cycle)
         }
-    }
-
-    /// @dev The cell's word at the `n`th place of the array at `cellsAt`, if it is to be listed.
-    function _packCell(uint256 cellsAt, uint256 n, uint64 position, bool always) internal view returns (uint256) {
-        Cell storage stored = _cells[position];
-        uint256 word;
-        // solhint-disable-next-line no-inline-assembly
-        assembly ("memory-safe") {
-            word := sload(stored.slot)
-        }
-        if (!always && (word >> 72) & 0xff == 0) {
-            return n;
-        }
-        // solhint-disable-next-line no-inline-assembly
-        assembly ("memory-safe") {
-            mstore(add(add(cellsAt, 0x20), mul(n, 0x20)), or(shl(128, position), word))
-        }
-        return n + 1;
     }
 
     function _countBits(uint8 n) internal pure returns (uint8 count) {

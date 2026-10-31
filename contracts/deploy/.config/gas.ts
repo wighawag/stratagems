@@ -49,7 +49,17 @@
  *   the reveal of 30 placements on the fork of Base                  3,336,808
  *   (step D's 3,337,329; the commits unchanged)
  *
- * so neither declared figure moves.
+ * then (the same day) after every resolution emits the cells it wrote
+ * (`CellsWritten`, which the indexer folds instead of a copy of the rules) and
+ * a reveal refuses a cycle past 24 bits:
+ *
+ *   the full chunk of the living case                                6,140,942
+ *   the full chunk whose every neighbour dies                        4,424,486
+ *   the reveal of 30 placements on the fork of Base                  3,425,075
+ *   the first commit paying a fresh payee, on the fork               149,577
+ *
+ * so neither declared figure moves: the living case is 12.3% under
+ * `revealGas`, still over the 10% the gas test asks.
  *
  * Each declared figure carries a margin over its reading, because it sizes a
  * reservation and is a limit: over-reserving costs a slightly larger stipend,
