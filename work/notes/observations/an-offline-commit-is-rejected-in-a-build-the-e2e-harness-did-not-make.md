@@ -1,7 +1,7 @@
 ---
 title: A commit in the offline world is rejected by the contract in a plain local build, while the e2e's build of the same tree plays a whole cycle
 type: observation
-status: cause found 2026-10-30 (step D specified; the fix is its PD1)
+status: DONE 2026-10-30 (fixed upstream by step D item 1, PD1: the offline suite passes 3 of 3 against such a build)
 spotted: 2026-10-27
 relates-to: work/plans/join-template-commit-reveal.md (step T1's by-hand check; steps 8 and D)
 ---
