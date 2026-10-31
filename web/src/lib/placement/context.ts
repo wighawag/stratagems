@@ -20,6 +20,7 @@ import type {SubmissionStore} from '$lib/game/core/submission';
 import type {CycleAdvanceStore} from '$lib/game/core/advance';
 import {
 	createActiveIdentity,
+	onchainIdentity,
 	type ActiveIdentityStore,
 	type GameIdentity,
 } from '$lib/game/identity';
@@ -401,7 +402,9 @@ export function createGameContext(core: CoreServices): GameContext {
 			const preview = createPlacementPreview({
 				plan: planning.plan,
 				board: onchainState,
-				identity: activeIdentity,
+				player: derived(activeIdentity, ($identity) =>
+					$identity === undefined ? undefined : onchainIdentity($identity),
+				),
 				simulate,
 				stakeOf,
 			});

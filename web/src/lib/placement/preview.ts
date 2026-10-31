@@ -20,7 +20,6 @@
 import {derived, type Readable} from 'svelte/store';
 import {latestResult, type LatestResult} from '$lib/game/simulation';
 import type {OnchainStateValue} from '$lib/game/core/seams';
-import {onchainIdentity, type GameIdentity} from '$lib/game/identity';
 import type {Placement} from './commit-reveal';
 import type {BoardState} from './state';
 import type {LocalPlan} from './view';
@@ -57,7 +56,11 @@ export function createPlacementPreview(params: {
 	plan: Readable<LocalPlan>;
 	/** The board as the chain holds it (not the held copy the view draws). */
 	board: Readable<OnchainStateValue<BoardState & {cycleNumber: number}>>;
-	identity: Readable<GameIdentity | undefined>;
+	/**
+	 * Who plays, as the contract keys them (`onchainIdentity`): a number on
+	 * every branch, which keeps this file the same whatever an identity is.
+	 */
+	player: Readable<bigint | undefined>;
 	/** The route, run from its bytecode: `resolvePlacements`. */
 	simulate: (
 		cells: readonly PlayerCell[],
@@ -66,15 +69,15 @@ export function createPlacementPreview(params: {
 	/** What `player` holds on `cellID`: `getStakeOnCell`. */
 	stakeOf: (cellID: bigint, player: bigint) => Promise<bigint>;
 }): PlacementPreviewStore {
-	const {plan, board, identity, simulate, stakeOf} = params;
+	const {plan, board, player, simulate, stakeOf} = params;
 
 	const inputs = derived(
-		[plan, board, identity],
-		([$plan, $board, $identity]): PreviewInput | undefined => {
-			if ($identity === undefined || $board.step !== 'Loaded') return undefined;
+		[plan, board, player],
+		([$plan, $board, $player]): PreviewInput | undefined => {
+			if ($player === undefined || $board.step !== 'Loaded') return undefined;
 			if ($plan.planned.length === 0) return undefined;
 			return {
-				player: onchainIdentity($identity),
+				player: $player,
 				cycleNumber: $board.cycleNumber,
 				planned: $plan.planned,
 				cells: $plan.planned.map((cellID) => {

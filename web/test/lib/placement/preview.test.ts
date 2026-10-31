@@ -17,8 +17,8 @@ import type {Placement} from '$lib/placement/commit-reveal';
  * it is a stand-in that records what it was asked.
  */
 
-const PLAYER = '0x00000000000000000000000000000000000000aa' as const;
-const PLAYER_ID = BigInt(PLAYER);
+/** Who plays, as the contract keys them: a number on every branch. */
+const PLAYER_ID = 170n;
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -61,7 +61,7 @@ describe('createPlacementPreview', () => {
 		const preview = createPlacementPreview({
 			plan,
 			board,
-			identity: writable(PLAYER),
+			player: writable(PLAYER_ID),
 			simulate,
 			stakeOf,
 		});
@@ -101,7 +101,7 @@ describe('createPlacementPreview', () => {
 		const preview = createPlacementPreview({
 			plan,
 			board,
-			identity: writable(PLAYER),
+			player: writable(PLAYER_ID),
 			simulate,
 			stakeOf,
 		});
@@ -124,20 +124,20 @@ describe('createPlacementPreview', () => {
 		const {simulate} = standInRule();
 		const stakeOf = vi.fn(async () => 0n);
 		const plan = writable<LocalPlan>({planned: []});
-		const identity = writable<typeof PLAYER | undefined>(PLAYER);
+		const player = writable<bigint | undefined>(PLAYER_ID);
 		const board = writable<
 			OnchainStateValue<BoardState & {cycleNumber: number}>
 		>({step: 'Unloaded'});
 		const preview = createPlacementPreview({
 			plan,
 			board,
-			identity,
+			player,
 			simulate,
 			stakeOf,
 		});
 		const stop = preview.subscribe(() => {});
 		plan.set({planned: [1n]});
-		identity.set(undefined);
+		player.set(undefined);
 		board.set({step: 'Loaded', cycleNumber: 1, cells: new Map()});
 		await flush();
 		expect(simulate).not.toHaveBeenCalled();
@@ -165,7 +165,7 @@ describe('withPreview', () => {
 		const preview = createPlacementPreview({
 			plan,
 			board,
-			identity: writable(PLAYER),
+			player: writable(PLAYER_ID),
 			simulate,
 			stakeOf: async () => 0n,
 		});
