@@ -96,6 +96,30 @@ contract StakeSale {
         address payable stipendTo,
         uint256 stipend
     ) external payable {
+        _purchase(GAME, owner, stipendTo, stipend);
+    }
+
+    /// @notice {purchase}, for another game played with the same token: a
+    ///         table for a fixed set of players, cloned per game by a factory,
+    ///         which no immutable here could name in advance.
+    /// @dev Open to any address on purpose. The tokens are minted for this
+    ///      purchase alone and approved to `game` alone, so a `game` that is not
+    ///      one only ever takes what its own buyer paid for.
+    function purchaseAt(
+        IGameCommit game,
+        address owner,
+        address payable stipendTo,
+        uint256 stipend
+    ) external payable {
+        _purchase(game, owner, stipendTo, stipend);
+    }
+
+    function _purchase(
+        IGameCommit game,
+        address owner,
+        address payable stipendTo,
+        uint256 stipend
+    ) internal {
         uint256 paymentAmount = msg.value;
         if (stipendTo != address(0)) {
             // Underflows, and so reverts, when the value does not even cover the
@@ -116,10 +140,10 @@ contract StakeSale {
         // ordering costs nothing and a game that copies this shape may well add
         // some.
         TOKENS.mint(address(this), AMOUNT);
-        TOKENS.approve(address(GAME), AMOUNT);
+        TOKENS.approve(address(game), AMOUNT);
         // THE ADDRESS GAME'S IDENTITY, spelled out at the one place that knows
         // this game is one.
-        GAME.addToReserve(uint256(uint160(owner)), AMOUNT);
+        game.addToReserve(uint256(uint160(owner)), AMOUNT);
 
         if (stipendTo != address(0) && stipend != 0) {
             _send(stipendTo, stipend);

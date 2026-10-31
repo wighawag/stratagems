@@ -169,6 +169,29 @@ describe('games for a fixed set of players', function () {
 		).toBeRejectedWith(/RosterAlreadyOpened/);
 	});
 
+	it("seats a player who buys a stake at the table through the world's sale", async function () {
+		const table = await createTable(2);
+		const price = BigInt((table.StakeSale.linkedData as {price: string}).price);
+		await table.env.execute(table.StakeSale, {
+			account: table.alice,
+			functionName: 'purchaseAt',
+			args: [
+				table.Table.address,
+				table.alice,
+				'0x0000000000000000000000000000000000000000',
+				0n,
+			],
+			value: price,
+		});
+		const [, members] = await table.read.roster();
+		expect(members).toEqual([idOf(table.alice)]);
+		const worldReserve = (await table.env.read(table.Game, {
+			functionName: 'getReserve',
+			args: [idOf(table.alice)],
+		})) as bigint;
+		expect(worldReserve).toEqual(0n);
+	});
+
 	it('leaves the persistent world with open entry and no lobby route', async function () {
 		const table = await createTable(2);
 		await table.join(table.alice);
