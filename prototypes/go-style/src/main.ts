@@ -13,7 +13,7 @@
  * outlines, L life display, 1/2/3 zoom, Y tilt (three), H hide panel, Esc.
  */
 import {AlphaFilter, Application, BlurFilter, Container, Graphics, Sprite, Text, TilingSprite, Texture} from 'pixi.js';
-import {type BoardKind, type GemStyle, type MineMark, boardCanvas, gemColour, labelColour, lineColour} from './style';
+import {type BoardKind, type GemStyle, type Metal, type MineMark, boardCanvas, gemColour, labelColour, lineColour} from './style';
 import {type Board, type Cell, EVIL, EVIL_OWNER, MAX_LIFE, factionOutlines, key, linksOf, nextBoard, ownerSummary, pressureOf} from './rules';
 import {LABELS, ME, initialBoard} from './scenes';
 import {
@@ -51,12 +51,13 @@ const NEAR_PX = 34;
 const params = new URLSearchParams(location.search);
 const state = {
 	look: (params.get('look') as Look) || 'rich',
+	metal: (params.get('metal') as Metal) || 'gold',
 	life: (params.get('life') as 'dial' | 'size') || 'dial',
 	links: params.get('links') !== '0',
 	outlines: params.get('outlines') === '1',
 	style: (params.get('style') as GemStyle) || 'jewel',
 	boardKind: (params.get('board') as BoardKind) || 'kaya',
-	mine: (params.get('mine') as MineMark) || 'halo',
+	mine: (params.get('mine') as MineMark) || 'bezel',
 	tilt: Number(params.get('tilt') ?? 50),
 	azimuth: Number(params.get('az') ?? 0),
 	focus: params.get('focus') as string | null,
@@ -76,6 +77,7 @@ function syncURL() {
 	p.set('style', state.style);
 	p.set('board', state.boardKind);
 	p.set('mine', state.mine);
+	p.set('metal', state.metal);
 	p.set('tilt', String(state.tilt));
 	if (state.azimuth) p.set('az', String(state.azimuth));
 	if (zoomName) p.set('zoom', zoomName);
@@ -247,7 +249,7 @@ function build() {
 		}
 		const showTrend = !ghost && (trend === 'grow' || trend === 'shrink');
 		if (showTrend && trend === 'grow') node.glow = sprite(glowTexture(), cell, under, scale * 1.02);
-		if (cell.owner === ME && !ghost) sprite(mineTexture(state.mine), cell, under, state.mine === 'bezel' ? scale : 1);
+		if (cell.owner === ME && !ghost) sprite(mineTexture(state.mine, state.metal), cell, under, state.mine === 'bezel' ? scale : 1);
 		let marks: number | undefined;
 		if (dial() && !ghost) marks = trend === 'shrink' ? cell.life - 1 : cell.life;
 		node.stone = sprite(stoneTexture(cell.color, {marks, stake: cell.stake, look, style: state.style}), cell, stones, scale);
@@ -655,6 +657,7 @@ function renderUI() {
 	($('style') as HTMLSelectElement).value = state.style;
 	($('boardKind') as HTMLSelectElement).value = state.boardKind;
 	($('mine') as HTMLSelectElement).value = state.mine;
+	($('metal') as HTMLSelectElement).value = state.metal;
 }
 const short = (a: string) => a.slice(0, 6) + '...' + a.slice(-4);
 const who = (a: string) => `<img src="${blockieDataURL(a, 24)}" width="20" height="20" style="image-rendering:pixelated;border-radius:4px;vertical-align:middle"/> <span class="addr">${short(a)}</span>${a === ME ? ' <b>(you)</b>' : ''}`;
@@ -702,7 +705,7 @@ $('life-dial').addEventListener('change', () => setLife('dial'));
 $('life-size').addEventListener('change', () => setLife('size'));
 $('links').addEventListener('change', () => toggle('links'));
 $('outlines').addEventListener('change', () => toggle('outlines'));
-for (const [id, k] of [['style', 'style'], ['boardKind', 'boardKind'], ['mine', 'mine']] as const)
+for (const [id, k] of [['style', 'style'], ['boardKind', 'boardKind'], ['mine', 'mine'], ['metal', 'metal']] as const)
 	$(id).addEventListener('change', (e) => {
 		(state as Record<string, unknown>)[k] = (e.target as HTMLSelectElement).value;
 		drawGrid();

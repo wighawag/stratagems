@@ -41,3 +41,7 @@ Kept from round 1: bridges and notches, the dial when zoomed in and size when zo
 - **Yours**: `halo` (an ivory ring with a black edge, on the board around the gem; the default), `bezel` (round 2's, heavier and outlined), `tile` (the gem on a light plinth). The halo and the plinth keep full size at far zoom.
 - **Live 3D, redone**: a perspective camera that tilts (Y) and turns (Q/E), real shadows, a warm key light low from the upper left and a cool rim light, a taller dome, and each gem style as a material (lacquer with real gold). **Round 2's 3D (and its baked sprites) looked flat because of a bug of mine**: the lathe profile was given top-down, so every face of the gem pointed inward and the dome was culled; fixed here (`pts.reverse()`), which also fixes the baked look.
 - **Territory**: the outlines (which ran between the Go lines) are replaced by a wash of each faction's colour under its living cells. Still faint.
+
+## Round 4 (2026-10-30)
+
+The user's favourite: rich 2D, jewel gems, kaya wood, a bezel for their own gems; these are now the defaults. New: the bezel's metal (`metal=gold|rose|platinum|bronze|gunmetal|ivory|onyx|ruby`, the "in" selector), screenshots with `node shots-r4.mjs`. Live 3D's lighting does not work (the user) and is parked; the territory wash is kept.

@@ -14,6 +14,19 @@ export type GemStyle = 'jewel' | 'yunzi' | 'lacquer';
 export type BoardKind = 'kaya' | 'slate' | 'washi' | 'felt';
 export type MineMark = 'bezel' | 'halo' | 'tile';
 
+/** The bezel's metal (or enamel): four stops, light to dark to light, and the outline. */
+export type Metal = 'gold' | 'rose' | 'platinum' | 'bronze' | 'gunmetal' | 'ivory' | 'onyx' | 'ruby';
+export const METALS: Record<Metal, {stops: [string, string, string, string]; edge: string; name: string}> = {
+	gold: {stops: ['#fff3b8', '#e6bb4c', '#8f6216', '#f0cd68'], edge: '#120a00', name: 'yellow gold'},
+	rose: {stops: ['#ffe2d6', '#e7a58c', '#93503c', '#f2c0aa'], edge: '#1a0806', name: 'rose gold'},
+	platinum: {stops: ['#ffffff', '#cfd4da', '#6d747c', '#e8ecf0'], edge: '#0b0d10', name: 'platinum'},
+	bronze: {stops: ['#f6d2a2', '#b8783a', '#5c3510', '#d39a5c'], edge: '#140800', name: 'bronze'},
+	gunmetal: {stops: ['#9aa3ad', '#4a5058', '#16191d', '#6b737c'], edge: '#000000', name: 'gunmetal'},
+	ivory: {stops: ['#ffffff', '#f6efe0', '#cfc4ad', '#fbf6ea'], edge: '#141414', name: 'ivory enamel'},
+	onyx: {stops: ['#5a5a5a', '#1c1c1c', '#050505', '#333333'], edge: '#f6efe0', name: 'onyx (light edge)'},
+	ruby: {stops: ['#ffb3b8', '#d3283a', '#6e0612', '#ef5a68'], edge: '#140003', name: 'ruby enamel'},
+};
+
 export const LEGACY = ['#00000000', '#5ab9bb', '#c5836e', '#8bffcb', '#d3d66d', '#a9799d', '#3d3d3d'];
 
 export function hexToHsl(hex: string): [number, number, number] {
@@ -59,12 +72,13 @@ export function shade(hex: string, amount: number): string {
 	return `rgb(${f(r)},${f(g)},${f(b)})`;
 }
 
-function goldGradient(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+function goldGradient(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, metal: Metal = 'gold') {
+	const [a, b, c, d] = METALS[metal].stops;
 	const g = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
-	g.addColorStop(0, '#fff3b8');
-	g.addColorStop(0.3, '#e6bb4c');
-	g.addColorStop(0.65, '#8f6216');
-	g.addColorStop(1, '#f0cd68');
+	g.addColorStop(0, a);
+	g.addColorStop(0.3, b);
+	g.addColorStop(0.65, c);
+	g.addColorStop(1, d);
 	return g;
 }
 
@@ -171,7 +185,7 @@ export function drawPip(ctx: CanvasRenderingContext2D, x: number, y: number, R: 
 }
 
 /** "Yours", drawn around the gem on a T-sized canvas centred at C. */
-export function drawMine(ctx: CanvasRenderingContext2D, C: number, R: number, kind: MineMark) {
+export function drawMine(ctx: CanvasRenderingContext2D, C: number, R: number, kind: MineMark, metal: Metal = 'gold') {
 	if (kind === 'tile') {
 		const h = R * 1.3;
 		ctx.save();
@@ -207,11 +221,12 @@ export function drawMine(ctx: CanvasRenderingContext2D, C: number, R: number, ki
 		return;
 	}
 	// bezel: heavier gold, outlined in black so it holds on wood
-	const gold = goldGradient(ctx, C, C, R);
+	const gold = goldGradient(ctx, C, C, R, metal);
+	const edge = METALS[metal].edge;
 	ctx.beginPath();
 	ctx.arc(C, C, R * 1.12, 0, Math.PI * 2);
 	ctx.lineWidth = R * 0.34;
-	ctx.strokeStyle = '#120a00';
+	ctx.strokeStyle = edge;
 	ctx.stroke();
 	ctx.beginPath();
 	ctx.arc(C, C, R * 1.12, 0, Math.PI * 2);
@@ -225,7 +240,7 @@ export function drawMine(ctx: CanvasRenderingContext2D, C: number, R: number, ki
 		ctx.fillStyle = gold;
 		ctx.fill();
 		ctx.lineWidth = 2;
-		ctx.strokeStyle = '#120a00';
+		ctx.strokeStyle = edge;
 		ctx.stroke();
 	}
 }

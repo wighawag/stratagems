@@ -5,7 +5,7 @@
 import {Texture} from 'pixi.js';
 import {Blockie} from './blockie';
 import {bakeFaces} from './bake';
-import {type GemStyle, type MineMark, drawMine, drawPip, gemColour, lacquerFace, yunziFace} from './style';
+import {type GemStyle, type Metal, type MineMark, drawMine, drawPip, gemColour, lacquerFace, yunziFace} from './style';
 
 export type Look = 'flat' | 'rich' | 'baked' | 'three';
 
@@ -155,8 +155,8 @@ export function stoneTexture(color: number, opts: {marks?: number; stake?: numbe
 }
 
 /** How "yours" is marked, around the gem. */
-export function mineTexture(kind: MineMark): Texture {
-	return cached(`mine:${kind}`, (ctx) => drawMine(ctx, C, RT, kind));
+export function mineTexture(kind: MineMark, metal: Metal = 'gold'): Texture {
+	return cached(`mine:${kind}:${metal}`, (ctx) => drawMine(ctx, C, RT, kind, metal));
 }
 
 function flatFace(ctx: CanvasRenderingContext2D, hex: string, evil: boolean) {
