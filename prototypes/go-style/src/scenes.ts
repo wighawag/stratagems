@@ -20,19 +20,28 @@ const BLUE = 1,
 export type Label = {x: number; y: number; text: string};
 
 export const LABELS: Label[] = [
-	{x: -0.4, y: -1.2, text: 'A growing friendly group (blue, three owners, mine have a dot)'},
+	{x: -0.4, y: -1.2, text: 'A growing friendly group (blue, three owners; yours sit in a gold bezel)'},
 	{x: 7.6, y: -1.2, text: 'A contested edge: blue against red'},
 	{x: 14.6, y: -1.2, text: 'A dying stone (life 1, two enemies)'},
 	{x: -0.4, y: 5.8, text: 'Life 1 to 7, growing (no enemy)'},
 	{x: -0.4, y: 8.1, text: 'Life 1 to 7, shrinking (each touches an Evil cell, flat charcoal)'},
 	{x: 23.6, y: -4.2, text: 'A random field, for the far zoom'},
-	{x: 14.6, y: 8.8, text: 'Evil grows like any colour (Evil friends)'},
+	{x: 14.6, y: 8.8, text: 'Evil grows like any colour; a collision stacks a gem per player'},
 	{x: 18.6, y: -0.2, text: 'Dead cells stay and still count:'},
 	{x: 18.6, y: 0.2, text: 'the dead red still presses the blue;'},
 	{x: 18.6, y: 2.0, text: 'two dead greens outweigh one red'},
-	{x: 14.6, y: 4.8, text: 'One faction, four owners; 3 gems on one cell'},
+	{x: 14.6, y: 4.8, text: 'One faction, five owners'},
 	{x: 3.6, y: 3.2, text: 'Planned: ghost = place, cross = remove'},
 ];
+
+const POOL = ['0x8ba1f109551bd432803012645ac136ddd64dba72', '0xab5801a7d398351b8be11c439e05c5b3259aec9b', '0x4e9ce36e442e55ecd9025b9a6e0d88485d628a67', '0xfe9e8709d3215310075d67e3ed32a380ccf451c8', '0x00000000219ab540356cbb839cbe05303d7705fa', '0x1d3a5e7f00000000000000000000000000c0ffee'];
+let evilSeed = 0;
+/** An Evil cell made by a collision of `stake` players, one gem each. */
+function evil(x: number, y: number, life: number, stake: number): Cell {
+	const contributors = Array.from({length: stake}, (_, i) => POOL[(evilSeed + i * 2) % POOL.length]);
+	evilSeed++;
+	return c(x, y, EVIL, life, EVIL_OWNER, {stake, contributors});
+}
 
 function c(x: number, y: number, color: number, life: number, owner: string, extra: Partial<Cell> = {}): Cell {
 	return {x, y, color, life, stake: 1, owner, ...extra};
@@ -66,11 +75,11 @@ function field(): Cell[] {
 				if (d < bd) [bd, best] = [d, s];
 			}
 			if (rand() < 0.03) {
-				out.push(c(x, y, EVIL, 1 + Math.floor(rand() * 7), EVIL_OWNER, {stake: 2}));
+				out.push(evil(x, y, 1 + Math.floor(rand() * 7), 2 + Math.floor(rand() * 2)));
 				continue;
 			}
 			const owner = rand() < 0.7 ? best.owner : owners[Math.floor(rand() * owners.length)];
-			out.push(c(x, y, best.color, rand() < 0.12 ? 0 : 1 + Math.floor(rand() * 7), owner, {stake: rand() < 0.1 ? 2 : 1}));
+			out.push(c(x, y, best.color, rand() < 0.12 ? 0 : 1 + Math.floor(rand() * 7), owner));
 		}
 	return out;
 }
@@ -109,12 +118,12 @@ export function initialBoard(): Board {
 		...[1, 2, 3, 4, 5, 6, 7].map((life, i) => c(i * 2, 7, GREEN, life, [me, b, cc, d, e, f, me][i])),
 
 		// E: the shrinking ladder, each under an Evil cell.
-		...[1, 2, 3, 4, 5, 6, 7].flatMap((life, i) => [c(i * 2, 10, YELLOW, life, [d, e, f, me, b, cc, d][i]), c(i * 2, 9, EVIL, [6, 3, 5, 7, 2, 4, 6][i], EVIL_OWNER, {stake: 2})]),
+		...[1, 2, 3, 4, 5, 6, 7].flatMap((life, i) => [c(i * 2, 10, YELLOW, life, [d, e, f, me, b, cc, d][i]), evil(i * 2, 9, [6, 3, 5, 7, 2, 4, 6][i], [2, 2, 3, 2, 4, 2, 2][i])]),
 
 		// G: Evil grows like any colour, with Evil friends.
-		c(15, 10, EVIL, 3, EVIL_OWNER, {stake: 2}),
-		c(16, 10, EVIL, 5, EVIL_OWNER, {stake: 3}),
-		c(17, 10, EVIL, 2, EVIL_OWNER, {stake: 2}),
+		evil(15, 10, 3, 2),
+		evil(16, 10, 5, 3),
+		evil(17, 10, 2, 2),
 
 		// H: dead cells stay, and still count.
 		c(20, 1, BLUE, 4, b),
@@ -124,12 +133,12 @@ export function initialBoard(): Board {
 		c(21, 3, GREEN, 0, cc),
 		c(20, 4, GREEN, 0, me),
 
-		// F: one faction, four owners, a stake of 3.
+		// F: one faction, five owners.
 		c(15, 6, GREEN, 5, b),
 		c(16, 6, GREEN, 6, b),
 		c(17, 6, GREEN, 4, cc),
 		c(15, 7, GREEN, 3, d),
-		c(16, 7, GREEN, 7, me, {stake: 3}),
+		c(16, 7, GREEN, 7, me),
 		c(17, 7, GREEN, 5, cc),
 		c(16, 8, GREEN, 2, e),
 	];

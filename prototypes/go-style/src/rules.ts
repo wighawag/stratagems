@@ -32,6 +32,13 @@ export type Cell = {
 	owner: string;
 	/** A planned move the player has not committed yet. */
 	planned?: 'place' | 'remove';
+	/**
+	 * Evil only: the players whose colliding placements made it, one gem each
+	 * (its stake). A normal cell's stake is always 1 (`_placeColor`); only a
+	 * collision stacks gems, all in the cycle it happens (a move on a live Evil
+	 * cell is skipped). The indexer keeps who placed where for 7 cycles only.
+	 */
+	contributors?: string[];
 };
 
 export type Board = Map<string, Cell>;
@@ -124,9 +131,36 @@ export function ownerSummary(board: Board, owner: string): OwnerSummary {
 	return {owner, cells, stake, colors: [...colors]};
 }
 
-/** The edges of an owner's connected groups: one unit segment per open side. */
-export function ownerOutline(board: Board, owner: string): {x1: number; y1: number; x2: number; y2: number}[] {
-	const segments: {x1: number; y1: number; x2: number; y2: number}[] = [];
+export type Segment = {x1: number; y1: number; x2: number; y2: number};
+
+/** The edges of each faction's connected living groups: one unit segment per open side. */
+export function factionOutlines(board: Board): Map<number, Segment[]> {
+	const out = new Map<number, Segment[]>();
+	for (const cell of board.values()) {
+		if (cell.life === 0 || cell.planned === 'place') continue;
+		const segs = out.get(cell.color) ?? out.set(cell.color, []).get(cell.color)!;
+		segs.push(...outlineOf(board, cell, (c) => c.color === cell.color && c.life > 0 && c.planned !== 'place'));
+	}
+	return out;
+}
+
+function outlineOf(board: Board, cell: Cell, same: (c: Cell) => boolean): Segment[] {
+	const segments: Segment[] = [];
+	const mine = (x: number, y: number) => {
+		const c = board.get(key(x, y));
+		return !!c && same(c);
+	};
+	const {x, y} = cell;
+	if (!mine(x, y - 1)) segments.push({x1: x - 0.5, y1: y - 0.5, x2: x + 0.5, y2: y - 0.5});
+	if (!mine(x + 1, y)) segments.push({x1: x + 0.5, y1: y - 0.5, x2: x + 0.5, y2: y + 0.5});
+	if (!mine(x, y + 1)) segments.push({x1: x - 0.5, y1: y + 0.5, x2: x + 0.5, y2: y + 0.5});
+	if (!mine(x - 1, y)) segments.push({x1: x - 0.5, y1: y - 0.5, x2: x - 0.5, y2: y + 0.5});
+	return segments;
+}
+
+/** The edges of an owner's connected groups (round 1; dropped: unbounded players). */
+export function ownerOutline(board: Board, owner: string): Segment[] {
+	const segments: Segment[] = [];
 	const mine = (x: number, y: number) => {
 		const c = board.get(key(x, y));
 		return !!c && c.owner === owner && c.planned !== 'place' && c.life > 0;

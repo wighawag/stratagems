@@ -8,11 +8,13 @@
 		"shots": "node shots.mjs"
 	},
 	"dependencies": {
-		"pixi.js": "8.22.0"
+		"pixi.js": "8.22.0",
+		"three": "0.186.1"
 	},
 	"devDependencies": {
-		"vite": "8.3.1",
+		"@types/three": "^0.186.0",
 		"playwright": "1.62.1",
-		"typescript": "~6.0.3"
+		"typescript": "~6.0.3",
+		"vite": "8.3.1"
 	}
 }

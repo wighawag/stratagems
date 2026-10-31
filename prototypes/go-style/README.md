@@ -1,4 +1,4 @@
-# PROTOTYPE, throwaway: stratagems on a Go board (pixi.js 8.22.0)
+# PROTOTYPE, throwaway: stratagems on a Go board (pixi.js 8.22.0, three.js 0.186.1)
 
 Branch `proto/go-style`, never merged. The question it answers: **how should a stratagems cell show its life (0 to 7) and its trend (+1 or -1 each cycle) without printing a number, and who owns it**, on a Go-like board rendered with pixi.js, so step 9 can be specified. Decided by the user on 2026-10-30: the twgl.js "world" renderer of `specify-9` is deferred; this replaces it.
 
@@ -19,3 +19,15 @@ then open http://127.0.0.1:5199/. Screenshots: `pnpm shots` (with the dev server
 - Other markers: your own stones have a centre dot; a planned placement is a ghost, a planned removal a cross; a cell holding more gems is a thicker stone (one seam per extra gem).
 
 The rule functions are in `src/rules.ts` (pure, what a real step would unit-test); every texture is drawn in code in `src/textures.ts`.
+
+## Round 2 (2026-10-30, after the user's review of round 1)
+
+Kept from round 1: bridges and notches, the dial when zoomed in and size when zoomed out. Dropped: cracks as the life display, the blockie inlays and the per-owner outlines (unbounded players). New:
+
+- **Four looks** (left/right or the panel): Flat (round 1); Rich 2D (a procedural straight-grained wood board with hoshi every 8 intersections, gems drawn as cabochons with a table ring, the one the Evil stone had, in deeper jewel tones of the same hues); Baked (the gem modelled in three.js and rendered once per colour into the pixi sprite); Live 3D (three.js, physically based, instanced, with a tilt).
+- **One pulse**: only the pending pip pulses, gold where life is coming and red where it is going, every gem in step; the glow and the red rim are steady.
+- **Your gems sit in a gold bezel** (four prongs), visible at every zoom; the white dot is gone.
+- **Stacks are Evil only**: a normal cell's stake is always 1 (`_placeColor`); a collision makes Evil with one gem per colliding player. The stack is drawn one disc per gem, and hovering it lists the players (from the indexer's 7-cycle placement window, in a real build) and what killing it pays.
+- **Hover without flicker**: the hit area is the cell's whole square (no gap between neighbours), and leaving to empty board keeps the highlight 250 ms.
+- **A real crack**: cracks race out from an impact point, the gem shudders, chips fly, then it sinks into its husk.
+- **Faction territory outlines** (G): each connected living group of one colour, outlined in its colour.
