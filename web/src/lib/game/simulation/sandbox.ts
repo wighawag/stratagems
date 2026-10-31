@@ -116,7 +116,10 @@ export type BytecodeSandbox<TName extends string> = {
 	}): Promise<
 		ContractFunctionReturnType<abi, 'pure' | 'view', functionName, args>
 	>;
-	/** Stop the node (and its Worker). Calls after this reject. */
+	/**
+	 * Stop the node (and its Worker). A later call starts it again, reading the
+	 * code again, so an app may dispose it on every teardown.
+	 */
 	dispose(): void;
 };
 
@@ -133,7 +136,6 @@ export function createBytecodeSandbox<TName extends string>(params: {
 }): BytecodeSandbox<TName> {
 	const {contracts, provider, node: makeNode = defaultNode} = params;
 
-	let disposed = false;
 	let started:
 		| Promise<{
 				node: SandboxRequest & {dispose?: () => unknown};
@@ -182,7 +184,6 @@ export function createBytecodeSandbox<TName extends string>(params: {
 	}
 
 	function ready() {
-		if (disposed) return Promise.reject(new Error('the sandbox is disposed'));
 		if (!started) {
 			started = start();
 			// A failed load is not forever: the next call tries again.
@@ -216,7 +217,6 @@ export function createBytecodeSandbox<TName extends string>(params: {
 			} as Parameters<typeof decodeFunctionResult>[0]) as never;
 		},
 		dispose() {
-			disposed = true;
 			const pending = started;
 			started = undefined;
 			void pending?.then(

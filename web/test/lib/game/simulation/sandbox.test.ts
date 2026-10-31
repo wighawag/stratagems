@@ -211,6 +211,28 @@ describe('createBytecodeSandbox', () => {
 		sandbox.dispose();
 	});
 
+	it('starts again after it is disposed, so an app can dispose it on every teardown', async () => {
+		const provider = chainHolding({[DEPLOYED]: await deployedToyCode(6n)});
+		const node = vi.fn(() => createNode({}));
+		const sandbox = createBytecodeSandbox({
+			provider,
+			contracts: {toy: {address: DEPLOYED}},
+			node,
+		});
+		const scaled = () =>
+			sandbox.call({
+				contract: 'toy',
+				abi: toyAbi,
+				functionName: 'scaled',
+				args: [1n],
+			});
+		expect(await scaled()).toBe(6n);
+		sandbox.dispose();
+		expect(await scaled()).toBe(6n);
+		expect(node).toHaveBeenCalledTimes(2);
+		sandbox.dispose();
+	});
+
 	it('starts nothing until it is first called', () => {
 		const node = vi.fn(() => createNode({}));
 		const provider = chainHolding({});
