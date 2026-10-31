@@ -176,3 +176,66 @@ describe('the trend of a cell, from the contract copy', () => {
 		expect(cell(planned, 1, 0)).toMatchObject({planned: BLUE, trend: 'shrink'});
 	});
 });
+
+describe('who made an Evil cell, while the indexer still knows', () => {
+	const DAVE = '0x00000000000000000000000000000000000da7e0' as const;
+
+	function evilBoard(placementsKnown: boolean) {
+		// a collision: Alice red and Bob blue on the same cell in one cycle
+		const onchain = boardAfter(
+			[
+				{
+					cycle: 1,
+					moves: [
+						{player: ALICE, x: 0, y: 0, color: RED},
+						{player: BOB, x: 0, y: 0, color: BLUE},
+					],
+				},
+			],
+			1,
+		);
+		if (placementsKnown) {
+			onchain.data.placements = [
+				{
+					cycle: 2,
+					cells: {
+						[at(5, 5).toString()]: {players: [{color: RED, address: DAVE}]},
+					},
+				},
+				{
+					cycle: 1,
+					cells: {
+						[at(0, 0).toString()]: {
+							players: [
+								{color: RED, address: ALICE},
+								{color: BLUE, address: BOB},
+							],
+						},
+					},
+				},
+			];
+		}
+		return mergeBoardView({
+			onchain,
+			local: {planned: []},
+			cycleNumber: 1,
+			maxLife: MAX_LIFE,
+		});
+	}
+
+	it('is a collision, one gem per player', () => {
+		expect(cell(evilBoard(false), 0, 0)).toMatchObject({
+			color: 6,
+			stake: 2,
+			life: 2,
+		});
+	});
+
+	it('names the players from the placement window', () => {
+		expect(cell(evilBoard(true), 0, 0).makers).toEqual([ALICE, BOB]);
+	});
+
+	it('names nobody once the window has moved on', () => {
+		expect(cell(evilBoard(false), 0, 0).makers).toBeUndefined();
+	});
+});

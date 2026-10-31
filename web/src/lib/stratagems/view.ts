@@ -9,6 +9,7 @@
  */
 import {
 	bigIntIDToXY,
+	Color,
 	StratagemsContract,
 	type ContractCell,
 	type StratagemsState,
@@ -47,6 +48,12 @@ export type CellView = {
 	mine: boolean;
 	/** The colour a planned move puts here, if one does. */
 	planned?: number;
+	/**
+	 * An Evil cell's makers: the players whose placements collided on it, one
+	 * gem each, while the indexer still knows them (it keeps who placed where
+	 * for the last 7 revealed cycles); undefined otherwise.
+	 */
+	makers?: `0x${string}`[];
 };
 
 export type BoardView = {
@@ -92,6 +99,26 @@ export function trendOf(
 	if (simulation._effectiveDelta(cell.delta, cell.enemyMap) < 0)
 		return 'shrink';
 	return cell.life >= maxLife ? 'full' : 'grow';
+}
+
+/**
+ * The players of the latest collision on `key` the placement window still
+ * holds (newest first): an Evil cell is made by one, and a move on a living
+ * Evil cell is skipped, so the latest is the one that made it.
+ */
+function makersOf(
+	placements: BoardState['data']['placements'],
+	key: string,
+): `0x${string}`[] | undefined {
+	for (const cycle of placements) {
+		const players = cycle.cells[key]?.players;
+		if (players && players.length > 1) {
+			return players.map(
+				(player) => player.address.toLowerCase() as `0x${string}`,
+			);
+		}
+	}
+	return undefined;
 }
 
 /** The merge, for a deployment's `maxLife`. */
@@ -142,6 +169,9 @@ export function mergeBoardView(params: {
 			owner,
 			mine: owner !== undefined && owner === player,
 			planned: planned.get(key),
+			...(updatedCell.color === Color.Evil
+				? {makers: makersOf(onchain.data.placements, key)}
+				: {}),
 		});
 	}
 	return {cells, player};
