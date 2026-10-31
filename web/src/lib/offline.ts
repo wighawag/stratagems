@@ -24,6 +24,8 @@ import {pokeWhenTheHumanActs} from '$lib/game/core/played';
 import {seatsPlayedByTheWorld, type Table} from '$lib/game/lobby/seats';
 import {authoriseTheBrowsersKey} from '$lib/game/acquire';
 import {resolvePlacementConfig} from '$lib/placement/config';
+import {deleteWorldIndex} from '$lib/indexer';
+import {INDEXER_PREFIX} from '$lib/placement/indexer/prefix';
 
 /**
  * THIS GAME'S OFFLINE WORLD: the composition, which is the half
@@ -110,6 +112,12 @@ const ADMIN_ADDRESS = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8' as const;
  * The key lives here rather than there because this file is what writes it.
  */
 export const CHAIN_ID_STORAGE_KEY = 'offline-world:chain-id';
+/**
+ * Which world's index this browser holds, so that the index of a world the
+ * lobby forgot is deleted when the next one starts. Its own key, because the
+ * lobby, byte-identical across games, knows nothing of an index.
+ */
+const INDEXED_CHAIN_ID_STORAGE_KEY = 'offline-world:indexed-chain-id';
 const PLAY_MONEY = 10n ** 24n;
 
 /**
@@ -217,6 +225,22 @@ export function startOfflineWorld(params: {
 	return pending;
 }
 
+/**
+ * Delete the index of the world this browser indexed before, when it is not
+ * the one starting now: the lobby forgot it, or its restore was incoherent and
+ * a new id was minted. Best-effort and not awaited (a database a stopping
+ * worker still holds blocks its deletion until it lets go).
+ */
+function forgetPreviousWorldIndex(chainId: number): void {
+	const previous = Number(localStorage.getItem(INDEXED_CHAIN_ID_STORAGE_KEY));
+	if (previous && previous !== chainId) {
+		void deleteWorldIndex(INDEXER_PREFIX, previous).catch((err) =>
+			console.warn('could not delete a forgotten world\u2019s index', err),
+		);
+	}
+	localStorage.setItem(INDEXED_CHAIN_ID_STORAGE_KEY, String(chainId));
+}
+
 async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 	// The id is minted once and remembered, because it is what keys everything
 	// the player keeps: the operations ledger, and this game's submission
@@ -228,6 +252,7 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 	});
 
 	const world = await openWorld(chainId, table);
+	forgetPreviousWorldIndex(world.deployments.get().chain.id);
 
 	status.set({step: 'Booting', what: 'connecting'});
 
