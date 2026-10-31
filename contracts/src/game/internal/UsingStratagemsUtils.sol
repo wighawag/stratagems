@@ -34,7 +34,11 @@ abstract contract UsingStratagemsUtils is UsingStratagemsTypes {
         transferCollection.numTransfers++;
     }
 
-    function _multiTransfer(IERC20 token, TokenTransferCollection memory transferCollection) internal {
+    /// @dev THE ONE PLACE TOKENS LEAVE A RESOLUTION, and so a hook:
+    ///      `StratagemsSimulation` overrides it to record the payouts instead
+    ///      of sending them. Internal and virtual, so the call is resolved at
+    ///      compile time and costs the reveal nothing.
+    function _multiTransfer(IERC20 token, TokenTransferCollection memory transferCollection) internal virtual {
         for (uint256 i = 0; i < transferCollection.numTransfers; i++) {
             token.transfer(transferCollection.transfers[i].to, transferCollection.transfers[i].amount);
         }

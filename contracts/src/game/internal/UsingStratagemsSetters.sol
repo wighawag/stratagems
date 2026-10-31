@@ -288,16 +288,16 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             : 0;
         if (oldOwner == newOwner) {
             if (newHolding > oldHolding) {
-                GENERATOR.add(newOwner, newHolding - oldHolding);
+                _addPoints(newOwner, newHolding - oldHolding);
             } else if (oldHolding > newHolding) {
-                GENERATOR.remove(oldOwner, oldHolding - newHolding);
+                _removePoints(oldOwner, oldHolding - newHolding);
             }
         } else {
             if (oldHolding != 0) {
-                GENERATOR.remove(oldOwner, oldHolding);
+                _removePoints(oldOwner, oldHolding);
             }
             if (newHolding != 0) {
-                GENERATOR.add(newOwner, newHolding);
+                _addPoints(newOwner, newHolding);
             }
         }
     }
@@ -388,6 +388,18 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
         currentState.distribution = 0;
         _cells[position] = currentState;
+    }
+
+    /// @dev THE ONE PLACE POINTS LEAVE A RESOLUTION, with {_removePoints}, and
+    ///      so a hook: `StratagemsSimulation` overrides both to record the
+    ///      changes instead of making them (see {_multiTransfer}).
+    function _addPoints(address owner, uint256 amount) internal virtual {
+        GENERATOR.add(owner, amount);
+    }
+
+    /// @dev See {_addPoints}.
+    function _removePoints(address owner, uint256 amount) internal virtual {
+        GENERATOR.remove(owner, amount);
     }
 
     //-------------------------------------------------------------------------
@@ -529,9 +541,9 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         if (owner != address(0) && newLife > 0) {
             int8 newEffectiveDelta = _effectiveDelta(cell.delta, cell.enemyMap);
             if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
-                GENERATOR.remove(owner, NUM_TOKENS_PER_GEMS * cell.stake);
+                _removePoints(owner, NUM_TOKENS_PER_GEMS * cell.stake);
             } else if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
-                GENERATOR.add(owner, NUM_TOKENS_PER_GEMS * cell.stake);
+                _addPoints(owner, NUM_TOKENS_PER_GEMS * cell.stake);
             }
         }
 
