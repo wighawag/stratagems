@@ -49,6 +49,7 @@ function cellTexture(): Texture | undefined {
 
 export class CellObject extends Container {
 	private readonly body: Graphics;
+	private readonly preview: Graphics;
 	private readonly outline: Graphics;
 	private tile: Sprite | undefined;
 
@@ -58,8 +59,10 @@ export class CellObject extends Container {
 	) {
 		super();
 		this.body = new Graphics();
+		this.preview = new Graphics();
 		this.outline = new Graphics();
 		this.addChild(this.body);
+		this.addChild(this.preview);
 		this.addChild(this.outline);
 		this.update(cell);
 	}
@@ -114,6 +117,21 @@ export class CellObject extends Container {
 			this.tile.visible = false;
 		}
 
+		// WHAT THE PLAN LEADS TO, from the contract's own rule run in the sandbox
+		// (`../preview.ts`): a smaller square at the opacity the cell will have
+		// once the turn is revealed, in the planned colour so it never reads as
+		// confirmed. Same mark, and the same numbers, as the immediate renderer.
+		this.preview.clear();
+		if (cell.planned && cell.next) {
+			const previewHalf = size * 0.2;
+			this.preview
+				.rect(-previewHalf, -previewHalf, 2 * previewHalf, 2 * previewHalf)
+				.fill({
+					color: PLANNED_COLOUR,
+					alpha: Math.min(0.35 + 0.2 * cell.next.numClaimants, 0.95),
+				});
+		}
+
 		this.outline.clear();
 		if (cell.planned) {
 			this.outline
@@ -124,6 +142,7 @@ export class CellObject extends Container {
 
 	onRemoved() {
 		this.body.destroy();
+		this.preview.destroy();
 		this.outline.destroy();
 		// The texture belongs to the shared spritesheet and must NOT be destroyed
 		// with the sprite: every other cell is drawing from it.
