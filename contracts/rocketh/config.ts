@@ -34,6 +34,14 @@ export const config = {
 			chain: 8453,
 			overrides: {tags: ['mainnet']},
 		},
+		// THE NEW DEPLOYMENT (step D of work/plans/join-template-commit-reveal.md):
+		// the contracts on the commit-reveal base, on Base, beside alpha1's
+		// records, with fresh tokens, a test-gems distributor and alpha1's day-long
+		// cycle. `alpha1` and `base` above are history.
+		alpha2: {
+			chain: 8453,
+			overrides: {tags: ['mainnet']},
+		},
 	},
 	chains: {
 		// The local chain (`pnpm local_node`, the e2e), with the two properties the
@@ -46,6 +54,20 @@ export const config = {
 		31337: {
 			properties: {
 				expectedWorstGasPrice: parseEther('1', 'gwei'),
+				creditsGasMultiplier: CLIENT_GAS.commitGas + CLIENT_GAS.revealGas,
+				supportsSendRawTransactionSync: false,
+			},
+		},
+		// Base (step D, PD6): the base fee sat at 0.005 gwei in every one of 1,024
+		// blocks measured on 2026-10-30, the 99th-percentile tip reaching 3.2 gwei
+		// in a spike. 0.02 gwei is four times the base fee: it sizes the stake's
+		// stipend (`signerStipend`: this price x (commitGas + revealGas) x 100 turns,
+		// 0.0143 ETH) and is the most fuzd is authorised to pay per gas for a
+		// scheduled reveal. A spike above it leaves fuzd's reveal waiting, which the
+		// browser's fallback at half the reveal phase covers.
+		8453: {
+			properties: {
+				expectedWorstGasPrice: parseEther('0.02', 'gwei'),
 				creditsGasMultiplier: CLIENT_GAS.commitGas + CLIENT_GAS.revealGas,
 				supportsSendRawTransactionSync: false,
 			},

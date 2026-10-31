@@ -44,6 +44,18 @@ const config: HardhatUserConfig = {
 			},
 		},
 	},
+	// A FORK OF BASE needs its hardfork history, which Hardhat does not ship for
+	// 8453: without it the in-process chain refuses to execute on a forked block
+	// ("No known hardfork"). Isthmus, Base mainnet's since 2025-05-09
+	// (timestamp 1746806401), is the latest OP hardfork the simulator knows. Used
+	// by `scripts/dry-run-alpha2.ts` (step D) and any `HARDHAT_FORK` of Base.
+	chainDescriptors: {
+		8453: {
+			name: 'Base',
+			chainType: 'op',
+			hardforkHistory: {isthmus: {timestamp: 1746806401}},
+		},
+	},
 	networks:
 		// the fork configuration for the network named by HARDHAT_FORK
 		addForkConfiguration(

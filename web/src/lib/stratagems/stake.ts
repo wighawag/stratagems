@@ -24,8 +24,13 @@ import {acquisitionTotal, type Acquisition} from '$lib/game/acquire';
 import {onchainIdentity} from '$lib/game/identity';
 import type {StratagemsConfig} from './game-config';
 
-/** Gas to keep back when asking whether a payer can afford the deposit. */
-const DEPOSIT_GAS = 200_000n;
+/**
+ * Gas to keep back when asking whether a payer can afford the deposit: the
+ * stake with its stipend (`addToReserveAndFund`) measured 191,660 on a fork of
+ * Base (step D, `contracts/scripts/dry-run-alpha2.ts`), so about 30% over it,
+ * as the rail asks ("generously rounded").
+ */
+const DEPOSIT_GAS = 250_000n;
 
 export function createStakeAcquisition(params: {
 	config: StratagemsConfig;
