@@ -20,7 +20,7 @@ import {ALICE, BOB, MAX_LIFE, at, boardAfter, boardStore} from './board';
  * her cell at 0,0 died in cycle 3, outnumbered by Bob's four cells around 1,0,
  * which live on; 3,3 is Evil (both placed on it in cycle 1). 9,9 was never played.
  */
-const BOARD = boardAfter(
+const BOARD = await boardAfter(
 	[
 		{
 			cycle: 1,

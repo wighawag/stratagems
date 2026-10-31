@@ -4,3 +4,4 @@ export * from './grid';
 export * from './stratagems';
 export * from './commitment';
 export * from './constants';
+export * from './projection';

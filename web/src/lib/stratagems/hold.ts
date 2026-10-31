@@ -18,6 +18,7 @@ import {
 import type {BoardState} from './board/indexed-board';
 import type {Move} from './moves';
 import type {LocalPlan} from './view';
+import {sameMoves} from './preview';
 
 export const holdResolvingCycle: HoldResolvingCycle<BoardState> = ({
 	shown,
@@ -34,7 +35,16 @@ export function holdPlanUntilBoardReleases(params: {
 		submission: params.submission,
 		holding: params.holding,
 	});
+	// the plan's preview goes with it when the turn held is the turn planned
 	return derived([params.plan, held], ([$plan, $held]): LocalPlan =>
-		$held === undefined ? $plan : {planned: $held, player: $plan.player},
+		$held === undefined
+			? $plan
+			: {
+					planned: $held,
+					player: $plan.player,
+					...($plan.preview && sameMoves($held, $plan.planned)
+						? {preview: $plan.preview}
+						: {}),
+				},
 	);
 }

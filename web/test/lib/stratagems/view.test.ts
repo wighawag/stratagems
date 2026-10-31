@@ -7,6 +7,7 @@ import {
 	MAX_LIFE,
 	at,
 	boardAfter,
+	previewed,
 	type Played,
 } from './board';
 
@@ -14,7 +15,7 @@ const RED = 1;
 const BLUE = 2;
 const GREEN = 3;
 
-function view(
+async function view(
 	cycles: {cycle: number; moves: Played[]}[],
 	atCycle: number,
 	plan: {
@@ -22,15 +23,17 @@ function view(
 		planned?: {x: number; y: number; color: number}[];
 	} = {},
 ) {
+	const onchain = await boardAfter(cycles, atCycle);
+	const local = {
+		player: plan.player,
+		planned: (plan.planned ?? []).map((m) => ({
+			position: at(m.x, m.y),
+			color: m.color,
+		})),
+	};
 	return mergeBoardView({
-		onchain: boardAfter(cycles, atCycle),
-		local: {
-			player: plan.player,
-			planned: (plan.planned ?? []).map((m) => ({
-				position: at(m.x, m.y),
-				color: m.color,
-			})),
-		},
+		onchain,
+		local: await previewed(onchain, local),
 		cycleNumber: atCycle,
 		maxLife: MAX_LIFE,
 	});
@@ -47,8 +50,8 @@ function cell(
 }
 
 describe('the trend of a cell, from the contract copy', () => {
-	it('grows with no enemy at all', () => {
-		const board = view(
+	it('grows with no enemy at all', async () => {
+		const board = await view(
 			[{cycle: 1, moves: [{player: ALICE, x: 0, y: 0, color: RED}]}],
 			1,
 		);
@@ -60,16 +63,16 @@ describe('the trend of a cell, from the contract copy', () => {
 		});
 	});
 
-	it('is full at the maximum life, and stays there', () => {
-		const board = view(
+	it('is full at the maximum life, and stays there', async () => {
+		const board = await view(
 			[{cycle: 1, moves: [{player: ALICE, x: 0, y: 0, color: RED}]}],
 			20,
 		);
 		expect(cell(board, 0, 0)).toMatchObject({life: MAX_LIFE, trend: 'full'});
 	});
 
-	it('shrinks when enemies outnumber friends', () => {
-		const board = view(
+	it('shrinks when enemies outnumber friends', async () => {
+		const board = await view(
 			[
 				{
 					cycle: 1,
@@ -93,8 +96,8 @@ describe('the trend of a cell, from the contract copy', () => {
 		});
 	});
 
-	it('grows when friends outnumber enemies', () => {
-		const board = view(
+	it('grows when friends outnumber enemies', async () => {
+		const board = await view(
 			[
 				{
 					cycle: 1,
@@ -116,8 +119,8 @@ describe('the trend of a cell, from the contract copy', () => {
 		});
 	});
 
-	it('shrinks on a tie, since only more friends than enemies (or none) grows', () => {
-		const board = view(
+	it('shrinks on a tie, since only more friends than enemies (or none) grows', async () => {
+		const board = await view(
 			[
 				{
 					cycle: 1,
@@ -137,13 +140,13 @@ describe('the trend of a cell, from the contract copy', () => {
 		});
 	});
 
-	it('is dead at life 0, and the dead cell keeps its colour and keeps pressing', () => {
+	it('is dead at life 0, and the dead cell keeps its colour and keeps pressing', async () => {
 		const surrounded = [
 			{player: ALICE, x: 0, y: 0, color: RED},
 			{player: BOB, x: 1, y: 0, color: BLUE},
 		];
 		// both die after their two lives (2, then 1, then 0)
-		const board = view(
+		const board = await view(
 			[
 				{cycle: 1, moves: surrounded},
 				{cycle: 5, moves: [{player: CAROL, x: 2, y: 0, color: GREEN}]},
@@ -163,12 +166,12 @@ describe('the trend of a cell, from the contract copy', () => {
 		});
 	});
 
-	it('takes planned moves into account, as the contract would apply them', () => {
+	it('takes planned moves into account, as the contract would apply them', async () => {
 		const cycles = [
 			{cycle: 1, moves: [{player: ALICE, x: 0, y: 0, color: RED}]},
 		];
-		expect(cell(view(cycles, 2), 0, 0).trend).toBe('grow');
-		const planned = view(cycles, 2, {
+		expect(cell(await view(cycles, 2), 0, 0).trend).toBe('grow');
+		const planned = await view(cycles, 2, {
 			player: BOB,
 			planned: [{x: 1, y: 0, color: BLUE}],
 		});
@@ -180,9 +183,9 @@ describe('the trend of a cell, from the contract copy', () => {
 describe('who made an Evil cell, while the indexer still knows', () => {
 	const DAVE = '0x00000000000000000000000000000000000da7e0' as const;
 
-	function evilBoard(placementsKnown: boolean) {
+	async function evilBoard(placementsKnown: boolean) {
 		// a collision: Alice red and Bob blue on the same cell in one cycle
-		const onchain = boardAfter(
+		const onchain = await boardAfter(
 			[
 				{
 					cycle: 1,
@@ -223,19 +226,19 @@ describe('who made an Evil cell, while the indexer still knows', () => {
 		});
 	}
 
-	it('is a collision, one gem per player', () => {
-		expect(cell(evilBoard(false), 0, 0)).toMatchObject({
+	it('is a collision, one gem per player', async () => {
+		expect(cell(await evilBoard(false), 0, 0)).toMatchObject({
 			color: 6,
 			stake: 2,
 			life: 2,
 		});
 	});
 
-	it('names the players from the placement window', () => {
-		expect(cell(evilBoard(true), 0, 0).makers).toEqual([ALICE, BOB]);
+	it('names the players from the placement window', async () => {
+		expect(cell(await evilBoard(true), 0, 0).makers).toEqual([ALICE, BOB]);
 	});
 
-	it('names nobody once the window has moved on', () => {
-		expect(cell(evilBoard(false), 0, 0).makers).toBeUndefined();
+	it('names nobody once the window has moved on', async () => {
+		expect(cell(await evilBoard(false), 0, 0).makers).toBeUndefined();
 	});
 });

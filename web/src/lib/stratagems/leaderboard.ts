@@ -16,7 +16,7 @@
  * `lands` counts the player's cells alive at the board's cycle.
  */
 import {derived, type Readable} from 'svelte/store';
-import {StratagemsContract} from 'stratagems-common';
+import {cellAtCycle} from 'stratagems-common';
 import type {OnchainStateStore, OnchainStateValue} from '$lib/game/core/seams';
 import type {GameIdentity} from '$lib/game/identity';
 import type {BoardState} from './board/indexed-board';
@@ -50,15 +50,11 @@ export function leaderboardOf(params: {
 	const global = data.points.global;
 
 	const lands = new Map<string, number>();
-	const simulation = new StratagemsContract(
-		{cells: data.cells, owners: {}, computedPoints: {}},
-		params.maxLife,
-	);
 	for (const key of Object.keys(data.cells)) {
 		const owner = data.owners[key]?.toLowerCase();
 		if (!owner) continue;
-		const {updatedCell} = simulation.getUpdatedCell(BigInt(key), cycleNumber);
-		if (updatedCell.life > 0) lands.set(owner, (lands.get(owner) ?? 0) + 1);
+		const {cell} = cellAtCycle(data.cells[key], cycleNumber, params.maxLife);
+		if (cell.life > 0) lands.set(owner, (lands.get(owner) ?? 0) + 1);
 	}
 
 	const rows = Object.entries(data.points.shared).map(

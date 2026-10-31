@@ -7,8 +7,8 @@
  * the camera); the base's client (`$lib/game/core/commit-reveal/`) owns the calls
  * every game on the base makes. This file hands them stratagems' parts: its
  * move, its board (the etherfold indexer, not a poller), its rules for what a
- * click may plan, its view (`stratagems-common`'s simulation of the planned
- * moves), its stake (gems in the reserve) and its board, drawn with pixi. It is the
+ * click may plan, its view (the planned moves run by the contract's own code
+ * in the bytecode sandbox, `./preview.ts`), its stake (gems in the reserve) and its board, drawn with pixi. It is the
  * reference game's `placement/context.ts` with stratagems' parts in it.
  *
  * Constructed synchronously and off-browser, like the core half: nothing here
@@ -106,6 +106,8 @@ import {createTestGems, type TestGemsStore} from './test-gems';
 import {createSyncing, type SyncingModel} from './syncing';
 import {holdResolvingCycle, holdPlanUntilBoardReleases} from './hold';
 import {createBoardMerge, type BoardView} from './view';
+import {createBytecodeSandbox} from '$lib/game/simulation';
+import {createMovesPreview, withPreview, type SimulateMoves} from './preview';
 import {createStakeAcquisition, stakeNeeded} from './stake';
 import {
 	createBoardRenderer,
@@ -247,6 +249,27 @@ export function createGameContext(core: CoreServices): GameContext {
 			})
 		: undefined;
 
+	// THE RULES, RUN FROM THE CONTRACT'S OWN CODE: `StratagemsSimulation`'s
+	// deployed bytes, read once from whatever chain the app is on (a live one or
+	// the one in the tab) and run in a sandbox of its own, so what a planned move
+	// shows is what the reveal will do. Nothing is fetched or started until a
+	// move is planned. See `./preview.ts`.
+	const sandbox = createBytecodeSandbox({
+		provider: core.publicClient,
+		contracts: {
+			simulation: {address: deployments.contracts.StratagemsSimulation.address},
+		},
+	});
+	const simulate: SimulateMoves = async (board, player, cycleNumber, moves) =>
+		(
+			await sandbox.call({
+				contract: 'simulation',
+				abi: deployments.contracts.StratagemsSimulation.abi,
+				functionName: 'resolveMoves',
+				args: [[...board], player, cycleNumber, [...moves]],
+			})
+		).cells;
+
 	const crg = createCommitRevealGame<StratagemsGame>(core, {
 		identity: activeIdentity,
 		contract: gameAddress,
@@ -315,15 +338,24 @@ export function createGameContext(core: CoreServices): GameContext {
 			acquisition: createStakeAcquisition({config, deployments}),
 			grant: SIGNER_GRANT,
 		},
-		planning: ({submission, maxOpenableActions, onchainState}) =>
-			createPlanning({
+		// The plan the view draws carries what the planned moves will do, once
+		// the sandbox has answered for exactly those moves.
+		planning: ({submission, maxOpenableActions, onchainState}) => {
+			const planning = createPlanning({
 				submission,
 				maxOpenableActions,
 				onchainState,
 				identity: activeIdentity,
 				faction,
 				maxLife: config.maxLife,
-			}),
+			});
+			const preview = createMovesPreview({
+				plan: planning.plan,
+				board: {subscribe: onchainState.subscribe},
+				simulate,
+			});
+			return {...planning, plan: withPreview(planning.plan, preview)};
+		},
 		hold: holdResolvingCycle,
 		holdPlan: holdPlanUntilBoardReleases,
 		merge: createBoardMerge(config.maxLife),
@@ -342,7 +374,11 @@ export function createGameContext(core: CoreServices): GameContext {
 			),
 		start: () => {
 			void reserve.update();
-			return activeIdentity.subscribe(() => void reserve.update());
+			const stop = activeIdentity.subscribe(() => void reserve.update());
+			return () => {
+				stop();
+				sandbox.dispose();
+			};
 		},
 	});
 

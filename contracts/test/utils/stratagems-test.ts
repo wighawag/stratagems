@@ -6,7 +6,7 @@ import {
 	Grid,
 	Cell,
 	bigIntIDToXY,
-	StratagemsContract,
+	cellAtCycle,
 	xyToBigIntID,
 	EVIL_OWNER_ADDRESS,
 } from 'stratagems-common';
@@ -93,7 +93,6 @@ export async function expectIndexedGridToMatch(env: GridEnv, resultGrid: string,
 }
 
 export function fromStateToGrid(env: GridEnv, state: Data, cycle: number): Grid {
-	const stratagemsContract = new StratagemsContract(state, 7); // TODO MAX_LIFE
 	const gridCells: Cell[] = [];
 	// let minX = 0;
 	// let minY = 0;
@@ -104,7 +103,7 @@ export function fromStateToGrid(env: GridEnv, state: Data, cycle: number): Grid 
 
 	for (const positionString of Object.keys(state.cells)) {
 		const position = BigInt(positionString);
-		const {updatedCell: cell} = stratagemsContract.getUpdatedCell(position, cycle);
+		const {cell} = cellAtCycle(state.cells[positionString], cycle, env.config.maxLife);
 
 		const {x, y} = bigIntIDToXY(position);
 		const ownerAddress = state.owners[positionString];

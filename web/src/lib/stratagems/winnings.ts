@@ -26,8 +26,8 @@
 import {derived, get, writable, type Readable} from 'svelte/store';
 import {
 	bigIntIDToXY,
+	cellAtCycle,
 	countBits,
-	StratagemsContract,
 	xyToBigIntID,
 } from 'stratagems-common';
 import type {Abi} from 'viem';
@@ -63,16 +63,13 @@ export function sharesOwed(params: {
 }): Share[] {
 	const {board, numTokensPerGems} = params;
 	const player = params.player.toLowerCase();
-	const simulation = new StratagemsContract(
-		{cells: board.data.cells, owners: {}, computedPoints: {}},
-		params.maxLife,
-	);
 	const shares: Share[] = [];
 	for (const key of Object.keys(board.data.cells)) {
 		const position = BigInt(key);
-		const {updatedCell, justDied} = simulation.getUpdatedCell(
-			position,
+		const {cell: updatedCell, justDied} = cellAtCycle(
+			board.data.cells[key],
 			board.cycleNumber,
+			params.maxLife,
 		);
 		const distribution = justDied
 			? (updatedCell.enemyMap << 4) + countBits(updatedCell.enemyMap)

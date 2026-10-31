@@ -36,29 +36,33 @@ const ONE_ENEMY: {cycle: number; moves: Played[]}[] = [
 	},
 ];
 
-const owed = (cycles: typeof ONE_ENEMY, cycle: number, player: `0x${string}`) =>
+const owed = async (
+	cycles: typeof ONE_ENEMY,
+	cycle: number,
+	player: `0x${string}`,
+) =>
 	sharesOwed({
-		board: boardAfter(cycles, cycle),
+		board: await boardAfter(cycles, cycle),
 		player,
 		numTokensPerGems: GEM,
 		maxLife: MAX_LIFE,
 	});
 
 describe('what a dead cell owes', () => {
-	it('owes nothing while it lives', () => {
-		expect(owed(ONE_ENEMY, 2, BOB)).toEqual([]);
+	it('owes nothing while it lives', async () => {
+		expect(await owed(ONE_ENEMY, 2, BOB)).toEqual([]);
 	});
 
-	it("owes its stake to its enemy's owner once it has died, split by its enemies", () => {
-		expect(owed(ONE_ENEMY, 3, BOB)).toEqual([
+	it("owes its stake to its enemy's owner once it has died, split by its enemies", async () => {
+		expect(await owed(ONE_ENEMY, 3, BOB)).toEqual([
 			{position: at(1, 0), from: at(0, 0), amount: GEM},
 		]);
 		// and nothing to its own owner, or to anyone else
-		expect(owed(ONE_ENEMY, 3, ALICE)).toEqual([]);
-		expect(owed(ONE_ENEMY, 3, CAROL)).toEqual([]);
+		expect(await owed(ONE_ENEMY, 3, ALICE)).toEqual([]);
+		expect(await owed(ONE_ENEMY, 3, CAROL)).toEqual([]);
 	});
 
-	it('splits between two enemies of different owners, one share each', () => {
+	it('splits between two enemies of different owners, one share each', async () => {
 		// Carol's -1,0 on Alice's left, with three friends of her own around it,
 		// none touching Bob's
 		const twoEnemies: {cycle: number; moves: Played[]}[] = [
@@ -73,18 +77,22 @@ describe('what a dead cell owes', () => {
 				],
 			},
 		];
-		const deathCycle = [2, 3, 4].find(
-			(cycle) => owed(twoEnemies, cycle, BOB).length > 0,
-		)!;
-		expect(owed(twoEnemies, deathCycle, BOB)).toEqual([
+		let deathCycle = 0;
+		for (const cycle of [2, 3, 4]) {
+			if ((await owed(twoEnemies, cycle, BOB)).length > 0) {
+				deathCycle = cycle;
+				break;
+			}
+		}
+		expect(await owed(twoEnemies, deathCycle, BOB)).toEqual([
 			{position: at(1, 0), from: at(0, 0), amount: GEM / 2n},
 		]);
-		expect(owed(twoEnemies, deathCycle, CAROL)).toEqual([
+		expect(await owed(twoEnemies, deathCycle, CAROL)).toEqual([
 			{position: at(-1, 0), from: at(0, 0), amount: GEM / 2n},
 		]);
 	});
 
-	it("pokes each of the player's cells once, however many shares it is owed", () => {
+	it("pokes each of the player's cells once, however many shares it is owed", async () => {
 		expect(
 			positionsToPoke([
 				{position: at(1, 0), from: at(0, 0), amount: 1n},
@@ -96,10 +104,10 @@ describe('what a dead cell owes', () => {
 });
 
 describe('collecting', () => {
-	function setup(send = vi.fn(async () => {})) {
+	async function setup(send = vi.fn(async () => {})) {
 		const onCollected = vi.fn();
 		const winnings = createWinnings({
-			onchainState: boardStore(boardAfter(ONE_ENEMY, 3)),
+			onchainState: boardStore(await boardAfter(ONE_ENEMY, 3)),
 			identity: writable<GameIdentity | undefined>(BOB),
 			numTokensPerGems: GEM,
 			maxLife: MAX_LIFE,
@@ -111,7 +119,7 @@ describe('collecting', () => {
 	}
 
 	it("totals what is owed, and pokes the player's cells from the wallet", async () => {
-		const {winnings, send, onCollected} = setup();
+		const {winnings, send, onCollected} = await setup();
 		expect(get(winnings).total).toBe(GEM);
 		await winnings.collect();
 		expect(send).toHaveBeenCalledWith(
@@ -128,7 +136,7 @@ describe('collecting', () => {
 	});
 
 	it('keeps the failure to show, and sends nothing when nothing is owed', async () => {
-		const {winnings} = setup(
+		const {winnings} = await setup(
 			vi.fn(async () => {
 				throw new Error('user rejected');
 			}),
@@ -141,7 +149,7 @@ describe('collecting', () => {
 
 		const send = vi.fn(async () => {});
 		const nothing = createWinnings({
-			onchainState: boardStore(boardAfter(ONE_ENEMY, 2)),
+			onchainState: boardStore(await boardAfter(ONE_ENEMY, 2)),
 			identity: writable<GameIdentity | undefined>(BOB),
 			numTokensPerGems: GEM,
 			maxLife: MAX_LIFE,

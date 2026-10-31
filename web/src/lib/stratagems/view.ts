@@ -1,22 +1,27 @@
 /**
  * What the renderer draws: the indexed board, as it stands at the board's cycle,
- * with the player's planned moves played onto it by `stratagems-common`'s copy
- * of the contract's rules (`StratagemsContract.computeMove`), so a planned move
- * shows what it would do, collisions and neighbours included.
+ * with what the player's planned moves will do drawn over it once the
+ * contract's own code has said (`./preview.ts`: `StratagemsSimulation`, run in
+ * the bytecode sandbox), collisions and neighbours included. Until it has, the
+ * planned moves show as planned (the ghost, the cross) on the board as it is.
  *
- * A pure function of its inputs (the framework's `ViewMerge`); the board's data
- * is copied before the simulation writes to it.
+ * Every cell is brought to the board's cycle by the projection
+ * (`stratagems-common`'s `cellAtCycle`, held to the contract's bytecode by a
+ * differential test), the one rule the client runs in TypeScript.
+ *
+ * A pure function of its inputs (the framework's `ViewMerge`).
  */
 import {
 	bigIntIDToXY,
+	cellAtCycle,
 	Color,
-	StratagemsContract,
+	effectiveDelta,
 	type ContractCell,
-	type StratagemsState,
 } from 'stratagems-common';
 import type {ViewMerge} from '$lib/view';
 import type {BoardState} from './board/indexed-board';
 import type {Move} from './moves';
+import type {MovesPreview} from './preview';
 
 /**
  * Where a cell's life goes at the next cycle, by the contract's rule: a living
@@ -56,27 +61,24 @@ export type CellView = {
 	makers?: `0x${string}`[];
 };
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
 export type BoardView = {
 	cells: Map<string, CellView>;
 	/** Who is viewing, lower-case, when anyone is. */
 	player?: `0x${string}`;
 };
 
-/** The plan as the view needs it: the moves, and whose they are. */
+/** The plan as the view needs it: the moves, whose they are, and what they will do. */
 export type LocalPlan = {
 	planned: readonly Move[];
 	player?: `0x${string}`;
+	/**
+	 * The cells the planned moves touch, after the turn, when the sandbox has
+	 * answered for exactly these moves (`./preview.ts`, `withPreview`).
+	 */
+	preview?: MovesPreview;
 };
-
-function copyState(data: BoardState['data']): StratagemsState {
-	const cells: {[position: string]: ContractCell} = {};
-	for (const [key, cell] of Object.entries(data.cells)) cells[key] = {...cell};
-	return {
-		cells,
-		owners: {...data.owners},
-		computedPoints: {},
-	};
-}
 
 function countBits(map: number): number {
 	let count = 0;
@@ -87,17 +89,15 @@ function countBits(map: number): number {
 /**
  * The trend of a cell already brought to the board's cycle, from the stored
  * `delta` (friends minus enemies) and `enemyMap` (one bit per enemy
- * neighbour), through the contract copy's own `_effectiveDelta`: the board can
- * never draw a rule the contract does not apply.
+ * neighbour), through the projection's `effectiveDelta` (the contract's
+ * `_effectiveDelta`): the board can never draw a rule the contract does not apply.
  */
 export function trendOf(
-	simulation: StratagemsContract,
 	cell: Pick<ContractCell, 'life' | 'delta' | 'enemyMap'>,
 	maxLife: number,
 ): Trend {
 	if (cell.life <= 0) return 'dead';
-	if (simulation._effectiveDelta(cell.delta, cell.enemyMap) < 0)
-		return 'shrink';
+	if (effectiveDelta(cell.delta, cell.enemyMap) < 0) return 'shrink';
 	return cell.life >= maxLife ? 'full' : 'grow';
 }
 
@@ -136,25 +136,49 @@ export function mergeBoardView(params: {
 	maxLife: number;
 }): BoardView {
 	const {onchain, local, cycleNumber} = params;
-	const state = copyState(onchain.data);
-	const simulation = new StratagemsContract(state, params.maxLife);
 	const player = local.player?.toLowerCase() as `0x${string}` | undefined;
 
 	const planned = new Map<string, number>();
 	if (player) {
 		for (const move of local.planned) {
-			simulation.computeMove(player, cycleNumber, move);
 			planned.set(move.position.toString(), move.color);
 		}
 	}
 
-	const keys = new Set([...Object.keys(state.cells), ...planned.keys()]);
+	// the board, with what the turn will do over it once the contract has said
+	const cellsOf: {[key: string]: ContractCell | undefined} = {
+		...onchain.data.cells,
+	};
+	const ownersOf: {[key: string]: `0x${string}` | undefined} = {
+		...onchain.data.owners,
+	};
+	if (player && local.preview) {
+		for (const [key, after] of local.preview) {
+			// a neighbour nobody ever placed on stays off the board
+			if (
+				!(key in cellsOf) &&
+				after.cell.lastCycleUpdate === 0 &&
+				after.cell.color === Color.None
+			)
+				continue;
+			cellsOf[key] = after.cell;
+			ownersOf[key] = after.owner;
+		}
+	}
+
+	const keys = new Set([...Object.keys(cellsOf), ...planned.keys()]);
 	const cells = new Map<string, CellView>();
 	for (const key of keys) {
 		const position = BigInt(key);
 		const {x, y} = bigIntIDToXY(position);
-		const {updatedCell} = simulation.getUpdatedCell(position, cycleNumber);
-		const owner = state.owners[key]?.toLowerCase() as `0x${string}` | undefined;
+		const {cell: updatedCell} = cellAtCycle(
+			cellsOf[key],
+			cycleNumber,
+			params.maxLife,
+		);
+		const stored = ownersOf[key]?.toLowerCase();
+		const owner =
+			stored && stored !== ZERO_ADDRESS ? (stored as `0x${string}`) : undefined;
 		const enemies = countBits(updatedCell.enemyMap);
 		cells.set(key, {
 			position,
@@ -163,7 +187,7 @@ export function mergeBoardView(params: {
 			color: updatedCell.color,
 			life: updatedCell.life,
 			stake: updatedCell.stake,
-			trend: trendOf(simulation, updatedCell, params.maxLife),
+			trend: trendOf(updatedCell, params.maxLife),
 			friends: updatedCell.delta + enemies,
 			enemies,
 			owner,

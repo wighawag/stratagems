@@ -20,8 +20,8 @@ import {
 const PRECISION = 10n ** 24n;
 
 /** Alice has two living cells, Bob one, Carol none; the generator knows all three. */
-function board() {
-	const played = boardAfter(
+async function board() {
+	const played = await boardAfter(
 		[
 			{
 				cycle: 1,
@@ -67,9 +67,9 @@ const earned = (points: bigint, perPoint: bigint) =>
 	(points * perPoint * PRECISION * 10n ** 12n) / PRECISION;
 
 describe('the leaderboard', () => {
-	it("ranks by gems earned as of the generator's last update, then points", () => {
+	it("ranks by gems earned as of the generator's last update, then points", async () => {
 		const rows = leaderboardOf({
-			board: board(),
+			board: await board(),
 			player: BOB,
 			maxLife: MAX_LIFE,
 		});
@@ -89,8 +89,8 @@ describe('the leaderboard', () => {
 		expect(rows[2]).toMatchObject({earned: 0n, points: 0n, lands: 0});
 	});
 
-	it('breaks a tie on earnings by points, and a tie on both by address', () => {
-		const tied = board();
+	it('breaks a tie on earnings by points, and a tie on both by address', async () => {
+		const tied = await board();
 		tied.data.points.shared = {
 			[CAROL]: {
 				points: GEM,
@@ -113,7 +113,7 @@ describe('the leaderboard', () => {
 		).toEqual([ALICE, BOB, CAROL]);
 	});
 
-	it("counts only the cells alive at the board's cycle", () => {
+	it("counts only the cells alive at the board's cycle", async () => {
 		// Alice's cell at 0,0, ringed by Bob's four, dies in cycle 3
 		const played = (cycle: number) =>
 			boardAfter(
@@ -131,8 +131,8 @@ describe('the leaderboard', () => {
 				],
 				cycle,
 			);
-		const lands = (cycle: number) => {
-			const b = played(cycle);
+		const lands = async (cycle: number) => {
+			const b = await played(cycle);
 			b.data.points.shared = {
 				[ALICE]: {
 					points: 0n,
@@ -152,15 +152,15 @@ describe('the leaderboard', () => {
 				]),
 			);
 		};
-		expect(lands(2)).toEqual({[ALICE]: 1, [BOB]: 4});
-		expect(lands(3)).toEqual({[ALICE]: 0, [BOB]: 4});
+		expect(await lands(2)).toEqual({[ALICE]: 1, [BOB]: 4});
+		expect(await lands(3)).toEqual({[ALICE]: 0, [BOB]: 4});
 	});
 
-	it('reads points as whole gems staked', () => {
+	it('reads points as whole gems staked', async () => {
 		expect(pointsLabel(3n * GEM + 1n, GEM)).toBe('3');
 	});
 
-	it("is empty until the board loads, and marks the viewer's row", () => {
+	it("is empty until the board loads, and marks the viewer's row", async () => {
 		const store = boardStore(undefined);
 		const identity = writable<GameIdentity | undefined>(ALICE);
 		const leaderboard = createLeaderboard({
@@ -169,7 +169,7 @@ describe('the leaderboard', () => {
 			maxLife: MAX_LIFE,
 		});
 		expect(get(leaderboard)).toEqual([]);
-		store.set(board());
+		store.set(await board());
 		expect(get(leaderboard).find((row) => row.mine)?.player).toBe(ALICE);
 	});
 });

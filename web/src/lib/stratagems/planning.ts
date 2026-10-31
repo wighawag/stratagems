@@ -24,7 +24,7 @@ import {derived, get, writable, type Readable} from 'svelte/store';
 import {
 	Color,
 	EVIL_OWNER_ADDRESS,
-	StratagemsContract,
+	cellAtCycle,
 	type ContractCell,
 } from 'stratagems-common';
 import type {SubmissionState, SubmissionStore} from '$lib/game/core/submission';
@@ -79,15 +79,11 @@ export function judgeCell(params: {
 	const key = position.toString();
 	const raw: ContractCell | undefined = board.data.cells[key];
 	if (!raw) return {kind: 'place'};
-	const simulation = new StratagemsContract(
-		{
-			cells: {[key]: {...raw}},
-			owners: {},
-			computedPoints: {},
-		},
+	const {cell: updatedCell} = cellAtCycle(
+		raw,
+		board.cycleNumber,
 		params.maxLife,
 	);
-	const {updatedCell} = simulation.getUpdatedCell(position, board.cycleNumber);
 	if (updatedCell.life === 0) return {kind: 'place'};
 	const owner = board.data.owners[key]?.toLowerCase();
 	if (

@@ -24,16 +24,6 @@ export type ContractFullCell = ContractCell & {
 	owner: `0x${string}`;
 };
 
-export type StratagemsState = {
-	cells: {[position: string]: ContractCell};
-	owners: {[position: string]: `0x${string}`};
-	computedPoints: {[owner: string]: number};
-	/** each cell as it stood before the first move on it in a cycle (the contract's `_cellsAtCycleStart`) */
-	cellsAtCycleStart?: {[position: string]: CellAtCycleStart};
-};
-
-export type CellAtCycleStart = {owner: `0x${string}`; cycle: number; life: number};
-
 export type ContractMove = {position: bigint; color: Color};
 
 export type CellXYPosition = {
