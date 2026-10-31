@@ -9,6 +9,8 @@ import {
 	toyAbi,
 	toyCreationCode,
 	toyHelperCreationCode,
+	toySimulationAbi,
+	toySimulationCreationCode,
 } from '../../../fixtures/simulation/toy';
 
 /**
@@ -243,6 +245,26 @@ describe('createBytecodeSandbox', () => {
 		});
 		expect(node).not.toHaveBeenCalled();
 		expect(provider.request).not.toHaveBeenCalled();
+		sandbox.dispose();
+	});
+
+	it('runs a function that seeds storage of its own, and nothing it writes outlives the call', async () => {
+		// The second pattern: a simulation contract that writes the state it is
+		// handed and runs the game's unchanged resolution over it.
+		const sandbox = createBytecodeSandbox({
+			contracts: {simulation: {creationCode: toySimulationCreationCode}},
+			node: () => createNode({}),
+		});
+		const seededSum = (keys: bigint[], values: bigint[], read: bigint[]) =>
+			sandbox.call({
+				contract: 'simulation',
+				abi: toySimulationAbi,
+				functionName: 'seededSum',
+				args: [keys, values, read],
+			});
+		expect(await seededSum([1n, 2n], [10n, 20n], [1n, 2n])).toBe(30n);
+		// the slots the first call wrote are not there for the second
+		expect(await seededSum([], [], [1n, 2n])).toBe(0n);
 		sandbox.dispose();
 	});
 });
