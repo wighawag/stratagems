@@ -1,17 +1,25 @@
 import type {PluginOption} from 'vite';
 import tailwindcss from '@tailwindcss/vite';
+import {assetpackPlugin} from './vite.assetpack.js';
 
 /**
  * The vite plugins THIS project adds to the template's.
  *
- * This variant adds Tailwind, and that is the whole of what it adds. It used to
- * be an import and a line in `vite.config.ts`, which made that file differ from
- * the stem's forever to say one thing; now `vite.config.ts` here is BYTE
- * IDENTICAL to `template-svelte`'s and this is the only file that differs.
+ * Tailwind is inherited. `with/pixi-js` adds the SPRITE PIPELINE here, and this
+ * file is the entire reason that branch no longer touches `vite.config.ts`.
  *
- * That is the seam paying for itself immediately: the merge that introduced it
- * conflicted in exactly the slot this replaces, which is the last time that
- * file has to conflict for this reason.
+ * That file was the branch's one recorded hazard: byte-identical to
+ * jolly-roger's, developed two repos up, and restructured wholesale in a
+ * descendant, so the two lines this branch used to keep there were a conflict
+ * site on every cascade forever. The fix was upstream at `template-svelte`, not
+ * here - which is why this file arrives by merge rather than being invented on
+ * the branch.
+ *
+ * What is left is the shape the tree already trusts: a small file whose job is
+ * to differ, like `core/connection/mode.ts`. It still differs from `main`'s -
+ * that is unavoidable, something has to say "and also the sprite pipeline" -
+ * but it is five lines that exist to be edited rather than a hunk in a 108-line
+ * config nobody here owns.
  *
  * WHY THAT IS WORTH A FILE. `vite.config.ts` is a template file: it travels
  * into every project scaffolded from this one and is merged down into every
@@ -61,5 +69,11 @@ export function extraPlugins(): PluginOption[] {
 	// `vite.config.ts` guarantees and what Tailwind's own SvelteKit
 	// instructions require. If that ever needs to change, it changes there,
 	// for everyone, rather than here.
-	return [tailwindcss()];
+	return [
+		tailwindcss(),
+		// Returns `false` when there is no `../assets` and under vitest, which is
+		// why this is one unconditional line: the decision lives with the paths it
+		// depends on, in `vite.assetpack.ts`.
+		assetpackPlugin(),
+	];
 }
