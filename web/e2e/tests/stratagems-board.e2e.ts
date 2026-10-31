@@ -1,0 +1,106 @@
+import type {Page, Route} from '@playwright/test';
+import {test, expect, describe} from '../fixtures/test';
+import {boardLoaded, cellPanel, clickCell} from '../fixtures/stratagems';
+
+/**
+ * STRATAGEMS' BOARD (step 9 of work/plans/join-template-commit-reveal.md):
+ *
+ * - P9-10: the board is the pixi host on a WebGL canvas, not the canvas-2d
+ *   stopgap it replaced, and it mounts without a page error.
+ * - P9-8: a click before the indexed board has loaded is refused with a word
+ *   (the cell panel says the board is still loading) rather than dropped, the
+ *   board says it is loading over its wood, and once the board loads both go.
+ *
+ * Neither sends a transaction from the wallet, but each test gets an account of
+ * its own all the same, like every file that connects.
+ */
+describe('Stratagems board', () => {
+	test.use({walletAccountIndex: 5});
+
+	test('is drawn by the pixi host on a WebGL canvas', async ({
+		connectedPage,
+	}) => {
+		const page = connectedPage;
+		const errors: string[] = [];
+		page.on('pageerror', (error) => errors.push(String(error)));
+		await boardLoaded(page);
+
+		const context = await page.evaluate(() => {
+			const canvas = document.querySelector('canvas');
+			if (!canvas) return 'no canvas';
+			// a canvas keeps the one context type it was first asked for, so
+			// asking for WebGL returns pixi's context, or null for a 2D canvas
+			if (canvas.getContext('webgl2')) return 'webgl2';
+			if (canvas.getContext('webgl')) return 'webgl';
+			return 'not webgl';
+		});
+		expect(context, 'the board should be the pixi host on WebGL').toMatch(
+			/^webgl2?$/,
+		);
+		expect(errors, 'no page error while the board mounts').toEqual([]);
+	});
+
+	test('refuses a click before the board has loaded, saying so, and plays once it has', async ({
+		connectedPage,
+	}) => {
+		const page = connectedPage;
+		await boardLoaded(page);
+
+		// Hold the indexer's log requests, then reload: the board stays unloaded
+		// while the rest of the app (the wallet, the cycle) comes up.
+		const gate = holdLogs(page);
+		await page.reload();
+		await expect(page.locator('canvas')).toBeVisible({timeout: 30_000});
+		await expect(
+			page.getByTestId('board-loading'),
+			'the board says it is loading, over its wood',
+		).toBeVisible({timeout: 30_000});
+		await expect
+			.poll(() => gate.held(), {
+				message: 'the indexer asked for logs',
+				timeout: 30_000,
+			})
+			.toBeGreaterThan(0);
+
+		await expect
+			.poll(
+				async () => {
+					await clickCell(page, {x: 3, y: -4});
+					return (await cellPanel(page).textContent()) ?? '';
+				},
+				{
+					message: 'a click before the board loads is refused, with a word',
+					timeout: 30_000,
+				},
+			)
+			.toContain('The board is still loading');
+
+		await gate.release();
+		await boardLoaded(page);
+		await expect(page.getByTestId('board-loading')).toBeHidden({
+			timeout: 30_000,
+		});
+	});
+});
+
+/** Hold every JSON-RPC `eth_getLogs` the page sends until released. */
+function holdLogs(page: Page): {held(): number; release(): Promise<void>} {
+	let open: () => void = () => {};
+	const released = new Promise<void>((resolve) => (open = resolve));
+	let held = 0;
+	const handler = async (route: Route) => {
+		const body = route.request().postData() ?? '';
+		if (!body.includes('eth_getLogs')) return route.fallback();
+		held++;
+		await released;
+		return route.fallback();
+	};
+	void page.route('**/*', handler);
+	return {
+		held: () => held,
+		release: async () => {
+			open();
+			await page.unroute('**/*', handler);
+		},
+	};
+}
