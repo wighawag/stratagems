@@ -1,0 +1,18 @@
+{
+	"name": "prototype-go-style",
+	"private": true,
+	"description": "THROWAWAY PROTOTYPE (branch proto/go-style): a Go-like pixi.js board for stratagems, to choose a style. Not a workspace package, not shipped.",
+	"type": "module",
+	"scripts": {
+		"dev": "vite --host 127.0.0.1 --port 5199 --strictPort",
+		"shots": "node shots.mjs"
+	},
+	"dependencies": {
+		"pixi.js": "8.22.0"
+	},
+	"devDependencies": {
+		"vite": "8.3.1",
+		"playwright": "1.62.1",
+		"typescript": "~6.0.3"
+	}
+}
