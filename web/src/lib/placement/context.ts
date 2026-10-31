@@ -341,6 +341,10 @@ export function createGameContext(core: CoreServices): GameContext {
 			// client's mirrored guard is an optimisation and nothing is riding on
 			// it. See `game/core/advance.ts`.
 			contractIsTheJudge: true,
+			// Inert under the world's Timed cycle and what a Manual one needs
+			// anyway; at a table (`TimedWithEarlyAdvance`) a phase closes the
+			// moment everyone has acted, which is what makes a table quick to play.
+			auto: 'eagerly',
 		},
 		// THE DEPLOYMENT'S CHUNK SIZE: it bounds how much of a turn can still be
 		// opened, and it is part of the commitment's hash (see `buildCommitment`).
