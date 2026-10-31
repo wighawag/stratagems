@@ -70,12 +70,9 @@ import {
 	createMissedReveal,
 	type MissedRevealStore,
 } from '$lib/placement/missed-reveal';
-import {
-	createBoardReader,
-	emptyBoard,
-	zonesForCamera,
-	type BoardState,
-} from '$lib/placement/state';
+import type {BoardState} from '$lib/placement/state';
+import type {EIP1193Provider} from 'viem';
+import {createIndexedBoard} from '$lib/placement/indexer/board';
 import {mergeBoardView, type BoardView} from '$lib/placement/view';
 import {createPlacementPreview, withPreview} from '$lib/placement/preview';
 import {createBytecodeSandbox} from '$lib/game/simulation';
@@ -346,11 +343,14 @@ export function createGameContext(core: CoreServices): GameContext {
 		// opened, and it is part of the commitment's hash (see `buildCommitment`).
 		actionsPerReveal: config.actionsPerReveal,
 		camera: config.camera,
-		board: ({poll}) =>
-			poll<BoardState>({
-				zonesForCamera,
-				read: createBoardReader({publicClient: core.publicClient, deployments}),
-				emptyState: emptyBoard,
+		// THE INDEXER (`with/indexer`), not the poller the skeleton offers: the
+		// game's processor folding its events in a worker (`$lib/indexer`).
+		board: () =>
+			createIndexedBoard({
+				provider: core.connection.provider as unknown as EIP1193Provider,
+				publicClient: core.publicClient,
+				deployments,
+				cycle: config.cycle,
 			}),
 		// The forfeit comes out of the reserve, so the number on screen changes.
 		// The committed turn is what lets a missed reveal be settled WITH its
