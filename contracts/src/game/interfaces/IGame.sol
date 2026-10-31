@@ -190,4 +190,31 @@ interface IGameGetters is UsingGameTypes {
     ) external view returns (CellAt[] memory cells, uint64 cycleNumber);
 }
 
-interface IGame is IGameCommit, IGameReveal, IGameGetters, IDelegation {}
+interface IGameSimulation is UsingGameTypes {
+    /// @notice What a turn would do to the cells it touches, by the rule a
+    ///         reveal applies, and with nothing written.
+    /// @param cells Every cell the placements name, as the PLAYER sees it: what
+    ///        the cell holds and what this player holds on it (`getCell` and
+    ///        `getStakeOnCell`). Any order, each once.
+    /// @param placements The turn, in the order it would be revealed.
+    /// @return outcome The same cells, in the same order, after the turn.
+    /// @dev Reads no storage, so the answer is about the cells it is given and
+    ///      not about the board: a client runs it from the deployed bytecode in
+    ///      its own sandbox. Reverts {CellNotGiven} for a placement on a cell
+    ///      missing from `cells`, rather than treating it as empty.
+    ///
+    ///      It is one player's turn on its own, and that is all a preview CAN
+    ///      be: the other players' turns this cycle are committed, not known.
+    function resolvePlacements(
+        PlayerCell[] calldata cells,
+        Placement[] calldata placements
+    ) external view returns (PlayerCell[] memory outcome);
+}
+
+interface IGame is
+    IGameCommit,
+    IGameReveal,
+    IGameGetters,
+    IGameSimulation,
+    IDelegation
+{}

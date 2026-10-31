@@ -3,11 +3,13 @@ import {
 	actionsPerReveal,
 	authoriseToPlay,
 	clearAnyMissedReveal,
+	claimantsOnCell,
 	clickCanvas,
 	forgetSubmissionAndReload,
 	planManyOnCanvas,
 	plannedCellIDs,
 	planOnCanvas,
+	previewOfCell,
 	submissionStep,
 	stake,
 	stakeOnCell,
@@ -139,6 +141,30 @@ describe('Commit-reveal submission', () => {
 		// What the cell already holds, from this run or any earlier one.
 		const stakeBefore = BigInt(await stakeOnCell(page, cellID));
 
+		// Read the cost from the deployment rather than hard-coding it, so changing
+		// `placementCost` in the deploy script cannot leave this quietly asserting
+		// the old number.
+		const placementCost = BigInt(
+			await page.evaluate(() =>
+				(
+					globalThis as unknown as {context: any}
+				).context.game.config.placementCost.toString(),
+			),
+		);
+
+		// WHAT THE PLAN LEADS TO, before anything is sent: the contract's own rule,
+		// its Simulation route's bytecode read off this chain and run in the
+		// browser's sandbox. Held to the reveal below, which is the point: the
+		// preview is what the chain then does, not a guess beside it.
+		await expect
+			.poll(async () => (await previewOfCell(page, cellID))?.totalStake, {
+				message: 'the planned cell should show what it will hold',
+				timeout: 30_000,
+			})
+			.toBe(`${stakeBefore + placementCost}`);
+		const preview = await previewOfCell(page, cellID);
+		if (!preview) throw new Error('the preview went away');
+
 		// Commit. Pressing the button if it is still live keeps the test short, but
 		// the submission commits by itself as the phase closes, so this deliberately
 		// does not REQUIRE the button: waiting for it to be enabled would race the
@@ -183,20 +209,20 @@ describe('Commit-reveal submission', () => {
 			)
 			.toBe(true);
 
-		// Read the cost from the deployment rather than hard-coding it, so changing
-		// `placementCost` in the deploy script cannot leave this quietly asserting
-		// the old number.
-		const placementCost = BigInt(
-			await page.evaluate(() =>
-				(
-					globalThis as unknown as {context: any}
-				).context.game.config.placementCost.toString(),
-			),
-		);
 		expect(
 			BigInt(await stakeOnCell(page, cellID)),
 			'the reveal should add exactly one placement of stake',
 		).toBe(stakeBefore + placementCost);
+		expect(
+			{
+				totalStake: await stakeOnCell(page, cellID),
+				numClaimants: await claimantsOnCell(page, cellID),
+			},
+			'the reveal should do what the preview said it would',
+		).toEqual({
+			totalStake: preview.totalStake,
+			numClaimants: preview.numClaimants,
+		});
 
 		expect(
 			(await submissionStep(page)).planned,

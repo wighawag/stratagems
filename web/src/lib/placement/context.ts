@@ -98,6 +98,8 @@ import {
 	type BoardState,
 } from '$lib/placement/state';
 import {mergeBoardView, type BoardView} from '$lib/placement/view';
+import {createPlacementPreview, withPreview} from '$lib/placement/preview';
+import {createBytecodeSandbox} from '$lib/game/simulation';
 import {createGameRenderer, type GameSurface} from '$lib/placement/render';
 import {cellID} from '$lib/placement/cells';
 
@@ -354,6 +356,40 @@ export function createGameContext(core: CoreServices): GameContext {
 			})
 		: undefined;
 
+	// THE GAME'S RULE, RUN FROM ITS OWN BYTECODE. The Simulation route's code is
+	// read once from whatever chain the app is on and run in a sandbox of its
+	// own, so the preview of a plan is the rule the reveal applies. Nothing is
+	// fetched or started until a cell is planned. See `$lib/placement/preview`.
+	const sandbox = createBytecodeSandbox({
+		provider: core.publicClient,
+		contracts: {
+			rules: {
+				address:
+					deployments.contracts.Game_Implementation_Router_Simulation_Route
+						.address,
+			},
+		},
+	});
+	const simulate = async (
+		cells: Parameters<
+			Parameters<typeof createPlacementPreview>[0]['simulate']
+		>[0],
+		placements: readonly Placement[],
+	) =>
+		sandbox.call({
+			contract: 'rules',
+			abi: deployments.contracts.Game.abi,
+			functionName: 'resolvePlacements',
+			args: [cells, placements],
+		});
+	const stakeOf = (cellID: bigint, player: bigint) =>
+		core.publicClient.readContract({
+			address: deployments.contracts.Game.address,
+			abi: deployments.contracts.Game.abi,
+			functionName: 'getStakeOnCell',
+			args: [cellID, player],
+		});
+
 	// The commit-reveal wiring is the framework's; what follows is this game.
 	const crg = createCommitRevealGame<PlacementGame>(core, {
 		identity: activeIdentity,
@@ -426,8 +462,22 @@ export function createGameContext(core: CoreServices): GameContext {
 			acquisition: createStakeAcquisition({config, deployments}),
 			grant: SIGNER_GRANT,
 		},
-		planning: ({submission, maxOpenableActions}) =>
-			createPlanning({submission, maxActions: maxOpenableActions}),
+		// The plan the view draws carries what the planned cells will hold, once
+		// the sandbox has answered for exactly that plan.
+		planning: ({submission, maxOpenableActions, onchainState}) => {
+			const planning = createPlanning({
+				submission,
+				maxActions: maxOpenableActions,
+			});
+			const preview = createPlacementPreview({
+				plan: planning.plan,
+				board: onchainState,
+				identity: activeIdentity,
+				simulate,
+				stakeOf,
+			});
+			return {...planning, plan: withPreview(planning.plan, preview)};
+		},
 		// What the resolving cycle changed is held back until it is over; see
 		// `$lib/placement/hold`.
 		hold: holdResolvingCycle,
@@ -443,7 +493,11 @@ export function createGameContext(core: CoreServices): GameContext {
 		start: () => {
 			// The reserve is keyed by the identity, so it follows the identity.
 			void reserve.update();
-			return activeIdentity.subscribe(() => void reserve.update());
+			const stop = activeIdentity.subscribe(() => void reserve.update());
+			return () => {
+				stop();
+				sandbox.dispose();
+			};
 		},
 	});
 

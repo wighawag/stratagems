@@ -61,6 +61,24 @@ interface UsingGameTypes is UsingCommitRevealTypes {
         uint32 numClaimants;
     }
 
+    /// @notice One cell as ONE PLAYER'S placement sees it: what the cell holds
+    ///         and what that player holds on it.
+    /// @dev THE INPUT AND THE OUTPUT OF THE PURE CORE, {UsingGameInternal-_placementOutcome}.
+    ///      A reveal loads one from storage, resolves it, and writes back what
+    ///      the core returns; the simulation route {IGameSimulation} is handed
+    ///      them by a client and returns what the same core makes of them. Both
+    ///      run the same function, which is the point: a client previewing a
+    ///      turn runs the rule the chain runs, not a copy of it.
+    struct PlayerCell {
+        uint64 cellID;
+        /// @notice total stake placed here by everyone
+        uint256 totalStake;
+        /// @notice how many distinct players have placed here
+        uint32 numClaimants;
+        /// @notice what this player has placed here, in every cycle so far
+        uint256 playerStake;
+    }
+
     /// @notice A cell plus its id, for range queries.
     struct CellAt {
         uint64 cellID;
