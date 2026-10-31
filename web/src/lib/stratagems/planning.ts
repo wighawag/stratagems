@@ -118,6 +118,13 @@ export function canPlaceOn(params: {
 export const REFUSED_COMMITTED =
 	'Your turn is already committed. Plan again once it is revealed.';
 export const REFUSED_LIMIT = 'That is as many moves as one turn can hold.';
+/**
+ * A click before the indexed board has loaded (step 9, P9-8): it cannot be
+ * judged against a board the player has not seen, so it is refused rather
+ * than queued, and said, rather than dropped without a word.
+ */
+export const REFUSED_LOADING =
+	'The board is still loading. Try again in a moment.';
 
 /** The cell the player last clicked, and what may be done with it. */
 export type SelectedCell = {
@@ -245,7 +252,12 @@ export function createPlanning(params: {
 			selection.set({position});
 			return;
 		}
-		const judgement = judge(position, get(board), player);
+		const $board = get(board);
+		if ($board.step !== 'Loaded') {
+			refuse(position, REFUSED_LOADING);
+			return;
+		}
+		const judgement = judge(position, $board, player);
 		if (!judgement) return;
 		if (judgement.kind === 'refused') {
 			refuse(position, judgement.reason);

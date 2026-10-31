@@ -9,7 +9,7 @@ import {
 	describeWinnings,
 	shortAddress,
 } from '$lib/stratagems/hud/panels';
-import {REFUSED_OTHERS} from '$lib/stratagems/planning';
+import {REFUSED_LOADING, REFUSED_OTHERS} from '$lib/stratagems/planning';
 import {ALICE, BOB, GEM, MAX_LIFE, at} from './board';
 
 function view(cells: Partial<CellView>[]): ViewStateValue<BoardView> {
@@ -57,6 +57,18 @@ describe('the cell panel', () => {
 			plannedLabel: undefined,
 			reason: REFUSED_OTHERS,
 			canRemove: false,
+		});
+	});
+
+	it('says the board is loading, not that the cell is empty, before it has loaded', () => {
+		const panel = describeCell({
+			selected: {position: at(1, 0), reason: REFUSED_LOADING, canRemove: false},
+			view: {step: 'Unloaded'},
+			maxLife: MAX_LIFE,
+		});
+		expect(panel).toMatchObject({
+			lifeLabel: 'loading',
+			reason: REFUSED_LOADING,
 		});
 	});
 

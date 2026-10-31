@@ -50,3 +50,43 @@ describe('the syncing indicator', () => {
 		).toBe(true);
 	});
 });
+
+describe('the word over the board while it loads', () => {
+	it("says the indexer's word until the board is loaded, then nothing", async () => {
+		const {boardLoadingWord} = await import('$lib/stratagems/syncing');
+		expect(
+			boardLoadingWord({
+				loaded: false,
+				syncing: describeSyncing(
+					progress({phase: 'catching-up', blocksBehindTip: 3}),
+				),
+			}),
+		).toEqual({label: 'Indexing the board: 3 blocks behind', failed: false});
+		expect(
+			boardLoadingWord({
+				loaded: true,
+				syncing: describeSyncing(progress({phase: 'loading'})),
+			}),
+		).toBeUndefined();
+	});
+
+	it('says the board is loading when the indexer has nothing to say yet', async () => {
+		const {boardLoadingWord} = await import('$lib/stratagems/syncing');
+		expect(boardLoadingWord({loaded: false, syncing: undefined})).toEqual({
+			label: 'Loading the board...',
+			failed: false,
+		});
+	});
+
+	it('keeps a failure red', async () => {
+		const {boardLoadingWord} = await import('$lib/stratagems/syncing');
+		expect(
+			boardLoadingWord({
+				loaded: false,
+				syncing: describeSyncing(
+					progress({failure: {} as HostProgress['failure']}),
+				),
+			}),
+		).toMatchObject({failed: true});
+	});
+});

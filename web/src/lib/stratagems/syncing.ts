@@ -62,3 +62,19 @@ export function createSyncing(
 ): Readable<SyncingModel> {
 	return derived(progress, describeSyncing);
 }
+
+/**
+ * The word over the board while the indexed board is not loaded yet (step 9,
+ * P9-8): the board already shows its wood and lines, and this says why it is
+ * empty. The indexer's own word when it has one, else that it is loading.
+ */
+export function boardLoadingWord(params: {
+	loaded: boolean;
+	syncing: SyncingModel;
+}): {label: string; failed: boolean} | undefined {
+	if (params.loaded) return undefined;
+	return {
+		label: params.syncing?.label ?? 'Loading the board...',
+		failed: params.syncing?.failed ?? false,
+	};
+}

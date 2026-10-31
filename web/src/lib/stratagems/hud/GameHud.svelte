@@ -2,7 +2,8 @@
 	The HUD, drawn over the canvas: the template's (`placement/ui/GameHud.svelte`)
 	with stratagems' words, and stratagems' own panels beside it (step 6c): the
 	faction picker, the cell panel and land menu, winnings, test gems, the
-	leaderboard and the indexer's progress.
+	leaderboard and the indexer's progress; since step 9 the focused gem's card,
+	the faction wash's toggle and the word over the board while it loads.
 
 	Logic-less on purpose (see AGENTS.md): everything it shows comes from the
 	`HudModel` store, and every button calls straight into the game's stores. If
@@ -21,6 +22,9 @@
 	import TestGems from './TestGems.svelte';
 	import Leaderboard from './Leaderboard.svelte';
 	import Syncing from './Syncing.svelte';
+	import FocusCard from './FocusCard.svelte';
+	import BoardLoading from './BoardLoading.svelte';
+	import FactionWashToggle from './FactionWashToggle.svelte';
 
 	const context = getAppContext();
 	const {game} = context;
@@ -50,12 +54,16 @@
 	};
 </script>
 
+<BoardLoading />
+
 <!-- Stratagems' own panels, on the right so the board's middle stays clear. -->
 <div
 	class="pointer-events-none absolute top-3 right-3 z-10 flex flex-col items-end gap-2"
 >
+	<FocusCard />
 	<Leaderboard />
 	<FactionPicker />
+	<FactionWashToggle />
 	<Winnings />
 	<CellPanel />
 </div>

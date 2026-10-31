@@ -10,6 +10,7 @@ import {
 	REFUSED_COMMITTED,
 	REFUSED_EVIL,
 	REFUSED_LIMIT,
+	REFUSED_LOADING,
 	REFUSED_OTHERS,
 } from '$lib/stratagems/planning';
 import {ALICE, BOB, MAX_LIFE, at, boardAfter, boardStore} from './board';
@@ -89,7 +90,11 @@ function fakeSubmission(initial: SubmissionState<Move> = {step: 'Idle'}) {
 	};
 }
 
-function setup(params?: {max?: number; faction?: number}) {
+function setup(params?: {
+	max?: number;
+	faction?: number;
+	board?: ReturnType<typeof boardStore>;
+}) {
 	const submission = fakeSubmission();
 	const identity = writable<GameIdentity | undefined>(ALICE);
 	const faction: Readable<number | undefined> = writable(
@@ -98,7 +103,7 @@ function setup(params?: {max?: number; faction?: number}) {
 	const planning = createPlanning({
 		submission,
 		maxOpenableActions: writable(params?.max),
-		onchainState: boardStore(BOARD),
+		onchainState: params?.board ?? boardStore(BOARD),
 		identity,
 		faction,
 		maxLife: MAX_LIFE,
@@ -185,6 +190,20 @@ describe('what a click means', () => {
 		expect(get(planning.selected)).toMatchObject({reason: REFUSED_COMMITTED});
 		planning.deselect();
 		expect(get(planning.selected)).toBeUndefined();
+	});
+
+	it('refuses a click before the board has loaded, saying so, and plans once it has', () => {
+		const board = boardStore(undefined);
+		const {submission, planning} = setup({board});
+		planning.click(at(9, 9));
+		expect(moves(submission)).toEqual([]);
+		expect(get(planning.selected)).toMatchObject({
+			position: at(9, 9),
+			reason: REFUSED_LOADING,
+		});
+		board.set(BOARD);
+		planning.click(at(9, 9));
+		expect(moves(submission)).toHaveLength(1);
 	});
 
 	it('does nothing with nobody playing', () => {

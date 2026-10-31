@@ -68,7 +68,9 @@ export function describeCell(params: {
 			? `life ${shown.life} of ${params.maxLife}`
 			: shown && shown.color > 0
 				? 'dead'
-				: 'empty',
+				: view.step === 'Loaded'
+					? 'empty'
+					: 'loading',
 		stakeLabel: alive
 			? `${shown.stake} gem${shown.stake === 1 ? '' : 's'} at stake`
 			: undefined,
