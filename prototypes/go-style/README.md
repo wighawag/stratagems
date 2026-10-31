@@ -49,3 +49,5 @@ The user's favourite: rich 2D, jewel gems, kaya wood, a bezel for their own gems
 Round 5 (2026-10-31): the white rings were too much (the user). The growing glow is narrower and half as strong, and the hovered owner's ring is a fine line hugging the rim; `shots/r5-halo-before-after.png`.
 
 Round 6 (2026-10-31): yours when zoomed out. The gold bezel is kept close up; below 48 px per intersection it gives way to `minefar=ring` (a plain bright ring of fixed screen width), `wash` (a gold territory wash under your gems) or `ivory` (the same in ivory). `shots/r6-mine-by-zoom.png`, `shots/r6-yours-far.png`.
+
+Round 7 (2026-10-31): the ivory wash is the default for yours when zoomed out, and (`washnear=1`, default on) close up too, under the gold bezel. It sits on top of the faction territory wash, so both show at once. `shots/r7-ivory-and-territory.png`.

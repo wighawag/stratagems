@@ -54,7 +54,9 @@ const params = new URLSearchParams(location.search);
 const state = {
 	look: (params.get('look') as Look) || 'rich',
 	metal: (params.get('metal') as Metal) || 'gold',
-	mineFar: (params.get('minefar') as 'ring' | 'wash' | 'ivory') || 'ring',
+	mineFar: (params.get('minefar') as 'ring' | 'wash' | 'ivory') || 'ivory',
+	/** The wash at every zoom, under the bezel when close. */
+	washNear: params.get('washnear') !== '0',
 	life: (params.get('life') as 'dial' | 'size') || 'dial',
 	links: params.get('links') !== '0',
 	outlines: params.get('outlines') === '1',
@@ -82,6 +84,7 @@ function syncURL() {
 	p.set('mine', state.mine);
 	p.set('metal', state.metal);
 	p.set('minefar', state.mineFar);
+	p.set('washnear', state.washNear ? '1' : '0');
 	p.set('tilt', String(state.tilt));
 	if (state.azimuth) p.set('az', String(state.azimuth));
 	if (zoomName) p.set('zoom', zoomName);
@@ -121,7 +124,9 @@ world.addChild(boardLayer, gridG, mineWash, outlineG, linksG, under, stones, ove
 function drawMineFar() {
 	mineFarG.clear();
 	for (const c of mineWash.removeChildren()) c.destroy();
-	if (state.look === 'three' || spacingPx() >= MINE_SIMPLE_PX) return;
+	if (state.look === 'three') return;
+	const far = spacingPx() < MINE_SIMPLE_PX;
+	if (!far && !(state.washNear && state.mineFar !== 'ring')) return;
 	if (state.mineFar !== 'ring') {
 		const g = new Graphics();
 		for (const cell of state.board.values()) {
@@ -705,6 +710,7 @@ function renderUI() {
 	($('mine') as HTMLSelectElement).value = state.mine;
 	($('metal') as HTMLSelectElement).value = state.metal;
 	($('minefar') as HTMLSelectElement).value = state.mineFar;
+	($('washnear') as HTMLInputElement).checked = state.washNear;
 }
 const short = (a: string) => a.slice(0, 6) + '...' + a.slice(-4);
 const who = (a: string) => `<img src="${blockieDataURL(a, 24)}" width="20" height="20" style="image-rendering:pixelated;border-radius:4px;vertical-align:middle"/> <span class="addr">${short(a)}</span>${a === ME ? ' <b>(you)</b>' : ''}`;
@@ -752,6 +758,11 @@ $('life-dial').addEventListener('change', () => setLife('dial'));
 $('life-size').addEventListener('change', () => setLife('size'));
 $('links').addEventListener('change', () => toggle('links'));
 $('outlines').addEventListener('change', () => toggle('outlines'));
+$('washnear').addEventListener('change', () => {
+	state.washNear = !state.washNear;
+	build();
+	syncURL();
+});
 for (const [id, k] of [['style', 'style'], ['boardKind', 'boardKind'], ['mine', 'mine'], ['metal', 'metal'], ['minefar', 'mineFar']] as const)
 	$(id).addEventListener('change', (e) => {
 		(state as Record<string, unknown>)[k] = (e.target as HTMLSelectElement).value;
