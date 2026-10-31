@@ -45,3 +45,5 @@ Kept from round 1: bridges and notches, the dial when zoomed in and size when zo
 ## Round 4 (2026-10-30)
 
 The user's favourite: rich 2D, jewel gems, kaya wood, a bezel for their own gems; these are now the defaults. New: the bezel's metal (`metal=gold|rose|platinum|bronze|gunmetal|ivory|onyx|ruby`, the "in" selector), screenshots with `node shots-r4.mjs`. Live 3D's lighting does not work (the user) and is parked; the territory wash is kept.
+
+Round 5 (2026-10-31): the white rings were too much (the user). The growing glow is narrower and half as strong, and the hovered owner's ring is a fine line hugging the rim; `shots/r5-halo-before-after.png`.

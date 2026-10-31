@@ -408,10 +408,11 @@ export function crackTexture(n: number): Texture {
 /** The soft light ring of a growing stone. */
 export function glowTexture(): Texture {
 	return cached('glow', (ctx) => {
-		const g = ctx.createRadialGradient(C, C, RT * 0.9, C, C, RT * 1.36);
-		g.addColorStop(0, 'rgba(255,246,200,0)');
-		g.addColorStop(0.3, 'rgba(255,246,200,0.95)');
-		g.addColorStop(1, 'rgba(255,246,200,0)');
+		// round 4 had a wide cream band (0.9 to 1.36 of the radius, 0.95 opaque): too much white everywhere
+		const g = ctx.createRadialGradient(C, C, RT * 0.96, C, C, RT * 1.16);
+		g.addColorStop(0, 'rgba(255,240,180,0)');
+		g.addColorStop(0.3, 'rgba(255,240,180,0.5)');
+		g.addColorStop(1, 'rgba(255,240,180,0)');
 		ctx.fillStyle = g;
 		ctx.fillRect(0, 0, T, T);
 	});
@@ -446,9 +447,10 @@ export function ringTexture(kind: 'next' | 'halo'): Texture {
 			ctx.lineWidth = 2.4;
 			ctx.strokeStyle = 'rgba(255,250,225,0.95)';
 		} else {
-			ctx.arc(C, C, RT * 1.14, 0, Math.PI * 2);
-			ctx.lineWidth = 6;
-			ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+			// the hovered owner's gems: a fine ring hugging the rim (round 4's was 6 px wide at 1.14)
+			ctx.arc(C, C, RT * 1.04, 0, Math.PI * 2);
+			ctx.lineWidth = 2.5;
+			ctx.strokeStyle = 'rgba(255,255,255,0.9)';
 		}
 		ctx.stroke();
 	});
