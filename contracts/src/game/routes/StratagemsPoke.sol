@@ -10,26 +10,20 @@ contract StratagemsPoke is IStratagemsPoke, UsingStratagemsSetters {
     /// @notice bring a cell up to the current cycle, paying out the shares a death owes
     function poke(uint64 position) external {
         (uint24 cycle, ) = _currentCycle();
-        TokenTransferCollection memory transferCollection = TokenTransferCollection({
-            transfers: new TokenTransfer[](5),
-            numTransfers: 0
-        });
-        _poke(transferCollection, position, cycle);
-        _multiTransfer(TOKENS, transferCollection);
+        Resolution memory r = _newResolution(5, 5, EFFECTS_PER_POKE);
+        _pokeIn(r, position, cycle);
+        _apply(r);
         emit SinglePoke(cycle, position);
     }
 
     function pokeMultiple(uint64[] calldata positions) external {
         (uint24 cycle, ) = _currentCycle();
         uint256 numCells = positions.length;
-        TokenTransferCollection memory transferCollection = TokenTransferCollection({
-            transfers: new TokenTransfer[](numCells * 5),
-            numTransfers: 0
-        });
+        Resolution memory r = _newResolution(numCells * 5, numCells * 5, numCells * EFFECTS_PER_POKE);
         for (uint256 i = 0; i < numCells; i++) {
-            _poke(transferCollection, positions[i], cycle);
+            _pokeIn(r, positions[i], cycle);
         }
-        _multiTransfer(TOKENS, transferCollection);
+        _apply(r);
         emit MultiPoke(cycle, positions);
     }
 }

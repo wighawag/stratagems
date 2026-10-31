@@ -66,6 +66,234 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
     }
 
     //-------------------------------------------------------------------------
+    // THE RESOLUTION: LOAD, RULE, APPLY
+    //-------------------------------------------------------------------------
+    //
+    // A reveal's moves and a poke are resolved over a TABLE OF THE CELLS THEY
+    // TOUCH, in memory (`Resolution.board`), and nothing in the rule below reads
+    // or writes storage, the generator or the token: it reads a cell through the
+    // table, writes it back to the table, and records what must happen (an
+    // event, a generator call, a payout) in order. {_apply} then does all of it.
+    //
+    // WHY. The simulation route ({StratagemsSimulation}) runs the SAME rule over
+    // a table a client hands it, in the client's own sandbox, from this
+    // deployment's bytecode: the preview of a turn is the rule the reveal
+    // applies, not a TypeScript copy of it.
+    //
+    // THE TABLE READS THROUGH TO STORAGE, ONE FIELD AT A TIME, the first time a
+    // field of a cell is asked for, and never again. That keeps the slots a
+    // reveal reads exactly the ones it read before this was a table (loading
+    // every neighbour's owner and start up front would read two cold slots per
+    // empty neighbour for nothing). In the sandbox there is no storage, so a cell
+    // the client did not hand over reads as empty, which is what the client
+    // knows of it.
+
+    struct Entry {
+        BoardCell value;
+        /// @dev bits: 1 cell read, 2 owner read, 4 start read, 8 cell written,
+        ///      16 owner written, 32 start written
+        uint8 flags;
+    }
+
+    struct Effect {
+        /// @dev 1 MoveProcessed, 2 Transfer, 3 generator add, 4 generator remove
+        uint8 kind;
+        uint64 position;
+        address a;
+        address b;
+        uint256 amount;
+        Color oldColor;
+        Color newColor;
+    }
+
+    struct Resolution {
+        Entry[] entries;
+        uint256 numEntries;
+        /// @dev open addressing: 0 is empty, else the entry's index plus one
+        uint256[] slots;
+        uint256 mask;
+        uint8 maxLife;
+        uint256 numTokensPerGems;
+        TokenTransferCollection transfers;
+        Effect[] effects;
+        uint256 numEffects;
+    }
+
+    uint8 internal constant READ_CELL = 1;
+    uint8 internal constant READ_OWNER = 2;
+    uint8 internal constant READ_START = 4;
+    uint8 internal constant WROTE_CELL = 8;
+    uint8 internal constant WROTE_OWNER = 16;
+    uint8 internal constant WROTE_START = 32;
+
+    /// @param numCells how many distinct cells the table may hold
+    /// @param numTransfers how many payouts the resolution may collect
+    /// @param numEffects how many effects it may record
+    function _newResolution(
+        uint256 numCells,
+        uint256 numTransfers,
+        uint256 numEffects
+    ) internal view returns (Resolution memory r) {
+        uint256 capacity = 8;
+        while (capacity < numCells * 2) capacity <<= 1;
+        r.entries = new Entry[](numCells);
+        r.slots = new uint256[](capacity);
+        r.mask = capacity - 1;
+        r.maxLife = MAX_LIFE;
+        r.numTokensPerGems = NUM_TOKENS_PER_GEMS;
+        r.transfers = TokenTransferCollection({transfers: new TokenTransfer[](numTransfers), numTransfers: 0});
+        r.effects = new Effect[](numEffects);
+    }
+
+    /// @dev The index of `position`'s entry, created empty (nothing read) if
+    ///      absent. An index rather than the entry, so a lookup allocates nothing:
+    ///      memory is never freed in a transaction and its price grows with the
+    ///      square of its size, so a struct returned per lookup is what a long
+    ///      turn would pay most for.
+    function _entryIndex(Resolution memory r, uint64 position) internal pure returns (uint256) {
+        uint256 slot;
+        // Masked, because the high bits of a short type are not guaranteed clean
+        // inside assembly: hashed dirty, one position would land in two slots.
+        assembly ("memory-safe") {
+            mstore(0, and(position, 0xffffffffffffffff))
+            slot := keccak256(0, 32)
+        }
+        slot &= r.mask;
+        while (true) {
+            uint256 index = r.slots[slot];
+            if (index == 0) {
+                index = r.numEntries;
+                r.entries[index].value.position = position;
+                r.numEntries = index + 1;
+                r.slots[slot] = index + 1;
+                return index;
+            }
+            if (r.entries[index - 1].value.position == position) {
+                return index - 1;
+            }
+            slot = (slot + 1) & r.mask;
+        }
+    }
+
+    // The three reads. `view` only because they read through: in the simulation
+    // route every field asked for has been handed over and marked read.
+    //
+    // THEY RETURN THE TABLE'S OWN STRUCT, not a copy, and every caller either
+    // copies before changing it ({_projectCell}) or changes it and writes the
+    // same struct back with nothing reading the cell in between, which is what
+    // the storage version of this code did with its memory copy.
+
+    function _cellOf(Resolution memory r, uint64 position) internal view returns (Cell memory) {
+        Entry memory e = r.entries[_entryIndex(r, position)];
+        if (e.flags & READ_CELL == 0) {
+            e.value.cell = _cells[position];
+            e.flags |= READ_CELL;
+        }
+        return e.value.cell;
+    }
+
+    function _ownerIn(Resolution memory r, uint64 position) internal view returns (address) {
+        Entry memory e = r.entries[_entryIndex(r, position)];
+        if (e.flags & READ_OWNER == 0) {
+            e.value.owner = _ownerOf(position);
+            e.flags |= READ_OWNER;
+        }
+        return e.value.owner;
+    }
+
+    function _startIn(Resolution memory r, uint64 position) internal view returns (CellAtCycleStart memory) {
+        Entry memory e = r.entries[_entryIndex(r, position)];
+        if (e.flags & READ_START == 0) {
+            e.value.start = _cellsAtCycleStart[position];
+            e.flags |= READ_START;
+        }
+        return e.value.start;
+    }
+
+    function _setCellIn(Resolution memory r, uint64 position, Cell memory cell) internal pure {
+        Entry memory e = r.entries[_entryIndex(r, position)];
+        e.value.cell = cell;
+        e.flags |= READ_CELL | WROTE_CELL;
+    }
+
+    function _setOwnerIn(Resolution memory r, uint64 position, address owner) internal pure {
+        Entry memory e = r.entries[_entryIndex(r, position)];
+        e.value.owner = owner;
+        e.flags |= READ_OWNER | WROTE_OWNER;
+    }
+
+    function _setStartIn(Resolution memory r, uint64 position, CellAtCycleStart memory start) internal pure {
+        Entry memory e = r.entries[_entryIndex(r, position)];
+        e.value.start = start;
+        e.flags |= READ_START | WROTE_START;
+    }
+
+    /// @dev See {_ownerAtCycleStart}, over the table.
+    function _ownerAtCycleStartIn(Resolution memory r, uint64 position, uint24 cycle) internal view returns (address) {
+        CellAtCycleStart memory start = _startIn(r, position);
+        if (start.cycle == cycle) {
+            return start.owner;
+        }
+        return _ownerIn(r, position);
+    }
+
+    function _record(Resolution memory r, Effect memory effect) internal pure {
+        r.effects[r.numEffects] = effect;
+        r.numEffects++;
+    }
+
+    function _recordGenerator(Resolution memory r, bool add, address owner, uint256 amount) internal pure {
+        _record(
+            r,
+            Effect({
+                kind: add ? 3 : 4,
+                position: 0,
+                a: owner,
+                b: address(0),
+                amount: amount,
+                oldColor: Color.None,
+                newColor: Color.None
+            })
+        );
+    }
+
+    /// @notice Do what the rule decided: the cells, owners and starts it wrote,
+    ///         then its events and generator calls in the order it made them,
+    ///         then the payouts.
+    function _apply(Resolution memory r) internal {
+        for (uint256 i = 0; i < r.numEntries; i++) {
+            Entry memory e = r.entries[i];
+            uint64 position = e.value.position;
+            if (e.flags & WROTE_CELL != 0) {
+                _cells[position] = e.value.cell;
+            }
+            if (e.flags & WROTE_OWNER != 0) {
+                _owners[position] = uint256(uint160(e.value.owner));
+            }
+            if (e.flags & WROTE_START != 0) {
+                _cellsAtCycleStart[position] = e.value.start;
+            }
+        }
+        for (uint256 i = 0; i < r.numEffects; i++) {
+            Effect memory effect = r.effects[i];
+            if (effect.kind == 1) {
+                emit MoveProcessed(effect.position, effect.a, effect.oldColor, effect.newColor);
+            } else if (effect.kind == 2) {
+                emit Transfer(effect.a, effect.b, effect.position);
+            } else if (effect.kind == 3) {
+                GENERATOR.add(effect.a, effect.amount);
+            } else {
+                GENERATOR.remove(effect.a, effect.amount);
+            }
+        }
+        _multiTransfer(TOKENS, r.transfers);
+    }
+
+    /// @dev The most a move records: its MoveProcessed, a Transfer, two
+    ///      generator calls for its own cell and one for each neighbour.
+    uint256 internal constant EFFECTS_PER_MOVE = 8;
+
+    //-------------------------------------------------------------------------
     // MOVES
     //-------------------------------------------------------------------------
 
@@ -73,20 +301,27 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
     function _resolveMoves(address player, uint24 cycle, Move[] memory moves) internal returns (uint256 cost) {
         // max number of transfer is (4+1) * moves.length
         // (for each move's cell's neighbours potentially being a different account)
-        TokenTransferCollection memory transferCollection = TokenTransferCollection({
-            transfers: new TokenTransfer[](moves.length * 5 + 1),
-            numTransfers: 0
-        });
+        Resolution memory r = _newResolution(moves.length * 5, moves.length * 5 + 1, moves.length * EFFECTS_PER_MOVE);
+        cost = _resolveMovesIn(r, player, cycle, moves);
+        _apply(r);
+    }
+
+    /// @notice THE RULE OF A TURN: what `moves` do, over the table.
+    function _resolveMovesIn(
+        Resolution memory r,
+        address player,
+        uint24 cycle,
+        Move[] memory moves
+    ) internal view returns (uint256 cost) {
         MoveTokens memory tokens;
         for (uint256 i = 0; i < moves.length; i++) {
-            (uint256 placed, uint256 returned) = _computeMove(transferCollection, player, cycle, moves[i]);
+            (uint256 placed, uint256 returned) = _computeMove(r, player, cycle, moves[i]);
             tokens.tokensPlaced += placed;
             tokens.tokensReturned += returned;
         }
         if (tokens.tokensReturned != 0) {
-            _collectTransfer(transferCollection, TokenTransfer({to: payable(player), amount: tokens.tokensReturned}));
+            _collectTransfer(r.transfers, TokenTransfer({to: payable(player), amount: tokens.tokensReturned}));
         }
-        _multiTransfer(TOKENS, transferCollection);
         cost = tokens.tokensPlaced;
     }
 
@@ -101,20 +336,20 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
     // after the first makes it Evil and adds one to its stake, all kept. Making
     // it black in all cases avoids a cell with several owners sharing winnings.
     function _computeMove(
-        TokenTransferCollection memory transferCollection,
+        Resolution memory r,
         address player,
         uint24 cycle,
         Move memory move
-    ) internal returns (uint256 tokensPlaced, uint256 tokensReturned) {
-        (Cell memory currentState, bool justDied) = _getUpdatedCell(move.position, cycle);
+    ) internal view returns (uint256 tokensPlaced, uint256 tokensReturned) {
+        (Cell memory currentState, bool justDied) = _projectCell(_cellOf(r, move.position), cycle, r.maxLife);
 
-        CellAtCycleStart memory start = _cellsAtCycleStart[move.position];
+        CellAtCycleStart memory start = _startIn(r, move.position);
         bool firstMoveThisCycle = start.cycle != cycle;
         if (firstMoveThisCycle) {
             // no move of this cycle has touched it, so the current record is
             // its state at the cycle's start (a neighbour's move changes
             // neither its life at this cycle nor its owner)
-            start = CellAtCycleStart({owner: _ownerOf(move.position), cycle: cycle, life: currentState.life});
+            start = CellAtCycleStart({owner: _ownerIn(r, move.position), cycle: cycle, life: currentState.life});
         }
 
         // the validity of the move, against the cycle's start
@@ -124,7 +359,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
                 return (0, 0);
             }
             if (move.color == Color.None) {
-                if (start.life != MAX_LIFE || currentState.life == 0 || _ownerOf(move.position) != player) {
+                if (start.life != r.maxLife || currentState.life == 0 || _ownerIn(r, move.position) != player) {
                     // only a cell at full life at the start, and still the player's, can be removed
                     return (0, 0);
                 }
@@ -142,7 +377,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         }
 
         if (firstMoveThisCycle) {
-            _cellsAtCycleStart[move.position] = start;
+            _setStartIn(r, move.position, start);
         }
 
         // we might have distribution still to do
@@ -154,26 +389,37 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         }
 
         if (move.color == Color.None) {
-            tokensReturned = NUM_TOKENS_PER_GEMS;
+            tokensReturned = r.numTokensPerGems;
         }
 
-        emit MoveProcessed(move.position, player, currentState.color, move.color);
+        _record(
+            r,
+            Effect({
+                kind: 1,
+                position: move.position,
+                a: player,
+                b: address(0),
+                amount: 0,
+                oldColor: currentState.color,
+                newColor: move.color
+            })
+        );
 
-        tokensPlaced = _completeMove(transferCollection, player, cycle, move, currentState, distribution, start.owner);
+        tokensPlaced = _completeMove(r, player, cycle, move, currentState, distribution, start.owner);
     }
 
     function _completeMove(
-        TokenTransferCollection memory transferCollection,
+        Resolution memory r,
         address player,
         uint24 cycle,
         Move memory move,
         Cell memory currentState,
         uint8 distribution,
         address ownerAtStart
-    ) internal returns (uint256 tokensPlaced) {
+    ) internal view returns (uint256 tokensPlaced) {
         unchecked {
             (int8 newDelta, uint8 newEnemyMap) = _propagate(
-                transferCollection,
+                r,
                 move,
                 cycle,
                 currentState.color,
@@ -182,7 +428,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
                 ownerAtStart
             );
 
-            address currentOwner = _ownerOf(move.position);
+            address currentOwner = _ownerIn(r, move.position);
             uint8 oldLife = currentState.life;
             uint8 oldStake = currentState.stake;
             int8 oldEffectiveDelta = _effectiveDelta(currentState.delta, currentState.enemyMap);
@@ -202,19 +448,31 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
                 currentState.lastCycleUpdate = 0;
                 currentState.delta = 0;
                 currentState.enemyMap = 0;
-                _setPoints(currentOwner, oldLife, oldStake, oldEffectiveDelta, address(0), 0, 0, 0);
-                emit Transfer(currentOwner, address(0), move.position);
-                _owners[move.position] = 0;
+                _setPoints(r, currentOwner, oldLife, oldStake, oldEffectiveDelta, address(0), 0, 0, 0);
+                _record(
+                    r,
+                    Effect({
+                        kind: 2,
+                        position: move.position,
+                        a: currentOwner,
+                        b: address(0),
+                        amount: 0,
+                        oldColor: Color.None,
+                        newColor: Color.None
+                    })
+                );
+                _setOwnerIn(r, move.position, address(0));
             } else {
-                tokensPlaced = NUM_TOKENS_PER_GEMS;
-                _placeColor(player, currentOwner, currentState, move, cycle, newDelta, newEnemyMap);
+                tokensPlaced = r.numTokensPerGems;
+                _placeColor(r, player, currentOwner, currentState, move, cycle, newDelta, newEnemyMap);
             }
 
-            _cells[move.position] = currentState;
+            _setCellIn(r, move.position, currentState);
         }
     }
 
     function _placeColor(
+        Resolution memory r,
         address player,
         address oldOwner,
         Cell memory currentState,
@@ -222,7 +480,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         uint24 cycle,
         int8 newDelta,
         uint8 newEnemyMap
-    ) internal {
+    ) internal pure {
         int8 oldEffectiveDelta = _effectiveDelta(currentState.delta, currentState.enemyMap);
         uint8 oldLife = currentState.life;
         uint8 oldStake = currentState.stake;
@@ -249,6 +507,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
         address newOwner = currentState.color == Color.Evil ? EVIL_OWNER : player;
         _setPoints(
+            r,
             oldOwner,
             oldLife,
             oldStake,
@@ -260,9 +519,20 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         );
 
         if (newOwner != oldOwner) {
-            emit Transfer(oldOwner, newOwner, move.position);
+            _record(
+                r,
+                Effect({
+                    kind: 2,
+                    position: move.position,
+                    a: oldOwner,
+                    b: newOwner,
+                    amount: 0,
+                    oldColor: Color.None,
+                    newColor: Color.None
+                })
+            );
         }
-        _owners[move.position] = uint256(uint160(newOwner));
+        _setOwnerIn(r, move.position, newOwner);
     }
 
     /// @notice Move a cell's points from its old holding to its new one.
@@ -271,6 +541,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
     ///      difference case by case, and missed some (a third placement on an
     ///      Evil cell whose delta changed in between).
     function _setPoints(
+        Resolution memory r,
         address oldOwner,
         uint8 oldLife,
         uint8 oldStake,
@@ -279,46 +550,46 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         uint8 newLife,
         uint8 newStake,
         int8 newEffectiveDelta
-    ) internal {
+    ) internal pure {
         uint256 oldHolding = oldOwner != address(0) && oldLife > 0 && oldEffectiveDelta > 0
-            ? NUM_TOKENS_PER_GEMS * oldStake
+            ? r.numTokensPerGems * oldStake
             : 0;
         uint256 newHolding = newOwner != address(0) && newLife > 0 && newEffectiveDelta > 0
-            ? NUM_TOKENS_PER_GEMS * newStake
+            ? r.numTokensPerGems * newStake
             : 0;
         if (oldOwner == newOwner) {
             if (newHolding > oldHolding) {
-                GENERATOR.add(newOwner, newHolding - oldHolding);
+                _recordGenerator(r, true, newOwner, newHolding - oldHolding);
             } else if (oldHolding > newHolding) {
-                GENERATOR.remove(oldOwner, oldHolding - newHolding);
+                _recordGenerator(r, false, oldOwner, oldHolding - newHolding);
             }
         } else {
             if (oldHolding != 0) {
-                GENERATOR.remove(oldOwner, oldHolding);
+                _recordGenerator(r, false, oldOwner, oldHolding);
             }
             if (newHolding != 0) {
-                GENERATOR.add(newOwner, newHolding);
+                _recordGenerator(r, true, newOwner, newHolding);
             }
         }
     }
 
     function _propagate(
-        TokenTransferCollection memory transferCollection,
+        Resolution memory r,
         Move memory move,
         uint24 cycle,
         Color color,
         uint8 distribution,
         uint8 stake,
         address ownerAtStart
-    ) internal returns (int8 newDelta, uint8 newEnemyMap) {
+    ) internal view returns (int8 newDelta, uint8 newEnemyMap) {
         (
             int8 newComputedDelta,
             uint8 newComputedEnemyMap,
             uint256 numDue,
             address[4] memory ownersToPay
-        ) = _updateNeighbours(move.position, cycle, color, move.color, distribution);
+        ) = _updateNeighbours(r, move.position, cycle, color, move.color, distribution);
 
-        _payShares(transferCollection, ownerAtStart, numDue, ownersToPay, stake, distribution);
+        _payShares(r, ownerAtStart, numDue, ownersToPay, stake, distribution);
         newDelta = newComputedDelta;
         newEnemyMap = newComputedEnemyMap;
     }
@@ -333,31 +604,34 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
     ///      path pays a share depends on the order of the cycle's reveals: the
     ///      rounding dust then moved between players with the order.
     function _payShares(
-        TokenTransferCollection memory transferCollection,
+        Resolution memory r,
         address owner,
         uint256 due,
         address[4] memory ownersToPay,
         uint8 stake,
         uint8 distribution
-    ) internal view {
+    ) internal pure {
         if (due > 0) {
-            _collectTransfer(transferCollection, TokenTransfer({to: payable(owner), amount: due}));
+            _collectTransfer(r.transfers, TokenTransfer({to: payable(owner), amount: due}));
         }
         for (uint8 i = 0; i < 4; i++) {
             if (ownersToPay[i] != address(0)) {
                 _collectTransfer(
-                    transferCollection,
+                    r.transfers,
                     TokenTransfer({
                         to: payable(ownersToPay[i]),
-                        amount: stake * (NUM_TOKENS_PER_GEMS / (distribution & 0x0f))
+                        amount: stake * (r.numTokensPerGems / (distribution & 0x0f))
                     })
                 );
             }
         }
     }
 
-    function _poke(TokenTransferCollection memory transferCollection, uint64 position, uint24 cycle) internal {
-        (Cell memory currentState, bool justDied) = _getUpdatedCell(position, cycle);
+    /// @dev The most a poke records: one generator call for each neighbour.
+    uint256 internal constant EFFECTS_PER_POKE = 4;
+
+    function _pokeIn(Resolution memory r, uint64 position, uint24 cycle) internal view {
+        (Cell memory currentState, bool justDied) = _projectCell(_cellOf(r, position), cycle, r.maxLife);
 
         // we might have distribution still to do
         uint8 distribution = currentState.distribution;
@@ -370,6 +644,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         }
 
         (, , uint256 numDue, address[4] memory ownersToPay) = _updateNeighbours(
+            r,
             position,
             cycle,
             currentState.color,
@@ -378,8 +653,8 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         );
 
         _payShares(
-            transferCollection,
-            _ownerAtCycleStart(position, cycle),
+            r,
+            _ownerAtCycleStartIn(r, position, cycle),
             numDue,
             ownersToPay,
             currentState.stake,
@@ -387,7 +662,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         );
 
         currentState.distribution = 0;
-        _cells[position] = currentState;
+        _setCellIn(r, position, currentState);
     }
 
     //-------------------------------------------------------------------------
@@ -402,6 +677,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
     /// @param side 0 up, 1 left, 2 down, 3 right (the bit in the enemy map)
     function _updateNeighbour(
+        Resolution memory r,
         address[4] memory ownersToPay,
         CellUpdate memory cellUpdate,
         uint64 position,
@@ -410,7 +686,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         uint8 distribution,
         Color oldColor,
         Color newColor
-    ) internal {
+    ) internal view {
         uint64 neighbourPosition;
         uint8 neighbourIndex; // this cell, from the neighbour's point of view
         if (side == 0) {
@@ -427,6 +703,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             neighbourIndex = 1;
         }
         (int8 enemyOrFriend, uint256 due) = _updateCell(
+            r,
             CellUpdateData({
                 position: neighbourPosition,
                 cycle: cycle,
@@ -443,20 +720,21 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         cellUpdate.delta += enemyOrFriend;
 
         if ((distribution >> 4) & bit == bit) {
-            ownersToPay[side] = _ownerAtCycleStart(neighbourPosition, cycle);
+            ownersToPay[side] = _ownerAtCycleStartIn(r, neighbourPosition, cycle);
         }
     }
 
     function _updateNeighbours(
+        Resolution memory r,
         uint64 position,
         uint24 cycle,
         Color oldColor,
         Color newColor,
         uint8 distribution
-    ) internal returns (int8 newDelta, uint8 newEnemyMap, uint256 numDue, address[4] memory ownersToPay) {
+    ) internal view returns (int8 newDelta, uint8 newEnemyMap, uint256 numDue, address[4] memory ownersToPay) {
         CellUpdate memory cellUpdate;
         for (uint8 side = 0; side < 4; side++) {
-            _updateNeighbour(ownersToPay, cellUpdate, position, side, cycle, distribution, oldColor, newColor);
+            _updateNeighbour(r, ownersToPay, cellUpdate, position, side, cycle, distribution, oldColor, newColor);
         }
         newDelta = cellUpdate.delta;
         newEnemyMap = cellUpdate.enemymap;
@@ -471,9 +749,12 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         Color newColor; // new color of the neighbor
     }
 
-    /// @dev This update the cell in storage
-    function _updateCell(CellUpdateData memory data) internal returns (int8 enemyOrFriend, uint256 due) {
-        Cell memory cell = _cells[data.position];
+    /// @dev This updates the cell in the table
+    function _updateCell(
+        Resolution memory r,
+        CellUpdateData memory data
+    ) internal view returns (int8 enemyOrFriend, uint256 due) {
+        Cell memory cell = _cellOf(r, data.position);
 
         uint24 lastUpdate = cell.lastCycleUpdate;
         Color color = cell.color;
@@ -483,26 +764,34 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         }
         if (lastUpdate >= 1 && color != Color.None) {
             if (cell.life > 0 && lastUpdate < data.cycle) {
-                (uint8 newLife, ) = _computeNewLife(lastUpdate, cell.enemyMap, cell.delta, cell.life, data.cycle);
-                due = _updateCellFromNeighbor(data, cell, newLife);
+                (uint8 newLife, ) = _computeNewLifeWith(
+                    r.maxLife,
+                    lastUpdate,
+                    cell.enemyMap,
+                    cell.delta,
+                    cell.life,
+                    data.cycle
+                );
+                due = _updateCellFromNeighbor(r, data, cell, newLife);
             } else {
-                due = _updateCellFromNeighbor(data, cell, cell.life);
+                due = _updateCellFromNeighbor(r, data, cell, cell.life);
             }
         }
     }
 
     function _updateCellFromNeighbor(
+        Resolution memory r,
         CellUpdateData memory data,
         Cell memory cell, // cell to be updated
         uint8 newLife // new life value for the cell
-    ) internal returns (uint256 due) {
+    ) internal view returns (uint256 due) {
         if (cell.life > 0 && newLife == 0) {
             // we just died, we establish the distributionMap and counts
             cell.distribution = (cell.enemyMap << 4) + _countBits(cell.enemyMap);
         }
 
         if ((cell.distribution >> 4) & (2 ** data.neighbourIndex) == 2 ** data.neighbourIndex) {
-            due = cell.stake * (NUM_TOKENS_PER_GEMS / (cell.distribution & 0x0f));
+            due = cell.stake * (r.numTokensPerGems / (cell.distribution & 0x0f));
 
             cell.distribution =
                 (uint8(uint256(cell.distribution >> 4) & (~(2 ** uint256(data.neighbourIndex)))) << 4) +
@@ -513,25 +802,26 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
 
         _handleColor(cell, data.neighbourIndex, data.oldColor, data.newColor);
 
-        _setCell(data.position, cell, newLife, data.cycle, oldEffectiveDelta);
+        _setCell(r, data.position, cell, newLife, data.cycle, oldEffectiveDelta);
 
-        _cells[data.position] = cell;
+        _setCellIn(r, data.position, cell);
     }
 
     function _setCell(
+        Resolution memory r,
         uint64 position, // position of the cell to be updated
         Cell memory cell, // cell to be updated
         uint8 newLife, // new life value for the celll
         uint24 cycle, // cycle at which the update occured
         int8 oldEffectiveDelta
-    ) internal {
-        address owner = _ownerOf(position);
+    ) internal view {
+        address owner = _ownerIn(r, position);
         if (owner != address(0) && newLife > 0) {
             int8 newEffectiveDelta = _effectiveDelta(cell.delta, cell.enemyMap);
             if (oldEffectiveDelta > 0 && newEffectiveDelta <= 0) {
-                GENERATOR.remove(owner, NUM_TOKENS_PER_GEMS * cell.stake);
+                _recordGenerator(r, false, owner, r.numTokensPerGems * cell.stake);
             } else if (oldEffectiveDelta <= 0 && newEffectiveDelta > 0) {
-                GENERATOR.add(owner, NUM_TOKENS_PER_GEMS * cell.stake);
+                _recordGenerator(r, true, owner, r.numTokensPerGems * cell.stake);
             }
         }
 

@@ -206,6 +206,9 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
         Color color,
         uint24 cycle
     ) internal returns (int8 delta, uint8 enemyMap) {
+        // The neighbours' updates are the resolution's, over its table, applied
+        // once all four are made (see UsingStratagemsSetters).
+        Resolution memory r = _newResolution(4, 0, 4);
         unchecked {
             {
                 uint64 upPosition = center.offset(0, -1);
@@ -217,6 +220,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                     }
                     delta += enemyOrFriend;
                     _updateCellFromNeighbor(
+                        r,
                         CellUpdateData({
                             position: upPosition,
                             cycle: cycle,
@@ -239,6 +243,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                     }
                     delta += enemyOrFriend;
                     _updateCellFromNeighbor(
+                        r,
                         CellUpdateData({
                             position: leftPosition,
                             cycle: cycle,
@@ -262,6 +267,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                     }
                     delta += enemyOrFriend;
                     _updateCellFromNeighbor(
+                        r,
                         CellUpdateData({
                             position: downPosition,
                             cycle: cycle,
@@ -284,6 +290,7 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                     }
                     delta += enemyOrFriend;
                     _updateCellFromNeighbor(
+                        r,
                         CellUpdateData({
                             position: rightPosition,
                             cycle: cycle,
@@ -297,5 +304,6 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
                 }
             }
         }
+        _apply(r);
     }
 }

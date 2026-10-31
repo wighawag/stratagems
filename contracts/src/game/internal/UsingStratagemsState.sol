@@ -77,20 +77,35 @@ abstract contract UsingStratagemsState is
         uint8 life,
         uint24 cycle
     ) internal view returns (uint8 newLife, uint24 cycleUsed) {
+        return _computeNewLifeWith(MAX_LIFE, lastUpdate, enemyMap, delta, life, cycle);
+    }
+
+    /// @notice THE PROJECTION: a cell's life brought from its last update to `cycle`.
+    /// @dev Pure, with the deployment's `maxLife` a parameter (a pure function may
+    ///      not read an immutable), so the resolution and the simulation route run
+    ///      it on cells handed to them as well as on storage.
+    function _computeNewLifeWith(
+        uint8 maxLife,
+        uint24 lastUpdate,
+        uint8 enemyMap,
+        int8 delta,
+        uint8 life,
+        uint24 cycle
+    ) internal pure returns (uint8 newLife, uint24 cycleUsed) {
         cycleUsed = lastUpdate;
         if (lastUpdate >= 1 && life > 0) {
             uint256 cycleDelta = cycle - lastUpdate;
             if (cycleDelta > 0) {
                 int8 effectiveDelta = _effectiveDelta(delta, enemyMap);
                 if (effectiveDelta > 0) {
-                    uint8 maxCycle = ((MAX_LIFE - life) + uint8(effectiveDelta) - 1) / uint8(effectiveDelta);
+                    uint8 maxCycle = ((maxLife - life) + uint8(effectiveDelta) - 1) / uint8(effectiveDelta);
                     if (cycleDelta > maxCycle) {
                         cycleDelta = maxCycle;
                     }
 
                     life += uint8(cycleDelta) * uint8(effectiveDelta);
-                    if (life > MAX_LIFE) {
-                        life = MAX_LIFE;
+                    if (life > maxLife) {
+                        life = maxLife;
                     }
                     newLife = life;
 
@@ -132,12 +147,34 @@ abstract contract UsingStratagemsState is
         uint64 position,
         uint24 cycle
     ) internal view returns (Cell memory updatedCell, bool justDied) {
-        updatedCell = _cells[position];
+        return _projectCell(_cells[position], cycle, MAX_LIFE);
+    }
+
+    /// @notice A cell brought to `cycle`: its life, its last update and the
+    ///         producing time accrued on the way.
+    /// @dev Returns a COPY, as reading storage into memory does, so a caller may
+    ///      change it without changing what it was given.
+    function _projectCell(
+        Cell memory cell,
+        uint24 cycle,
+        uint8 maxLife
+    ) internal pure returns (Cell memory updatedCell, bool justDied) {
+        updatedCell = Cell({
+            lastCycleUpdate: cell.lastCycleUpdate,
+            cycleWhenTokenIsAdded: cell.cycleWhenTokenIsAdded,
+            producingCycles: cell.producingCycles,
+            color: cell.color,
+            life: cell.life,
+            delta: cell.delta,
+            enemyMap: cell.enemyMap,
+            distribution: cell.distribution,
+            stake: cell.stake
+        });
         uint24 lastUpdate = updatedCell.lastCycleUpdate;
         int8 delta = updatedCell.delta;
         uint8 life = updatedCell.life;
         if (lastUpdate >= 1 && life > 0) {
-            (uint8 newLife, ) = _computeNewLife(lastUpdate, updatedCell.enemyMap, delta, life, cycle);
+            (uint8 newLife, ) = _computeNewLifeWith(maxLife, lastUpdate, updatedCell.enemyMap, delta, life, cycle);
             updatedCell.life = newLife;
             updatedCell.lastCycleUpdate = cycle;
             justDied = newLife == 0;

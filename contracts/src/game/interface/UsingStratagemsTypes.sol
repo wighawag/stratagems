@@ -80,6 +80,19 @@ interface UsingStratagemsTypes is UsingCommitRevealTypes {
         uint8 life;
     }
 
+    /// @notice One cell as the resolution reads and writes it: the cell, its
+    ///         owner and its record at the cycle's start.
+    /// @dev THE INPUT AND THE OUTPUT OF THE SIMULATION ROUTE
+    ///      ({IStratagemsSimulation-resolveMoves}): a client hands it the cells
+    ///      it knows, the route resolves the moves over them by the rule a reveal
+    ///      applies, and returns every cell the moves touched as it leaves them.
+    struct BoardCell {
+        uint64 position;
+        Cell cell;
+        address owner;
+        CellAtCycleStart start;
+    }
+
     struct TokenTransfer {
         address payable to;
         uint256 amount;
