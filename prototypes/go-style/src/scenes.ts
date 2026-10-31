@@ -20,7 +20,7 @@ const BLUE = 1,
 export type Label = {x: number; y: number; text: string};
 
 export const LABELS: Label[] = [
-	{x: -0.4, y: -1.2, text: 'A growing friendly group (blue, three owners; yours sit in a gold bezel)'},
+	{x: -0.4, y: -1.2, text: 'A growing friendly group (blue, three owners; yours are marked)'},
 	{x: 7.6, y: -1.2, text: 'A contested edge: blue against red'},
 	{x: 14.6, y: -1.2, text: 'A dying stone (life 1, two enemies)'},
 	{x: -0.4, y: 5.8, text: 'Life 1 to 7, growing (no enemy)'},

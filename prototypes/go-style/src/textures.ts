@@ -5,6 +5,7 @@
 import {Texture} from 'pixi.js';
 import {Blockie} from './blockie';
 import {bakeFaces} from './bake';
+import {type GemStyle, type MineMark, drawMine, drawPip, gemColour, lacquerFace, yunziFace} from './style';
 
 export type Look = 'flat' | 'rich' | 'baked' | 'three';
 
@@ -98,11 +99,12 @@ function bakedFace(color: number): HTMLCanvasElement {
 }
 
 /** A gem: its face (by look), the stack of gems under it (one per gem at stake) and its shadow. */
-export function stoneTexture(color: number, opts: {marks?: number; stake?: number; look?: Look} = {}): Texture {
+export function stoneTexture(color: number, opts: {marks?: number; stake?: number; look?: Look; style?: GemStyle} = {}): Texture {
 	const stake = Math.min(opts.stake ?? 1, 4);
 	const look = opts.look ?? 'flat';
-	return cached(`stone:${look}:${color}:${opts.marks ?? '-'}:${stake}`, (ctx) => {
-		const hex = look === 'flat' ? COLOURS[color] : jewel(color);
+	const style = opts.style ?? 'jewel';
+	return cached(`stone:${look}:${style}:${color}:${opts.marks ?? '-'}:${stake}`, (ctx) => {
+		const hex = look === 'flat' ? COLOURS[color] : look === 'rich' ? gemColour(color, style) : jewel(color);
 		const evil = color === 6;
 		const step = 9;
 		const thick = 3 + step * (stake - 1);
@@ -136,17 +138,25 @@ export function stoneTexture(color: number, opts: {marks?: number; stake?: numbe
 			const r = RT * 1.1;
 			ctx.drawImage(bakedFace(color), C - r, C - r, r * 2, r * 2);
 		} else if (look === 'rich') {
-			richFace(ctx, hex, evil);
+			if (style === 'yunzi') yunziFace(ctx, C, RT, hex, evil);
+			else if (style === 'lacquer') lacquerFace(ctx, C, RT, hex, evil);
+			else richFace(ctx, hex, evil);
 		} else {
 			flatFace(ctx, hex, evil);
 		}
 		if (opts.marks !== undefined) {
 			for (let i = 0; i < 7; i++) {
 				const a = markAngle(i);
-				drawMark(ctx, C + Math.cos(a) * RT * MARK_RADIUS, C + Math.sin(a) * RT * MARK_RADIUS, i < opts.marks, evil);
+				const kind = look === 'rich' && style === 'lacquer' ? 'gold' : evil ? 'bone' : 'ink';
+				drawPip(ctx, C + Math.cos(a) * RT * MARK_RADIUS, C + Math.sin(a) * RT * MARK_RADIUS, RT, i < opts.marks, kind);
 			}
 		}
 	});
+}
+
+/** How "yours" is marked, around the gem. */
+export function mineTexture(kind: MineMark): Texture {
+	return cached(`mine:${kind}`, (ctx) => drawMine(ctx, C, RT, kind));
 }
 
 function flatFace(ctx: CanvasRenderingContext2D, hex: string, evil: boolean) {

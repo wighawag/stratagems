@@ -6,12 +6,14 @@
  * owner overlays do not; this round tries four looks.
  *
  * URL params (shareable, reload-stable): look=flat|rich|baked|three,
- * life=dial|size, links=0|1, outlines=0|1, tilt=<deg> (three only),
+ * life=dial|size, links=0|1, outlines=0|1 (the territory wash), tilt=<deg> (three only),
+ * style=jewel|yunzi|lacquer, board=kaya|slate|washi|felt, mine=bezel|halo|tile,
  * zoom=near|mid|far, cx/cy/px (an exact camera), focus=<address>, ui=0.
  * Keys: left/right look, T turn the cycle, R reset, B links, G faction
  * outlines, L life display, 1/2/3 zoom, Y tilt (three), H hide panel, Esc.
  */
-import {Application, Container, Graphics, Sprite, Text, TilingSprite, Texture} from 'pixi.js';
+import {AlphaFilter, Application, BlurFilter, Container, Graphics, Sprite, Text, TilingSprite, Texture} from 'pixi.js';
+import {type BoardKind, type GemStyle, type MineMark, boardCanvas, gemColour, labelColour, lineColour} from './style';
 import {type Board, type Cell, EVIL, EVIL_OWNER, MAX_LIFE, factionOutlines, key, linksOf, nextBoard, ownerSummary, pressureOf} from './rules';
 import {LABELS, ME, initialBoard} from './scenes';
 import {
@@ -20,7 +22,7 @@ import {
 	type Look,
 	MARK_RADIUS,
 	RT,
-	bezelTexture,
+	mineTexture,
 	blockieDataURL,
 	crossTexture,
 	glowTexture,
@@ -31,13 +33,12 @@ import {
 	ringTexture,
 	stoneTexture,
 	crackTexture,
-	woodCanvas,
 } from './textures';
 import {createThreeView} from './three-view';
 
 const LOOKS: {id: Look; name: string}[] = [
 	{id: 'flat', name: 'Flat (round 1)'},
-	{id: 'rich', name: 'Rich 2D: wood board, drawn cabochons'},
+	{id: 'rich', name: 'Rich 2D (pixi)'},
 	{id: 'baked', name: 'Baked: 3D gems rendered once into pixi sprites'},
 	{id: 'three', name: 'Live 3D: three.js, physically based'},
 ];
@@ -53,7 +54,11 @@ const state = {
 	life: (params.get('life') as 'dial' | 'size') || 'dial',
 	links: params.get('links') !== '0',
 	outlines: params.get('outlines') === '1',
-	tilt: Number(params.get('tilt') ?? 0),
+	style: (params.get('style') as GemStyle) || 'jewel',
+	boardKind: (params.get('board') as BoardKind) || 'kaya',
+	mine: (params.get('mine') as MineMark) || 'halo',
+	tilt: Number(params.get('tilt') ?? 50),
+	azimuth: Number(params.get('az') ?? 0),
 	focus: params.get('focus') as string | null,
 	hover: null as null | {owner: string; cell: Cell},
 	pinned: null as null | {owner: string; cell: Cell},
@@ -68,7 +73,11 @@ function syncURL() {
 	p.set('life', state.life);
 	p.set('links', state.links ? '1' : '0');
 	if (state.outlines) p.set('outlines', '1');
-	if (state.tilt) p.set('tilt', String(state.tilt));
+	p.set('style', state.style);
+	p.set('board', state.boardKind);
+	p.set('mine', state.mine);
+	p.set('tilt', String(state.tilt));
+	if (state.azimuth) p.set('az', String(state.azimuth));
 	if (zoomName) p.set('zoom', zoomName);
 	history.replaceState(null, '', '?' + p.toString());
 }
@@ -94,12 +103,19 @@ const labels = new Container();
 world.addChild(boardLayer, gridG, outlineG, linksG, under, stones, over, fx, labels);
 
 const plain = new Graphics().rect(-20000, -20000, 40000, 40000).fill({color: 0xd2a868});
-const wood = new TilingSprite({texture: Texture.from(woodCanvas(1024)), width: 64 * 1024, height: 64 * 1024});
+const boardTextures = new Map<BoardKind, Texture>();
+const boardTexture = (k: BoardKind) => boardTextures.get(k) ?? boardTextures.set(k, Texture.from(boardCanvas(k))).get(k)!;
+const wood = new TilingSprite({texture: boardTexture(state.boardKind), width: 64 * 1024, height: 64 * 1024});
 wood.position.set(-32 * 1024, -32 * 1024);
 boardLayer.addChild(plain, wood);
+// the territory wash: each faction's living cells, blurred into one soft region, under everything
+const territory = new Container();
+const territoryBlur = new BlurFilter({strength: 20, quality: 3});
+territory.filters = [territoryBlur, new AlphaFilter({alpha: 0.4})];
+world.addChildAt(territory, 1);
 
 for (const l of LABELS) {
-	const t = new Text({text: l.text, style: {fontFamily: 'Georgia, serif', fontSize: 15, fill: '#2b1606'}, resolution: 3});
+	const t = new Text({text: l.text, style: {fontFamily: 'Georgia, serif', fontSize: 15, fill: labelColour(state.boardKind)}, resolution: 3});
 	t.position.set(l.x * S, l.y * S);
 	labels.addChild(t);
 }
@@ -109,7 +125,7 @@ const camera = {x: 0, y: 0, scale: 1};
 function applyCamera() {
 	world.scale.set(camera.scale);
 	world.position.set(app.screen.width / 2 - camera.x * camera.scale, app.screen.height / 2 - camera.y * camera.scale);
-	three.setCamera(camera, app.screen.width, app.screen.height, state.tilt);
+	three.setCamera(camera, app.screen.width, app.screen.height, state.look === 'three' ? state.tilt : 0, state.azimuth);
 }
 function preset(name: string) {
 	zoomName = name;
@@ -124,7 +140,8 @@ function onCamera() {
 	applyCamera();
 	drawGrid();
 	const cls = spacingPx() >= NEAR_PX ? 'near' : 'far';
-	labels.visible = spacingPx() > 22 && !(state.look === 'three' && state.tilt);
+	labels.visible = spacingPx() > 22 && state.look !== 'three';
+	territoryBlur.strength = Math.max(1, S * 0.06 * camera.scale);
 	if (cls !== zoomClass) {
 		zoomClass = cls;
 		build();
@@ -144,11 +161,12 @@ function drawGrid() {
 	const y1 = Math.ceil((app.screen.height - world.position.y) / camera.scale / S) + 1;
 	for (let x = x0; x <= x1; x++) gridG.moveTo(x * S, y0 * S).lineTo(x * S, y1 * S);
 	for (let y = y0; y <= y1; y++) gridG.moveTo(x0 * S, y * S).lineTo(x1 * S, y * S);
-	gridG.stroke({width: px * (rich ? 1.4 : 1.2), color: rich ? 0x24130a : 0x4a2c0a, alpha: (rich ? 0.8 : 0.55) * alpha});
+	const ink = lineColour(state.boardKind);
+	gridG.stroke({width: px * (rich ? 1.4 : 1.2), color: rich ? ink.color : 0x4a2c0a, alpha: (rich ? ink.alpha : 0.55) * alpha});
 	if (rich && spacingPx() > 14) {
 		// hoshi: landmarks every 8 intersections, on an unbounded board
 		for (let x = Math.ceil(x0 / 8) * 8; x <= x1; x += 8) for (let y = Math.ceil(y0 / 8) * 8; y <= y1; y += 8) gridG.circle(x * S, y * S, S * 0.07);
-		gridG.fill({color: 0x24130a, alpha: 0.9 * alpha});
+		gridG.fill({color: ink.color, alpha: Math.min(1, ink.alpha + 0.1) * alpha});
 	}
 }
 
@@ -200,13 +218,16 @@ function build() {
 	boardLayer.visible = !isThree;
 	plain.visible = state.look === 'flat';
 	wood.visible = state.look !== 'flat';
+	wood.texture = boardTexture(state.boardKind);
+	for (const t of labels.children as Text[]) t.style.fill = state.look === 'flat' ? '#2b1606' : labelColour(state.boardKind);
+	clear(territory);
 	for (const c of [under, stones, over, fx]) clear(c);
 	linksG.clear();
 	outlineG.clear();
 	nodes = [];
 	const focus = focusOwner();
 	if (isThree) {
-		three.build({board: state.board, sized: sized(), dial: dial(), links: state.links, outlines: state.outlines, focus, sizeOf});
+		three.build({board: state.board, sized: sized(), dial: dial(), links: state.links, outlines: state.outlines, focus, sizeOf, style: state.style, boardKind: state.boardKind, mine: state.mine});
 		drawGrid();
 		return;
 	}
@@ -226,10 +247,10 @@ function build() {
 		}
 		const showTrend = !ghost && (trend === 'grow' || trend === 'shrink');
 		if (showTrend && trend === 'grow') node.glow = sprite(glowTexture(), cell, under, scale * 1.02);
-		if (cell.owner === ME && !ghost) sprite(bezelTexture(), cell, under, scale);
+		if (cell.owner === ME && !ghost) sprite(mineTexture(state.mine), cell, under, state.mine === 'bezel' ? scale : 1);
 		let marks: number | undefined;
 		if (dial() && !ghost) marks = trend === 'shrink' ? cell.life - 1 : cell.life;
-		node.stone = sprite(stoneTexture(cell.color, {marks, stake: cell.stake, look}), cell, stones, scale);
+		node.stone = sprite(stoneTexture(cell.color, {marks, stake: cell.stake, look, style: state.style}), cell, stones, scale);
 		if (ghost) node.stone.alpha = 0.42;
 		if (dial() && !ghost && showTrend) {
 			const i = trend === 'shrink' ? cell.life - 1 : cell.life;
@@ -283,7 +304,7 @@ function drawLinks(focus: string | null) {
 		const [x1, y1, x2, y2] = horizontal ? [l.ax * S + ra, l.ay * S, l.bx * S - rb, l.by * S] : [l.ax * S, l.ay * S + ra, l.bx * S, l.by * S - rb];
 		if (l.kind === 'bridge') {
 			const w = S * 0.26;
-			const col = parseInt((state.look === 'flat' ? (a.color === EVIL ? '#2c2c2c' : COLOURS[a.color]) : jewel(a.color)).slice(1, 7), 16);
+			const col = parseInt(gemHex(a.color).slice(1, 7), 16);
 			const rect = () => (x1 === x2 ? linksG.roundRect(x1 - w / 2, y1, w, y2 - y1, w / 3) : linksG.roundRect(x1, y1 - w / 2, x2 - x1, w, w / 3));
 			rect().fill({color: col, alpha: dim});
 			rect().stroke({width: 2, color: 0x2a1a08, alpha: 0.6 * dim});
@@ -300,13 +321,34 @@ function drawLinks(focus: string | null) {
 	}
 }
 
+/** A gem's colour as the current look and style draw it (bridges and chips share it). */
+function gemHex(color: number): string {
+	if (state.look === 'flat') return color === EVIL ? '#2c2c2c' : COLOURS[color];
+	if (state.look === 'rich') return gemColour(color, state.style);
+	return jewel(color);
+}
+
+/**
+ * Territory as a wash, not a line: round 2's outlines ran along the cell
+ * boundaries, between the Go lines, and fought them. Each faction's living
+ * cells are discs of its colour, blurred together into one soft region.
+ */
 function drawOutlines() {
 	if (!state.outlines) return;
-	for (const [color, segs] of factionOutlines(state.board)) {
-		for (const s of segs) outlineG.moveTo(s.x1 * S, s.y1 * S).lineTo(s.x2 * S, s.y2 * S);
-		const col = parseInt(jewel(color).slice(1, 7), 16);
-		outlineG.stroke({width: 4, color: col, alpha: 0.9, cap: 'round'});
+	void factionOutlines;
+	const byColour = new Map<number, Graphics>();
+	for (const cell of state.board.values()) {
+		if (cell.life === 0 || cell.planned === 'place') continue;
+		let g = byColour.get(cell.color);
+		if (!g) {
+			g = new Graphics();
+			byColour.set(cell.color, g);
+			territory.addChild(g);
+		}
+		g.roundRect(cell.x * S - S * 0.62, cell.y * S - S * 0.62, S * 1.24, S * 1.24, S * 0.3);
 	}
+	for (const [color, g] of byColour) g.fill({color: parseInt(gemHex(color).slice(1, 7), 16)});
+	territoryBlur.strength = Math.max(1, S * 0.06 * camera.scale);
 }
 
 // ---------------------------------------------------------------- cracking
@@ -383,7 +425,7 @@ function animateDying(n: Node, p: number) {
 	d.chips.clear();
 	const q = Math.max(0, (p - 0.3) / 0.55);
 	if (q > 0 && q < 1) {
-		const col = parseInt(jewel(n.cell.color).slice(1, 7), 16);
+		const col = parseInt(gemHex(n.cell.color).slice(1, 7), 16);
 		d.cracks.forEach((pts, i) => {
 			const [ex, ey] = pts[pts.length - 1];
 			const a = Math.atan2(ey, ex);
@@ -456,18 +498,20 @@ function turn() {
 }
 
 // ---------------------------------------------------------------- input
-let drag: null | {x: number; y: number; cx: number; cy: number; moved: boolean} = null;
+let drag: null | {x: number; y: number; anchor: {x: number; y: number}; moved: boolean} = null;
 const target = app.canvas;
 target.addEventListener('pointerdown', (e) => {
-	drag = {x: e.clientX, y: e.clientY, cx: camera.x, cy: camera.y, moved: false};
+	const anchor = toWorld(e);
+	if (anchor) drag = {x: e.clientX, y: e.clientY, anchor, moved: false};
 });
-function toWorld(e: {clientX: number; clientY: number}) {
-	if (state.look === 'three') return three.screenToWorld(e.clientX, e.clientY, app.screen.width, app.screen.height);
+function toWorld(e: {clientX: number; clientY: number}, atZ = 0) {
+	if (state.look === 'three') return three.screenToWorld(e.clientX, e.clientY, app.screen.width, app.screen.height, atZ);
 	return {x: (e.clientX - world.position.x) / camera.scale, y: (e.clientY - world.position.y) / camera.scale};
 }
 /** The cell whose square holds the point: no gaps between neighbours, so no flicker crossing them. */
 function cellAt(e: {clientX: number; clientY: number}): Cell | undefined {
-	const w = toWorld(e);
+	// in 3D, aim at the gems' mid-height, not the board under them
+	const w = toWorld(e, state.look === 'three' ? three.gemHeight * 0.5 : 0);
 	if (!w) return;
 	const c = state.board.get(key(Math.round(w.x / S), Math.round(w.y / S)));
 	return c && c.planned !== 'place' ? c : undefined;
@@ -500,9 +544,12 @@ window.addEventListener('pointermove', (e) => {
 		const dy = e.clientY - drag.y;
 		if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true;
 		if (drag.moved) {
-			const tiltK = state.look === 'three' && state.tilt ? 1 / Math.cos((state.tilt * Math.PI) / 180) : 1;
-			camera.x = drag.cx - dx / camera.scale;
-			camera.y = drag.cy - (dy * tiltK) / camera.scale;
+			// keep the point grabbed under the pointer (works for a tilted, turned 3D camera too)
+			const now = toWorld(e);
+			if (now) {
+				camera.x += drag.anchor.x - now.x;
+				camera.y += drag.anchor.y - now.y;
+			}
 			zoomName = null;
 			applyCamera();
 			drawGrid();
@@ -543,6 +590,7 @@ target.addEventListener(
 
 function setLook(l: Look) {
 	state.look = l;
+	zoomClass = '';
 	drawGrid();
 	onCamera();
 	build();
@@ -558,7 +606,9 @@ window.addEventListener('keydown', (e) => {
 	else if (e.key === 'b' || e.key === 'B') toggle('links');
 	else if (e.key === 'g' || e.key === 'G') toggle('outlines');
 	else if (e.key === 'l' || e.key === 'L') setLife(state.life === 'dial' ? 'size' : 'dial');
-	else if (e.key === 'y' || e.key === 'Y') setTilt(state.tilt ? 0 : 35);
+	else if (e.key === 'y' || e.key === 'Y') setTilt(state.tilt ? 0 : 50);
+	else if (e.key === 'q' || e.key === 'Q') ((state.azimuth -= 15), onCamera());
+	else if (e.key === 'e' || e.key === 'E') ((state.azimuth += 15), onCamera());
 	else if (e.key === '1') preset('near');
 	else if (e.key === '2') preset('mid');
 	else if (e.key === '3') preset('far');
@@ -602,6 +652,9 @@ function renderUI() {
 	($('links') as HTMLInputElement).checked = state.links;
 	($('outlines') as HTMLInputElement).checked = state.outlines;
 	($('tilt') as HTMLInputElement).checked = !!state.tilt;
+	($('style') as HTMLSelectElement).value = state.style;
+	($('boardKind') as HTMLSelectElement).value = state.boardKind;
+	($('mine') as HTMLSelectElement).value = state.mine;
 }
 const short = (a: string) => a.slice(0, 6) + '...' + a.slice(-4);
 const who = (a: string) => `<img src="${blockieDataURL(a, 24)}" width="20" height="20" style="image-rendering:pixelated;border-radius:4px;vertical-align:middle"/> <span class="addr">${short(a)}</span>${a === ME ? ' <b>(you)</b>' : ''}`;
@@ -649,7 +702,14 @@ $('life-dial').addEventListener('change', () => setLife('dial'));
 $('life-size').addEventListener('change', () => setLife('size'));
 $('links').addEventListener('change', () => toggle('links'));
 $('outlines').addEventListener('change', () => toggle('outlines'));
-$('tilt').addEventListener('change', () => setTilt(state.tilt ? 0 : 35));
+for (const [id, k] of [['style', 'style'], ['boardKind', 'boardKind'], ['mine', 'mine']] as const)
+	$(id).addEventListener('change', (e) => {
+		(state as Record<string, unknown>)[k] = (e.target as HTMLSelectElement).value;
+		drawGrid();
+		build();
+		syncURL();
+	});
+$('tilt').addEventListener('change', () => setTilt(state.tilt ? 0 : 50));
 $('turn').addEventListener('click', turn);
 $('reset').addEventListener('click', reset);
 $('hide').addEventListener('click', () => ($('controls').style.display = 'none'));

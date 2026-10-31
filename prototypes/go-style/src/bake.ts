@@ -16,6 +16,8 @@ export function cabochonGeometry(segments = 48): THREE.BufferGeometry {
 		pts.push(new THREE.Vector2(r, 0.12 + 0.32 * Math.cos((u * Math.PI) / 2) ** 0.75));
 	}
 	pts.push(new THREE.Vector2(1, 0), new THREE.Vector2(0.001, 0));
+	// LatheGeometry wants the profile from the bottom up for outward faces (top-down, as round 2 had it, every face pointed in)
+	pts.reverse();
 	const g = new THREE.LatheGeometry(pts, segments);
 	g.rotateX(Math.PI / 2);
 	g.computeVertexNormals();
