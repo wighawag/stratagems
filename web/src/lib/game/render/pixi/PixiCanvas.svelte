@@ -27,6 +27,7 @@
 	import {createFrameLoop} from '../frame-loop';
 	import {applyTransform, buildGrid, positionGrid} from './world';
 	import LoadingGate from './LoadingGate.svelte';
+	import {surfaceOptions} from './surface';
 
 	interface Props {
 		cameraControl: CameraControl;
@@ -47,6 +48,13 @@
 		 * full zoom out, which is exactly where nobody looks.
 		 */
 		gridCells: number;
+		/**
+		 * Smooth art rather than pixel art: the device ratio, antialiasing and
+		 * unrounded positions. Off by default, since the reference game is pixel
+		 * art. See `surface.ts`, which also says why texture filtering is not
+		 * part of it.
+		 */
+		smooth?: boolean;
 	}
 	let {
 		cameraControl,
@@ -56,7 +64,16 @@
 		showGrid = true,
 		backgroundColor = '#0b1020',
 		gridCells,
+		smooth = false,
 	}: Props = $props();
+
+	// Read once: pixi takes these at init, and a host is mounted for one game.
+	// svelte-ignore state_referenced_locally
+	const surface = surfaceOptions({
+		smooth,
+		devicePixelRatio:
+			typeof window === 'undefined' ? 1 : window.devicePixelRatio,
+	});
 
 	let canvas: HTMLCanvasElement;
 
@@ -79,17 +96,17 @@
 			canvas,
 			backgroundAlpha: 1,
 			backgroundColor,
-			roundPixels: true,
-			// Pinned at 1 deliberately: the art is pixelated, and rendering it at
-			// device resolution would upscale it and defeat that.
+			// 1 for pixel art, deliberately: rendering it at device resolution
+			// would upscale it and defeat that. The device ratio for smooth art.
 			//
-			// This is therefore the REAL backing-store ratio for this host, and it
-			// is what the frame reports. A renderer sizing a hairline off
-			// `frame.devicePixelRatio` gets 1 here and is correct to, because the
-			// buffer really is one pixel per CSS pixel. A host that wants device
-			// resolution sets this AND reports it; the canvas-2d one does.
-			resolution: 1,
-			antialias: false,
+			// Either way this is the REAL backing-store ratio for this host, and it
+			// is what the frame reports (`app.renderer.resolution` below). A
+			// renderer sizing a hairline off `frame.devicePixelRatio` gets 1 for
+			// pixel art and is correct to, because the buffer really is one pixel
+			// per CSS pixel.
+			resolution: surface.resolution,
+			antialias: surface.antialias,
+			roundPixels: surface.roundPixels,
 		});
 
 		appInitialising.then(() => {
@@ -153,7 +170,11 @@
 	}
 </script>
 
-<canvas oncontextmenu={onCanvasContextMenu} bind:this={canvas}></canvas>
+<canvas
+	oncontextmenu={onCanvasContextMenu}
+	bind:this={canvas}
+	style:image-rendering={surface.imageRendering}
+></canvas>
 
 <!--
 	Rendered by the HOST rather than by the page, which is what keeps this branch's
@@ -167,7 +188,6 @@
 		width: 100%;
 		height: 100%;
 		pointer-events: auto;
-		image-rendering: pixelated;
 		/*
 			Without this a touch drag scrolls the page instead of panning the board,
 			and a pinch zooms the whole document. Set here rather than relied on from
