@@ -26,12 +26,17 @@
  * Every contract of the sandbox is present in every call, so one may call
  * another at the address it was given.
  *
- * WHAT IT CANNOT RUN: anything that reads STORAGE. The sandbox has the code
- * and none of the state, so a function that reads a mapping reads zeroes and
- * answers wrongly rather than failing. That is the rule this asks of a game's
- * contracts, and it is the shape the commit-reveal order rule already pushes
- * towards: load what a resolution needs, resolve it in a pure function, apply
- * what it returns. See `./README.md`.
+ * WHAT IT CANNOT RUN: anything that reads STORAGE it did not write itself.
+ * The sandbox has the code and none of the state, so a function that reads a
+ * mapping reads zeroes and answers wrongly rather than failing. That is the
+ * rule this asks of a game's contracts, and there are two ways to keep it
+ * (`./README.md`): the resolution as load, a pure core and apply, the core
+ * exposed as a `pure` or `view` function; or, for a resolution that is
+ * storage-heavy, a contract of its own that SEEDS its storage from its
+ * arguments and runs the unchanged resolution over it. The second is not
+ * `view`, which is why `call` takes a function of any mutability but
+ * `payable`: it is an `eth_call`, so whatever the function writes is gone
+ * when it answers.
  *
  * NOTHING STARTS UNTIL THE FIRST CALL, and webevm is not even imported until
  * then, so a route that never simulates pays nothing for this module. In the
@@ -103,19 +108,24 @@ export class SandboxRevert extends Error {
 	}
 }
 
+/**
+ * What a call may run: a `pure` or `view` function (a pure core), or a
+ * `nonpayable` one that writes only storage it seeded itself (a simulation
+ * contract). Never `payable`: an `eth_call` here carries no value.
+ */
+type Runnable = 'pure' | 'view' | 'nonpayable';
+
 export type BytecodeSandbox<TName extends string> = {
 	call<
 		const abi extends Abi,
-		functionName extends ContractFunctionName<abi, 'pure' | 'view'>,
-		const args extends ContractFunctionArgs<abi, 'pure' | 'view', functionName>,
+		functionName extends ContractFunctionName<abi, Runnable>,
+		const args extends ContractFunctionArgs<abi, Runnable, functionName>,
 	>(params: {
 		contract: TName;
 		abi: abi;
 		functionName: functionName;
 		args: args;
-	}): Promise<
-		ContractFunctionReturnType<abi, 'pure' | 'view', functionName, args>
-	>;
+	}): Promise<ContractFunctionReturnType<abi, Runnable, functionName, args>>;
 	/**
 	 * Stop the node (and its Worker). A later call starts it again, reading the
 	 * code again, so an app may dispose it on every teardown.
