@@ -193,6 +193,26 @@ describe('the board drawn in immediate mode', () => {
 		expect(calls.map((c) => c.op)).toEqual(['fillRect', 'strokeRect']);
 	});
 
+	/**
+	 * What the plan leads to is a third mark, drawn only once the sandbox has
+	 * answered for the plan (`next`), and drawn smaller than a confirmed fill so
+	 * the two are never confused.
+	 */
+	it('shows what a planned cell will hold once the preview answers', () => {
+		const next = {totalStake: 2n, numClaimants: 2, playerStake: 1n};
+		const {renderer, calls} = setup([
+			cell(0, 0, {numClaimants: 1, planned: true, next}),
+		]);
+		renderer.tick(frame);
+		expect(calls.map((c) => c.op)).toEqual([
+			'fillRect',
+			'fillRect',
+			'strokeRect',
+		]);
+		const [confirmed, preview] = calls;
+		expect(preview.args[2]).toBeLessThan(confirmed.args[2]);
+	});
+
 	it('stops drawing once the host has stopped', () => {
 		const {renderer, calls} = setup([cell(0, 0, {numClaimants: 1})]);
 		renderer.onAppStopped();

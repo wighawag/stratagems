@@ -1,0 +1,157 @@
+/**
+ * A toy contract for the bytecode sandbox, compiled from `./Toy.sol`.
+ *
+ * Generated with solc 0.8.28 (`--optimize --evm-version london`, the
+ * template contracts' evmVersion), by hand, and committed as bytes so the unit
+ * tests need no compiler. Regenerate it the same way if `Toy.sol` changes.
+ */
+export const toyAbi = [
+	{
+		inputs: [
+			{
+				internalType: 'uint256',
+				name: 'factor',
+				type: 'uint256',
+			},
+			{
+				internalType: 'contract ToyHelper',
+				name: 'helper',
+				type: 'address',
+			},
+		],
+		stateMutability: 'nonpayable',
+		type: 'constructor',
+	},
+	{
+		inputs: [
+			{
+				internalType: 'uint256',
+				name: 'value',
+				type: 'uint256',
+			},
+			{
+				internalType: 'uint256',
+				name: 'limit',
+				type: 'uint256',
+			},
+		],
+		name: 'TooBig',
+		type: 'error',
+	},
+	{
+		inputs: [
+			{
+				internalType: 'uint256',
+				name: 'a',
+				type: 'uint256',
+			},
+			{
+				internalType: 'uint256',
+				name: 'b',
+				type: 'uint256',
+			},
+		],
+		name: 'add',
+		outputs: [
+			{
+				internalType: 'uint256',
+				name: '',
+				type: 'uint256',
+			},
+		],
+		stateMutability: 'pure',
+		type: 'function',
+	},
+	{
+		inputs: [
+			{
+				internalType: 'uint256',
+				name: 'x',
+				type: 'uint256',
+			},
+			{
+				internalType: 'uint256',
+				name: 'limit',
+				type: 'uint256',
+			},
+		],
+		name: 'capped',
+		outputs: [
+			{
+				internalType: 'uint256',
+				name: '',
+				type: 'uint256',
+			},
+		],
+		stateMutability: 'pure',
+		type: 'function',
+	},
+	{
+		inputs: [
+			{
+				internalType: 'uint256',
+				name: 'x',
+				type: 'uint256',
+			},
+		],
+		name: 'doubledByHelper',
+		outputs: [
+			{
+				internalType: 'uint256',
+				name: '',
+				type: 'uint256',
+			},
+		],
+		stateMutability: 'view',
+		type: 'function',
+	},
+	{
+		inputs: [
+			{
+				internalType: 'uint256',
+				name: 'x',
+				type: 'uint256',
+			},
+		],
+		name: 'scaled',
+		outputs: [
+			{
+				internalType: 'uint256',
+				name: '',
+				type: 'uint256',
+			},
+		],
+		stateMutability: 'view',
+		type: 'function',
+	},
+] as const;
+
+export const toyHelperAbi = [
+	{
+		inputs: [
+			{
+				internalType: 'uint256',
+				name: 'x',
+				type: 'uint256',
+			},
+		],
+		name: 'double',
+		outputs: [
+			{
+				internalType: 'uint256',
+				name: '',
+				type: 'uint256',
+			},
+		],
+		stateMutability: 'pure',
+		type: 'function',
+	},
+] as const;
+
+/** Creation code of `Toy`, without its constructor arguments. */
+export const toyCreationCode =
+	'0x60c0604052348015600f57600080fd5b50604051610323380380610323833981016040819052602c916042565b6080919091526001600160a01b031660a052607d565b60008060408385031215605457600080fd5b825160208401519092506001600160a01b0381168114607257600080fd5b809150509250929050565b60805160a0516102826100a160003960006101320152600060b601526102826000f3fe608060405234801561001057600080fd5b506004361061004c5760003560e01c80632b526dc7146100515780636503cdf0146100765780636a633e2f14610089578063771602f71461009c575b600080fd5b61006461005f3660046101b8565b6100af565b60405190815260200160405180910390f35b6100646100843660046101d1565b6100e1565b6100646100973660046101b8565b610119565b6100646100aa3660046101d1565b6101a5565b60006100db7f000000000000000000000000000000000000000000000000000000000000000083610209565b92915050565b60008183111561011257604051631ab6737f60e21b8152600481018490526024810183905260440160405180910390fd5b5090919050565b604051637774b90360e11b8152600481018290526000907f00000000000000000000000000000000000000000000000000000000000000006001600160a01b03169063eee9720690602401602060405180830381865afa158015610181573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906100db9190610220565b60006101b18284610239565b9392505050565b6000602082840312156101ca57600080fd5b5035919050565b600080604083850312156101e457600080fd5b50508035926020909101359150565b634e487b7160e01b600052601160045260246000fd5b80820281158282048414176100db576100db6101f3565b60006020828403121561023257600080fd5b5051919050565b808201808211156100db576100db6101f356fea2646970667358221220a3c10790f5e670d31c66d25877a58b949149298938751cb746378ee2d518e8a564736f6c634300081c0033' as const;
+
+/** Creation code of `ToyHelper`, which takes no constructor arguments. */
+export const toyHelperCreationCode =
+	'0x6080604052348015600f57600080fd5b5060d180601d6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063eee9720614602d575b600080fd5b603c6038366004605f565b604e565b60405190815260200160405180910390f35b600060598260026077565b92915050565b600060208284031215607057600080fd5b5035919050565b8082028115828204841417605957634e487b7160e01b600052601160045260246000fdfea264697066735822122007ad46f5488475672cbd7ecd0a419105d8b361ccaade41b11f2e765f0d886aac64736f6c634300081c0033' as const;

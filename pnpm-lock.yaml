@@ -153,6 +153,9 @@ importers:
       '@assetpack/core':
         specifier: ^1.7.0
         version: 1.7.0(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)
+      '@eip-1193/over-port':
+        specifier: ^0.2.0
+        version: 0.2.0
       '@etherkit/burner-wallet':
         specifier: ^0.2.2
         version: 0.2.2(typescript@6.0.3)(viem@2.55.19(typescript@6.0.3)(zod@4.4.3))(zod@4.4.3)

@@ -4,6 +4,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"devDependencies": {
+		"@eip-1193/over-port": "^0.2.0",
 		"@etherkit/burner-wallet": "^0.2.2",
 		"@etherkit/tx-observer": "0.3.0",
 		"@etherkit/viem-tx-tracker": "0.2.1",

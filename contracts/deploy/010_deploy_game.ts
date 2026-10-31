@@ -58,6 +58,11 @@ export default deployScript(
 			{name: 'Getters', artifact: artifacts.GameGetters, args: [config]},
 			{name: 'Commit', artifact: artifacts.GameCommit, args: [config]},
 			{name: 'Reveal', artifact: artifacts.GameReveal, args: [config]},
+			// The game's rule, runnable without a chain: the client reads THIS
+			// route's code and runs it in its own sandbox to preview a turn
+			// (`web/src/lib/game/simulation/`). Its own route so that the code a
+			// client fetches holds the rule and nothing that needs storage.
+			{name: 'Simulation', artifact: artifacts.GameSimulation, args: [config]},
 			// Who may play as whom. Its own route because a router maps one
 			// selector to one route, and UsingDelegation carries six. Takes no
 			// config: the delegation record is namespaced storage shared across
