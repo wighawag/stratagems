@@ -87,12 +87,73 @@ abstract contract UsingGameInternal is
         _closeChunk(chunk, placements.length * PLACEMENT_COST);
     }
 
-    /// @dev Pure accumulation. No player's outcome depends on what another
+    /// @dev LOAD, A PURE CORE, APPLY. The rule of a placement is
+    ///      {_placementOutcome}, a pure function of the cell as this player sees
+    ///      it; this loads that from storage and {_applyPlacement} writes back
+    ///      what the rule returns. The split is what lets a client run the SAME
+    ///      rule, in the deployment's own bytecode, through the simulation route
+    ///      ({IGameSimulation}) before anything is committed, rather than keeping
+    ///      a copy of it in TypeScript that can drift from this one.
+    ///
+    ///      Pure accumulation. No player's outcome depends on what another
     ///      player's reveal did this cycle, so it commutes. See _reveal.
     function _place(uint256 player, uint64 cellID) internal {
-        Cell storage cell = _cells[cellID];
+        PlayerCell memory before = _loadPlayerCell(player, cellID);
+        _applyPlacement(
+            player,
+            before,
+            _placementOutcome(before, PLACEMENT_COST)
+        );
+    }
 
-        if (cell.numClaimants == 0) {
+    /// @notice What one placement does to a cell: THE RULE OF THIS GAME.
+    /// @dev Pure, and it must stay so: the simulation route runs it with no
+    ///      storage behind it. The cost is a parameter rather than the
+    ///      immutable because a pure function may not read one; both callers
+    ///      pass the deployment's {PLACEMENT_COST}.
+    ///
+    ///      It only ever ADDS, which is the order-independence rule in its
+    ///      smallest form: a stake and a claimant count reached by accumulation
+    ///      are the same whichever reveal of the cycle lands first.
+    function _placementOutcome(
+        PlayerCell memory before,
+        uint256 placementCost
+    ) internal pure returns (PlayerCell memory outcome) {
+        outcome = PlayerCell({
+            cellID: before.cellID,
+            totalStake: before.totalStake + placementCost,
+            numClaimants: before.playerStake == 0
+                ? before.numClaimants + 1
+                : before.numClaimants,
+            playerStake: before.playerStake + placementCost
+        });
+    }
+
+    /// @dev The cell as `player`'s placement sees it, from storage.
+    function _loadPlayerCell(
+        uint256 player,
+        uint64 cellID
+    ) internal view returns (PlayerCell memory) {
+        Cell storage cell = _cells[cellID];
+        return
+            PlayerCell({
+                cellID: cellID,
+                totalStake: cell.totalStake,
+                numClaimants: cell.numClaimants,
+                playerStake: _stakeOnCellBy[cellID][player]
+            });
+    }
+
+    /// @dev Writes what {_placementOutcome} decided, and does the two things a
+    ///      placement does that are not the rule: the zone index and the event.
+    function _applyPlacement(
+        uint256 player,
+        PlayerCell memory before,
+        PlayerCell memory outcome
+    ) internal {
+        uint64 cellID = before.cellID;
+
+        if (before.numClaimants == 0) {
             // First claim this cell has ever had: index it under its zone, so
             // reading a viewport costs what the board holds (see
             // _cellsInZones) instead of walking 256 slots per zone.
@@ -109,19 +170,24 @@ abstract contract UsingGameInternal is
             // in the array, and which of the two reveals pays for the append.
             // Neither is part of the game.
             //
+            // It is HERE, in apply, and not in the rule, for the same reason:
+            // it is bookkeeping for readers, not a consequence of the move, so
+            // the simulation has nothing to say about it.
+            //
             // Guarded on numClaimants rather than totalStake so it stays
             // correct for a game configured with a zero placement cost, where
             // an occupied cell can still have a total stake of zero.
             _occupiedCellsInZone[PositionUtils.getZone(cellID)].push(cellID);
         }
 
-        if (_stakeOnCellBy[cellID][player] == 0) {
-            cell.numClaimants += 1;
+        Cell storage cell = _cells[cellID];
+        cell.totalStake = outcome.totalStake;
+        if (outcome.numClaimants != before.numClaimants) {
+            cell.numClaimants = outcome.numClaimants;
         }
-        _stakeOnCellBy[cellID][player] += PLACEMENT_COST;
-        cell.totalStake += PLACEMENT_COST;
+        _stakeOnCellBy[cellID][player] = outcome.playerStake;
 
-        emit Placed(player, cellID, PLACEMENT_COST);
+        emit Placed(player, cellID, outcome.playerStake - before.playerStake);
     }
 
     /// @notice The hash a chunk of placements is committed under.

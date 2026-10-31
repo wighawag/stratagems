@@ -75,6 +75,14 @@ export const CYCLE_POLICY = {
  *   full fresh chunk, four zones, final      535,561
  *   the same chunk, non-final                534,756
  *
+ * RE-MEASURED 2026-10-31, when a placement's rule became a pure function the
+ * client can run (`_placementOutcome`, with `_place` loading before it and
+ * applying after it, and a `Simulation` route exposing it): the GasBudget
+ * test's worst reveal went from 533,508 to 536,813 (+3,305, 0.6%), its first
+ * commit from 117,714 to 117,740 and the paid one from 152,154 to 152,180 (one
+ * more route behind the router). Both figures below still hold, with more than
+ * the test's ten per cent above the worst case.
+ *
  * THE COMMIT'S WORST CASE IS A PAID ONE. A game that hands the skeleton a
  * reveal scheduler (`RevealScheduler`, stratagems' plan step 8, P3) makes the
  * commit carry the scheduler's payment, which `makeCommitment` forwards to
