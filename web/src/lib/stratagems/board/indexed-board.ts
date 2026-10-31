@@ -1,69 +1,48 @@
 /**
- * STRATAGEMS' BOARD, as the framework's state seam (`OnchainStateStore`): the
- * etherfold indexer, not the template's poller.
+ * STRATAGEMS' BOARD, as the framework's state seam (`OnchainStateStore`): its
+ * etherfold processor, hosted by the framework (`$lib/indexer`, `with/indexer`),
+ * not the template's poller.
  *
- * The indexer runs in a dedicated worker (`./indexer.worker.ts`), which starts
- * from a published snapshot when there is one and folds forward; this tab holds a
- * PORT to it and reads the state back through GraphQL with `stratagems-indexer`'s
- * `StateFollower` (one full read, then only the parts whose entities moved). The
- * skeleton hands this store a `poll` it does not use.
+ * What is stratagems' here is the answer to each of `createIndexedState`'s
+ * questions:
  *
- * THE WORKER READS THROUGH THE FRAMEWORK'S PROVIDER (`connection.provider`, P6 of
- * step 6 in work/plans/join-template-commit-reveal.md), which is the app's RPC
- * when there is one (`PUBLIC_NODE_URL` or the chain's) and the wallet's
- * otherwise, so an account with no wallet still sees the board.
- *
- * STAMPED WITH ITS CYCLE, which is what the framework's handover and its
- * `catching-up` phase read: the cycle the chain was in at the block the state is
- * as of. That block is the last read's, or, once the worker is at the tip, the
- * last block it folded, because a block with no stratagems event moves no entity
- * and so triggers no read while the state is still current as of it. Without the
- * second, a quiet chain would leave the board a cycle behind the clock for ever.
- * The race this admits (a block folded whose re-read has not landed) cannot hide
- * a reveal at a cycle boundary: reveals land in their own cycle's reveal phase,
- * so their re-reads were asked for by earlier blocks.
- *
- * The cycle is computed by `./board-cycle.ts`: from the block's timestamp under
- * the timed policy, from the state's own `advancedCycle` under Manual (the
- * offline world), and a hybrid deployment is refused when its board is made.
- *
- * AN OFFLINE WORLD IS INDEXED BY ITS OWN WORKER (`./worker-choice.ts`): no tab
- * election, no publication, a database per world kept across reloads.
+ * - its two worker entries (`./indexer.worker.ts`, the published bundle on a
+ *   live chain; `./indexer.embedded.worker.ts`, the processor folding an
+ *   offline world), started by literal `new Worker(new URL(...))` so the
+ *   bundler sees both;
+ * - what is indexed (`indexingSource`) and the finality the snapshot job
+ *   publishes under, both from `stratagems-indexer`;
+ * - WHERE THE PUBLICATION IS: the snapshot job's remote when this build names
+ *   one (`PUBLIC_SNAPSHOT_URI`), then the copy embedded in this build
+ *   (`static/indexed-states/<name>/`), found relative to the app as served,
+ *   since the app is deployed under paths nobody knows in advance (IPFS
+ *   gateways). A local chain has neither, and the worker then folds from the
+ *   deployment's start block;
+ * - how the state is read (`stratagems-indexer`'s parts and `readParts`; the
+ *   connected player's commitment is the part that depends on who plays);
+ * - the cycle the Manual stamp reads: the processor's `advancedCycle`.
  */
-import {
-	connectToIndexerHost,
-	createProgressReadable,
-	dedicatedWorkerHost,
-	type HostProgress,
-	type IndexerPort,
-} from '@etherfold/browser';
-import {workerExecutor} from '@etherfold/graphql/worker';
 import {
 	emptyData,
 	indexingSource,
+	PARTS,
+	PART_OF_ENTITY,
+	readParts,
 	STREAM_FINALITY,
-	StateFollower,
 	type Data,
-	type StateRead,
+	type Part,
 } from 'stratagems-indexer';
-import {readable, writable, type Readable} from 'svelte/store';
+import type {Readable} from 'svelte/store';
 import type {EIP1193Provider} from 'viem';
-import {logs} from 'named-logs';
-import type {TypedPublicClient} from '$lib/core/connection/types';
-import type {CycleConfig} from '$lib/game/core/cycle';
 import {
-	assertStampable,
-	boardCycleNumber,
-	stampNeedsTimestamp,
-} from './board-cycle';
-import {boardWorkerFor} from './worker-choice';
-import type {
-	OnchainStateStatus,
-	OnchainStateStore,
-	OnchainStateValue,
-} from '$lib/game/core/seams';
-
-const logger = logs('stratagems:board');
+	createIndexedState,
+	indexerWorkerFor,
+	type BlockTimestamps,
+	type IndexedStateStore,
+	type StateFollowerSpec,
+} from '$lib/indexer';
+import type {CycleConfig} from '$lib/game/core/cycle';
+import {INDEXER_PREFIX} from './prefix';
 
 /** The indexed state, as of one block, and the cycle the chain was in then. */
 export type BoardState = {
@@ -76,21 +55,24 @@ export const emptyBoard = (): Data => emptyData();
 /** What `rocketh-export` writes, as far as the indexer reads it. */
 type Deployment = Parameters<typeof indexingSource>[0] & {name: string};
 
-/**
- * Where the publication index is: the snapshot job's remote, when this build
- * names one, then the copy embedded in this build
- * (`static/indexed-states/<name>/`). Absolute, because the worker resolves them
- * against its own URL. A local chain has neither, and the worker then folds from
- * the deployment's start block.
- */
-function publicationLocations(
+/** The board's parts, for the framework's follower. */
+export const boardFollower: StateFollowerSpec<Part, Data> = {
+	parts: PARTS,
+	partOf: PART_OF_ENTITY,
+	accountPart: 'commitments',
+	read: (execute, parts, options) => readParts(execute, parts, options),
+};
+
+/** Where the publication index is: the remote first, then the embedded copy. Absolute, because the worker resolves them against its own URL. */
+export function publicationLocations(
 	deploymentName: string,
 	appPath: (path: string) => string,
 	snapshotURI: string | undefined,
+	base: string = location.href,
 ): string[] {
 	const embedded = new URL(
 		appPath(`/indexed-states/${deploymentName}/publication.json`),
-		location.href,
+		base,
 	).href;
 	if (!snapshotURI) return [embedded];
 	const remote = `${snapshotURI.replace(/\/$/, '')}/${deploymentName}/`;
@@ -100,100 +82,27 @@ function publicationLocations(
 export function createIndexedBoard(params: {
 	/** The framework's chain provider (`connection.provider`). */
 	provider: EIP1193Provider;
-	publicClient: TypedPublicClient;
+	publicClient: BlockTimestamps;
 	deployment: Deployment;
 	cycleConfig: CycleConfig;
 	/** Whose commitment the follower reads too: who plays, lower-case or not. */
 	player: Readable<`0x${string}` | undefined>;
 	/** `PUBLIC_SNAPSHOT_URI`, when this build names one. */
 	snapshotURI?: string;
-	/**
-	 * A path of the app as served (`$lib/kit/paths`' `url`): the app is deployed
-	 * under paths nobody knows in advance (IPFS gateways), so the embedded
-	 * publication is found relative to the app, not to the page.
-	 */
+	/** A path of the app as served (`$lib/kit/paths`' `url`). */
 	appPath: (path: string) => string;
-}): OnchainStateStore<BoardState> & {
-	/** The worker's own progress, for a syncing indicator. */
-	progress: Readable<HostProgress | undefined>;
-} {
-	assertStampable(params.cycleConfig);
-	const worker = boardWorkerFor({
-		chain: params.deployment.chain,
-		gameAddress: params.deployment.contracts.Stratagems.address,
-	});
-	const value = writable<OnchainStateValue<BoardState>>({step: 'Unloaded'});
-	const status = writable<OnchainStateStatus>({loading: true});
-	const progressStore = writable<HostProgress | undefined>(undefined);
-
-	let indexer: IndexerPort | undefined;
-	let follower: StateFollower | undefined;
-	let lastRead: StateRead | undefined;
-	let lastProgress: HostProgress | undefined;
-	let stampedBlock = -1;
-	const timestamps = new Map<number, Promise<number>>();
-
-	function timestampOf(block: number): Promise<number> {
-		let known = timestamps.get(block);
-		if (!known) {
-			known = params.publicClient
-				.getBlock({blockNumber: BigInt(block)})
-				.then((b) => Number(b.timestamp));
-			known.catch(() => timestamps.delete(block));
-			timestamps.set(block, known);
-			if (timestamps.size > 64) {
-				const oldest = timestamps.keys().next().value;
-				if (oldest !== undefined) timestamps.delete(oldest);
-			}
-		}
-		return known;
-	}
-
-	/** Publish the last read, stamped with the cycle of the block it is as of. */
-	async function publish() {
-		const read = lastRead;
-		if (!read) return;
-		const atTip = lastProgress?.phase === 'at-tip';
-		const block = Math.max(
-			read.block ?? 0,
-			atTip ? (lastProgress?.lastToBlock ?? 0) : 0,
-		);
-		if (block === 0) return;
-		try {
-			const timestamp = stampNeedsTimestamp(params.cycleConfig)
-				? await timestampOf(block)
-				: undefined;
-			// a later publish may have overtaken this one while the block was read
-			if (read !== lastRead || block < stampedBlock) return;
-			stampedBlock = block;
-			const currentCycleNumber = boardCycleNumber(
-				params.cycleConfig,
-				read.data,
-				timestamp,
-			);
-			value.set({
-				step: 'Loaded',
-				data: read.data,
-				cycleNumber: currentCycleNumber,
-			});
-			status.set({
-				loading: !atTip,
-				lastSuccessfulFetch: Date.now(),
-			});
-		} catch (error) {
-			logger.error(`could not read block ${block}`, error);
-			status.update((s) => ({
-				...s,
-				error: {message: `could not read block ${block}`, cause: error},
-			}));
-		}
-	}
-
-	function start(provider: EIP1193Provider) {
-		const deployment = params.deployment;
-		// Two literal `new Worker(new URL(...))` so the bundler sees both entries.
-		const host = dedicatedWorkerHost(() =>
-			worker.kind === 'embedded'
+}): IndexedStateStore<BoardState> {
+	return createIndexedState({
+		provider: params.provider,
+		publicClient: params.publicClient,
+		cycle: params.cycleConfig,
+		worker: indexerWorkerFor(
+			INDEXER_PREFIX,
+			params.deployment,
+			params.deployment.contracts.Stratagems.address,
+		),
+		startWorker: (worker) =>
+			worker.kind === 'world'
 				? new Worker(new URL('./indexer.embedded.worker.ts', import.meta.url), {
 						type: 'module',
 						name: worker.name,
@@ -202,105 +111,21 @@ export function createIndexedBoard(params: {
 						type: 'module',
 						name: worker.name,
 					}),
-		);
-		indexer = connectToIndexerHost(host, {
-			provider: provider as never,
-			settings: {
-				source: indexingSource(deployment) as never,
-				// the finality the snapshot job published under: part of the
-				// stream digest the publication index is keyed by
-				config: {stream: {finality: STREAM_FINALITY}},
-				// a world has no publication (nobody snapshots a chain in a tab)
-				...(worker.kind === 'online'
-					? {
-							publication: {
-								locations: publicationLocations(
-									deployment.name,
-									params.appPath,
-									params.snapshotURI,
-								),
-							},
-						}
-					: {}),
-			},
-			onConnect: (outcome) => {
-				if (!outcome.accepted) {
-					logger.error(`the indexer worker refused this tab`, outcome.error);
-					status.set({
-						loading: false,
-						error: {
-							message: 'the indexer refused this tab',
-							cause: outcome.error,
-						},
-					});
-				}
-			},
-		});
-		const following = new StateFollower(
-			workerExecutor(indexer),
-			'',
-			(error) => {
-				logger.error(`state query failed`, error);
-				status.update((s) => ({
-					...s,
-					error: {message: error.message, cause: error},
-				}));
-			},
-		);
-		follower = following;
-		following.onUpdate((read) => {
-			lastRead = read;
-			void publish();
-		});
-		// subscribe last: a listener may be called before the code after it runs
-		createProgressReadable(indexer).subscribe((progress) => {
-			lastProgress = progress;
-			progressStore.set(progress);
-			if (progress?.failure) {
-				logger.error(`indexer stopped`, progress.failure);
-				status.set({
-					loading: false,
-					error: {message: 'the indexer stopped', cause: progress.failure},
-				});
-				return;
-			}
-			void publish();
-		});
-		indexer.onStateMoved((moved) => void following.moved(moved));
-		const stopPlayer = params.player.subscribe(
-			(player) => void following.setAccount(player?.toLowerCase() ?? ''),
-		);
-		void following.refreshAll();
-		return () => {
-			stopPlayer();
-			const port = indexer;
-			indexer = undefined;
-			follower = undefined;
-			void port?.stopIndexing().catch(() => undefined);
-			port?.close();
-		};
-	}
-
-	// Started by its first subscriber, in the browser only, and stopped by its last.
-	const lifecycle = readable<OnchainStateValue<BoardState>>(
-		{step: 'Unloaded'},
-		(set) => {
-			if (typeof window === 'undefined') return;
-			const stop = start(params.provider);
-			const stopValue = value.subscribe(set);
-			return () => {
-				stopValue();
-				stop();
-			};
-		},
-	);
-
-	return {
-		subscribe: lifecycle.subscribe,
-		status: {subscribe: status.subscribe},
-		progress: {subscribe: progressStore.subscribe},
-		async update() {
-			await follower?.refreshAll();
-		},
-	};
+		source: indexingSource(params.deployment),
+		// the finality the snapshot job published under: part of the stream
+		// digest the publication index is keyed by
+		finality: STREAM_FINALITY,
+		// asked when the worker starts, in the browser; a world has none
+		publication: () => ({
+			locations: publicationLocations(
+				params.deployment.name,
+				params.appPath,
+				params.snapshotURI,
+			),
+		}),
+		follower: boardFollower,
+		player: params.player,
+		cycleOf: (data) => data.advancedCycle?.cycleNumber,
+		present: (data, cycleNumber) => ({data, cycleNumber}),
+	});
 }
