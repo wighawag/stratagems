@@ -47,11 +47,14 @@ const S = 64;
 const R = 0.38 * S;
 const K = R / RT;
 const NEAR_PX = 34;
+/** Below this many px per intersection, the detailed bezel gives way to a plain bright ring of constant screen width. */
+const MINE_SIMPLE_PX = 48;
 
 const params = new URLSearchParams(location.search);
 const state = {
 	look: (params.get('look') as Look) || 'rich',
 	metal: (params.get('metal') as Metal) || 'gold',
+	mineFar: (params.get('minefar') as 'ring' | 'wash' | 'ivory') || 'ring',
 	life: (params.get('life') as 'dial' | 'size') || 'dial',
 	links: params.get('links') !== '0',
 	outlines: params.get('outlines') === '1',
@@ -78,6 +81,7 @@ function syncURL() {
 	p.set('board', state.boardKind);
 	p.set('mine', state.mine);
 	p.set('metal', state.metal);
+	p.set('minefar', state.mineFar);
 	p.set('tilt', String(state.tilt));
 	if (state.azimuth) p.set('az', String(state.azimuth));
 	if (zoomName) p.set('zoom', zoomName);
@@ -102,7 +106,47 @@ const stones = new Container();
 const over = new Container();
 const fx = new Container();
 const labels = new Container();
-world.addChild(boardLayer, gridG, outlineG, linksG, under, stones, over, fx, labels);
+const mineFarG = new Graphics();
+// the "territory" of the player's own gems: a soft wash under them, like the faction wash but brighter
+const mineWash = new Container();
+const mineWashBlur = new BlurFilter({strength: 4, quality: 3});
+mineWash.filters = [mineWashBlur, new AlphaFilter({alpha: 0.75})];
+world.addChild(boardLayer, gridG, mineWash, outlineG, linksG, under, stones, over, fx, mineFarG, labels);
+
+/**
+ * Yours, when zoomed out: no metalwork, one bright ring with a dark edge, its
+ * width fixed in SCREEN pixels so it reads at any zoom (the bezel scales with
+ * the gem and vanishes far out). Redrawn on every camera change.
+ */
+function drawMineFar() {
+	mineFarG.clear();
+	for (const c of mineWash.removeChildren()) c.destroy();
+	if (state.look === 'three' || spacingPx() >= MINE_SIMPLE_PX) return;
+	if (state.mineFar !== 'ring') {
+		const g = new Graphics();
+		for (const cell of state.board.values()) {
+			if (cell.owner !== ME || cell.planned === 'place') continue;
+			g.roundRect(cell.x * S - S * 0.6, cell.y * S - S * 0.6, S * 1.2, S * 1.2, S * 0.35);
+		}
+		g.fill({color: state.mineFar === 'ivory' ? 0xfffbef : 0xffd21a});
+		mineWash.addChild(g);
+		mineWashBlur.strength = Math.max(1, S * 0.08 * camera.scale);
+		return;
+	}
+	const px = 1 / camera.scale;
+	const w = 3 * px;
+	for (const cell of state.board.values()) {
+		if (cell.owner !== ME || cell.planned === 'place') continue;
+		const r = R * stoneScale(cell) + 2.5 * px;
+		mineFarG.circle(cell.x * S, cell.y * S, r);
+	}
+	mineFarG.stroke({width: w + 2 * px, color: 0x1a0f00, alpha: 1});
+	for (const cell of state.board.values()) {
+		if (cell.owner !== ME || cell.planned === 'place') continue;
+		mineFarG.circle(cell.x * S, cell.y * S, R * stoneScale(cell) + 2.5 * px);
+	}
+	mineFarG.stroke({width: w, color: 0xffd21a, alpha: 1});
+}
 
 const plain = new Graphics().rect(-20000, -20000, 40000, 40000).fill({color: 0xd2a868});
 const boardTextures = new Map<BoardKind, Texture>();
@@ -141,7 +185,8 @@ let zoomClass = '';
 function onCamera() {
 	applyCamera();
 	drawGrid();
-	const cls = spacingPx() >= NEAR_PX ? 'near' : 'far';
+	drawMineFar();
+	const cls = (spacingPx() >= NEAR_PX ? 'near' : 'far') + (spacingPx() >= MINE_SIMPLE_PX ? '' : '+simple');
 	labels.visible = spacingPx() > 22 && state.look !== 'three';
 	territoryBlur.strength = Math.max(1, S * 0.06 * camera.scale);
 	if (cls !== zoomClass) {
@@ -193,7 +238,7 @@ let nodes: Node[] = [];
 function sizeOf(life: number) {
 	return 0.42 + (0.58 * life) / MAX_LIFE;
 }
-const dial = () => state.life === 'dial' && zoomClass === 'near';
+const dial = () => state.life === 'dial' && zoomClass.startsWith('near');
 const sized = () => !dial();
 function stoneScale(cell: Cell) {
 	if (cell.life === 0 && cell.planned !== 'place') return sized() ? 0.62 : 0.9;
@@ -249,7 +294,7 @@ function build() {
 		}
 		const showTrend = !ghost && (trend === 'grow' || trend === 'shrink');
 		if (showTrend && trend === 'grow') node.glow = sprite(glowTexture(), cell, under, scale * 1.02);
-		if (cell.owner === ME && !ghost) sprite(mineTexture(state.mine, state.metal), cell, under, state.mine === 'bezel' ? scale : 1);
+		if (cell.owner === ME && !ghost && spacingPx() >= MINE_SIMPLE_PX) sprite(mineTexture(state.mine, state.metal), cell, under, state.mine === 'bezel' ? scale : 1);
 		let marks: number | undefined;
 		if (dial() && !ghost) marks = trend === 'shrink' ? cell.life - 1 : cell.life;
 		node.stone = sprite(stoneTexture(cell.color, {marks, stake: cell.stake, look, style: state.style}), cell, stones, scale);
@@ -289,6 +334,7 @@ function build() {
 	}
 	drawLinks(focus);
 	drawOutlines();
+	drawMineFar();
 }
 
 function drawLinks(focus: string | null) {
@@ -658,6 +704,7 @@ function renderUI() {
 	($('boardKind') as HTMLSelectElement).value = state.boardKind;
 	($('mine') as HTMLSelectElement).value = state.mine;
 	($('metal') as HTMLSelectElement).value = state.metal;
+	($('minefar') as HTMLSelectElement).value = state.mineFar;
 }
 const short = (a: string) => a.slice(0, 6) + '...' + a.slice(-4);
 const who = (a: string) => `<img src="${blockieDataURL(a, 24)}" width="20" height="20" style="image-rendering:pixelated;border-radius:4px;vertical-align:middle"/> <span class="addr">${short(a)}</span>${a === ME ? ' <b>(you)</b>' : ''}`;
@@ -705,7 +752,7 @@ $('life-dial').addEventListener('change', () => setLife('dial'));
 $('life-size').addEventListener('change', () => setLife('size'));
 $('links').addEventListener('change', () => toggle('links'));
 $('outlines').addEventListener('change', () => toggle('outlines'));
-for (const [id, k] of [['style', 'style'], ['boardKind', 'boardKind'], ['mine', 'mine'], ['metal', 'metal']] as const)
+for (const [id, k] of [['style', 'style'], ['boardKind', 'boardKind'], ['mine', 'mine'], ['metal', 'metal'], ['minefar', 'mineFar']] as const)
 	$(id).addEventListener('change', (e) => {
 		(state as Record<string, unknown>)[k] = (e.target as HTMLSelectElement).value;
 		drawGrid();
