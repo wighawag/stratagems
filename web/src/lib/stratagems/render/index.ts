@@ -1,6 +1,6 @@
 /**
  * WHICH CANVAS AND RENDERER STRATAGEMS USES (step 9): the template's pixi host
- * (`$lib/game/render/pixi`, from `with/pixi-js` through `with/fuzd-pixi`) with
+ * (`$lib/game/render/pixi`, from `with/pixi-js` through `with/fuzd-pixi-indexer`) with
  * smooth art, and this game's board on it. The play page loads the host from
  * here, which is how `test/render-host-boundary.test.ts` finds it.
  *
