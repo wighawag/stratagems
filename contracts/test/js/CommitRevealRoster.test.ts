@@ -265,6 +265,11 @@ describe('a closed roster on the commit-reveal base', function () {
 		expect(roster.members).toEqual([idOf(game.alice)]);
 		expect((await game.read.attendance()).waitedFor).toEqual(0n);
 
+		// In a commit phase, so the refusal is about the roster.
+		const cycle = await game.read.cycle();
+		if (!cycle.commiting) {
+			await goTo(Number(cycle.phaseEnd));
+		}
 		await expect(game.act.commit(game.alice)).toBeRejectedWith(/NotInGame/);
 		await expect(game.act.advance()).toBeRejectedWith(/NoOneToWaitFor/);
 	});

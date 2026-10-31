@@ -354,6 +354,34 @@ export const config = {
 				expectedActionsPerTurn: EXPECTED_ACTIONS_PER_TURN,
 			},
 		},
+		/**
+		 * GAMES FOR A FIXED SET OF PLAYERS: the lobby implementation every table
+		 * is a clone of (`deploy/030_deploy_lobby.ts`), so these are every
+		 * table's rules, fixed per deployment (a clone cannot carry its own).
+		 *
+		 * `TimedWithEarlyAdvance`, because a table has a closed set to be
+		 * unanimous about: the reveal phase opens the moment everyone has
+		 * committed, the next cycle the moment everyone has revealed, and the
+		 * clock is what keeps a table moving when a member vanishes. The phases
+		 * are longer than the world's because two people at two screens are
+		 * slower than one, and only the absent pay for the length.
+		 *
+		 * The gas figures are the world's: a table runs the same routes behind
+		 * a clone. Measured 2026-10-31 by `test/js/Lobby.test.ts`: a table's
+		 * first commit 115,102, its worst reveal 533,795, and the start of a
+		 * two-member table 149,932.
+		 */
+		Lobby: {
+			default: {
+				commitPhaseDuration: 45n,
+				revealPhaseDuration: 15n,
+				actionsPerReveal: 4n,
+				cyclePolicy: CYCLE_POLICY.TimedWithEarlyAdvance,
+				commitGas: COMMIT_GAS,
+				revealGas: REVEAL_GAS,
+				expectedActionsPerTurn: EXPECTED_ACTIONS_PER_TURN,
+			},
+		},
 	},
 	signerProtocols: {
 		privateKey,
