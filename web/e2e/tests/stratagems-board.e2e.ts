@@ -4,7 +4,10 @@ import {
 	boardLoaded,
 	cellPanel,
 	clickCell,
+	gameStep,
 	getTestGems,
+	positionOf,
+	rivalCommits,
 	stake,
 } from '../fixtures/stratagems';
 
@@ -17,8 +20,13 @@ import {
  *   (the cell panel says the board is still loading) rather than dropped, the
  *   board says it is loading over its wood, and once the board loads both go.
  *
- * The second stakes (a click means nothing until the player could commit it),
- * so this file has an account of its own.
+ * - X2 (PX9): what a planned move does is drawn from the contract's own code
+ *   (`StratagemsSimulation`, run in the bytecode sandbox): a rival's lone cell
+ *   grows, and a move planned beside it in another colour turns it to shrink,
+ *   before anything is committed; and how long the preview of a full turn takes.
+ *
+ * The later tests stake (a click means nothing until the player could commit
+ * it), so this file has an account of its own. None of them commits.
  */
 describe('Stratagems board', () => {
 	test.use({walletAccountIndex: 5});
@@ -110,6 +118,164 @@ describe('Stratagems board', () => {
 		}
 	});
 });
+
+/**
+ * Its own account, and serial: both stake it, and neither commits, so a plan
+ * left by one cannot reach the chain.
+ */
+describe('Stratagems board: the preview', () => {
+	test.use({walletAccountIndex: 6});
+	test.describe.configure({mode: 'serial'});
+
+	test('draws what a planned move does, from the contract’s own code', async ({
+		connectedPage,
+	}) => {
+		const page = connectedPage;
+		await getTestGems(page);
+		await stake(page);
+		await readyToPlay(page);
+		await boardLoaded(page);
+
+		// the player's faction, and a rival colour that is its enemy
+		const faction = (await page.evaluate(`(() => {
+			let value;
+			globalThis.context.game.faction.subscribe((v) => (value = v))();
+			return value;
+		})()`)) as number;
+		const rivalColor = (faction % 5) + 1;
+		const RIVAL = {x: 8, y: -6};
+		const BESIDE = {x: 9, y: -6};
+
+		// A RIVAL places a lone cell, through a whole cycle
+		await phase(page, 'play', 10);
+		const rival = await rivalCommits(page, {...RIVAL, color: rivalColor});
+		await phase(page, 'reveal', 0);
+		await rival.reveal();
+		await expect
+			.poll(async () => (await cellView(page, RIVAL))?.color, {
+				message: "the rival's cell is on the board",
+				timeout: 90_000,
+			})
+			.toBe(rivalColor);
+		expect(await cellView(page, RIVAL)).toMatchObject({
+			trend: 'grow',
+			enemies: 0,
+		});
+
+		// planned beside it in an enemy colour: the rival's cell will shrink
+		await phase(page, 'play', 15);
+		await clickCell(page, BESIDE);
+		await expect
+			.poll(async () => (await cellView(page, BESIDE))?.planned, {
+				message: 'the move is planned',
+				timeout: 15_000,
+			})
+			.toBe(faction);
+		await expect
+			.poll(async () => await cellView(page, RIVAL), {
+				message: "the contract's code says the rival's cell will shrink",
+				timeout: 30_000,
+			})
+			.toMatchObject({trend: 'shrink', enemies: 1});
+		expect(await cellView(page, BESIDE)).toMatchObject({
+			color: faction,
+			enemies: 1,
+		});
+
+		// taken back: the rival's cell grows again, and nothing is committed
+		await clickCell(page, BESIDE);
+		await expect
+			.poll(async () => (await cellView(page, RIVAL))?.trend, {
+				message: 'without the move the cell grows again',
+				timeout: 15_000,
+			})
+			.toBe('grow');
+		expect((await gameStep(page)).planned).toBe(0);
+	});
+
+	test('previews a full turn in good time (measured)', async ({
+		connectedPage,
+	}) => {
+		const page = connectedPage;
+		await getTestGems(page);
+		await stake(page);
+		await readyToPlay(page);
+		await boardLoaded(page);
+		await phase(page, 'play', 20);
+
+		// a full turn (the client's cap, 30 moves) on empty cells away from the
+		// rest, twice: the first pays for the sandbox's start, the second does not
+		const timings: number[] = [];
+		for (const row of [40, 42]) {
+			const positions = Array.from({length: 30}, (_, i) =>
+				positionOf({x: 40 + 2 * i, y: row}).toString(),
+			);
+			const elapsed = (await page.evaluate(`(async () => {
+				const positions = ${JSON.stringify(positions)};
+				const game = globalThis.context.game;
+				const read = (store) => { let v; store.subscribe((x) => (v = x))(); return v; };
+				game.planning.clear();
+				const start = performance.now();
+				for (const p of positions) game.planning.click(BigInt(p));
+				for (;;) {
+					const view = read(globalThis.context.viewState);
+					const done = view.step === 'Loaded' && positions.every((p) => {
+						const cell = view.cells.get(p);
+						return cell && cell.planned !== undefined && cell.color === cell.planned;
+					});
+					if (done) break;
+					if (performance.now() - start > 60000) return -1;
+					await new Promise((r) => setTimeout(r, 5));
+				}
+				const elapsed = performance.now() - start;
+				game.planning.clear();
+				return elapsed;
+			})()`)) as number;
+			expect(elapsed, 'the preview of a full turn lands').toBeGreaterThan(0);
+			timings.push(elapsed);
+		}
+		console.log(
+			`preview of 30 moves: ${timings.map((t) => `${Math.round(t)} ms`).join(', then ')}`,
+		);
+		expect((await gameStep(page)).planned).toBe(0);
+	});
+});
+
+/** Wait for `phase` ('play' or 'reveal') with at least `secondsLeft` of it left. */
+async function phase(
+	page: Page,
+	name: string,
+	secondsLeft: number,
+): Promise<void> {
+	await expect
+		.poll(
+			async () => {
+				const step = await gameStep(page);
+				return step.phase === name && step.timeLeft > secondsLeft;
+			},
+			{message: `a ${name} phase with ${secondsLeft}s left`, timeout: 120_000},
+		)
+		.toBe(true);
+}
+
+/** A cell as the board draws it, with its trend, or undefined. */
+async function cellView(
+	page: Page,
+	cell: {x: number; y: number},
+): Promise<
+	{color: number; trend: string; enemies: number; planned?: number} | undefined
+> {
+	return page.evaluate(`(() => {
+		let view;
+		globalThis.context.viewState.subscribe((v) => (view = v))();
+		if (!view || view.step !== 'Loaded') return undefined;
+		const cell = view.cells.get('${positionOf(cell)}');
+		return cell ? {color: cell.color, trend: cell.trend, enemies: cell.enemies, planned: cell.planned} : undefined;
+	})()`) as Promise<
+		| {color: number; trend: string; enemies: number; planned?: number}
+		| undefined
+	>;
+}
 
 /** Wait until a click on the board means something (setup done, the phase right). */
 async function readyToPlay(page: Page): Promise<void> {
