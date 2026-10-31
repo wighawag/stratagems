@@ -21,6 +21,7 @@ import {
 	crossTexture,
 	dotTexture,
 	glowTexture,
+	huskTexture,
 	inlayTexture,
 	markAngle,
 	markTexture,
@@ -146,6 +147,7 @@ type Node = {
 	crack?: Sprite;
 	crackNext?: Sprite;
 	death?: Sprite;
+	husk?: Sprite;
 	phase: number;
 	dim: number;
 };
@@ -153,6 +155,11 @@ let nodes: Node[] = [];
 
 function sizeOf(life: number) {
 	return 0.42 + (0.58 * life) / MAX_LIFE;
+}
+/** The drawn scale of a cell's stone, a dead one's husk included. */
+function stoneScale(cell: Cell) {
+	if (cell.life === 0 && cell.planned !== 'place') return sized() ? 0.62 : 0.9;
+	return sized() ? sizeOf(cell.life) : 1;
 }
 const dial = () => state.variant === 'a' && zoomClass.startsWith('near');
 const sized = () => state.variant === 'b' || (state.variant === 'a' && !zoomClass.startsWith('near'));
@@ -181,23 +188,32 @@ function build() {
 		const {trend} = pressureOf(board, cell);
 		const evil = cell.color === EVIL;
 		const ghost = cell.planned === 'place';
-		const scale = sized() && !evil ? sizeOf(cell.life) : 1;
+		const dead = cell.life === 0 && !ghost;
+		const scale = stoneScale(cell);
 		const node: Node = {cell, trend, all: [], stone: undefined as unknown as Sprite, baseScale: scale, dim: 1, phase: (cell.x * 7 + cell.y * 13) % 10};
+		if (dead) {
+			// a dead cell stays: a husk of its colour, still pressing its neighbours, free to anyone
+			node.stone = sprite(huskTexture(cell.color), cell, stones, scale);
+			sprite(crackTexture(6), cell, over, scale * 0.95).alpha = 0.55;
+			if (focus && cell.owner === focus) sprite(ringTexture('halo'), cell, under, scale);
+			nodes.push(node);
+			continue;
+		}
 		const showTrend = !ghost && (trend === 'grow' || trend === 'shrink');
 		if (showTrend && trend === 'grow') node.glow = sprite(glowTexture(), cell, under, scale * 1.02);
 		let marks: number | undefined;
-		if (dial() && !evil && !ghost) marks = trend === 'shrink' ? cell.life - 1 : cell.life;
+		if (dial() && !ghost) marks = trend === 'shrink' ? cell.life - 1 : cell.life;
 		node.stone = sprite(stoneTexture(cell.color, {marks, stake: cell.stake}), cell, stones, scale);
 		if (ghost) node.stone.alpha = 0.42;
-		if (dial() && !evil && !ghost) {
+		if (dial() && !ghost) {
 			const i = trend === 'shrink' ? cell.life - 1 : cell.life;
 			if ((trend === 'grow' || trend === 'shrink') && i < 7) {
 				const a = markAngle(i);
-				node.pulse = sprite(markTexture(), cell, over, 1, Math.cos(a) * R * MARK_RADIUS, Math.sin(a) * R * MARK_RADIUS);
+				node.pulse = sprite(markTexture(evil), cell, over, 1, Math.cos(a) * R * MARK_RADIUS * scale, Math.sin(a) * R * MARK_RADIUS * scale);
 				node.pulse.scale.set(K);
 			}
 		}
-		if (state.variant === 'c' && !evil && !ghost) {
+		if (state.variant === 'c' && !ghost) {
 			const damage = MAX_LIFE - cell.life;
 			if (damage > 0) node.crack = sprite(crackTexture(Math.min(6, damage)), cell, over, scale);
 			if (trend === 'grow' || trend === 'shrink') {
@@ -216,8 +232,13 @@ function build() {
 		if (inlay) sprite(inlayTexture(cell.owner, cell.owner === ME), cell, over, Math.min(1, scale + 0.15));
 		else if (cell.owner === ME && !ghost) sprite(dotTexture(), cell, over, Math.max(0.7, scale));
 		if (focus && cell.owner === focus && !ghost) sprite(ringTexture('halo'), cell, under, scale);
-		node.death = sprite(crackTexture(6), cell, over, scale);
-		node.death.alpha = 0;
+		if (trend === 'shrink' && cell.life === 1) {
+			// it dies at the turn: cracks run across it and it sinks into a husk
+			node.death = sprite(crackTexture(6), cell, over, scale);
+			node.death.alpha = 0;
+			node.husk = sprite(huskTexture(cell.color), cell, under, stoneScale({...cell, life: 0}));
+			node.husk.alpha = 0;
+		}
 		nodes.push(node);
 	}
 	// group membership of sprites by cell, for dimming and fading
@@ -249,8 +270,8 @@ function drawLinks(focus: string | null) {
 		const either = !focus || a.owner === focus || b.owner === focus;
 		const dim = l.kind === 'bridge' ? (both ? 1 : 0.15) : either ? 1 : 0.15;
 		// from rim to rim: a link never shows through a dimmed stone
-		const ra = R * 0.8 * (sized() ? sizeOf(a.life) : 1);
-		const rb = R * 0.8 * (sized() ? sizeOf(b.life) : 1);
+		const ra = R * 0.8 * stoneScale(a);
+		const rb = R * 0.8 * stoneScale(b);
 		const horizontal = l.ay === l.by;
 		const [x1, y1, x2, y2] = horizontal
 			? [l.ax * S + ra, l.ay * S, l.bx * S - rb, l.by * S]
@@ -312,13 +333,14 @@ app.ticker.add(() => {
 		if (n.glow) n.glow.alpha = 0.6 * fade;
 		if (n.rim) n.rim.alpha = Math.max(fade, to ? 0 : 1);
 		if (n.next) n.next.alpha = 0.5 * fade;
-		if (!to) {
-			// dies: cracks run across it, then it fades
+		if (!to || n.cell.life === 0) continue;
+		if (to.life === 0) {
+			// dies: cracks run across it, then it sinks into a husk that stays
 			n.death!.alpha = Math.min(1, p * 2.2);
 			const q = Math.max(0, (p - 0.45) / 0.55);
-			for (const s of n.all) if (s !== n.death) s.alpha = Math.min(s.alpha, 1 - q);
-			n.death!.alpha *= 1 - q;
-			n.stone.scale.set(K * n.baseScale * (1 - 0.12 * q));
+			for (const s of n.all) if (s !== n.death && s !== n.husk) s.alpha = Math.min(s.alpha, 1 - q);
+			n.husk!.alpha = q;
+			n.stone.scale.set(K * (n.baseScale + (stoneScale(to) - n.baseScale) * q));
 			continue;
 		}
 		const e = 1 - (1 - p) ** 3;
@@ -331,7 +353,7 @@ app.ticker.add(() => {
 				n.pulse.scale.set(K * (1 + 0.6 * e));
 			}
 		}
-		if (sized() && n.cell.color !== EVIL) {
+		if (sized()) {
 			const s = sizeOf(n.cell.life) + (sizeOf(to.life) - sizeOf(n.cell.life)) * e;
 			n.stone.scale.set(K * s);
 		}

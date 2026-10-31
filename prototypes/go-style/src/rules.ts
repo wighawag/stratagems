@@ -4,11 +4,22 @@
  * (`contracts/src/game/internal/UsingStratagemsState.sol`, `_computeNewLife`
  * and `_effectiveDelta`): four neighbours along the grid lines, a living cell
  * grows by one a cycle if it has more friends than enemies or no enemy at all,
- * and otherwise shrinks by one; life is 0 to 7.
+ * and otherwise shrinks by one; life is 0 to 7, a placement starts at 2.
+ *
+ * A DEAD CELL STAYS (checked in `UsingStratagemsSetters.sol`): its colour is
+ * never cleared, `_updateCell` judges friend or enemy by colour and not by
+ * life, and a death changes no neighbour's delta, so it keeps pressing its
+ * neighbours until someone places on it (it is free to anyone; it cannot be
+ * removed, removal needs full life). Its stake has been paid to its enemies.
+ *
+ * EVIL IS A COLOUR LIKE THE OTHERS: placed at life 2 by a collision, it grows
+ * and shrinks by the same rule, other Evil cells are its friends and every
+ * faction its enemy; its owner is the contract's EVIL_OWNER.
  */
 
 export const MAX_LIFE = 7;
 export const EVIL = 6;
+export const EVIL_OWNER = '0xffffffffffffffffffffffffffffffffffffffff';
 
 export type Cell = {
 	x: number;
@@ -34,12 +45,12 @@ export const NEIGHBOURS = [
 	[-1, 0],
 ] as const;
 
-/** A cell that takes part in the rule (a planned placement does not yet). */
-function alive(cell: Cell | undefined): cell is Cell {
-	return !!cell && cell.life > 0 && cell.planned !== 'place';
+/** A cell that takes part in the rule: any coloured cell, dead or alive (a planned placement does not yet). */
+function present(cell: Cell | undefined): cell is Cell {
+	return !!cell && cell.planned !== 'place';
 }
 
-export type Trend = 'grow' | 'shrink' | 'full' | 'static';
+export type Trend = 'grow' | 'shrink' | 'full' | 'dead' | 'static';
 
 export type Pressure = {friends: number; enemies: number; trend: Trend};
 
@@ -48,11 +59,12 @@ export function pressureOf(board: Board, cell: Cell): Pressure {
 	let enemies = 0;
 	for (const [dx, dy] of NEIGHBOURS) {
 		const n = board.get(key(cell.x + dx, cell.y + dy));
-		if (!alive(n)) continue;
+		if (!present(n)) continue;
 		if (n.color === cell.color) friends++;
 		else enemies++;
 	}
-	if (cell.color === EVIL || cell.planned === 'place') return {friends, enemies, trend: 'static'};
+	if (cell.planned === 'place') return {friends, enemies, trend: 'static'};
+	if (cell.life === 0) return {friends, enemies, trend: 'dead'};
 	const grows = friends - enemies > 0 || enemies === 0;
 	const trend: Trend = grows ? (cell.life >= MAX_LIFE ? 'full' : 'grow') : 'shrink';
 	return {friends, enemies, trend};
@@ -65,26 +77,26 @@ export type Link = {ax: number; ay: number; bx: number; by: number; kind: 'bridg
 export function linksOf(board: Board): Link[] {
 	const links: Link[] = [];
 	for (const cell of board.values()) {
-		if (!alive(cell)) continue;
+		if (!present(cell)) continue;
 		for (const [dx, dy] of [
 			[1, 0],
 			[0, 1],
 		]) {
 			const n = board.get(key(cell.x + dx, cell.y + dy));
-			if (!alive(n)) continue;
+			if (!present(n)) continue;
 			links.push({
 				ax: cell.x,
 				ay: cell.y,
 				bx: n.x,
 				by: n.y,
-				kind: n.color === cell.color && cell.color !== EVIL ? 'bridge' : 'notch',
+				kind: n.color === cell.color ? 'bridge' : 'notch',
 			});
 		}
 	}
 	return links;
 }
 
-/** The board one cycle on: every living non-evil cell moves by exactly one. */
+/** The board one cycle on: every living cell moves by exactly one; a dead cell stays. */
 export function nextBoard(board: Board): Board {
 	const next: Board = new Map();
 	for (const [k, cell] of board) {
@@ -92,7 +104,6 @@ export function nextBoard(board: Board): Board {
 		let life = cell.life;
 		if (trend === 'grow') life += 1;
 		else if (trend === 'shrink') life -= 1;
-		if (life <= 0) continue;
 		next.set(k, {...cell, life});
 	}
 	return next;
@@ -105,7 +116,7 @@ export function ownerSummary(board: Board, owner: string): OwnerSummary {
 	let stake = 0;
 	const colors = new Set<number>();
 	for (const cell of board.values()) {
-		if (cell.owner !== owner || cell.planned === 'place') continue;
+		if (cell.owner !== owner || cell.planned === 'place' || cell.life === 0) continue;
 		cells++;
 		stake += cell.stake;
 		colors.add(cell.color);
@@ -118,7 +129,7 @@ export function ownerOutline(board: Board, owner: string): {x1: number; y1: numb
 	const segments: {x1: number; y1: number; x2: number; y2: number}[] = [];
 	const mine = (x: number, y: number) => {
 		const c = board.get(key(x, y));
-		return !!c && c.owner === owner && c.planned !== 'place';
+		return !!c && c.owner === owner && c.planned !== 'place' && c.life > 0;
 	};
 	for (const cell of board.values()) {
 		if (!mine(cell.x, cell.y)) continue;

@@ -41,20 +41,20 @@ export function markAngle(i: number): number {
 	return -Math.PI / 2 + (i * 2 * Math.PI) / 7;
 }
 
-function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, filled: boolean) {
+function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, filled: boolean, light = false) {
 	ctx.beginPath();
 	if (filled) {
-		// ink pips: dark on every faction colour, light or not
+		// ink pips: dark on every faction colour, light or not; bone on Evil's charcoal
 		ctx.arc(x, y, RT * 0.115, 0, Math.PI * 2);
-		ctx.fillStyle = '#1d130a';
+		ctx.fillStyle = light ? '#efe6d2' : '#1d130a';
 		ctx.fill();
 		ctx.lineWidth = 1.8;
-		ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+		ctx.strokeStyle = light ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.75)';
 		ctx.stroke();
 	} else {
 		ctx.arc(x, y, RT * 0.075, 0, Math.PI * 2);
 		ctx.lineWidth = 2;
-		ctx.strokeStyle = 'rgba(20,10,0,0.35)';
+		ctx.strokeStyle = light ? 'rgba(255,255,255,0.3)' : 'rgba(20,10,0,0.35)';
 		ctx.stroke();
 	}
 }
@@ -113,21 +113,49 @@ export function stoneTexture(color: number, opts: {marks?: number; stake?: numbe
 		if (opts.marks !== undefined) {
 			for (let i = 0; i < 7; i++) {
 				const a = markAngle(i);
-				drawMark(ctx, C + Math.cos(a) * RT * MARK_RADIUS, C + Math.sin(a) * RT * MARK_RADIUS, i < opts.marks);
+				drawMark(ctx, C + Math.cos(a) * RT * MARK_RADIUS, C + Math.sin(a) * RT * MARK_RADIUS, i < opts.marks, evil);
 			}
 		}
 	});
 }
 
 /** One filled mark, for the pulse and the turn's animation. */
-export function markTexture(): Texture {
+export function markTexture(light = false): Texture {
 	return cached(
-		'mark',
+		`mark:${light}`,
 		(ctx) => {
-			drawMark(ctx, 16, 16, true);
+			drawMark(ctx, 16, 16, true, light);
 		},
 		32,
 	);
+}
+
+/**
+ * A dead cell: it stays on the board, keeps its colour and still counts for
+ * its neighbours, but holds nothing and is free to anyone. A flat, sunken
+ * husk of its colour, cracked through, with no shine and no thickness.
+ */
+export function huskTexture(color: number): Texture {
+	return cached(`husk:${color}`, (ctx) => {
+		const hex = COLOURS[color];
+		const [r, g, b] = rgb(hex);
+		const grey = (v: number) => Math.round(v * 0.45 + 120 * 0.55);
+		ctx.beginPath();
+		ctx.arc(C, C, RT * 0.92, 0, Math.PI * 2);
+		ctx.fillStyle = `rgba(${grey(r)},${grey(g)},${grey(b)},0.85)`;
+		ctx.fill();
+		// sunken: a dark inner shadow at the top
+		const s = ctx.createLinearGradient(0, C - RT, 0, C + RT);
+		s.addColorStop(0, 'rgba(30,15,0,0.45)');
+		s.addColorStop(0.4, 'rgba(30,15,0,0)');
+		ctx.fillStyle = s;
+		ctx.fill();
+		ctx.setLineDash([6, 5]);
+		ctx.lineWidth = 3;
+		ctx.strokeStyle = shade(hex, -0.5);
+		ctx.stroke();
+		ctx.setLineDash([]);
+	});
 }
 
 /** Cracks, `n` of 6, deterministic, on a transparent texture. */

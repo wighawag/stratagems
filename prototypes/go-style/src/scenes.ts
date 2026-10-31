@@ -1,5 +1,5 @@
 /** THROWAWAY PROTOTYPE. A hard-coded board holding every situation to judge. */
-import {type Board, type Cell, EVIL, key} from './rules';
+import {type Board, type Cell, EVIL, EVIL_OWNER, key} from './rules';
 
 export const ME = '0x1d3a5e7f00000000000000000000000000c0ffee';
 export const OWNERS = {
@@ -26,6 +26,10 @@ export const LABELS: Label[] = [
 	{x: -0.4, y: 5.8, text: 'Life 1 to 7, growing (no enemy)'},
 	{x: -0.4, y: 8.1, text: 'Life 1 to 7, shrinking (each touches an Evil cell, flat charcoal)'},
 	{x: 23.6, y: -4.2, text: 'A random field, for the far zoom'},
+	{x: 14.6, y: 8.8, text: 'Evil grows like any colour (Evil friends)'},
+	{x: 18.6, y: -0.2, text: 'Dead cells stay and still count:'},
+	{x: 18.6, y: 0.2, text: 'the dead red still presses the blue;'},
+	{x: 18.6, y: 2.0, text: 'two dead greens outweigh one red'},
 	{x: 14.6, y: 4.8, text: 'One faction, four owners; 3 gems on one cell'},
 	{x: 3.6, y: 3.2, text: 'Planned: ghost = place, cross = remove'},
 ];
@@ -62,11 +66,11 @@ function field(): Cell[] {
 				if (d < bd) [bd, best] = [d, s];
 			}
 			if (rand() < 0.03) {
-				out.push(c(x, y, EVIL, 7, '0x0000000000000000000000000000000000000000'));
+				out.push(c(x, y, EVIL, 1 + Math.floor(rand() * 7), EVIL_OWNER, {stake: 2}));
 				continue;
 			}
 			const owner = rand() < 0.7 ? best.owner : owners[Math.floor(rand() * owners.length)];
-			out.push(c(x, y, best.color, 1 + Math.floor(rand() * 7), owner, {stake: rand() < 0.1 ? 2 : 1}));
+			out.push(c(x, y, best.color, rand() < 0.12 ? 0 : 1 + Math.floor(rand() * 7), owner, {stake: rand() < 0.1 ? 2 : 1}));
 		}
 	return out;
 }
@@ -105,7 +109,20 @@ export function initialBoard(): Board {
 		...[1, 2, 3, 4, 5, 6, 7].map((life, i) => c(i * 2, 7, GREEN, life, [me, b, cc, d, e, f, me][i])),
 
 		// E: the shrinking ladder, each under an Evil cell.
-		...[1, 2, 3, 4, 5, 6, 7].flatMap((life, i) => [c(i * 2, 10, YELLOW, life, [d, e, f, me, b, cc, d][i]), c(i * 2, 9.0 + 0, EVIL, 7, '0x0000000000000000000000000000000000000000')]),
+		...[1, 2, 3, 4, 5, 6, 7].flatMap((life, i) => [c(i * 2, 10, YELLOW, life, [d, e, f, me, b, cc, d][i]), c(i * 2, 9, EVIL, [6, 3, 5, 7, 2, 4, 6][i], EVIL_OWNER, {stake: 2})]),
+
+		// G: Evil grows like any colour, with Evil friends.
+		c(15, 10, EVIL, 3, EVIL_OWNER, {stake: 2}),
+		c(16, 10, EVIL, 5, EVIL_OWNER, {stake: 3}),
+		c(17, 10, EVIL, 2, EVIL_OWNER, {stake: 2}),
+
+		// H: dead cells stay, and still count.
+		c(20, 1, BLUE, 4, b),
+		c(21, 1, RED, 0, d),
+		c(19, 3, RED, 5, e),
+		c(20, 3, GREEN, 3, f),
+		c(21, 3, GREEN, 0, cc),
+		c(20, 4, GREEN, 0, me),
 
 		// F: one faction, four owners, a stake of 3.
 		c(15, 6, GREEN, 5, b),
