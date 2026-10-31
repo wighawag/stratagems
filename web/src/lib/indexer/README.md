@@ -12,7 +12,11 @@
 // indexer.worker.ts (a live chain)
 import {hostLiveIndexer} from '$lib/indexer/host';
 import {myProcessor} from './processor';
-hostLiveIndexer({processor: myProcessor, databasePrefix: 'mygame', finality: 12});
+hostLiveIndexer({
+	processor: myProcessor,
+	databasePrefix: 'mygame',
+	finality: 12,
+});
 
 // indexer.world.worker.ts (an offline world)
 import {hostWorldIndexer} from '$lib/indexer/host';
