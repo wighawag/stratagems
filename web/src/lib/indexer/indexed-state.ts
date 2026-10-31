@@ -88,8 +88,12 @@ export type IndexedStateOptions<Part extends string, Data, State> = {
 	source: unknown;
 	/** The stream's finality: part of the digest a publication is found by. */
 	finality: number;
-	/** Where the publication index is, for a live chain whose snapshot job publishes one. */
-	publication?: {locations: string[]};
+	/**
+	 * Where the publication index is, for a live chain whose snapshot job
+	 * publishes one. Asked when the worker starts, in the browser, because the
+	 * locations are usually found relative to the page (`location.href`).
+	 */
+	publication?: () => {locations: string[]} | undefined;
 	/** The game's parts and how to read them. */
 	follower: StateFollowerSpec<Part, Data>;
 	/** Who plays, for a part that depends on it (`accountPart`). */
@@ -193,6 +197,8 @@ export function createIndexedState<Part extends string, Data, State>(
 			return connectToIndexerHost(options.host(), {watch: false, onConnect});
 		}
 		const startWorker = options.startWorker!;
+		const publication =
+			options.worker.kind === 'live' ? options.publication?.() : undefined;
 		return connectToIndexerHost(
 			dedicatedWorkerHost(() => startWorker(options.worker)),
 			{
@@ -201,9 +207,7 @@ export function createIndexedState<Part extends string, Data, State>(
 					source: options.source as never,
 					config: {stream: {finality: options.finality}},
 					// a world has no publication (nobody snapshots a chain in a tab)
-					...(options.worker.kind === 'live' && options.publication
-						? {publication: options.publication}
-						: {}),
+					...(publication ? {publication} : {}),
 				},
 				onConnect,
 			},
