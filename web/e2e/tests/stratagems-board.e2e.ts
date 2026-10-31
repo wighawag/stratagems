@@ -41,45 +41,63 @@ describe('Stratagems board', () => {
 	});
 
 	test('refuses a click before the board has loaded, saying so, and plays once it has', async ({
-		connectedPage,
+		browser,
+		connectWallet,
 	}) => {
-		const page = connectedPage;
-		await boardLoaded(page);
-
-		// Hold the indexer's log requests, then reload: the board stays unloaded
-		// while the rest of the app (the wallet, the cycle) comes up.
-		const gate = holdLogs(page);
-		await page.reload();
-		await expect(page.locator('canvas')).toBeVisible({timeout: 30_000});
-		await expect(
-			page.getByTestId('board-loading'),
-			'the board says it is loading, over its wood',
-		).toBeVisible({timeout: 30_000});
-		await expect
-			.poll(() => gate.held(), {
-				message: 'the indexer asked for logs',
-				timeout: 30_000,
-			})
-			.toBeGreaterThan(0);
-
-		await expect
-			.poll(
-				async () => {
-					await clickCell(page, {x: 3, y: -4});
-					return (await cellPanel(page).textContent()) ?? '';
-				},
-				{
-					message: 'a click before the board loads is refused, with a word',
-					timeout: 30_000,
-				},
-			)
-			.toContain('The board is still loading');
-
-		await gate.release();
-		await boardLoaded(page);
-		await expect(page.getByTestId('board-loading')).toBeHidden({
-			timeout: 30_000,
+		// A context of its own, with NO service worker: a page the app's service
+		// worker controls sends its requests through it, and Playwright's routes
+		// do not see a request the worker handles, so nothing could be held.
+		const context = await browser.newContext({
+			storageState: {cookies: [], origins: []},
+			serviceWorkers: 'block',
 		});
+		try {
+			const page = await context.newPage();
+			await page.goto('/play');
+			await expect(page.locator('canvas')).toBeVisible({timeout: 30_000});
+			const connect = page.getByRole('button', {name: /^connect$/i}).first();
+			await expect(connect).toBeEnabled({timeout: 60_000});
+			await connect.click();
+			await connectWallet(page);
+			await boardLoaded(page);
+
+			// Hold the indexer's log requests, then reload: the board stays
+			// unloaded while the rest of the app (the wallet, the cycle) comes up.
+			const gate = holdLogs(page);
+			await page.reload();
+			await expect(page.locator('canvas')).toBeVisible({timeout: 30_000});
+			await expect
+				.poll(() => gate.held(), {
+					message: 'the indexer asked for logs',
+					timeout: 30_000,
+				})
+				.toBeGreaterThan(0);
+			await expect(
+				page.getByTestId('board-loading'),
+				'the board says it is loading, over its wood',
+			).toBeVisible();
+
+			await expect
+				.poll(
+					async () => {
+						await clickCell(page, {x: 3, y: -4});
+						return (await cellPanel(page).textContent()) ?? '';
+					},
+					{
+						message: 'a click before the board loads is refused, with a word',
+						timeout: 30_000,
+					},
+				)
+				.toContain('The board is still loading');
+
+			await gate.release();
+			await boardLoaded(page);
+			await expect(page.getByTestId('board-loading')).toBeHidden({
+				timeout: 30_000,
+			});
+		} finally {
+			await context.close();
+		}
 	});
 });
 
