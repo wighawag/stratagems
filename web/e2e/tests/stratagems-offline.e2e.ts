@@ -236,6 +236,6 @@ describe('Stratagems offline', () => {
 					) - BigInt(gemsBefore as string),
 				{timeout: 60_000},
 			)
-			.toBe(15n * 10n ** 18n);
+			.toBe(32n * 10n ** 18n); // one stake a press, since step D
 	});
 });
