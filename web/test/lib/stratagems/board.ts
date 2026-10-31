@@ -41,7 +41,6 @@ export function emptyBoardData(): BoardState['data'] {
 			fixed: {},
 			shared: {},
 		},
-		computedPoints: {},
 	};
 }
 
@@ -54,7 +53,7 @@ export function boardAfter(
 	const state = {
 		cells: data.cells as {[position: string]: ContractCell},
 		owners: data.owners,
-		computedPoints: data.computedPoints,
+		computedPoints: {},
 	};
 	const simulation = new StratagemsContract(state, MAX_LIFE);
 	for (const {cycle, moves} of cycles) {

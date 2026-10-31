@@ -16,6 +16,9 @@ contract StratagemsPoke is IStratagemsPoke, UsingStratagemsSetters {
         });
         _poke(transferCollection, position, cycle);
         _multiTransfer(TOKENS, transferCollection);
+        uint64[] memory centres = new uint64[](1);
+        centres[0] = position;
+        _emitCellsWritten(cycle, centres);
         emit SinglePoke(cycle, position);
     }
 
@@ -30,6 +33,7 @@ contract StratagemsPoke is IStratagemsPoke, UsingStratagemsSetters {
             _poke(transferCollection, positions[i], cycle);
         }
         _multiTransfer(TOKENS, transferCollection);
+        _emitCellsWritten(cycle, positions);
         emit MultiPoke(cycle, positions);
     }
 }

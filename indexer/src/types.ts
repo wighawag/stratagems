@@ -55,7 +55,6 @@ export type Data = {
 			[address: string]: SharedRatePerAccount;
 		};
 	};
-	computedPoints: {[player: string]: number};
 	/**
 	 * The cycle as the last `CycleAdvanced` left it, absent before the first
 	 * one: under the Manual policy, the chain's cycle (`advancedCycle` in
@@ -75,6 +74,5 @@ export function emptyData(): Data {
 			fixed: {},
 			shared: {},
 		},
-		computedPoints: {},
 	};
 }

@@ -68,7 +68,7 @@ export async function setupWallets(env: GridEnv, walletsBefore: {[playerIndex: n
 }
 
 /** Index the local chain with the stratagems processor, and read the whole state back (as the web app does). */
-async function indexedState(env: GridEnv): Promise<Data> {
+export async function indexedState(env: GridEnv): Promise<Data> {
 	const indexed = await indexInProcess({
 		processor: stratagemsProcessor,
 		provider: env.provider,

@@ -74,7 +74,7 @@ function copyState(data: BoardState['data']): StratagemsState {
 	return {
 		cells,
 		owners: {...data.owners},
-		computedPoints: {...data.computedPoints},
+		computedPoints: {},
 	};
 }
 

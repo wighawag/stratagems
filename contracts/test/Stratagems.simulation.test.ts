@@ -13,13 +13,17 @@
  *
  * The simulation's `cellAtCycle` is held to the getters on every cell read.
  *
+ * And at the end of every history, the indexer's state (the processor folding
+ * `CellsWritten`, step X2's PX5) is held to what the contract stores, cell by
+ * cell and owner by owner, over the whole board and its ring.
+ *
  * `SIMULATION_TRIALS` (default 12) and `SIMULATION_SEED` (default 7) size it.
  */
 import {expect, describe, it} from 'vitest';
 import {encodeAbiParameters, keccak256, parseEther, zeroAddress} from 'viem';
 import {Color, EVIL_OWNER_ADDRESS, xyToBigIntID, bigIntIDToXY, zeroBytes24} from 'stratagems-common';
 import {getConnection, loadFixture} from '../utils/connection.js';
-import {deployStratagemsWithTestConfig} from './utils/stratagems-test.js';
+import {deployStratagemsWithTestConfig, indexedState} from './utils/stratagems-test.js';
 import {increaseTime} from './utils/stratagems.js';
 
 type Env = Awaited<ReturnType<typeof deployStratagemsWithTestConfig>>;
@@ -148,7 +152,32 @@ const normalise = (cells: any[]) =>
 		start: {...c.start, owner: lower(c.start.owner)},
 	}));
 
-let checked = {reveals: 0, pokes: 0, payouts: 0, points: 0, cells: 0};
+/** The indexer's cells and owners against the contract's storage, over the board and its ring. */
+async function expectIndexedAsStored(env: Env) {
+	const indexed = await indexedState(env as any);
+	const ids: bigint[] = [];
+	for (let y = -1; y <= BOARD; y++) for (let x = -1; x <= BOARD; x++) ids.push(xyToBigIntID(x, y));
+	const stored = await storedCells(env, ids);
+	const zero = {
+		lastCycleUpdate: 0,
+		cycleWhenTokenIsAdded: 0,
+		producingCycles: 0,
+		color: 0,
+		life: 0,
+		delta: 0,
+		enemyMap: 0,
+		distribution: 0,
+		stake: 0,
+	};
+	for (const {position, owner, cell} of stored) {
+		const key = position.toString();
+		expect({...zero, ...indexed.cells[key]}, `the indexed cell ${key}`).to.deep.equal({...zero, ...cell});
+		expect(lower(indexed.owners[key] ?? zeroAddress), `the indexed owner of ${key}`).to.equal(lower(owner));
+	}
+	checked.indexed += stored.length;
+}
+
+let checked = {reveals: 0, pokes: 0, payouts: 0, points: 0, cells: 0, indexed: 0};
 
 /** Simulate `send` over the stored cells it can read, send it, and hold the answer to what it did. */
 async function expectSimulated(env: Env, centres: bigint[], simulate: (board: any[]) => Promise<any>, send: () => Promise<void>) {
@@ -246,7 +275,7 @@ describe('StratagemsSimulation: what a turn will do, by the reveal’s own code'
 		async function () {
 			const trials = Number(process.env.SIMULATION_TRIALS ?? 12);
 			const r = rng(Number(process.env.SIMULATION_SEED ?? 7));
-			checked = {reveals: 0, pokes: 0, payouts: 0, points: 0, cells: 0};
+			checked = {reveals: 0, pokes: 0, payouts: 0, points: 0, cells: 0, indexed: 0};
 			for (let trial = 0; trial < trials; trial++) {
 				const env = await loadFixture(deployWithPlayers);
 				const cycles = 2 + r.int(4);
@@ -259,9 +288,10 @@ describe('StratagemsSimulation: what a turn will do, by the reveal’s own code'
 						await increaseTime(BigInt(skip) * (env.config.commitPhaseDuration + env.config.revealPhaseDuration));
 					}
 				}
+				await expectIndexedAsStored(env);
 			}
 			console.log(
-				`simulation: ${checked.reveals} reveals and ${checked.pokes} pokes, ${checked.cells} cells, ${checked.payouts} payouts and ${checked.points} point changes held to the chain`,
+				`simulation: ${checked.reveals} reveals and ${checked.pokes} pokes, ${checked.cells} cells, ${checked.payouts} payouts and ${checked.points} point changes held to the chain; ${checked.indexed} indexed cells held to storage`,
 			);
 			// the history must exercise what it claims to check
 			expect(checked.payouts).to.be.greaterThan(0);

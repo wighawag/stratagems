@@ -16,7 +16,8 @@
  *   state.points.global                   -> `globalRate` (one row, id `singleton`)
  *   state.points.fixed[account]           -> `fixedRate`
  *   state.points.shared[account]          -> `sharedRate`
- *   state.computedPoints[owner]           -> `computedPoints`
+ *   state.computedPoints[owner]           -> gone in step X2: the rules' own tally, which left
+ *                                            with the rules (the generator's `sharedRate` holds the points)
  *   (new, step O) the last pushed cycle   -> `advancedCycle` (one row, id `singleton`)
  *
  * `web/` reads them through GraphQL (`./queries.ts`), which is built from these
@@ -132,18 +133,6 @@ export const stratagemsEntities = declareEntities([
 	},
 
 	/**
-	 * The contract's `_cellsAtCycleStart`: a cell before the first move on it in
-	 * a cycle, which every move of that cycle is judged against (the rule that
-	 * makes the board independent of the order of reveals). Written by that
-	 * first move, read by the later ones.
-	 */
-	{
-		name: 'cellAtCycleStart',
-		id: 'position',
-		fields: {owner: 'text', cycle: 'integer', life: 'integer'},
-	},
-
-	/**
 	 * `state.placements[]`, an ORDERED, BOUNDED array (unshift, pop past 7).
 	 *
 	 * The child of a window, keyed by the ARRIVAL of the event that first
@@ -236,22 +225,6 @@ export const stratagemsEntities = declareEntities([
 			totalRewardPerPointAccounted: {storage: 'blob', type: 'u256'},
 			rewardsToWithdraw: {storage: 'blob', type: 'u256'},
 		},
-	},
-
-	/**
-	 * `state.computedPoints[player]`, a DERIVED accumulator, and the counter the
-	 * reorg case exists for.
-	 *
-	 * No contortion, and worth saying so: read-then-add-then-write needs no
-	 * aggregation support, and two `addPoints` calls in one block compose purely
-	 * from read-your-writes. Reverting the block that raised it must make it go
-	 * back DOWN, which on this stream it really does: see the named revert case in
-	 * `test/alpha1.test.ts`.
-	 */
-	{
-		name: 'computedPoints',
-		id: 'owner',
-		fields: {points: 'integer'},
 	},
 
 	/**

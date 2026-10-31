@@ -159,7 +159,7 @@ export default deployScript(
 		await env.deploy('StratagemsSimulation', {
 			account: deployer,
 			artifact: artifacts.StratagemsSimulation,
-			args: [config],
+			args: [{...config, startTime: BigInt(config.startTime)}],
 		});
 
 		const desiredWeight = parseEther('1');

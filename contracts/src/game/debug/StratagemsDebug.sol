@@ -161,6 +161,11 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
             // logger.logCell(0, string.concat("forceSimpleCells at cycle ", Strings.toString(cycle)), uint64(position), updatedCell, address(uint160(_owners[position])));
         }
 
+        uint64[] memory centres = new uint64[](cells.length);
+        for (uint256 i = 0; i < cells.length; i++) {
+            centres[i] = cells[i].position;
+        }
+        _emitCellsWritten(cycle, centres);
         emit ForceSimpleCells(cycle, cells);
     }
 

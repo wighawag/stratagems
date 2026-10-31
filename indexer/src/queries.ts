@@ -24,7 +24,7 @@
  *   Q3 the commitment of the connected account           `commitments`    (`commitment`, `where: {account: {eq}}`)
  *   Q4 the placements of the last 7 revealed cycles      `placements`     (`placement` + nested `players`)
  *   Q5 the reward state of every account, and the global `shared`, `global` (`sharedRate`, `globalRate`)
- *   Q6 the points the game logic accumulated per owner   `computedPoints` (`computedPoints`)
+ *   (Q6, the points the processor's copy of the rules tallied, left with that copy in step X2)
  *   (Q7 `fixed`, `fixedRate`: nothing in `web/` reads it; kept so the answer is the whole state)
  *   Q8 the cycle the last push left, if any              `advancedCycle`  (`advancedCycle`, the board's stamp under Manual)
  *
@@ -56,7 +56,6 @@ export type Part =
 	| 'shared'
 	| 'fixed'
 	| 'global'
-	| 'computedPoints'
 	| 'advancedCycle';
 
 export const PARTS: readonly Part[] = [
@@ -67,7 +66,6 @@ export const PARTS: readonly Part[] = [
 	'shared',
 	'fixed',
 	'global',
-	'computedPoints',
 	'advancedCycle',
 ];
 
@@ -81,7 +79,6 @@ const PART_OF_ENTITY: Record<string, Part> = {
 	sharedRate: 'shared',
 	fixedRate: 'fixed',
 	globalRate: 'global',
-	computedPoints: 'computedPoints',
 	advancedCycle: 'advancedCycle',
 };
 
@@ -122,8 +119,6 @@ function rootFields(part: Part, commitments: Commitments, pinned: boolean): stri
 			return `fixedRate(first: ${LIST_LIMIT}${at}) { account toWithdraw lastTime }`;
 		case 'global':
 			return `globalRate(where: {id: {eq: "${SINGLETON.id}"}}, first: 1${at}) { lastUpdateTime totalRewardPerPointAtLastUpdate totalPoints }`;
-		case 'computedPoints':
-			return `computedPoints(first: ${LIST_LIMIT}${at}) { owner points }`;
 		case 'advancedCycle':
 			return `advancedCycle(where: {id: {eq: "${SINGLETON.id}"}}, first: 1${at}) { cycleNumber commiting }`;
 	}
@@ -291,10 +286,6 @@ function writeParts(data: Data, parts: ReadonlySet<Part>, answer: Record<string,
 					}
 				: emptyData().points.global,
 		};
-	}
-	if (parts.has('computedPoints')) {
-		data.computedPoints = {};
-		for (const row of list('computedPoints')) data.computedPoints[String(row.owner)] = Number(row.points);
 	}
 	if (parts.has('advancedCycle')) {
 		const row = answer.advancedCycle[0];

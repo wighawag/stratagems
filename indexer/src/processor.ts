@@ -11,6 +11,16 @@
  * `../oracle/2026-09-29-alpha1/` at the tag `alpha1-final` (alpha1's support, and
  * the oracle with it, ended in step 10b, when the game moved onto the commit-reveal base).
  *
+ * IT FOLDS RESULTS, NOT RULES (step X2 of work/plans/join-template-commit-reveal.md,
+ * PX5): every resolution (a revealed chunk, a poke, the debug route's forced
+ * cells) emits `CellsWritten`, the cells it wrote as the contract stores them,
+ * and `onCellsWritten` stores them. Until then this ran its own 616-line copy of
+ * the contract's rules (`stratagems-contract.ts`) on every move and poke,
+ * because `MovesRevealed` carries the moves and not what they did; nothing
+ * checked it against the contract, and the simulation the client previews with
+ * is the contract's own bytecode now. The cells' points are the generator's
+ * (`sharedRate`), so the rules' own tally (`computedPoints`) went with them.
+ *
  * The one handler that is not a line-for-line port is `onMovesRevealed` (alpha1's
  * `onCommitmentRevealed`, whose moves the base's event no longer carries): the
  * old processor kept `state.placements` as an array it unshifted and popped past
@@ -28,7 +38,6 @@ import {
 	stratagemsEntities,
 	WINDOW,
 } from './entities.js';
-import {StratagemsContractOnEntities} from './stratagems-contract.js';
 import type {StratagemsABI} from './abi.js';
 
 /** What a listed placement carries: its arrival key, and the cycle it is for. */
@@ -65,6 +74,29 @@ async function dropPlacement(state: MutationContext, ordinal: string): Promise<v
 		if (!page.truncated) break;
 	}
 	state.delete('placement', {window: WINDOW, ordinal});
+}
+
+/** The low 120 bits of a `CellsWritten` cell word: the record as stored. */
+const BITS = (n: number) => (1n << BigInt(n)) - 1n;
+const POSITION_MASK = BITS(64);
+
+/** A field of the stored record, `bits` wide at `shift` (the layout is `CellsWritten`'s, in the contract's events). */
+const field = (word: bigint, shift: number, bits: number) => Number((word >> BigInt(shift)) & BITS(bits));
+
+/** The `cell` row of a stored record: its fields in the storage slot's order, `delta` a two's-complement byte. */
+export function cellRowOfWord(word: bigint) {
+	const delta = field(word, 88, 8);
+	return {
+		lastCycleUpdate: field(word, 0, 24),
+		cycleWhenTokenIsAdded: field(word, 24, 24),
+		producingCycles: field(word, 48, 24),
+		color: field(word, 72, 8),
+		life: field(word, 80, 8),
+		delta: delta >= 128 ? delta - 256 : delta,
+		enemyMap: field(word, 96, 8),
+		distribution: field(word, 104, 8),
+		stake: field(word, 112, 8),
+	};
 }
 
 const ZERO_BYTES24 = '0x000000000000000000000000000000000000000000000000';
@@ -124,10 +156,8 @@ export const stratagemsProcessor: EntityProcessor<StratagemsABI> = {
 			}
 		}
 
-		const stratagemsContract = new StratagemsContractOnEntities(state, 7);
 		for (let moveIndex = 0; moveIndex < event.args.moves.length; moveIndex++) {
 			const move = event.args.moves[moveIndex];
-			await stratagemsContract.computeMove(account, cycle, move);
 
 			// `cell.players.push({color, address})`, as one write, keyed by the
 			// move's own arrival, so it is naturally unique and ordered.
@@ -144,17 +174,24 @@ export const stratagemsProcessor: EntityProcessor<StratagemsABI> = {
 		await advanceCommitment(state, playerToAccount(event.args.player), event.args.furtherActions, event.args.cost);
 	},
 
-	async onSinglePoke(state, event) {
-		const stratagemsContract = new StratagemsContractOnEntities(state, 7);
-		await stratagemsContract.poke(event.args.position, Number(event.args.cycleNumber));
-	},
-
-	async onMultiPoke(state, event) {
-		const stratagemsContract = new StratagemsContractOnEntities(state, 7);
-		for (const position of event.args.positions) {
-			await stratagemsContract.poke(position, Number(event.args.cycleNumber));
+	/**
+	 * What a resolution wrote, as stored: the cells, then the moved cells'
+	 * owners. Every word was read after the whole resolution, so a cell listed
+	 * twice is written twice with the same row.
+	 */
+	onCellsWritten(state, event) {
+		for (const word of event.args.cells) {
+			state.set('cell', {position: (word >> 128n).toString()}, cellRowOfWord(word & BITS(120)));
+		}
+		for (const word of event.args.owners) {
+			const owner = `0x${(word >> 64n).toString(16).padStart(40, '0')}` as const;
+			state.set('cellOwner', {position: (word & POSITION_MASK).toString()}, {owner});
 		}
 	},
+
+	// what a poke did is in its `CellsWritten`
+	onSinglePoke() {},
+	onMultiPoke() {},
 
 	onCommitmentCancelled(state, event) {
 		state.delete('commitment', {account: playerToAccount(event.args.player)});
@@ -186,10 +223,8 @@ export const stratagemsProcessor: EntityProcessor<StratagemsABI> = {
 
 	// --------------------------
 
-	async onForceSimpleCells(state, event) {
-		const stratagemsContract = new StratagemsContractOnEntities(state, 7);
-		await stratagemsContract.forceSimpleCells(Number(event.args.cycle), event.args.cells as never);
-	},
+	// the debug route's forced cells: what they wrote is in their `CellsWritten`
+	onForceSimpleCells() {},
 
 	// The three reward handlers are the flat case and port one-to-one, the u256
 	// fields included: each is DECLARED a `u256` (ADR-0098), so the handler writes
