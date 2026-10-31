@@ -80,6 +80,9 @@ contracts/test/js/Game.test.ts
 contracts/test/js/CyclePolicy.test.ts
 contracts/test/js/GasBudget.test.ts
 contracts/test/js/StakeSale.test.ts
+# The reference game's Simulation route held to its reveal (2026-10-31): the route
+# is omitted above, and stratagems' own is test/Stratagems.simulation.test.ts.
+contracts/test/js/Simulation.test.ts
 contracts/test/js/utils
 contracts/js
 # The template's Solidity linter config. stratagems has no `lint` script and no
