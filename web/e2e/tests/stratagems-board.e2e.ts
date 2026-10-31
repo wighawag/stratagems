@@ -157,10 +157,11 @@ describe('Stratagems board: the preview', () => {
 				timeout: 90_000,
 			})
 			.toBe(rivalColor);
-		expect(await cellView(page, RIVAL)).toMatchObject({
-			trend: 'grow',
-			enemies: 0,
-		});
+		// alone: it lives on (growing, or already full on a slow run)
+		const alone = await cellView(page, RIVAL);
+		console.log(`the rival's cell alone: ${JSON.stringify(alone)}`);
+		expect(alone?.enemies).toBe(0);
+		expect(['grow', 'full']).toContain(alone?.trend);
 
 		// planned beside it in an enemy colour: the rival's cell will shrink
 		await phase(page, 'play', 15);
@@ -186,10 +187,10 @@ describe('Stratagems board: the preview', () => {
 		await clickCell(page, BESIDE);
 		await expect
 			.poll(async () => (await cellView(page, RIVAL))?.trend, {
-				message: 'without the move the cell grows again',
+				message: 'without the move the cell is as it was',
 				timeout: 15_000,
 			})
-			.toBe('grow');
+			.toBe(alone?.trend);
 		expect((await gameStep(page)).planned).toBe(0);
 	});
 
@@ -201,32 +202,42 @@ describe('Stratagems board: the preview', () => {
 		await stake(page);
 		await readyToPlay(page);
 		await boardLoaded(page);
-		await phase(page, 'play', 20);
+		await phase(page, 'play', 12);
 
 		// a full turn (the client's cap, 30 moves) on empty cells away from the
-		// rest, twice: the first pays for the sandbox's start, the second does not
+		// rest, twice
 		const timings: number[] = [];
 		for (const row of [40, 42]) {
 			const positions = Array.from({length: 30}, (_, i) =>
 				positionOf({x: 40 + 2 * i, y: row}).toString(),
 			);
+			// 29 planned and drawn, then the 30th: the time is one preview of a
+			// full turn, from the click to the board drawing what it does
 			const elapsed = (await page.evaluate(`(async () => {
 				const positions = ${JSON.stringify(positions)};
 				const game = globalThis.context.game;
 				const read = (store) => { let v; store.subscribe((x) => (v = x))(); return v; };
-				game.planning.clear();
-				const start = performance.now();
-				for (const p of positions) game.planning.click(BigInt(p));
-				for (;;) {
+				const drawn = (count) => {
 					const view = read(globalThis.context.viewState);
-					const done = view.step === 'Loaded' && positions.every((p) => {
+					return view.step === 'Loaded' && positions.slice(0, count).every((p) => {
 						const cell = view.cells.get(p);
 						return cell && cell.planned !== undefined && cell.color === cell.planned;
 					});
-					if (done) break;
-					if (performance.now() - start > 60000) return -1;
-					await new Promise((r) => setTimeout(r, 5));
-				}
+				};
+				const until = async (count) => {
+					const start = performance.now();
+					while (!drawn(count)) {
+						if (performance.now() - start > 60000) return false;
+						await new Promise((r) => setTimeout(r, 2));
+					}
+					return true;
+				};
+				game.planning.clear();
+				for (const p of positions.slice(0, 29)) game.planning.click(BigInt(p));
+				if (!(await until(29))) return -1;
+				const start = performance.now();
+				game.planning.click(BigInt(positions[29]));
+				if (!(await until(30))) return -1;
 				const elapsed = performance.now() - start;
 				game.planning.clear();
 				return elapsed;
@@ -235,7 +246,7 @@ describe('Stratagems board: the preview', () => {
 			timings.push(elapsed);
 		}
 		console.log(
-			`preview of 30 moves: ${timings.map((t) => `${Math.round(t)} ms`).join(', then ')}`,
+			`preview of a 30-move turn, from its last click to drawn: ${timings.map((t) => `${Math.round(t)} ms`).join(', then ')}`,
 		);
 		expect((await gameStep(page)).planned).toBe(0);
 	});
@@ -270,9 +281,15 @@ async function cellView(
 		globalThis.context.viewState.subscribe((v) => (view = v))();
 		if (!view || view.step !== 'Loaded') return undefined;
 		const cell = view.cells.get('${positionOf(cell)}');
-		return cell ? {color: cell.color, trend: cell.trend, enemies: cell.enemies, planned: cell.planned} : undefined;
+		return cell ? {color: cell.color, trend: cell.trend, enemies: cell.enemies, life: cell.life, planned: cell.planned} : undefined;
 	})()`) as Promise<
-		| {color: number; trend: string; enemies: number; planned?: number}
+		| {
+				color: number;
+				trend: string;
+				enemies: number;
+				life: number;
+				planned?: number;
+		  }
 		| undefined
 	>;
 }

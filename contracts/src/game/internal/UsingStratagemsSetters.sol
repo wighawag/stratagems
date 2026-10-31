@@ -45,6 +45,11 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
             furtherActions
         );
         emit MovesRevealed(player, chunk.cycleNumber, moves);
+        // refused rather than wrapped, as {_currentCycle} does: a cell stores
+        // its cycle in 24 bits, and a wrapped one reads as many cycles old
+        if (chunk.cycleNumber > type(uint24).max) {
+            revert CycleTooFar(chunk.cycleNumber);
+        }
         uint256 cost = _resolveMoves(address(uint160(player)), uint24(chunk.cycleNumber), moves);
         _closeChunk(chunk, cost);
     }

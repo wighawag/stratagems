@@ -25,7 +25,7 @@ export default deployScript(
 		const {deployer} = namedAccounts;
 		const deployConfig = getConfig(env);
 
-		const startTime = 0; // BigInt(Math.floor(Date.now() / 1000)); // startTime: nextSunday(),
+		let startTime = 0; // BigInt(Math.floor(Date.now() / 1000)); // startTime: nextSunday(),
 
 		const generator = get<typeof artifacts.RewardsGenerator.abi>('GemsGenerator');
 		const testTokens = get<typeof artifacts.TestTokens.abi>('TestTokens');
@@ -62,6 +62,14 @@ export default deployScript(
 		if (env.name === 'localhost') {
 			revealPhaseDuration = 10n;
 			commitPhaseDuration = 30n;
+			// A CELL STORES ITS CYCLE IN 24 BITS (`_currentCycle`), and 40-second
+			// cycles counted from 1970 are about 44.8 million, past the 16.8 million
+			// 24 bits hold: the reveal stored them wrapped (refused since step X2),
+			// and every cell then read as millions of cycles old. Counted from
+			// 2025-01-01 (a multiple of the 40 s cycle, so the phases fall as
+			// before), they fit for 21 years; a fixed date and not the deploy's,
+			// so a redeploy on a running chain does not move the clock.
+			startTime = 1_735_689_600;
 		}
 
 		if (env.name === 'fast') {
