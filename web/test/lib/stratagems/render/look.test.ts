@@ -266,3 +266,29 @@ describe('hovering without flicker', () => {
 		expect(hoverStep(on, {type: 'tick', at: 5})).toBe(on);
 	});
 });
+
+describe('the crack', () => {
+	it('cracks first, shudders while cracking, then sinks, finishing sunk', async () => {
+		const {dyingFrame} = await import('$lib/stratagems/render/look');
+		expect(dyingFrame(0)).toMatchObject({cracks: 0, sink: 0, shake: 0});
+		expect(dyingFrame(0.35).cracks).toBe(1);
+		expect(dyingFrame(0.4).shake).not.toBe(0);
+		expect(dyingFrame(0.6).shake).toBe(0);
+		expect(dyingFrame(0.5).sink).toBe(0);
+		expect(dyingFrame(1)).toMatchObject({cracks: 1, sink: 1, chips: 0});
+		expect(dyingFrame(2)).toEqual(dyingFrame(1));
+	});
+
+	it('breaks the same gem the same way, from near the middle out to the rim', async () => {
+		const {crackPaths} = await import('$lib/stratagems/render/look');
+		const one = crackPaths(42);
+		expect(crackPaths(42)).toEqual(one);
+		expect(crackPaths(43)).not.toEqual(one);
+		expect(Math.hypot(...one.impact)).toBeLessThan(0.36);
+		expect(one.paths.length).toBeGreaterThanOrEqual(6);
+		for (const path of one.paths.slice(0, 1)) {
+			const [x, y] = path[path.length - 1];
+			expect(Math.hypot(x, y)).toBeGreaterThanOrEqual(0.98);
+		}
+	});
+});

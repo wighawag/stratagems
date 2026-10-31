@@ -8,13 +8,19 @@
  * every game on the base makes. This file hands them stratagems' parts: its
  * move, its board (the etherfold indexer, not a poller), its rules for what a
  * click may plan, its view (`stratagems-common`'s simulation of the planned
- * moves), its stake (gems in the reserve) and a stopgap renderer. It is the
+ * moves), its stake (gems in the reserve) and its board, drawn with pixi. It is the
  * reference game's `placement/context.ts` with stratagems' parts in it.
  *
  * Constructed synchronously and off-browser, like the core half: nothing here
  * starts IO, which belongs to `start()` and to the board's first subscriber.
  */
-import {derived, get, type Readable} from 'svelte/store';
+import {
+	derived,
+	get,
+	writable,
+	type Readable,
+	type Writable,
+} from 'svelte/store';
 // dynamic, not static: the framework's own tests mock `$env/static/public` with
 // the framework's names only (test/lib/context/fatal.test.ts)
 import {env} from '$env/dynamic/public';
@@ -101,7 +107,12 @@ import {createSyncing, type SyncingModel} from './syncing';
 import {holdResolvingCycle, holdPlanUntilBoardReleases} from './hold';
 import {createBoardMerge, type BoardView} from './view';
 import {createStakeAcquisition, stakeNeeded} from './stake';
-import {createBoardRenderer, type GameSurface} from './canvas2d/board-renderer';
+import {
+	createBoardRenderer,
+	createFocus,
+	type FocusStore,
+	type GameSurface,
+} from './render';
 
 /** What stands between the player and their first move. */
 export type SetupNeeded = FrameworkSetupNeeded<{step: 'stake'}>;
@@ -142,6 +153,10 @@ export type Game = CommitRevealGame<StratagemsGame>['game'] & {
 	leaderboard: Readable<LeaderboardRow[]>;
 	/** Free gems from the deployment's distributor, where it has one. */
 	testGems: TestGemsStore;
+	/** The gem whose owner the board lights and the card describes. */
+	focus: FocusStore;
+	/** The faction wash under each faction's living cells, a toggle (off by default). */
+	factionWash: Writable<boolean>;
 	/** What the indexer is doing while the board is behind the chain. */
 	syncing: Readable<SyncingModel>;
 	/**
@@ -172,6 +187,8 @@ export function createGameContext(core: CoreServices): GameContext {
 	// WHO PLAYS: the account, as in every address game on the template; the local
 	// signer acts for it through `StratagemsDelegation`.
 	const activeIdentity = createActiveIdentity({account: core.account});
+	const focus = createFocus();
+	const factionWash = writable(false);
 
 	const deployments = core.deployments.get();
 	const config = resolveStratagemsConfig(deployments);
@@ -311,7 +328,13 @@ export function createGameContext(core: CoreServices): GameContext {
 		holdPlan: holdPlanUntilBoardReleases,
 		merge: createBoardMerge(config.maxLife),
 		renderer: ({viewState}) =>
-			createBoardRenderer({viewState, maxLife: config.maxLife}),
+			createBoardRenderer({
+				viewState,
+				cellSize: config.cellSize,
+				maxLife: config.maxLife,
+				focus,
+				factionWash,
+			}),
 		// Cells are centred on their integer coordinate.
 		click: (position, {planning}) =>
 			planning.click(
@@ -382,6 +405,8 @@ export function createGameContext(core: CoreServices): GameContext {
 			testGems,
 			syncing,
 			revealSchedule,
+			focus,
+			factionWash,
 		},
 		render: crg.render,
 		start: () => {

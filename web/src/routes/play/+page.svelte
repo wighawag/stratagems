@@ -1,9 +1,9 @@
 <!--
 	STRATAGEMS, ONLINE: the template's game page (`routes/play/+page.svelte`, the
-	reference game's) with stratagems' parts in it: its canvas host and stopgap
-	renderer (`$lib/stratagems/canvas2d`, until step 9's twgl host), its HUD
-	(`$lib/stratagems/hud`, until step 6c ports stratagems' own panels) and the
-	words for its stake. Nothing of the legacy overlays (step 6c).
+	reference game's) with stratagems' parts in it: its board (`$lib/stratagems/render`,
+	the template's pixi host with smooth art, the board drawing its own wood and
+	lines, so the host's grid is off), its HUD (`$lib/stratagems/hud`) and the
+	words for its stake.
 -->
 <script lang="ts">
 	import {browser} from '$app/environment';
@@ -11,7 +11,7 @@
 	import DefaultHead from '$lib/metadata/DefaultHead.svelte';
 	import GameHud from '$lib/stratagems/hud/GameHud.svelte';
 	import AcquireModal from '$lib/game/acquire/AcquireModal.svelte';
-	import {loadCanvasComponent} from '$lib/stratagems/canvas2d/board-renderer';
+	import {loadCanvasComponent} from '$lib/stratagems/render';
 	import {stakeWords} from '$lib/stratagems/stake';
 	import {gridTileCells} from '$lib/game/render/grid';
 
@@ -40,7 +40,7 @@
 	 * prerendering resolves dependencies differently and succeeds. It shows up
 	 * only in `pnpm web:dev`.
 	 *
-	 * WHICH canvas is not decided here: `$lib/stratagems/canvas2d` names it, next to
+	 * WHICH canvas is not decided here: `$lib/stratagems/render` names it, next to
 	 * the renderer that has to match it. Both hosts take the same props, so this
 	 * page is identical whichever is chosen.
 	 */
@@ -78,7 +78,7 @@
 <div class="relative h-full w-full overflow-hidden">
 	<!-- A canvas host needs a real canvas, so it only mounts in the browser; the
 	     page still prerenders (see ADR-0002). Which host that is belongs to
-	     `$lib/stratagems/canvas2d`, and differs by branch, so this page does not
+	     `$lib/stratagems/render`, and differs by branch, so this page does not
 	     name one. -->
 	{#if canvasModule}
 		{#await canvasModule then { default: GameCanvas }}
@@ -88,6 +88,9 @@
 				eventEmitter={render.eventEmitter}
 				cellSize={game.config.cellSize}
 				gridCells={gridTileCells(game.config.camera.limits)}
+				showGrid={false}
+				smooth={true}
+				backgroundColor="#d2a868"
 			/>
 		{:catch error}
 			<!--

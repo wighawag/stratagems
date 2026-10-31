@@ -276,3 +276,69 @@ export function hoverStep(state: HoverState, event: HoverEvent): HoverState {
 				: state;
 	}
 }
+
+/** How long a dying gem takes to crack and sink into its husk. */
+export const DYING_MS = 1600;
+
+/**
+ * The dying animation at progress `p` (0 to 1): cracks race out from an impact
+ * point over the first 35%, the gem shudders while it cracks, chips fly from
+ * the crack ends, and from 65% it sinks into its husk.
+ */
+export function dyingFrame(p: number): {
+	cracks: number;
+	shake: number;
+	chips: number;
+	sink: number;
+} {
+	const t = Math.min(1, Math.max(0, p));
+	const shaking = t > 0.2 && t < 0.55;
+	return {
+		cracks: Math.min(1, t / 0.35),
+		shake: shaking ? Math.sin(t * 140) * (1 - Math.abs(t - 0.37) / 0.18) : 0,
+		chips: t > 0.3 && t < 0.85 ? (t - 0.3) / 0.55 : 0,
+		sink: Math.max(0, (t - 0.65) / 0.35),
+	};
+}
+
+/**
+ * The cracks of a dying gem, in units of its radius around its centre: from an
+ * impact point near the middle out to the rim, some with a branch.
+ * Deterministic for a cell, so the same gem always breaks the same way.
+ */
+export function crackPaths(seed: number): {
+	impact: [number, number];
+	paths: [number, number][][];
+} {
+	let state = (Math.abs(Math.floor(seed)) % 2147483646) + 1;
+	const rand = () => (state = (state * 16807) % 2147483647) / 2147483647;
+	const impact: [number, number] = [(rand() - 0.5) * 0.5, (rand() - 0.5) * 0.5];
+	const paths: [number, number][][] = [];
+	const count = 6;
+	for (let i = 0; i < count; i++) {
+		let a = (i / count) * Math.PI * 2 + rand() * 0.6;
+		let [x, y] = impact;
+		const points: [number, number][] = [[x, y]];
+		while (Math.hypot(x, y) < 0.98 && points.length < 40) {
+			a += (rand() - 0.5) * 0.7;
+			x += Math.cos(a) * 0.16;
+			y += Math.sin(a) * 0.16;
+			points.push([x, y]);
+		}
+		paths.push(points);
+		if (rand() < 0.6 && points.length > 2) {
+			const j = 1 + Math.floor(rand() * (points.length - 2));
+			let [bx, by] = points[j];
+			let ba = a + (rand() < 0.5 ? 0.9 : -0.9);
+			const branch: [number, number][] = [[bx, by]];
+			for (let k = 0; k < 3 && Math.hypot(bx, by) < 0.95; k++) {
+				bx += Math.cos(ba) * 0.13;
+				by += Math.sin(ba) * 0.13;
+				ba += (rand() - 0.5) * 0.6;
+				branch.push([bx, by]);
+			}
+			paths.push(branch);
+		}
+	}
+	return {impact, paths};
+}
