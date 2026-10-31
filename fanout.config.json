@@ -2,7 +2,7 @@
   "stem": "github:wighawag/template-commit-reveal",
   "branches": {
     "main": {
-      "stemBranch": "with/fuzd-pixi"
+      "stemBranch": "with/fuzd-pixi-indexer"
     }
   },
   "verify": "pnpm install && pnpm --filter ./web check && pnpm --filter ./web run test:unit"
