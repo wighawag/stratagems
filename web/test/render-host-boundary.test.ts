@@ -1,10 +1,12 @@
 import {describe, it, expect} from 'vitest';
-import {readFileSync} from 'node:fs';
+import {existsSync, readFileSync} from 'node:fs';
 
 /**
  * SWAPPING THE RENDERER MUST COST ONE FILE.
  *
- * `$lib/placement/render/index.ts` names which canvas host this game mounts,
+ * The module the play page loads its canvas from (`loadCanvasComponent`,
+ * `$lib/placement/render/index.ts` in this template) names which canvas host
+ * this game mounts,
  * and D11 makes that choice a BRANCH axis: `main` carries the immediate
  * canvas-2d host and no rendering library, and `with/pixi-js` carries pixi. The
  * branch is only affordable if it edits that one shared file, because every
@@ -26,11 +28,50 @@ import {readFileSync} from 'node:fs';
  * This is a SOURCE check rather than a runtime one on purpose. Svelte 5 does
  * not throw on an undeclared prop, so the failure it guards against is silent
  * at runtime: the host simply ignores something the page meant it to have.
+ *
+ * THE SELECTOR IS FOUND THROUGH THE PAGE, not named here. Every game replaces
+ * `$lib/placement` with its own game and keeps its selector wherever its game
+ * lives (`$lib/world/render` in reveal-or-die, a file of stratagems' own), so a
+ * hard-coded path made every game either edit this file or omit it. Following
+ * the page's `import {loadCanvasComponent} from '$lib/...'` keeps the file
+ * byte-identical in all of them, and it is the page's import that decides
+ * which host mounts anyway.
  */
 
 const root = new URL('..', import.meta.url).pathname;
 const PAGE = 'src/routes/play/+page.svelte';
-const SELECTOR = 'src/lib/placement/render/index.ts';
+
+/**
+ * The module the page imports `loadCanvasComponent` from, as a path under the
+ * web root: `$lib/a/b` resolves to `src/lib/a/b.ts` or `src/lib/a/b/index.ts`,
+ * the two shapes SvelteKit's `$lib` alias takes.
+ */
+function selectorPath(
+	pageSource: string,
+	exists: (path: string) => boolean,
+): string {
+	const found = pageSource.match(
+		/import\s*\{[^}]*\bloadCanvasComponent\b[^}]*\}\s*from\s*'\$lib\/([^']+)'/,
+	);
+	expect(
+		found,
+		`${PAGE} no longer imports loadCanvasComponent from $lib; this test needs updating with it`,
+	).not.toBeNull();
+	const base = `src/lib/${found![1].replace(/\.(ts|js)$/, '')}`;
+	const candidates = [`${base}.ts`, `${base}/index.ts`];
+	const path = candidates.find(exists);
+	expect(
+		path,
+		`${PAGE} loads its canvas from $lib/${found![1]}, but none of ${candidates.join(', ')} exists`,
+	).toBeDefined();
+	return path!;
+}
+
+function selector(): string {
+	return selectorPath(readFileSync(`${root}${PAGE}`, 'utf8'), (path) =>
+		existsSync(`${root}${path}`),
+	);
+}
 
 /** The props `+page.svelte` hands to `<GameCanvas ... />`. */
 function propsPassedByThePage(): string[] {
@@ -47,11 +88,12 @@ function propsPassedByThePage(): string[] {
 
 /** The host component `index.ts` says to load. */
 function hostPath(): string {
-	const source = readFileSync(`${root}${SELECTOR}`, 'utf8');
+	const at = selector();
+	const source = readFileSync(`${root}${at}`, 'utf8');
 	const found = source.match(/import\('\$lib\/(.*?\.svelte)'\)/);
 	expect(
 		found,
-		`${SELECTOR} no longer names a canvas component to load`,
+		`${at} no longer names a canvas component to load`,
 	).not.toBeNull();
 	return `src/lib/${found![1]}`;
 }
@@ -102,6 +144,39 @@ describe('the render host boundary', () => {
 		expect(passed).toContain('gridCells');
 		expect(propsDeclaredBy(hostPath())).toEqual(
 			expect.arrayContaining(['cellSize', 'gridCells']),
+		);
+	});
+});
+
+describe('finding the selector through the page', () => {
+	const page = (from: string) =>
+		`<script lang="ts">\n\timport {loadCanvasComponent} from '${from}';\n</script>`;
+
+	it('resolves a directory module to its index', () => {
+		const exists = (path: string) => path === 'src/lib/world/render/index.ts';
+		expect(selectorPath(page('$lib/world/render'), exists)).toBe(
+			'src/lib/world/render/index.ts',
+		);
+	});
+
+	it('resolves a file module, preferred over a directory of the same name', () => {
+		const exists = (path: string) =>
+			path === 'src/lib/game/canvas/board.ts' ||
+			path === 'src/lib/game/canvas/board/index.ts';
+		expect(selectorPath(page('$lib/game/canvas/board'), exists)).toBe(
+			'src/lib/game/canvas/board.ts',
+		);
+	});
+
+	it('refuses a page that does not import loadCanvasComponent', () => {
+		expect(() =>
+			selectorPath(`<script>import x from '$lib/a';</script>`, () => true),
+		).toThrow(/no longer imports loadCanvasComponent/);
+	});
+
+	it('refuses an import that resolves to nothing', () => {
+		expect(() => selectorPath(page('$lib/gone'), () => false)).toThrow(
+			/none of src\/lib\/gone\.ts, src\/lib\/gone\/index\.ts exists/,
 		);
 	});
 });
