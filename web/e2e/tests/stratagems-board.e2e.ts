@@ -1,6 +1,12 @@
 import type {Page, Route} from '@playwright/test';
 import {test, expect, describe} from '../fixtures/test';
-import {boardLoaded, cellPanel, clickCell} from '../fixtures/stratagems';
+import {
+	boardLoaded,
+	cellPanel,
+	clickCell,
+	getTestGems,
+	stake,
+} from '../fixtures/stratagems';
 
 /**
  * STRATAGEMS' BOARD (step 9 of work/plans/join-template-commit-reveal.md):
@@ -11,8 +17,8 @@ import {boardLoaded, cellPanel, clickCell} from '../fixtures/stratagems';
  *   (the cell panel says the board is still loading) rather than dropped, the
  *   board says it is loading over its wood, and once the board loads both go.
  *
- * Neither sends a transaction from the wallet, but each test gets an account of
- * its own all the same, like every file that connects.
+ * The second stakes (a click means nothing until the player could commit it),
+ * so this file has an account of its own.
  */
 describe('Stratagems board', () => {
 	test.use({walletAccountIndex: 5});
@@ -59,6 +65,9 @@ describe('Stratagems board', () => {
 			await expect(connect).toBeEnabled({timeout: 60_000});
 			await connect.click();
 			await connectWallet(page);
+			await getTestGems(page);
+			await stake(page);
+			await readyToPlay(page);
 			await boardLoaded(page);
 
 			// Hold the indexer's log requests, then reload: the board stays
@@ -76,6 +85,7 @@ describe('Stratagems board', () => {
 				page.getByTestId('board-loading'),
 				'the board says it is loading, over its wood',
 			).toBeVisible();
+			await readyToPlay(page);
 
 			await expect
 				.poll(
@@ -100,6 +110,31 @@ describe('Stratagems board', () => {
 		}
 	});
 });
+
+/** Wait until a click on the board means something (setup done, the phase right). */
+async function readyToPlay(page: Page): Promise<void> {
+	await expect
+		.poll(
+			() =>
+				page.evaluate(() => {
+					const context = (
+						globalThis as {
+							context?: {
+								game: {
+									readyToPlay: {subscribe(f: (v: boolean) => void): () => void};
+								};
+							};
+						}
+					).context;
+					if (!context) return false;
+					let ready = false;
+					context.game.readyToPlay.subscribe((value) => (ready = value))();
+					return ready;
+				}),
+			{message: 'the player can plan', timeout: 120_000},
+		)
+		.toBe(true);
+}
 
 /** Hold every JSON-RPC `eth_getLogs` the page sends until released. */
 function holdLogs(page: Page): {held(): number; release(): Promise<void>} {
