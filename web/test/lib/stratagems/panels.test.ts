@@ -198,7 +198,7 @@ describe('the other panels', () => {
 				currency,
 			}),
 		).toMatchObject({
-			label: 'Get 15 test gems',
+			label: 'Get 32 test gems',
 			busy: false,
 			hint: 'Your wallet holds 1 gems and a stake takes 32. This deployment hands out test gems for free.',
 		});

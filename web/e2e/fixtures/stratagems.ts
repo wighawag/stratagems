@@ -126,8 +126,9 @@ export async function walletGems(page: Page, address: string): Promise<bigint> {
 
 /**
  * Press the HUD's "Get test gems" (`TestTokensDistributor.topup()`, from the
- * wallet) until the wallet holds enough to stake: a top-up is 15 gems and a
- * stake a whole chunk of 32, so three presses on a fresh account.
+ * wallet) until the wallet holds enough to stake: a top-up is one stake (32
+ * gems since step D; three presses of 15 before it), so one press on a fresh
+ * account.
  */
 export async function getTestGems(page: Page): Promise<number> {
 	const button = page.locator('[data-testid="get-test-gems"]');

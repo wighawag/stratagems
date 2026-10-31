@@ -1,4 +1,5 @@
 import {deployScript, artifacts} from '../rocketh/deploy.js';
+import {parseEther} from 'viem';
 
 export default deployScript(
 	async ({deploy, execute, get, namedAccounts, name}) => {
@@ -6,15 +7,20 @@ export default deployScript(
 
 		const TestTokens = await get<typeof artifacts.TestTokens.abi>('TestTokens');
 
-		// Anyone may take test gems from it (`topup()`, 15 a call): the local chain's
-		// way to get gems (the HUD's "Get test gems"), and the offline world's, for
-		// the human and for the seats the world plays. Never on a live chain: how a
-		// live chain hands out gems is step D's (work/plans/join-template-commit-reveal.md).
-		if (name == 'localhost' || name == 'offline') {
+		// Anyone may take test gems from it (`topup()`, one stake a call): the local
+		// chain's way to get gems (the HUD's "Get test gems"), the offline world's,
+		// for the human and for the seats the world plays, and the `alpha2` test
+		// deployment's, where test gems are worth nothing (step D, PD4, of
+		// work/plans/join-template-commit-reveal.md). Not on a chain whose tokens
+		// are worth something: alpha1's had claim links.
+		if (name == 'localhost' || name == 'offline' || name == 'alpha2') {
 			const TestTokensDistributor = await deploy('TestTokensDistributor', {
 				account: deployer,
 				artifact: artifacts.TestTokensInfiniteDistributor,
-				args: [TestTokens.address],
+				// ONE STAKE A CALL: the game's `actionsPerReveal` (32, `020_deploy_game.ts`)
+				// gems, what the HUD stakes, so a new player presses once and not three
+				// times (15 a call until step D).
+				args: [TestTokens.address, parseEther('32')],
 			});
 
 			await execute(TestTokens, {

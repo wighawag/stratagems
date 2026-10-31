@@ -2,20 +2,23 @@
  * TEST GEMS (P2 of step 6c in work/plans/join-template-commit-reveal.md): how a
  * player gets gems to stake on a deployment that hands them out for free.
  *
- * Every local deploy (`contracts/deploy/002_deploy_test_tokens_distributor.ts`,
- * `name == 'localhost'`, the e2e's included) has `TestTokensDistributor`, whose
- * `topup()` mints 15 gems to the caller, anyone, any number of times: the legacy
- * InfoBar's "Get Test token". Offered only where the deployment has that
- * contract, and sent from the wallet, since the gems are the wallet's. How a
- * live chain hands out gems (claim links, a faucet, a sale) is step D's.
+ * Every deploy whose gems are worth nothing (`contracts/deploy/002_deploy_test_tokens_distributor.ts`:
+ * `localhost`, the e2e's included, the offline world and the `alpha2` test
+ * deployment, step D's PD4) has `TestTokensDistributor`, whose `topup()` mints
+ * one stake to the caller, anyone, any number of times: the legacy InfoBar's
+ * "Get Test token". Offered only where the deployment has that contract, and
+ * sent from the wallet, since the gems are the wallet's.
  */
 import {derived, get, writable, type Readable} from 'svelte/store';
 import type {Abi} from 'viem';
 import type {TypedDeployments} from '$lib/core/connection/types';
 import {errorMessage, type WalletActionState, type WalletSend} from './wallet';
 
-/** What `topup()` mints, in gems. */
-export const TOPUP_GEMS = 15;
+/**
+ * What `topup()` mints, in gems: one stake (`amountPerTopup`, which the deploy
+ * sets to the game's 32 actions per reveal; 15 until step D).
+ */
+export const TOPUP_GEMS = 32;
 
 type Distributor = {address: `0x${string}`; abi: Abi};
 
