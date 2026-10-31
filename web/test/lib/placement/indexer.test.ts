@@ -276,10 +276,16 @@ describe("the reference game's indexer", () => {
 			new Set(data.cells.keys()),
 		);
 
-		// the cycle the last push left: three cycles of two pushes from 2
+		// the cycle the last re-anchoring push opened: three cycles of two
+		// pushes from 2, the last one opening cycle 5, with its block's time
 		const cycle = await read<{cycleNumber: bigint}>('getCycle');
-		expect(data.advancedCycle).toBe(Number(cycle.cycleNumber));
-		expect(data.advancedCycle).toBe(5);
+		expect(data.advancedCycle?.cycleNumber).toBe(Number(cycle.cycleNumber));
+		expect(data.advancedCycle?.cycleNumber).toBe(5);
+		const tip = await readerOf(world).publicClient.getBlock();
+		expect(data.advancedCycle?.anchoredAt).toBeGreaterThan(0);
+		expect(data.advancedCycle?.anchoredAt).toBeLessThanOrEqual(
+			Number(tip.timestamp),
+		);
 	});
 
 	it("publishes the same board through the framework's indexed state, stamped with the chain's cycle", async () => {

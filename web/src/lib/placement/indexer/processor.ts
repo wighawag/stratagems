@@ -14,9 +14,12 @@
  *   decide the same thing the same way. That is a copy of one line of the rule,
  *   kept because the event says what was added and not what the cell holds;
  *   the unit test holds the folded board to the contract's `getCellsInZones`.
- * - `CycleAdvanced(cycleNumber, commiting, ...)`: the cycle the last push left,
- *   which an offline world's board (Manual policy) is stamped with
- *   (`$lib/indexer/cycle-stamp`).
+ * - `CycleAdvanced(cycleNumber, commiting, ...)` with `commiting` true: the
+ *   cycle the last re-anchoring push opened and its block's timestamp, which
+ *   an offline world's board (Manual policy) and a table's
+ *   (`TimedWithEarlyAdvance`) are stamped with (`$lib/indexer/cycle-stamp`). A
+ *   push that opens a reveal phase moves no cycle number under either, so it
+ *   is not folded.
  *
  * Order does not matter, as the contract's rule does not let it: every write is
  * an accumulation, so a cycle's reveals folded in any order leave the same rows.
@@ -48,11 +51,11 @@ export const placementEntities = declareEntities([
 		id: ['cellID', 'player'],
 		fields: {stake: {storage: 'blob', type: 'u256'}},
 	},
-	/** The cycle the last `CycleAdvanced` left. */
+	/** The cycle the last re-anchoring `CycleAdvanced` opened, and when. */
 	{
 		name: 'advancedCycle',
 		id: 'id',
-		fields: {cycleNumber: 'integer', commiting: 'integer'},
+		fields: {cycleNumber: 'integer', anchoredAt: 'integer'},
 	},
 ]);
 
@@ -79,11 +82,19 @@ export const placementProcessor: EntityProcessor<GameABI> = {
 		state.set('claim', {cellID, player}, {stake: before + added});
 	},
 
-	/** Only a push emits this, and under Manual only a push moves the cycle. */
+	/** Only a push emits this; only one that opens a commit phase re-anchors the cycle. */
 	onCycleAdvanced(state, event) {
+		if (!event.args.commiting) return;
+		if (event.blockTimestamp === undefined) {
+			// etherfold refuses a node that serves no timestamp on its logs, so
+			// this is a log that reached the processor some other way.
+			throw new Error(
+				`CycleAdvanced at block ${event.blockNumber} carries no blockTimestamp`,
+			);
+		}
 		state.set('advancedCycle', SINGLETON, {
 			cycleNumber: Number(event.args.cycleNumber),
-			commiting: event.args.commiting ? 1 : 0,
+			anchoredAt: event.blockTimestamp,
 		});
 	},
 };
