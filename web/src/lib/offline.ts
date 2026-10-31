@@ -22,7 +22,8 @@ import {pokeWhenTheHumanActs} from '$lib/game/core/played';
 import {seatsPlayedByTheWorld, type Table} from '$lib/game/lobby/seats';
 import {authoriseTheBrowsersKey} from '$lib/game/acquire';
 import {resolveStratagemsConfig} from '$lib/stratagems/game-config';
-import {deleteWorldIndex} from '$lib/stratagems/board/worker-choice';
+import {deleteWorldIndex} from '$lib/indexer';
+import {INDEXER_PREFIX} from '$lib/stratagems/board/prefix';
 
 /**
  * STRATAGEMS' OFFLINE WORLD: the composition, which is the half `$lib/embedded`
@@ -59,7 +60,7 @@ import {deleteWorldIndex} from '$lib/stratagems/board/worker-choice';
  *    than freezing the board when its gems run out (P5).
  *
  * THE WORLD'S BOARD IS INDEXED IN THIS TAB, by its own worker and into a
- * database of its own kept across reloads (`board/worker-choice.ts`, P8). Its
+ * database of its own kept across reloads (`$lib/indexer/worker-choice`, P8). Its
  * index is deleted when a new world replaces it (see `forgetPreviousWorldIndex`).
  */
 
@@ -173,7 +174,7 @@ export function startOfflineWorld(params: {
 function forgetPreviousWorldIndex(chainId: number): void {
 	const previous = Number(localStorage.getItem(INDEXED_CHAIN_ID_STORAGE_KEY));
 	if (previous && previous !== chainId) {
-		void deleteWorldIndex(previous).catch((err) =>
+		void deleteWorldIndex(INDEXER_PREFIX, previous).catch((err) =>
 			console.warn('could not delete a forgotten world\u2019s index', err),
 		);
 	}

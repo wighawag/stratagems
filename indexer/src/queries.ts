@@ -5,9 +5,10 @@
  *
  * One module for every reader, so what is checked is what runs:
  *
- * - `web/` follows the state with a `StateFollower`: one full read, then, each time
- *   the worker says the state moved, a read of only the PARTS whose entities moved,
- *   pinned to the HASH of the block the signal names;
+ * - `web/` follows the state with the framework's follower (`$lib/indexer`'s
+ *   `createStateFollower`, handed `PARTS`, `PART_OF_ENTITY` and `readParts`): one
+ *   full read, then, each time the worker says the state moved, a read of only the
+ *   PARTS whose entities moved, pinned to the HASH of the block the signal names;
  * - alpha1's oracle (`oracle/2026-09-29-alpha1/compare.ts`, at the tag
  *   `alpha1-final`: it left with alpha1's support in step 10b) ran the same
  *   documents against the database `etherfold build` folded and against the
@@ -69,8 +70,8 @@ export const PARTS: readonly Part[] = [
 	'advancedCycle',
 ];
 
-/** Which part an entity's move invalidates (the state-moved signal names entities). */
-const PART_OF_ENTITY: Record<string, Part> = {
+/** Which part an entity's move invalidates (the state-moved signal names entities); an entity left out invalidates every part. */
+export const PART_OF_ENTITY: Record<string, Part> = {
 	cell: 'cells',
 	cellOwner: 'owners',
 	commitment: 'commitments',
@@ -81,17 +82,6 @@ const PART_OF_ENTITY: Record<string, Part> = {
 	globalRate: 'global',
 	advancedCycle: 'advancedCycle',
 };
-
-/** The parts the given entities' moves invalidate; an entity this module does not know invalidates everything. */
-export function partsMovedBy(entities: readonly string[]): Set<Part> {
-	const parts = new Set<Part>();
-	for (const entity of entities) {
-		const part = PART_OF_ENTITY[entity];
-		if (!part) return new Set(PARTS);
-		parts.add(part);
-	}
-	return parts;
-}
 
 type Commitments = 'one' | 'all';
 
@@ -342,155 +332,4 @@ export async function readParts(
 /** Ask the whole game state, as of the tip. */
 export function readState(execute: Execute, options: {account?: string} = {}): Promise<StateRead> {
 	return readParts(execute, PARTS, options);
-}
-
-/** What the state-moved signal says (etherfold's `StateMoved`), as far as the follower reads it. */
-export type Moved =
-	| {
-			readonly kind: 'applied';
-			readonly block: number;
-			readonly hash: string;
-			readonly coherence: string;
-			readonly entities: readonly string[];
-	  }
-	| {readonly kind: 'retracted' | 'repointed'; readonly coherence: string};
-
-/**
- * FOLLOW THE STATE, re-reading only what moved (etherfold ADR-0083).
- *
- * One full read, then per state-moved signal:
- *
- * - a coherence token it does not hold (a reorg, a promotion, the first signal):
- *   read everything again;
- * - an `applied` block: read only the parts whose entities the signal names, AS OF
- *   the signal's block (or the block this state is at, when that is later), pinned
- *   by its HASH (`block: {hash}`), so the re-read is of that block on ONE chain.
- *
- * Why that composes into the state of ONE block: a part the signals did not name
- * since it was read did not change since, so it is still right as of the newer
- * block; and every part that did is read as of that block. Pinning to a block the
- * fold has just applied is also what keeps the read cheap on IndexedDB, whose
- * as-of read costs the versions closed ABOVE that block (none, or a few).
- *
- * Why by hash and not by number: a reorg can replace the block between the signal
- * and the re-read. Pinned to its number, the re-read would read the REPLACEMENT and
- * compose it with parts read on the old chain, until the rotated coherence token
- * arrives. Pinned to its hash, it is refused (`block-not-recorded`), and the
- * follower reads everything again, at the tip, without telling anyone: a replaced
- * block is the chain moving, not a failure.
- *
- * Work is serialised: one read at a time, the moves that arrive meanwhile merged
- * into the next one, so an older answer can never land after a newer one. Any other
- * failure is reported (`onError`) and the next read is a full one.
- */
-export class StateFollower {
-	private current: StateRead | undefined;
-	private coherence: string | undefined;
-	private everything = true;
-	private dirty = new Set<Part>();
-	/** The latest block an `applied` signal named since the last read. */
-	private dirtyAt: BlockRef | undefined;
-	private running: Promise<void> | undefined;
-	private readonly listeners = new Set<(read: StateRead) => void>();
-
-	constructor(
-		private readonly execute: Execute,
-		private account: string,
-		private readonly onError: (error: StateQueryError) => void = () => {},
-	) {}
-
-	/** The last state read, with the block it is as of. */
-	get state(): StateRead | undefined {
-		return this.current;
-	}
-
-	onUpdate(listener: (read: StateRead) => void): () => void {
-		this.listeners.add(listener);
-		return () => this.listeners.delete(listener);
-	}
-
-	/** Read everything again (the first read, or a reset). */
-	refreshAll(): Promise<void> {
-		this.everything = true;
-		return this.schedule();
-	}
-
-	/** Feed it every state-moved signal, in order. */
-	moved(moved: Moved): Promise<void> {
-		if (moved.coherence !== this.coherence) {
-			this.coherence = moved.coherence;
-			this.everything = true;
-		} else if (moved.kind === 'applied') {
-			for (const part of partsMovedBy(moved.entities)) this.dirty.add(part);
-			if (!this.dirtyAt || moved.block >= this.dirtyAt.number) {
-				this.dirtyAt = {number: moved.block, hash: moved.hash};
-			}
-		} else {
-			this.everything = true;
-		}
-		return this.schedule();
-	}
-
-	/** The connected account changed: its commitment is the one part that depends on it. */
-	setAccount(account: string): Promise<void> {
-		if (account.toLowerCase() === this.account.toLowerCase()) return Promise.resolve();
-		this.account = account;
-		this.dirty.add('commitments');
-		return this.schedule();
-	}
-
-	private schedule(): Promise<void> {
-		if (!this.running) {
-			this.running = this.drain().finally(() => (this.running = undefined));
-		}
-		return this.running;
-	}
-
-	private async drain(): Promise<void> {
-		while (this.everything || this.dirty.size > 0) {
-			const everything = this.everything || !this.current;
-			const parts = everything ? new Set(PARTS) : this.dirty;
-			const at = everything ? undefined : this.pin(this.dirtyAt, this.current!);
-			this.everything = false;
-			this.dirty = new Set();
-			this.dirtyAt = undefined;
-			try {
-				this.current = await readParts(this.execute, parts, {
-					account: this.account,
-					at,
-					into: everything ? undefined : this.current!.data,
-				});
-			} catch (error) {
-				if (error instanceof StateQueryError && error.code === BLOCK_NOT_RECORDED) {
-					// the block this read was pinned to was replaced: read it all again, at the tip
-					this.everything = true;
-					continue;
-				}
-				// read it all again next time: a part that failed is not known to be right
-				this.everything = true;
-				this.onError(error instanceof StateQueryError ? error : new StateQueryError(String(error), undefined));
-				return;
-			}
-			for (const listener of this.listeners) listener(this.current);
-		}
-	}
-
-	/**
-	 * The block a partial read is pinned to: the latest one a signal named, or the
-	 * block the state is at when that is later (or when no signal named one: an
-	 * account change). By hash when it is known; by number only for a state read
-	 * before a host named hashes; the tip when the state is at no block yet.
-	 */
-	private pin(signalled: BlockRef | undefined, current: StateRead): number | BlockRef | undefined {
-		const held =
-			current.block === undefined
-				? undefined
-				: current.blockHash !== undefined
-					? {number: current.block, hash: current.blockHash}
-					: current.block;
-		if (!signalled) return held;
-		if (held === undefined) return signalled;
-		const heldNumber = typeof held === 'number' ? held : held.number;
-		return heldNumber > signalled.number ? held : signalled;
-	}
 }
