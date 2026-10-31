@@ -14,6 +14,12 @@ interface IStratagemsDebug is UsingStratagemsDebugTypes, UsingStratagemsDebugEve
     function forceSimpleCells(SimpleCell[] memory cells) external;
 
     function getRawCell(uint256 id) external view returns (Cell memory cell);
+
+    /// @notice the owner as stored (zero for none), where `ownerOf` would revert
+    function getRawOwner(uint256 id) external view returns (address owner);
+
+    /// @notice the record of the first move on the cell in its cycle (`StratagemsSimulation`'s test reads it)
+    function getRawCellAtCycleStart(uint256 id) external view returns (CellAtCycleStart memory start);
 }
 
 interface IStratagemsWithDebug is IStratagems, IStratagemsDebug {}

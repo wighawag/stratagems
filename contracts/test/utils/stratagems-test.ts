@@ -186,6 +186,9 @@ async function deployStratagems(override?: Partial<GameConfig>) {
 	const Gems = await fetchContract(deployments['Gems'] as Deployment<typeof abis.Gems>);
 	const GemsGenerator = await fetchContract(deployments['GemsGenerator'] as Deployment<typeof abis.RewardsGenerator>);
 	const Stratagems = await fetchContract(deployments['Stratagems'] as Deployment<typeof abis.IStratagemsWithDebug>);
+	const StratagemsSimulation = await fetchContract(
+		deployments['StratagemsSimulation'] as Deployment<typeof abis.StratagemsSimulation>,
+	);
 
 	const config = await Stratagems.read.getConfig();
 
@@ -197,6 +200,7 @@ async function deployStratagems(override?: Partial<GameConfig>) {
 		stratagemsAdmin: deployer, // TODO
 		tokensBeneficiary,
 		Stratagems,
+		StratagemsSimulation,
 		TestTokens,
 		config,
 		otherAccounts,

@@ -15,6 +15,14 @@ contract StratagemsDebug is UsingStratagemsSetters, IStratagemsDebug {
         return _cells[id];
     }
 
+    function getRawOwner(uint256 id) external view returns (address) {
+        return address(uint160(_owners[id]));
+    }
+
+    function getRawCellAtCycleStart(uint256 id) external view returns (CellAtCycleStart memory) {
+        return _cellsAtCycleStart[id];
+    }
+
     function _getOwner() internal view returns (address ownerAddress) {
         // solhint-disable-next-line security/no-inline-assembly
         assembly {

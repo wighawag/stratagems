@@ -151,6 +151,17 @@ export default deployScript(
 			},
 		);
 
+		// WHAT A TURN WILL DO, answered by the reveal's own code: the resolution,
+		// unchanged, over storage of its own (`StratagemsSimulation.sol` says why it
+		// is a contract of its own and never a route). The same config, because its
+		// immutables are the rules' parameters; nothing is ever sent to it, the
+		// client runs its deployed code in a sandbox (`web/src/lib/game/simulation`).
+		await env.deploy('StratagemsSimulation', {
+			account: deployer,
+			artifact: artifacts.StratagemsSimulation,
+			args: [config],
+		});
+
 		const desiredWeight = parseEther('1');
 		const weight = await env.read(generator, {
 			functionName: 'games',
