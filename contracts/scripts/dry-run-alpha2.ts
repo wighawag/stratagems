@@ -46,7 +46,7 @@ const publicClient = createPublicClient({chain, transport: custom(provider)});
 const deployments = env.deployments as Record<string, {address: `0x${string}`; abi: any; linkedData?: any}>;
 const names = Object.keys(deployments).sort();
 console.log(`deployed under alpha2 on a fork of Base: ${names.join(', ')}`);
-for (const required of ['TestTokens', 'TestTokensDistributor', 'Gems', 'GemsGenerator', 'Stratagems']) {
+for (const required of ['TestTokens', 'TestTokensDistributor', 'Gems', 'GemsGenerator', 'Stratagems', 'StratagemsSimulation']) {
 	if (!deployments[required]) throw new Error(`alpha2 did not deploy ${required}`);
 }
 const S = deployments.Stratagems;
@@ -135,6 +135,20 @@ const afterCommit = (await publicClient.readContract({address: S.address, abi: S
 const now = Number((await publicClient.getBlock()).timestamp);
 await provider.request({method: 'evm_increaseTime', params: [Number(afterCommit.phaseEnd) - now + 1]});
 await provider.request({method: 'evm_mine', params: []});
+// what the client's preview asks first: the turn, simulated by the reveal's own
+// code over the cells as stored (none yet on these rows of a fresh board)
+const [revealCycle] = (await publicClient.readContract({address: S.address, abi: S.abi, functionName: 'getCycleNumber'})) as [bigint, boolean];
+const Simulation = deployments.StratagemsSimulation;
+const {result: outcome} = (await publicClient.simulateContract({
+	address: Simulation.address,
+	abi: Simulation.abi,
+	functionName: 'resolveMoves',
+	args: [[], player.address, Number(revealCycle), moves],
+	account: browserKey,
+})) as {result: any};
+if (outcome.cost !== BigInt(moves.length) * 10n ** 18n) throw new Error(`the simulation's cost ${outcome.cost}`);
+console.log(`simulation: ${outcome.cells.length} cells touched, cost ${outcome.cost / 10n ** 18n} gems`);
+
 const revealUsed = await send(`reveal of ${moves.length} placements`, browserKey, {
 	address: S.address,
 	abi: S.abi,
@@ -142,6 +156,22 @@ const revealUsed = await send(`reveal of ${moves.length} placements`, browserKey
 	args: [BigInt(player.address), moves, SECRET, '0x000000000000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000'],
 	gas: CLIENT_GAS.revealGas,
 });
+
+// the board the reveal left is the one the simulation answered
+const placed = (await publicClient.readContract({
+	address: S.address,
+	abi: S.abi,
+	functionName: 'getCells',
+	args: [moves.map((m) => m.position)],
+})) as any[];
+for (const [i, cell] of placed.entries()) {
+	const simulated = outcome.cells.find((c: any) => c.position === moves[i].position);
+	for (const key of ['color', 'life', 'delta', 'enemyMap', 'stake', 'lastCycleUpdate'] as const) {
+		if (cell[key] !== simulated.cell[key]) throw new Error(`cell ${i}: ${key} ${cell[key]}, simulated ${simulated.cell[key]}`);
+	}
+	if (cell.owner.toLowerCase() !== simulated.owner.toLowerCase()) throw new Error(`cell ${i}: owner`);
+}
+console.log(`the reveal left the ${placed.length} cells the simulation answered`);
 
 let failed = false;
 for (const [name, used, declared] of [

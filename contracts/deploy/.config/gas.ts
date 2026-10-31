@@ -40,6 +40,17 @@
  *
  * so both figures below stand for Base as declared.
  *
+ * and (2026-10-31, step X2) after the resolution's payouts and points moved
+ * behind two internal virtual hooks for `StratagemsSimulation` (the reveal's
+ * code otherwise unchanged; the optimiser shares the calls, so it is cheaper):
+ *
+ *   the full chunk of the living case                                6,002,468
+ *   the full chunk whose every neighbour dies                        4,286,012
+ *   the reveal of 30 placements on the fork of Base                  3,336,808
+ *   (step D's 3,337,329; the commits unchanged)
+ *
+ * so neither declared figure moves.
+ *
  * Each declared figure carries a margin over its reading, because it sizes a
  * reservation and is a limit: over-reserving costs a slightly larger stipend,
  * under-reserving costs a player their bond.
