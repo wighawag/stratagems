@@ -67,6 +67,9 @@ contracts/src/game/routes/GameCommit.sol
 contracts/src/game/routes/GameDelegation.sol
 contracts/src/game/routes/GameGetters.sol
 contracts/src/game/routes/GameReveal.sol
+# The reference game's rule as a route for the bytecode sandbox (2026-10-31): built
+# on its `UsingGameInternal`, omitted above, so it goes with it.
+contracts/src/game/routes/GameSimulation.sol
 contracts/src/tokens
 contracts/deploy/001_deploy_token.ts
 contracts/deploy/010_deploy_game.ts
