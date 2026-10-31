@@ -6,9 +6,10 @@ import {
 	enterGame,
 	commitmentHashFor,
 	revealTurn,
+	TURN_BOND,
 	type Placement,
 } from './utils/index.js';
-import {parseEther, zeroAddress} from 'viem';
+import {zeroAddress} from 'viem';
 
 /**
  * THE SIMULATION ROUTE IS THE REVEAL'S RULE, and the reveal is its oracle.
@@ -20,6 +21,12 @@ import {parseEther, zeroAddress} from 'viem';
  * reveal it, and compare the board with the preview, cell by cell, on the
  * shapes where the rule branches: a cell nobody holds, one this player already
  * holds, one somebody else holds, and one the turn names twice.
+ *
+ * WRITTEN AGAINST WHATEVER THE DEPLOYMENT CHARGES, and against however a
+ * player gets in (`enterGame`, `TURN_BOND`), because those are what a branch
+ * of this template varies: on `with/nft-identity` a placement is free and the
+ * stake is custody. The comparison with the reveal holds either way; the shape
+ * assertions that name a number are made only where a placement costs one.
  */
 
 const {provider, networkHelpers} = await network.connect();
@@ -62,12 +69,9 @@ describe('the simulation route', function () {
 
 		const playerA = unnamedAccounts[0];
 		const playerB = unnamedAccounts[1];
-		const identityA = await enterGame(fixtures, playerA, {
-			amount: parseEther('20'),
-		});
-		const identityB = await enterGame(fixtures, playerB, {
-			amount: parseEther('20'),
-		});
+		const identityA = await enterGame(fixtures, playerA);
+		const identityB = await enterGame(fixtures, playerB);
+		const placementCost = BigInt(fixtures.linkedData.placementCost);
 
 		/** One cycle in which each listed player commits and reveals a turn. */
 		async function playCycle(
@@ -85,7 +89,7 @@ describe('the simulation route', function () {
 					args: [
 						turn.identity,
 						commitmentHashFor(turn.placements, turn.secret, actionsPerReveal),
-						parseEther('10'),
+						TURN_BOND,
 						zeroAddress,
 					],
 				});
@@ -133,6 +137,7 @@ describe('the simulation route', function () {
 
 		return {
 			fixtures,
+			placementCost,
 			playerA,
 			playerB,
 			identityA,
@@ -144,8 +149,16 @@ describe('the simulation route', function () {
 	}
 
 	it('previews exactly what the reveal then does', async function () {
-		const {playerA, playerB, identityA, identityB, playCycle, load, simulate} =
-			await setup();
+		const {
+			placementCost,
+			playerA,
+			playerB,
+			identityA,
+			identityB,
+			playCycle,
+			load,
+			simulate,
+		} = await setup();
 
 		const fresh = cellAt(1, 1);
 		const heldByA = cellAt(2, 1);
@@ -187,16 +200,19 @@ describe('the simulation route', function () {
 		expect(await load(identityA, cellIDs)).toEqual(preview);
 		// And the shapes it was about, so a rule that changed in both places at
 		// once is still caught.
-		expect(preview.map((cell) => cell.numClaimants)).toEqual([1, 1, 2]);
-		expect(preview.map((cell) => cell.playerStake)).toEqual([
-			parseEther('1'),
-			parseEther('2'),
-			parseEther('1'),
-		]);
+		if (placementCost > 0n) {
+			expect(preview.map((cell) => cell.numClaimants)).toEqual([1, 1, 2]);
+			expect(preview.map((cell) => cell.playerStake)).toEqual([
+				placementCost,
+				2n * placementCost,
+				placementCost,
+			]);
+		}
 	});
 
 	it('resolves a turn that names a cell twice as the reveal does', async function () {
-		const {playerA, identityA, playCycle, load, simulate} = await setup();
+		const {placementCost, playerA, identityA, playCycle, load, simulate} =
+			await setup();
 
 		const twice = cellAt(4, 4);
 		const turn: Placement[] = [{cellID: twice}, {cellID: twice}];
@@ -212,8 +228,10 @@ describe('the simulation route', function () {
 		]);
 
 		expect(await load(identityA, [twice])).toEqual(preview);
-		expect(preview[0].numClaimants).toEqual(1);
-		expect(preview[0].totalStake).toEqual(parseEther('2'));
+		if (placementCost > 0n) {
+			expect(preview[0].numClaimants).toEqual(1);
+			expect(preview[0].totalStake).toEqual(2n * placementCost);
+		}
 	});
 
 	it('writes nothing', async function () {
