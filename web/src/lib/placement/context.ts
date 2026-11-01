@@ -78,6 +78,7 @@ import {createPlacementPreview, withPreview} from '$lib/placement/preview';
 import {createBytecodeSandbox} from '$lib/game/simulation';
 import {createGameRenderer, type GameSurface} from '$lib/placement/render';
 import {cellID} from '$lib/placement/cells';
+import {createTableStore, type TableStore} from '$lib/game/lobby/table';
 
 export type Game = {
 	config: PlacementConfig;
@@ -173,6 +174,8 @@ export type Game = {
 	setup: Readable<SetupNeeded | undefined>;
 	/** Whether the saved turn has loaded, for the HUD to say while it has not. */
 	savedTurn: Readable<SavedTurn>;
+	/** The table this game is at, if it is at one: its roster and the creator's powers. */
+	table: TableStore | undefined;
 };
 
 /**
@@ -338,6 +341,10 @@ export function createGameContext(core: CoreServices): GameContext {
 			// client's mirrored guard is an optimisation and nothing is riding on
 			// it. See `game/core/advance.ts`.
 			contractIsTheJudge: true,
+			// Inert under the world's Timed cycle and what a Manual one needs
+			// anyway; at a table (`TimedWithEarlyAdvance`) a phase closes the
+			// moment everyone has acted, which is what makes a table quick to play.
+			auto: 'eagerly',
 		},
 		// THE DEPLOYMENT'S CHUNK SIZE: it bounds how much of a turn can still be
 		// opened, and it is part of the commitment's hash (see `buildCommitment`).
@@ -389,7 +396,11 @@ export function createGameContext(core: CoreServices): GameContext {
 		stake: {
 			refresh: () => reserve.update(),
 			needed: derived(reserve, stakeNeeded),
-			acquisition: createStakeAcquisition({config, deployments}),
+			acquisition: createStakeAcquisition({
+				config,
+				deployments,
+				table: core.table,
+			}),
 			grant: SIGNER_GRANT,
 		},
 		// The plan the view draws carries what the planned cells will hold, once
@@ -433,6 +444,19 @@ export function createGameContext(core: CoreServices): GameContext {
 		},
 	});
 
+	// AT A TABLE: its roster, polled beside the game. The creator's start and
+	// forfeit move the cycle, so the cycle is read again after either lands.
+	const table = core.table
+		? createTableStore({
+				deps: core,
+				table: core.table,
+				you: derived(activeIdentity, ($identity) =>
+					$identity === undefined ? undefined : onchainIdentity($identity),
+				),
+				onChanged: () => void crg.game.cycleAdvance.check(),
+			})
+		: undefined;
+
 	const cost = derived(
 		crg.game.planning.count,
 		($count) => BigInt($count) * config.placementCost,
@@ -441,8 +465,15 @@ export function createGameContext(core: CoreServices): GameContext {
 	return {
 		onchainState: crg.onchainState,
 		viewState: crg.viewState,
-		game: {...crg.game, config, activeIdentity, reserve, cost},
+		game: {...crg.game, config, activeIdentity, reserve, cost, table},
 		render: crg.render,
-		start: crg.start,
+		start: () => {
+			const stopGame = crg.start();
+			const stopTable = table?.startPolling();
+			return () => {
+				stopTable?.();
+				stopGame();
+			};
+		},
 	};
 }

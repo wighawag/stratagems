@@ -9,6 +9,8 @@ pragma solidity ^0.8.0;
 // feature.
 import {IDelegation} from "@etherplay/delegation/contracts/IDelegation.sol";
 
+import {ICommitRevealLobby} from "../../commit-reveal/interfaces/ICommitRevealLobby.sol";
+
 import "./UsingGameTypes.sol";
 import "./UsingGameEvents.sol";
 import "./UsingGameErrors.sol";
@@ -218,3 +220,8 @@ interface IGame is
     IGameSimulation,
     IDelegation
 {}
+
+/// @notice A game at a table for a fixed set of players: the whole game, plus
+///         the lobby's routes. What a clone made by {CommitRevealGameFactory}
+///         answers to; the persistent world answers to {IGame} alone.
+interface IGameLobby is IGame, ICommitRevealLobby {}
