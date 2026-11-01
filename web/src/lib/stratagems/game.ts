@@ -19,6 +19,12 @@ export {createGameContext as createAppContext, SIGNER_GRANT} from './context';
  */
 export type AppMembers = Omit<GameContext, 'start'>;
 
+/**
+ * STRATAGEMS' TABLES (step L2): one game for a fixed set of players at an
+ * address of its own, beside the persistent world. See `./table.ts`.
+ */
+export {stratagemsLobby as lobby} from './table';
+
 /** What `?debug` traces, on top of the framework's own. */
 export {startDiagnostics} from './diagnostics';
 

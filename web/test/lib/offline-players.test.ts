@@ -81,6 +81,7 @@ async function buildWorld(options: {stakeSeats: boolean} = {stakeSeats: true}) {
 		scripts: [...OFFLINE_DEPLOYMENT.scripts],
 		accounts: {...OFFLINE_DEPLOYMENT.accounts},
 		initialBalances: {...OFFLINE_DEPLOYMENT.initialBalances},
+		expectedContracts: [...OFFLINE_DEPLOYMENT.expectedContracts],
 		provision: async ({env, node}) => {
 			for (const address of [HUMAN.address, ...PLAYED.map((p) => p.address)]) {
 				await node.provider.request({

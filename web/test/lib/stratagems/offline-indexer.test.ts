@@ -43,7 +43,12 @@ import {
 	STREAM_FINALITY,
 } from 'stratagems-indexer';
 import {prepareCommitment, xyToBigIntID} from 'stratagems-common';
-import {createEmbeddedWorld, type EmbeddedWorld} from '$lib/embedded';
+import {
+	createEmbeddedWorld,
+	expectedContractNames,
+	type EmbeddedWorld,
+} from '$lib/embedded';
+import {isTableContract} from '$lib/stratagems/table';
 import {createBytecodeSandbox} from '$lib/game/simulation';
 import {createNode} from 'webevm';
 
@@ -84,6 +89,10 @@ async function bootWorld(): Promise<EmbeddedWorld> {
 		},
 		initialBalances: Object.fromEntries(
 			KEYS.map((key) => [privateKeyToAccount(key).address, 10n ** 24n]),
+		),
+		// the offline world has no tables (step L2's PL2-3)
+		expectedContracts: expectedContractNames().filter(
+			(name) => !isTableContract(name),
 		),
 	});
 }

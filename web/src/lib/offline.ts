@@ -7,6 +7,7 @@ import deployGenerator from 'stratagems-contracts/deploy/011_deploy_gems_generat
 import deployGame from 'stratagems-contracts/deploy/020_deploy_game.js';
 import {
 	createEmbeddedWorld,
+	expectedContractNames,
 	restoreIsCoherent,
 	type EmbeddedWorld,
 } from '$lib/embedded';
@@ -15,6 +16,7 @@ import {startEmbeddedNode} from '$lib/embedded/node';
 import {announceEmbeddedWallet} from '$lib/embedded/wallet';
 import {createIndexedDBPersistence} from 'webevm';
 import {createIndexedDBDeploymentStore} from '@rocketh/web';
+import {isTableContract} from '$lib/stratagems/table';
 import {createContext} from '$lib/context/index';
 import type {Context} from '$lib/context/types';
 import {createOfflinePlayers, type OfflinePlayer} from '$lib/offline-players';
@@ -122,6 +124,14 @@ export const OFFLINE_DEPLOYMENT = {
 		[DEPLOYER_ADDRESS]: PLAY_MONEY,
 		[BENEFICIARY_ADDRESS]: PLAY_MONEY,
 	},
+	/**
+	 * What must exist afterwards: everything the app was built against except
+	 * the tables (`021_deploy_tables.ts` is not among the scripts above, since
+	 * an in-tab chain has nobody to invite: step L2's PL2-3).
+	 */
+	expectedContracts: expectedContractNames().filter(
+		(name) => !isTableContract(name),
+	),
 } as const;
 
 export type OfflineWorldStatus =
@@ -341,6 +351,7 @@ async function openWorld(
 		scripts: [...OFFLINE_DEPLOYMENT.scripts],
 		accounts: {...OFFLINE_DEPLOYMENT.accounts},
 		initialBalances: {...OFFLINE_DEPLOYMENT.initialBalances},
+		expectedContracts: [...OFFLINE_DEPLOYMENT.expectedContracts],
 		persistence: createIndexedDBPersistence({
 			db: `offline-world-chain:${chainId}`,
 		}),
