@@ -9,7 +9,9 @@
 export {
 	acquisitionAuthorisation,
 	acquisitionTotal,
+	approveIfShort,
 	createAcquisition,
+	ERC20_ALLOWANCE_ABI,
 	opensAWallet,
 	refreshWhenPendingAcquisitionSettles,
 	resolveAcquisitionState,
