@@ -50,6 +50,7 @@ import {
 import {
 	createCycleAdvance,
 	type Attendance,
+	type AutoAdvance,
 	type CycleAdvanceStore,
 } from './advance';
 import {
@@ -470,6 +471,13 @@ export type CommitRevealGameParts<T extends GameTypes> = {
 		 * its own contract, never the framework's: see `advance.ts`.
 		 */
 		contractIsTheJudge: boolean;
+		/**
+		 * WHEN THIS BROWSER PUSHES THE CYCLE (`advance.ts`'s `AutoAdvance`).
+		 * Defaults to pushing only where nothing else will (a Manual cycle); a
+		 * game on the hybrid policy that wants a phase to close the moment
+		 * everyone has acted says `eagerly`.
+		 */
+		auto?: AutoAdvance;
 	};
 	/**
 	 * Actions per reveal chunk, when the game chains its reveal. Bounds how much
@@ -671,6 +679,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 		advance: parts.cycle.advance,
 		refreshCycle,
 		contractIsTheJudge: parts.cycle.contractIsTheJudge,
+		auto: parts.cycle.auto,
 	});
 
 	const {camera, cameraControl} = createCamera(parts.camera);

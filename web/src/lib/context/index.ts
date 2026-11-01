@@ -16,9 +16,47 @@
  * matters: the game needs the connection, and the health/refresh wiring needs
  * the game's chain reads. See the injection point in `core.ts`.
  */
+import {readable} from 'svelte/store';
 import {createCoreContext, type ConnectionFactory} from './core.js';
+import * as app from '$app-specific';
 import {createAppContext, SIGNER_GRANT} from '$app-specific';
 import type {Context} from './types.js';
+import {params} from '$lib';
+import {deployments} from '$lib/deployments-store';
+import {establishRemoteConnection} from '$lib/core/connection/remote';
+import type {DeploymentsStore} from '$lib/core/connection/types';
+import {tableFromParam, type TableLobby} from '$lib/game/lobby/table';
+
+/**
+ * THE GAME'S TABLES, if it has any: the `lobby` its `$app-specific` module
+ * exports. Optional, read off the module rather than imported by name, so a
+ * game with no tables declares nothing and compiles unedited.
+ */
+export const lobby: TableLobby | undefined = (
+	app as unknown as {lobby?: TableLobby}
+).lobby;
+
+/**
+ * The table this page is at: `?game=<address>`, when the game has tables.
+ * Read once, as the context is, so moving between tables is a page load.
+ */
+export function tableOfThisPage(): `0x${string}` | undefined {
+	return lobby ? tableFromParam(params.game) : undefined;
+}
+
+/** The remote chain, with the game at `table`: the world's records, made the table's by the game. */
+function establishTableConnection(
+	lobbyOfTheGame: TableLobby,
+	table: `0x${string}`,
+): ConnectionFactory {
+	const records = lobbyOfTheGame.deploymentsAt(deployments.get(), table);
+	const store: DeploymentsStore = {
+		...readable(records),
+		get: () => records,
+	};
+	return (request) =>
+		establishRemoteConnection({...request, deployments: store});
+}
 
 export type {
 	CoreServices,
@@ -44,9 +82,17 @@ export function createContext(options?: {
 	// to "what is this browser's key for", which two pieces of shared UI need
 	// (the payment dialog's consent step and the account panel's delegation row)
 	// and neither can work out. See ui/delegation/grant.
+	// AT A TABLE, the whole page is: one connection and one account's data,
+	// with the game at the table's address. A second context beside the app's
+	// would be a second connection to the same wallet and a second writer of
+	// the same account data.
+	const table = options?.establishConnection ? undefined : tableOfThisPage();
 	return createCoreContext({
 		createApp: createAppContext,
 		signerGrant: SIGNER_GRANT,
-		establishConnection: options?.establishConnection,
+		establishConnection:
+			options?.establishConnection ??
+			(table && lobby ? establishTableConnection(lobby, table) : undefined),
+		table,
 	});
 }
