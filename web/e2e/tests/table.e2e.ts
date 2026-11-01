@@ -73,20 +73,24 @@ async function rosterOf(
  */
 async function readyToPlay(page: Page): Promise<void> {
 	await expect
-		.poll(
-			() =>
-				page.evaluate(() => {
-					const context = (globalThis as unknown as {context: any}).context;
-					let value = false;
-					const stop = context.game.readyToPlay.subscribe(
-						(v: boolean) => (value = v),
-					);
-					stop();
-					return value;
-				}),
-			{message: 'the board should take a turn', timeout: 60_000},
-		)
+		.poll(() => canPlay(page), {
+			message: 'the board should take a turn',
+			timeout: 60_000,
+		})
 		.toBe(true);
+}
+
+/** Whether the board takes a turn right now. */
+async function canPlay(page: Page): Promise<boolean> {
+	return page.evaluate(() => {
+		const context = (globalThis as unknown as {context: any}).context;
+		let value = false;
+		const stop = context.game.readyToPlay.subscribe(
+			(v: boolean) => (value = v),
+		);
+		stop();
+		return value;
+	});
 }
 
 async function commitNow(page: Page): Promise<void> {
@@ -127,7 +131,9 @@ describe('A table for a fixed set of players', () => {
 		const table = new URL(host.url()).searchParams.get('game');
 		if (!table) throw new Error('the lobby did not open the table');
 		await expect(host.locator('canvas')).toBeVisible({timeout: 30_000});
-		await expect(host.getByTestId('table-panel')).toBeVisible();
+		// BEFORE THE START THE PAGE IS THE TABLE'S LOBBY: what it plays by, who
+		// is seated, and the seat to take.
+		await expect(host.getByTestId('table-lobby')).toBeVisible();
 
 		// The context is AT the table: its game is the table's address, so every
 		// transaction below goes there and nowhere else.
@@ -161,7 +167,7 @@ describe('A table for a fixed set of players', () => {
 		let second: Awaited<ReturnType<typeof cycleOf>>;
 		try {
 			await connectPageAs(guest, 0, `/play/?game=${table}`);
-			await expect(guest.getByTestId('table-panel')).toBeVisible();
+			await expect(guest.getByTestId('table-lobby')).toBeVisible();
 			// Nobody but the creator is offered the start.
 			await expect(guest.getByTestId('table-start')).toHaveCount(0);
 			await stake(guest);
@@ -172,6 +178,12 @@ describe('A table for a fixed set of players', () => {
 					timeout: 60_000,
 				})
 				.toBe(2);
+			// Seated, and still not playing: the guest waits for the creator, and
+			// the board takes no turn until the table has started.
+			await expect(guest.getByTestId('table-status')).toContainText(
+				/waiting for the creator/i,
+			);
+			expect(await canPlay(guest)).toBe(false);
 
 			// START: the roster closes and the clock is anchored at the press.
 			await expect(host.getByTestId('table-start')).toBeEnabled({
@@ -184,6 +196,13 @@ describe('A table for a fixed set of players', () => {
 					timeout: 60_000,
 				})
 				.toBe(true);
+			// The lobby gives way to the board, for both.
+			await expect(host.getByTestId('table-lobby')).toBeHidden({
+				timeout: 30_000,
+			});
+			await expect(guest.getByTestId('table-lobby')).toBeHidden({
+				timeout: 30_000,
+			});
 			const first = await cycleOf(host);
 			expect(first.commiting).toBe(true);
 

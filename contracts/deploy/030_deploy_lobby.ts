@@ -7,13 +7,13 @@ import {parseEther, zeroAddress} from 'viem';
 /**
  * GAMES FOR A FIXED SET OF PLAYERS, beside the persistent world.
  *
- * One lobby implementation, the same routes as the world's `Game` plus
- * `GameLobby`, built with the lobby's config (`data.Lobby`), and a factory that
- * clones it per table. The implementation is a router WITHOUT a proxy: nothing
+ * One lobby implementation, the same routes as the world's `Game` plus the
+ * base's `CommitRevealLobby`, built with the lobby's config (`data.Lobby`),
+ * and a factory that clones it per table. The implementation is a router WITHOUT a proxy: nothing
  * upgrades a table, and a clone delegates to the router, which delegates to
  * the routes, so each table's storage is its own.
  *
- * The world's `Game` is untouched: it has no `GameLobby` route, so nothing can
+ * The world's `Game` is untouched: it has no lobby route, so nothing can
  * open a roster on it and its entry stays open.
  */
 export default deployScript(
@@ -53,7 +53,22 @@ export default deployScript(
 					args: [config],
 				},
 				{name: 'Delegation', artifact: artifacts.GameDelegation, args: []},
-				{name: 'Lobby', artifact: artifacts.GameLobby, args: [config]},
+				// The base's own lobby route, the same for every game: it takes
+				// only the cycle's half of the config.
+				{
+					name: 'Lobby',
+					artifact: artifacts.CommitRevealLobby,
+					args: [
+						{
+							startTime: config.startTime,
+							commitPhaseDuration: config.commitPhaseDuration,
+							revealPhaseDuration: config.revealPhaseDuration,
+							time: config.time,
+							actionsPerReveal: config.actionsPerReveal,
+							cyclePolicy: config.cyclePolicy,
+						},
+					],
+				},
 			],
 		);
 
