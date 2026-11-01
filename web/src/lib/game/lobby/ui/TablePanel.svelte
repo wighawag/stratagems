@@ -8,7 +8,7 @@
 -->
 <script lang="ts">
 	import Button from '$lib/shadcn/ui/button/button.svelte';
-	import type {TableStore} from '$lib/game/lobby/table';
+	import {memberLabel, type TableStore} from '$lib/game/lobby/table';
 
 	interface Props {
 		table: TableStore;
@@ -57,7 +57,7 @@
 						{:else if seat.occupant.kind === 'you'}
 							You
 						{:else if seat.occupant.kind === 'remote-human'}
-							{short(seat.occupant.address)}
+							{memberLabel(seat.occupant.player)}
 						{/if}
 					</span>
 					{#if $table.isCreator && $table.roster.started && seat.occupant?.kind === 'remote-human'}
@@ -69,7 +69,7 @@
 							disabled={$action.step === 'Sending'}
 							onclick={() =>
 								seat.occupant?.kind === 'remote-human' &&
-								table.forfeit(BigInt(seat.occupant.address))}>Forfeit</Button
+								table.forfeit(seat.occupant.player)}>Forfeit</Button
 						>
 					{/if}
 				</li>

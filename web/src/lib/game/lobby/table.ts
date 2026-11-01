@@ -126,11 +126,21 @@ export async function readTables(
 	return tables.reverse();
 }
 
-/** Whether a member of the roster is this account. */
-export function isMember(roster: Roster, account: string | undefined): boolean {
-	if (!account) return false;
-	const id = BigInt(account);
-	return roster.members.some((member) => member === id);
+/** Whether `you` (an identity as the contract keys it) holds a seat. */
+export function isMember(roster: Roster, you: bigint | undefined): boolean {
+	return you !== undefined && roster.members.some((member) => member === you);
+}
+
+/**
+ * How a member is named on screen: an identity that fits an address is shown
+ * as one (shortened), anything bigger (a token) by its number.
+ */
+export function memberLabel(player: bigint): string {
+	if (player < 1n << 160n) {
+		const address = `0x${player.toString(16).padStart(40, '0')}`;
+		return `${address.slice(0, 6)}...${address.slice(-4)}`;
+	}
+	return `#${player}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -243,7 +253,7 @@ export type TableState =
 			table: readonly TableSeat[];
 			/** Whether this account created the table, and so starts it. */
 			isCreator: boolean;
-			/** Whether this account holds a seat. */
+			/** Whether this browser's identity holds a seat. */
 			seated: boolean;
 	  }
 	| {step: 'Failed'; message: string};
@@ -275,6 +285,12 @@ export function createTableStore(params: {
 		| 'signerBalance'
 	>;
 	table: `0x${string}`;
+	/**
+	 * This browser's identity as the contract keys it, which is what a member
+	 * is (`$lib/game/identity`'s `onchainIdentity` of the game's active
+	 * identity). The creator is an ACCOUNT, compared with `deps.account`.
+	 */
+	you: Readable<bigint | undefined>;
 	/** Called after the creator's transactions land, so the game re-reads its cycle. */
 	onChanged?: () => void;
 	pollInterval?: number;
@@ -287,14 +303,15 @@ export function createTableStore(params: {
 	function publish() {
 		if (!roster) return;
 		const account = get(deps.account);
+		const you = get(params.you);
 		state.set({
 			step: 'Loaded',
 			roster,
-			table: tableAtRoster(roster.seats, roster.members, account),
+			table: tableAtRoster(roster.seats, roster.members, you),
 			isCreator:
 				account !== undefined &&
 				account.toLowerCase() === roster.creator.toLowerCase(),
-			seated: isMember(roster, account),
+			seated: isMember(roster, you),
 		});
 	}
 
@@ -353,10 +370,12 @@ export function createTableStore(params: {
 				() => void update(),
 				params.pollInterval ?? 2000,
 			);
-			const stop = deps.account.subscribe(() => publish());
+			const stopAccount = deps.account.subscribe(() => publish());
+			const stopYou = params.you.subscribe(() => publish());
 			return () => {
 				clearInterval(timer);
-				stop();
+				stopAccount();
+				stopYou();
 			};
 		},
 	};
