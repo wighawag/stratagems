@@ -15,8 +15,18 @@
  *   the first push the base's cycle is its first, 2, committing. The timestamp
  *   would be wrong here, not merely unneeded: both durations are zero, and the
  *   arithmetic divides by them.
- * - `hybrid` (`TimedWithEarlyAdvance`): REFUSED. Its cycle moves by the clock
- *   (no event) and by a push (an event), so a stamp would need both readings.
+ * - `hybrid` (`TimedWithEarlyAdvance`, a table for a fixed set of players):
+ *   from BOTH. Its cycle moves by the clock (no event) and by a push that
+ *   RE-ANCHORS it (`CycleAdvanced` with `commiting` true: an early close, or a
+ *   table's start), from which the clock carries on. So the stamp is the last
+ *   anchor's cycle plus the whole cycles elapsed since its block, by this
+ *   block's timestamp; before any anchor, the deployment's start, as Timed. An
+ *   early REVEAL (`commiting` false) moves no cycle number, so a processor
+ *   folds only the re-anchoring pushes, with their block's timestamp.
+ *
+ * Under Manual the anchor is the same row: a push that opens a reveal phase
+ * keeps its cycle's number, so the cycle the last re-anchoring push left IS the
+ * cycle the last push left.
  *
  * Written first in stratagems (its `board/board-cycle.ts`).
  */
@@ -25,47 +35,47 @@ import {calculateCycleInfo, type CycleConfig} from '$lib/game/core/cycle';
 /** The base's first cycle: cycle 1 is the hypothetical reveal phase before it. */
 export const FIRST_CYCLE_NUMBER = 2;
 
-/** A deployment whose indexed state cannot be stamped. */
-export class UnstampableCyclePolicyError extends Error {
-	constructor(readonly policy: CycleConfig['policy']) {
-		super(
-			`an indexed state cannot stamp the cycle of a ${policy} deployment: its cycle moves both by the clock and by a push, and the stamp reads one or the other`,
-		);
-		this.name = 'UnstampableCyclePolicyError';
-	}
-}
+/**
+ * The last re-anchoring `CycleAdvanced` (`commiting` true) a state folded: the
+ * cycle it opened and its block's timestamp. `anchoredAt` is read under the
+ * hybrid policy only, so a game whose deployments are never hybrid may leave it
+ * out.
+ */
+export type CycleAnchor = {cycleNumber: number; anchoredAt?: number};
 
-/** Throws for a policy the stamp cannot read, so a deployment is refused when its state is made rather than at the first read. */
-export function assertStampable(config: CycleConfig): void {
-	if (config.policy !== 'timed' && config.policy !== 'manual') {
-		throw new UnstampableCyclePolicyError(config.policy);
-	}
-}
-
-/** Whether the stamp needs the block's timestamp (only the timed policy reads it). */
+/** Whether the stamp needs the block's timestamp (every policy with a clock). */
 export function stampNeedsTimestamp(config: CycleConfig): boolean {
-	return config.policy === 'timed';
+	return config.policy !== 'manual';
 }
 
 /**
- * The cycle a state read as of some block is stamped with. `advancedCycle` is
- * the cycle the last `CycleAdvanced` left in that state (undefined before the
- * first), read only under Manual; `timestamp` is the block's, and is required
+ * The cycle a state read as of some block is stamped with. `anchor` is the
+ * last re-anchoring push folded in that state (undefined before the first),
+ * read under Manual and hybrid; `timestamp` is the block's, and is required
  * exactly when `stampNeedsTimestamp`.
  */
 export function stampedCycleNumber(
 	config: CycleConfig,
-	advancedCycle: number | undefined,
+	anchor: CycleAnchor | undefined,
 	timestamp?: number,
 ): number {
-	assertStampable(config);
 	if (config.policy === 'manual') {
-		return advancedCycle ?? FIRST_CYCLE_NUMBER;
+		return anchor?.cycleNumber ?? FIRST_CYCLE_NUMBER;
 	}
 	if (timestamp === undefined) {
 		throw new Error(
-			`a timed deployment's state stamp needs the block's timestamp`,
+			`a ${config.policy} deployment's state stamp needs the block's timestamp`,
 		);
 	}
-	return calculateCycleInfo(timestamp, config).currentCycleNumber;
+	if (config.policy === 'timed' || anchor === undefined) {
+		return calculateCycleInfo(timestamp, config).currentCycleNumber;
+	}
+	if (anchor.anchoredAt === undefined) {
+		throw new Error(
+			`a hybrid deployment's state stamp needs the anchor's block timestamp (the processor folds it with the re-anchoring CycleAdvanced)`,
+		);
+	}
+	const cycleDuration = config.commitPhaseDuration + config.revealPhaseDuration;
+	const elapsed = Math.max(0, timestamp - anchor.anchoredAt);
+	return anchor.cycleNumber + Math.floor(elapsed / cycleDuration);
 }

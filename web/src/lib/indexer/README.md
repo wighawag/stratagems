@@ -5,7 +5,7 @@
 ## What a game writes
 
 1. **Its processor** (`declareEntities` and an `on<Event>` handler per event it folds), and its **source**: its contracts and, of each ABI, only the events a handler folds. The source is part of the stream's digest, so it is built in one place.
-2. **Its questions**: the PARTS of its state, which part each entity's move invalidates, and a `read(execute, parts, {account, at, into})` that asks some parts as of one block and writes them into a copy of the state (see `./follower.ts`, `StateFollowerSpec`). If it folds the base's `CycleAdvanced`, an offline world (Manual policy) is stamped from it.
+2. **Its questions**: the PARTS of its state, which part each entity's move invalidates, and a `read(execute, parts, {account, at, into})` that asks some parts as of one block and writes them into a copy of the state (see `./follower.ts`, `StateFollowerSpec`). If it folds the base's re-anchoring `CycleAdvanced` (`commiting` true) with its block's timestamp, an offline world (Manual policy) and a table (`TimedWithEarlyAdvance`) are stamped from it.
 3. **Two worker entries**, about ten lines each, because the bundler has to see the processor's import and a literal `new Worker(new URL(...))` in the game's code:
 
 ```ts
@@ -51,7 +51,7 @@ The reference game on this node is the worked example: `$lib/placement/indexer/`
 
 - **`./host.ts`**: the two worker bodies. A live chain's: ONE TAB INDEXES and the others read (etherfold ADR-0097) under an election named per deployment, a database per stream, a published snapshot installed when the tab names a publication (the processor may then be the PUBLISHED BUNDLE, whose bytes are its identity: `processorBundle: {url: new URL('processor.bundle.js', appRoot())}`). An offline world's: no election, no publication, its database named by the world and kept across reloads.
 - **`./worker-choice.ts`**: which worker a deployment runs and its name (`<prefix>-<chainId>-<game>` for a live chain, `<prefix>-world-<chainId>` for a world), and `deleteWorldIndex` for a forgotten world.
-- **`./indexed-state.ts`**: the `OnchainStateStore` the skeleton reads: the port to the worker, the follower, the worker's progress, the refusal and failure statuses, and the CYCLE STAMP (`./cycle-stamp.ts`: the block's timestamp under the timed policy, the game's folded `CycleAdvanced` under Manual, hybrid refused).
+- **`./indexed-state.ts`**: the `OnchainStateStore` the skeleton reads: the port to the worker, the follower, the worker's progress, the refusal and failure statuses, and the CYCLE STAMP (`./cycle-stamp.ts`: the block's timestamp under the timed policy, the game's folded `CycleAdvanced` under Manual, both under the hybrid policy).
 - **`./follower.ts`**: one full read, then only the parts whose entities moved, pinned by block HASH so a reorg between the signal and the read is refused and read again rather than composed, serialised so an older answer never lands after a newer one.
 - **`contracts/utils/indexer.ts`**: `indexInProcess`, the same processor in Node over SQLite, for contracts tests, unit tests and scripts.
 

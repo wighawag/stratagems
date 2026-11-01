@@ -23,11 +23,10 @@ export {
 	type StateRead,
 } from './follower';
 export {
-	assertStampable,
 	FIRST_CYCLE_NUMBER,
 	stampedCycleNumber,
 	stampNeedsTimestamp,
-	UnstampableCyclePolicyError,
+	type CycleAnchor,
 } from './cycle-stamp';
 export {
 	deleteWorldIndex,
