@@ -173,3 +173,24 @@ describe('the leaderboard', () => {
 		expect(get(leaderboard).find((row) => row.mine)?.player).toBe(ALICE);
 	});
 });
+
+describe('the leaderboard at a table (step L2, PL2-7)', () => {
+	it('ranks every owner of a living cell by the cells they hold, with no points and nothing earned', async () => {
+		const played = await board();
+		// a table's generator is `NoRewards`: the indexer folds no points at all
+		played.data.points.shared = {};
+		const rows = leaderboardOf({
+			board: played,
+			player: BOB,
+			maxLife: MAX_LIFE,
+			byLands: true,
+		});
+		expect(rows.map((row) => [row.player, row.lands, row.mine])).toEqual([
+			[ALICE.toLowerCase(), 2, false],
+			[BOB.toLowerCase(), 1, true],
+		]);
+		expect(rows.every((row) => row.earned === 0n && row.points === 0n)).toBe(
+			true,
+		);
+	});
+});

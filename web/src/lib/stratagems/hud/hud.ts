@@ -319,6 +319,10 @@ export function acquisitionBusyLabel(
 			return opensAWallet(state.authorisation)
 				? 'Confirm in your wallet to authorise this browser...'
 				: 'Authorising this browser...';
+		case 'Approving':
+			// at a table (step L2): the table is paid by an ordinary allowance,
+			// so the wallet opens once to approve and once to stake
+			return 'Confirm in your wallet to let this table take your gems...';
 		case 'Acquiring':
 			return 'Staking...';
 		case 'ChoosingPayer':

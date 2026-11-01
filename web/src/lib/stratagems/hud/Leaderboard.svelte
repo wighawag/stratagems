@@ -12,6 +12,8 @@
 	import {describeLeaderboard} from './panels';
 
 	const {game} = getAppContext();
+	// at a table there are no points and nothing earned: ranked by lands (PL2-7)
+	const atTable = game.atTable;
 	const rows = derived(game.leaderboard, ($rows) =>
 		describeLeaderboard($rows, {
 			decimals: game.config.currency.decimals,
@@ -36,7 +38,9 @@
 			data-testid="leaderboard"
 		>
 			{#if $rows.length === 0}
-				<p class="text-xs text-muted-foreground">Nobody has scored yet.</p>
+				<p class="text-xs text-muted-foreground">
+					{atTable ? 'Nobody holds a cell yet.' : 'Nobody has scored yet.'}
+				</p>
 			{:else}
 				<table class="w-full text-xs">
 					<thead class="text-muted-foreground">
@@ -44,8 +48,10 @@
 							<th class="text-left">#</th>
 							<th class="text-left">Player</th>
 							<th class="text-right">Cells</th>
-							<th class="text-right">Points</th>
-							<th class="text-right">Earned</th>
+							{#if !atTable}
+								<th class="text-right">Points</th>
+								<th class="text-right">Earned</th>
+							{/if}
 						</tr>
 					</thead>
 					<tbody>
@@ -54,8 +60,10 @@
 								<td>{row.rank}</td>
 								<td>{row.player}</td>
 								<td class="text-right">{row.lands}</td>
-								<td class="text-right">{row.points}</td>
-								<td class="text-right">{row.earned}</td>
+								{#if !atTable}
+									<td class="text-right">{row.points}</td>
+									<td class="text-right">{row.earned}</td>
+								{/if}
 							</tr>
 						{/each}
 					</tbody>

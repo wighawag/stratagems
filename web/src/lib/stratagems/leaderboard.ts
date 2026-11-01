@@ -39,11 +39,18 @@ export type LeaderboardRow = {
 	mine: boolean;
 };
 
-/** The leaderboard, as of `board`. Pure. */
+/**
+ * The leaderboard, as of `board`. Pure.
+ *
+ * AT A TABLE (`byLands`) there are no points and nothing is earned (its
+ * generator is `NoRewards`, step L2's PL2-7), so the rows are every owner of a
+ * living cell, ranked by the cells they hold.
+ */
 export function leaderboardOf(params: {
 	board: BoardState;
 	player?: `0x${string}`;
 	maxLife: number;
+	byLands?: boolean;
 }): LeaderboardRow[] {
 	const {data, cycleNumber} = params.board;
 	const viewer = params.player?.toLowerCase();
@@ -55,6 +62,26 @@ export function leaderboardOf(params: {
 		if (!owner) continue;
 		const {cell} = cellAtCycle(data.cells[key], cycleNumber, params.maxLife);
 		if (cell.life > 0) lands.set(owner, (lands.get(owner) ?? 0) + 1);
+	}
+
+	if (params.byLands) {
+		return [...lands.entries()]
+			.map(([owner, count]): LeaderboardRow => ({
+				player: owner as `0x${string}`,
+				earned: 0n,
+				points: 0n,
+				lands: count,
+				mine: owner === viewer,
+			}))
+			.sort((a, b) =>
+				a.lands !== b.lands
+					? b.lands - a.lands
+					: a.player < b.player
+						? -1
+						: a.player > b.player
+							? 1
+							: 0,
+			);
 	}
 
 	const rows = Object.entries(data.points.shared).map(
@@ -102,6 +129,8 @@ export function createLeaderboard(params: {
 	onchainState: OnchainStateStore<BoardState>;
 	identity: Readable<GameIdentity | undefined>;
 	maxLife: number;
+	/** At a table: ranked by lands, see `leaderboardOf`. */
+	byLands?: boolean;
 }): Readable<LeaderboardRow[]> {
 	const board: Readable<OnchainStateValue<BoardState>> = {
 		subscribe: params.onchainState.subscribe,
@@ -112,6 +141,7 @@ export function createLeaderboard(params: {
 					board: $board,
 					player: $identity,
 					maxLife: params.maxLife,
+					byLands: params.byLands,
 				})
 			: [],
 	);

@@ -14,7 +14,9 @@ import type {CycleConfig} from '$lib/game/core/cycle';
 type Row = {cycleNumber: number; anchoredAt: number};
 
 /** The processor's `state`, as far as `onCycleAdvanced` writes it. */
-function fold(events: {cycleNumber: bigint; commiting: boolean; blockTimestamp: number}[]): Row | undefined {
+function fold(
+	events: {cycleNumber: bigint; commiting: boolean; blockTimestamp: number}[],
+): Row | undefined {
 	let row: Row | undefined;
 	const state = {
 		set(entity: string, _id: unknown, value: Row) {
@@ -22,11 +24,19 @@ function fold(events: {cycleNumber: bigint; commiting: boolean; blockTimestamp: 
 			row = value;
 		},
 	};
-	const handler = (stratagemsProcessor as unknown as Record<string, (s: unknown, e: unknown) => void>)
-		.onCycleAdvanced;
+	const handler = (
+		stratagemsProcessor as unknown as Record<
+			string,
+			(s: unknown, e: unknown) => void
+		>
+	).onCycleAdvanced;
 	for (const event of events) {
 		handler(state, {
-			args: {cycleNumber: event.cycleNumber, commiting: event.commiting, pushedBy: '0x00'},
+			args: {
+				cycleNumber: event.cycleNumber,
+				commiting: event.commiting,
+				pushedBy: '0x00',
+			},
 			blockNumber: 1,
 			blockTimestamp: event.blockTimestamp,
 		});
@@ -41,11 +51,18 @@ const hybrid = {
 	commitPhaseDuration: 45,
 	revealPhaseDuration: 15,
 } as unknown as CycleConfig;
-const manual = {policy: 'manual', startTime: 0, commitPhaseDuration: 0, revealPhaseDuration: 0} as unknown as CycleConfig;
+const manual = {
+	policy: 'manual',
+	startTime: 0,
+	commitPhaseDuration: 0,
+	revealPhaseDuration: 0,
+} as unknown as CycleConfig;
 
 describe("the board's stamp from the folded anchor", () => {
 	it("folds a table's start, and counts whole cycles of the clock from its block", () => {
-		const row = fold([{cycleNumber: 1000n, commiting: true, blockTimestamp: START + 100_000}]);
+		const row = fold([
+			{cycleNumber: 1000n, commiting: true, blockTimestamp: START + 100_000},
+		]);
 		expect(row).toEqual({cycleNumber: 1000, anchoredAt: START + 100_000});
 		expect(stampedCycleNumber(hybrid, row, START + 100_000)).toBe(1000);
 		expect(stampedCycleNumber(hybrid, row, START + 100_059)).toBe(1000);
@@ -54,13 +71,17 @@ describe("the board's stamp from the folded anchor", () => {
 	});
 
 	it('moves nothing on an early reveal, which keeps its cycle number', () => {
-		const anchored = fold([{cycleNumber: 1000n, commiting: true, blockTimestamp: START + 100_000}]);
+		const anchored = fold([
+			{cycleNumber: 1000n, commiting: true, blockTimestamp: START + 100_000},
+		]);
 		const afterEarlyReveal = fold([
 			{cycleNumber: 1000n, commiting: true, blockTimestamp: START + 100_000},
 			{cycleNumber: 1000n, commiting: false, blockTimestamp: START + 100_010},
 		]);
 		expect(afterEarlyReveal).toEqual(anchored);
-		expect(fold([{cycleNumber: 7n, commiting: false, blockTimestamp: START}])).toBeUndefined();
+		expect(
+			fold([{cycleNumber: 7n, commiting: false, blockTimestamp: START}]),
+		).toBeUndefined();
 	});
 
 	it('re-anchors on an early close, from which the clock carries on', () => {
