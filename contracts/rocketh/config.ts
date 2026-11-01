@@ -68,19 +68,24 @@ export const config = {
 				supportsSendRawTransactionSync: false,
 			},
 		},
-		// THE LAN BOX (`lan` above): geth's dev mode prices like a local chain,
-		// so the local chain's properties; its genesis is reset when the box is,
-		// which the deterministic deploys survive and the records must follow.
+		// THE LAN BOX (`lan` above). The app reaches its node same-host
+		// (`web/.env.lan`); this url is what a laptop on the box's hotspot names it.
+		// A reset of the box keeps its genesis, so the records on disk outlive the
+		// chain and must be deleted by hand (README, "On an ethereum-lan-node box").
 		19216801: {
 			info: {
 				id: 19216801,
 				name: 'Ethereum LAN node',
 				nativeCurrency: {name: 'Ether', symbol: 'ETH', decimals: 18},
-				rpcUrls: {default: {http: ['http://localhost:8545']}},
+				rpcUrls: {default: {http: ['http://ethereum.lan:8545']}},
 			},
 			deleteDeploymentsIfDifferentGenesisHash: true,
 			properties: {
-				expectedWorstGasPrice: parseEther('1', 'gwei'),
+				// geth's dev chain: a base fee of a few wei and its miner's least tip,
+				// 1,000,000 wei (0.001 gwei), measured in step L2's rehearsal. Ten
+				// times that sizes the stake's stipend at about 0.007 ETH; at 1 gwei
+				// it was 0.717 ETH, most of the box faucet's 1 ETH claim.
+				expectedWorstGasPrice: parseEther('0.01', 'gwei'),
 				creditsGasMultiplier: CLIENT_GAS.commitGas + CLIENT_GAS.revealGas,
 				supportsSendRawTransactionSync: false,
 			},
