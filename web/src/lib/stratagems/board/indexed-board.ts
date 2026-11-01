@@ -89,6 +89,8 @@ export function createIndexedBoard(params: {
 	player: Readable<`0x${string}` | undefined>;
 	/** `PUBLIC_SNAPSHOT_URI`, when this build names one. */
 	snapshotURI?: string;
+	/** Whether to look for a published snapshot at all (not at a table). Default true. */
+	publish?: boolean;
 	/** A path of the app as served (`$lib/kit/paths`' `url`). */
 	appPath: (path: string) => string;
 }): IndexedStateStore<BoardState> {
@@ -116,23 +118,23 @@ export function createIndexedBoard(params: {
 		// digest the publication index is keyed by
 		finality: STREAM_FINALITY,
 		// asked when the worker starts, in the browser; a world has none
-		publication: () => ({
-			locations: publicationLocations(
-				params.deployment.name,
-				params.appPath,
-				params.snapshotURI,
-			),
-		}),
+		publication: () =>
+			params.publish === false
+				? undefined
+				: {
+						locations: publicationLocations(
+							params.deployment.name,
+							params.appPath,
+							params.snapshotURI,
+						),
+					},
 		follower: boardFollower,
 		player: params.player,
-		// The stamp's anchor (`$lib/indexer`'s `CycleAnchor`). The cycle alone:
-		// stratagems' deployments are Timed (the world) or Manual (an offline
-		// world), and neither reads when the anchor was set. A table
-		// (`TimedWithEarlyAdvance`) does, which is step L2's.
-		cycleOf: (data) =>
-			data.advancedCycle
-				? {cycleNumber: data.advancedCycle.cycleNumber}
-				: undefined,
+		// The stamp's anchor (`$lib/indexer`'s `CycleAnchor`): the cycle the last
+		// re-anchoring push opened and when, which a table
+		// (`TimedWithEarlyAdvance`) counts whole cycles from and an offline
+		// world (Manual) reads as the cycle; the world (Timed) never has one.
+		cycleOf: (data) => data.advancedCycle,
 		present: (data, cycleNumber) => ({data, cycleNumber}),
 	});
 }

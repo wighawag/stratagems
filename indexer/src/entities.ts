@@ -228,21 +228,23 @@ export const stratagemsEntities = declareEntities([
 	},
 
 	/**
-	 * THE CYCLE AS THE LAST PUSH LEFT IT (`CycleAdvanced`), a SINGLETON, absent
-	 * until the first push. Not in the old processor: added by step O of
-	 * work/plans/join-template-commit-reveal.md, for the offline world.
+	 * THE CYCLE THE LAST RE-ANCHORING PUSH OPENED, and its block's timestamp: a
+	 * `CycleAdvanced` with `commiting` true (an early close, or a table's
+	 * start), a SINGLETON, absent until the first. Added by step O of
+	 * work/plans/join-template-commit-reveal.md for the offline world, and given
+	 * the reference game's shape by step L2 (PL2-6) for a table.
 	 *
-	 * Under the Manual policy this IS the cycle: there it moves only through a
-	 * successful `advance`, and every one emits the event (the commit-to-reveal
-	 * turn included, `commiting` false), so a board stamped with this row is
-	 * stamped with the chain's cycle as of the block it was read at, and no event
-	 * means the cycle has not moved. Under Timed the base never emits it (a
-	 * clock-driven turnover is nothing on chain), so the row stays absent and the
-	 * board keeps the timestamp. `commiting` is 0 or 1.
+	 * The board's stamp reads it (`$lib/indexer/cycle-stamp`). Under Manual it
+	 * IS the cycle: there the number moves only through a push that opens a
+	 * commit phase (one that opens a reveal phase keeps its number, so it is
+	 * not folded). Under `TimedWithEarlyAdvance` (a table) the stamp is this
+	 * cycle plus the whole cycles elapsed since `anchoredAt`. Under Timed the
+	 * base never emits the event, so the row stays absent and the board keeps
+	 * the timestamp.
 	 */
 	{
 		name: 'advancedCycle',
 		id: 'id',
-		fields: {cycleNumber: 'integer', commiting: 'integer'},
+		fields: {cycleNumber: 'integer', anchoredAt: 'integer'},
 	},
 ]);

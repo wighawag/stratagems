@@ -27,7 +27,7 @@
  *   Q5 the reward state of every account, and the global `shared`, `global` (`sharedRate`, `globalRate`)
  *   (Q6, the points the processor's copy of the rules tallied, left with that copy in step X2)
  *   (Q7 `fixed`, `fixedRate`: nothing in `web/` reads it; kept so the answer is the whole state)
- *   Q8 the cycle the last push left, if any              `advancedCycle`  (`advancedCycle`, the board's stamp under Manual)
+ *   Q8 the cycle the last push left, if any              `advancedCycle`  (`advancedCycle`, the board's stamp under Manual and at a table)
  *
  * No `orderBy` over a `u256` (the browser does not yet sort one numerically), and
  * none of these needs one: the leaderboard sorts its rows itself.
@@ -110,7 +110,7 @@ function rootFields(part: Part, commitments: Commitments, pinned: boolean): stri
 		case 'global':
 			return `globalRate(where: {id: {eq: "${SINGLETON.id}"}}, first: 1${at}) { lastUpdateTime totalRewardPerPointAtLastUpdate totalPoints }`;
 		case 'advancedCycle':
-			return `advancedCycle(where: {id: {eq: "${SINGLETON.id}"}}, first: 1${at}) { cycleNumber commiting }`;
+			return `advancedCycle(where: {id: {eq: "${SINGLETON.id}"}}, first: 1${at}) { cycleNumber anchoredAt }`;
 	}
 }
 
@@ -280,7 +280,7 @@ function writeParts(data: Data, parts: ReadonlySet<Part>, answer: Record<string,
 	if (parts.has('advancedCycle')) {
 		const row = answer.advancedCycle[0];
 		data.advancedCycle = row
-			? {cycleNumber: Number(row.cycleNumber), commiting: Number(row.commiting) === 1}
+			? {cycleNumber: Number(row.cycleNumber), anchoredAt: Number(row.anchoredAt)}
 			: undefined;
 	}
 }

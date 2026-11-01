@@ -212,11 +212,17 @@ export const stratagemsProcessor: EntityProcessor<StratagemsABI> = {
 
 	onReserveDeposited() {},
 	onReserveWithdrawn() {},
-	/** Only a push emits this, and under Manual only a push moves the cycle (see `advancedCycle`). */
+	/** Only a push emits this; only one that opens a commit phase re-anchors the cycle (see `advancedCycle`). */
 	onCycleAdvanced(state, event) {
+		if (!event.args.commiting) return;
+		if (event.blockTimestamp === undefined) {
+			// etherfold refuses a node that serves no timestamp on its logs, so
+			// this is a log that reached the processor some other way
+			throw new Error(`CycleAdvanced at block ${event.blockNumber} carries no blockTimestamp`);
+		}
 		state.set('advancedCycle', SINGLETON, {
 			cycleNumber: Number(event.args.cycleNumber),
-			commiting: event.args.commiting ? 1 : 0,
+			anchoredAt: Number(event.blockTimestamp),
 		});
 	},
 	onWaitedForChanged() {},

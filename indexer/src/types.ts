@@ -56,11 +56,11 @@ export type Data = {
 		};
 	};
 	/**
-	 * The cycle as the last `CycleAdvanced` left it, absent before the first
-	 * one: under the Manual policy, the chain's cycle (`advancedCycle` in
-	 * `./entities.ts`).
+	 * The cycle the last re-anchoring `CycleAdvanced` opened and its block's
+	 * timestamp, absent before the first: the board's stamp under Manual and at
+	 * a table (`advancedCycle` in `./entities.ts`).
 	 */
-	advancedCycle?: {cycleNumber: number; commiting: boolean};
+	advancedCycle?: {cycleNumber: number; anchoredAt: number};
 };
 
 export function emptyData(): Data {
