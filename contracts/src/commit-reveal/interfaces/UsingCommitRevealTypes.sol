@@ -121,6 +121,23 @@ interface UsingCommitRevealTypes {
         uint64 revealed;
     }
 
+    /// @notice A CLOSED ROSTER: a game for a fixed set of members, created by
+    ///         anyone, joined by staking, started by its creator.
+    /// @dev OPT-IN BY INITIALISATION. A game whose storage never had a roster
+    ///      written (`seats` zero, the persistent world) has OPEN ENTRY and
+    ///      behaves exactly as it did before rosters existed: a funded
+    ///      reserve is a member, at any time. See
+    ///      {UsingCommitReveal-_openRoster}.
+    struct Roster {
+        /// @notice who created the game, and may start it and forfeit a
+        ///         member who has not acted
+        address creator;
+        /// @notice how many members it may hold; zero means open entry
+        uint8 seats;
+        /// @notice whether the creator has started it, which closes the roster
+        bool started;
+    }
+
     /// @notice THE HEAD OF A HASH CHAIN, plus what is riding on it.
     /// @dev `hash` is the hash of the NEXT chunk of the turn still owed, which
     ///      for a turn that fits in one transaction is simply the whole turn. A

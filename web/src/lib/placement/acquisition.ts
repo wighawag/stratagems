@@ -32,11 +32,13 @@ const PURCHASE_GAS = 400_000n;
 export function createStakeAcquisition(params: {
 	config: PlacementConfig;
 	deployments: TypedDeployments;
+	/** The table the stake is for, if this game is at one: the sale's `purchaseAt`. */
+	table?: `0x${string}`;
 }): Acquisition {
-	const {config, deployments} = params;
+	const {config, deployments, table} = params;
 	return {
 		address: config.sale.address,
-		functionName: 'purchase',
+		functionName: table ? 'purchaseAt' : 'purchase',
 		price: config.sale.price,
 		stipend: config.sale.stipend,
 		gas: PURCHASE_GAS,
@@ -48,6 +50,7 @@ export function createStakeAcquisition(params: {
 			// own, and topping up somebody else's reserve is a gift, because only
 			// its owner can ever withdraw it.
 			args: [
+				...(table ? [table] : []),
 				owner,
 				// The contract refuses a stipend with nowhere to go rather than
 				// keeping it, so these two have to move together.

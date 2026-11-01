@@ -10,6 +10,7 @@
 	import {createHud} from './hud';
 	import Button from '$lib/shadcn/ui/button/button.svelte';
 	import GameClock from '$lib/game/ui/GameClock.svelte';
+	import TablePanel from '$lib/game/lobby/ui/TablePanel.svelte';
 
 	const context = getAppContext();
 	const {game} = context;
@@ -42,6 +43,15 @@
 <div
 	class="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-3"
 >
+	<!-- At a table: who is seated, and the creator's start and forfeit. -->
+	{#if game.table}
+		<div class="absolute top-3 right-3">
+			<TablePanel
+				table={game.table}
+				inviteLink={typeof location === 'undefined' ? '' : location.href}
+			/>
+		</div>
+	{/if}
 	<!-- Phase and cycle -->
 	<div
 		class="pointer-events-auto w-fit rounded-lg bg-background/85 p-3 shadow-lg backdrop-blur"
