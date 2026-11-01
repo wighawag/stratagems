@@ -1121,6 +1121,85 @@ async function authoriseBrowser(
 	};
 }
 
+/**
+ * CONNECT A PAGE AS ONE OF THE IMPERSONATED ACCOUNTS, at `path`.
+ *
+ * What the `connectedPage` fixture does, as a function, for the suites that
+ * need more than one browser (a table is played by several people, each in a
+ * browser of their own): open another context, then hand its page here with
+ * an account index nobody else's file claims.
+ */
+export async function connectPageAs(
+	page: Page,
+	walletAccountIndex: number,
+	path = '/play',
+): Promise<void> {
+	// Out of range fails here, naming the cause, instead of several steps later
+	// on an account picker that has no such entry. The mapping of index to test
+	// file is in scripts/run-e2e-tests.sh, next to the list itself.
+	if (walletAccountIndex >= IMPERSONATE_ADDRESSES.length) {
+		throw new Error(
+			`walletAccountIndex ${walletAccountIndex} is out of range: ` +
+				`PUBLIC_IMPERSONATE_ADDRESSES has ${IMPERSONATE_ADDRESSES.length} ` +
+				`account(s). Add one to web/e2e/impersonate-addresses.json if this ` +
+				`file needs an account of its own (files that send transactions do, ` +
+				`or they race each other for a nonce).`,
+		);
+	}
+
+	// Fund the wallet addresses BEFORE navigating to the page
+	// This ensures the wallet has ETH when the app auto-connects
+	for (const address of IMPERSONATE_ADDRESSES) {
+		await fundAddressViaHardhat(address, '100');
+	}
+
+	// Navigate to the game
+	await page.goto(path);
+
+	// Wait for the app to initialise. The canvas is the game's surface, and
+	// it only mounts in the browser (pixi needs a real WebGL context).
+	const canvas = page.locator('canvas');
+	await expect(canvas).toBeVisible({timeout: 30000});
+
+	// Ask the app whether it is connected, rather than inferring it from the
+	// navbar balance: the balance span is empty while loading and hidden below
+	// the `sm` breakpoint, so the old check reported "disconnected" for an
+	// already-connected app and re-ran the connect flow on top of it - which
+	// re-opened the account picker in the middle of the test.
+	if (!(await isWalletConnected(page))) {
+		// Connect through the navbar's dedicated Connect affordance.
+		//
+		// This used to provoke the connect flow by driving a feature of the page
+		// and force-clicking its submit button. Two problems: `force` skips
+		// actionability, so while the app was still initialising the click was a
+		// silent no-op - no dialog opened, the connect flow never started, and
+		// the fixture handed back an unconnected page. It also sent a junk
+		// transaction on every single test purely as a side effect of connecting.
+		const connectButton = page
+			.getByRole('button', {name: /^connect$/i})
+			.first();
+		await expect(
+			connectButton,
+			'navbar Connect should become actionable once the app has initialised',
+		).toBeEnabled({timeout: 60_000});
+		await connectButton.click();
+
+		// Connect using Dev Mode (handles both connection modal and funding if needed)
+		await connectWalletDevMode(page, walletAccountIndex);
+	}
+
+	// Never hand a test a page that is not actually connected.
+	await expectWalletConnected(page);
+
+	// Fund whatever the app will spend from. This has to happen AFTER
+	// connecting: the burner generates its accounts and the signer is derived
+	// at sign-in, so neither address exists before this point. The signer
+	// especially starts empty by nature - it is a fresh key, not the user's
+	// funded wallet - and it is what the game's moves are sent through, so
+	// without this every commit and reveal would fail for want of gas.
+	await fundAppSenders(page);
+}
+
 export const test = base.extend<WalletFixtures & WalletOptions>({
 	// Option fixture: which burner account the connect flow selects.
 	// Override per file/describe with `test.use({walletAccountIndex: 1})`.
@@ -1174,70 +1253,8 @@ export const test = base.extend<WalletFixtures & WalletOptions>({
 	 * Usage:
 	 *   test('my test', async ({ connectedPage }) => { ... })
 	 */
-	connectedPage: async ({page, fundWallets, walletAccountIndex}, use) => {
-		// Out of range fails here, naming the cause, instead of several steps later
-		// on an account picker that has no such entry. The mapping of index to test
-		// file is in scripts/run-e2e-tests.sh, next to the list itself.
-		if (walletAccountIndex >= IMPERSONATE_ADDRESSES.length) {
-			throw new Error(
-				`walletAccountIndex ${walletAccountIndex} is out of range: ` +
-					`PUBLIC_IMPERSONATE_ADDRESSES has ${IMPERSONATE_ADDRESSES.length} ` +
-					`account(s). Add one to web/e2e/impersonate-addresses.json if this ` +
-					`file needs an account of its own (files that send transactions do, ` +
-					`or they race each other for a nonce).`,
-			);
-		}
-
-		// Fund the wallet addresses BEFORE navigating to the page
-		// This ensures the wallet has ETH when the app auto-connects
-		await fundWallets();
-
-		// Navigate to the game
-		await page.goto('/play');
-
-		// Wait for the app to initialise. The canvas is the game's surface, and
-		// it only mounts in the browser (pixi needs a real WebGL context).
-		const canvas = page.locator('canvas');
-		await expect(canvas).toBeVisible({timeout: 30000});
-
-		// Ask the app whether it is connected, rather than inferring it from the
-		// navbar balance: the balance span is empty while loading and hidden below
-		// the `sm` breakpoint, so the old check reported "disconnected" for an
-		// already-connected app and re-ran the connect flow on top of it - which
-		// re-opened the account picker in the middle of the test.
-		if (!(await isWalletConnected(page))) {
-			// Connect through the navbar's dedicated Connect affordance.
-			//
-			// This used to provoke the connect flow by driving a feature of the page
-			// and force-clicking its submit button. Two problems: `force` skips
-			// actionability, so while the app was still initialising the click was a
-			// silent no-op - no dialog opened, the connect flow never started, and
-			// the fixture handed back an unconnected page. It also sent a junk
-			// transaction on every single test purely as a side effect of connecting.
-			const connectButton = page
-				.getByRole('button', {name: /^connect$/i})
-				.first();
-			await expect(
-				connectButton,
-				'navbar Connect should become actionable once the app has initialised',
-			).toBeEnabled({timeout: 60_000});
-			await connectButton.click();
-
-			// Connect using Dev Mode (handles both connection modal and funding if needed)
-			await connectWalletDevMode(page, walletAccountIndex);
-		}
-
-		// Never hand a test a page that is not actually connected.
-		await expectWalletConnected(page);
-
-		// Fund whatever the app will spend from. This has to happen AFTER
-		// connecting: the burner generates its accounts and the signer is derived
-		// at sign-in, so neither address exists before this point. The signer
-		// especially starts empty by nature - it is a fresh key, not the user's
-		// funded wallet - and it is what the game's moves are sent through, so
-		// without this every commit and reveal would fail for want of gas.
-		await fundAppSenders(page);
-
+	connectedPage: async ({page, walletAccountIndex}, use) => {
+		await connectPageAs(page, walletAccountIndex);
 		await use(page);
 	},
 
