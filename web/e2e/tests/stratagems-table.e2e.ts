@@ -93,11 +93,23 @@ async function readyToPlay(page: Page): Promise<void> {
 		.toBe(true);
 }
 
+/** A timestamped line in the run's output: where the table and the page are. */
+async function trace(page: Page, label: string): Promise<void> {
+	const cycle = await cycleOf(page).catch(() => undefined);
+	const step = await gameStep(page).catch(() => undefined);
+	console.log(
+		`[table e2e] ${new Date().toISOString()} ${label}: cycle ${cycle?.cycleNumber} ${cycle?.commiting ? 'commit' : 'reveal'} ends ${cycle?.phaseEnd}, submission ${step?.step} planned ${step?.planned} phase ${step?.phase} ${step?.timeLeft}s, ready ${await canPlay(page).catch(() => undefined)}`,
+	);
+}
+
 /** Plan one placement on `cell`, a cell of this player's alone this cycle. */
 async function planAt(page: Page, cell: {x: number; y: number}) {
 	await page.bringToFront();
+	await trace(page, `planAt(${cell.x},${cell.y}) start`);
 	await readyToPlay(page);
+	await trace(page, 'ready');
 	await boardLoaded(page);
+	await trace(page, 'board loaded');
 	await expect
 		.poll(
 			async () => {
@@ -107,9 +119,11 @@ async function planAt(page: Page, cell: {x: number; y: number}) {
 			{message: 'one move should be planned', timeout: 30_000},
 		)
 		.toBe(1);
+	await trace(page, 'planned');
 }
 
 async function commitNow(page: Page): Promise<void> {
+	await trace(page, 'commitNow start');
 	const commit = page.getByRole('button', {name: /commit now/i});
 	if (await commit.isEnabled().catch(() => false)) {
 		await commit.click().catch(() => {});
@@ -120,6 +134,7 @@ async function commitNow(page: Page): Promise<void> {
 			timeout: 90_000,
 		})
 		.toBe('Committed');
+	await trace(page, 'committed');
 }
 
 /** The tokens' allowance from `owner` to the table: what PL2-1's approval left. */
