@@ -85,13 +85,12 @@ contracts/test/js/StakeSale.test.ts
 contracts/test/js/Simulation.test.ts
 contracts/test/js/utils
 # The reference game's TABLES (step L1, 2026-11-01): its lobby implementation's
-# deploy, its `GameLobby` route and their suite, built on the template's
-# `UsingGameInternal`, which stratagems does not have. Its tables are its own
-# (step L2), in its own deploy and route. The base's roster suite
+# deploy and its suite, built from the template's game routes, which stratagems
+# does not have. Its tables are its own (step L2), in its own deploy, with the
+# base's `CommitRevealLobby` route. The base's roster suite
 # (CommitRevealRoster.test.ts) runs on the base's stub game and is kept, as
 # CommitRevealBase.test.ts is.
 contracts/deploy/030_deploy_lobby.ts
-contracts/src/game/routes/GameLobby.sol
 contracts/test/js/Lobby.test.ts
 contracts/js
 # The template's Solidity linter config. stratagems has no `lint` script and no
