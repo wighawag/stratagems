@@ -99,6 +99,7 @@ import {
 	type CameraWatcher,
 } from '$lib/game/render/camera';
 import {createViewState, type ViewMerge} from '$lib/view';
+import {tableAllowsPlay, type TableState} from '$lib/game/lobby/table';
 import {createPollingOnchainState} from '$lib/onchain/state';
 
 // ---------------------------------------------------------------------------
@@ -480,6 +481,12 @@ export type CommitRevealGameParts<T extends GameTypes> = {
 		auto?: AutoAdvance;
 	};
 	/**
+	 * THE TABLE this game is at, if it is at one (`$lib/game/lobby/table`'s
+	 * store): no turn is taken there until it has started, and only by a
+	 * member. Absent for a game that is not at a table.
+	 */
+	table?: Readable<TableState>;
+	/**
 	 * Actions per reveal chunk, when the game chains its reveal. Bounds how much
 	 * of a turn this client could still OPEN before the reveal phase shuts;
 	 * without it nothing is bounded.
@@ -857,10 +864,15 @@ export function createCommitRevealGame<T extends GameTypes>(
 	);
 	const onlyInPlayPhase = parts.onlyInPlayPhase ?? false;
 	const savedTurn = derived(core.accountData.lifecycle$, savedTurnOf);
+	// AT A TABLE, only once it has started and only for a member: before that
+	// the contract refuses every commitment, so a plan could only revert.
+	const tableState: Readable<TableState | undefined> =
+		parts.table ?? readable(undefined);
 	const readyToPlay = derived(
-		[setup, phase, savedTurn],
-		([$setup, $phase, $savedTurn]) =>
+		[setup, phase, savedTurn, tableState],
+		([$setup, $phase, $savedTurn, $table]) =>
 			$savedTurn.status === 'ready' &&
+			tableAllowsPlay($table) &&
 			canTakeTurnNow({setup: $setup, phase: $phase, onlyInPlayPhase}),
 	);
 
