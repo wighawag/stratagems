@@ -183,6 +183,35 @@ for etherscan if the network is not supported by default (no endpoint), you can 
 pnpm contracts:verify <network> etherscan --endpoint <api endpoint url>
 ```
 
+## On an ethereum-lan-node box
+
+stratagems' tables (games for a fixed set of players, created from `/lobby/` and joined by link) can be played on a LAN with no internet, on a box running [ethereum-lan-node](https://github.com/wighawag/ethereum-lan-node): geth in dev mode (chain 19216801, a block every 2 s), a faucet on port 34010, everything over plain `http://`. The persistent world is deployed there too, with its day-long cycles. Packaging stratagems as one of the box's games is a separate step; this is how to deploy to a box and build for it by hand.
+
+1. Point the `lan` environment at the box, in `contracts/.env.local` (the defaults in `contracts/.env` are `http://ethereum.local:8545` and the box's public `test ... junk` mnemonic, which its genesis funds):
+
+   ```bash
+   ETH_NODE_URI_lan="http://ethereum.lan:8545"   # on the box's hotspot; or the box's address on another network
+   ```
+
+2. Deploy and export, then build:
+
+   ```bash
+   pnpm contracts:deploy lan
+   pnpm --filter ./web build lan
+   ```
+
+   The deploys are DETERMINISTIC (CREATE2 through the proxy the box predeploys), so the addresses the build embeds are the same on every box and after every reset of its chain. `pnpm build lan` would also try to pre-index the chain into the build; a box's chain starts empty, so building the web app alone is enough and the indexer folds the chain in the browser.
+
+3. Serve `web/build` from the box on a port of its own. Every URL in the `lan` build is same-host (`web/.env.lan`: the node at `//:8545`, the faucet at `//:34010`), so one build works on the hotspot address, on a venue's network and by name.
+
+**After a reset of the box's chain, delete `contracts/deployments/lan` before deploying again.** The genesis is the same, so rocketh cannot tell the chain was reset and reuses records whose contracts no longer exist. The deterministic deploy then puts every contract back at the same address.
+
+What a box needs, found by the rehearsal of step L2 (a geth dev chain from the box's genesis, its faucet package, the `lan` build served over plain http on a LAN address, two browsers):
+
+- **The faucet must allow other origins** (`CORS_ORIGINS`): a game is served on another port than the faucet, so it is another origin, and without it the app's "Get ETH" fails with "Failed to fetch". ethereum-lan-node sets it from its `faucet.corsOrigins` option, `*` by default.
+- **geth mines no transaction whose tip is below 1,000,000 wei**, and will not be configured lower. On an idle chain every fee-history reward is zero, so the app takes the node's own `eth_maxPriorityFeePerGas` as the least tip it sends.
+- **It is not a secure context**: no `crypto.subtle`, no `crypto.randomUUID`, no service worker, no `navigator.locks`. The app works without them; the offline world (which a table does not use) is the one part that wants `navigator.locks`.
+
 ## 🙌🎉 How You Can Contribute
 
 If you're passionate about Autonomous Worlds and infinite games, or if you have your own ideas to bring to the table, we welcome your contributions!
