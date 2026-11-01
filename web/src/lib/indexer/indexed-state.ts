@@ -23,7 +23,8 @@
  * landed) cannot hide a reveal at a cycle boundary: reveals land in their own
  * cycle's reveal phase, so their re-reads were asked for by earlier blocks.
  * How the cycle is known is `./cycle-stamp.ts`: the block's timestamp under the
- * timed policy, the game's own folded `CycleAdvanced` (`cycleOf`) under Manual.
+ * timed policy, the game's own folded `CycleAdvanced` (`cycleOf`) under Manual,
+ * and both under the hybrid policy.
  *
  * Written first in stratagems (its `board/indexed-board.ts`).
  */
@@ -45,9 +46,9 @@ import type {
 	OnchainStateValue,
 } from '$lib/game/core/seams';
 import {
-	assertStampable,
 	stampedCycleNumber,
 	stampNeedsTimestamp,
+	type CycleAnchor,
 } from './cycle-stamp';
 import {
 	createStateFollower,
@@ -98,8 +99,8 @@ export type IndexedStateOptions<Part extends string, Data, State> = {
 	follower: StateFollowerSpec<Part, Data>;
 	/** Who plays, for a part that depends on it (`accountPart`). */
 	player?: Readable<string | undefined>;
-	/** The cycle the last `CycleAdvanced` left, as folded by the game (read under Manual only). */
-	cycleOf: (data: Data) => number | undefined;
+	/** The last re-anchoring `CycleAdvanced`, as folded by the game (read under Manual and hybrid). */
+	cycleOf: (data: Data) => CycleAnchor | undefined;
 	/** What the seam publishes, from a read and its stamp. */
 	present: (data: Data, cycleNumber: number) => State;
 };
@@ -112,7 +113,6 @@ export type IndexedStateStore<State> = OnchainStateStore<State> & {
 export function createIndexedState<Part extends string, Data, State>(
 	options: IndexedStateOptions<Part, Data, State>,
 ): IndexedStateStore<State> {
-	assertStampable(options.cycle);
 	if (!options.startWorker && !options.host) {
 		throw new Error(
 			`an indexed state needs the game's worker (startWorker) or a host`,

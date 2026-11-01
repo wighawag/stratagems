@@ -6,7 +6,7 @@
  * Two PARTS, each one question, for `$lib/indexer`'s follower:
  *
  *   cells          every cell, its total stake and its claimant count  (`cell`)
- *   advancedCycle  the cycle the last push left, if any                (`advancedCycle`)
+ *   advancedCycle  the last re-anchoring push's cycle and time, if any (`advancedCycle`)
  *
  * The `claim` rows are the processor's own bookkeeping and nothing reads them.
  */
@@ -17,14 +17,15 @@ import {
 	type StateFollowerSpec,
 	type StateRead,
 } from '$lib/indexer';
+import type {CycleAnchor} from '$lib/indexer';
 import type {Cell} from '$lib/placement/state';
 import {SINGLETON} from './processor';
 
 /** What the indexed state holds, as the game computes with it. */
 export type IndexedBoard = {
 	cells: Map<bigint, Cell>;
-	/** The cycle the last `CycleAdvanced` left (undefined before the first). */
-	advancedCycle?: number;
+	/** The last re-anchoring `CycleAdvanced` (undefined before the first). */
+	advancedCycle?: CycleAnchor;
 };
 
 export const emptyIndexedBoard = (): IndexedBoard => ({cells: new Map()});
@@ -44,7 +45,7 @@ function rootField(part: Part, pinned: boolean): string {
 		case 'cells':
 			return `cell(first: ${LIST_LIMIT}${at}) { cellID totalStake numClaimants }`;
 		case 'advancedCycle':
-			return `advancedCycle(where: {id: {eq: "${SINGLETON.id}"}}, first: 1${at}) { cycleNumber }`;
+			return `advancedCycle(where: {id: {eq: "${SINGLETON.id}"}}, first: 1${at}) { cycleNumber anchoredAt }`;
 	}
 }
 
@@ -111,7 +112,12 @@ export async function readBoard(
 	}
 	if (parts.has('advancedCycle')) {
 		const row = answer.advancedCycle[0];
-		data.advancedCycle = row ? Number(row.cycleNumber) : undefined;
+		data.advancedCycle = row
+			? {
+					cycleNumber: Number(row.cycleNumber),
+					anchoredAt: Number(row.anchoredAt),
+				}
+			: undefined;
 	}
 	// Pinned, the fields are as of `at`; unpinned, as of the operation's pin.
 	if (at !== undefined && typeof at !== 'number') {
