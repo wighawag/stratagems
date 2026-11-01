@@ -37,7 +37,7 @@
  */
 import {derived, get, readable, writable, type Readable} from 'svelte/store';
 import {logs} from 'named-logs';
-import type {Abi} from 'viem';
+import {parseAbi, type Abi} from 'viem';
 import type {Context} from '$lib/context/types';
 import {isRegistered} from '$lib/onchain/delegation';
 import {
@@ -135,7 +135,85 @@ export type Acquisition = {
 		stipendTo: `0x${string}` | undefined;
 		stipend: bigint;
 	}): AcquisitionCall;
+	/**
+	 * An ERC20 allowance the call spends, if it pulls tokens from the PAYER.
+	 *
+	 * A game whose contract takes its stake with `transferFrom(payer, ...)`
+	 * declares it here, and the rail approves `address` for `amount` from the
+	 * payer before the call, skipping the approval when the allowance already
+	 * covers it ({@link approveIfShort}). The rail does it, not the game,
+	 * because the account that must approve is the payer, which is chosen
+	 * inside the rail ("pay with another wallet" connects it only then): an
+	 * approval sent by the game beforehand comes from the wrong address
+	 * whenever someone else pays.
+	 *
+	 * NEVER AN UNLIMITED ALLOWANCE: exactly what this call spends, to a contract
+	 * a link may have pointed the player at. `gas` above should include the
+	 * approval's (about 46,000 for an ordinary ERC20).
+	 *
+	 * Two transactions, where the rail's point is one: the price of a token the
+	 * game does not control. A token with a permit could fold it into a
+	 * signature; not built.
+	 */
+	allowance?: {
+		/** The ERC20 the call pulls. */
+		token: `0x${string}`;
+		/** How much of it. */
+		amount: bigint;
+	};
 };
+
+/** What the rail calls on a token: an ordinary ERC20's allowance and approval. */
+export const ERC20_ALLOWANCE_ABI = parseAbi([
+	'function allowance(address owner, address spender) view returns (uint256)',
+	'function approve(address spender, uint256 amount) returns (bool)',
+]);
+
+/**
+ * Approve `spender` for `amount` of `token` from `payer`, unless the allowance
+ * already covers it. Returns whether an approval was sent.
+ *
+ * READ FIRST, so a second attempt after a reload (the approval landed, the
+ * call did not) asks for one transaction rather than two, and a player who
+ * approved by other means is not asked again. Waits for the receipt, because
+ * the call that follows spends what this grants.
+ */
+export async function approveIfShort(params: {
+	publicClient: {
+		readContract(request: unknown): Promise<unknown>;
+		waitForTransactionReceipt(request: {
+			hash: `0x${string}`;
+		}): Promise<{status: string}>;
+	};
+	writer: {writeContract(request: unknown): Promise<`0x${string}`>};
+	account: unknown;
+	payer: `0x${string}`;
+	spender: `0x${string}`;
+	token: `0x${string}`;
+	amount: bigint;
+}): Promise<boolean> {
+	const current = (await params.publicClient.readContract({
+		address: params.token,
+		abi: ERC20_ALLOWANCE_ABI,
+		functionName: 'allowance',
+		args: [params.payer, params.spender],
+	})) as bigint;
+	if (current >= params.amount) {
+		return false;
+	}
+	const hash = await params.writer.writeContract({
+		address: params.token,
+		abi: ERC20_ALLOWANCE_ABI,
+		functionName: 'approve',
+		args: [params.spender, params.amount],
+		account: params.account,
+	});
+	const receipt = await params.publicClient.waitForTransactionReceipt({hash});
+	if (receipt.status === 'reverted') {
+		throw new Error('The token refused the approval.');
+	}
+	return true;
+}
 
 /** Price plus stipend: what the wallet is actually asked for. */
 export function acquisitionTotal(params: {
@@ -280,6 +358,12 @@ export type AcquisitionState =
 	 * a window that will never open.
 	 */
 	| {step: 'Authorising'; authorisation: AcquisitionAuthorisation}
+	/**
+	 * The payer is approving the token the call spends (an
+	 * {@link Acquisition} with an `allowance`), before the wallet is asked to
+	 * pay. A transaction of its own, so the wallet opens twice.
+	 */
+	| {step: 'Approving'}
 	/** The wallet has been asked to pay; the player may still refuse. */
 	| {step: 'Acquiring'}
 	/** Paid for. The signer is now registering itself out of its stipend. */
@@ -770,6 +854,22 @@ export function createAcquisition(params: {
 				`acquiring: price=${acquisition.price} stipend=${stipend} to=${stipendTo ?? 'nobody'}`,
 			);
 			state.set({step: 'Acquiring'});
+
+			// The allowance the call spends, from the payer, now that it is known
+			// who pays: see `Acquisition.allowance`.
+			if (acquisition.allowance) {
+				state.set({step: 'Approving'});
+				await approveIfShort({
+					publicClient: deps.publicClient as never,
+					writer: payer.client as never,
+					account: payer.account,
+					payer: payer.address,
+					spender: acquisition.address,
+					token: acquisition.allowance.token,
+					amount: acquisition.allowance.amount,
+				});
+				state.set({step: 'Acquiring'});
+			}
 
 			const call = acquisition.request({owner: $owner, stipendTo, stipend});
 			const request = {
