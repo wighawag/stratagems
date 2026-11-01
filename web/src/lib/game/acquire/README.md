@@ -35,6 +35,8 @@ const acquisition: Acquisition = {
 
 `stipendTo` is `undefined` when there is no signer to fund, and `stipend` is then `0n`. A request must not tell the contract to forward what it was not given: the value and the split would disagree and the call would revert.
 
+**A stake paid in an ERC20 the contract pulls** (`transferFrom(payer, ...)`) declares `allowance: {token, amount}`. The rail then approves the acquisition's `address` for exactly `amount` FROM THE PAYER, after the payer is connected and before the call, and skips it when the allowance already covers it (`approveIfShort`), so a second attempt after a reload asks for one transaction. The rail does it rather than the game because the payer is chosen inside the rail: an approval the game sent beforehand would come from the wrong address whenever another wallet pays. It is a second transaction, the price of a token the game does not control, and the state says so (`Approving`). Include the approval's gas in `gas`. Never an unlimited allowance.
+
 ## What the game keeps
 
 The WORDS. What the thing is called, what the button says, what the player is told while it is in flight. Those are the game's brand, they are three short strings, and parameterising them would produce sentences that fit no game well. The rail exports the STATE; each game's HUD words it.
