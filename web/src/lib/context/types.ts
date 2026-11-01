@@ -193,6 +193,12 @@ export type CoreContext = {
 	 */
 	hasAppRpc: boolean;
 	/**
+	 * The table this context is at (`?game=<address>`), if any: a game for a
+	 * fixed set of players at an address of its own, which `deployments` then
+	 * names as the game. See `$lib/game/lobby/table`.
+	 */
+	table: `0x${string}` | undefined;
+	/**
 	 * Whether the app can read the chain right now (has its own RPC, or the
 	 * wallet is connected and supplies one). UI gates onchain fetches on this and
 	 * shows a "connect to load" state instead of firing calls that would fail.

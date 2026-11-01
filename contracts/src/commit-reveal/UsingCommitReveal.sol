@@ -102,12 +102,16 @@ abstract contract UsingCommitReveal is
     /// @dev WHAT MAKES SOMEONE A MEMBER IS THE GAME'S ANSWER, and a reserve
     ///      game's is a funded reserve: holding one is exactly what lets an
     ///      account play, so it is what the cycle waits for. A game whose
-    ///      entry is custody of a token calls {_startWaitingFor} from wherever
+    ///      entry is custody of a token calls {_takeSeat} from wherever
     ///      custody is taken instead, and never funds a reserve.
+    ///
+    ///      UNDER A CLOSED ROSTER a funded reserve is a SEAT ({_openRoster}):
+    ///      refused once the game has started or when every seat is taken,
+    ///      and waited for only from the start.
     function _addToReserve(uint256 player, uint256 amount) internal {
         uint256 newAmount = CommitReveal.deposit(player, amount);
         if (newAmount != 0) {
-            CommitReveal.startWaitingFor(player);
+            _takeSeat(player);
         }
     }
 
@@ -118,8 +122,86 @@ abstract contract UsingCommitReveal is
     function _withdrawFromReserve(uint256 player, uint256 amount) internal {
         uint256 newAmount = CommitReveal.withdraw(player, amount);
         if (newAmount == 0) {
-            CommitReveal.stopWaitingFor(player);
+            _leaveSeat(player);
         }
+    }
+
+    //-------------------------------------------------------------------------
+    // A CLOSED ROSTER
+    //-------------------------------------------------------------------------
+
+    /// @notice Make this a game for a fixed set of members: `seats` of them,
+    ///         seated by funding a reserve, started by `creator`.
+    /// @dev OPT-IN, AND ONCE. A game that never calls this (the persistent
+    ///      world) has open entry, exactly as before rosters existed. A game
+    ///      cloned per table calls it from its initialiser, in the same
+    ///      transaction as the clone is made, so nobody can open it first.
+    ///
+    ///      The roster's rules, in one place: a seat is taken by funding a
+    ///      reserve while the game has not started and a seat is free; a
+    ///      seated member may top up at any time; emptying a reserve is
+    ///      leaving (before the start the seat can be taken again, after it
+    ///      nobody joins); the creator starts the game once two are seated
+    ///      ({_startGame}), and may forfeit a member who has not acted
+    ///      ({_forfeitMember}).
+    function _openRoster(address creator, uint8 seats) internal {
+        CommitReveal.openRoster(creator, seats);
+    }
+
+    /// @notice Seat a player, and wait for them if the game has started (or
+    ///         has open entry). What a custody game calls where it takes
+    ///         custody, in place of {_startWaitingFor}.
+    function _takeSeat(uint256 player) internal {
+        if (CommitReveal.seat(player)) {
+            CommitReveal.startWaitingFor(player);
+        }
+    }
+
+    /// @notice Leave: stop waiting for this player and free their seat.
+    function _leaveSeat(uint256 player) internal {
+        CommitReveal.releaseSeat(player);
+        CommitReveal.stopWaitingFor(player);
+    }
+
+    /// @notice Start a game with a closed roster.
+    /// @param sender Who is starting it, normally `msg.sender`: the creator,
+    ///        or a delegate of theirs (their browser's key).
+    function _startGame(address sender) internal returns (uint64 cycleNumber) {
+        Delegation.requireAccountFor(sender, _requireRosterCreator());
+        return
+            CommitReveal.start(
+                _clock(),
+                _cycle(),
+                CYCLE_POLICY == CyclePolicy.Manual ? 0 : _timestamp()
+            );
+    }
+
+    /// @notice The creator's forfeit of a member who has not acted in the
+    ///         current phase. See {CommitReveal-forfeitMember}.
+    /// @param sender Who is forfeiting, normally `msg.sender`: the creator,
+    ///        or a delegate of theirs.
+    function _forfeitMember(address sender, uint256 player) internal {
+        Delegation.requireAccountFor(sender, _requireRosterCreator());
+        (uint64 cycleNumber, bool commiting) = _cycleNumber();
+        CommitReveal.forfeitMember(player, cycleNumber, commiting);
+    }
+
+    function _roster() internal view returns (Roster memory) {
+        return CommitReveal.roster();
+    }
+
+    function _members() internal view returns (uint256[] memory) {
+        return CommitReveal.members();
+    }
+
+    /// @dev The creator, or a revert: under open entry there is nobody to
+    ///      ask, and `Delegation` would read a zero creator as "the sender".
+    function _requireRosterCreator() private view returns (address) {
+        Roster memory opened = CommitReveal.roster();
+        if (opened.seats == 0) {
+            revert NoRoster();
+        }
+        return opened.creator;
     }
 
     //-------------------------------------------------------------------------

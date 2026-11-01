@@ -76,6 +76,14 @@ library CommitReveal {
         /// @notice Whether this player is one of them, so the count cannot be
         ///         incremented twice for the same member.
         mapping(uint256 player => bool) isWaitedFor;
+        /// @notice A closed roster, if one was opened; all zero is open entry.
+        /// @dev Appended, so a layout written before rosters existed reads it
+        ///      as open entry.
+        T.Roster roster;
+        /// @notice Who holds a seat, in no particular order.
+        uint256[] members;
+        /// @notice Where a member is in {members}, plus one; zero is unseated.
+        mapping(uint256 player => uint256 indexPlusOne) seatOf;
     }
 
     /// keccak256(abi.encode(uint256(keccak256("etherplay.storage.CommitReveal")) - 1)) & ~bytes32(uint256(0xff))
@@ -213,6 +221,179 @@ library CommitReveal {
             result.committed = tally.committed;
             result.revealed = tally.revealed;
         }
+    }
+
+    //-------------------------------------------------------------------------
+    // A CLOSED ROSTER
+    //-------------------------------------------------------------------------
+
+    function roster() internal view returns (T.Roster memory) {
+        return layout().roster;
+    }
+
+    function members() internal view returns (uint256[] memory) {
+        return layout().members;
+    }
+
+    function isSeated(uint256 player) internal view returns (bool) {
+        return layout().seatOf[player] != 0;
+    }
+
+    /// @notice Give a game a closed roster. Once, and before anyone joined.
+    /// @dev A ROSTER IS A WHOLE MODE, NOT A SETTING: who the cycle waits for
+    ///      starts as nobody and becomes the members only when the creator
+    ///      starts the game, so a game cannot switch to it once open entry has
+    ///      let somebody in.
+    function openRoster(address creator, uint8 seats) internal {
+        Layout storage $ = layout();
+        if ($.roster.seats != 0) {
+            revert E.RosterAlreadyOpened();
+        }
+        if (seats < 2) {
+            revert E.InvalidSeats(seats);
+        }
+        if (creator == address(0)) {
+            revert E.InvalidCreator();
+        }
+        if ($.waitedFor != 0) {
+            revert E.GameAlreadyStarted();
+        }
+        $.roster = T.Roster({creator: creator, seats: seats, started: false});
+        emit Ev.RosterOpened(creator, seats);
+    }
+
+    /// @notice Seat a player who has just funded a reserve, if they need one.
+    /// @return waitNow Whether the cycle should wait for them from now on:
+    ///         always under open entry, only once started under a roster.
+    /// @dev UNDER A ROSTER NOBODY IS WAITED FOR UNTIL THE START, and that is
+    ///      what keeps the persistent world's commit and advance paths free of
+    ///      a roster read: a commitment before the start is refused because its
+    ///      player is not a member yet ({E-NotInGame}), and an advance because
+    ///      there is nobody to wait for ({E-NoOneToWaitFor}).
+    ///
+    ///      Anyone may fund anyone's reserve, so anyone may seat anyone. That
+    ///      is left open on purpose: it costs the giver a stake which the
+    ///      seated player may withdraw (freeing the seat before the start),
+    ///      and the acquisition rail stakes for a player from a contract.
+    function seat(uint256 player) internal returns (bool waitNow) {
+        Layout storage $ = layout();
+        T.Roster memory current = $.roster;
+        if (current.seats == 0) {
+            return true;
+        }
+        if ($.seatOf[player] == 0) {
+            if (current.started) {
+                revert E.GameAlreadyStarted();
+            }
+            uint256 seated = $.members.length;
+            if (seated >= current.seats) {
+                revert E.GameFull(current.seats);
+            }
+            $.members.push(player);
+            $.seatOf[player] = seated + 1;
+            emit Ev.SeatTaken(player, seated + 1);
+        }
+        return current.started;
+    }
+
+    /// @notice Free a member's seat. Idempotent, and nothing under open entry.
+    /// @dev Before the start the seat can be taken again. After it, nobody
+    ///      joins, so a member who leaves (or is forfeited) is gone for good:
+    ///      D5's "final, and final for free".
+    function releaseSeat(uint256 player) internal {
+        Layout storage $ = layout();
+        uint256 indexPlusOne = $.seatOf[player];
+        if (indexPlusOne == 0) {
+            return;
+        }
+        uint256 last = $.members.length - 1;
+        if (indexPlusOne - 1 != last) {
+            uint256 moved = $.members[last];
+            $.members[indexPlusOne - 1] = moved;
+            $.seatOf[moved] = indexPlusOne;
+        }
+        $.members.pop();
+        $.seatOf[player] = 0;
+        emit Ev.SeatReleased(player, last);
+    }
+
+    /// @notice Start a game with a closed roster: the members become who the
+    ///         cycle waits for, and the clock is re-anchored at this moment.
+    /// @param current Where the cycle is now, as the caller's `_cycle` reads it.
+    /// @param time The chain time, ignored under the manual policy.
+    /// @dev RE-ANCHORED AS AN EARLY CLOSE IS: the next cycle opens its commit
+    ///      phase now and runs its full length, so a game started near the end
+    ///      of the deployment's commit phase does not give its first turn a few
+    ///      seconds. It emits {Ev-CycleAdvanced} for the same reason an advance
+    ///      does: a reader folding the anchor needs no other event.
+    function start(
+        Clock memory clock,
+        T.Cycle memory current,
+        uint256 time
+    ) internal returns (uint64 cycleNumber) {
+        Layout storage $ = layout();
+        T.Roster memory opened = $.roster;
+        if (opened.seats == 0) {
+            revert E.NoRoster();
+        }
+        if (opened.started) {
+            revert E.GameAlreadyStarted();
+        }
+        uint256 seated = $.members.length;
+        if (seated < 2) {
+            revert E.NotEnoughMembers(seated);
+        }
+        $.roster.started = true;
+        for (uint256 i = 0; i < seated; i++) {
+            startWaitingFor($.members[i]);
+        }
+
+        cycleNumber = current.cycleNumber + 1;
+        $.cycleState.anchorCycleNumber = cycleNumber;
+        if (clock.policy == T.CyclePolicy.Manual) {
+            $.cycleState.commiting = true;
+        } else {
+            $.cycleState.anchoredAt = uint64(time);
+        }
+
+        emit Ev.GameStarted(opened.creator, seated);
+        emit Ev.CycleAdvanced(cycleNumber, true, opened.creator);
+    }
+
+    /// @notice The creator's forfeit of a member who has not acted: the cycle
+    ///         stops waiting for them, and their seat is gone.
+    /// @dev BOUNDED, SO THE POWER IS ONLY DECLARING THE OBVIOUS (D5): only in
+    ///      a commit phase, and only a member with no commitment in it. A
+    ///      member who has committed cannot be kicked; in a reveal phase the
+    ///      cycle waits for the commitments made, not for the members, so a
+    ///      forfeit there would unblock nothing and is refused. It settles
+    ///      nothing: a past commitment left open is settled as any missed
+    ///      reveal is, and the reserve stays its owner's to withdraw.
+    function forfeitMember(
+        uint256 player,
+        uint64 cycleNumber,
+        bool commiting
+    ) internal {
+        Layout storage $ = layout();
+        T.Roster memory current = $.roster;
+        if (current.seats == 0) {
+            revert E.NoRoster();
+        }
+        if (!current.started) {
+            revert E.GameNotStarted();
+        }
+        if ($.seatOf[player] == 0) {
+            revert E.NotInGame(player);
+        }
+        if (!commiting) {
+            revert E.InRevealPhase(cycleNumber);
+        }
+        if ($.commitments[player].cycleNumber == cycleNumber) {
+            revert E.MemberHasActed(player, cycleNumber);
+        }
+        releaseSeat(player);
+        stopWaitingFor(player);
+        emit Ev.MemberForfeited(player, cycleNumber);
     }
 
     //-------------------------------------------------------------------------

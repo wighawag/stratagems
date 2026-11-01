@@ -203,6 +203,12 @@ export type CoreServices = {
 	 * it here without this type changing. See the note above.
 	 */
 	appConfig: ResolvedAppConfig;
+	/**
+	 * The table this context is at, if it is at one: a game for a fixed set
+	 * of players at an address of its own (`$lib/game/lobby/table`), which is
+	 * then `deployments`' game too.
+	 */
+	table: `0x${string}` | undefined;
 };
 
 /**
@@ -1207,6 +1213,8 @@ export function createCoreContext<App extends AppContext>(params: {
 	 * was built against, which is the only world most apps have.
 	 */
 	establishConnection?: ConnectionFactory;
+	/** The table this context is at: see `CoreServices.table`. */
+	table?: `0x${string}`;
 }): {
 	context: CoreContext & Omit<App, 'start'>;
 	start: () => () => void;
@@ -1544,6 +1552,7 @@ export function createCoreContext<App extends AppContext>(params: {
 		canReadChain,
 		hasAppRpc,
 		appConfig,
+		table: params.table,
 	});
 	// `start` is lifecycle rather than context, so it is held back from the
 	// spread below; everything else, `onchainState` included, goes into the
@@ -1658,6 +1667,7 @@ export function createCoreContext<App extends AppContext>(params: {
 		nonceCache,
 		refreshChainData,
 		hasAppRpc,
+		table: params.table,
 		canReadChain,
 		forceRpcFailure,
 		offline,
