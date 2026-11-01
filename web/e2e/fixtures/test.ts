@@ -1122,12 +1122,14 @@ async function authoriseBrowser(
 }
 
 /**
- * CONNECT A PAGE AS ONE OF THE IMPERSONATED ACCOUNTS, at `path`.
+ * CONNECT A PAGE, signed in as the burner's account at `walletAccountIndex`,
+ * at `path` (a page with the board: the canvas is what says the app is up).
  *
  * What the `connectedPage` fixture does, as a function, for the suites that
  * need more than one browser (a table is played by several people, each in a
- * browser of their own): open another context, then hand its page here with
- * an account index nobody else's file claims.
+ * browser of their own): open another context and hand its page here. A new
+ * context's burner generates a mnemonic of its own, so its accounts are nobody
+ * else's whatever the index.
  */
 export async function connectPageAs(
 	page: Page,

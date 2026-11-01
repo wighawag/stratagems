@@ -103,10 +103,11 @@ async function commitNow(page: Page): Promise<void> {
 }
 
 describe('A table for a fixed set of players', () => {
-	// The creator's account; the guest connects as account 10, below. Each is a
-	// claim `test/e2e-account-claims.test.ts` checks. Nine and ten rather than
-	// the next free pair here, because `with/fuzd` claims seven and eight for
-	// its own two suites and every node has to agree.
+	// The creator's account, a claim `test/e2e-account-claims.test.ts` checks:
+	// nine, because `with/fuzd` claims seven and eight for its own two suites
+	// and every node has to agree. The guest's is NOT a claim: it connects in a
+	// browser context of its own, whose burner generates a fresh mnemonic, so
+	// its first account is nobody else's.
 	test.use({walletAccountIndex: 9});
 
 	test('is created, joined by link, started, advanced early and by the clock, and a vanished member forfeited', async ({
@@ -159,7 +160,7 @@ describe('A table for a fixed set of players', () => {
 		const guest = await guestContext.newPage();
 		let second: Awaited<ReturnType<typeof cycleOf>>;
 		try {
-			await connectPageAs(guest, 10, `/play/?game=${table}`);
+			await connectPageAs(guest, 0, `/play/?game=${table}`);
 			await expect(guest.getByTestId('table-panel')).toBeVisible();
 			// Nobody but the creator is offered the start.
 			await expect(guest.getByTestId('table-start')).toHaveCount(0);
