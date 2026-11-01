@@ -3,6 +3,7 @@ import {get, writable} from 'svelte/store';
 import {
 	createTableStore,
 	isMember,
+	memberLabel,
 	readTables,
 	tableFromParam,
 	type Roster,
@@ -42,25 +43,29 @@ describe('the table a page is at', () => {
 });
 
 describe('a roster laid out as seats', () => {
-	it('names this account YOU, every other member a remote human, the rest empty', () => {
-		const seats = tableAtRoster(4, [BigInt(BOB), BigInt(ALICE)], ALICE);
+	it('names this identity YOU, every other member a remote human, the rest empty', () => {
+		const seats = tableAtRoster(4, [BigInt(BOB), BigInt(ALICE)], BigInt(ALICE));
 		expect(seats.map((seat) => seat.occupant?.kind)).toEqual([
 			'remote-human',
 			'you',
 			undefined,
 			undefined,
 		]);
-		expect(seats[0].occupant).toEqual({kind: 'remote-human', address: BOB});
+		expect(seats[0].occupant).toEqual({
+			kind: 'remote-human',
+			player: BigInt(BOB),
+		});
 	});
 
-	it('compares an account as a number, so a checksummed address is still you', () => {
-		// The contract keys members as uint256: case is not part of an identity.
-		const checksummed = '0x00000000000000000000000000000000000A11CE';
-		const seats = tableAtRoster(2, [BigInt(ALICE)], checksummed);
+	it('compares identities as numbers, so a token identity is you too', () => {
+		// Where a game plays as a token, a member is the token: the account that
+		// owns it is nowhere in the roster.
+		const token = 7n;
+		const seats = tableAtRoster(2, [token], token);
 		expect(seats[0].occupant).toEqual({kind: 'you'});
 	});
 
-	it('shows every member as a remote human to a visitor with no account', () => {
+	it('shows every member as a remote human to a visitor with no identity', () => {
 		const seats = tableAtRoster(2, [BigInt(ALICE)], undefined);
 		expect(seats[0].occupant?.kind).toBe('remote-human');
 		expect(seats[1].occupant).toBeUndefined();
@@ -73,9 +78,14 @@ describe('a roster laid out as seats', () => {
 			started: false,
 			members: [BigInt(ALICE)],
 		};
-		expect(isMember(roster, ALICE)).toBe(true);
-		expect(isMember(roster, BOB)).toBe(false);
+		expect(isMember(roster, BigInt(ALICE))).toBe(true);
+		expect(isMember(roster, BigInt(BOB))).toBe(false);
 		expect(isMember(roster, undefined)).toBe(false);
+	});
+
+	it('names a member by its address when it is one, by its number when it is a token', () => {
+		expect(memberLabel(BigInt(BOB))).toBe('0x0000...0b0b');
+		expect(memberLabel(1n << 200n)).toBe(`#${1n << 200n}`);
 	});
 });
 
@@ -114,8 +124,10 @@ describe('the tables a factory lists', () => {
 });
 
 describe('a table store', () => {
-	function storeWith(roster: Roster, account: string | undefined) {
+	function storeWith(roster: Roster, account: `0x${string}` | undefined) {
 		const accountStore = writable(account);
+		// A game that plays as the account: the identity follows it.
+		const you = writable(account === undefined ? undefined : BigInt(account));
 		const readContract = vi.fn(async () => [
 			{creator: roster.creator, seats: roster.seats, started: roster.started},
 			roster.members,
@@ -126,8 +138,9 @@ describe('a table store', () => {
 				account: accountStore,
 			} as never,
 			table: TABLE,
+			you,
 		});
-		return {table, accountStore};
+		return {table, accountStore, you};
 	}
 
 	it('tells the creator they start it, and a seated guest that they are seated', async () => {
@@ -137,7 +150,7 @@ describe('a table store', () => {
 			started: false,
 			members: [BigInt(ALICE), BigInt(BOB)],
 		};
-		const {table, accountStore} = storeWith(roster, ALICE);
+		const {table, accountStore, you} = storeWith(roster, ALICE);
 		await table.update();
 		let state = get(table);
 		if (state.step !== 'Loaded') throw new Error(state.step);
@@ -147,7 +160,8 @@ describe('a table store', () => {
 		// The creator's powers follow the ACCOUNT, so they move with it, read
 		// again without another round trip to the chain.
 		const stop = table.startPolling();
-		accountStore.set(BOB.toUpperCase().replace('0X', '0x'));
+		accountStore.set(BOB.toUpperCase().replace('0X', '0x') as `0x${string}`);
+		you.set(BigInt(BOB));
 		state = get(table);
 		stop();
 		if (state.step !== 'Loaded') throw new Error(state.step);
@@ -166,6 +180,7 @@ describe('a table store', () => {
 				account: writable(undefined),
 			} as never,
 			table: TABLE,
+			you: writable(undefined),
 		});
 		await table.update();
 		expect(get(table)).toEqual({step: 'Failed', message: 'execution reverted'});

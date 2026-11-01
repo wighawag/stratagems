@@ -96,9 +96,11 @@ export type Occupant =
 	/**
 	 * A human at ANOTHER browser, seated at a table for a fixed set of players
 	 * by their own stake (`$lib/game/lobby/table`). Nothing here plays for
-	 * them: the seat is only who the cycle waits for.
+	 * them: the seat is only who the cycle waits for. `player` is their
+	 * identity as the contract keys it: an account widened to a number, or a
+	 * token, whichever the game plays as.
 	 */
-	| {kind: 'remote-human'; address: `0x${string}`};
+	| {kind: 'remote-human'; player: bigint};
 
 /** One place at the table. */
 export type Seat = {occupant: Occupant};
@@ -292,24 +294,20 @@ export type TableSeat = {occupant: Occupant | undefined};
 
 /**
  * A TABLE'S SEATS, as its roster holds them: each member a human, the one this
- * browser's account plays as being `you`, and the seats nobody has taken yet
- * empty. Members are the contract's identities (an account, widened), so an
- * account is compared as a number.
+ * browser plays as being `you`, and the seats nobody has taken yet empty.
+ * Members are the contract's identities, so `you` is this browser's identity
+ * as the contract keys it (`$lib/game/identity`'s `onchainIdentity`), which is
+ * the account widened to a number in a game that plays as the account and a
+ * token in one that plays as a token.
  */
 export function tableAtRoster(
 	seats: number,
 	members: readonly bigint[],
-	account: string | undefined,
+	you: bigint | undefined,
 ): readonly TableSeat[] {
-	const you = account === undefined ? undefined : BigInt(account);
 	const table: TableSeat[] = members.map((member) => ({
 		occupant:
-			member === you
-				? {kind: 'you'}
-				: {
-						kind: 'remote-human',
-						address: `0x${member.toString(16).padStart(40, '0')}`,
-					},
+			member === you ? {kind: 'you'} : {kind: 'remote-human', player: member},
 	}));
 	while (table.length < seats) table.push({occupant: undefined});
 	return table;

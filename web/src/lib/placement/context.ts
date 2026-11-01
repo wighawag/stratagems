@@ -450,6 +450,9 @@ export function createGameContext(core: CoreServices): GameContext {
 		? createTableStore({
 				deps: core,
 				table: core.table,
+				you: derived(activeIdentity, ($identity) =>
+					$identity === undefined ? undefined : onchainIdentity($identity),
+				),
 				onChanged: () => void crg.game.cycleAdvance.check(),
 			})
 		: undefined;
