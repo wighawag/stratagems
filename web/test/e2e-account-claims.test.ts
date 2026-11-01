@@ -37,14 +37,22 @@ const ACCOUNTS = JSON.parse(
  * A file with no claim at all uses the default, which is account 0.
  */
 function claimedIndices(source: string): number[] {
-	const matches = [...source.matchAll(/walletAccountIndex:\s*(\d+)/g)];
+	// A suite with a second browser connects it with `connectPageAs(page, N)`,
+	// which claims account N exactly as `test.use` does.
+	const matches = [
+		...source.matchAll(
+			/walletAccountIndex:\s*(\d+)|connectPageAs\(\s*\w+,\s*(\d+)/g,
+		),
+	];
 	if (matches.length === 0) return [0];
-	return matches.map((m) => Number(m[1]));
+	return matches.map((m) => Number(m[1] ?? m[2]));
 }
 
 /** A file that submits a transaction: it either connects a wallet or sends one. */
 function sendsTransactions(source: string): boolean {
-	return /connectedPage|submitGreeting|connectWallet/.test(source);
+	return /connectedPage|submitGreeting|connectWallet|connectPageAs/.test(
+		source,
+	);
 }
 
 describe('e2e wallet account claims', () => {
@@ -79,6 +87,13 @@ describe('e2e wallet account claims', () => {
 		).toEqual([0, 3]);
 		// A file that claims nothing uses the default, which is account 0.
 		expect(claimedIndices('describe("plain", () => {});')).toEqual([0]);
+		// A second browser's account is a claim too.
+		expect(
+			claimedIndices(`
+				test.use({walletAccountIndex: 7});
+				await connectPageAs(guest, 8);
+			`),
+		).toEqual([7, 8]);
 	});
 
 	it('gives each of them a distinct account', () => {
