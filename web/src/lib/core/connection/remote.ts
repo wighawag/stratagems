@@ -377,9 +377,16 @@ export function establishRemoteConnection(options: {
 	walletHost?: string;
 	walletOnly: boolean;
 	permissions?: PermissionDeclaration[];
+	/**
+	 * The records this connection describes, when they are not the build's:
+	 * the same chain with the game at another address (a table for a fixed
+	 * set of players, `$lib/game/lobby/table`). Defaults to the build's.
+	 */
+	deployments?: DeploymentsStore;
 }): EstablishedConnection {
-	// Use deployments.get() for synchronous access
-	const currentDeployments = deployments.get();
+	const records = options.deployments ?? deployments;
+	// Use .get() for synchronous access
+	const currentDeployments = records.get();
 
 	// Cast to ChainInfo to preserve the literal type even when modifying rpcUrls.
 	// The structure is the same, just the RPC URL may change. An empty
@@ -401,7 +408,7 @@ export function establishRemoteConnection(options: {
 
 	return establishConnectionOn({
 		chainInfo,
-		deployments, // Use the imported HMR-aware store
+		deployments: records, // the imported HMR-aware store, unless told otherwise
 		nodeURL: options.nodeURL,
 		targetStep: options.targetStep,
 		walletHost: options.walletHost,
