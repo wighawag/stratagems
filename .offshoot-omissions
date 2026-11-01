@@ -75,12 +75,11 @@ contracts/deploy/001_deploy_token.ts
 contracts/deploy/010_deploy_game.ts
 contracts/deploy/020_deploy_stake_sale.ts
 # The reference game's TABLES (step L1, 2026-11-01): its lobby implementation's
-# deploy and its `GameLobby` route, built on the template's `UsingGameInternal`,
-# which stratagems does not have. Its tables are its own (step L2), in its own
-# deploy and route. The `Lobby` data the template's rocketh/config.ts gained with
-# them is resolved away in the merge, as its other data is.
+# deploy, built from the template's game routes, which stratagems does not
+# have. Its tables are its own (step L2), in its own deploy, with the base's
+# `CommitRevealLobby` route. The `Lobby` data the template's rocketh/config.ts
+# gained with them is resolved away in the merge, as its other data is.
 contracts/deploy/030_deploy_lobby.ts
-contracts/src/game/routes/GameLobby.sol
 contracts/test/js
 contracts/js
 # The template's Solidity linter config. stratagems has no `lint` script and no

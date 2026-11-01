@@ -18,11 +18,12 @@
  * who has not committed in the current commit phase. This module reads the
  * roster and sends the creator's two transactions; it decides none of it.
  */
-import {get, writable, type Readable} from 'svelte/store';
+import {derived, get, writable, type Readable} from 'svelte/store';
 import {parseAbi, parseEventLogs, isAddress} from 'viem';
 import type {CoreServices} from '$lib/context/core';
 import type {TypedDeployments} from '$lib/deployments-store';
 import {sendMove} from '$lib/game/core/commit-reveal/send';
+import type {CycleConfig} from '$lib/game/core/cycle';
 import {tableAtRoster, type TableSeat} from './seats';
 
 /** The lobby's routes, as `ICommitRevealLobby` declares them. */
@@ -265,6 +266,8 @@ export type TableAction =
 
 export type TableStore = Readable<TableState> & {
 	address: `0x${string}`;
+	/** What the table's page shows: see {@link tableScreenOf}. */
+	screen: Readable<TableScreen>;
 	action: Readable<TableAction>;
 	update(): Promise<void>;
 	/** The creator starts the table (sent by this browser's key, a delegate of theirs). */
@@ -359,6 +362,7 @@ export function createTableStore(params: {
 	return {
 		subscribe: state.subscribe,
 		address: table,
+		screen: derived(state, tableScreenOf),
 		action: {subscribe: action.subscribe},
 		update,
 		start: () => send('start', {functionName: 'start'}),
@@ -386,4 +390,112 @@ function messageOf(error: unknown): string {
 		return String((error as {shortMessage: unknown}).shortMessage);
 	}
 	return error instanceof Error ? error.message : String(error);
+}
+
+// ---------------------------------------------------------------------------
+// Before the start: the table's own lobby screen
+// ---------------------------------------------------------------------------
+
+/**
+ * WHETHER THE BOARD TAKES A TURN AT THIS TABLE: only once it has started, and
+ * only from a member. Before the start the contract refuses a commitment from
+ * anyone (nobody is waited for yet), and after it from anyone not seated, so a
+ * plan made then could only revert. `undefined` is a game with no table.
+ */
+export function tableAllowsPlay(state: TableState | undefined): boolean {
+	if (state === undefined) return true;
+	return state.step === 'Loaded' && state.roster.started && state.seated;
+}
+
+/** What every table of this game plays by: the lobby implementation's config. */
+export type TableSettings = {
+	commitPhaseDuration: number;
+	revealPhaseDuration: number;
+	/** Whether a phase closes as soon as every member has acted. */
+	earlyAdvance: boolean;
+};
+
+export function tableSettingsOf(cycle: CycleConfig): TableSettings {
+	return {
+		commitPhaseDuration: cycle.commitPhaseDuration,
+		revealPhaseDuration: cycle.revealPhaseDuration,
+		earlyAdvance: cycle.policy === 'hybrid',
+	};
+}
+
+/** A duration in seconds, as a person reads it. */
+export function describeDuration(seconds: number): string {
+	if (seconds < 120) return `${seconds} seconds`;
+	if (seconds < 7200) return `${Math.round(seconds / 60)} minutes`;
+	return `${Math.round(seconds / 3600)} hours`;
+}
+
+/**
+ * WHAT THE TABLE'S PAGE SHOWS: its lobby until it has started, then the board
+ * to its members, and a closed door to anyone else.
+ */
+export type TableScreen =
+	| {screen: 'loading'}
+	| {screen: 'failed'; message: string}
+	| {
+			screen: 'lobby';
+			/** Whether this browser's identity holds a seat. */
+			seated: boolean;
+			isCreator: boolean;
+			/** Whether the creator may start now (two or more seated). */
+			canStart: boolean;
+			/** Whether a seat is still free to take. */
+			seatFree: boolean;
+			taken: number;
+			seats: number;
+			/** One sentence: what this person is waiting for, or can do. */
+			status: string;
+	  }
+	| {screen: 'playing'}
+	| {screen: 'closed'; status: string};
+
+export function tableScreenOf(state: TableState): TableScreen {
+	if (state.step === 'Loading') return {screen: 'loading'};
+	if (state.step === 'Failed') {
+		return {screen: 'failed', message: state.message};
+	}
+	const {roster, seated, isCreator} = state;
+	const taken = roster.members.length;
+	if (roster.started) {
+		return seated
+			? {screen: 'playing'}
+			: {
+					screen: 'closed',
+					status: 'This game has started, and you are not one of its players.',
+				};
+	}
+	const seatFree = taken < roster.seats;
+	const canStart = isCreator && taken >= 2;
+	const count = `${taken} of ${roster.seats} seats taken`;
+	let status: string;
+	if (!seated && !seatFree) {
+		status = `Every seat is taken (${count}).`;
+	} else if (!seated) {
+		status = isCreator
+			? `Take a seat to play at your own table (${count}).`
+			: `Take a seat to join (${count}). The game begins when its creator starts it.`;
+	} else if (!isCreator) {
+		status = `You are seated. Waiting for the creator to start the game (${count}).`;
+	} else if (!canStart) {
+		status = `Waiting for at least one more player to take a seat (${count}). Send them the invite link.`;
+	} else if (seatFree) {
+		status = `You can start now, or wait for more players (${count}).`;
+	} else {
+		status = `Every seat is taken (${count}). Start when you are ready.`;
+	}
+	return {
+		screen: 'lobby',
+		seated,
+		isCreator,
+		canStart,
+		seatFree,
+		taken,
+		seats: roster.seats,
+		status,
+	};
 }
