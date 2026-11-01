@@ -197,18 +197,14 @@ export default deployScript(
 			});
 		}
 
-		const addressesToAuthorize = Object.values(env.namedAccounts).concat([stratagems.address]);
-		const anyNotAuthorized = await env.read(testTokens, {
-			functionName: 'anyNotAuthorized',
-			args: [addressesToAuthorize],
-		});
-		if (anyNotAuthorized) {
-			await env.execute(testTokens, {
-				account: deployer,
-				functionName: 'enableRequireAuthorization',
-				args: [addressesToAuthorize],
-			});
-		}
+		// NO `enableRequireAuthorization` (step L2, PL2-1 of
+		// work/plans/join-template-commit-reveal.md). It was alpha1's guard against
+		// one player amassing gems through many claim links: once on, a transfer
+		// into an address already touched needs one side authorised. Gems come free
+		// from the distributor now, so it guards nothing, and it refuses a TABLE's
+		// second deposit and every payout out of it, whatever the allowance (a table
+		// is an address created by anyone, which no admin authorises). The contract
+		// keeps the feature; this deploy no longer turns it on.
 	},
 	{
 		tags: ['Stratagems', 'Stratagems_deploy'],
