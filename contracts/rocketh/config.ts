@@ -42,6 +42,16 @@ export const config = {
 			chain: 8453,
 			overrides: {tags: ['mainnet']},
 		},
+		// A BOX ON THE LAN (step L2, PL2-8): the user's `ethereum-lan-node`, geth
+		// in dev mode with a block every 2 s, chain 19216801. Deployed from the
+		// user's machine with `ETH_NODE_URI_lan` and `MNEMONIC_lan` (the box's
+		// genesis funds the `test ... junk` mnemonic). DETERMINISTIC, through the
+		// CREATE2 proxy the box predeploys, so a static build's addresses hold on
+		// every box and after every reset of its chain.
+		lan: {
+			chain: 19216801,
+			overrides: {tags: ['deterministic']},
+		},
 	},
 	chains: {
 		// The local chain (`pnpm local_node`, the e2e), with the two properties the
@@ -52,6 +62,23 @@ export const config = {
 		// one commit plus one reveal step, shows the key's balance as moves left
 		// rather than as ether. A live chain declares its own at step D.
 		31337: {
+			properties: {
+				expectedWorstGasPrice: parseEther('1', 'gwei'),
+				creditsGasMultiplier: CLIENT_GAS.commitGas + CLIENT_GAS.revealGas,
+				supportsSendRawTransactionSync: false,
+			},
+		},
+		// THE LAN BOX (`lan` above): geth's dev mode prices like a local chain,
+		// so the local chain's properties; its genesis is reset when the box is,
+		// which the deterministic deploys survive and the records must follow.
+		19216801: {
+			info: {
+				id: 19216801,
+				name: 'Ethereum LAN node',
+				nativeCurrency: {name: 'Ether', symbol: 'ETH', decimals: 18},
+				rpcUrls: {default: {http: ['http://localhost:8545']}},
+			},
+			deleteDeploymentsIfDifferentGenesisHash: true,
 			properties: {
 				expectedWorstGasPrice: parseEther('1', 'gwei'),
 				creditsGasMultiplier: CLIENT_GAS.commitGas + CLIENT_GAS.revealGas,

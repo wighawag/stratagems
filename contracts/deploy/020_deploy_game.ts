@@ -24,6 +24,7 @@ export default deployScript(
 		const {deployViaProxy, deployments, namedAccounts, deployViaRouter, get} = env;
 		const {deployer} = namedAccounts;
 		const deployConfig = getConfig(env);
+		const {deterministic} = deployConfig;
 
 		let startTime = 0; // BigInt(Math.floor(Date.now() / 1000)); // startTime: nextSunday(),
 
@@ -137,13 +138,14 @@ export default deployScript(
 							...(args as any),
 						},
 						routes,
-						{extraABIs: [Abi_UsingStratagemsDebugEvents]},
+						{extraABIs: [Abi_UsingStratagemsDebugEvents], deterministic},
 					) as Promise<Deployment<Abi_IStratagems>>;
 				},
 				args: [config],
 			},
 			{
 				owner: admin,
+				...(deterministic ? {deterministic, deterministicImplementation: true} : {}),
 				// The client's gas figures beside the contract's config, not in it: the
 				// contract never reads them (see .config/gas.ts).
 				linkedData: {
@@ -168,7 +170,7 @@ export default deployScript(
 			account: deployer,
 			artifact: artifacts.StratagemsSimulation,
 			args: [{...config, startTime: BigInt(config.startTime)}],
-		});
+		}, {deterministic});
 
 		const desiredWeight = parseEther('1');
 		const weight = await env.read(generator, {

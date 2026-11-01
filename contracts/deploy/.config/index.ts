@@ -12,5 +12,11 @@ export function getConfig(env: Pick<Environment, 'name' | 'tags'>) {
 		// take it again (step D of work/plans/join-template-commit-reveal.md),
 		// where fast-forwarding a live game was useful (`scripts/skipDays.ts`).
 		useTimeContract: !!env.tags['time-contract'] && !env.tags['mainnet'],
+		// DETERMINISTIC ADDRESSES (CREATE2 through the chain's deterministic
+		// deployment proxy), where an environment OPTS IN with the `deterministic`
+		// tag: the `lan` box (step L2, PL2-8a), so the addresses a static build
+		// embeds hold on every box and after every reset of its chain. `undefined`
+		// rather than `false`, so a deploy given it is a deploy as before.
+		deterministic: env.tags['deterministic'] ? (true as const) : undefined,
 	};
 }

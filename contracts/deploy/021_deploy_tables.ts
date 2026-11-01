@@ -2,6 +2,7 @@ import {deployScript, artifacts} from '../rocketh/deploy.js';
 import {Abi_UsingStratagemsDebugEvents} from '../generated/abis/UsingStratagemsDebugEvents.js';
 import {checksumAddress} from 'viem';
 import {CLIENT_GAS} from './.config/gas.js';
+import {getConfig} from './.config/index.js';
 
 /**
  * TABLES: stratagems games for a fixed set of players, created by anyone, beside
@@ -59,6 +60,7 @@ export default deployScript(
 		}
 		const {deploy, deployViaRouter, namedAccounts, get} = env;
 		const {deployer} = namedAccounts;
+		const {deterministic} = getConfig(env);
 
 		const world = get('Stratagems');
 		const testTokens = get<typeof artifacts.TestTokens.abi>('TestTokens');
@@ -70,7 +72,7 @@ export default deployScript(
 		const noRewards = await deploy('NoRewards', {
 			account: deployer,
 			artifact: artifacts.NoRewards,
-		});
+		}, {deterministic});
 
 		const config = {
 			tokens: testTokens.address,
@@ -113,7 +115,7 @@ export default deployScript(
 					],
 				},
 			],
-			{extraABIs: [Abi_UsingStratagemsDebugEvents]},
+			{extraABIs: [Abi_UsingStratagemsDebugEvents], deterministic},
 		);
 
 		// what a table's moves will do, answered by the reveal's own code over
@@ -123,7 +125,7 @@ export default deployScript(
 			account: deployer,
 			artifact: artifacts.StratagemsSimulation,
 			args: [config],
-		});
+		}, {deterministic});
 
 		await deploy(
 			'StratagemsTableFactory',
@@ -142,6 +144,7 @@ export default deployScript(
 					currency: worldConfig.currency,
 					admin: worldConfig.admin,
 				},
+				deterministic,
 			},
 		);
 	},

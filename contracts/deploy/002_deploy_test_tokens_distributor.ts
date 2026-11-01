@@ -1,8 +1,11 @@
 import {deployScript, artifacts} from '../rocketh/deploy.js';
 import {parseEther} from 'viem';
+import {getConfig} from './.config/index.js';
 
 export default deployScript(
-	async ({deploy, execute, get, namedAccounts, name}) => {
+	async (env) => {
+		const {deploy, execute, get, namedAccounts, name} = env;
+		const {deterministic} = getConfig(env);
 		const {deployer} = namedAccounts;
 
 		const TestTokens = await get<typeof artifacts.TestTokens.abi>('TestTokens');
@@ -11,9 +14,10 @@ export default deployScript(
 		// chain's way to get gems (the HUD's "Get test gems"), the offline world's,
 		// for the human and for the seats the world plays, and the `alpha2` test
 		// deployment's, where test gems are worth nothing (step D, PD4, of
-		// work/plans/join-template-commit-reveal.md). Not on a chain whose tokens
-		// are worth something: alpha1's had claim links.
-		if (name == 'localhost' || name == 'offline' || name == 'alpha2') {
+		// work/plans/join-template-commit-reveal.md), and the `lan` box's, where
+		// guests at a table get their gems (step L2, PL2-8). Not on a chain whose
+		// tokens are worth something: alpha1's had claim links.
+		if (name == 'localhost' || name == 'offline' || name == 'alpha2' || name == 'lan') {
 			const TestTokensDistributor = await deploy('TestTokensDistributor', {
 				account: deployer,
 				artifact: artifacts.TestTokensInfiniteDistributor,
@@ -21,7 +25,7 @@ export default deployScript(
 				// gems, what the HUD stakes, so a new player presses once and not three
 				// times (15 a call until step D).
 				args: [TestTokens.address, parseEther('32')],
-			});
+			}, {deterministic});
 
 			await execute(TestTokens, {
 				functionName: 'authorizeMinters',

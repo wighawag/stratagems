@@ -1,8 +1,11 @@
 import {deployScript, artifacts} from '../rocketh/deploy.js';
 import {zeroAddress} from 'viem';
+import {getConfig} from './.config/index.js';
 
 export default deployScript(
-	async ({deployViaProxy, namedAccounts, get, getOrNull, execute, showMessage}) => {
+	async (env) => {
+		const {deployViaProxy, namedAccounts, get, getOrNull, execute, showMessage} = env;
+		const {deterministic} = getConfig(env);
 		const {deployer, tokensBeneficiary} = namedAccounts;
 
 		const Gems = await get<typeof artifacts.Gems.abi>('Gems');
@@ -36,6 +39,7 @@ export default deployScript(
 			{
 				owner: namedAccounts.deployer,
 				execute: 'postUpgrade',
+				...(deterministic ? {deterministic, deterministicImplementation: true} : {}),
 			},
 		);
 	},
