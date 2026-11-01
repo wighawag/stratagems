@@ -206,6 +206,7 @@ async function deployStratagems(override?: Partial<GameConfig>) {
 		provider: provider as any,
 		Gems,
 		GemsGenerator,
+		deployments,
 	};
 }
 
