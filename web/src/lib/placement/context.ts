@@ -100,7 +100,7 @@ import {createPlacementPreview, withPreview} from '$lib/placement/preview';
 import {createBytecodeSandbox} from '$lib/game/simulation';
 import {createGameRenderer, type GameSurface} from '$lib/placement/render';
 import {cellID} from '$lib/placement/cells';
-import {createTableStore, type TableStore} from '$lib/game/lobby/table';
+import type {TableStore} from '$lib/game/lobby/table';
 
 export type Game = {
 	config: PlacementConfig;
@@ -202,7 +202,7 @@ export type Game = {
 	setup: Readable<SetupNeeded | undefined>;
 	/** Whether the saved turn has loaded, for the HUD to say while it has not. */
 	savedTurn: Readable<SavedTurn>;
-	/** The table this game is at, if it is at one: its roster and the creator's powers. */
+	/** The table this game is at, if it is at one: the skeleton's, see `$lib/game/lobby/table`. */
 	table: TableStore | undefined;
 };
 
@@ -515,19 +515,6 @@ export function createGameContext(core: CoreServices): GameContext {
 		},
 	});
 
-	// AT A TABLE: its roster, polled beside the game. The creator's start and
-	// forfeit move the cycle, so the cycle is read again after either lands.
-	const table = core.table
-		? createTableStore({
-				deps: core,
-				table: core.table,
-				you: derived(activeIdentity, ($identity) =>
-					$identity === undefined ? undefined : onchainIdentity($identity),
-				),
-				onChanged: () => void crg.game.cycleAdvance.check(),
-			})
-		: undefined;
-
 	const cost = derived(
 		crg.game.planning.count,
 		($count) => BigInt($count) * config.placementCost,
@@ -557,7 +544,6 @@ export function createGameContext(core: CoreServices): GameContext {
 			reserve,
 			cost,
 			revealSchedule,
-			table,
 		},
 		render: crg.render,
 		start: () => {
@@ -569,9 +555,7 @@ export function createGameContext(core: CoreServices): GameContext {
 						submission: crg.game.submission,
 					})
 				: () => {};
-			const stopTable = table?.startPolling();
 			return () => {
-				stopTable?.();
 				stopFallback();
 				stop();
 			};
