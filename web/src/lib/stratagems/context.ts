@@ -159,6 +159,11 @@ export type Game = CommitRevealGame<StratagemsGame>['game'] & {
 	focus: FocusStore;
 	/** The faction wash under each faction's living cells, a toggle (off by default). */
 	factionWash: Writable<boolean>;
+	/**
+	 * Whether this page is at a table (step L2): no rewards there, so the
+	 * leaderboard ranks by lands and shows neither points nor earnings.
+	 */
+	atTable: boolean;
 	/** What the indexer is doing while the board is behind the chain. */
 	syncing: Readable<SyncingModel>;
 	/**
@@ -282,8 +287,12 @@ export function createGameContext(core: CoreServices): GameContext {
 			}),
 			advance: createCycleAdvancer({deps: core, contract}),
 			// The base's `_advanceCycle` re-checks the policy and refuses under
-			// `Timed`, stratagems' policy, with a named error.
+			// `Timed`, the world's policy, with a named error.
 			contractIsTheJudge: true,
+			// Inert under the world's Timed cycle and what a Manual one needs
+			// anyway; at a table (`TimedWithEarlyAdvance`) a phase closes the
+			// moment everyone has acted, which is what makes a table quick to play.
+			auto: 'eagerly',
 		},
 		actionsPerReveal: config.actionsPerReveal,
 		camera: config.camera,
@@ -297,7 +306,13 @@ export function createGameContext(core: CoreServices): GameContext {
 				>[0]['deployment'],
 				cycleConfig: config.cycle,
 				player: activeIdentity,
-				snapshotURI: env.PUBLIC_SNAPSHOT_URI || undefined,
+				// A table has no published snapshot (nobody snapshots a table, and
+				// its record has the WORLD'S name, so the world's would be found):
+				// it indexes from the chain.
+				snapshotURI: core.table
+					? undefined
+					: env.PUBLIC_SNAPSHOT_URI || undefined,
+				publish: core.table === undefined,
 				appPath: url,
 			})),
 		// Shown its chunks, a missed reveal costs one gem per committed move and
@@ -335,7 +350,11 @@ export function createGameContext(core: CoreServices): GameContext {
 		stake: {
 			refresh: () => reserve.update(),
 			needed: derived(reserve, stakeNeeded),
-			acquisition: createStakeAcquisition({config, deployments}),
+			acquisition: createStakeAcquisition({
+				config,
+				deployments,
+				atTable: core.table !== undefined,
+			}),
 			grant: SIGNER_GRANT,
 		},
 		// The plan the view draws carries what the planned moves will do, once
@@ -404,6 +423,7 @@ export function createGameContext(core: CoreServices): GameContext {
 		onchainState: crg.onchainState,
 		identity: activeIdentity,
 		maxLife: config.maxLife,
+		byLands: core.table !== undefined,
 	});
 	const testGems = createTestGems({
 		deployments,
@@ -443,6 +463,7 @@ export function createGameContext(core: CoreServices): GameContext {
 			revealSchedule,
 			focus,
 			factionWash,
+			atTable: core.table !== undefined,
 		},
 		render: crg.render,
 		start: () => {

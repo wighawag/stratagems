@@ -11,7 +11,13 @@
  * the paying wallet into the player's reserve AND forwards the stipend to the
  * key this browser plays with, which then registers itself out of it (the
  * template's `StakeSale.purchase` does the same for its game). The deploy gives
- * the game a global approval on TestTokens, so no `approve` precedes it.
+ * the WORLD a global approval on TestTokens, so no `approve` precedes it there.
+ *
+ * AT A TABLE, AN ORDINARY ALLOWANCE (step L2, PL2-1): a table is an address
+ * created by anyone, which no admin approves, so the rail approves the table
+ * for exactly the stake, from whoever pays, before the call
+ * (`Acquisition.allowance`), and skips it when the allowance already covers it.
+ * Two transactions, as any ERC20 would need; a table should later take any.
  *
  * ONE DIFFERENCE FROM THE TEMPLATE'S: the payer must already hold gems. The
  * template's sale mints them for a price; here they come from the wallet, and
@@ -32,9 +38,14 @@ import type {StratagemsConfig} from './game-config';
  */
 const DEPOSIT_GAS = 250_000n;
 
+/** Gas kept back for the approval at a table: 46,031 measured, rounded up. */
+const APPROVAL_GAS = 60_000n;
+
 export function createStakeAcquisition(params: {
 	config: StratagemsConfig;
 	deployments: TypedDeployments;
+	/** At a table, which is paid by an allowance (see the header). */
+	atTable?: boolean;
 }): Acquisition {
 	const {config, deployments} = params;
 	const Stratagems = deployments.contracts.Stratagems;
@@ -43,7 +54,10 @@ export function createStakeAcquisition(params: {
 		functionName: 'addToReserveAndFund',
 		price: 0n,
 		stipend: config.stipend,
-		gas: DEPOSIT_GAS,
+		gas: params.atTable ? DEPOSIT_GAS + APPROVAL_GAS : DEPOSIT_GAS,
+		...(params.atTable
+			? {allowance: {token: config.tokenAddress, amount: config.stakeAmount}}
+			: {}),
 		// `stipendTo` and `stipend` move together (the rail's `stipendFor`): with
 		// no key to register, nothing is sent and the contract forwards nothing.
 		request: ({owner, stipendTo, stipend}) => ({
