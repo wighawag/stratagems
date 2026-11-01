@@ -23,6 +23,7 @@ import {parseAbi, parseEventLogs, isAddress} from 'viem';
 import type {CoreServices} from '$lib/context/core';
 import type {TypedDeployments} from '$lib/deployments-store';
 import {sendMove} from '$lib/game/core/commit-reveal/send';
+import {InsufficientFundsError} from '$lib/core/transaction';
 import type {CycleConfig} from '$lib/game/core/cycle';
 import {tableAtRoster, type TableSeat} from './seats';
 
@@ -176,7 +177,12 @@ export type TablesLobby = {
 export function createTablesLobby(params: {
 	deps: Pick<
 		CoreServices,
-		'publicClient' | 'accountExecutor' | 'connection' | 'deployments'
+		| 'publicClient'
+		| 'accountExecutor'
+		| 'connection'
+		| 'deployments'
+		| 'balanceCheck'
+		| 'accountBalance'
 	>;
 	lobby: TableLobby;
 }): TablesLobby {
@@ -205,12 +211,26 @@ export function createTablesLobby(params: {
 			if (executor.status !== 'ready') {
 				throw new Error('Connect a wallet to create a table.');
 			}
+			// THROUGH THE BALANCE CHECK, as every transaction the account pays for:
+			// a creator with no ether is shown the insufficient-funds modal and its
+			// remedy (the faucet, where there is one) rather than the node's raw
+			// "exceeds the balance of the account". On a LAN box every newcomer
+			// starts with nothing, and creating a table is the first thing a host
+			// does (found by stratagems' LAN rehearsal, its plan's step L2).
+			const request = await deps.balanceCheck.ensureCanAfford(
+				{
+					contract: {
+						address: factory(),
+						abi: FACTORY_ABI,
+						functionName: 'createGame',
+						args: [seats],
+						account: executor.account,
+					},
+				},
+				{balance: deps.accountBalance, sender: executor.address},
+			);
 			const hash = await executor.client.writeContract({
-				address: factory(),
-				abi: FACTORY_ABI,
-				functionName: 'createGame',
-				args: [seats],
-				account: executor.account,
+				...(request as object),
 				chain: null,
 			} as never);
 			const receipt = await deps.publicClient.waitForTransactionReceipt({
@@ -228,6 +248,12 @@ export function createTablesLobby(params: {
 			void refresh();
 			return created.args.game;
 		} catch (error) {
+			// The modal has already said why and offered the remedy; the creator
+			// chose to stop, which is not a failure to paint again.
+			if (error instanceof InsufficientFundsError) {
+				creating.set({step: 'Idle'});
+				return undefined;
+			}
 			creating.set({step: 'Failed', message: messageOf(error)});
 			return undefined;
 		}
