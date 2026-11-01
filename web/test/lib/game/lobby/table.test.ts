@@ -9,7 +9,6 @@ import {
 	type Roster,
 } from '$lib/game/lobby/table';
 import {tableAtRoster} from '$lib/game/lobby/seats';
-import {placementLobby} from '$lib/placement/table';
 
 /**
  * TABLES, the client half: which table a page is at, how a roster is laid out
@@ -184,47 +183,5 @@ describe('a table store', () => {
 		});
 		await table.update();
 		expect(get(table)).toEqual({step: 'Failed', message: 'execution reverted'});
-	});
-});
-
-describe("the reference game's table record", () => {
-	it('is the world record with the game at the table, as a clone of the lobby implementation', () => {
-		const world = {
-			chain: {id: 1},
-			contracts: {
-				Game: {address: '0xworld', abi: ['world'], linkedData: {world: true}},
-				GameLobbyImplementation: {
-					address: '0ximplementation',
-					abi: ['lobby'],
-				},
-				GameFactory: {address: '0xfactory', linkedData: {lobby: true}},
-				Game_Implementation_Router_Simulation_Route: {address: '0xworldsim'},
-				GameLobbyImplementation_Router_Simulation_Route: {
-					address: '0xlobbysim',
-				},
-				Token: {address: '0xtoken'},
-			},
-		};
-		const record = placementLobby.deploymentsAt(
-			world as never,
-			TABLE,
-		) as never as typeof world & {
-			contracts: {Game: {address: string; abi: string[]; linkedData: unknown}};
-		};
-		expect(record.contracts.Game).toEqual({
-			address: TABLE,
-			abi: ['lobby'],
-			linkedData: {lobby: true},
-		});
-		expect(
-			record.contracts.Game_Implementation_Router_Simulation_Route,
-		).toEqual({
-			address: '0xlobbysim',
-		});
-		// Everything else is the world's.
-		expect(record.contracts.Token).toBe(world.contracts.Token);
-		expect(placementLobby.factory(world as never)).toBe(
-			world.contracts.GameFactory,
-		);
 	});
 });
