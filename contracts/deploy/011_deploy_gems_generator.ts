@@ -21,27 +21,40 @@ export default deployScript(
 			});
 		}
 
-		await deployViaProxy(
+		const args = [
+			zeroAddress, // Gems.address,
+			{
+				rewardRateMillionth: 100n, // 100 for every million of second. or 8.64 / day
+				// in play test we add reward midway
+				fixedRewardRateThousandsMillionth: 10n, // 10 for every  thousand million of seconds, or 0.000864 per day per stake or 315.36 / year / 1000 stake
+			},
+			[],
+		] as const;
+
+		const generator = await deployViaProxy(
 			'GemsGenerator',
 			{
 				account: deployer,
 				artifact: artifacts.RewardsGenerator,
-				args: [
-					zeroAddress, // Gems.address,
-					{
-						rewardRateMillionth: 100n, // 100 for every million of second. or 8.64 / day
-						// in play test we add reward midway
-						fixedRewardRateThousandsMillionth: 10n, // 10 for every  thousand million of seconds, or 0.000864 per day per stake or 315.36 / year / 1000 stake
-					},
-					[],
-				],
+				args: [...args] as any,
 			},
 			{
 				owner: namedAccounts.deployer,
-				execute: 'postUpgrade',
-				...(deterministic ? {deterministic, deterministicImplementation: true} : {}),
+				// UNDER CREATE2 THE PROXY'S CONSTRUCTOR IS CALLED BY THE FACTORY, not
+				// by the deployer, so `postUpgrade` (`onlyProxyAdmin`) would revert
+				// inside it: a deterministic proxy is deployed without the call, and
+				// the admin sends it below. It is idempotent (it only sets `_init`
+				// when there are no initial games), so the state is the same.
+				...(deterministic ? {deterministic, deterministicImplementation: true} : {execute: 'postUpgrade'}),
 			},
 		);
+		if (deterministic) {
+			await execute(generator, {
+				functionName: 'postUpgrade',
+				args: [...args] as any,
+				account: deployer,
+			});
+		}
 	},
 	{tags: ['GemsGenerator', 'GemsGenerator_deploy'], dependencies: ['Gems_deploy']},
 );
