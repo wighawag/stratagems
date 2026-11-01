@@ -405,6 +405,9 @@ export async function stakeForEveryoneInTheWorld(params: {
 	table: Table;
 }): Promise<void> {
 	for (const seat of params.table) {
+		// A remote human stakes for themselves, at a table online; an offline
+		// world has none.
+		if (seat.occupant.kind === 'remote-human') continue;
 		const player =
 			seat.occupant.kind === 'you' ? params.player : seat.occupant.address;
 		await stakeForOfflinePlayer({env: params.env, player});

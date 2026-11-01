@@ -125,7 +125,14 @@ export function createIndexedBoard(params: {
 		}),
 		follower: boardFollower,
 		player: params.player,
-		cycleOf: (data) => data.advancedCycle?.cycleNumber,
+		// The stamp's anchor (`$lib/indexer`'s `CycleAnchor`). The cycle alone:
+		// stratagems' deployments are Timed (the world) or Manual (an offline
+		// world), and neither reads when the anchor was set. A table
+		// (`TimedWithEarlyAdvance`) does, which is step L2's.
+		cycleOf: (data) =>
+			data.advancedCycle
+				? {cycleNumber: data.advancedCycle.cycleNumber}
+				: undefined,
 		present: (data, cycleNumber) => ({data, cycleNumber}),
 	});
 }
