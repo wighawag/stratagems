@@ -7,6 +7,7 @@ import {
 import deployToken from 'template-commit-reveal-contracts/deploy/001_deploy_token.js';
 import deployGame from 'template-commit-reveal-contracts/deploy/010_deploy_game.js';
 import deployStakeSale from 'template-commit-reveal-contracts/deploy/020_deploy_stake_sale.js';
+import deployLobby from 'template-commit-reveal-contracts/deploy/030_deploy_lobby.js';
 import {
 	createEmbeddedWorld,
 	restoreIsCoherent,
@@ -142,6 +143,10 @@ export const OFFLINE_DEPLOYMENT = {
 		{id: '001_deploy_token', module: deployToken},
 		{id: '010_deploy_game', module: deployGame},
 		{id: '020_deploy_stake_sale', module: deployStakeSale},
+		// Tables are an online thing, and an offline world deploys their factory
+		// anyway: the app's records name it, and a world is refused unless it
+		// deploys everything they name.
+		{id: '030_deploy_lobby', module: deployLobby},
 	],
 	/**
 	 * What the in-tab deployment declares.
@@ -160,6 +165,7 @@ export const OFFLINE_DEPLOYMENT = {
 			commitPhaseDuration: 0n,
 			revealPhaseDuration: 0n,
 		},
+		Lobby: config.data.Lobby.default,
 	},
 	accounts: {deployer: DEPLOYER, admin: ADMIN},
 	initialBalances: {
@@ -614,6 +620,9 @@ export async function stakeForEveryoneInTheWorld(params: {
 	table: Table;
 }): Promise<void> {
 	for (const seat of params.table) {
+		// A remote human stakes for themselves, at a table online; an offline
+		// world has none.
+		if (seat.occupant.kind === 'remote-human') continue;
 		const player =
 			seat.occupant.kind === 'you' ? params.player : seat.occupant.address;
 		await stakeForOfflinePlayer({env: params.env, player});

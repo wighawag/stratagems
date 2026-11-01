@@ -92,7 +92,15 @@ export type Occupant =
 	 * no intelligence, no difficulty, no interface. The NPCs the plan's Phase 6
 	 * wants are a different job.
 	 */
-	| {kind: 'the-world'; privateKey: `0x${string}`; address: `0x${string}`};
+	| {kind: 'the-world'; privateKey: `0x${string}`; address: `0x${string}`}
+	/**
+	 * A human at ANOTHER browser, seated at a table for a fixed set of players
+	 * by their own stake (`$lib/game/lobby/table`). Nothing here plays for
+	 * them: the seat is only who the cycle waits for. `player` is their
+	 * identity as the contract keys it: an account widened to a number, or a
+	 * token, whichever the game plays as.
+	 */
+	| {kind: 'remote-human'; player: bigint};
 
 /** One place at the table. */
 export type Seat = {occupant: Occupant};
@@ -279,4 +287,28 @@ export function seatsPlayedByTheWorld(
 		}
 	}
 	return world;
+}
+
+/** A seat at a table for a fixed set of players: its occupant, or nobody yet. */
+export type TableSeat = {occupant: Occupant | undefined};
+
+/**
+ * A TABLE'S SEATS, as its roster holds them: each member a human, the one this
+ * browser plays as being `you`, and the seats nobody has taken yet empty.
+ * Members are the contract's identities, so `you` is this browser's identity
+ * as the contract keys it (`$lib/game/identity`'s `onchainIdentity`), which is
+ * the account widened to a number in a game that plays as the account and a
+ * token in one that plays as a token.
+ */
+export function tableAtRoster(
+	seats: number,
+	members: readonly bigint[],
+	you: bigint | undefined,
+): readonly TableSeat[] {
+	const table: TableSeat[] = members.map((member) => ({
+		occupant:
+			member === you ? {kind: 'you'} : {kind: 'remote-human', player: member},
+	}));
+	while (table.length < seats) table.push({occupant: undefined});
+	return table;
 }

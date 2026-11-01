@@ -120,12 +120,16 @@ export async function stake(page: Page): Promise<void> {
 	// fixture fail on the first branch that sold an avatar instead of a bond,
 	// thirty seconds at a time, with a timeout that named a button nobody had
 	// removed. The testids are on the two controls in `GameHud.svelte`.
-	const deposit = page.locator('[data-testid="acquire-stake"]');
-	if (await deposit.isVisible({timeout: 5_000}).catch(() => false)) {
-		await deposit.click();
-	} else {
-		await page.locator('[data-testid="acquire-more-stake"]').click();
-	}
+	//
+	// ONE LOCATOR FOR BOTH, clicked with Playwright's own waiting. Asking which
+	// one is visible first and then clicking it raced the HUD: the gate renders
+	// once the reserve is read, so a page that had only just loaded (a table,
+	// opened by its link) answered "neither" and then waited on the wrong one.
+	await page
+		.locator('[data-testid="acquire-stake"]')
+		.or(page.locator('[data-testid="acquire-more-stake"]'))
+		.first()
+		.click({timeout: 60_000});
 
 	// WHICHEVER PAYER IS OFFERED. With only one method the rail skips the choice
 	// entirely, so this acts only if the chooser is actually up.
