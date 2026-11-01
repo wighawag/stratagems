@@ -123,17 +123,22 @@ async function planAt(page: Page, cell: {x: number; y: number}) {
 }
 
 async function commitNow(page: Page): Promise<void> {
+	// In front, as a person switching windows would be: a click on a page in
+	// the background was lost once (the commit then came from the auto-commit
+	// at the phase's end, which is too late for an early advance).
+	await page.bringToFront();
 	await trace(page, 'commitNow start');
 	const commit = page.getByRole('button', {name: /commit now/i});
-	if (await commit.isEnabled().catch(() => false)) {
-		await commit.click().catch(() => {});
-	}
+	await expect(commit, 'the turn should be committable').toBeEnabled({
+		timeout: 30_000,
+	});
+	await commit.click();
 	await expect
 		.poll(async () => (await gameStep(page)).step, {
 			message: 'the commitment should reach the chain',
 			timeout: 90_000,
 		})
-		.toBe('Committed');
+		.toMatch(/^(Committed|Revealing|Revealed)$/);
 	await trace(page, 'committed');
 }
 
