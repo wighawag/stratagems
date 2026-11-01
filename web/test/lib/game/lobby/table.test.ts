@@ -2,11 +2,16 @@ import {describe, it, expect, vi} from 'vitest';
 import {get, writable} from 'svelte/store';
 import {
 	createTableStore,
+	describeDuration,
 	isMember,
 	memberLabel,
 	readTables,
+	tableAllowsPlay,
 	tableFromParam,
+	tableScreenOf,
+	tableSettingsOf,
 	type Roster,
+	type TableState,
 } from '$lib/game/lobby/table';
 import {tableAtRoster} from '$lib/game/lobby/seats';
 
@@ -183,5 +188,104 @@ describe('a table store', () => {
 		});
 		await table.update();
 		expect(get(table)).toEqual({step: 'Failed', message: 'execution reverted'});
+	});
+});
+
+describe('a table before its start', () => {
+	const loaded = (overrides: {
+		started?: boolean;
+		members?: bigint[];
+		seats?: number;
+		isCreator?: boolean;
+		seated?: boolean;
+	}): TableState => {
+		const members = overrides.members ?? [BigInt(ALICE)];
+		const roster: Roster = {
+			creator: ALICE,
+			seats: overrides.seats ?? 3,
+			started: overrides.started ?? false,
+			members,
+		};
+		return {
+			step: 'Loaded',
+			roster,
+			table: [],
+			isCreator: overrides.isCreator ?? false,
+			seated: overrides.seated ?? false,
+		};
+	};
+
+	it('takes no turn until the table has started, and then only from a member', () => {
+		// The contract refuses a commitment before the start from anyone, and
+		// after it from anyone not seated: a plan made then could only revert.
+		expect(tableAllowsPlay(undefined)).toBe(true);
+		expect(tableAllowsPlay({step: 'Loading'})).toBe(false);
+		expect(tableAllowsPlay(loaded({seated: true}))).toBe(false);
+		expect(tableAllowsPlay(loaded({started: true, seated: false}))).toBe(false);
+		expect(tableAllowsPlay(loaded({started: true, seated: true}))).toBe(true);
+	});
+
+	it('shows its lobby until it starts, the board to a member after, and a closed door to anyone else', () => {
+		expect(tableScreenOf(loaded({})).screen).toBe('lobby');
+		expect(tableScreenOf(loaded({started: true, seated: true}))).toEqual({
+			screen: 'playing',
+		});
+		expect(tableScreenOf(loaded({started: true})).screen).toBe('closed');
+	});
+
+	it('tells each person what they are waiting for', () => {
+		const status = (state: TableState) => {
+			const screen = tableScreenOf(state);
+			if (screen.screen !== 'lobby') throw new Error(screen.screen);
+			return screen;
+		};
+		const visitor = status(loaded({}));
+		expect(visitor.seatFree).toBe(true);
+		expect(visitor.status).toMatch(/take a seat to join/i);
+
+		const guest = status(
+			loaded({members: [BigInt(ALICE), BigInt(BOB)], seated: true}),
+		);
+		expect(guest.canStart).toBe(false);
+		expect(guest.status).toMatch(/waiting for the creator/i);
+
+		const alone = status(loaded({isCreator: true, seated: true}));
+		expect(alone.canStart).toBe(false);
+		expect(alone.status).toMatch(/at least one more player/i);
+
+		const ready = status(
+			loaded({
+				isCreator: true,
+				seated: true,
+				members: [BigInt(ALICE), BigInt(BOB)],
+			}),
+		);
+		expect(ready.canStart).toBe(true);
+		expect(ready.status).toMatch(/start now, or wait/i);
+
+		const full = status(
+			loaded({members: [BigInt(ALICE), BigInt(BOB)], seats: 2}),
+		);
+		expect(full.seatFree).toBe(false);
+		expect(full.status).toMatch(/every seat is taken/i);
+	});
+
+	it('says what every table plays by, from the deployment', () => {
+		expect(
+			tableSettingsOf({
+				commitPhaseDuration: 45,
+				revealPhaseDuration: 15,
+				startTime: 0,
+				commitTimeAllowance: 5,
+				policy: 'hybrid',
+			}),
+		).toEqual({
+			commitPhaseDuration: 45,
+			revealPhaseDuration: 15,
+			earlyAdvance: true,
+		});
+		expect(describeDuration(45)).toBe('45 seconds');
+		expect(describeDuration(180)).toBe('3 minutes');
+		expect(describeDuration(86400)).toBe('24 hours');
 	});
 });

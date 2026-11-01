@@ -99,6 +99,12 @@ import {
 	type CameraWatcher,
 } from '$lib/game/render/camera';
 import {createViewState, type ViewMerge} from '$lib/view';
+import {
+	createTableStore,
+	tableAllowsPlay,
+	type TableState,
+	type TableStore,
+} from '$lib/game/lobby/table';
 import {createPollingOnchainState} from '$lib/onchain/state';
 
 // ---------------------------------------------------------------------------
@@ -601,6 +607,12 @@ export type CommitRevealGame<T extends GameTypes> = {
 		readyToPlay: Readable<boolean>;
 		/** Where the saved turn is, for the HUD to say: see {@link SavedTurn}. */
 		savedTurn: Readable<SavedTurn>;
+		/**
+		 * The table this game is at (`?game=<address>`), if it is at one: its
+		 * roster, its lobby screen and the creator's powers. See
+		 * `$lib/game/lobby/table`.
+		 */
+		table: TableStore | undefined;
 	};
 	/** The board as the chain says it. What FETCHES reads this. */
 	onchainState: OnchainStateStore<T['board']>;
@@ -857,10 +869,29 @@ export function createCommitRevealGame<T extends GameTypes>(
 	);
 	const onlyInPlayPhase = parts.onlyInPlayPhase ?? false;
 	const savedTurn = derived(core.accountData.lifecycle$, savedTurnOf);
+	// AT A TABLE (`$lib/game/lobby/table`): its roster, polled beside the game,
+	// with the creator's two transactions, which move the cycle, so it is read
+	// again after either lands. Every game at a table has this and none writes
+	// it: a member is the game's identity as the contract keys it.
+	const table = core.table
+		? createTableStore({
+				deps: core,
+				table: core.table,
+				you: derived(parts.identity, ($identity) =>
+					$identity === undefined ? undefined : BigInt($identity),
+				),
+				onChanged: () => void cycleAdvance.check(),
+			})
+		: undefined;
+	// No turn there until it has started, and then only from a member: before
+	// that the contract refuses every commitment, so a plan could only revert.
+	const tableState: Readable<TableState | undefined> =
+		table ?? readable(undefined);
 	const readyToPlay = derived(
-		[setup, phase, savedTurn],
-		([$setup, $phase, $savedTurn]) =>
+		[setup, phase, savedTurn, tableState],
+		([$setup, $phase, $savedTurn, $table]) =>
 			$savedTurn.status === 'ready' &&
+			tableAllowsPlay($table) &&
 			canTakeTurnNow({setup: $setup, phase: $phase, onlyInPlayPhase}),
 	);
 
@@ -870,6 +901,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 	function start() {
 		const stopSubmission = submission.start();
 		const stopCycleAdvance = cycleAdvance.start();
+		const stopTable = table?.startPolling();
 
 		// A click is only a click to the canvas; what it MEANS is the game's, and
 		// it means nothing until the player could commit it.
@@ -923,6 +955,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 		return () => {
 			stopSubmission();
 			stopCycleAdvance();
+			stopTable?.();
 			eventEmitter.off('clicked', onClicked);
 			unsubscribeIdentity();
 			unsubscribeSubmission();
@@ -950,6 +983,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 			acquisition,
 			setup,
 			readyToPlay,
+			table,
 			savedTurn,
 		},
 		onchainState,

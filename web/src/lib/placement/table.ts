@@ -4,7 +4,7 @@
  *
  * A table is the world's record with the game at the table's address: the ABI
  * of the lobby implementation it is a clone of (the world's routes plus
- * `GameLobby`), and the config every table plays by, which
+ * the base's `CommitRevealLobby`), and the config every table plays by, which
  * `contracts/deploy/030_deploy_lobby.ts` records on the factory. The simulation
  * route the preview runs is the lobby implementation's, built with that config.
  * Everything else (the token, the sale) is the world's.
