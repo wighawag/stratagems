@@ -81,7 +81,7 @@ import {createPlacementPreview, withPreview} from '$lib/placement/preview';
 import {createBytecodeSandbox} from '$lib/game/simulation';
 import {createGameRenderer, type GameSurface} from '$lib/placement/render';
 import {cellID} from '$lib/placement/cells';
-import {createTableStore, type TableStore} from '$lib/game/lobby/table';
+import type {TableStore} from '$lib/game/lobby/table';
 
 export type Game = {
 	config: PlacementConfig;
@@ -177,7 +177,7 @@ export type Game = {
 	setup: Readable<SetupNeeded | undefined>;
 	/** Whether the saved turn has loaded, for the HUD to say while it has not. */
 	savedTurn: Readable<SavedTurn>;
-	/** The table this game is at, if it is at one: its roster and the creator's powers. */
+	/** The table this game is at, if it is at one: the skeleton's, see `$lib/game/lobby/table`. */
 	table: TableStore | undefined;
 };
 
@@ -326,20 +326,6 @@ export function createGameContext(core: CoreServices): GameContext {
 		});
 
 	// The commit-reveal wiring is the framework's; what follows is this game.
-	// AT A TABLE: its roster, polled beside the game. The creator's start and
-	// forfeit move the cycle, so the cycle is read again after either lands.
-	const table = core.table
-		? createTableStore({
-				deps: core,
-				table: core.table,
-				you: derived(activeIdentity, ($identity) =>
-					$identity === undefined ? undefined : onchainIdentity($identity),
-				),
-				// Read when a transaction lands, long after `crg` exists.
-				onChanged: () => void crg.game.cycleAdvance.check(),
-			})
-		: undefined;
-
 	const crg = createCommitRevealGame<PlacementGame>(core, {
 		identity: activeIdentity,
 		contract: deployments.contracts.Game.address,
@@ -363,8 +349,6 @@ export function createGameContext(core: CoreServices): GameContext {
 			// moment everyone has acted, which is what makes a table quick to play.
 			auto: 'eagerly',
 		},
-		// At a table, no turn until it has started (`$lib/game/lobby/table`).
-		table,
 		// THE DEPLOYMENT'S CHUNK SIZE: it bounds how much of a turn can still be
 		// opened, and it is part of the commitment's hash (see `buildCommitment`).
 		actionsPerReveal: config.actionsPerReveal,
@@ -468,15 +452,8 @@ export function createGameContext(core: CoreServices): GameContext {
 	return {
 		onchainState: crg.onchainState,
 		viewState: crg.viewState,
-		game: {...crg.game, config, activeIdentity, reserve, cost, table},
+		game: {...crg.game, config, activeIdentity, reserve, cost},
 		render: crg.render,
-		start: () => {
-			const stopGame = crg.start();
-			const stopTable = table?.startPolling();
-			return () => {
-				stopTable?.();
-				stopGame();
-			};
-		},
+		start: crg.start,
 	};
 }
