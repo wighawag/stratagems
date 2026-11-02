@@ -148,6 +148,10 @@ web/e2e/tests/game.e2e.ts
 web/e2e/tests/offline.e2e.ts
 web/e2e/tests/out-of-gas.e2e.ts
 web/e2e/fixtures/game.ts
+# The template's table suite (step L1) plays the reference game at a table, with
+# that game's fixture; stratagems' own is e2e/tests/stratagems-table.e2e.ts
+# (step L2). FOR EVER, like the game.
+web/e2e/tests/table.e2e.ts
 # `with/fuzd`'s two suites play the reference game: its closed-page reveal and
 # its fallback, with their fixture. stratagems' own are
 # e2e/tests/stratagems-fuzd.e2e.ts and stratagems-fuzd-fallback.e2e.ts (step 8),
