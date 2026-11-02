@@ -267,12 +267,15 @@ describe('the offline world\u2019s lobby', () => {
 			vi.resetModules();
 			const real = await import('$lib/offline');
 			expect(real.CHAIN_ID_STORAGE_KEY).toBe('offline-world:chain-id');
-			// And the levels the real world offers are what the lobby reads.
-			expect(
-				(real as unknown as {AI_LEVELS?: {id: string}[]}).AI_LEVELS?.map(
-					(level) => level.id,
-				),
-			).toEqual(['random', 'greedy']);
+			// And whatever levels the real world offers (a game may offer none),
+			// `random` is among them: it is every seat's level until one is
+			// chosen. Not which levels, which is the game's answer and not this
+			// file's (it is identical in every game).
+			const levels = (real as unknown as {AI_LEVELS?: {id: string}[]})
+				.AI_LEVELS;
+			if (levels !== undefined) {
+				expect(levels.map((level) => level.id)).toContain('random');
+			}
 		},
 	);
 });
