@@ -119,6 +119,23 @@ async function begin(page: Page, label: string): Promise<void> {
 	await page.getByTestId('handover-begin').click();
 	await expect(page.getByTestId('handover')).toHaveCount(0, {timeout: 60_000});
 	await expect(page.locator('canvas')).toBeVisible({timeout: 30_000});
+	// AND THE GAME IS SHOWN ONLY ONCE THIS PERSON'S DATA HAS LOADED: before it,
+	// the submission drops every plan, so a click would be silently ignored.
+	expect(await dataLoadedForWhoPlays(page)).toBe(true);
+}
+
+/** Whether the account data loaded is the signed-in person's own. */
+async function dataLoadedForWhoPlays(page: Page): Promise<boolean> {
+	return page.evaluate(`(() => {
+		${READ}
+		const lifecycle = read(world.context.accountData.lifecycle$);
+		const account = read(world.context.account);
+		return (
+			lifecycle.status === 'ready' &&
+			!!account &&
+			lifecycle.account.toLowerCase() === account.toLowerCase()
+		);
+	})()`) as Promise<boolean>;
 }
 
 /** Plan one placement at `offset` and commit it; the cell planned. */

@@ -144,7 +144,8 @@ function fakeContext(
 			// The four-part model, asked separately from the countdown: the
 			// catch-up has no countdown at all. See game/core/cycle-phase.ts.
 			phase: writable('play'),
-			submission: writable(submission),
+			// `ready`: the account's data loaded (see `SubmissionStore.ready`).
+			submission: Object.assign(writable(submission), {ready: writable(true)}),
 			// `maxActions` is how many placements this client could still OPEN in one
 			// reveal phase, and `undefined` bounds nothing: it is what the chain
 			// clock answers before it has measured a block time.
@@ -386,5 +387,25 @@ describe('what the HUD says while the saved turn is not there yet (Q8-6)', () =>
 		const model = get(createHud(fakeContext(planning)));
 		expect(model.savedTurn).toBeUndefined();
 		expect(model.canCommit).toBe(true);
+	});
+});
+
+/**
+ * A CLICK WHILE THE ACCOUNT'S DATA LOADS PLANS NOTHING (`SubmissionStore.plan`
+ * drops it: what is stored may be a committed turn), which is after every
+ * account switch, a hotseat handover's included. The HUD says so rather than
+ * leaving the click silent.
+ */
+describe('a submission that cannot take a plan yet', () => {
+	it('says the account is loading, and that a click is not planned', () => {
+		const context = fakeContext(idle());
+		(
+			context.game.submission as unknown as {ready: Writable<boolean>}
+		).ready.set(false);
+		expect(get(createHud(context)).warning).toMatch(/loading/i);
+	});
+
+	it('says nothing of it once loaded', () => {
+		expect(get(createHud(fakeContext(idle()))).warning).toBeUndefined();
 	});
 });
