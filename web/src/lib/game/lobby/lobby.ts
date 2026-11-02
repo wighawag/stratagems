@@ -2,10 +2,12 @@ import {get, writable, type Readable} from 'svelte/store';
 import {
 	SEATS_BY_DEFAULT,
 	clampHumans,
+	clampLevels,
 	clampSeats,
 	tableOf,
 	type Table,
 } from './seats';
+import type {AiLevel} from '../core/strategy';
 
 /**
  * THE LOBBY: how many seats are at the table, decided before the game exists.
@@ -35,6 +37,12 @@ import {
  * the game says it can play (`humansAtMost`, 1 meaning no hotseat). Everything
  * else hotseat needs, the accounts, the revealer and the handover, is the
  * game's world and `./hotseat`, not the lobby's.
+ *
+ * AND SO IS A LEVEL PER WORLD SEAT: how each seat the world plays plays
+ * (`random`, today's derived turn, or a level the game's strategy offers),
+ * chosen with the seats and fixed for that game, offered only when the game
+ * offers levels (`levels`). A seat's level changes how it plays, never which
+ * key it plays with.
  *
  * ## THE GAME IS A PARAMETER, and that inversion is the one structural change
  * ## in the move that brought this file here
@@ -89,6 +97,13 @@ export type LobbyState = {
 	humansAtMost: number;
 	/** Every count of people at this device the lobby offers at these seats. */
 	humanChoices: readonly number[];
+	/**
+	 * Each world seat's level, in seat order, one per seat the world plays:
+	 * `random` unless the player chose another.
+	 */
+	levels: readonly string[];
+	/** The levels the game offers. Empty means no choice is shown. */
+	levelChoices: readonly AiLevel[];
 	/** Who is in each of them. See `./seats`. */
 	table: Table;
 };
@@ -153,6 +168,15 @@ export type LobbyDeps = {
 	 * provisions each of them.
 	 */
 	humansAtMost?: number;
+	/**
+	 * Where to remember each world seat's level: a JSON array of level ids, one
+	 * per world seat. A WIRE like the seats key; absent is read as every seat
+	 * `random`, and an entry it cannot read, or a level the game does not offer,
+	 * as `random` too. Omitted by a game that offers no levels.
+	 */
+	levelsStorageKey?: string;
+	/** The levels the game's world seats may play at. Absent or empty: none. */
+	levels?: readonly AiLevel[];
 };
 
 export type LobbyStore = Readable<LobbyState> & {
@@ -172,6 +196,12 @@ export type LobbyStore = Readable<LobbyState> & {
 	/** Pick how many of the seats are people at this device (hotseat). */
 	chooseHumans(humans: number): void;
 	/**
+	 * Pick the level of one world seat, by its place among the WORLD's seats
+	 * (0 is the first seat the world plays). A level the game does not offer
+	 * is read as `random`.
+	 */
+	chooseLevel(worldSeat: number, level: string): void;
+	/**
 	 * Take the table, and build the game around it.
 	 *
 	 * The count is recorded BEFORE the boot rather than after it, so a boot
@@ -179,7 +209,7 @@ export type LobbyStore = Readable<LobbyState> & {
 	 * as the table that game was being built for. The alternative loses the
 	 * answer precisely when the game is in the state hardest to reason about.
 	 */
-	sitDown(seats?: number, humans?: number): void;
+	sitDown(seats?: number, humans?: number, levels?: readonly string[]): void;
 	/**
 	 * Leave this table, so that the next visit chooses a new one.
 	 *
@@ -202,8 +232,15 @@ export type LobbyStore = Readable<LobbyState> & {
  */
 export function createLobby(deps: LobbyDeps): LobbyStore {
 	const atMost = Math.max(1, Math.floor(deps.humansAtMost ?? 1));
+	const offers = deps.levels ?? [];
+	const seated = (
+		step: LobbyState['step'],
+		seats: number,
+		humans: number,
+		levels: unknown,
+	) => seatedAt(step, seats, humans, atMost, levels, offers);
 	const lobby = writable<LobbyState>(
-		seated('Opening', SEATS_BY_DEFAULT, 1, atMost),
+		seated('Opening', SEATS_BY_DEFAULT, 1, []),
 	);
 
 	/**
@@ -215,7 +252,8 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 	 * silent reuse this file exists to avoid. The humans' count is read with it,
 	 * and its absence means one (a game from before hotseat).
 	 */
-	function tableAlreadyHere(): {seats: number; humans: number} | undefined {
+	function tableAlreadyHere():
+		{seats: number; humans: number; levels: unknown} | undefined {
 		if (typeof localStorage === 'undefined') return undefined;
 		if (!deps.gameAlreadyHere()) return undefined;
 		const seats = localStorage.getItem(deps.seatsStorageKey);
@@ -223,19 +261,33 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 		const humans = deps.humansStorageKey
 			? localStorage.getItem(deps.humansStorageKey)
 			: null;
+		const levels = deps.levelsStorageKey
+			? localStorage.getItem(deps.levelsStorageKey)
+			: null;
 		const count = clampSeats(seats);
-		return {seats: count, humans: clampHumans(humans ?? 1, count, atMost)};
+		return {
+			seats: count,
+			humans: clampHumans(humans ?? 1, count, atMost),
+			levels,
+		};
 	}
 
 	function sitDown(
 		seats: number = SEATS_BY_DEFAULT,
 		humans: number = get(lobby).humans,
+		levels: unknown = get(lobby).levels,
 	): void {
-		const state = seated('Sat', seats, humans, atMost);
+		const state = seated('Sat', seats, humans, levels);
 		if (typeof localStorage !== 'undefined') {
 			localStorage.setItem(deps.seatsStorageKey, String(state.seats));
 			if (deps.humansStorageKey) {
 				localStorage.setItem(deps.humansStorageKey, String(state.humans));
+			}
+			if (deps.levelsStorageKey) {
+				localStorage.setItem(
+					deps.levelsStorageKey,
+					JSON.stringify(state.levels),
+				);
 			}
 		}
 		lobby.set(state);
@@ -248,16 +300,25 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 			if (get(lobby).step !== 'Opening') return;
 			const already = tableAlreadyHere();
 			if (already === undefined) {
-				lobby.set(seated('Choosing', SEATS_BY_DEFAULT, 1, atMost));
+				lobby.set(seated('Choosing', SEATS_BY_DEFAULT, 1, []));
 				return;
 			}
-			sitDown(already.seats, already.humans);
+			sitDown(already.seats, already.humans, already.levels);
 		},
 		chooseSeats(seats: number): void {
-			lobby.set(seated('Choosing', seats, get(lobby).humans, atMost));
+			const {humans, levels} = get(lobby);
+			lobby.set(seated('Choosing', seats, humans, levels));
 		},
 		chooseHumans(humans: number): void {
-			lobby.set(seated('Choosing', get(lobby).seats, humans, atMost));
+			const {seats, levels} = get(lobby);
+			lobby.set(seated('Choosing', seats, humans, levels));
+		},
+		chooseLevel(worldSeat: number, level: string): void {
+			const {seats, humans, levels} = get(lobby);
+			const next = [...levels];
+			if (worldSeat < 0 || worldSeat >= next.length) return;
+			next[worldSeat] = level;
+			lobby.set(seated('Choosing', seats, humans, next));
 		},
 		sitDown,
 		leaveTheTable(): void {
@@ -267,20 +328,28 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 				if (deps.humansStorageKey) {
 					localStorage.removeItem(deps.humansStorageKey);
 				}
+				if (deps.levelsStorageKey) {
+					localStorage.removeItem(deps.levelsStorageKey);
+				}
 			}
 			if (typeof location !== 'undefined') location.reload();
 		},
 	};
 }
 
-function seated(
+function seatedAt(
 	step: LobbyState['step'],
 	seats: number,
 	humans: number,
 	humansAtMost: number,
+	levels: unknown,
+	offers: readonly AiLevel[],
 ): LobbyState {
 	const count = clampSeats(seats);
 	const here = clampHumans(humans, count, humansAtMost);
+	// A SEAT KEEPS ITS LEVEL while the others change: the list is per world
+	// seat, cut or padded with `random` when the count of them moves.
+	const worldLevels = clampLevels(levels, count - here, offers);
 	return {
 		step,
 		seats: count,
@@ -290,6 +359,8 @@ function seated(
 			{length: Math.min(count, humansAtMost)},
 			(_, i) => i + 1,
 		),
-		table: tableOf(count, here),
+		levels: worldLevels,
+		levelChoices: offers,
+		table: tableOf(count, here, worldLevels),
 	};
 }
