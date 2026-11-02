@@ -236,3 +236,102 @@ describe('the lobby, for a game that can seat several people at one device', () 
 		expect(store.has(HUMANS_KEY)).toBe(false);
 	});
 });
+
+describe('the lobby with levels for the world seats', () => {
+	const LEVELS_KEY = 'a-game:levels';
+	const OFFERS = [
+		{id: 'random', label: 'Random'},
+		{id: 'greedy', label: 'Greedy'},
+	];
+
+	function levelledGame(params: {alreadyHere?: boolean} = {}) {
+		const started: Table[] = [];
+		let here = params.alreadyHere ?? false;
+		const lobby = createLobby({
+			gameAlreadyHere: () => here,
+			startGame: (table) => void started.push(table),
+			forgetGame: () => void (here = false),
+			seatsStorageKey: SEATS_KEY,
+			humansStorageKey: HUMANS_KEY,
+			humansAtMost: 10,
+			levelsStorageKey: LEVELS_KEY,
+			levels: OFFERS,
+		});
+		return {lobby, started};
+	}
+
+	const worldLevels = (table: Table) =>
+		table
+			.filter((seat) => seat.occupant.kind === 'the-world')
+			.map((seat) =>
+				seat.occupant.kind === 'the-world' ? seat.occupant.level : undefined,
+			);
+
+	it('offers no choice of level to a game that offers none', () => {
+		const {lobby} = fakeGame();
+		lobby.enter();
+		expect(get(lobby).levelChoices).toEqual([]);
+		expect(get(lobby).levels).toEqual(['random', 'random']);
+	});
+
+	it('defaults every world seat to random, which is the world as it always was', () => {
+		const {lobby, started} = levelledGame();
+		lobby.enter();
+		expect(get(lobby).levelChoices).toEqual(OFFERS);
+		expect(get(lobby).levels).toEqual(['random', 'random']);
+		lobby.sitDown();
+		expect(worldLevels(started[0])).toEqual([undefined, undefined]);
+		expect(store.get(LEVELS_KEY)).toBe('["random","random"]');
+	});
+
+	it('takes a level per world seat, keeps it as the seats change, and boots that table', () => {
+		const {lobby, started} = levelledGame();
+		lobby.enter();
+		lobby.chooseLevel(1, 'greedy');
+		expect(get(lobby).levels).toEqual(['random', 'greedy']);
+		lobby.chooseSeats(4);
+		expect(get(lobby).levels).toEqual(['random', 'greedy', 'random']);
+		lobby.chooseHumans(3);
+		// Three people at four seats leaves one world seat, which keeps the
+		// first one's level.
+		expect(get(lobby).levels).toEqual(['random']);
+		lobby.chooseHumans(1);
+		lobby.chooseLevel(0, 'greedy');
+		lobby.chooseLevel(2, 'genius');
+		lobby.chooseLevel(9, 'greedy');
+		expect(get(lobby).levels).toEqual(['greedy', 'random', 'random']);
+		lobby.sitDown(get(lobby).seats);
+		expect(store.get(LEVELS_KEY)).toBe('["greedy","random","random"]');
+		expect(worldLevels(started[0])).toEqual(['greedy', undefined, undefined]);
+	});
+
+	it('goes back into a world with its levels, and reads absent and unknown ones as random', () => {
+		store.set(SEATS_KEY, '3');
+		store.set(LEVELS_KEY, '["random","greedy"]');
+		const back = levelledGame({alreadyHere: true});
+		back.lobby.enter();
+		expect(get(back.lobby)).toMatchObject({
+			step: 'Sat',
+			levels: ['random', 'greedy'],
+		});
+		expect(worldLevels(back.started[0])).toEqual([undefined, 'greedy']);
+
+		store.delete(LEVELS_KEY);
+		const before = levelledGame({alreadyHere: true});
+		before.lobby.enter();
+		expect(get(before.lobby).levels).toEqual(['random', 'random']);
+
+		store.set(LEVELS_KEY, '["genius", 3');
+		const garbled = levelledGame({alreadyHere: true});
+		garbled.lobby.enter();
+		expect(get(garbled.lobby).levels).toEqual(['random', 'random']);
+	});
+
+	it('forgets the levels with the seats when the player leaves', () => {
+		store.set(SEATS_KEY, '3');
+		store.set(LEVELS_KEY, '["greedy","greedy"]');
+		const {lobby} = levelledGame({alreadyHere: true});
+		lobby.leaveTheTable();
+		expect(store.has(LEVELS_KEY)).toBe(false);
+	});
+});

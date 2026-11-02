@@ -5,6 +5,7 @@ import {
 	SEATS_BY_DEFAULT,
 	SEAT_CHOICES,
 	clampHumans,
+	clampLevels,
 	clampSeats,
 	humansAtThisDevice,
 	localRevealerKey,
@@ -139,5 +140,56 @@ describe('people at this device (hotseat)', () => {
 		);
 		expect(everyone).not.toContain(revealer.address);
 		expect(revealer.privateKey).toMatch(/^0x[0-9a-f]{64}$/);
+	});
+
+	it('gives each world seat its level, in seat order, without moving a key', () => {
+		const levels = tableOf(5, 2, ['greedy', 'random', 'greedy']);
+		expect(levels.map((seat) => seat.occupant)).toMatchObject([
+			{kind: 'you'},
+			{kind: 'local-human'},
+			{kind: 'the-world', level: 'greedy'},
+			{kind: 'the-world'},
+			{kind: 'the-world', level: 'greedy'},
+		]);
+		// `random` IS NO LEVEL AT ALL, which is what every table before levels
+		// was: the seat's occupant is exactly the one it always had.
+		expect(levels[3].occupant).not.toHaveProperty('level');
+		expect(tableOf(4, 1, [])).toEqual(tableOf(4));
+		// AND THE ADDRESSES ARE A WIRE: the same whatever the levels.
+		const addresses = (table: ReturnType<typeof tableOf>) =>
+			seatsPlayedByTheWorld(table).map((seat) => seat.address);
+		expect(addresses(levels)).toEqual(addresses(tableOf(5, 2)));
+		expect(seatsPlayedByTheWorld(levels).map((seat) => seat.level)).toEqual([
+			'greedy',
+			undefined,
+			'greedy',
+		]);
+	});
+
+	it('reads levels from whatever was stored: absent, malformed and unknown are random', () => {
+		const offers = [
+			{id: 'random', label: 'Random'},
+			{id: 'greedy', label: 'Greedy'},
+		];
+		expect(clampLevels(null, 2, offers)).toEqual(['random', 'random']);
+		expect(clampLevels('{not json', 2, offers)).toEqual(['random', 'random']);
+		expect(clampLevels('"greedy"', 2, offers)).toEqual(['random', 'random']);
+		expect(clampLevels('["greedy", "genius", 7]', 3, offers)).toEqual([
+			'greedy',
+			'random',
+			'random',
+		]);
+		// Cut or padded to the world's seats.
+		expect(clampLevels(['greedy', 'greedy', 'greedy'], 2, offers)).toEqual([
+			'greedy',
+			'greedy',
+		]);
+		expect(clampLevels(['greedy'], 3, offers)).toEqual([
+			'greedy',
+			'random',
+			'random',
+		]);
+		// A game that offers no levels plays random everywhere.
+		expect(clampLevels(['greedy'], 2, [])).toEqual(['random', 'random']);
 	});
 });
