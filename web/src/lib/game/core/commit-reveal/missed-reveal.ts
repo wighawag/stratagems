@@ -185,6 +185,11 @@ export function createMissedReveal<
 		store.set(next);
 	}
 
+	/** Whether `player` stopped being the identity this store is about. */
+	function stale(player: unknown): boolean {
+		return get(params.identity) !== player;
+	}
+
 	async function check() {
 		const player = get(params.identity);
 		// `=== undefined`, not falsy: an identity that is a token id can be `0n`.
@@ -199,6 +204,13 @@ export function createMissedReveal<
 				functionName: 'getCommitment',
 				args: [params.onchainIdentity(player)],
 			})) as CommitmentOnChain;
+			// AN ANSWER ABOUT SOMEBODY WHO IS NO LONGER PLAYING is dropped: the
+			// identity changed while this read was out (an account switch, which
+			// starts a check of its own), and publishing it would put the previous
+			// identity's commitment on the new one, which then reads as a turn this
+			// browser lost and refuses to commit over it. Found by hotseat, whose
+			// handovers switch accounts back to back.
+			if (stale(player)) return;
 
 			if (onChain.cycleNumber === 0n) {
 				commitment.set(undefined);
@@ -211,6 +223,7 @@ export function createMissedReveal<
 				abi: contract.abi,
 				functionName: 'getCycleNumber',
 			})) as [bigint, boolean];
+			if (stale(player)) return;
 
 			// A commitment for the CURRENT cycle is live, not missed: it can still
 			// be revealed, the contract lets it be replaced, and acknowledging it
