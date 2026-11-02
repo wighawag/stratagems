@@ -52,6 +52,8 @@
 	import {Button} from '$lib/shadcn/ui/button';
 	import InWorld from '$lib/context/InWorld.svelte';
 	import Play from '../play/+page.svelte';
+	import {hotseat} from '$lib/game/lobby/hotseat';
+	import Handover from '$lib/game/lobby/ui/Handover.svelte';
 
 	onMount(() => {
 		void offlineLobby.enter();
@@ -101,7 +103,16 @@
 	     ADR-0007 (jolly-roger) exists for, and the reason this route spells no
 	     height of its own. -->
 	<Context context={$offlineWorld.context}>
-		<Play />
+		<!-- HOTSEAT: while the device changes hands the handover REPLACES the
+		     game rather than covering it, so nothing of the previous person's
+		     turn stays mounted. The context stays, because the world keeps
+		     running underneath (its seats, its advance, the revealer). A world
+		     with one person at it never sets a hotseat, and this is `Play`. -->
+		{#if $hotseat.step === 'Inactive' || $hotseat.step === 'Playing'}
+			<Play />
+		{:else}
+			<Handover current={$hotseat} onBegin={() => void hotseat.begin()} />
+		{/if}
 		<!-- The app's own overlays, bound to THIS world. Without them the flows this
 		     game opens (authorising the browser's key, topping it up) drive stores
 		     nothing on screen is reading, and the button appears to do nothing. See
@@ -130,19 +141,39 @@
 				>
 			{/each}
 		</div>
+		{#if $offlineLobby.humansAtMost > 1}
+			<!-- HOTSEAT, when this game's world can play it: how many of the seats
+			     are people at this device, passing it between them. -->
+			<p class="mt-6 text-sm font-medium">How many of you, at this device?</p>
+			<div class="mt-2 flex flex-wrap justify-center gap-2">
+				{#each $offlineLobby.humanChoices as choice (choice)}
+					<Button
+						size="sm"
+						variant={choice === $offlineLobby.humans ? 'default' : 'outline'}
+						data-testid={`humans-${choice}`}
+						onclick={() => offlineLobby.chooseHumans(choice)}>{choice}</Button
+					>
+				{/each}
+			</div>
+		{/if}
 		<ul
 			class="mx-auto mt-4 flex max-w-md flex-wrap justify-center gap-2 text-xs text-muted-foreground"
 		>
 			{#each $offlineLobby.table as seat, index (index)}
 				<li class="rounded-md border border-muted-foreground/30 px-2 py-1">
-					{seat.occupant.kind === 'you' ? 'You' : 'The world'}
+					{seat.occupant.kind === 'you'
+						? 'You'
+						: seat.occupant.kind === 'local-human'
+							? `Player ${seat.occupant.account + 1}`
+							: 'The world'}
 				</li>
 			{/each}
 		</ul>
 		<Button
 			class="mt-6"
 			data-testid="sit-down"
-			onclick={() => offlineLobby.sitDown($offlineLobby.seats)}
+			onclick={() =>
+				offlineLobby.sitDown($offlineLobby.seats, $offlineLobby.humans)}
 			>Sit down and play</Button
 		>
 		<p class="mx-auto mt-4 max-w-md text-xs text-muted-foreground">

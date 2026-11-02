@@ -419,6 +419,10 @@ export async function stakeForEveryoneInTheWorld(params: {
 		// A remote human stakes for themselves, at a table online; an offline
 		// world has none.
 		if (seat.occupant.kind === 'remote-human') continue;
+		// Nor any other person at this device: this world offers no hotseat yet
+		// (it exports no `LOCAL_HUMANS_AT_MOST`; step H2 of the port plan), so
+		// its lobby seats none.
+		if (seat.occupant.kind === 'local-human') continue;
 		const player =
 			seat.occupant.kind === 'you' ? params.player : seat.occupant.address;
 		await stakeForOfflinePlayer({env: params.env, player});
