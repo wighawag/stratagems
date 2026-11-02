@@ -15,14 +15,31 @@ import {
 } from '$lib/embedded';
 import {mintChainId, rememberChainId} from '$lib/embedded/chain-id';
 import {startEmbeddedNode} from '$lib/embedded/node';
-import {announceEmbeddedWallet} from '$lib/embedded/wallet';
+import {
+	announceEmbeddedWallet,
+	type EmbeddedWallet,
+} from '$lib/embedded/wallet';
 import {createIndexedDBPersistence} from 'webevm';
 import {createIndexedDBDeploymentStore} from '@rocketh/web';
 import {createContext} from '$lib/context/index';
 import type {Context} from '$lib/context/types';
 import {createOfflinePlayers, type OfflinePlayer} from '$lib/offline-players';
 import {pokeWhenTheHumanActs} from '$lib/game/core/played';
-import {seatsPlayedByTheWorld, type Table} from '$lib/game/lobby/seats';
+import {
+	MOST_SEATS,
+	humansAtThisDevice,
+	localRevealerKey,
+	seatsPlayedByTheWorld,
+	type Table,
+} from '$lib/game/lobby/seats';
+import {createLocalRevealer} from '$lib/game/core/local-revealer';
+import {
+	createHotseat,
+	createHotseatChainReader,
+	showHotseat,
+	signInAs,
+	type HotseatHuman,
+} from '$lib/game/lobby/hotseat';
 import {authoriseTheBrowsersKey} from '$lib/game/acquire';
 import {resolvePlacementConfig} from '$lib/placement/config';
 
@@ -111,6 +128,15 @@ const ADMIN_ADDRESS = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8' as const;
  * The key lives here rather than there because this file is what writes it.
  */
 export const CHAIN_ID_STORAGE_KEY = 'offline-world:chain-id';
+
+/**
+ * HOTSEAT: how many people at this device this world can play, each their own
+ * account in the world's wallet, passing the device between them
+ * (`$lib/game/lobby/hotseat`). Every seat may be one. Read by the
+ * byte-identical lobby off this module (`$lib/offline-lobby`); a game whose
+ * world does not export it offers no hotseat.
+ */
+export const LOCAL_HUMANS_AT_MOST = MOST_SEATS;
 const PLAY_MONEY = 10n ** 24n;
 
 /**
@@ -234,6 +260,29 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 	});
 
 	const world = await openWorld(chainId, table);
+	const humans = humansAtThisDevice(table);
+	const hotseatHere = humans.length > 1;
+
+	/**
+	 * WHO REVEALS FOR THE PEOPLE AT THIS DEVICE, in a hotseat world: a local
+	 * revealer with its own funded key (provisioned below), handed each turn at
+	 * its commit through the scheduler seam, so nobody takes the device back to
+	 * reveal. The context hands it to the game in place of any scheduler of the
+	 * game's own. One person needs none: they reveal themselves, as before.
+	 */
+	let pokeAdvance = () => {};
+	const revealer = hotseatHere
+		? createLocalRevealer({
+				provider: world.provider as never,
+				chain: worldChain(world),
+				privateKey: localRevealerKey().privateKey,
+				contract: {
+					address: world.deployments.get().contracts.Game.address,
+					abi: world.deployments.get().contracts.Game.abi,
+				},
+				onActed: () => pokeAdvance(),
+			})
+		: undefined;
 
 	status.set({step: 'Booting', what: 'connecting'});
 
@@ -246,7 +295,9 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 	// world.
 	const context = createContext({
 		establishConnection: world.establishConnection,
+		...(revealer ? {scheduler: revealer.scheduler} : {}),
 	});
+	pokeAdvance = () => void context.context.game.cycleAdvance.check();
 
 	// Dev/debug: the world on the console, beside the `context` handle `core.ts`
 	// installs. Worth having for a world specifically, because the only way to
@@ -307,14 +358,87 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 	 * and it is a better outcome than throwing away a booted world.
 	 */
 	status.set({step: 'Booting', what: "authorising this browser's key"});
-	try {
-		await authoriseTheBrowsersKey(context.context);
-	} catch (err) {
-		console.error(
-			"the offline world could not authorise this browser's key",
-			err,
-		);
+	const wallet = announcedWallet;
+	const seated: HotseatHuman[] = [];
+	if (hotseatHere && wallet) {
+		// EVERY PERSON HERE, ONE AFTER ANOTHER, ending on the first: each signs
+		// in (the world asks for the signature, as above) and has their own
+		// browser key authorised, now rather than at their first handover, so no
+		// turn opens on a transaction. `authoriseTheBrowsersKey` answers
+		// `AlreadyAuthorised` on a restore.
+		for (const human of humans) {
+			const address = wallet.accounts[human.account];
+			seated.push({
+				address,
+				player: await offlineIdentityOf({env: world.env, player: address}),
+				label: `Player ${human.account + 1}`,
+			});
+			status.set({
+				step: 'Booting',
+				what: `authorising Player ${human.account + 1}'s key`,
+			});
+			try {
+				await signInAs({
+					connection: context.context.connection,
+					select: wallet.select,
+					address,
+				});
+				await authoriseWhenReady(context.context);
+			} catch (err) {
+				console.error(
+					`the offline world could not authorise Player ${human.account + 1}'s key`,
+					err,
+				);
+			}
+		}
+		try {
+			await signInAs({
+				connection: context.context.connection,
+				select: wallet.select,
+				address: seated[0].address,
+			});
+		} catch (err) {
+			console.error('the offline world could not sign in as Player 1', err);
+		}
+	} else {
+		try {
+			await authoriseTheBrowsersKey(context.context);
+		} catch (err) {
+			console.error(
+				"the offline world could not authorise this browser's key",
+				err,
+			);
+		}
 	}
+
+	/**
+	 * THE HANDOVER, when there are several people here: whose turn it is, read
+	 * from the chain, and the screen that covers the game while the device
+	 * changes hands. See `$lib/game/lobby/hotseat`.
+	 */
+	const hotseat =
+		hotseatHere && wallet && revealer
+			? createHotseat({
+					humans: seated,
+					switchTo: (address) =>
+						signInAs({
+							connection: context.context.connection,
+							select: wallet.select,
+							address,
+						}),
+					read: createHotseatChainReader({
+						provider: world.provider as never,
+						chain: worldChain(world),
+						contract: {
+							address: world.deployments.get().contracts.Game.address,
+							abi: world.deployments.get().contracts.Game.abi,
+						},
+						players: seated.map((human) => human.player),
+					}),
+					revealer,
+					submission: context.context.game.submission,
+				})
+			: undefined;
 
 	/**
 	 * THE OTHER TWO PLAYERS, STARTED WITH THE BOARD AND STOPPED WITH IT.
@@ -347,7 +471,11 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 					loop: players,
 					submission: context.context.game.submission,
 				});
+				const stopRevealer = revealer?.start() ?? (() => {});
+				const stopHotseat = hotseat?.start() ?? (() => {});
 				return () => {
+					stopHotseat();
+					stopRevealer();
 					stopPoke();
 					stopPlayers();
 					stopContext();
@@ -355,8 +483,35 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 			},
 		},
 	};
+	showHotseat(hotseat);
 	status.set(ready);
 	return ready;
+}
+
+/** The world's chain as viem wants it, for the clients the world's own loops build. */
+function worldChain(world: EmbeddedWorld) {
+	const records = world.deployments.get();
+	return {
+		id: records.chain.id,
+		name: records.chain.name,
+		nativeCurrency: records.chain.nativeCurrency,
+		rpcUrls: {default: {http: [] as string[]}},
+	};
+}
+
+/**
+ * Authorise the signed-in person's browser key, once the context has caught up
+ * with the account switch: right after one, the account's executor can still
+ * be getting ready, which `authoriseTheBrowsersKey` answers with a refusal
+ * rather than a wait.
+ */
+async function authoriseWhenReady(context: Context): Promise<void> {
+	for (let attempt = 0; attempt < 40; attempt++) {
+		const outcome = await authoriseTheBrowsersKey(context);
+		if (outcome.step !== 'Refused') return;
+		await new Promise((resolve) => setTimeout(resolve, 250));
+	}
+	throw new Error("the browser's key could not be authorised");
 }
 
 /**
@@ -455,6 +610,8 @@ async function openWorld(
 }
 
 let announced: (() => void) | undefined;
+/** The wallet provisioning announced: the world switches its accounts in hotseat. */
+let announcedWallet: EmbeddedWallet | undefined;
 
 /**
  * WHAT AN OFFLINE PLAYER OF THIS GAME IS GIVEN, which is the seam's whole
@@ -518,11 +675,23 @@ async function provisionOfflinePlayer(params: {
 	const {env, node, table} = params;
 
 	status.set({step: 'Booting', what: 'handing the player a wallet'});
+	const humans = humansAtThisDevice(table);
 	const wallet = await announceEmbeddedWallet({
 		provider: node.provider as never,
 		chainId: params.chainId,
+		// One account per person at this device (hotseat), in seat order.
+		accounts: humans.length,
 	});
 	announced = wallet.cleanup;
+	announcedWallet = wallet;
+
+	// The revealer of a hotseat world pays for everyone's reveals.
+	if (humans.length > 1) {
+		await node.provider.request({
+			method: 'evm_setBalance',
+			params: [localRevealerKey().address, `0x${PLAY_MONEY.toString(16)}`],
+		} as never);
+	}
 
 	// GAS IS FREE HERE AND THE STAKE IS NOT, which is the one asymmetry in this
 	// function and it is deliberate. This runs on EVERY boot, including a restore,
@@ -553,6 +722,7 @@ async function provisionOfflinePlayer(params: {
 	await stakeForEveryoneInTheWorld({
 		env,
 		player: wallet.accounts[0],
+		humans: wallet.accounts,
 		table,
 	});
 
@@ -592,6 +762,11 @@ export async function stakeForEveryoneInTheWorld(params: {
 	 * Every other seat carries its own, because the world holds those keys.
 	 */
 	player: `0x${string}`;
+	/**
+	 * Every account of the world's wallet, in seat order, for the other people
+	 * at this device (hotseat): a `local-human` seat is the account at its index.
+	 */
+	humans?: readonly `0x${string}`[];
 	table: Table;
 }): Promise<void> {
 	for (const seat of params.table) {
@@ -599,7 +774,14 @@ export async function stakeForEveryoneInTheWorld(params: {
 		// world has none.
 		if (seat.occupant.kind === 'remote-human') continue;
 		const player =
-			seat.occupant.kind === 'you' ? params.player : seat.occupant.address;
+			seat.occupant.kind === 'you'
+				? params.player
+				: seat.occupant.kind === 'local-human'
+					? params.humans?.[seat.occupant.account]
+					: seat.occupant.address;
+		if (!player) {
+			throw new Error('a person at this device has no account to stake for');
+		}
 		await stakeForOfflinePlayer({env: params.env, player});
 	}
 }

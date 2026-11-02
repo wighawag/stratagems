@@ -100,7 +100,17 @@ export type Occupant =
 	 * identity as the contract keys it: an account widened to a number, or a
 	 * token, whichever the game plays as.
 	 */
-	| {kind: 'remote-human'; player: bigint};
+	| {kind: 'remote-human'; player: bigint}
+	/**
+	 * ANOTHER human at THIS device (hotseat): the seats after the first that
+	 * people take turns at, passing the device between them. `account` is the
+	 * index of their account in the wallet the world announces (`you` is index
+	 * 0), because that wallet is what they play through, exactly as `you` does:
+	 * one account per player (the template's D4), switched at each handover
+	 * (`$lib/game/lobby/hotseat`). Like `you`, no key here and no address until
+	 * the world has booted and the wallet has derived it.
+	 */
+	| {kind: 'local-human'; account: number};
 
 /** One place at the table. */
 export type Seat = {occupant: Occupant};
@@ -250,20 +260,79 @@ function playedKey(index: number): {
 }
 
 /**
- * Lay out a table of `seats`.
+ * How many humans at this device a table of `seats` can hold, given what the
+ * game says it can play (`atMost`): at least one (you), at most every seat.
  *
- * SEAT ONE IS YOURS, always, and the rest are the world's. That is a fact
- * about today's two occupants rather than a rule: when a seat can hold a
- * second human, this is the one function that changes, and it changes by
- * taking what each seat holds as an argument instead of assuming it.
+ * TOTAL for the same reason as {@link clampSeats}: one input comes out of
+ * `localStorage`.
  */
-export function tableOf(seats: number): Table {
+export function clampHumans(
+	humans: unknown,
+	seats: number,
+	atMost: number = 1,
+): number {
+	const parsed =
+		typeof humans === 'number'
+			? humans
+			: typeof humans === 'string'
+				? Number(humans)
+				: Number.NaN;
+	const ceiling = Math.max(1, Math.min(clampSeats(seats), Math.floor(atMost)));
+	if (!Number.isFinite(parsed)) return 1;
+	return Math.min(ceiling, Math.max(1, Math.floor(parsed)));
+}
+
+/**
+ * Lay out a table of `seats`, `humans` of them at this device.
+ *
+ * SEAT ONE IS YOURS, always; the next `humans - 1` are the other people at
+ * this device (hotseat), each the wallet's account at its seat's index; the
+ * rest are the world's. A world seat keeps the key it had at the same position
+ * among the WORLD'S seats, so a table without hotseat plays exactly the
+ * addresses it always has.
+ */
+export function tableOf(seats: number, humans: number = 1): Table {
 	const count = clampSeats(seats);
+	const here = clampHumans(humans, count, count);
 	const table: Seat[] = [{occupant: {kind: 'you'}}];
-	for (let index = 0; index < count - 1; index++) {
+	for (let account = 1; account < here; account++) {
+		table.push({occupant: {kind: 'local-human', account}});
+	}
+	for (let index = 0; index < count - here; index++) {
 		table.push({occupant: {kind: 'the-world', ...playedKey(index)}});
 	}
 	return table;
+}
+
+/**
+ * The humans at this device, in seat order: `you` first (account 0), then each
+ * `local-human`. Each with the index of its account in the world's wallet.
+ */
+export function humansAtThisDevice(
+	table: Table,
+): readonly {seat: number; account: number}[] {
+	const humans: {seat: number; account: number}[] = [];
+	table.forEach((seat, index) => {
+		if (seat.occupant.kind === 'you') humans.push({seat: index, account: 0});
+		else if (seat.occupant.kind === 'local-human') {
+			humans.push({seat: index, account: seat.occupant.account});
+		}
+	});
+	return humans;
+}
+
+/**
+ * THE KEY THAT SENDS THE HUMANS' REVEALS in a hotseat world
+ * (`$lib/game/core/local-revealer`): its own account, so the reveals are paid
+ * for by neither whoever happened to commit last nor anybody's stake, from the
+ * same well-known list as the world's seats, at an index no seat can reach (the
+ * world's seats stop at `FIRST_PLAYED_ACCOUNT + MOST_SEATS - 2`).
+ */
+export function localRevealerKey(): {
+	privateKey: `0x${string}`;
+	address: `0x${string}`;
+} {
+	return playedKey(MOST_SEATS);
 }
 
 /**
