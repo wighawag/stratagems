@@ -126,7 +126,7 @@ Candidates already visible, each to be judged when its step comes (not decided h
 - [x] **Step L2**: stratagems' lobby games on L1, beside the persistent world (which stays the main mode), and a `lan` environment for a node of the user's own
 - [ ] **Step L3**: stratagems as a game of the user's `ethereum-lan-node` box (a flake output with `passthru.lan`: its deterministic deploy and its static `lan` build), installed on the box by the user (decided 2026-11-01, PL2-8d; specified in its own context after L2)
 - [x] **Step H1** (in the template tree): hotseat in the offline world: several humans at one device, one account each, a local revealer, a pass-the-device handover; the reference game its first user
-- [ ] **Step H2**: stratagems' offline world on H1
+- [x] **Step H2**: stratagems' offline world on H1
 - [ ] **Step A1** (in the template tree): AI seats in the offline world: a game's strategy behind a seam, its turn stored as a human's is, scored by the game's own simulation, a level per seat; the reference game's strategy
 - [ ] **Step A2**: stratagems' AI on A1 (offline only)
 - [ ] **Step D-live** (needs the user, deferred by them on 2026-10-30 until the steps that do not need them are done; needs X2, which changes the contracts it deploys): items 5 and 6 of step D's section, the hosted fuzd upgraded and the live deploy, then one turn played on Base (the deploy includes the tables since L2's PL2-3)
@@ -1064,6 +1064,8 @@ git -C ~/dev/github/wighawag/stratagems grep -n -E "function (getCycle|getCommit
 5. Verify: check, unit, the full e2e; play two people and one world seat by hand once in a browser (a handover, a reload) and record what the e2e does not see.
 
 **Done when** (H2), all measured: `stratagems-hotseat.e2e.ts` passes, and the full e2e passes with it with nothing skipped (from 59 passed and 1 skipped: the template's suite omitted, the new one added); `stratagems-offline.e2e.ts` unchanged and passing; check 0 errors and 0 warnings; unit no fewer than 2014 + 75 plus the new cases; `check-dangling-imports` and `check-omissions` clean (ignoring the generated `$lib/manifest.json`); the framework's files still byte-identical to the stem's; contracts untouched.
+
+**What H2 leaves** (2026-11-02): stratagems' offline world plays hotseat (`LOCAL_HUMANS_AT_MOST = MOST_SEATS`, chosen per world at creation), composed as the template's world is, in its own `offline.ts`. The per-person sign-in, authorisation and funding loop, `authoriseWhenReady` and `worldChain` now exist in two games' `offline.ts` (the template's reference world and stratagems'); their home is `$lib/game/lobby/hotseat.ts` (H1-5), and they move there when a third game takes hotseat (H2-1). Two things a person meets that no test asserts, both seen while writing the e2e: right after a handover the person's account data is still loading, the submission reads `Idle`, and a click on the board selects the cell but plans nothing, silently (`submission.plan` returns before the storage is ready, and stratagems' `planning.ts` gives no "loading" reason for it, as it does for the board); and the HUD covers the left of the board's lower half, so a cell there cannot be clicked at the default camera. Neither is hotseat's own (one person switching account online meets the first; everyone meets the second), so they are left as findings, not fixed here.
 
 ### Step A: AI seats in the offline world
 
@@ -2716,3 +2718,20 @@ The user: "hotseat should be configurable, so how many players is decided at cre
 ### 2026-11-02, step H2 decided
 
 The user answered "Go": H2-1 to H2-9 as proposed, H2-2 as reworded. Branch `specify-H2` lands. Next: H2 is built.
+
+### 2026-11-02, step H2: stratagems' offline world on H1 (built, verified, landed)
+
+Branch `step-H2` from the integration branch at 3f37089f, worktree `~/dev/worktrees/stratagems/step-H2`; stratagems only, no preview branch, nothing pushed but the integration branch. Commits: 70a0db0e (every person at this device funded and staked as their own account, with its world test first: two people and one world seat each staked once across a re-provisioning, a person without an account refused; red before, green after), 9183b211 (the composition: the framework's local revealer on `Stratagems` with `localRevealerKey()`, handed to `createContext({scheduler})`; each person signed in, authorised and their browser key funded in seat order, ending on Player 1; `createHotseat` with `createHotseatChainReader`, shown through `showHotseat`, started and stopped with the board; one person's path unchanged), 09d9c108, 05711364 and 4e62482f (`stratagems-hotseat.e2e.ts`, and the template's `offline-hotseat.e2e.ts` omitted for ever in `.offshoot-omissions` with its reason, beside `offline.e2e.ts`). `web/src/lib/stratagems/context.ts` and `offline-players.ts` untouched, as H2-5 and H2-6 said; the framework still byte-identical to the stem (`git diff stem/with/fuzd-pixi-indexer` empty for `game`, `core`, `context`, `embedded`, `offline-lobby.ts`, `offline-chrome.ts`, `routes/offline`); contracts untouched.
+
+**Item 1**: the Start here commands held as written; baseline on this branch check 0 errors and 0 warnings, unit 2014 + 75 (the e2e baseline is H1's on byte-identical code, 59 passed and 1 skipped, not re-run).
+
+**What the e2e found on the way** (three failed runs before it passed): (1) clicks right after a handover are dropped while the person's account data loads (the submission reads `Idle` meanwhile), so the suite waits for `accountData.lifecycle$` to be `ready`, beside the authorised key and the loaded board; (2) the second person's first cells, at x = -9, were under the HUD panel, so the click never reached the canvas and the panel still showed Player 1's last cell: both people now play at the top right, outside the seats' block and six cells apart. Both are recorded in "What H2 leaves" as findings, neither fixed here.
+
+**Measured against "Done when"** (H2):
+
+- `stratagems-hotseat.e2e.ts` passes (two people and one world seat, two cycles: the handover with no canvas mounted, the second person's plan empty and none of the first's cells on the board before the reveal, each person's two moves owned by their own account on the indexed board after each cycle, the revealer's key sending the reveals, a reload in the commit phase landing on the handover for Player 2, and Player 1's lost turn revealed behind the screen): three runs in a row, about 10 s each;
+- the full e2e **60 passed** of 60, nothing skipped (10.1 min, RPC 8557, app 4183, gateways 4273 and 4274, free before and after), from 59 passed and 1 skipped; `stratagems-offline.e2e.ts` unchanged and passing. The first full run failed once in `stratagems-table.e2e.ts` (L2's online table, which H2 does not touch: "the turn should be committable" timed out with two workers) with 3 not run after it; that suite then passed alone twice and the whole suite passed on the rerun, so it is a flake under load, recorded here;
+- check **0 errors and 0 warnings**; unit **2016 + 75** (from 2014 + 75, the two world cases);
+- `check-dangling-imports` clean; `check-omissions stem/with/fuzd-pixi-indexer` covers all 90 paths; no em dash added.
+
+Not verified: item 5's by-hand pass, a person playing it in a browser; the only look at the screen was the e2e's failure screenshots. Next: Step A1 (in the template tree; specified in outline, so its session specifies it first, with PA5a); L3 still needs the user's box.
