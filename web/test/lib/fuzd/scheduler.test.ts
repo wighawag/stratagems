@@ -417,6 +417,25 @@ describe('when there is nothing to schedule with (R2)', () => {
 		expect(stub.calls.created).toHaveLength(0);
 	});
 
+	it('refuses a chain with no reveal time (an offline world), asking fuzd nothing', async () => {
+		// A manually advanced chain hands schedulers its reveal with no
+		// `revealDueAt` (hotseat's local revealer takes it); fuzd schedules by the
+		// clock, so it refuses, and the adapter records the turn unscheduled.
+		const stub = stubClient();
+		const scheduler = schedulerWith(stub);
+		const manual = request();
+		delete (manual as {revealDueAt?: number}).revealDueAt;
+		await expect(scheduler.prepare(manual)).rejects.toThrow(/no reveal time/);
+		await expect(
+			scheduler.submit({
+				...manual,
+				commitTransaction: '0xc0',
+				payment: {payee: REMOTE, value: 1n},
+			}),
+		).rejects.toThrow(/no reveal time/);
+		expect(stub.calls.created).toHaveLength(0);
+	});
+
 	it('fails each half when fuzd does, so the adapter records the turn unscheduled', async () => {
 		await expect(
 			schedulerWith(stubClient({fail: 'assign'})).prepare(request()),
