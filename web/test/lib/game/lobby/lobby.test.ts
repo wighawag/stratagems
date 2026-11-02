@@ -24,6 +24,7 @@ const store = new Map<string, string>();
 let reloads = 0;
 
 const SEATS_KEY = 'a-game:seats';
+const HUMANS_KEY = 'a-game:humans';
 
 beforeEach(() => {
 	store.clear();
@@ -165,5 +166,73 @@ describe('the lobby', () => {
 
 		expect(get(lobby).seats).toBe(10);
 		expect(started[0]).toHaveLength(10);
+	});
+});
+
+describe('the lobby, for a game that can seat several people at one device', () => {
+	function hotseatGame(params: {alreadyHere?: boolean; atMost?: number} = {}) {
+		const started: Table[] = [];
+		const lobby = createLobby({
+			gameAlreadyHere: () => params.alreadyHere ?? false,
+			startGame: (table) => void started.push(table),
+			forgetGame: () => {},
+			seatsStorageKey: SEATS_KEY,
+			humansStorageKey: HUMANS_KEY,
+			humansAtMost: params.atMost ?? 10,
+		});
+		return {lobby, started};
+	}
+
+	it('offers no choice of people to a game that has no hotseat', () => {
+		const {lobby} = fakeGame();
+		lobby.enter();
+		expect(get(lobby)).toMatchObject({humans: 1, humansAtMost: 1});
+		expect(get(lobby).humanChoices).toEqual([1]);
+		lobby.chooseHumans(3);
+		expect(get(lobby).humans).toBe(1);
+	});
+
+	it('offers one person to every seat, up to what the game can play', () => {
+		const {lobby} = hotseatGame({atMost: 2});
+		lobby.enter();
+		lobby.chooseSeats(4);
+		expect(get(lobby).humanChoices).toEqual([1, 2]);
+		lobby.chooseHumans(5);
+		expect(get(lobby).humans).toBe(2);
+	});
+
+	it('remembers how many people beside the seats, and boots that table', () => {
+		const {lobby, started} = hotseatGame();
+		lobby.enter();
+		lobby.chooseSeats(3);
+		lobby.chooseHumans(2);
+		lobby.sitDown(get(lobby).seats);
+		expect(store.get(HUMANS_KEY)).toBe('2');
+		expect(started[0].map((seat) => seat.occupant.kind)).toEqual([
+			'you',
+			'local-human',
+			'the-world',
+		]);
+	});
+
+	it('goes back into a world with its people, and reads a world from before hotseat as one person', () => {
+		store.set(SEATS_KEY, '3');
+		store.set(HUMANS_KEY, '2');
+		const back = hotseatGame({alreadyHere: true});
+		back.lobby.enter();
+		expect(get(back.lobby)).toMatchObject({step: 'Sat', seats: 3, humans: 2});
+
+		store.delete(HUMANS_KEY);
+		const before = hotseatGame({alreadyHere: true});
+		before.lobby.enter();
+		expect(get(before.lobby)).toMatchObject({step: 'Sat', seats: 3, humans: 1});
+	});
+
+	it('forgets the people with the seats when the player leaves', () => {
+		store.set(SEATS_KEY, '3');
+		store.set(HUMANS_KEY, '2');
+		const {lobby} = hotseatGame({alreadyHere: true});
+		lobby.leaveTheTable();
+		expect(store.has(HUMANS_KEY)).toBe(false);
 	});
 });
