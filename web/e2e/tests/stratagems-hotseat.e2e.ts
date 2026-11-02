@@ -101,7 +101,9 @@ async function shown(page: Page): Promise<Shown | undefined> {
 			account: account ? account.toLowerCase() : undefined,
 			cycleNumber: onchain && onchain.step === 'Loaded' ? onchain.cycleNumber : undefined,
 			viewLoaded: !!view && view.step === 'Loaded',
-			accountDataReady: !!lifecycle && lifecycle.status === 'ready',
+			// ready, and for the signed-in person (not the previous one's, still ready)
+			accountDataReady: !!lifecycle && lifecycle.status === 'ready' && !!account &&
+				lifecycle.account.toLowerCase() === account.toLowerCase(),
 			delegation: delegation.step !== 'Loaded' ? delegation.step : delegation.allowed === true ? 'allowed' : 'refused',
 			submission: submission.step,
 			planned: 'actions' in submission ? submission.actions.length : 0,
@@ -172,6 +174,9 @@ async function begin(page: Page, label: string): Promise<void> {
 	await page.getByTestId('handover-begin').click();
 	await expect(page.getByTestId('handover')).toHaveCount(0, {timeout: 60_000});
 	await expect(page.locator('canvas')).toBeVisible({timeout: 30_000});
+	// AND THE GAME IS SHOWN ONLY ONCE THIS PERSON'S DATA HAS LOADED (step H1b):
+	// before it, the submission drops every plan.
+	expect((await shown(page))?.accountDataReady).toBe(true);
 }
 
 /** Plan `cells` on the canvas and commit them. */
@@ -181,10 +186,9 @@ async function play(page: Page, cells: readonly Cell[]): Promise<void> {
 	await expect
 		.poll(async () => (await shown(page))?.submission, {timeout: 60_000})
 		.toMatch(/Idle|Planning|Revealed/);
-	// Once this person's key is authorised, the board the moves are judged
-	// against has loaded (a click before then is dropped: stratagems' offline
-	// suite), and their account data has loaded after the switch: until then the
-	// submission reads `Idle` and drops a plan (`submission.ts`, `plan`).
+	// Once this person's key is authorised and the board the moves are judged
+	// against has loaded (a click before then is refused: stratagems' offline
+	// suite). Their account data has loaded already: the handover waits for it.
 	await expect
 		.poll(
 			async () => {
@@ -192,7 +196,6 @@ async function play(page: Page, cells: readonly Cell[]): Promise<void> {
 				return (
 					now?.delegation === 'allowed' &&
 					now.viewLoaded &&
-					now.accountDataReady &&
 					now.cycleNumber !== undefined
 				);
 			},
