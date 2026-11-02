@@ -1,5 +1,11 @@
 import {get, writable, type Readable} from 'svelte/store';
-import {SEATS_BY_DEFAULT, clampSeats, tableOf, type Table} from './seats';
+import {
+	SEATS_BY_DEFAULT,
+	clampHumans,
+	clampSeats,
+	tableOf,
+	type Table,
+} from './seats';
 
 /**
  * THE LOBBY: how many seats are at the table, decided before the game exists.
@@ -23,12 +29,12 @@ import {SEATS_BY_DEFAULT, clampSeats, tableOf, type Table} from './seats';
  * a returning player the question they already answered is exactly the kind of
  * dialog-with-one-answer this slice removed from the board.
  *
- * WHAT IS DELIBERATELY NOT HERE IS HOTSEAT. A seat whose occupant is a second
- * human is several ACCOUNTS against one game, in a context built for exactly
- * one, and it reopens the account-picker question the embedded wallet closed on
- * purpose. What this owes hotseat is the seat model (`./seats`) and nothing else
- * - and the test of that model is that adding an occupant would not change a
- * line of this file.
+ * HOTSEAT IS ONE MORE NUMBER HERE AND NOTHING ELSE. How many of the seats are
+ * people at this device is decided with the seats and for the same reason (each
+ * of them is staked while the game is built), and it is offered only up to what
+ * the game says it can play (`humansAtMost`, 1 meaning no hotseat). Everything
+ * else hotseat needs, the accounts, the revealer and the handover, is the
+ * game's world and `./hotseat`, not the lobby's.
  *
  * ## THE GAME IS A PARAMETER, and that inversion is the one structural change
  * ## in the move that brought this file here
@@ -72,8 +78,17 @@ export type LobbyState = {
 	 * game from then on.
 	 */
 	step: 'Opening' | 'Choosing' | 'Sat';
-	/** How many seats, which is the one number the player picks. */
+	/** How many seats. */
 	seats: number;
+	/**
+	 * How many of them are people at this device (hotseat): 1 unless the game
+	 * can play more and the player chose more.
+	 */
+	humans: number;
+	/** The most the game can seat at this device. 1 means no hotseat. */
+	humansAtMost: number;
+	/** Every count of people at this device the lobby offers at these seats. */
+	humanChoices: readonly number[];
 	/** Who is in each of them. See `./seats`. */
 	table: Table;
 };
@@ -126,6 +141,18 @@ export type LobbyDeps = {
 	 * underneath, and the seats the player asked for survive that.
 	 */
 	seatsStorageKey: string;
+	/**
+	 * Where to remember how many of the seats are people at this device. A
+	 * WIRE like the seats key, and read as 1 when absent, which is what every
+	 * game built before hotseat was. Omitted by a game that has no hotseat.
+	 */
+	humansStorageKey?: string;
+	/**
+	 * The most people at this device the game can play (1, the default, means
+	 * no hotseat). The game's to say, because it is the game's world that
+	 * provisions each of them.
+	 */
+	humansAtMost?: number;
 };
 
 export type LobbyStore = Readable<LobbyState> & {
@@ -142,6 +169,8 @@ export type LobbyStore = Readable<LobbyState> & {
 	enter(): void;
 	/** Pick a different number of seats, before sitting down at them. */
 	chooseSeats(seats: number): void;
+	/** Pick how many of the seats are people at this device (hotseat). */
+	chooseHumans(humans: number): void;
 	/**
 	 * Take the table, and build the game around it.
 	 *
@@ -150,7 +179,7 @@ export type LobbyStore = Readable<LobbyState> & {
 	 * as the table that game was being built for. The alternative loses the
 	 * answer precisely when the game is in the state hardest to reason about.
 	 */
-	sitDown(seats?: number): void;
+	sitDown(seats?: number, humans?: number): void;
 	/**
 	 * Leave this table, so that the next visit chooses a new one.
 	 *
@@ -172,7 +201,10 @@ export type LobbyStore = Readable<LobbyState> & {
  * the bug the `Opening` state exists to describe.
  */
 export function createLobby(deps: LobbyDeps): LobbyStore {
-	const lobby = writable<LobbyState>(seated('Opening', SEATS_BY_DEFAULT));
+	const atMost = Math.max(1, Math.floor(deps.humansAtMost ?? 1));
+	const lobby = writable<LobbyState>(
+		seated('Opening', SEATS_BY_DEFAULT, 1, atMost),
+	);
 
 	/**
 	 * Whether there is a table to go back to, and how big it was.
@@ -180,20 +212,31 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 	 * BOTH OR NEITHER. A seat record with no game behind it is not a game to
 	 * carry on with, so it is ignored rather than acted on: the alternative boots
 	 * a brand new game at a remembered count without ever asking, which is the
-	 * silent reuse this file exists to avoid.
+	 * silent reuse this file exists to avoid. The humans' count is read with it,
+	 * and its absence means one (a game from before hotseat).
 	 */
-	function tableAlreadyHere(): number | undefined {
+	function tableAlreadyHere(): {seats: number; humans: number} | undefined {
 		if (typeof localStorage === 'undefined') return undefined;
 		if (!deps.gameAlreadyHere()) return undefined;
 		const seats = localStorage.getItem(deps.seatsStorageKey);
 		if (seats === null) return undefined;
-		return clampSeats(seats);
+		const humans = deps.humansStorageKey
+			? localStorage.getItem(deps.humansStorageKey)
+			: null;
+		const count = clampSeats(seats);
+		return {seats: count, humans: clampHumans(humans ?? 1, count, atMost)};
 	}
 
-	function sitDown(seats: number = SEATS_BY_DEFAULT): void {
-		const state = seated('Sat', seats);
+	function sitDown(
+		seats: number = SEATS_BY_DEFAULT,
+		humans: number = get(lobby).humans,
+	): void {
+		const state = seated('Sat', seats, humans, atMost);
 		if (typeof localStorage !== 'undefined') {
 			localStorage.setItem(deps.seatsStorageKey, String(state.seats));
+			if (deps.humansStorageKey) {
+				localStorage.setItem(deps.humansStorageKey, String(state.humans));
+			}
 		}
 		lobby.set(state);
 		deps.startGame(state.table);
@@ -205,26 +248,48 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 			if (get(lobby).step !== 'Opening') return;
 			const already = tableAlreadyHere();
 			if (already === undefined) {
-				lobby.set(seated('Choosing', SEATS_BY_DEFAULT));
+				lobby.set(seated('Choosing', SEATS_BY_DEFAULT, 1, atMost));
 				return;
 			}
-			sitDown(already);
+			sitDown(already.seats, already.humans);
 		},
 		chooseSeats(seats: number): void {
-			lobby.set(seated('Choosing', seats));
+			lobby.set(seated('Choosing', seats, get(lobby).humans, atMost));
+		},
+		chooseHumans(humans: number): void {
+			lobby.set(seated('Choosing', get(lobby).seats, humans, atMost));
 		},
 		sitDown,
 		leaveTheTable(): void {
 			deps.forgetGame();
 			if (typeof localStorage !== 'undefined') {
 				localStorage.removeItem(deps.seatsStorageKey);
+				if (deps.humansStorageKey) {
+					localStorage.removeItem(deps.humansStorageKey);
+				}
 			}
 			if (typeof location !== 'undefined') location.reload();
 		},
 	};
 }
 
-function seated(step: LobbyState['step'], seats: number): LobbyState {
+function seated(
+	step: LobbyState['step'],
+	seats: number,
+	humans: number,
+	humansAtMost: number,
+): LobbyState {
 	const count = clampSeats(seats);
-	return {step, seats: count, table: tableOf(count)};
+	const here = clampHumans(humans, count, humansAtMost);
+	return {
+		step,
+		seats: count,
+		humans: here,
+		humansAtMost,
+		humanChoices: Array.from(
+			{length: Math.min(count, humansAtMost)},
+			(_, i) => i + 1,
+		),
+		table: tableOf(count, here),
+	};
 }

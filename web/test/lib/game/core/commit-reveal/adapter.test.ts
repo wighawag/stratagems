@@ -385,14 +385,21 @@ describe("the base's adapter, with a reveal scheduler (P3)", () => {
 		expect(outcome).toEqual({hash: '0xtx', revealScheduled: false});
 	});
 
-	it('asks nothing on a chain with no reveal time to schedule for', async () => {
+	it('hands the reveal over on a chain with no reveal time, saying it has none', async () => {
+		// A MANUALLY ADVANCED CHAIN (an offline world) has no clock, so there is
+		// no time to schedule for, and the request says so rather than being
+		// withheld: a scheduler that watches the chain (hotseat's local revealer)
+		// takes it, and one that needs a time refuses in `prepare` (fuzd), which
+		// is the case above.
 		const fake = fakeDeps({reserve: 10n});
 		const {scheduler: s, calls} = scheduler();
 		const outcome = await commitWith(s, fake, null);
-		expect(calls.prepare).toHaveLength(0);
-		expect(calls.submit).toHaveLength(0);
-		expect(fake.sends[0].args[3]).toBe(zeroAddress);
-		expect(outcome).toEqual({hash: '0xtx', revealScheduled: false});
+		expect(calls.prepare).toHaveLength(1);
+		expect(calls.prepare[0]).toMatchObject({identity: TOKEN, cycleNumber: 3});
+		expect('revealDueAt' in calls.prepare[0]).toBe(false);
+		expect(calls.prepare[0].transactions).toHaveLength(2);
+		expect(calls.submit).toHaveLength(1);
+		expect(outcome).toMatchObject({hash: '0xtx', revealScheduled: true});
 	});
 
 	it('passes zero and no value, as before, when there is no scheduler', async () => {
