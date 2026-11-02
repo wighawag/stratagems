@@ -653,6 +653,17 @@ export function createCommitRevealGame<T extends GameTypes>(
 	const {identity} = parts;
 	const chainId = core.deployments.get().chain.id;
 
+	// WHO ELSE REVEALS: the WORLD'S revealer when it has one (a hotseat world,
+	// `CoreServices.scheduler`), in place of the game's own; and then this
+	// browser reveals only as a fallback, or the person who committed last
+	// would race the revealer for the same reveal. The game's scheduler
+	// otherwise (a layer's, `with/fuzd`), and the game's choice of when.
+	const scheduler: RevealScheduler<T['identity'], ExtensionsOf<T>> | undefined =
+		core.scheduler ?? parts.scheduler;
+	const autoReveal = core.scheduler
+		? ('fallback' as const)
+		: parts.submission?.autoReveal;
+
 	// Chain-synced, unlike the UI clock: the phases are defined against block
 	// timestamps, and a drifting browser clock would show the wrong phase.
 	const chainTime = createChainTime({
@@ -777,16 +788,14 @@ export function createCommitRevealGame<T extends GameTypes>(
 		// missed-reveal reader already reads: it decides between two stored
 		// turns for one cycle, and takes up a commit that was never recorded.
 		liveCommitment: missedReveal.commitment,
-		...(parts.scheduler ? {scheduler: parts.scheduler} : {}),
+		...(scheduler ? {scheduler} : {}),
 		...(parts.submission?.commitWhenIdle
 			? {commitWhenIdle: parts.submission.commitWhenIdle}
 			: {}),
 		// WHEN THIS BROWSER REVEALS is the game's choice (P7): `fallback` where a
 		// scheduler is expected to reveal, `immediately` otherwise. Before this the
 		// skeleton passed only `commitWhenIdle`, so no game could choose.
-		...(parts.submission?.autoReveal
-			? {autoReveal: parts.submission.autoReveal}
-			: {}),
+		...(autoReveal ? {autoReveal} : {}),
 		...(parts.submission?.fallbackRevealAfter !== undefined
 			? {fallbackRevealAfter: parts.submission.fallbackRevealAfter}
 			: {}),
