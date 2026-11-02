@@ -73,6 +73,9 @@ type Cell = {x: number; y: number};
 
 type Shown = {
 	account?: string;
+	cycleNumber?: number;
+	viewLoaded: boolean;
+	delegation: string;
 	submission: string;
 	planned: number;
 	plannedOnBoard: number;
@@ -87,9 +90,14 @@ async function shown(page: Page): Promise<Shown | undefined> {
 		const submission = read(context.game.submission);
 		const view = read(context.viewState);
 		const account = read(context.account);
+		const onchain = read(context.onchainState);
+		const delegation = read(context.delegation);
 		const cells = view && view.step === 'Loaded' ? [...view.cells.entries()] : [];
 		return {
 			account: account ? account.toLowerCase() : undefined,
+			cycleNumber: onchain && onchain.step === 'Loaded' ? onchain.cycleNumber : undefined,
+			viewLoaded: !!view && view.step === 'Loaded',
+			delegation: delegation.step !== 'Loaded' ? delegation.step : delegation.allowed === true ? 'allowed' : 'refused',
 			submission: submission.step,
 			planned: 'actions' in submission ? submission.actions.length : 0,
 			plannedOnBoard: cells.filter(([, cell]) => cell.planned !== undefined).length,
@@ -168,6 +176,22 @@ async function play(page: Page, cells: readonly Cell[]): Promise<void> {
 	await expect
 		.poll(async () => (await shown(page))?.submission, {timeout: 60_000})
 		.toMatch(/Idle|Planning|Revealed/);
+	// Once this person's key is authorised and the board the moves are judged
+	// against has loaded: a click before then is dropped (stratagems' offline
+	// suite).
+	await expect
+		.poll(
+			async () => {
+				const now = await shown(page);
+				return (
+					now?.delegation === 'allowed' &&
+					now.viewLoaded &&
+					now.cycleNumber !== undefined
+				);
+			},
+			{timeout: 60_000},
+		)
+		.toBe(true);
 	for (const cell of cells) {
 		await clickCell(page, cell);
 		await page.waitForTimeout(200);
