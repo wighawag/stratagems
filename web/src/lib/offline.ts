@@ -233,6 +233,23 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 
 	const world = await openWorld(chainId, table);
 	forgetPreviousWorldIndex(world.deployments.get().chain.id);
+	const humans = humansAtThisDevice(table);
+	const hotseatHere = humans.length > 1;
+
+	// WHO REVEALS FOR THE PEOPLE AT THIS DEVICE, in a hotseat world: the
+	// framework's local revealer, with its own funded key, handed each turn at
+	// its commit through the scheduler seam, so nobody takes the device back to
+	// reveal (the template's world, H2-5). One person needs none.
+	let pokeAdvance = () => {};
+	const revealer = hotseatHere
+		? createLocalRevealer({
+				provider: world.provider as never,
+				chain: worldChain(world),
+				privateKey: localRevealerKey().privateKey,
+				contract: gameContract(world),
+				onActed: () => pokeAdvance(),
+			})
+		: undefined;
 
 	status.set({step: 'Booting', what: 'connecting'});
 
@@ -240,7 +257,9 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 	// constructing (the template's argument).
 	const context = createContext({
 		establishConnection: world.establishConnection,
+		...(revealer ? {scheduler: revealer.scheduler} : {}),
 	});
+	pokeAdvance = () => void context.context.game.cycleAdvance.check();
 
 	if (typeof window !== 'undefined') {
 		try {
@@ -265,30 +284,80 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 	// AND AUTHORISES THE KEY THIS BROWSER PLAYS WITH, which exists only after the
 	// signature above. Not fatal: the setup gate comes back with the button.
 	status.set({step: 'Booting', what: "authorising this browser's key"});
-	try {
-		await authoriseTheBrowsersKey(context.context);
-	} catch (err) {
-		console.error(
-			"the offline world could not authorise this browser's key",
-			err,
-		);
+	const wallet = announcedWallet;
+	const seated: HotseatHuman[] = [];
+	if (hotseatHere && wallet) {
+		// EVERY PERSON HERE, ONE AFTER ANOTHER, ending on the first: each signed in
+		// (the world asks for the signature, as above), their browser key
+		// authorised and funded now rather than at their first handover, so no
+		// turn opens on a transaction. The template's world's loop, with
+		// stratagems' funding in it; its home is `$lib/game/lobby/hotseat`, where
+		// it moves when a third game takes hotseat (H2-1).
+		for (const human of humans) {
+			const address = wallet.accounts[human.account];
+			const label = `Player ${human.account + 1}`;
+			seated.push({address, player: offlineIdentityOf(address), label});
+			status.set({step: 'Booting', what: `authorising ${label}'s key`});
+			try {
+				await signInAs({
+					connection: context.context.connection,
+					select: wallet.select,
+					address,
+				});
+				await authoriseWhenReady(context.context);
+				await fundTheBrowsersKey(world, context.context);
+			} catch (err) {
+				console.error(
+					`the offline world could not authorise ${label}'s key`,
+					err,
+				);
+			}
+		}
+		try {
+			await signInAs({
+				connection: context.context.connection,
+				select: wallet.select,
+				address: seated[0].address,
+			});
+		} catch (err) {
+			console.error('the offline world could not sign in as Player 1', err);
+		}
+	} else {
+		try {
+			await authoriseTheBrowsersKey(context.context);
+		} catch (err) {
+			console.error(
+				"the offline world could not authorise this browser's key",
+				err,
+			);
+		}
+		await fundTheBrowsersKey(world, context.context);
 	}
 
-	// AND GIVES THAT KEY PLAY MONEY, as every seat (reveal-or-die's finding,
-	// measured in bomber-world): offline the key also pushes the manual cycle,
-	// twice a cycle, which the authorisation's one online top-up does not cover.
-	// Gas is free here, so this is set on every boot.
-	try {
-		const signer = get(context.context.signerExecutor);
-		if (signer.status === 'ready') {
-			await world.provider.request({
-				method: 'evm_setBalance',
-				params: [signer.address, `0x${PLAY_MONEY.toString(16)}`],
-			} as never);
-		}
-	} catch (err) {
-		console.error("the offline world could not fund this browser's key", err);
-	}
+	// THE HANDOVER, when there are several people here: whose turn it is, read
+	// from the chain, and the screen that covers the game while the device
+	// changes hands (`$lib/game/lobby/hotseat`).
+	const hotseat =
+		hotseatHere && wallet && revealer
+			? createHotseat({
+					humans: seated,
+					switchTo: (address) =>
+						signInAs({
+							connection: context.context.connection,
+							select: wallet.select,
+							address,
+						}),
+					read: createHotseatChainReader({
+						provider: world.provider as never,
+						chain: worldChain(world),
+						contract: gameContract(world),
+						players: seated.map((human) => human.player),
+					}),
+					revealer,
+					submission: context.context.game.submission,
+					signedIn: signedInAs(context.context.connection),
+				})
+			: undefined;
 
 	// THE OTHER PLAYERS, started with the board and stopped with it.
 	const players = createOfflinePlayers({
@@ -312,7 +381,11 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 					loop: players,
 					submission: context.context.game.submission,
 				});
+				const stopRevealer = revealer?.start() ?? (() => {});
+				const stopHotseat = hotseat?.start() ?? (() => {});
 				return () => {
+					stopHotseat();
+					stopRevealer();
 					stopPoke();
 					stopPlayers();
 					stopContext();
@@ -320,8 +393,65 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 			},
 		},
 	};
+	showHotseat(hotseat);
 	status.set(ready);
 	return ready;
+}
+
+/**
+ * GIVE THE SIGNED-IN PERSON'S BROWSER KEY PLAY MONEY, as every seat
+ * (reveal-or-die's finding, measured in bomber-world): offline the key also
+ * pushes the manual cycle, twice a cycle, which the authorisation's one online
+ * top-up does not cover. Gas is free here, so this is set on every boot, for
+ * every person. Not fatal.
+ */
+async function fundTheBrowsersKey(
+	world: EmbeddedWorld,
+	context: Context,
+): Promise<void> {
+	try {
+		const signer = get(context.signerExecutor);
+		if (signer.status === 'ready') {
+			await world.provider.request({
+				method: 'evm_setBalance',
+				params: [signer.address, `0x${PLAY_MONEY.toString(16)}`],
+			} as never);
+		}
+	} catch (err) {
+		console.error("the offline world could not fund this browser's key", err);
+	}
+}
+
+/**
+ * Authorise the signed-in person's browser key, once the context has caught up
+ * with the account switch: right after one, the account's executor can still
+ * be getting ready, which `authoriseTheBrowsersKey` answers with a refusal
+ * rather than a wait (the template's world).
+ */
+async function authoriseWhenReady(context: Context): Promise<void> {
+	for (let attempt = 0; attempt < 40; attempt++) {
+		const outcome = await authoriseTheBrowsersKey(context);
+		if (outcome.step !== 'Refused') return;
+		await new Promise((resolve) => setTimeout(resolve, 250));
+	}
+	throw new Error("the browser's key could not be authorised");
+}
+
+/** The world's chain as viem wants it, for the clients the world's own loops build. */
+function worldChain(world: EmbeddedWorld) {
+	const records = world.deployments.get();
+	return {
+		id: records.chain.id,
+		name: records.chain.name,
+		nativeCurrency: records.chain.nativeCurrency,
+		rpcUrls: {default: {http: [] as string[]}},
+	};
+}
+
+/** Stratagems' game contract, which the revealer and the handover read. */
+function gameContract(world: EmbeddedWorld) {
+	const game = world.deployments.get().contracts.Stratagems;
+	return {address: game.address, abi: game.abi};
 }
 
 /**
