@@ -21,13 +21,19 @@ const started: {table: {occupant: {kind: string}}[]}[] = [];
 /** What the mocked boot resolves to; a test may hand back a world. */
 let booted: unknown = {step: 'Booting', what: 'in a test'};
 
-vi.mock('$lib/offline', () => ({
-	CHAIN_ID_STORAGE_KEY: 'offline-world:chain-id',
-	startOfflineWorld: (params: {table: {occupant: {kind: string}}[]}) => {
-		started.push(params);
-		return Promise.resolve(booted);
-	},
-}));
+vi.mock('$lib/offline', () => mockedWorld());
+
+/** The mocked world; `extra` is what a test adds to its exports. */
+function mockedWorld(extra: Record<string, unknown> = {}) {
+	return {
+		CHAIN_ID_STORAGE_KEY: 'offline-world:chain-id',
+		startOfflineWorld: (params: {table: {occupant: {kind: string}}[]}) => {
+			started.push(params);
+			return Promise.resolve(booted);
+		},
+		...extra,
+	};
+}
 
 const store = new Map<string, string>();
 let reloads = 0;
@@ -141,6 +147,33 @@ describe('the offline world\u2019s lobby', () => {
 		expect(reloads).toBe(1);
 	});
 
+	it('offers no level to a world that exports no AI_LEVELS', async () => {
+		const offlineLobby = await lobby();
+		expect(get(offlineLobby).levelChoices).toEqual([]);
+	});
+
+	it("offers the world's AI_LEVELS per world seat, and keeps them beside the seats", async () => {
+		// The same mock, with the export a game with AI seats adds.
+		const aiLevels = [
+			{id: 'random', label: 'Random'},
+			{id: 'greedy', label: 'Greedy'},
+		];
+		vi.doMock('$lib/offline', () => mockedWorld({AI_LEVELS: aiLevels}));
+		const offlineLobby = await lobby();
+		expect(get(offlineLobby).levelChoices).toEqual(aiLevels);
+		offlineLobby.chooseLevel(0, 'greedy');
+		offlineLobby.sitDown(get(offlineLobby).seats);
+		expect(store.get('offline-world:levels')).toBe('["greedy","random"]');
+		expect(started[0].table[1].occupant).toMatchObject({
+			kind: 'the-world',
+			level: 'greedy',
+		});
+
+		offlineLobby.leaveTheTable();
+		expect(store.has('offline-world:levels')).toBe(false);
+		vi.doMock('$lib/offline', () => mockedWorld());
+	});
+
 	it('never starts a world, nor offers a table, while another tab has the world', async () => {
 		// The second tab of a browser that already holds a world. Booting would
 		// restore the same chain beside the first tab's and the two would diverge;
@@ -234,6 +267,15 @@ describe('the offline world\u2019s lobby', () => {
 			vi.resetModules();
 			const real = await import('$lib/offline');
 			expect(real.CHAIN_ID_STORAGE_KEY).toBe('offline-world:chain-id');
+			// And whatever levels the real world offers (a game may offer none),
+			// `random` is among them: it is every seat's level until one is
+			// chosen. Not which levels, which is the game's answer and not this
+			// file's (it is identical in every game).
+			const levels = (real as unknown as {AI_LEVELS?: {id: string}[]})
+				.AI_LEVELS;
+			if (levels !== undefined) {
+				expect(levels.map((level) => level.id)).toContain('random');
+			}
 		},
 	);
 });

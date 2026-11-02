@@ -1,5 +1,6 @@
 import {bytesToHex} from 'viem';
 import {mnemonicToAccount} from 'viem/accounts';
+import {RANDOM_LEVEL, type AiLevel} from '../core/strategy';
 
 /**
  * HOW MANY SEATS ARE AT THE TABLE, AND WHO IS IN EACH ONE.
@@ -30,8 +31,8 @@ import {mnemonicToAccount} from 'viem/accounts';
  * used to live in the app namespace and assert in prose that it was
  * byte-identical in every game that had one, which is a claim a reader has to
  * verify by grepping two repos. Two games have now been measured against it and
- * it held; moving it here makes the claim structural, and the one thing it
- * imports is `viem`.
+ * it held; moving it here makes the claim structural, and what it imports is
+ * `viem` and the framework's own `RANDOM_LEVEL`.
  */
 
 /**
@@ -87,12 +88,19 @@ export type Occupant =
 	/**
 	 * The world itself, playing a key it holds.
 	 *
-	 * What it DOES with that key is the loop that plays it, and that loop is
-	 * deliberately the smallest thing that gives a cycle somebody to wait for:
-	 * no intelligence, no difficulty, no interface. The NPCs the plan's Phase 6
-	 * wants are a different job.
+	 * What it DOES with that key is the game's pass (its `offline-players.ts`),
+	 * at the seat's LEVEL: absent means `random`, today's derived turn and the
+	 * smallest thing that gives a cycle somebody to wait for; another level is
+	 * the game's strategy (`$lib/game/core/strategy`). A level is chosen at the
+	 * lobby with the seats, and it changes how the seat plays, never which key
+	 * it plays with, so an AI seat is a world seat and not a kind of its own.
 	 */
-	| {kind: 'the-world'; privateKey: `0x${string}`; address: `0x${string}`}
+	| {
+			kind: 'the-world';
+			privateKey: `0x${string}`;
+			address: `0x${string}`;
+			level?: string;
+	  }
 	/**
 	 * A human at ANOTHER browser, seated at a table for a fixed set of players
 	 * by their own stake (`$lib/game/lobby/table`). Nothing here plays for
@@ -290,8 +298,17 @@ export function clampHumans(
  * rest are the world's. A world seat keeps the key it had at the same position
  * among the WORLD'S seats, so a table without hotseat plays exactly the
  * addresses it always has.
+ *
+ * `levels` are the world's seats' levels, in seat order (see
+ * {@link clampLevels}); a seat at `random`, or past the end of the list, has
+ * no `level` at all, which is what every table before levels was. A level
+ * never moves a key: the addresses are the same whatever the levels.
  */
-export function tableOf(seats: number, humans: number = 1): Table {
+export function tableOf(
+	seats: number,
+	humans: number = 1,
+	levels: readonly string[] = [],
+): Table {
 	const count = clampSeats(seats);
 	const here = clampHumans(humans, count, count);
 	const table: Seat[] = [{occupant: {kind: 'you'}}];
@@ -299,9 +316,46 @@ export function tableOf(seats: number, humans: number = 1): Table {
 		table.push({occupant: {kind: 'local-human', account}});
 	}
 	for (let index = 0; index < count - here; index++) {
-		table.push({occupant: {kind: 'the-world', ...playedKey(index)}});
+		const level = levels[index];
+		table.push({
+			occupant: {
+				kind: 'the-world',
+				...playedKey(index),
+				...(level !== undefined && level !== RANDOM_LEVEL ? {level} : {}),
+			},
+		});
 	}
 	return table;
+}
+
+/**
+ * The world's seats' levels, one per world seat, from whatever was stored or
+ * chosen.
+ *
+ * TOTAL, like {@link clampSeats}: the input comes out of `localStorage`. Not an
+ * array, malformed JSON, an entry that is not a level the game `offers`, and a
+ * missing entry are each read as `random`; the list is cut or padded to
+ * `worldSeats`. A game that offers no levels gets `random` everywhere.
+ */
+export function clampLevels(
+	levels: unknown,
+	worldSeats: number,
+	offers: readonly AiLevel[],
+): string[] {
+	let parsed: unknown = levels;
+	if (typeof levels === 'string') {
+		try {
+			parsed = JSON.parse(levels);
+		} catch {
+			parsed = [];
+		}
+	}
+	const list = Array.isArray(parsed) ? parsed : [];
+	const known = new Set(offers.map((level) => level.id));
+	return Array.from({length: Math.max(0, Math.floor(worldSeats))}, (_, i) => {
+		const level = list[i];
+		return typeof level === 'string' && known.has(level) ? level : RANDOM_LEVEL;
+	});
 }
 
 /**
@@ -343,15 +397,24 @@ export function localRevealerKey(): {
  * per member (fund it, stake for it, play it) asks the table who is there
  * instead of assuming that everyone except seat one is the world's.
  */
-export function seatsPlayedByTheWorld(
-	table: Table,
-): readonly {privateKey: `0x${string}`; address: `0x${string}`}[] {
-	const world: {privateKey: `0x${string}`; address: `0x${string}`}[] = [];
+export function seatsPlayedByTheWorld(table: Table): readonly {
+	privateKey: `0x${string}`;
+	address: `0x${string}`;
+	level?: string;
+}[] {
+	const world: {
+		privateKey: `0x${string}`;
+		address: `0x${string}`;
+		level?: string;
+	}[] = [];
 	for (const seat of table) {
 		if (seat.occupant.kind === 'the-world') {
 			world.push({
 				privateKey: seat.occupant.privateKey,
 				address: seat.occupant.address,
+				...(seat.occupant.level !== undefined
+					? {level: seat.occupant.level}
+					: {}),
 			});
 		}
 	}
