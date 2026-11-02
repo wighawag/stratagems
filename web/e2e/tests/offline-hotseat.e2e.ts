@@ -1,7 +1,6 @@
 import type {Page} from '@playwright/test';
 import {mnemonicToAccount} from 'viem/accounts';
 import {test, expect, describe} from '../fixtures/test';
-import {clickCanvas} from '../fixtures/game';
 
 /**
  * HOTSEAT IN THE OFFLINE WORLD: two people at one device and one world seat,
@@ -38,6 +37,23 @@ const REVEALER = mnemonicToAccount(
 	'test test test test test test test test test test test junk',
 	{addressIndex: 12},
 ).address;
+
+/**
+ * Click the board at an offset from its centre. Here rather than imported from
+ * the reference game's fixtures, which a game that replaces the reference game
+ * does not have: this file arrives in every game unchanged.
+ */
+async function clickCanvas(
+	page: Page,
+	offset: {x: number; y: number},
+): Promise<void> {
+	const box = await page.locator('canvas').boundingBox();
+	if (!box) throw new Error('the canvas has no layout box');
+	await page.mouse.click(
+		box.x + box.width / 2 + offset.x,
+		box.y + box.height / 2 + offset.y,
+	);
+}
 
 async function whoPlays(page: Page): Promise<string | undefined> {
 	return page.evaluate(`(() => {
