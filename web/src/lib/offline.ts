@@ -38,6 +38,7 @@ import {
 	createHotseatChainReader,
 	showHotseat,
 	signInAs,
+	signedInAs,
 	type HotseatHuman,
 } from '$lib/game/lobby/hotseat';
 import {authoriseTheBrowsersKey} from '$lib/game/acquire';
@@ -437,6 +438,7 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 					}),
 					revealer,
 					submission: context.context.game.submission,
+					signedIn: signedInAs(context.context.connection),
 				})
 			: undefined;
 

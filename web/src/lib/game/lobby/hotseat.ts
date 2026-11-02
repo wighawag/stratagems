@@ -32,7 +32,7 @@
  * Under the manual policy nothing else would: a turn handed to a scheduler
  * never reveals itself there, and the cycle waits for it for ever.
  */
-import {get, writable, type Readable} from 'svelte/store';
+import {derived, get, writable, type Readable} from 'svelte/store';
 import {
 	createPublicClient,
 	custom,
@@ -212,6 +212,16 @@ export async function signInAs(params: {
 	await until(connection, signedIn, `the signature of ${params.address}`);
 }
 
+/** The account a connection is signed in as, lowercased, or undefined. */
+export function signedInAs(
+	connection: WorldConnection,
+): Readable<string | undefined> {
+	return derived(
+		connection,
+		($connection) => addressesOf($connection).signedIn,
+	);
+}
+
 export function createHotseat(params: {
 	humans: readonly HotseatHuman[];
 	/** Make `address` the account the world plays as (see {@link signInAs}). */
@@ -221,6 +231,12 @@ export function createHotseat(params: {
 	revealer: {holds(player: bigint, cycleNumber: number): boolean};
 	/** The active person's submission, which follows the account. */
 	submission: Readable<{step: string}> & {reveal(): Promise<void>};
+	/**
+	 * The account the world's connection is signed in as right now (any case),
+	 * or undefined. The game is shown only while it is the account of the
+	 * person who has the device: see {@link signedInAs}.
+	 */
+	signedIn: Readable<string | undefined>;
 	pollInterval?: number;
 }): Hotseat {
 	const {humans, revealer, submission} = params;
@@ -232,6 +248,46 @@ export function createHotseat(params: {
 	let busy = false;
 	/** Recoveries tried, by cycle and person, so a failure is not retried in a loop. */
 	const recovered = new Set<string>();
+
+	/**
+	 * THE GAME IS SHOWN ONLY WHILE THE CONNECTION IS THE PERSON WITH THE DEVICE,
+	 * decided synchronously from the connection rather than after a poll. A
+	 * connection that moves to somebody else's account while a person plays (it
+	 * has been measured to: `@etherplay/connect`'s auto-connect, started when
+	 * the page loaded with the previous person stored as the last account,
+	 * landing after a later switch) would otherwise put that somebody's turn on
+	 * screen; covered in the same update, it never reaches the game, and the
+	 * switch below puts the right account back.
+	 */
+	const shown = derived([state, params.signedIn], ([current, account]) => {
+		if (
+			current.step === 'Playing' &&
+			account?.toLowerCase() !== humans[current.seat].address.toLowerCase()
+		) {
+			return {
+				step: 'Switching',
+				to: current.seat,
+				label: current.label,
+			} satisfies HotseatState;
+		}
+		return current;
+	});
+
+	/** Put the right account back under the person who has the device. */
+	async function heal(): Promise<void> {
+		const current = get(state);
+		if (current.step !== 'Playing' || busy) return;
+		const expected = humans[current.seat].address;
+		if (get(params.signedIn)?.toLowerCase() === expected.toLowerCase()) return;
+		busy = true;
+		try {
+			await params.switchTo(expected);
+		} catch (error) {
+			console.error('the hotseat could not put the account back', error);
+		} finally {
+			busy = false;
+		}
+	}
 
 	function passTo(index: number): void {
 		if (index < 0) {
@@ -269,6 +325,8 @@ export function createHotseat(params: {
 
 	async function check(): Promise<void> {
 		if (humans.length < 2 || busy) return;
+		await heal();
+		if (busy) return;
 		let view: HotseatChainView;
 		try {
 			view = await params.read();
@@ -320,13 +378,15 @@ export function createHotseat(params: {
 		const unsubscribe = submission.subscribe(($submission) => {
 			if ($submission.step === 'Committed') void check();
 		});
+		const unsubscribeAccount = params.signedIn.subscribe(() => void heal());
 		return () => {
 			clearInterval(timer);
 			unsubscribe();
+			unsubscribeAccount();
 		};
 	}
 
-	return {subscribe: state.subscribe, begin, start, check};
+	return {subscribe: shown.subscribe, begin, start, check};
 }
 
 /**

@@ -37,17 +37,22 @@ const HUMANS: HotseatHuman[] = [
 function fakeWorld(view: HotseatChainView, humans = HUMANS) {
 	const switched: `0x${string}`[] = [];
 	const held = new Set<string>();
+	const signedIn = writable<string | undefined>(undefined);
 	const submission = Object.assign(writable<{step: string}>({step: 'Idle'}), {
 		reveal: vi.fn(async () => {}),
 	});
 	const hotseat = createHotseat({
 		humans,
-		switchTo: async (address) => void switched.push(address),
+		switchTo: async (address) => {
+			switched.push(address);
+			signedIn.set(address);
+		},
 		read: async () => view,
 		revealer: {holds: (player, cycle) => held.has(`${cycle}:${player}`)},
 		submission,
+		signedIn,
 	});
-	return {hotseat, view, switched, held, submission};
+	return {hotseat, view, switched, held, submission, signedIn};
 }
 
 const commitPhase = (outstanding: boolean[]): HotseatChainView => ({
@@ -137,22 +142,45 @@ describe('a hotseat', () => {
 		void view;
 	});
 
+	it('covers the game the moment the connection is somebody else, and puts the account back', async () => {
+		// Measured: a connection's auto-connect, started when the page loaded
+		// with the previous person stored, landed after a later switch.
+		const {hotseat, switched, signedIn} = fakeWorld(
+			commitPhase([false, false, false]),
+		);
+		await hotseat.check();
+		await hotseat.begin();
+		expect(get(hotseat).step).toBe('Playing');
+
+		signedIn.set(HUMANS[1].address);
+		// Covered in the same update, before anything could render the turn.
+		expect(get(hotseat)).toEqual({step: 'Switching', to: 0, label: 'Player 1'});
+		await hotseat.check();
+		expect(switched.at(-1)).toBe(HUMANS[0].address);
+		expect(get(hotseat).step).toBe('Playing');
+	});
+
 	it('does not move the device while a press is being handled', async () => {
 		let release = () => {};
 		const switched: string[] = [];
+		const signedIn = writable<string | undefined>(undefined);
 		const view = commitPhase([false, false, false]);
 		const hotseat = createHotseat({
 			humans: HUMANS,
 			switchTo: (address) =>
 				new Promise<void>((resolve) => {
 					switched.push(address);
-					release = resolve;
+					release = () => {
+						signedIn.set(address);
+						resolve();
+					};
 				}),
 			read: async () => view,
 			revealer: {holds: () => true},
 			submission: Object.assign(writable({step: 'Idle'}), {
 				reveal: async () => {},
 			}),
+			signedIn,
 		});
 		await hotseat.check();
 		const pressed = hotseat.begin();
