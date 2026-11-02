@@ -1,5 +1,6 @@
 import {describe, it, expect, vi} from 'vitest';
 import {get, writable} from 'svelte/store';
+import type {AccountDataLifecycle} from '$lib/account/lifecycle';
 import {
 	createHotseat,
 	signInAs,
@@ -38,6 +39,9 @@ function fakeWorld(view: HotseatChainView, humans = HUMANS) {
 	const switched: `0x${string}`[] = [];
 	const held = new Set<string>();
 	const signedIn = writable<string | undefined>(undefined);
+	const lifecycle$ = writable<AccountDataLifecycle>({status: 'no-account'});
+	/** Whether a switch finds the account's data loaded at once (a fast load). */
+	const loads = {instantly: true};
 	const submission = Object.assign(writable<{step: string}>({step: 'Idle'}), {
 		reveal: vi.fn(async () => {}),
 	});
@@ -46,13 +50,27 @@ function fakeWorld(view: HotseatChainView, humans = HUMANS) {
 		switchTo: async (address) => {
 			switched.push(address);
 			signedIn.set(address);
+			lifecycle$.set({
+				status: loads.instantly ? 'ready' : 'loading',
+				account: address,
+			});
 		},
 		read: async () => view,
 		revealer: {holds: (player, cycle) => held.has(`${cycle}:${player}`)},
 		submission,
 		signedIn,
+		accountData: {lifecycle$},
 	});
-	return {hotseat, view, switched, held, submission, signedIn};
+	return {
+		hotseat,
+		view,
+		switched,
+		held,
+		submission,
+		signedIn,
+		lifecycle$,
+		loads,
+	};
 }
 
 const commitPhase = (outstanding: boolean[]): HotseatChainView => ({
@@ -160,6 +178,40 @@ describe('a hotseat', () => {
 		expect(get(hotseat).step).toBe('Playing');
 	});
 
+	it('keeps the game covered until the account data of the person with the device has loaded', async () => {
+		// After a switch the submission reads `Idle` and drops a plan until the
+		// new account's data has loaded: a board shown then ignores clicks.
+		const {hotseat, lifecycle$, loads} = fakeWorld(
+			commitPhase([false, false, false]),
+		);
+		loads.instantly = false;
+		await hotseat.check();
+		await hotseat.begin();
+		expect(get(hotseat)).toEqual({step: 'Switching', to: 0, label: 'Player 1'});
+
+		// The PREVIOUS person's data, still ready, is not this person's.
+		lifecycle$.set({status: 'ready', account: HUMANS[1].address});
+		expect(get(hotseat).step).toBe('Switching');
+
+		lifecycle$.set({status: 'ready', account: HUMANS[0].address});
+		expect(get(hotseat)).toEqual({step: 'Playing', seat: 0, label: 'Player 1'});
+	});
+
+	it('shows the game when the account data failed to load, so the game can say so', async () => {
+		const {hotseat, lifecycle$, loads} = fakeWorld(
+			commitPhase([false, false, false]),
+		);
+		loads.instantly = false;
+		await hotseat.check();
+		await hotseat.begin();
+		lifecycle$.set({
+			status: 'error',
+			account: HUMANS[0].address,
+			error: new Error('unreadable'),
+		});
+		expect(get(hotseat).step).toBe('Playing');
+	});
+
 	it('does not move the device while a press is being handled', async () => {
 		let release = () => {};
 		const switched: string[] = [];
@@ -181,6 +233,12 @@ describe('a hotseat', () => {
 				reveal: async () => {},
 			}),
 			signedIn,
+			accountData: {
+				lifecycle$: writable<AccountDataLifecycle>({
+					status: 'ready',
+					account: HUMANS[0].address,
+				}),
+			},
 		});
 		await hotseat.check();
 		const pressed = hotseat.begin();

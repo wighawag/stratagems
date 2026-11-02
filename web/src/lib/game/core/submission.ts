@@ -28,7 +28,7 @@
  * exactly the moment the tab is busiest. Writing it first means the worst case
  * is a stored secret for a commitment that never landed, which is harmless.
  */
-import {get, writable, type Readable} from 'svelte/store';
+import {get, readable, writable, type Readable} from 'svelte/store';
 import type {
 	CommitRevealAdapter,
 	PlayerIdentity,
@@ -206,6 +206,16 @@ export type SubmissionStore<
 	TExtensions extends object = {},
 > = Readable<SubmissionState<TAction>> & {
 	readonly value: SubmissionState<TAction>;
+	/**
+	 * WHETHER A PLAN WOULD BE TAKEN NOW: the storage's readiness for whoever
+	 * plays (always true for a storage that has none). While it is false the
+	 * submission reads `Idle` and {@link SubmissionStore.plan} drops what it is
+	 * given, because what the storage holds may be a committed turn; that is
+	 * after every account switch, while the new account's data loads. A game
+	 * that plans on a click reads this to refuse the click with a reason,
+	 * rather than doing nothing silently.
+	 */
+	readonly ready: Readable<boolean>;
 	/** Replace what is planned for this cycle. Ignored once committed. */
 	plan(actions: readonly TAction[]): void;
 	/** Send the commitment now, rather than waiting for the phase to close. */
@@ -1274,6 +1284,9 @@ export function createSubmission<
 			return $state;
 		},
 		subscribe: store.subscribe,
+		ready: storage.ready
+			? {subscribe: storage.ready.subscribe}
+			: readable(true),
 		plan,
 		commit,
 		reveal,
