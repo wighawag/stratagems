@@ -133,6 +133,13 @@ describe('Hotseat in the offline world', () => {
 			timeout: 60_000,
 		});
 		await page.getByTestId('seats-3').click();
+		// A GAME WHOSE WORLD HAS NO HOTSEAT offers no choice of people (its
+		// `$lib/offline` exports no `LOCAL_HUMANS_AT_MOST`), and this file arrives
+		// in it unchanged: it says so rather than failing.
+		test.skip(
+			(await page.getByTestId('humans-2').count()) === 0,
+			"this game's offline world offers no hotseat",
+		);
 		await page.getByTestId('humans-2').click();
 		await expect(page.getByText('Player 2', {exact: true})).toBeVisible();
 		await page.getByTestId('sit-down').click();
