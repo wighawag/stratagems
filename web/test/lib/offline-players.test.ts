@@ -16,6 +16,7 @@ import {
 	OFFLINE_DEPLOYMENT,
 	offlineIdentityOf,
 	playedByTheWorld,
+	playedSeatDecider,
 	stakeForOfflinePlayer,
 } from '$lib/offline';
 import {
@@ -25,7 +26,13 @@ import {
 } from '$lib/game/lobby/seats';
 import {costOfPlacements, resolvePlacementConfig} from '$lib/placement/config';
 import {buildPlacementChain} from '$lib/placement/commit-reveal';
-import {createOfflinePlayers, turnFor} from '$lib/offline-players';
+import {
+	createOfflinePlayers,
+	playedTurnCells,
+	turnFor,
+} from '$lib/offline-players';
+import {shareOf} from '$lib/placement/strategy';
+import type {Table} from '$lib/game/lobby/seats';
 // The secret is the FRAMEWORK's now, and asserting against it here is the point
 // rather than an import detail: what a reload has to reproduce is what this
 // world actually committed with.
@@ -589,5 +596,354 @@ describe('the other players in the offline world', () => {
 				args: [first.identity],
 			}),
 		).rejects.toThrow(/CanStillReveal/);
+	});
+});
+
+/**
+ * SEATS AT THE `greedy` LEVEL: the game's strategy asked once per cycle, its
+ * turn stored before the commit and read back by the reveal (stratagems' port
+ * plan, step A1, A1-2 to A1-5 and A1-8).
+ *
+ * The same world as above, with the same keys: a level changes how a seat
+ * plays, never which address it plays as, so `buildWorld` funds them as it
+ * always has.
+ */
+describe('the world seats at the greedy level', () => {
+	const GREEDY_TABLE = tableOf(SEATS_BY_DEFAULT, 1, ['greedy', 'greedy']);
+
+	function memoryStorage() {
+		const map = new Map<string, string>();
+		let failing = false;
+		return {
+			getItem: (key: string) => map.get(key) ?? null,
+			setItem: (key: string, value: string) => {
+				if (failing) throw new Error('the storage refused the write');
+				map.set(key, value);
+			},
+			fail: () => void (failing = true),
+		};
+	}
+
+	/** The world's seats as `$lib/offline` builds them, over `storage`. */
+	async function seatsOf(
+		built: EmbeddedWorld,
+		table: Table,
+		storage: ReturnType<typeof memoryStorage>,
+	) {
+		const played = await playedByTheWorld({env: built.env, table});
+		const decisions: {ms: number; claimed: number; simulated: number}[] = [];
+		const decider = playedSeatDecider(built, played, {
+			storage,
+			onDecided: (measure) => void decisions.push(measure),
+		});
+		const players = createOfflinePlayers({
+			provider: built.provider,
+			deployments: built.deployments,
+			config: resolvePlacementConfig(built.deployments.get()),
+			players: played,
+			...(decider ? {strategy: decider.strategy, turns: decider.turns} : {}),
+		});
+		return {
+			players,
+			played,
+			decisions,
+			decider,
+			dispose: () => decider?.sandbox.dispose(),
+		};
+	}
+
+	/** The human's turn in a cycle, both halves, with the seats acting between. */
+	async function playCycle(
+		built: EmbeddedWorld,
+		players: {tick: () => Promise<void>},
+		humanTurn: {cellID: bigint}[],
+	) {
+		const {send, senderFor} = clientsOf(built);
+		const placement = resolvePlacementConfig(built.deployments.get());
+		const human = senderFor(HUMAN.privateKey);
+		const identity = await offlineIdentityOf({
+			env: built.env,
+			player: HUMAN.address,
+		});
+		const chain = buildPlacementChain({
+			actions: humanTurn,
+			secret: HUMAN_SECRET,
+			actionsPerReveal: placement.actionsPerReveal,
+		});
+		await players.tick();
+		await send(human, {
+			functionName: 'makeCommitment',
+			args: [
+				identity,
+				chain[0].hash,
+				costOfPlacements(placement, humanTurn.length),
+				zeroAddress,
+			],
+		});
+		await send(human, {functionName: 'advanceCycle', args: []});
+		await players.tick();
+		for (const chunk of chain) {
+			await send(human, {
+				functionName: 'reveal',
+				args: [
+					identity,
+					chunk.actions,
+					HUMAN_SECRET,
+					chunk.furtherActions,
+					zeroAddress,
+				],
+			});
+		}
+		await send(human, {functionName: 'advanceCycle', args: []});
+	}
+
+	/** A seat's share of the stake on every cell it holds, summed (A1-8's objective). */
+	async function shareHeldBy(built: EmbeddedWorld, identity: bigint) {
+		const {read} = clientsOf(built);
+		let total = 0n;
+		for (const cellID of playedTurnCells()) {
+			const cell = await read<Cell>('getCell', [cellID]);
+			if (cell.totalStake === 0n) continue;
+			const playerStake = await read<bigint>('getStakeOnCell', [
+				cellID,
+				identity,
+			]);
+			total += shareOf({totalStake: cell.totalStake, playerStake});
+		}
+		return total;
+	}
+
+	it('decides once, stores the turn before committing it, and reveals what it stored', async () => {
+		world = await buildWorld();
+		const {read} = clientsOf(world);
+		const records = world.deployments.get();
+		const placement = resolvePlacementConfig(records);
+		const storage = memoryStorage();
+		const seats = await seatsOf(world, GREEDY_TABLE, storage);
+		expect(seats.played.map((seat) => seat.level)).toEqual([
+			'greedy',
+			'greedy',
+		]);
+
+		await seats.players.tick();
+		await seats.players.tick();
+		expect((await read<Attendance>('getAttendance')).committed).toBe(2n);
+		// ONCE PER SEAT AND CYCLE, however many passes the commit phase sees.
+		expect(seats.decisions).toHaveLength(2);
+
+		const stored: bigint[] = [];
+		for (const seat of seats.played) {
+			const turn = seats.decider?.turns.get(seat.identity, 2);
+			expect(turn).toHaveLength(1);
+			stored.push(turn![0].cellID);
+			// THE HEAD ON CHAIN IS THE STORED TURN'S, under the derived secret.
+			const head = buildPlacementChain({
+				actions: turn!,
+				secret: playedSeatSecret({
+					chainId: records.chain.id,
+					contract: records.contracts.Game.address,
+					identity: seat.identity,
+					cycleNumber: 2,
+				}),
+				actionsPerReveal: placement.actionsPerReveal,
+			})[0].hash;
+			const onChain = await read<Commitment>('getCommitment', [seat.identity]);
+			expect(onChain.hash.toLowerCase()).toBe(head.toLowerCase());
+		}
+		// Every candidate is empty on a new board, so each picked one of the
+		// block's cells, and the seeded random made them differ.
+		expect(new Set(stored).size).toBe(2);
+
+		await playCycle(world, seats.players, [{cellID: HUMAN_CELL}]);
+		expect((await read<Cycle>('getCycle')).cycleNumber).toBe(3n);
+		for (const cellID of stored) {
+			expect(
+				(await read<Cell>('getCell', [cellID])).numClaimants,
+			).toBeGreaterThanOrEqual(1);
+		}
+		seats.dispose();
+	});
+
+	it('reveals its stored turn after a reload in the reveal phase, without deciding again', async () => {
+		world = await buildWorld();
+		const {read, send, senderFor} = clientsOf(world);
+		const storage = memoryStorage();
+		const before = await seatsOf(world, GREEDY_TABLE, storage);
+		await before.players.tick();
+		before.dispose();
+
+		const human = senderFor(HUMAN.privateKey);
+		const identity = await offlineIdentityOf({
+			env: world.env,
+			player: HUMAN.address,
+		});
+		await send(human, {
+			functionName: 'makeCommitment',
+			args: [
+				identity,
+				'0x555555555555555555555555555555555555555555555555',
+				0n,
+				zeroAddress,
+			],
+		});
+		await send(human, {functionName: 'advanceCycle', args: []});
+
+		// THE RELOAD: a new loop, a new sandbox, the same storage.
+		const after = await seatsOf(world, GREEDY_TABLE, storage);
+		await after.players.tick();
+		expect((await read<Attendance>('getAttendance')).revealed).toBe(2n);
+		expect(after.decisions).toHaveLength(0);
+		after.dispose();
+	});
+
+	it('re-decides a lost record in the commit phase, and repairs the head if it differs', async () => {
+		world = await buildWorld();
+		const {read} = clientsOf(world);
+		const first = await seatsOf(world, GREEDY_TABLE, memoryStorage());
+		await first.players.tick();
+		const heads = await Promise.all(
+			first.played.map((seat) =>
+				read<Commitment>('getCommitment', [seat.identity]),
+			),
+		);
+		first.dispose();
+
+		// A STORAGE THAT LOST THE RECORD BUT KEPT THE WORLD. The board has not
+		// moved in the commit phase, so the same seeded input decides the same
+		// turn and the head on chain is left alone.
+		const again = await seatsOf(world, GREEDY_TABLE, memoryStorage());
+		await again.players.tick();
+		expect(again.decisions).toHaveLength(2);
+		for (const [i, seat] of again.played.entries()) {
+			const now = await read<Commitment>('getCommitment', [seat.identity]);
+			expect(now.hash).toBe(heads[i].hash);
+		}
+		expect((await read<Attendance>('getAttendance')).committed).toBe(2n);
+		again.dispose();
+	});
+
+	it('sends nothing when the turn cannot be stored', async () => {
+		world = await buildWorld();
+		const {read} = clientsOf(world);
+		const storage = memoryStorage();
+		const seats = await seatsOf(world, GREEDY_TABLE, storage);
+		storage.fail();
+		await seats.players.tick();
+		expect((await read<Attendance>('getAttendance')).committed).toBe(0n);
+		for (const seat of seats.played) {
+			expect(
+				(await read<Commitment>('getCommitment', [seat.identity])).cycleNumber,
+			).toBe(0n);
+		}
+		seats.dispose();
+	});
+
+	it('decides the same turns in two worlds built from the same inputs', async () => {
+		const turns: (bigint | undefined)[][] = [];
+		for (let run = 0; run < 2; run++) {
+			world = await buildWorld();
+			const seats = await seatsOf(world, GREEDY_TABLE, memoryStorage());
+			await seats.players.tick();
+			turns.push(
+				seats.played.map(
+					(seat) => seats.decider?.turns.get(seat.identity, 2)?.[0]?.cellID,
+				),
+			);
+			seats.dispose();
+			await world.dispose();
+			world = undefined;
+		}
+		expect(turns[0].every((cell) => cell !== undefined)).toBe(true);
+		expect(turns[1]).toEqual(turns[0]);
+	});
+
+	it("holds at least random's share on a seeded board, and strictly more where random's cell is contested", async () => {
+		// THE SAME WORLD TWICE, the first seat greedy in one and random in the
+		// other, everything else equal: the human, the second seat (random in
+		// both) and the chain id. In the contested case the human takes, in the
+		// cycle before, the cell the random seat will play next, so on the board
+		// the second turn is decided on, random's cell is shared and greedy can
+		// see it is.
+		const measured: Record<string, {greedy: bigint; random: bigint}> = {};
+		for (const contested of [false, true]) {
+			const share: Record<string, bigint> = {};
+			for (const level of ['greedy', 'random']) {
+				world = await buildWorld();
+				const records = world.deployments.get();
+				const table = tableOf(SEATS_BY_DEFAULT, 1, [level, 'random']);
+				const seats = await seatsOf(world, table, memoryStorage());
+				const [first] = seats.played;
+				const nextRandomCell = turnFor({
+					game: records.contracts.Game.address,
+					identity: first.identity,
+					cycleNumber: 3,
+				})[0].cellID;
+				await playCycle(world, seats.players, [
+					{cellID: contested ? nextRandomCell : HUMAN_CELL},
+				]);
+				// THE GAIN OF THE TURN DECIDED ON THIS BOARD, and only that one. The
+				// first cycle's turns were decided on an empty board, where neither
+				// level can see what anybody commits beside it (a greedy seat may
+				// meet the human's simultaneous placement, and did: once in a
+				// hundred and sixty-nine).
+				const held = await shareHeldBy(world, first.identity);
+				await playCycle(world, seats.players, [{cellID: HUMAN_CELL}]);
+				share[level] = (await shareHeldBy(world, first.identity)) - held;
+				seats.dispose();
+				await world.dispose();
+				world = undefined;
+			}
+			measured[String(contested)] = {
+				greedy: share.greedy,
+				random: share.random,
+			};
+		}
+		expect(measured['false'].greedy).toBeGreaterThanOrEqual(
+			measured['false'].random,
+		);
+		expect(measured['true'].greedy).toBeGreaterThan(measured['true'].random);
+	});
+
+	it('decides within budget on a board of 30 claimed cells, in one simulation', async () => {
+		// A1-11's measurement, in node: the human claims 30 cells of the block
+		// in one turn (three stakes' worth), then a greedy seat decides on that
+		// board. One `getCellsInZones`, one `getStakeOnCell` per claimed cell,
+		// one `resolvePlacements` over the 169 candidates.
+		world = await buildWorld();
+		const env = world.env as unknown as {
+			get: (name: string) => never;
+			namedAccounts: Record<string, `0x${string}`>;
+			execute: (deployment: never, args: unknown) => Promise<unknown>;
+		};
+		for (let i = 0; i < 2; i++) {
+			await env.execute(env.get('StakeSale'), {
+				account: env.namedAccounts.deployer,
+				functionName: 'purchase',
+				args: [HUMAN.address, zeroAddress, 0n],
+				value: config.data.sale.default.price,
+			});
+		}
+		const cells = playedTurnCells();
+		const claimed = cells.slice(0, 30).map((cellID) => ({cellID}));
+		const random = await seatsOf(world, TABLE, memoryStorage());
+		await playCycle(world, random.players, claimed);
+
+		const seats = await seatsOf(world, GREEDY_TABLE, memoryStorage());
+		await seats.players.tick();
+		expect(seats.decisions).toHaveLength(2);
+		const [decision] = seats.decisions;
+		expect(decision.claimed).toBeGreaterThanOrEqual(30);
+		process.stderr.write(
+			`greedy decision on ${decision.claimed} claimed cells, ${decision.simulated} simulated: ${seats.decisions
+				.map((d) => `${d.ms} ms`)
+				.join(', ')}\n`,
+		);
+		expect(decision.ms).toBeLessThan(500);
+		// It picked a cell nobody held, which is what its objective asks.
+		for (const seat of seats.played) {
+			const [turn] = seats.decider!.turns.get(seat.identity, 3)!;
+			expect(claimed.some((c) => c.cellID === turn.cellID)).toBe(false);
+		}
+		seats.dispose();
 	});
 });

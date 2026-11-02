@@ -23,7 +23,19 @@ import {createIndexedDBPersistence} from 'webevm';
 import {createIndexedDBDeploymentStore} from '@rocketh/web';
 import {createContext} from '$lib/context/index';
 import type {Context} from '$lib/context/types';
-import {createOfflinePlayers, type OfflinePlayer} from '$lib/offline-players';
+import {createPublicClient, custom} from 'viem';
+import {
+	createOfflinePlayers,
+	playedTurnCells,
+	type OfflinePlayer,
+} from '$lib/offline-players';
+import {createPlayedTurnStore, RANDOM_LEVEL} from '$lib/game/core/strategy';
+import {createBytecodeSandbox} from '$lib/game/simulation';
+import {
+	PLACEMENT_LEVELS,
+	createPlacementStrategy,
+} from '$lib/placement/strategy';
+import {PLACEMENT_STORAGE} from '$lib/placement/storage';
 import {pokeWhenTheHumanActs} from '$lib/game/core/played';
 import {
 	MOST_SEATS,
@@ -138,6 +150,22 @@ export const CHAIN_ID_STORAGE_KEY = 'offline-world:chain-id';
  * world does not export it offers no hotseat.
  */
 export const LOCAL_HUMANS_AT_MOST = MOST_SEATS;
+
+/**
+ * THE LEVELS A WORLD SEAT MAY PLAY AT, chosen per seat at the lobby: `random`
+ * (today's derived turn, the default) and `greedy` (`$lib/placement/strategy`).
+ * Read by the byte-identical lobby off this module, as `LOCAL_HUMANS_AT_MOST`
+ * is; a game whose world does not export it offers no choice, and every seat
+ * plays `random`.
+ */
+export const AI_LEVELS = PLACEMENT_LEVELS;
+
+/**
+ * Where a played seat's decided turn is kept, beside this world's other keys:
+ * a storage that lost it has lost the chain id too, and so the world. A WIRE
+ * from its first build, like the record it holds (`$lib/game/core/strategy`).
+ */
+export const PLAYED_TURNS_STORAGE_KEY = 'offline-world:played-turns';
 const PLAY_MONEY = 10n ** 24n;
 
 /**
@@ -452,14 +480,17 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 	 * while nothing is on screen. The WORLD still outlives the page (the chain
 	 * is not disposed when a router navigates away); what stops is the playing.
 	 */
+	const played = await playedByTheWorld({env: world.env, table});
+	const decider = playedSeatDecider(world, played);
 	const players = createOfflinePlayers({
 		provider: world.provider,
 		deployments: world.deployments,
 		config: resolvePlacementConfig(world.deployments.get()),
-		players: await playedByTheWorld({env: world.env, table}),
+		players: played,
 		// A played commit can complete unanimity just as the human's can, and the
 		// advance client would otherwise find out on its own one-second poll.
 		onActed: () => void context.context.game.cycleAdvance.check(),
+		...(decider ? {strategy: decider.strategy, turns: decider.turns} : {}),
 	});
 
 	const ready: OfflineWorldStatus = {
@@ -481,6 +512,9 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 					stopRevealer();
 					stopPoke();
 					stopPlayers();
+					// The seats' sandbox stops with the board; a later decision starts
+					// it again.
+					decider?.sandbox.dispose();
 					stopContext();
 				};
 			},
@@ -491,8 +525,69 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 	return ready;
 }
 
+/**
+ * HOW THE WORLD'S SEATS DECIDE, when one of them plays at a level other than
+ * `random`: the game's strategy over the world's own provider, scored by the
+ * `Simulation` route's bytecode in a sandbox of the seats' own (not the
+ * player's preview sandbox, which is the game context's and rebuilt with it),
+ * and the store their decided turns are kept in. Undefined when every seat
+ * plays `random`, so such a world builds no sandbox and stores nothing.
+ *
+ * EXPORTED for the world test, which builds the seats exactly as this does.
+ * Handed the provider and nothing of the page (PA6): no context, no
+ * submission, no handover.
+ */
+export function playedSeatDecider(
+	world: Pick<EmbeddedWorld, 'provider' | 'deployments'>,
+	played: readonly OfflinePlayer[],
+	options: {
+		storage?: Pick<Storage, 'getItem' | 'setItem'>;
+		onDecided?: (measure: {
+			ms: number;
+			claimed: number;
+			simulated: number;
+		}) => void;
+	} = {},
+) {
+	if (played.every((seat) => (seat.level ?? RANDOM_LEVEL) === RANDOM_LEVEL)) {
+		return undefined;
+	}
+	const records = world.deployments.get();
+	const contract = {
+		address: records.contracts.Game.address,
+		abi: records.contracts.Game.abi,
+	};
+	const sandbox = createBytecodeSandbox({
+		provider: world.provider as never,
+		contracts: {
+			rules: {
+				address:
+					records.contracts.Game_Implementation_Router_Simulation_Route.address,
+			},
+		},
+	});
+	const strategy = createPlacementStrategy({
+		publicClient: createPublicClient({
+			chain: worldChain(world),
+			transport: custom(world.provider as never),
+		}),
+		sandbox,
+		contract,
+		candidates: playedTurnCells(),
+		onDecided: options.onDecided,
+	});
+	const turns = createPlayedTurnStore({
+		storage: options.storage ?? localStorage,
+		key: PLAYED_TURNS_STORAGE_KEY,
+		chainId: records.chain.id,
+		contract: contract.address,
+		format: PLACEMENT_STORAGE,
+	});
+	return {strategy, turns, sandbox};
+}
+
 /** The world's chain as viem wants it, for the clients the world's own loops build. */
-function worldChain(world: EmbeddedWorld) {
+function worldChain(world: Pick<EmbeddedWorld, 'deployments'>) {
 	const records = world.deployments.get();
 	return {
 		id: records.chain.id,
@@ -907,6 +1002,7 @@ export async function playedByTheWorld(params: {
 				env: params.env,
 				player: played.address,
 			}),
+			...(played.level !== undefined ? {level: played.level} : {}),
 		});
 	}
 	return resolved;
