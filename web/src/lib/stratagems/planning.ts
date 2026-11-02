@@ -121,6 +121,13 @@ export const REFUSED_LIMIT = 'That is as many moves as one turn can hold.';
  */
 export const REFUSED_LOADING =
 	'The board is still loading. Try again in a moment.';
+/**
+ * A click while the account's data loads (after every account switch, a
+ * hotseat handover's included, step H1b): the submission takes no plan until
+ * it has (`SubmissionStore.ready`), so it is refused and said, like the board's.
+ */
+export const REFUSED_ACCOUNT_LOADING =
+	"Your account's data is still loading. Try again in a moment.";
 
 /** The cell the player last clicked, and what may be done with it. */
 export type SelectedCell = {
@@ -179,8 +186,9 @@ export function createPlanning(params: {
 			player: $identity,
 		}),
 	);
-	const canPlan = derived(submission, ($submission) =>
-		isPlannable($submission),
+	const canPlan = derived(
+		[submission, submission.ready],
+		([$submission, $ready]) => $ready && isPlannable($submission),
 	);
 	const count = derived(actions, ($actions) => $actions.length);
 	const atLimit = derived(
@@ -237,6 +245,12 @@ export function createPlanning(params: {
 	function click(position: bigint) {
 		const player = get(identity);
 		if (!player) return;
+		// Before the submission's `Idle` is believed: while the account's data
+		// loads it reads `Idle` and drops a plan.
+		if (!get(submission.ready)) {
+			refuse(position, REFUSED_ACCOUNT_LOADING);
+			return;
+		}
 		if (!isPlannable(submission.value)) {
 			refuse(position, REFUSED_COMMITTED);
 			return;
@@ -276,7 +290,7 @@ export function createPlanning(params: {
 
 	function remove(position: bigint) {
 		const player = get(identity);
-		if (!player || !isPlannable(submission.value)) return;
+		if (!player || !get(canPlan)) return;
 		if (judge(position, get(board), player)?.kind !== 'remove') return;
 		const current = movesOf(submission.value);
 		if (current.some((move) => move.position === position)) return;
@@ -289,7 +303,7 @@ export function createPlanning(params: {
 	}
 
 	function clear() {
-		if (!isPlannable(submission.value)) return;
+		if (!get(canPlan)) return;
 		submission.plan([]);
 	}
 

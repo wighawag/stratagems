@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {get, writable, type Readable} from 'svelte/store';
+import {get, writable, type Readable, type Writable} from 'svelte/store';
 import {Color} from 'stratagems-common';
 import type {SubmissionState, SubmissionStore} from '$lib/game/core/submission';
 import type {GameIdentity} from '$lib/game/identity';
@@ -11,6 +11,7 @@ import {
 	REFUSED_EVIL,
 	REFUSED_LIMIT,
 	REFUSED_LOADING,
+	REFUSED_ACCOUNT_LOADING,
 	REFUSED_OTHERS,
 } from '$lib/stratagems/planning';
 import {ALICE, BOB, MAX_LIFE, at, boardAfter, boardStore} from './board';
@@ -74,6 +75,8 @@ function fakeSubmission(initial: SubmissionState<Move> = {step: 'Idle'}) {
 	const state = writable<SubmissionState<Move>>(initial);
 	return {
 		subscribe: state.subscribe,
+		// the account's data loaded (`SubmissionStore.ready`)
+		ready: writable(true),
 		get value() {
 			return get(state);
 		},
@@ -87,6 +90,7 @@ function fakeSubmission(initial: SubmissionState<Move> = {step: 'Idle'}) {
 		},
 	} as unknown as SubmissionStore<GameIdentity, Move> & {
 		set(state: SubmissionState<Move>): void;
+		ready: Writable<boolean>;
 	};
 }
 
@@ -202,6 +206,25 @@ describe('what a click means', () => {
 			reason: REFUSED_LOADING,
 		});
 		board.set(BOARD);
+		planning.click(at(9, 9));
+		expect(moves(submission)).toHaveLength(1);
+	});
+
+	it("refuses a click while the account's data loads, saying so, and plans once it has", () => {
+		// After every account switch (a hotseat handover's included) the
+		// submission reads `Idle` and drops a plan until the new account's data
+		// has loaded: said, rather than a cell selected and nothing planned.
+		const {submission, planning} = setup();
+		submission.ready.set(false);
+		expect(get(planning.canPlan)).toBe(false);
+		planning.click(at(9, 9));
+		expect(moves(submission)).toEqual([]);
+		expect(get(planning.selected)).toMatchObject({
+			position: at(9, 9),
+			reason: REFUSED_ACCOUNT_LOADING,
+		});
+		submission.ready.set(true);
+		expect(get(planning.canPlan)).toBe(true);
 		planning.click(at(9, 9));
 		expect(moves(submission)).toHaveLength(1);
 	});
