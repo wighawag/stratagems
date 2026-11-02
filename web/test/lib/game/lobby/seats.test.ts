@@ -4,7 +4,10 @@ import {
 	MOST_SEATS,
 	SEATS_BY_DEFAULT,
 	SEAT_CHOICES,
+	clampHumans,
 	clampSeats,
+	humansAtThisDevice,
+	localRevealerKey,
 	seatsPlayedByTheWorld,
 	tableOf,
 } from '$lib/game/lobby/seats';
@@ -89,5 +92,52 @@ describe('the seats at a table', () => {
 		expect(SEAT_CHOICES[SEAT_CHOICES.length - 1]).toBe(MOST_SEATS);
 		expect(SEAT_CHOICES).toEqual([...SEAT_CHOICES].sort((a, b) => a - b));
 		for (const choice of SEAT_CHOICES) expect(clampSeats(choice)).toBe(choice);
+	});
+});
+
+describe('people at this device (hotseat)', () => {
+	it('seats them after you, each at their account in the wallet, and gives the world the rest', () => {
+		const table = tableOf(5, 3);
+		expect(table.map((seat) => seat.occupant)).toMatchObject([
+			{kind: 'you'},
+			{kind: 'local-human', account: 1},
+			{kind: 'local-human', account: 2},
+			{kind: 'the-world'},
+			{kind: 'the-world'},
+		]);
+		expect(humansAtThisDevice(table)).toEqual([
+			{seat: 0, account: 0},
+			{seat: 1, account: 1},
+			{seat: 2, account: 2},
+		]);
+	});
+
+	it('keeps the world playing the keys it plays without hotseat', () => {
+		// The world's seats are keyed by their place among the WORLD'S seats, so
+		// a table of one person plays exactly the addresses it always has.
+		expect(seatsPlayedByTheWorld(tableOf(4, 2))).toEqual(
+			seatsPlayedByTheWorld(tableOf(3, 1)),
+		);
+	});
+
+	it('is one person unless more were asked for, and never more than the seats or the game can play', () => {
+		expect(tableOf(4).filter((s) => s.occupant.kind === 'local-human')).toEqual(
+			[],
+		);
+		expect(clampHumans(undefined, 4, 4)).toBe(1);
+		expect(clampHumans('garbage', 4, 4)).toBe(1);
+		expect(clampHumans(0, 4, 4)).toBe(1);
+		expect(clampHumans(9, 4, 10)).toBe(4);
+		expect(clampHumans(3, 4, 2)).toBe(2);
+		expect(clampHumans(3, 4)).toBe(1);
+	});
+
+	it('gives the revealer a key no seat can have', () => {
+		const revealer = localRevealerKey();
+		const everyone = seatsPlayedByTheWorld(tableOf(MOST_SEATS)).map(
+			(p) => p.address,
+		);
+		expect(everyone).not.toContain(revealer.address);
+		expect(revealer.privateKey).toMatch(/^0x[0-9a-f]{64}$/);
 	});
 });
