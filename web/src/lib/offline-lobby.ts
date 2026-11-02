@@ -1,4 +1,5 @@
 import {createLobby, type LobbyStore} from '$lib/game/lobby/lobby';
+import type {AiLevel} from '$lib/game/core/strategy';
 import {createWorldClaim, letGoOfWorld} from '$lib/embedded/claim';
 import * as offline from '$lib/offline';
 import {CHAIN_ID_STORAGE_KEY, startOfflineWorld} from '$lib/offline';
@@ -56,6 +57,25 @@ const LOCAL_HUMANS_AT_MOST =
 		: 1;
 
 /**
+ * Each world seat's level, as a JSON array of level ids. A wire like the seats
+ * key, beside it, and read as every seat `random` when absent: every world
+ * built before levels played `random`.
+ */
+const LEVELS_STORAGE_KEY = 'offline-world:levels';
+
+/**
+ * THE LEVELS THIS GAME'S WORLD SEATS MAY PLAY AT, which its `$lib/offline`
+ * says by exporting `AI_LEVELS` (its world is what plays them, with the game's
+ * own strategy). Read off the module for the reason `LOCAL_HUMANS_AT_MOST` is:
+ * a game whose world offers none declares nothing, and this file stays one git
+ * object in every game.
+ */
+const AI_LEVELS: readonly AiLevel[] =
+	'AI_LEVELS' in offline
+		? ((offline as unknown as {AI_LEVELS?: readonly AiLevel[]}).AI_LEVELS ?? [])
+		: [];
+
+/**
  * The boot this tab started, if any: what letting the world go waits for.
  *
  * Kept HERE rather than read off the world's status store, because the lobby is
@@ -110,6 +130,8 @@ const lobby: LobbyStore = createLobby({
 	seatsStorageKey: SEATS_STORAGE_KEY,
 	humansStorageKey: HUMANS_STORAGE_KEY,
 	humansAtMost: LOCAL_HUMANS_AT_MOST,
+	levelsStorageKey: LEVELS_STORAGE_KEY,
+	levels: AI_LEVELS,
 });
 
 /**
