@@ -36,6 +36,8 @@ const BENEFICIARY_ADDRESS = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8';
 // development accounts from the third on, `$lib/game/lobby/seats`), as the
 // world's generated wallet is not.
 const HUMAN = '0x00000000000000000000000000000000000a11ce' as const;
+/** A second person at this device (hotseat), as the wallet's second account. */
+const SECOND_HUMAN = '0x0000000000000000000000000000000000000b0b' as const;
 
 let world: EmbeddedWorld | undefined;
 afterEach(async () => {
@@ -222,6 +224,60 @@ describe('stratagems\u2019 offline world', () => {
 		expect(MOST_SEATS).toBeGreaterThan(SEATS_BY_DEFAULT);
 		await stakesEverySeat(MOST_SEATS);
 	}, 60_000);
+
+	/**
+	 * HOTSEAT (step H2): two people at this device and one seat the world plays,
+	 * each person staked as their own account in the world's wallet, and each
+	 * only once, since provisioning runs again on every restore.
+	 */
+	it('stakes every person at this device as their own account, once', async () => {
+		const table = tableOf(3, 2);
+		const humans = [HUMAN, SECOND_HUMAN] as const;
+		world = await buildWorld({
+			provision: async ({env}) => {
+				await stakeForEveryoneInTheWorld({env, player: HUMAN, humans, table});
+			},
+		});
+		// as a restore runs it again
+		await stakeForEveryoneInTheWorld({
+			env: world.env,
+			player: HUMAN,
+			humans,
+			table,
+		});
+		const read = reader(world);
+		const deployments = world.deployments.get();
+		const {stakeAmount} = resolveStratagemsConfig(deployments as never);
+
+		const attendance = (await read(deployments.contracts.Stratagems, {
+			functionName: 'getAttendance',
+		})) as {waitedFor: bigint};
+		expect(attendance.waitedFor).toBe(3n);
+		for (const player of [
+			...humans,
+			...seatsPlayedByTheWorld(table).map((seat) => seat.address),
+		]) {
+			expect(
+				await read(deployments.contracts.Stratagems, {
+					functionName: 'getReserve',
+					args: [BigInt(player)],
+				}),
+				player,
+			).toBe(stakeAmount);
+		}
+	}, 60_000);
+
+	it('refuses a person at this device who has no account to stake for', async () => {
+		world = await buildWorld();
+		await expect(
+			stakeForEveryoneInTheWorld({
+				env: world.env,
+				player: HUMAN,
+				humans: [HUMAN],
+				table: tableOf(3, 2),
+			}),
+		).rejects.toThrow(/no account/);
+	});
 
 	it('does NOT hand out a second stake when the world is restored', async () => {
 		world = await buildWorld({

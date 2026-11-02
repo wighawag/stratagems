@@ -13,7 +13,10 @@ import {
 } from '$lib/embedded';
 import {mintChainId, rememberChainId} from '$lib/embedded/chain-id';
 import {startEmbeddedNode} from '$lib/embedded/node';
-import {announceEmbeddedWallet} from '$lib/embedded/wallet';
+import {
+	announceEmbeddedWallet,
+	type EmbeddedWallet,
+} from '$lib/embedded/wallet';
 import {createIndexedDBPersistence} from 'webevm';
 import {createIndexedDBDeploymentStore} from '@rocketh/web';
 import {isTableContract} from '$lib/stratagems/table';
@@ -21,7 +24,22 @@ import {createContext} from '$lib/context/index';
 import type {Context} from '$lib/context/types';
 import {createOfflinePlayers, type OfflinePlayer} from '$lib/offline-players';
 import {pokeWhenTheHumanActs} from '$lib/game/core/played';
-import {seatsPlayedByTheWorld, type Table} from '$lib/game/lobby/seats';
+import {
+	MOST_SEATS,
+	humansAtThisDevice,
+	localRevealerKey,
+	seatsPlayedByTheWorld,
+	type Table,
+} from '$lib/game/lobby/seats';
+import {createLocalRevealer} from '$lib/game/core/local-revealer';
+import {
+	createHotseat,
+	createHotseatChainReader,
+	showHotseat,
+	signInAs,
+	signedInAs,
+	type HotseatHuman,
+} from '$lib/game/lobby/hotseat';
 import {authoriseTheBrowsersKey} from '$lib/game/acquire';
 import {resolveStratagemsConfig} from '$lib/stratagems/game-config';
 import {deleteWorldIndex} from '$lib/indexer';
@@ -60,6 +78,12 @@ import {INDEXER_PREFIX} from '$lib/stratagems/board/prefix';
  * 4. **Who else is in it**: the table the lobby laid out, played by
  *    `$lib/offline-players`, which tops a seat up from the distributor rather
  *    than freezing the board when its gems run out (P5).
+ * 5. **Hotseat** (step H2): several people at this device, as many as the
+ *    lobby was told when the world was created (`LOCAL_HUMANS_AT_MOST` is the
+ *    cap), each their own account in the world's wallet, staked, authorised and
+ *    their browser key funded like the one human's; a local revealer sends their
+ *    reveals, and the framework's handover passes the device between them
+ *    (`$lib/game/lobby/hotseat`). The composition is the template's world's.
  *
  * THE WORLD'S BOARD IS INDEXED IN THIS TAB, by its own worker and into a
  * database of its own kept across reloads (`$lib/indexer/worker-choice`, P8). Its
@@ -93,6 +117,14 @@ export const CHAIN_ID_STORAGE_KEY = 'offline-world:chain-id';
  */
 const INDEXED_CHAIN_ID_STORAGE_KEY = 'offline-world:indexed-chain-id';
 const PLAY_MONEY = 10n ** 24n;
+
+/**
+ * HOTSEAT: how many people at this device this world can play, each their own
+ * account in the world's wallet. Every seat may be one (H2-2: how many is
+ * chosen when the world is created; this is only the cap). Read by the
+ * byte-identical lobby off this module (`$lib/offline-lobby`).
+ */
+export const LOCAL_HUMANS_AT_MOST = MOST_SEATS;
 
 /**
  * THE DEPLOYMENT AN OFFLINE GAME IS, as one exported value, so the world test
@@ -361,6 +393,8 @@ async function openWorld(
 }
 
 let announced: (() => void) | undefined;
+/** The wallet provisioning announced: the world switches its accounts in hotseat. */
+let announcedWallet: EmbeddedWallet | undefined;
 
 /**
  * WHAT AN OFFLINE PLAYER OF STRATAGEMS IS GIVEN: a wallet (the world's own),
@@ -377,15 +411,20 @@ async function provisionOfflinePlayer(params: {
 	const {env, node, table} = params;
 
 	status.set({step: 'Booting', what: 'handing the player a wallet'});
+	const humans = humansAtThisDevice(table);
 	const wallet = await announceEmbeddedWallet({
 		provider: node.provider as never,
 		chainId: params.chainId,
+		accounts: humans.length,
 	});
 	announced = wallet.cleanup;
+	announcedWallet = wallet;
 
 	for (const account of [
 		...wallet.accounts,
 		...seatsPlayedByTheWorld(table).map((seat) => seat.address),
+		// the revealer's own key, which only a hotseat world uses
+		...(humans.length > 1 ? [localRevealerKey().address] : []),
 	]) {
 		await node.provider.request({
 			method: 'evm_setBalance',
@@ -397,6 +436,7 @@ async function provisionOfflinePlayer(params: {
 	await stakeForEveryoneInTheWorld({
 		env,
 		player: wallet.accounts[0],
+		humans: wallet.accounts,
 		table,
 	});
 
@@ -413,18 +453,26 @@ export async function stakeForEveryoneInTheWorld(params: {
 	env: EmbeddedWorld['env'];
 	/** The human's address, which exists once the wallet is announced. */
 	player: `0x${string}`;
+	/**
+	 * Every person at this device, by their account in the world's wallet (a
+	 * `local-human` seat names its index here). Absent, the table has none.
+	 */
+	humans?: readonly `0x${string}`[];
 	table: Table;
 }): Promise<void> {
 	for (const seat of params.table) {
 		// A remote human stakes for themselves, at a table online; an offline
 		// world has none.
 		if (seat.occupant.kind === 'remote-human') continue;
-		// Nor any other person at this device: this world offers no hotseat yet
-		// (it exports no `LOCAL_HUMANS_AT_MOST`; step H2 of the port plan), so
-		// its lobby seats none.
-		if (seat.occupant.kind === 'local-human') continue;
 		const player =
-			seat.occupant.kind === 'you' ? params.player : seat.occupant.address;
+			seat.occupant.kind === 'you'
+				? params.player
+				: seat.occupant.kind === 'local-human'
+					? params.humans?.[seat.occupant.account]
+					: seat.occupant.address;
+		if (!player) {
+			throw new Error('a person at this device has no account to stake for');
+		}
 		await stakeForOfflinePlayer({env: params.env, player});
 	}
 }
