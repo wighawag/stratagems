@@ -42,6 +42,7 @@ import {
 } from 'viem';
 import type {ChainProvider} from '$lib/game/core/played';
 import type {Context} from '$lib/context/types';
+import type {AccountDataLifecycle} from '$lib/account/lifecycle';
 
 /** One person at the device, in seat order. */
 export type HotseatHuman = {
@@ -212,6 +213,22 @@ export async function signInAs(params: {
 	await until(connection, signedIn, `the signature of ${params.address}`);
 }
 
+/**
+ * WHETHER `address`'s ACCOUNT DATA HAS LOADED: ready, or failed (the game then
+ * says it could not read the data, which a covering screen would hide). The
+ * account is compared, not only the status: right after a switch the lifecycle
+ * can still be the PREVIOUS person's `ready`.
+ */
+function dataLoadedFor(
+	lifecycle: AccountDataLifecycle,
+	address: `0x${string}`,
+): boolean {
+	return (
+		(lifecycle.status === 'ready' || lifecycle.status === 'error') &&
+		lifecycle.account.toLowerCase() === address.toLowerCase()
+	);
+}
+
 /** The account a connection is signed in as, lowercased, or undefined. */
 export function signedInAs(
 	connection: WorldConnection,
@@ -237,6 +254,13 @@ export function createHotseat(params: {
 	 * person who has the device: see {@link signedInAs}.
 	 */
 	signedIn: Readable<string | undefined>;
+	/**
+	 * The world's account data (the context's `accountData`): the game is shown
+	 * only once the data of the person with the device has loaded, since until
+	 * then their submission reads `Idle` and drops every plan
+	 * (`SubmissionStore.ready`), so a board shown earlier ignores their clicks.
+	 */
+	accountData: {lifecycle$: Readable<AccountDataLifecycle>};
 	pollInterval?: number;
 }): Hotseat {
 	const {humans, revealer, submission} = params;
@@ -258,20 +282,30 @@ export function createHotseat(params: {
 	 * landing after a later switch) would otherwise put that somebody's turn on
 	 * screen; covered in the same update, it never reaches the game, and the
 	 * switch below puts the right account back.
+	 *
+	 * AND ONLY ONCE THAT PERSON'S ACCOUNT DATA HAS LOADED (stratagems' port plan,
+	 * step H1b): until then their submission reads `Idle` and drops every plan,
+	 * so a board shown earlier ignores their clicks without a word. The handover
+	 * stays `Switching` meanwhile, as H1-8 decided it would.
 	 */
-	const shown = derived([state, params.signedIn], ([current, account]) => {
-		if (
-			current.step === 'Playing' &&
-			account?.toLowerCase() !== humans[current.seat].address.toLowerCase()
-		) {
-			return {
-				step: 'Switching',
-				to: current.seat,
-				label: current.label,
-			} satisfies HotseatState;
-		}
-		return current;
-	});
+	const shown = derived(
+		[state, params.signedIn, params.accountData.lifecycle$],
+		([current, account, lifecycle]) => {
+			if (
+				current.step === 'Playing' &&
+				(account?.toLowerCase() !==
+					humans[current.seat].address.toLowerCase() ||
+					!dataLoadedFor(lifecycle, humans[current.seat].address))
+			) {
+				return {
+					step: 'Switching',
+					to: current.seat,
+					label: current.label,
+				} satisfies HotseatState;
+			}
+			return current;
+		},
+	);
 
 	/** Put the right account back under the person who has the device. */
 	async function heal(): Promise<void> {
