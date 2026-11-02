@@ -126,9 +126,14 @@ async function playOneCell(
 	page: Page,
 	offset: {x: number; y: number},
 ): Promise<string> {
+	// A turn of a past cycle shown as `Revealed` is a state to plan from, like
+	// `Idle`: whether a person comes back to it or to `Idle` depends on when
+	// their record was restored against the chain, which differs by branch
+	// (on `with/nft-identity` the identity is an avatar, resolved after the
+	// account switch).
 	await expect
 		.poll(async () => (await planned(page)).submission, {timeout: 60_000})
-		.toMatch(/Idle|Planning/);
+		.toMatch(/Idle|Planning|Revealed/);
 	await clickCanvas(page, offset);
 	await expect
 		.poll(async () => (await planned(page)).actions.length, {timeout: 15_000})
