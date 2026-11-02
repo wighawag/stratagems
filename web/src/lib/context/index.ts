@@ -21,6 +21,7 @@ import {createCoreContext, type ConnectionFactory} from './core.js';
 import * as app from '$app-specific';
 import {createAppContext, SIGNER_GRANT} from '$app-specific';
 import type {Context} from './types.js';
+import type {PlayerIdentity, RevealScheduler} from '$lib/game/core/seams';
 import {params} from '$lib';
 import {deployments} from '$lib/deployments-store';
 import {establishRemoteConnection} from '$lib/core/connection/remote';
@@ -73,6 +74,11 @@ export type {
  */
 export function createContext(options?: {
 	establishConnection?: ConnectionFactory;
+	/**
+	 * Who reveals for this world's players, when the world has someone (a
+	 * hotseat world's local revealer): see `CoreServices.scheduler`.
+	 */
+	scheduler?: RevealScheduler<PlayerIdentity>;
 }): {
 	context: Context;
 	start: () => () => void;
@@ -94,5 +100,6 @@ export function createContext(options?: {
 			options?.establishConnection ??
 			(table && lobby ? establishTableConnection(lobby, table) : undefined),
 		table,
+		...(options?.scheduler ? {scheduler: options.scheduler} : {}),
 	});
 }

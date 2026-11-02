@@ -195,6 +195,32 @@ describe('a commitment that was never revealed', () => {
 		expect(writes).toEqual([]);
 	});
 
+	it('drops what it read about somebody who stopped playing while it read', async () => {
+		// AN ACCOUNT SWITCH DURING A CHECK (hotseat's handovers switch back to
+		// back): the previous identity's live commitment must not be published
+		// for the new one, which would read as a turn this browser lost.
+		const {deps, identity} = fakeDeps({
+			commitment: {cycleNumber: 12n, bond: 5n * 10n ** 18n},
+			currentCycleNumber: 12n,
+		});
+		const read = deps.publicClient as unknown as {
+			readContract: (r: {functionName: string}) => Promise<unknown>;
+		};
+		const original = read.readContract;
+		read.readContract = async (request) => {
+			const answer = await original(request);
+			if (request.functionName === 'getCommitment') {
+				(identity as unknown as {set(v: unknown): void}).set(
+					'0x2222222222222222222222222222222222222222',
+				);
+			}
+			return answer;
+		};
+		const store = createMissedReveal({deps, config, identity});
+		await store.check();
+		expect(get(store.commitment)).toBeUndefined();
+	});
+
 	it('reports nothing when there is no commitment at all', async () => {
 		const {deps, identity} = fakeDeps({
 			commitment: {cycleNumber: 0n, bond: 0n},

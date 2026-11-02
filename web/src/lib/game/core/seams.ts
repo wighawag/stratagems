@@ -279,8 +279,15 @@ export type SchedulerPayment = {payee: `0x${string}`; value: bigint};
 export type RevealScheduleRequest<TIdentity extends PlayerIdentity> = {
 	identity: TIdentity;
 	cycleNumber: number;
-	/** Chain time, in seconds, at which the reveal phase opens. */
-	revealDueAt: number;
+	/**
+	 * Chain time, in seconds, at which the reveal phase opens. UNDEFINED ON A
+	 * MANUALLY ADVANCED CHAIN, which has no clock: there the reveal is due
+	 * whenever the phase is pushed open, so only a scheduler that watches the
+	 * chain (a local revealer in a hotseat world) can take it, and one that
+	 * needs a time (fuzd) refuses it in `prepare`, which leaves the turn
+	 * unscheduled and revealed by this browser, as without a scheduler.
+	 */
+	revealDueAt?: number;
 	/** The reveal, one transaction per chunk, in the order they must land. */
 	transactions: readonly RevealTransaction[];
 };
