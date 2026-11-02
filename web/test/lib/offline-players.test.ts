@@ -865,6 +865,20 @@ describe('the world seats at the greedy level', () => {
 		// the second turn is decided on, random's cell is shared and greedy can
 		// see it is.
 		const measured: Record<string, {greedy: bigint; random: bigint}> = {};
+		{
+			world = await buildWorld();
+			const placement = resolvePlacementConfig(world.deployments.get());
+			await world.dispose();
+			world = undefined;
+			if (placement.placementCost === 0n) {
+				// THE BRANCH WHERE A PLACEMENT IS FREE, said rather than hidden
+				// behind a green run: no stake ever moves there, so every share is
+				// zero, every candidate ties, and greedy plays a seeded-random cell
+				// of the block. There is nothing for it to beat.
+				expect(costOfPlacements(placement, 99)).toBe(0n);
+				return;
+			}
+		}
 		for (const contested of [false, true]) {
 			const share: Record<string, bigint> = {};
 			for (const level of ['greedy', 'random']) {
@@ -915,7 +929,11 @@ describe('the world seats at the greedy level', () => {
 			namedAccounts: Record<string, `0x${string}`>;
 			execute: (deployment: never, args: unknown) => Promise<unknown>;
 		};
-		for (let i = 0; i < 2; i++) {
+		// Where a placement costs, a stake buys ten, so the human buys two more.
+		// Where it is free (and there is no sale), thirty cost nothing.
+		const free =
+			resolvePlacementConfig(world.deployments.get()).placementCost === 0n;
+		for (let i = 0; !free && i < 2; i++) {
 			await env.execute(env.get('StakeSale'), {
 				account: env.namedAccounts.deployer,
 				functionName: 'purchase',
@@ -939,8 +957,9 @@ describe('the world seats at the greedy level', () => {
 				.join(', ')}\n`,
 		);
 		expect(decision.ms).toBeLessThan(500);
-		// It picked a cell nobody held, which is what its objective asks.
-		for (const seat of seats.played) {
+		// It picked a cell nobody held, which is what its objective asks (where
+		// a placement costs: where it is free every share is zero and it ties).
+		for (const seat of free ? [] : seats.played) {
 			const [turn] = seats.decider!.turns.get(seat.identity, 3)!;
 			expect(claimed.some((c) => c.cellID === turn.cellID)).toBe(false);
 		}

@@ -35,6 +35,12 @@
  * (every empty cell scores the same) are broken by the seat's seeded random, so
  * two greedy seats rarely pick the same empty cell and a test reproduces.
  *
+ * WHERE A PLACEMENT IS FREE (`with/nft-identity`, whose stake is custody of
+ * a token) no stake ever moves, every share is zero and every candidate ties,
+ * so greedy plays a seeded-random cell of the block there. That is the honest
+ * consequence of an objective about stake on a branch without one, and it
+ * still exercises the seam.
+ *
  * WHAT IT SEES (PA6): the board on chain and the simulation. It is handed a
  * public client on the world's provider and the sandbox, and nothing else.
  */
