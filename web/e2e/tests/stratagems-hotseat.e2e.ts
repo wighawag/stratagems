@@ -43,8 +43,10 @@ const REVEALER = mnemonicToAccount(
 
 /**
  * Each person's two moves a cycle: outside the block the world's seats play
- * in, on screen, apart from each other's (so no fight between the two
- * people's cells decides what the board shows), and new each cycle.
+ * in, on screen and clear of the HUD (the left half of the board's lower half
+ * is under it, where a click never reaches the canvas), apart from each
+ * other's (so no fight between the two people's cells decides what the board
+ * shows), and new each cycle.
  */
 const CELLS = {
 	first: [
@@ -59,12 +61,12 @@ const CELLS = {
 	],
 	second: [
 		[
-			{x: -9, y: 0},
-			{x: -9, y: 3},
+			{x: 9, y: -6},
+			{x: 9, y: -9},
 		],
 		[
-			{x: -10, y: 0},
-			{x: -10, y: 3},
+			{x: 10, y: -6},
+			{x: 10, y: -9},
 		],
 	],
 } as const;
@@ -75,6 +77,7 @@ type Shown = {
 	account?: string;
 	cycleNumber?: number;
 	viewLoaded: boolean;
+	accountDataReady: boolean;
 	delegation: string;
 	submission: string;
 	planned: number;
@@ -92,11 +95,13 @@ async function shown(page: Page): Promise<Shown | undefined> {
 		const account = read(context.account);
 		const onchain = read(context.onchainState);
 		const delegation = read(context.delegation);
+		const lifecycle = read(context.accountData.lifecycle$);
 		const cells = view && view.step === 'Loaded' ? [...view.cells.entries()] : [];
 		return {
 			account: account ? account.toLowerCase() : undefined,
 			cycleNumber: onchain && onchain.step === 'Loaded' ? onchain.cycleNumber : undefined,
 			viewLoaded: !!view && view.step === 'Loaded',
+			accountDataReady: !!lifecycle && lifecycle.status === 'ready',
 			delegation: delegation.step !== 'Loaded' ? delegation.step : delegation.allowed === true ? 'allowed' : 'refused',
 			submission: submission.step,
 			planned: 'actions' in submission ? submission.actions.length : 0,
@@ -176,9 +181,10 @@ async function play(page: Page, cells: readonly Cell[]): Promise<void> {
 	await expect
 		.poll(async () => (await shown(page))?.submission, {timeout: 60_000})
 		.toMatch(/Idle|Planning|Revealed/);
-	// Once this person's key is authorised and the board the moves are judged
-	// against has loaded: a click before then is dropped (stratagems' offline
-	// suite).
+	// Once this person's key is authorised, the board the moves are judged
+	// against has loaded (a click before then is dropped: stratagems' offline
+	// suite), and their account data has loaded after the switch: until then the
+	// submission reads `Idle` and drops a plan (`submission.ts`, `plan`).
 	await expect
 		.poll(
 			async () => {
@@ -186,6 +192,7 @@ async function play(page: Page, cells: readonly Cell[]): Promise<void> {
 				return (
 					now?.delegation === 'allowed' &&
 					now.viewLoaded &&
+					now.accountDataReady &&
 					now.cycleNumber !== undefined
 				);
 			},
