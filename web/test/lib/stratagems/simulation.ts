@@ -13,6 +13,7 @@ import type {ContractCell} from 'stratagems-common';
 import {createBytecodeSandbox} from '$lib/game/simulation';
 import type {Move} from '$lib/stratagems/moves';
 import type {StoredCell} from '$lib/stratagems/preview';
+import type {StratagemsSimulator} from '$lib/stratagems/strategy';
 
 export const SIMULATION_MAX_LIFE = 7;
 
@@ -97,3 +98,28 @@ export async function pokeCells(
 	});
 	return {cells: outcome.cells, payouts: outcome.payouts};
 }
+
+/**
+ * The simulation as the AI's strategy calls it (step A2): `resolveMoves` and
+ * `poke` with their whole outcome (cells, payouts, cost).
+ */
+export const simulator: StratagemsSimulator = {
+	async resolveMoves(board, player, cycle, moves) {
+		const outcome = await simulation().call({
+			contract: 'simulation',
+			abi: Simulation.abi,
+			functionName: 'resolveMoves',
+			args: [[...board], player, cycle, [...moves]],
+		});
+		return {cells: outcome.cells, payouts: outcome.payouts, cost: outcome.cost};
+	},
+	async poke(board, cycle, positions) {
+		const outcome = await simulation().call({
+			contract: 'simulation',
+			abi: Simulation.abi,
+			functionName: 'poke',
+			args: [[...board], cycle, [...positions]],
+		});
+		return {cells: outcome.cells, payouts: outcome.payouts, cost: outcome.cost};
+	},
+};
