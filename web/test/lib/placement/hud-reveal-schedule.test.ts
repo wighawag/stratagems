@@ -113,7 +113,10 @@ describe('what the HUD says about who reveals the turn', () => {
 				config: {sale: {price: 1n, amount: 10n, stipend: 2n}},
 				twoPhase: writable({phase: 'reveal', timeLeft: 5, duration: 10}),
 				phase: writable('reveal'),
-				submission: writable(committed(true)),
+				// `ready`: the account's data loaded (see `SubmissionStore.ready`).
+				submission: Object.assign(writable(committed(true)), {
+					ready: writable(true),
+				}),
 				planning: {count: writable(0), maxActions: writable(undefined)},
 				cost: writable(0n),
 				reserve: writable({step: 'Loaded', amount: 100n}),

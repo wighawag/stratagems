@@ -112,6 +112,18 @@ or does not enrol them. The smallest thing that gives a cycle somebody to wait
 for: no intelligence, no difficulty, no interface.
 _Avoid_: bot, NPC, AI, opponent, computer player, played player
 
+**Table**:
+One game for a fixed set of members, at an address of its own: created by anyone (its CREATOR) with a number of seats, its seats taken by staking at it, and started by the creator once two are seated, which closes its roster. A table is a clone of its game's lobby implementation made by the game's factory, so what the client knows of it is only its address (`?game=<address>`). The persistent world is not a table: it has open entry and no creator.
+_Avoid_: room, match, instance, lobby (a table is IN its lobby until its creator starts it)
+
+**Hotseat**:
+Several people at ONE device, each in a seat of their own and each their own account in the world's wallet, passing the device between them. Real commit-reveal, the same code path as online: one person commits, hands the device over, the next commits, and nobody reveals by hand (the world's local REVEALER, given each turn at its commit, sends every reveal from a key of its own). What it hides is the shared screen, not anything in the browser's storage.
+_Avoid_: local multiplayer, pass-and-play, shared account
+
+**Handover**:
+The moment the device changes hands in a hotseat, and the screen that covers the game while it does: nothing of the previous person's turn is mounted, the next person presses to begin, and only then is the world's connection switched to their account and the game shown. Whose turn it is comes from the chain, so a reload lands on the handover for the right person.
+_Avoid_: turn change (`turn` is the game's word), switch screen
+
 ### Who is who
 
 **Identity**:

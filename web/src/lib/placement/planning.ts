@@ -102,8 +102,12 @@ export function createPlanning(params: {
 		$planned.map((cellID) => ({cellID})),
 	);
 
-	const canPlan = derived(submission, ($submission) =>
-		isPlannable($submission),
+	// AND ONLY ONCE THE SUBMISSION CAN TAKE A PLAN: after an account switch the
+	// new account's data loads, the submission reads `Idle` meanwhile and drops a
+	// plan, so a click then would change nothing (`SubmissionStore.ready`).
+	const canPlan = derived(
+		[submission, submission.ready],
+		([$submission, $ready]) => $ready && isPlannable($submission),
 	);
 
 	const count = derived(plannedStore, ($planned) => $planned.length);
@@ -114,7 +118,7 @@ export function createPlanning(params: {
 	);
 
 	function toggle(cellID: bigint) {
-		if (!isPlannable(submission.value)) return;
+		if (!get(canPlan)) return;
 
 		const current = plannedCellsOf(submission.value);
 		const without = current.filter((id) => id !== cellID);

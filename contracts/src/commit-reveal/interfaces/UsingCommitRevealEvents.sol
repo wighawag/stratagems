@@ -91,6 +91,41 @@ interface UsingCommitRevealEvents is UsingCommitRevealTypes {
         address pushedBy
     );
 
+    /// @notice A closed roster was opened: the game now has `seats` seats, a
+    ///         creator who starts it, and plays `cycles` cycles from its start.
+    /// @param gameOptions What the game's own rules read at this table,
+    ///        opaque to the base (see {UsingCommitReveal-_gameOptions}).
+    event RosterOpened(
+        address indexed creator,
+        uint8 seats,
+        uint16 cycles,
+        bytes32 gameOptions
+    );
+
+    /// @notice A member took a seat, by funding a reserve.
+    /// @param seated How many seats are taken now.
+    event SeatTaken(uint256 indexed player, uint256 seated);
+
+    /// @notice A member left their seat: by emptying their reserve, or by
+    ///         being forfeited.
+    /// @param seated How many seats are taken now.
+    event SeatReleased(uint256 indexed player, uint256 seated);
+
+    /// @notice The creator started the game, which closes its roster.
+    /// @dev Followed by {CycleAdvanced} in the same transaction: starting
+    ///      re-anchors the clock, so the first cycle runs its full length.
+    /// @param lastCycleNumber The last cycle it plays: after it, the game has
+    ///        ended.
+    event GameStarted(
+        address indexed creator,
+        uint256 members,
+        uint64 lastCycleNumber
+    );
+
+    /// @notice The creator forfeited a member who had not acted in the
+    ///         current phase: the cycle stops waiting for them, for good.
+    event MemberForfeited(uint256 indexed player, uint64 indexed cycleNumber);
+
     /// @notice The cycle started, or stopped, waiting for this player.
     /// @param waitedFor Whether it now waits for them.
     /// @param waitedForCount How many members it waits for in total, which is

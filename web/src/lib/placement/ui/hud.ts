@@ -539,6 +539,14 @@ export function describeRevealSchedule(
 const NO_REVEAL_SCHEDULE: Readable<ScheduledReveal | undefined> =
 	readable(undefined);
 
+/**
+ * What the HUD says while the account's data loads (after any account switch, a
+ * hotseat handover's included): the submission takes no plan until it has, so a
+ * click on the board then is not planned (`SubmissionStore.ready`).
+ */
+export const LOADING_ACCOUNT =
+	"Loading your account's data: a cell clicked now is not planned.";
+
 export function createHud(context: Context): Readable<HudModel> {
 	const {game} = context;
 
@@ -558,6 +566,7 @@ export function createHud(context: Context): Readable<HudModel> {
 			game.recovery,
 			game.savedTurn,
 			game.revealSchedule ?? NO_REVEAL_SCHEDULE,
+			game.submission.ready,
 		],
 		([
 			$twoPhase,
@@ -574,6 +583,7 @@ export function createHud(context: Context): Readable<HudModel> {
 			$recovery,
 			$savedTurn,
 			$revealSchedule,
+			$ready,
 		]): HudModel => {
 			const savedTurn = describeSavedTurn($savedTurn as SavedTurn);
 			const submission = describeSubmission($submission);
@@ -645,6 +655,8 @@ export function createHud(context: Context): Readable<HudModel> {
 				reserveLabel:
 					reserveAmount === undefined ? '-' : STAKE.amount(reserveAmount),
 				warning:
+					// First: until it is loaded a click plans nothing at all.
+					(!$ready ? LOADING_ACCOUNT : undefined) ??
 					describePlanLimit($count, $maxActions as number | undefined) ??
 					(reserveAmount !== undefined && $cost > reserveAmount
 						? STAKE.notEnough

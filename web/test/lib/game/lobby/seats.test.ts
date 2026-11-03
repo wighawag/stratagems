@@ -4,7 +4,11 @@ import {
 	MOST_SEATS,
 	SEATS_BY_DEFAULT,
 	SEAT_CHOICES,
+	clampHumans,
+	clampLevels,
 	clampSeats,
+	humansAtThisDevice,
+	localRevealerKey,
 	seatsPlayedByTheWorld,
 	tableOf,
 } from '$lib/game/lobby/seats';
@@ -89,5 +93,103 @@ describe('the seats at a table', () => {
 		expect(SEAT_CHOICES[SEAT_CHOICES.length - 1]).toBe(MOST_SEATS);
 		expect(SEAT_CHOICES).toEqual([...SEAT_CHOICES].sort((a, b) => a - b));
 		for (const choice of SEAT_CHOICES) expect(clampSeats(choice)).toBe(choice);
+	});
+});
+
+describe('people at this device (hotseat)', () => {
+	it('seats them after you, each at their account in the wallet, and gives the world the rest', () => {
+		const table = tableOf(5, 3);
+		expect(table.map((seat) => seat.occupant)).toMatchObject([
+			{kind: 'you'},
+			{kind: 'local-human', account: 1},
+			{kind: 'local-human', account: 2},
+			{kind: 'the-world'},
+			{kind: 'the-world'},
+		]);
+		expect(humansAtThisDevice(table)).toEqual([
+			{seat: 0, account: 0},
+			{seat: 1, account: 1},
+			{seat: 2, account: 2},
+		]);
+	});
+
+	it('keeps the world playing the keys it plays without hotseat', () => {
+		// The world's seats are keyed by their place among the WORLD'S seats, so
+		// a table of one person plays exactly the addresses it always has.
+		expect(seatsPlayedByTheWorld(tableOf(4, 2))).toEqual(
+			seatsPlayedByTheWorld(tableOf(3, 1)),
+		);
+	});
+
+	it('is one person unless more were asked for, and never more than the seats or the game can play', () => {
+		expect(tableOf(4).filter((s) => s.occupant.kind === 'local-human')).toEqual(
+			[],
+		);
+		expect(clampHumans(undefined, 4, 4)).toBe(1);
+		expect(clampHumans('garbage', 4, 4)).toBe(1);
+		expect(clampHumans(0, 4, 4)).toBe(1);
+		expect(clampHumans(9, 4, 10)).toBe(4);
+		expect(clampHumans(3, 4, 2)).toBe(2);
+		expect(clampHumans(3, 4)).toBe(1);
+	});
+
+	it('gives the revealer a key no seat can have', () => {
+		const revealer = localRevealerKey();
+		const everyone = seatsPlayedByTheWorld(tableOf(MOST_SEATS)).map(
+			(p) => p.address,
+		);
+		expect(everyone).not.toContain(revealer.address);
+		expect(revealer.privateKey).toMatch(/^0x[0-9a-f]{64}$/);
+	});
+
+	it('gives each world seat its level, in seat order, without moving a key', () => {
+		const levels = tableOf(5, 2, ['greedy', 'random', 'greedy']);
+		expect(levels.map((seat) => seat.occupant)).toMatchObject([
+			{kind: 'you'},
+			{kind: 'local-human'},
+			{kind: 'the-world', level: 'greedy'},
+			{kind: 'the-world'},
+			{kind: 'the-world', level: 'greedy'},
+		]);
+		// `random` IS NO LEVEL AT ALL, which is what every table before levels
+		// was: the seat's occupant is exactly the one it always had.
+		expect(levels[3].occupant).not.toHaveProperty('level');
+		expect(tableOf(4, 1, [])).toEqual(tableOf(4));
+		// AND THE ADDRESSES ARE A WIRE: the same whatever the levels.
+		const addresses = (table: ReturnType<typeof tableOf>) =>
+			seatsPlayedByTheWorld(table).map((seat) => seat.address);
+		expect(addresses(levels)).toEqual(addresses(tableOf(5, 2)));
+		expect(seatsPlayedByTheWorld(levels).map((seat) => seat.level)).toEqual([
+			'greedy',
+			undefined,
+			'greedy',
+		]);
+	});
+
+	it('reads levels from whatever was stored: absent, malformed and unknown are random', () => {
+		const offers = [
+			{id: 'random', label: 'Random'},
+			{id: 'greedy', label: 'Greedy'},
+		];
+		expect(clampLevels(null, 2, offers)).toEqual(['random', 'random']);
+		expect(clampLevels('{not json', 2, offers)).toEqual(['random', 'random']);
+		expect(clampLevels('"greedy"', 2, offers)).toEqual(['random', 'random']);
+		expect(clampLevels('["greedy", "genius", 7]', 3, offers)).toEqual([
+			'greedy',
+			'random',
+			'random',
+		]);
+		// Cut or padded to the world's seats.
+		expect(clampLevels(['greedy', 'greedy', 'greedy'], 2, offers)).toEqual([
+			'greedy',
+			'greedy',
+		]);
+		expect(clampLevels(['greedy'], 3, offers)).toEqual([
+			'greedy',
+			'random',
+			'random',
+		]);
+		// A game that offers no levels plays random everywhere.
+		expect(clampLevels(['greedy'], 2, [])).toEqual(['random', 'random']);
 	});
 });

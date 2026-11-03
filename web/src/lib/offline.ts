@@ -7,6 +7,7 @@ import {
 import deployToken from 'template-commit-reveal-contracts/deploy/001_deploy_token.js';
 import deployGame from 'template-commit-reveal-contracts/deploy/010_deploy_game.js';
 import deployStakeSale from 'template-commit-reveal-contracts/deploy/020_deploy_stake_sale.js';
+import deployLobby from 'template-commit-reveal-contracts/deploy/030_deploy_lobby.js';
 import {
 	createEmbeddedWorld,
 	restoreIsCoherent,
@@ -14,14 +15,44 @@ import {
 } from '$lib/embedded';
 import {mintChainId, rememberChainId} from '$lib/embedded/chain-id';
 import {startEmbeddedNode} from '$lib/embedded/node';
-import {announceEmbeddedWallet} from '$lib/embedded/wallet';
+import {
+	announceEmbeddedWallet,
+	type EmbeddedWallet,
+} from '$lib/embedded/wallet';
 import {createIndexedDBPersistence} from 'webevm';
 import {createIndexedDBDeploymentStore} from '@rocketh/web';
 import {createContext} from '$lib/context/index';
 import type {Context} from '$lib/context/types';
-import {createOfflinePlayers, type OfflinePlayer} from '$lib/offline-players';
+import {createPublicClient, custom} from 'viem';
+import {
+	createOfflinePlayers,
+	playedTurnCells,
+	type OfflinePlayer,
+} from '$lib/offline-players';
+import {createPlayedTurnStore, RANDOM_LEVEL} from '$lib/game/core/strategy';
+import {createBytecodeSandbox} from '$lib/game/simulation';
+import {
+	PLACEMENT_LEVELS,
+	createPlacementStrategy,
+} from '$lib/placement/strategy';
+import {PLACEMENT_STORAGE} from '$lib/placement/storage';
 import {pokeWhenTheHumanActs} from '$lib/game/core/played';
-import {seatsPlayedByTheWorld, type Table} from '$lib/game/lobby/seats';
+import {
+	MOST_SEATS,
+	humansAtThisDevice,
+	localRevealerKey,
+	seatsPlayedByTheWorld,
+	type Table,
+} from '$lib/game/lobby/seats';
+import {createLocalRevealer} from '$lib/game/core/local-revealer';
+import {
+	createHotseat,
+	createHotseatChainReader,
+	showHotseat,
+	signInAs,
+	signedInAs,
+	type HotseatHuman,
+} from '$lib/game/lobby/hotseat';
 import {authoriseTheBrowsersKey} from '$lib/game/acquire';
 import {resolvePlacementConfig} from '$lib/placement/config';
 
@@ -110,6 +141,31 @@ const ADMIN_ADDRESS = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8' as const;
  * The key lives here rather than there because this file is what writes it.
  */
 export const CHAIN_ID_STORAGE_KEY = 'offline-world:chain-id';
+
+/**
+ * HOTSEAT: how many people at this device this world can play, each their own
+ * account in the world's wallet, passing the device between them
+ * (`$lib/game/lobby/hotseat`). Every seat may be one. Read by the
+ * byte-identical lobby off this module (`$lib/offline-lobby`); a game whose
+ * world does not export it offers no hotseat.
+ */
+export const LOCAL_HUMANS_AT_MOST = MOST_SEATS;
+
+/**
+ * THE LEVELS A WORLD SEAT MAY PLAY AT, chosen per seat at the lobby: `random`
+ * (today's derived turn, the default) and `greedy` (`$lib/placement/strategy`).
+ * Read by the byte-identical lobby off this module, as `LOCAL_HUMANS_AT_MOST`
+ * is; a game whose world does not export it offers no choice, and every seat
+ * plays `random`.
+ */
+export const AI_LEVELS = PLACEMENT_LEVELS;
+
+/**
+ * Where a played seat's decided turn is kept, beside this world's other keys:
+ * a storage that lost it has lost the chain id too, and so the world. A WIRE
+ * from its first build, like the record it holds (`$lib/game/core/strategy`).
+ */
+export const PLAYED_TURNS_STORAGE_KEY = 'offline-world:played-turns';
 const PLAY_MONEY = 10n ** 24n;
 
 /**
@@ -134,6 +190,10 @@ export const OFFLINE_DEPLOYMENT = {
 		{id: '001_deploy_token', module: deployToken},
 		{id: '010_deploy_game', module: deployGame},
 		{id: '020_deploy_stake_sale', module: deployStakeSale},
+		// Tables are an online thing, and an offline world deploys their factory
+		// anyway: the app's records name it, and a world is refused unless it
+		// deploys everything they name.
+		{id: '030_deploy_lobby', module: deployLobby},
 	],
 	/**
 	 * What the in-tab deployment declares.
@@ -152,6 +212,7 @@ export const OFFLINE_DEPLOYMENT = {
 			commitPhaseDuration: 0n,
 			revealPhaseDuration: 0n,
 		},
+		Lobby: config.data.Lobby.default,
 	},
 	accounts: {deployer: DEPLOYER, admin: ADMIN},
 	initialBalances: {
@@ -228,6 +289,29 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 	});
 
 	const world = await openWorld(chainId, table);
+	const humans = humansAtThisDevice(table);
+	const hotseatHere = humans.length > 1;
+
+	/**
+	 * WHO REVEALS FOR THE PEOPLE AT THIS DEVICE, in a hotseat world: a local
+	 * revealer with its own funded key (provisioned below), handed each turn at
+	 * its commit through the scheduler seam, so nobody takes the device back to
+	 * reveal. The context hands it to the game in place of any scheduler of the
+	 * game's own. One person needs none: they reveal themselves, as before.
+	 */
+	let pokeAdvance = () => {};
+	const revealer = hotseatHere
+		? createLocalRevealer({
+				provider: world.provider as never,
+				chain: worldChain(world),
+				privateKey: localRevealerKey().privateKey,
+				contract: {
+					address: world.deployments.get().contracts.Game.address,
+					abi: world.deployments.get().contracts.Game.abi,
+				},
+				onActed: () => pokeAdvance(),
+			})
+		: undefined;
 
 	status.set({step: 'Booting', what: 'connecting'});
 
@@ -240,7 +324,9 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 	// world.
 	const context = createContext({
 		establishConnection: world.establishConnection,
+		...(revealer ? {scheduler: revealer.scheduler} : {}),
 	});
+	pokeAdvance = () => void context.context.game.cycleAdvance.check();
 
 	// Dev/debug: the world on the console, beside the `context` handle `core.ts`
 	// installs. Worth having for a world specifically, because the only way to
@@ -301,14 +387,89 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 	 * and it is a better outcome than throwing away a booted world.
 	 */
 	status.set({step: 'Booting', what: "authorising this browser's key"});
-	try {
-		await authoriseTheBrowsersKey(context.context);
-	} catch (err) {
-		console.error(
-			"the offline world could not authorise this browser's key",
-			err,
-		);
+	const wallet = announcedWallet;
+	const seated: HotseatHuman[] = [];
+	if (hotseatHere && wallet) {
+		// EVERY PERSON HERE, ONE AFTER ANOTHER, ending on the first: each signs
+		// in (the world asks for the signature, as above) and has their own
+		// browser key authorised, now rather than at their first handover, so no
+		// turn opens on a transaction. `authoriseTheBrowsersKey` answers
+		// `AlreadyAuthorised` on a restore.
+		for (const human of humans) {
+			const address = wallet.accounts[human.account];
+			seated.push({
+				address,
+				player: await offlineIdentityOf({env: world.env, player: address}),
+				label: `Player ${human.account + 1}`,
+			});
+			status.set({
+				step: 'Booting',
+				what: `authorising Player ${human.account + 1}'s key`,
+			});
+			try {
+				await signInAs({
+					connection: context.context.connection,
+					select: wallet.select,
+					address,
+				});
+				await authoriseWhenReady(context.context);
+			} catch (err) {
+				console.error(
+					`the offline world could not authorise Player ${human.account + 1}'s key`,
+					err,
+				);
+			}
+		}
+		try {
+			await signInAs({
+				connection: context.context.connection,
+				select: wallet.select,
+				address: seated[0].address,
+			});
+		} catch (err) {
+			console.error('the offline world could not sign in as Player 1', err);
+		}
+	} else {
+		try {
+			await authoriseTheBrowsersKey(context.context);
+		} catch (err) {
+			console.error(
+				"the offline world could not authorise this browser's key",
+				err,
+			);
+		}
 	}
+
+	/**
+	 * THE HANDOVER, when there are several people here: whose turn it is, read
+	 * from the chain, and the screen that covers the game while the device
+	 * changes hands. See `$lib/game/lobby/hotseat`.
+	 */
+	const hotseat =
+		hotseatHere && wallet && revealer
+			? createHotseat({
+					humans: seated,
+					switchTo: (address) =>
+						signInAs({
+							connection: context.context.connection,
+							select: wallet.select,
+							address,
+						}),
+					read: createHotseatChainReader({
+						provider: world.provider as never,
+						chain: worldChain(world),
+						contract: {
+							address: world.deployments.get().contracts.Game.address,
+							abi: world.deployments.get().contracts.Game.abi,
+						},
+						players: seated.map((human) => human.player),
+					}),
+					revealer,
+					submission: context.context.game.submission,
+					signedIn: signedInAs(context.context.connection),
+					accountData: context.context.accountData,
+				})
+			: undefined;
 
 	/**
 	 * THE OTHER TWO PLAYERS, STARTED WITH THE BOARD AND STOPPED WITH IT.
@@ -319,14 +480,17 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 	 * while nothing is on screen. The WORLD still outlives the page (the chain
 	 * is not disposed when a router navigates away); what stops is the playing.
 	 */
+	const played = await playedByTheWorld({env: world.env, table});
+	const decider = playedSeatDecider(world, played);
 	const players = createOfflinePlayers({
 		provider: world.provider,
 		deployments: world.deployments,
 		config: resolvePlacementConfig(world.deployments.get()),
-		players: await playedByTheWorld({env: world.env, table}),
+		players: played,
 		// A played commit can complete unanimity just as the human's can, and the
 		// advance client would otherwise find out on its own one-second poll.
 		onActed: () => void context.context.game.cycleAdvance.check(),
+		...(decider ? {strategy: decider.strategy, turns: decider.turns} : {}),
 	});
 
 	const ready: OfflineWorldStatus = {
@@ -341,16 +505,111 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 					loop: players,
 					submission: context.context.game.submission,
 				});
+				const stopRevealer = revealer?.start() ?? (() => {});
+				const stopHotseat = hotseat?.start() ?? (() => {});
 				return () => {
+					stopHotseat();
+					stopRevealer();
 					stopPoke();
 					stopPlayers();
+					// The seats' sandbox stops with the board; a later decision starts
+					// it again.
+					decider?.sandbox.dispose();
 					stopContext();
 				};
 			},
 		},
 	};
+	showHotseat(hotseat);
 	status.set(ready);
 	return ready;
+}
+
+/**
+ * HOW THE WORLD'S SEATS DECIDE, when one of them plays at a level other than
+ * `random`: the game's strategy over the world's own provider, scored by the
+ * `Simulation` route's bytecode in a sandbox of the seats' own (not the
+ * player's preview sandbox, which is the game context's and rebuilt with it),
+ * and the store their decided turns are kept in. Undefined when every seat
+ * plays `random`, so such a world builds no sandbox and stores nothing.
+ *
+ * EXPORTED for the world test, which builds the seats exactly as this does.
+ * Handed the provider and nothing of the page (PA6): no context, no
+ * submission, no handover.
+ */
+export function playedSeatDecider(
+	world: Pick<EmbeddedWorld, 'provider' | 'deployments'>,
+	played: readonly OfflinePlayer[],
+	options: {
+		storage?: Pick<Storage, 'getItem' | 'setItem'>;
+		onDecided?: (measure: {
+			ms: number;
+			claimed: number;
+			simulated: number;
+		}) => void;
+	} = {},
+) {
+	if (played.every((seat) => (seat.level ?? RANDOM_LEVEL) === RANDOM_LEVEL)) {
+		return undefined;
+	}
+	const records = world.deployments.get();
+	const contract = {
+		address: records.contracts.Game.address,
+		abi: records.contracts.Game.abi,
+	};
+	const sandbox = createBytecodeSandbox({
+		provider: world.provider as never,
+		contracts: {
+			rules: {
+				address:
+					records.contracts.Game_Implementation_Router_Simulation_Route.address,
+			},
+		},
+	});
+	const strategy = createPlacementStrategy({
+		publicClient: createPublicClient({
+			chain: worldChain(world),
+			transport: custom(world.provider as never),
+		}),
+		sandbox,
+		contract,
+		candidates: playedTurnCells(),
+		onDecided: options.onDecided,
+	});
+	const turns = createPlayedTurnStore({
+		storage: options.storage ?? localStorage,
+		key: PLAYED_TURNS_STORAGE_KEY,
+		chainId: records.chain.id,
+		contract: contract.address,
+		format: PLACEMENT_STORAGE,
+	});
+	return {strategy, turns, sandbox};
+}
+
+/** The world's chain as viem wants it, for the clients the world's own loops build. */
+function worldChain(world: Pick<EmbeddedWorld, 'deployments'>) {
+	const records = world.deployments.get();
+	return {
+		id: records.chain.id,
+		name: records.chain.name,
+		nativeCurrency: records.chain.nativeCurrency,
+		rpcUrls: {default: {http: [] as string[]}},
+	};
+}
+
+/**
+ * Authorise the signed-in person's browser key, once the context has caught up
+ * with the account switch: right after one, the account's executor can still
+ * be getting ready, which `authoriseTheBrowsersKey` answers with a refusal
+ * rather than a wait.
+ */
+async function authoriseWhenReady(context: Context): Promise<void> {
+	for (let attempt = 0; attempt < 40; attempt++) {
+		const outcome = await authoriseTheBrowsersKey(context);
+		if (outcome.step !== 'Refused') return;
+		await new Promise((resolve) => setTimeout(resolve, 250));
+	}
+	throw new Error("the browser's key could not be authorised");
 }
 
 /**
@@ -449,6 +708,8 @@ async function openWorld(
 }
 
 let announced: (() => void) | undefined;
+/** The wallet provisioning announced: the world switches its accounts in hotseat. */
+let announcedWallet: EmbeddedWallet | undefined;
 
 /**
  * WHAT AN OFFLINE PLAYER OF THIS GAME IS GIVEN, which is the seam's whole
@@ -512,11 +773,23 @@ async function provisionOfflinePlayer(params: {
 	const {env, node, table} = params;
 
 	status.set({step: 'Booting', what: 'handing the player a wallet'});
+	const humans = humansAtThisDevice(table);
 	const wallet = await announceEmbeddedWallet({
 		provider: node.provider as never,
 		chainId: params.chainId,
+		// One account per person at this device (hotseat), in seat order.
+		accounts: humans.length,
 	});
 	announced = wallet.cleanup;
+	announcedWallet = wallet;
+
+	// The revealer of a hotseat world pays for everyone's reveals.
+	if (humans.length > 1) {
+		await node.provider.request({
+			method: 'evm_setBalance',
+			params: [localRevealerKey().address, `0x${PLAY_MONEY.toString(16)}`],
+		} as never);
+	}
 
 	// GAS IS FREE HERE AND THE STAKE IS NOT, which is the one asymmetry in this
 	// function and it is deliberate. This runs on EVERY boot, including a restore,
@@ -547,6 +820,7 @@ async function provisionOfflinePlayer(params: {
 	await stakeForEveryoneInTheWorld({
 		env,
 		player: wallet.accounts[0],
+		humans: wallet.accounts,
 		table,
 	});
 
@@ -586,11 +860,26 @@ export async function stakeForEveryoneInTheWorld(params: {
 	 * Every other seat carries its own, because the world holds those keys.
 	 */
 	player: `0x${string}`;
+	/**
+	 * Every account of the world's wallet, in seat order, for the other people
+	 * at this device (hotseat): a `local-human` seat is the account at its index.
+	 */
+	humans?: readonly `0x${string}`[];
 	table: Table;
 }): Promise<void> {
 	for (const seat of params.table) {
+		// A remote human stakes for themselves, at a table online; an offline
+		// world has none.
+		if (seat.occupant.kind === 'remote-human') continue;
 		const player =
-			seat.occupant.kind === 'you' ? params.player : seat.occupant.address;
+			seat.occupant.kind === 'you'
+				? params.player
+				: seat.occupant.kind === 'local-human'
+					? params.humans?.[seat.occupant.account]
+					: seat.occupant.address;
+		if (!player) {
+			throw new Error('a person at this device has no account to stake for');
+		}
 		await stakeForOfflinePlayer({env: params.env, player});
 	}
 }
@@ -713,6 +1002,7 @@ export async function playedByTheWorld(params: {
 				env: params.env,
 				player: played.address,
 			}),
+			...(played.level !== undefined ? {level: played.level} : {}),
 		});
 	}
 	return resolved;

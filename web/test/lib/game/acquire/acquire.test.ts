@@ -2,6 +2,7 @@ import {describe, expect, it} from 'vitest';
 import {
 	acquisitionAuthorisation,
 	acquisitionTotal,
+	approveIfShort,
 	opensAWallet,
 	stipendFor,
 } from '$lib/game/acquire';
@@ -149,5 +150,73 @@ describe('how an acquisition will authorise the browser', () => {
 		expect(
 			acquisitionAuthorisation({...preSigned, hasSigner: false}),
 		).toBeUndefined();
+	});
+});
+
+describe('an allowance the acquisition spends', () => {
+	const TOKEN = '0x1111111111111111111111111111111111111111' as const;
+	const SPENDER = '0x3333333333333333333333333333333333333333' as const;
+	const PAYER = '0x4444444444444444444444444444444444444444' as const;
+
+	function fakes(allowance: bigint, status = 'success') {
+		const reads: unknown[] = [];
+		const writes: {
+			functionName: string;
+			args: readonly unknown[];
+			address: string;
+		}[] = [];
+		return {
+			reads,
+			writes,
+			publicClient: {
+				async readContract(request: unknown) {
+					reads.push(request);
+					return allowance;
+				},
+				async waitForTransactionReceipt() {
+					return {status};
+				},
+			},
+			writer: {
+				async writeContract(request: unknown) {
+					writes.push(request as (typeof writes)[number]);
+					return '0xabc' as `0x${string}`;
+				},
+			},
+		};
+	}
+
+	const request = {
+		account: PAYER,
+		payer: PAYER,
+		spender: SPENDER,
+		token: TOKEN,
+	};
+
+	it('approves exactly the amount, from the payer, when the allowance is short', async () => {
+		const f = fakes(5n);
+		expect(await approveIfShort({...f, ...request, amount: 32n})).toBe(true);
+		expect(f.writes).toHaveLength(1);
+		expect(f.writes[0].address).toBe(TOKEN);
+		expect(f.writes[0].functionName).toBe('approve');
+		// never unlimited: what the call spends, to the contract that spends it
+		expect(f.writes[0].args).toEqual([SPENDER, 32n]);
+		expect((f.reads[0] as {args: readonly unknown[]}).args).toEqual([
+			PAYER,
+			SPENDER,
+		]);
+	});
+
+	it('sends nothing when the allowance already covers it, so a retry is one transaction', async () => {
+		const f = fakes(32n);
+		expect(await approveIfShort({...f, ...request, amount: 32n})).toBe(false);
+		expect(f.writes).toHaveLength(0);
+	});
+
+	it('fails when the token refuses, rather than going on to a call that would revert', async () => {
+		const f = fakes(0n, 'reverted');
+		await expect(
+			approveIfShort({...f, ...request, amount: 32n}),
+		).rejects.toThrow(/refused/);
 	});
 });

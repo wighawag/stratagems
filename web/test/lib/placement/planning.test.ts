@@ -23,6 +23,7 @@ import type {GameIdentity} from '$lib/game/identity';
 
 function fakeSubmission(): SubmissionStore<GameIdentity, Placement> & {
 	state: Writable<SubmissionState<Placement>>;
+	ready: Writable<boolean>;
 } {
 	const state = writable<SubmissionState<Placement>>({
 		step: 'Planning',
@@ -44,10 +45,12 @@ function fakeSubmission(): SubmissionStore<GameIdentity, Placement> & {
 		async reveal() {},
 		dismiss() {},
 		adopt: () => false,
+		ready: writable(true),
 		state,
 	};
 	return store as unknown as SubmissionStore<GameIdentity, Placement> & {
 		state: Writable<SubmissionState<Placement>>;
+		ready: Writable<boolean>;
 	};
 }
 
@@ -128,5 +131,18 @@ describe('a plan is bounded by what the reveal phase can open', () => {
 		const submission = fakeSubmission();
 		const planning = createPlanning({submission, maxActions: writable(36)});
 		expect(get(planning.maxActions)).toBe(36);
+	});
+
+	it('takes no plan while the submission cannot take one, and says so through canPlan', () => {
+		const submission = fakeSubmission();
+		const planning = createPlanning({submission, maxActions: writable(36)});
+		submission.ready.set(false);
+		expect(get(planning.canPlan)).toBe(false);
+		planning.toggle(5n);
+		expect(get(planning.count)).toBe(0);
+		submission.ready.set(true);
+		expect(get(planning.canPlan)).toBe(true);
+		planning.toggle(5n);
+		expect(get(planning.count)).toBe(1);
 	});
 });

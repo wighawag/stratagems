@@ -201,9 +201,26 @@ export function createFuzdScheduler<TIdentity extends PlayerIdentity>(
 		return slotFor(request.cycleNumber, request.transactions[0].to);
 	}
 
+	/**
+	 * The time fuzd is to reveal at. A MANUALLY ADVANCED CHAIN (an offline world)
+	 * has none, and says so with an undefined `revealDueAt`: fuzd schedules by the
+	 * clock, so it refuses, which leaves the turn unscheduled and revealed by this
+	 * browser, as without fuzd. A world with a revealer of its own (hotseat) hands
+	 * the game that one instead.
+	 */
+	function dueAt(request: RevealScheduleRequest<TIdentity>): number {
+		if (request.revealDueAt === undefined) {
+			throw new FuzdSchedulingError(
+				'fuzd schedules by the clock, and this chain has no reveal time',
+			);
+		}
+		return request.revealDueAt;
+	}
+
 	async function prepare(
 		request: RevealScheduleRequest<TIdentity>,
 	): Promise<SchedulerPayment> {
+		dueAt(request);
 		const client = clientFor();
 		const remote = await client.assignRemoteAccount(chainId);
 		const payee = remote.address.toLowerCase() as `0x${string}`;
@@ -222,6 +239,7 @@ export function createFuzdScheduler<TIdentity extends PlayerIdentity>(
 			payment: SchedulerPayment;
 		},
 	): Promise<{fuzd: FuzdSchedule}> {
+		const revealDueAt = dueAt(request);
 		const client = clientFor();
 		const slot = slotOf(request);
 		const totalMaxCost = client.computeTotalMaxCost(costed(request));
@@ -240,7 +258,7 @@ export function createFuzdScheduler<TIdentity extends PlayerIdentity>(
 			})),
 			timing: {
 				type: 'fixed-time',
-				scheduledTime: request.revealDueAt,
+				scheduledTime: revealDueAt,
 				expiryDelta: params.expiryDelta,
 			},
 			// What this schedule may cost, which fuzd counts against the remote
@@ -265,7 +283,7 @@ export function createFuzdScheduler<TIdentity extends PlayerIdentity>(
 			cycleNumber: request.cycleNumber,
 			batchSize: request.transactions.length,
 			scheduledAt: now(),
-			revealDueAt: request.revealDueAt,
+			revealDueAt,
 			expiryDelta: params.expiryDelta,
 			inClear: !timelock,
 		};
