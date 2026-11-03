@@ -34,7 +34,11 @@ import {CellObject} from './CellObject';
 const cellChanged: Changed<CellView> = (previous, next) =>
 	previous.totalStake !== next.totalStake ||
 	previous.numClaimants !== next.numClaimants ||
-	previous.planned !== next.planned;
+	previous.planned !== next.planned ||
+	// What the plan leads to arrives a moment after the plan (the sandbox
+	// answers asynchronously), so it is a change of its own.
+	previous.next?.numClaimants !== next.next?.numClaimants ||
+	previous.next?.totalStake !== next.next?.totalStake;
 
 export function createBoardRenderer(params: {
 	viewState: ViewStateStore<BoardView>;
