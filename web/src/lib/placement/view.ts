@@ -12,11 +12,18 @@
 import type {ViewMerge} from '$lib/view';
 import type {BoardState, Cell} from './state';
 import {positionOf, type Position} from './cells';
+import type {CellPreview} from './preview';
 
 export type CellView = Cell & {
 	position: Position;
 	/** The player has planned a placement here this cycle. */
 	planned: boolean;
+	/**
+	 * What the cell will hold once the planned turn is revealed, from the
+	 * contract's own rule run in the sandbox (`./preview.ts`). Absent until that
+	 * answers, and on a cell that is not planned.
+	 */
+	next?: CellPreview;
 };
 
 export type BoardView = {
@@ -26,6 +33,11 @@ export type BoardView = {
 export type LocalPlan = {
 	/** Cells the player has clicked this cycle, in the order they picked them. */
 	planned: readonly bigint[];
+	/**
+	 * What those cells will hold after the turn, when the sandbox has answered
+	 * for exactly this plan (`./preview.ts`, `withPreview`).
+	 */
+	preview?: ReadonlyMap<bigint, CellPreview>;
 };
 
 /**
@@ -46,9 +58,10 @@ export const mergeBoardView: ViewMerge<BoardState, LocalPlan, BoardView> = ({
 	}
 
 	for (const id of local.planned) {
+		const next = local.preview?.get(id);
 		const existing = cells.get(id);
 		if (existing) {
-			cells.set(id, {...existing, planned: true});
+			cells.set(id, {...existing, planned: true, ...(next ? {next} : {})});
 			continue;
 		}
 		// A planned placement on an empty cell has nothing on chain behind it
@@ -60,6 +73,7 @@ export const mergeBoardView: ViewMerge<BoardState, LocalPlan, BoardView> = ({
 			numClaimants: 0,
 			position: positionOf(id),
 			planned: true,
+			...(next ? {next} : {}),
 		});
 	}
 

@@ -10,6 +10,9 @@
 	import {createHud} from './hud';
 	import Button from '$lib/shadcn/ui/button/button.svelte';
 	import GameClock from '$lib/game/ui/GameClock.svelte';
+	import TablePanel from '$lib/game/lobby/ui/TablePanel.svelte';
+	import TableLobby from '$lib/game/lobby/ui/TableLobby.svelte';
+	import {tableSettingsOf} from '$lib/game/lobby/table';
 
 	const context = getAppContext();
 	const {game} = context;
@@ -31,6 +34,13 @@
 	// move cannot open two top-ups at once.
 	const topUp = context.topUp;
 
+	// At a table: its lobby until it starts, then its seats over the board.
+	const tableScreen = game.table?.screen;
+	const tableSettings = tableSettingsOf(game.config.cycle);
+	const inTableLobby = $derived(
+		game.table !== undefined && $tableScreen?.screen !== 'playing',
+	);
+
 	const toneClass: Record<string, string> = {
 		idle: 'text-muted-foreground',
 		busy: 'text-blue-400',
@@ -39,9 +49,75 @@
 	};
 </script>
 
+<!-- What stands between this person and a turn (signing in, the stake,
+     authorising this browser): in the HUD, and in a table's lobby, where the
+     stake is what takes a seat. -->
+{#snippet setupControls()}
+	{#if $hud.setup}
+		<!--
+			Not yet playable: ask for the one thing that is missing, rather than
+			showing planning controls that cannot lead anywhere.
+		-->
+		<p class="text-sm font-semibold">{$hud.setup.headline}</p>
+		<p class="mt-1 max-w-sm text-xs text-muted-foreground">
+			{$hud.setup.detail}
+		</p>
+		{#if $hud.setup.action === 'stake'}
+			<!-- The testid is what an e2e presses. Its LABEL says what this game
+			     sells, so a suite matching on the words breaks the moment the
+			     stake changes - which is exactly what happened when a branch
+			     started selling avatars instead of tokens. -->
+			<Button
+				size="sm"
+				class="mt-3"
+				data-testid="acquire-stake"
+				disabled={$hud.setup.busy}
+				onclick={() => acquisition.buy()}
+			>
+				{$hud.setup.busyLabel ?? $hud.setup.actionLabel}
+			</Button>
+			{#if $hud.setup.error}
+				<p class="mt-2 max-w-sm text-xs text-red-400">{$hud.setup.error}</p>
+			{/if}
+		{:else if $hud.setup.action === 'authorise'}
+			<!--
+				The same flow the out-of-gas remedy uses: it registers the delegate
+				AND funds it in one transaction, which is the right shape here too.
+				A key that is authorised but has no gas is authorised in name only,
+				and that is a second dead end one step further on.
+			-->
+			<Button
+				size="sm"
+				class="mt-3"
+				onclick={() => topUp.start(topUp.purposes.authorise)}
+			>
+				Authorise and carry on
+			</Button>
+		{/if}
+	{/if}
+{/snippet}
+
 <div
 	class="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-3"
 >
+	<!-- At a table: its lobby (what it plays by, who is seated, the creator's
+	     start) until it has started and this person holds a seat; then who is
+	     playing, and the creator's forfeit. -->
+	{#if game.table && inTableLobby}
+		<TableLobby
+			table={game.table}
+			inviteLink={typeof location === 'undefined' ? '' : location.href}
+			settings={tableSettings}
+		>
+			{#snippet takeSeat()}
+				{@render setupControls()}
+			{/snippet}
+		</TableLobby>
+	{:else if game.table}
+		<div class="absolute top-3 right-3">
+			<TablePanel table={game.table} />
+		</div>
+	{/if}
 	<!-- Phase and cycle -->
 	<div
 		class="pointer-events-auto w-fit rounded-lg bg-background/85 p-3 shadow-lg backdrop-blur"
@@ -159,46 +235,8 @@
 		{/if}
 
 		{#if $hud.setup}
-			<!--
-				Not yet playable: ask for the one thing that is missing, rather than
-				showing planning controls that cannot lead anywhere.
-			-->
-			<p class="text-sm font-semibold">{$hud.setup.headline}</p>
-			<p class="mt-1 max-w-sm text-xs text-muted-foreground">
-				{$hud.setup.detail}
-			</p>
-			{#if $hud.setup.action === 'stake'}
-				<!-- The testid is what an e2e presses. Its LABEL says what this game
-				     sells, so a suite matching on the words breaks the moment the
-				     stake changes - which is exactly what happened when a branch
-				     started selling avatars instead of tokens. -->
-				<Button
-					size="sm"
-					class="mt-3"
-					data-testid="acquire-stake"
-					disabled={$hud.setup.busy}
-					onclick={() => acquisition.buy()}
-				>
-					{$hud.setup.busyLabel ?? $hud.setup.actionLabel}
-				</Button>
-				{#if $hud.setup.error}
-					<p class="mt-2 max-w-sm text-xs text-red-400">{$hud.setup.error}</p>
-				{/if}
-			{:else if $hud.setup.action === 'authorise'}
-				<!--
-					The same flow the out-of-gas remedy uses: it registers the delegate
-					AND funds it in one transaction, which is the right shape here too.
-					A key that is authorised but has no gas is authorised in name only,
-					and that is a second dead end one step further on.
-				-->
-				<Button
-					size="sm"
-					class="mt-3"
-					onclick={() => topUp.start(topUp.purposes.authorise)}
-				>
-					Authorise and carry on
-				</Button>
-			{/if}
+			<!-- In a table's lobby the setup is asked for there, once. -->
+			{#if !inTableLobby}{@render setupControls()}{/if}
 		{:else}
 			<p class="text-sm {toneClass[$hud.submissionTone]}">
 				{$hud.submissionLabel}

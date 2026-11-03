@@ -120,12 +120,16 @@ export async function stake(page: Page): Promise<void> {
 	// fixture fail on the first branch that sold an avatar instead of a bond,
 	// thirty seconds at a time, with a timeout that named a button nobody had
 	// removed. The testids are on the two controls in `GameHud.svelte`.
-	const deposit = page.locator('[data-testid="acquire-stake"]');
-	if (await deposit.isVisible({timeout: 5_000}).catch(() => false)) {
-		await deposit.click();
-	} else {
-		await page.locator('[data-testid="acquire-more-stake"]').click();
-	}
+	//
+	// ONE LOCATOR FOR BOTH, clicked with Playwright's own waiting. Asking which
+	// one is visible first and then clicking it raced the HUD: the gate renders
+	// once the reserve is read, so a page that had only just loaded (a table,
+	// opened by its link) answered "neither" and then waited on the wrong one.
+	await page
+		.locator('[data-testid="acquire-stake"]')
+		.or(page.locator('[data-testid="acquire-more-stake"]'))
+		.first()
+		.click({timeout: 60_000});
 
 	// WHICHEVER PAYER IS OFFERED. With only one method the rail skips the choice
 	// entirely, so this acts only if the chooser is actually up.
@@ -175,6 +179,53 @@ export async function stakeOnCell(page: Page, cellID: string): Promise<string> {
 			return cell ? cell.totalStake.toString() : '0';
 		})()`,
 	) as Promise<string>;
+}
+
+/** How many players hold a stake on a cell, as the board shows it. */
+export async function claimantsOnCell(
+	page: Page,
+	cellID: string,
+): Promise<number> {
+	return page.evaluate(
+		`(() => {
+			${READ}
+			const view = read(globalThis.context.viewState);
+			if (view.step !== 'Loaded') return 0;
+			const cell = view.cells.get(BigInt('${cellID}'));
+			return cell ? cell.numClaimants : 0;
+		})()`,
+	) as Promise<number>;
+}
+
+/**
+ * What the board shows a planned cell will hold once the turn is revealed, or
+ * undefined while the sandbox has not answered. This is the contract's own rule
+ * run from its bytecode (`$lib/placement/preview`), so a test can hold it to
+ * what the reveal then does.
+ */
+export async function previewOfCell(
+	page: Page,
+	cellID: string,
+): Promise<
+	{totalStake: string; numClaimants: number; playerStake: string} | undefined
+> {
+	return page.evaluate(
+		`(() => {
+			${READ}
+			const view = read(globalThis.context.viewState);
+			if (view.step !== 'Loaded') return undefined;
+			const next = view.cells.get(BigInt('${cellID}'))?.next;
+			return next
+				? {
+						totalStake: next.totalStake.toString(),
+						numClaimants: next.numClaimants,
+						playerStake: next.playerStake.toString(),
+					}
+				: undefined;
+		})()`,
+	) as Promise<
+		{totalStake: string; numClaimants: number; playerStake: string} | undefined
+	>;
 }
 
 /**

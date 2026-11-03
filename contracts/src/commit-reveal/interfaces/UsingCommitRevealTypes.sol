@@ -109,6 +109,13 @@ interface UsingCommitRevealTypes {
         /// @notice which phase the anchor cycle is in (Manual only; the timed
         ///         policies read it off the clock)
         bool commiting;
+        /// @notice the last cycle a game with an end plays, written by
+        ///         {CommitReveal-start}; zero means no end (the persistent
+        ///         world, and a table before its start)
+        /// @dev IN THIS SLOT ON PURPOSE: it shares the slot {commiting} is
+        ///      in, which every read of the cycle loads already, so a commit
+        ///      that checks the end reads nothing new.
+        uint64 lastCycleNumber;
     }
 
     /// @notice How many members have acted, in the cycle it names.
@@ -119,6 +126,29 @@ interface UsingCommitRevealTypes {
         uint64 cycleNumber;
         uint64 committed;
         uint64 revealed;
+    }
+
+    /// @notice A CLOSED ROSTER: a game for a fixed set of members, created by
+    ///         anyone, joined by staking, started by its creator.
+    /// @dev OPT-IN BY INITIALISATION. A game whose storage never had a roster
+    ///      written (`seats` zero, the persistent world) has OPEN ENTRY and
+    ///      behaves exactly as it did before rosters existed: a funded
+    ///      reserve is a member, at any time. See
+    ///      {UsingCommitReveal-_openRoster}.
+    struct Roster {
+        /// @notice who created the game, and may start it and forfeit a
+        ///         member who has not acted
+        address creator;
+        /// @notice how many members it may hold; zero means open entry
+        uint8 seats;
+        /// @notice whether the creator has started it, which closes the roster
+        bool started;
+        /// @notice how many cycles it plays from its start; never zero under a
+        ///         roster, since every game for a fixed set of members ends
+        uint16 cycles;
+        /// @notice how many members were seated when it started, which those
+        ///         who leave afterwards do not change (zero before the start)
+        uint8 startedWith;
     }
 
     /// @notice THE HEAD OF A HASH CHAIN, plus what is riding on it.

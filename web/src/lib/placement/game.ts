@@ -32,6 +32,9 @@ export type AppMembers = Omit<GameContext, 'start'>;
 /** What `?debug` traces, on top of the framework's own. */
 export {startDiagnostics} from './diagnostics';
 
+/** Its tables: games for a fixed set of players, beside the world. See `./table.ts`. */
+export {placementLobby as lobby} from './table';
+
 /**
  * The contract that records who may act for whom (`UsingDelegation`). In this
  * game the Game is the registry.

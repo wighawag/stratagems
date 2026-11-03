@@ -75,6 +75,14 @@ export const CYCLE_POLICY = {
  *   full fresh chunk, four zones, final      535,561
  *   the same chunk, non-final                534,756
  *
+ * RE-MEASURED 2026-10-31, when a placement's rule became a pure function the
+ * client can run (`_placementOutcome`, with `_place` loading before it and
+ * applying after it, and a `Simulation` route exposing it): the GasBudget
+ * test's worst reveal went from 533,508 to 536,813 (+3,305, 0.6%), its first
+ * commit from 117,714 to 117,740 and the paid one from 152,154 to 152,180 (one
+ * more route behind the router). Both figures below still hold, with more than
+ * the test's ten per cent above the worst case.
+ *
  * THE COMMIT'S WORST CASE IS A PAID ONE. A game that hands the skeleton a
  * reveal scheduler (`RevealScheduler`, stratagems' plan step 8, P3) makes the
  * commit carry the scheduler's payment, which `makeCommitment` forwards to
@@ -341,6 +349,34 @@ export const config = {
 				revealPhaseDuration: 10n,
 				actionsPerReveal: 4n,
 				cyclePolicy: CYCLE_POLICY.Timed,
+				commitGas: COMMIT_GAS,
+				revealGas: REVEAL_GAS,
+				expectedActionsPerTurn: EXPECTED_ACTIONS_PER_TURN,
+			},
+		},
+		/**
+		 * GAMES FOR A FIXED SET OF PLAYERS: the lobby implementation every table
+		 * is a clone of (`deploy/030_deploy_lobby.ts`), so these are every
+		 * table's rules, fixed per deployment (a clone cannot carry its own).
+		 *
+		 * `TimedWithEarlyAdvance`, because a table has a closed set to be
+		 * unanimous about: the reveal phase opens the moment everyone has
+		 * committed, the next cycle the moment everyone has revealed, and the
+		 * clock is what keeps a table moving when a member vanishes. The phases
+		 * are longer than the world's because two people at two screens are
+		 * slower than one, and only the absent pay for the length.
+		 *
+		 * The gas figures are the world's: a table runs the same routes behind
+		 * a clone. Measured 2026-10-31 by `test/js/Lobby.test.ts`: a table's
+		 * first commit 115,102, its worst reveal 533,795, and the start of a
+		 * two-member table 149,932.
+		 */
+		Lobby: {
+			default: {
+				commitPhaseDuration: 45n,
+				revealPhaseDuration: 15n,
+				actionsPerReveal: 4n,
+				cyclePolicy: CYCLE_POLICY.TimedWithEarlyAdvance,
 				commitGas: COMMIT_GAS,
 				revealGas: REVEAL_GAS,
 				expectedActionsPerTurn: EXPECTED_ACTIONS_PER_TURN,

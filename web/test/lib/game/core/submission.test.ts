@@ -127,6 +127,8 @@ describe('the commit-reveal submission', () => {
 		});
 		const stop = submission.start();
 
+		// a storage with no readiness takes a plan at once
+		expect(get(submission.ready)).toBe(true);
 		submission.plan([{cellID: 42n}]);
 		expect(submission.value.step).toBe('Planning');
 
@@ -1548,6 +1550,18 @@ describe('a storage that loads asynchronously (Q8-1, Q8-8)', () => {
 			actions: [{cellID: 9n}],
 		});
 		stop();
+	});
+
+	it('says whether it can take a plan: `ready` follows the storage', () => {
+		const {ready, submission} = setup();
+		// A plan before ready is dropped (above), so a game that lays one on a
+		// click reads this to say so rather than doing nothing.
+		expect(get(submission.ready)).toBe(false);
+		ready.set(true);
+		expect(get(submission.ready)).toBe(true);
+		// an account switch: loading again
+		ready.set(false);
+		expect(get(submission.ready)).toBe(false);
 	});
 
 	it('makes a reveal asked for before ready wait, not return', async () => {

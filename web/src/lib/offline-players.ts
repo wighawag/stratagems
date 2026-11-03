@@ -19,6 +19,13 @@ import {
 	type Placement,
 } from '$lib/placement/commit-reveal';
 import {chunkDueNext} from '$lib/game/core/commit-reveal/chain';
+import {
+	RANDOM_LEVEL,
+	decidePlayedTurn,
+	seededRandom,
+	type PlayedTurnStore,
+	type Strategy,
+} from '$lib/game/core/strategy';
 
 /**
  * THE OTHER PLAYERS IN THE OFFLINE WORLD, because a commit-reveal game with one
@@ -39,11 +46,15 @@ import {chunkDueNext} from '$lib/game/core/commit-reveal/chain';
  * a quiet game - they make a FROZEN one, for the human as well. Either the
  * world plays them or it must not enrol them.
  *
- * WHAT THIS IS NOT. It is not a mode, and it is not the NPCs a later phase
- * wants: there is no intelligence here, no difficulty and no interface for
- * either. It is the smallest thing that makes the cycle have somebody to wait
- * for, written in the app beside the world that wants it, exactly as the
- * provisioning hook is.
+ * A SEAT HAS A LEVEL (`$lib/game/lobby/seats`), chosen at the lobby. At
+ * `random`, the default, it plays the derived turn below and nothing more: no
+ * intelligence, no interface, the smallest thing that makes the cycle have
+ * somebody to wait for. At any other level it asks the game's STRATEGY
+ * (`$lib/placement/strategy`, through `$lib/game/core/strategy`) once per
+ * cycle, in the commit phase, and the turn it decided is STORED before it is
+ * committed, because a turn that depends on the board cannot be re-derived
+ * once the board has moved. Every other pass, the reveal and the settlement
+ * read it back.
  *
  * WHAT IS NO LONGER HERE IS THE MACHINERY, and that split is worth knowing
  * before reading on. The keyring that sends a call and waits for inclusion, the
@@ -56,9 +67,11 @@ import {chunkDueNext} from '$lib/game/core/commit-reveal/chain';
  * call or a chain of chunks, and what settling a missed reveal COSTS - which
  * here spends this world's own stake and in the next game spends nothing at all.
  *
- * THEY HOLD NOTHING IN MEMORY, AND THAT IS THE LOAD-BEARING PROPERTY. Both the
- * secret and the actions are DERIVED from (chain, game, identity, cycle), so a
- * reload reconstructs them exactly. The alternative bricks the world: a player
+ * THEY HOLD NOTHING IN MEMORY, AND THAT IS THE LOAD-BEARING PROPERTY. The
+ * secret is DERIVED from (chain, game, identity, cycle), and so are a `random`
+ * seat's actions; a seat at another level keeps its actions in the store the
+ * world hands in, written before the commit. Either way a reload reconstructs
+ * them exactly. The alternative bricks the world: a player
  * that commits and then forgets its secret can never reveal, `advanceCycle`
  * refuses to close a cycle with an unopened commitment in it (correctly - that
  * is what stops a turn being stranded), and the human's game stops for good
@@ -92,6 +105,8 @@ export type OfflinePlayer = {
 	 * an address or passes a token id; nothing in this file has an opinion.
 	 */
 	identity: bigint;
+	/** How it plays: absent means `random`, today's derived turn. */
+	level?: string;
 };
 
 /** What `getCommitment` hands back. */
@@ -147,6 +162,22 @@ export function turnFor(params: {
 	return [{cellID: cellID(x, y)}];
 }
 
+/**
+ * Every cell a played turn may land on: the block {@link turnFor} draws from,
+ * which is also what a strategy chooses among, so a seat at any level plays
+ * where the human can see it.
+ */
+export function playedTurnCells(): bigint[] {
+	const half = Math.floor(PLAYED_TURN_SPREAD / 2);
+	const cells: bigint[] = [];
+	for (let y = -half; y < PLAYED_TURN_SPREAD - half; y++) {
+		for (let x = -half; x < PLAYED_TURN_SPREAD - half; x++) {
+			cells.push(cellID(x, y));
+		}
+	}
+	return cells;
+}
+
 export function createOfflinePlayers(params: {
 	provider: EIP1193ProviderLike;
 	deployments: DeploymentsStore;
@@ -163,8 +194,18 @@ export function createOfflinePlayers(params: {
 	 * one-second poll.
 	 */
 	onActed?: () => void;
+	/**
+	 * How a seat at a level other than `random` decides its turn. Without it
+	 * (or without `turns`) every seat plays `random`.
+	 */
+	strategy?: Strategy<Placement>;
+	/**
+	 * Where a decided turn is kept, written before its commit: what the reveal
+	 * and the settlement read back. The world names it, beside its other keys.
+	 */
+	turns?: PlayedTurnStore<Placement>;
 }): SerialisedLoop {
-	const {provider, deployments, config, players} = params;
+	const {provider, deployments, config, players, strategy, turns} = params;
 
 	const records = deployments.get();
 	const game = {
@@ -231,14 +272,82 @@ export function createOfflinePlayers(params: {
 	 * and lets the hash decide, exactly as the app's own adapter lets the hash
 	 * judge a recovered turn.
 	 */
+	//
+	// AND A THIRD, FIRST, WHEN THE SEAT DECIDED ITS TURN: the one it stored before
+	// committing. The derived turn stays a candidate beside it, so a seat whose
+	// record was lost still opens what it would have committed at `random`, and
+	// a `random` seat (nothing stored) behaves exactly as it always has.
 	function candidateTurns(
 		player: OfflinePlayer,
 		cycleNumber: number,
-	): Placement[][] {
-		return [
-			turnFor({game: game.address, identity: player.identity, cycleNumber}),
-			[],
-		];
+	): (readonly Placement[])[] {
+		const derived = turnFor({
+			game: game.address,
+			identity: player.identity,
+			cycleNumber,
+		});
+		const stored = decides(player)
+			? turns?.get(player.identity, cycleNumber)
+			: undefined;
+		return stored ? [stored, derived, []] : [derived, []];
+	}
+
+	/** Whether this seat asks the strategy rather than playing `random`. */
+	function decides(player: OfflinePlayer): boolean {
+		return (
+			strategy !== undefined &&
+			turns !== undefined &&
+			player.level !== undefined &&
+			player.level !== RANDOM_LEVEL
+		);
+	}
+
+	/**
+	 * The turn this seat wants this cycle, given what it can afford.
+	 *
+	 * At `random`, the derived one. At another level, the strategy's, decided
+	 * once and stored before it is returned (so a commit never carries a turn
+	 * that is not stored). A strategy that throws (its sandbox did not start, a
+	 * read failed) is answered with the derived turn, stored in its place: a
+	 * seat that cannot decide still plays, because a seat that does not commit
+	 * freezes the cycle for everybody.
+	 */
+	async function wantedTurn(
+		player: OfflinePlayer,
+		cycleNumber: number,
+		affordable: number,
+	): Promise<readonly Placement[]> {
+		const derived = turnFor({
+			game: game.address,
+			identity: player.identity,
+			cycleNumber,
+		});
+		if (!decides(player) || !strategy || !turns) return derived;
+		return decidePlayedTurn({
+			store: turns,
+			strategy: async (input) => {
+				try {
+					return await strategy(input);
+				} catch (err) {
+					console.warn(
+						'an offline player could not decide its turn, and plays the derived one',
+						err,
+					);
+					return derived;
+				}
+			},
+			identity: player.identity,
+			cycleNumber,
+			level: player.level ?? RANDOM_LEVEL,
+			random: seededRandom({
+				chainId: records.chain.id,
+				contract: game.address,
+				identity: player.identity,
+				cycleNumber,
+			}),
+			// One placement, as `random` plays: both levels spend alike.
+			budget: {actionsAtMost: Math.min(1, affordable)},
+		});
 	}
 
 	/**
@@ -260,11 +369,20 @@ export function createOfflinePlayers(params: {
 	async function turnToCommit(
 		player: OfflinePlayer,
 		cycleNumber: number,
-	): Promise<{actions: Placement[]; bond: bigint}> {
-		const [wanted] = candidateTurns(player, cycleNumber);
+	): Promise<{actions: readonly Placement[]; bond: bigint}> {
+		const one = costOfPlacements(config, 1);
+		if (one === 0n) {
+			return {
+				actions: await wantedTurn(player, cycleNumber, Infinity),
+				bond: 0n,
+			};
+		}
+		const reserve = await reserveOf(player);
+		// Nothing affordable: the empty turn, without asking anybody.
+		if (reserve < one) return {actions: [], bond: 0n};
+		const wanted = await wantedTurn(player, cycleNumber, Number(reserve / one));
 		const cost = costOfPlacements(config, wanted.length);
 		if (cost === 0n) return {actions: wanted, bond: 0n};
-		const reserve = await reserveOf(player);
 		// Whole chunks, like the app's own client (see `bondFor`): the surplus
 		// comes back with the last reveal or a settlement shown the chunks.
 		if (reserve >= cost) {
