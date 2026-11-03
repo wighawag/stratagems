@@ -24,6 +24,7 @@ const store = new Map<string, string>();
 let reloads = 0;
 
 const SEATS_KEY = 'a-game:seats';
+const HUMANS_KEY = 'a-game:humans';
 
 beforeEach(() => {
 	store.clear();
@@ -165,5 +166,172 @@ describe('the lobby', () => {
 
 		expect(get(lobby).seats).toBe(10);
 		expect(started[0]).toHaveLength(10);
+	});
+});
+
+describe('the lobby, for a game that can seat several people at one device', () => {
+	function hotseatGame(params: {alreadyHere?: boolean; atMost?: number} = {}) {
+		const started: Table[] = [];
+		const lobby = createLobby({
+			gameAlreadyHere: () => params.alreadyHere ?? false,
+			startGame: (table) => void started.push(table),
+			forgetGame: () => {},
+			seatsStorageKey: SEATS_KEY,
+			humansStorageKey: HUMANS_KEY,
+			humansAtMost: params.atMost ?? 10,
+		});
+		return {lobby, started};
+	}
+
+	it('offers no choice of people to a game that has no hotseat', () => {
+		const {lobby} = fakeGame();
+		lobby.enter();
+		expect(get(lobby)).toMatchObject({humans: 1, humansAtMost: 1});
+		expect(get(lobby).humanChoices).toEqual([1]);
+		lobby.chooseHumans(3);
+		expect(get(lobby).humans).toBe(1);
+	});
+
+	it('offers one person to every seat, up to what the game can play', () => {
+		const {lobby} = hotseatGame({atMost: 2});
+		lobby.enter();
+		lobby.chooseSeats(4);
+		expect(get(lobby).humanChoices).toEqual([1, 2]);
+		lobby.chooseHumans(5);
+		expect(get(lobby).humans).toBe(2);
+	});
+
+	it('remembers how many people beside the seats, and boots that table', () => {
+		const {lobby, started} = hotseatGame();
+		lobby.enter();
+		lobby.chooseSeats(3);
+		lobby.chooseHumans(2);
+		lobby.sitDown(get(lobby).seats);
+		expect(store.get(HUMANS_KEY)).toBe('2');
+		expect(started[0].map((seat) => seat.occupant.kind)).toEqual([
+			'you',
+			'local-human',
+			'the-world',
+		]);
+	});
+
+	it('goes back into a world with its people, and reads a world from before hotseat as one person', () => {
+		store.set(SEATS_KEY, '3');
+		store.set(HUMANS_KEY, '2');
+		const back = hotseatGame({alreadyHere: true});
+		back.lobby.enter();
+		expect(get(back.lobby)).toMatchObject({step: 'Sat', seats: 3, humans: 2});
+
+		store.delete(HUMANS_KEY);
+		const before = hotseatGame({alreadyHere: true});
+		before.lobby.enter();
+		expect(get(before.lobby)).toMatchObject({step: 'Sat', seats: 3, humans: 1});
+	});
+
+	it('forgets the people with the seats when the player leaves', () => {
+		store.set(SEATS_KEY, '3');
+		store.set(HUMANS_KEY, '2');
+		const {lobby} = hotseatGame({alreadyHere: true});
+		lobby.leaveTheTable();
+		expect(store.has(HUMANS_KEY)).toBe(false);
+	});
+});
+
+describe('the lobby with levels for the world seats', () => {
+	const LEVELS_KEY = 'a-game:levels';
+	const OFFERS = [
+		{id: 'random', label: 'Random'},
+		{id: 'greedy', label: 'Greedy'},
+	];
+
+	function levelledGame(params: {alreadyHere?: boolean} = {}) {
+		const started: Table[] = [];
+		let here = params.alreadyHere ?? false;
+		const lobby = createLobby({
+			gameAlreadyHere: () => here,
+			startGame: (table) => void started.push(table),
+			forgetGame: () => void (here = false),
+			seatsStorageKey: SEATS_KEY,
+			humansStorageKey: HUMANS_KEY,
+			humansAtMost: 10,
+			levelsStorageKey: LEVELS_KEY,
+			levels: OFFERS,
+		});
+		return {lobby, started};
+	}
+
+	const worldLevels = (table: Table) =>
+		table
+			.filter((seat) => seat.occupant.kind === 'the-world')
+			.map((seat) =>
+				seat.occupant.kind === 'the-world' ? seat.occupant.level : undefined,
+			);
+
+	it('offers no choice of level to a game that offers none', () => {
+		const {lobby} = fakeGame();
+		lobby.enter();
+		expect(get(lobby).levelChoices).toEqual([]);
+		expect(get(lobby).levels).toEqual(['random', 'random']);
+	});
+
+	it('defaults every world seat to random, which is the world as it always was', () => {
+		const {lobby, started} = levelledGame();
+		lobby.enter();
+		expect(get(lobby).levelChoices).toEqual(OFFERS);
+		expect(get(lobby).levels).toEqual(['random', 'random']);
+		lobby.sitDown();
+		expect(worldLevels(started[0])).toEqual([undefined, undefined]);
+		expect(store.get(LEVELS_KEY)).toBe('["random","random"]');
+	});
+
+	it('takes a level per world seat, keeps it as the seats change, and boots that table', () => {
+		const {lobby, started} = levelledGame();
+		lobby.enter();
+		lobby.chooseLevel(1, 'greedy');
+		expect(get(lobby).levels).toEqual(['random', 'greedy']);
+		lobby.chooseSeats(4);
+		expect(get(lobby).levels).toEqual(['random', 'greedy', 'random']);
+		lobby.chooseHumans(3);
+		// Three people at four seats leaves one world seat, which keeps the
+		// first one's level.
+		expect(get(lobby).levels).toEqual(['random']);
+		lobby.chooseHumans(1);
+		lobby.chooseLevel(0, 'greedy');
+		lobby.chooseLevel(2, 'genius');
+		lobby.chooseLevel(9, 'greedy');
+		expect(get(lobby).levels).toEqual(['greedy', 'random', 'random']);
+		lobby.sitDown(get(lobby).seats);
+		expect(store.get(LEVELS_KEY)).toBe('["greedy","random","random"]');
+		expect(worldLevels(started[0])).toEqual(['greedy', undefined, undefined]);
+	});
+
+	it('goes back into a world with its levels, and reads absent and unknown ones as random', () => {
+		store.set(SEATS_KEY, '3');
+		store.set(LEVELS_KEY, '["random","greedy"]');
+		const back = levelledGame({alreadyHere: true});
+		back.lobby.enter();
+		expect(get(back.lobby)).toMatchObject({
+			step: 'Sat',
+			levels: ['random', 'greedy'],
+		});
+		expect(worldLevels(back.started[0])).toEqual([undefined, 'greedy']);
+
+		store.delete(LEVELS_KEY);
+		const before = levelledGame({alreadyHere: true});
+		before.lobby.enter();
+		expect(get(before.lobby).levels).toEqual(['random', 'random']);
+
+		store.set(LEVELS_KEY, '["genius", 3');
+		const garbled = levelledGame({alreadyHere: true});
+		garbled.lobby.enter();
+		expect(get(garbled.lobby).levels).toEqual(['random', 'random']);
+	});
+
+	it('forgets the levels with the seats when the player leaves', () => {
+		store.set(SEATS_KEY, '3');
+		store.set(LEVELS_KEY, '["greedy","greedy"]');
+		const {lobby} = levelledGame({alreadyHere: true});
+		lobby.leaveTheTable();
+		expect(store.has(LEVELS_KEY)).toBe(false);
 	});
 });

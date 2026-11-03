@@ -52,10 +52,16 @@
 	import {Button} from '$lib/shadcn/ui/button';
 	import InWorld from '$lib/context/InWorld.svelte';
 	import Play from '../play/+page.svelte';
+	import {hotseat} from '$lib/game/lobby/hotseat';
+	import Handover from '$lib/game/lobby/ui/Handover.svelte';
 
 	onMount(() => {
 		void offlineLobby.enter();
 	});
+
+	/** A level's label, for the seat list: presentational only. */
+	const levelLabel = (id: string) =>
+		$offlineLobby.levelChoices.find((level) => level.id === id)?.label ?? id;
 </script>
 
 <DefaultHead title={'Play Offline - a chain in this tab'} />
@@ -101,7 +107,16 @@
 	     ADR-0007 (jolly-roger) exists for, and the reason this route spells no
 	     height of its own. -->
 	<Context context={$offlineWorld.context}>
-		<Play />
+		<!-- HOTSEAT: while the device changes hands the handover REPLACES the
+		     game rather than covering it, so nothing of the previous person's
+		     turn stays mounted. The context stays, because the world keeps
+		     running underneath (its seats, its advance, the revealer). A world
+		     with one person at it never sets a hotseat, and this is `Play`. -->
+		{#if $hotseat.step === 'Inactive' || $hotseat.step === 'Playing'}
+			<Play />
+		{:else}
+			<Handover current={$hotseat} onBegin={() => void hotseat.begin()} />
+		{/if}
 		<!-- The app's own overlays, bound to THIS world. Without them the flows this
 		     game opens (authorising the browser's key, topping it up) drive stores
 		     nothing on screen is reading, and the button appears to do nothing. See
@@ -130,20 +145,68 @@
 				>
 			{/each}
 		</div>
+		{#if $offlineLobby.humansAtMost > 1}
+			<!-- HOTSEAT, when this game's world can play it: how many of the seats
+			     are people at this device, passing it between them. -->
+			<p class="mt-6 text-sm font-medium">How many of you, at this device?</p>
+			<div class="mt-2 flex flex-wrap justify-center gap-2">
+				{#each $offlineLobby.humanChoices as choice (choice)}
+					<Button
+						size="sm"
+						variant={choice === $offlineLobby.humans ? 'default' : 'outline'}
+						data-testid={`humans-${choice}`}
+						onclick={() => offlineLobby.chooseHumans(choice)}>{choice}</Button
+					>
+				{/each}
+			</div>
+		{/if}
+		{#if $offlineLobby.levelChoices.length > 0 && $offlineLobby.levels.length > 0}
+			<!-- A LEVEL PER WORLD SEAT, when this game's world offers levels: how each
+			     seat the world plays plays, fixed for this world once it is built. -->
+			<p class="mt-6 text-sm font-medium">How does each world seat play?</p>
+			<div class="mt-2 flex flex-col items-center gap-2">
+				{#each $offlineLobby.levels as level, worldSeat (worldSeat)}
+					<div class="flex flex-wrap items-center justify-center gap-2">
+						<span class="text-xs text-muted-foreground"
+							>World seat {worldSeat + 1}</span
+						>
+						{#each $offlineLobby.levelChoices as choice (choice.id)}
+							<Button
+								size="sm"
+								variant={choice.id === level ? 'default' : 'outline'}
+								data-testid={`level-${worldSeat}-${choice.id}`}
+								onclick={() => offlineLobby.chooseLevel(worldSeat, choice.id)}
+								>{choice.label}</Button
+							>
+						{/each}
+					</div>
+				{/each}
+			</div>
+		{/if}
 		<ul
 			class="mx-auto mt-4 flex max-w-md flex-wrap justify-center gap-2 text-xs text-muted-foreground"
 		>
 			{#each $offlineLobby.table as seat, index (index)}
 				<li class="rounded-md border border-muted-foreground/30 px-2 py-1">
-					{seat.occupant.kind === 'you' ? 'You' : 'The world'}
+					{seat.occupant.kind === 'you'
+						? 'You'
+						: seat.occupant.kind === 'local-human'
+							? `Player ${seat.occupant.account + 1}`
+							: 'level' in seat.occupant && seat.occupant.level
+								? `The world (${levelLabel(seat.occupant.level)})`
+								: 'The world'}
 				</li>
 			{/each}
 		</ul>
 		<Button
 			class="mt-6"
 			data-testid="sit-down"
-			onclick={() => offlineLobby.sitDown($offlineLobby.seats)}
-			>Sit down and play</Button
+			onclick={() =>
+				offlineLobby.sitDown(
+					$offlineLobby.seats,
+					$offlineLobby.humans,
+					$offlineLobby.levels,
+				)}>Sit down and play</Button
 		>
 		<p class="mx-auto mt-4 max-w-md text-xs text-muted-foreground">
 			{THE_KEY_THIS_BROWSER_PLAYS_WITH}

@@ -94,6 +94,7 @@ upstream rather than workarounds here.
 web/vite.assetpack.ts                            the pipeline
 web/src/lib/game/render/pixi/PixiCanvas.svelte   the host
 web/src/lib/game/render/pixi/world.ts            camera -> pixi container
+web/src/lib/game/render/pixi/surface.ts          pixel art (default) or smooth art
 web/src/lib/game/render/pixi/assets.ts           bundle loading + progress
 web/src/lib/game/render/pixi/LoadingGate.svelte  progress -> something on screen
 web/src/lib/placement/render/board-renderer.ts   this game's board, diffed
@@ -108,6 +109,8 @@ the unexercised code D11 exists to remove. `CellObject` draws the tile for a
 claimed cell and falls back to vector graphics when there is no sheet, so both
 paths are reachable in an ordinary checkout and a clone without `../assets`
 still builds and plays.
+
+**Pixel art is the default, smooth art is a prop.** The host renders at one pixel per CSS pixel, without antialiasing and with positions rounded, because the reference game's sprite is pixel art. A game drawing smooth art (gradients, fine rings) passes `smooth` and gets the device ratio and antialiasing (`surface.ts`), and sets `linear` filtering on the textures it makes, since `assets.ts` makes `nearest` the default for every texture. The canvas-2d host on `main` accepts `smooth` and ignores it, so the props stay identical.
 
 ## The pipeline is a MOVE, and its second half is not done yet
 

@@ -35,6 +35,13 @@
 		backgroundColor?: string;
 		/** Unused here: this host strokes only the grid lines that are visible. */
 		gridCells?: number;
+		/**
+		 * Unused here: this host always draws at the device ratio with the
+		 * browser's own smoothing. The pixi host defaults to pixel art and takes
+		 * this to draw smooth art instead; accepted so the two hosts keep the
+		 * same props.
+		 */
+		smooth?: boolean;
 	}
 	let {
 		cameraControl,

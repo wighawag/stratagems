@@ -1,5 +1,6 @@
 import {bytesToHex} from 'viem';
 import {mnemonicToAccount} from 'viem/accounts';
+import {RANDOM_LEVEL, type AiLevel} from '../core/strategy';
 
 /**
  * HOW MANY SEATS ARE AT THE TABLE, AND WHO IS IN EACH ONE.
@@ -30,8 +31,8 @@ import {mnemonicToAccount} from 'viem/accounts';
  * used to live in the app namespace and assert in prose that it was
  * byte-identical in every game that had one, which is a claim a reader has to
  * verify by grepping two repos. Two games have now been measured against it and
- * it held; moving it here makes the claim structural, and the one thing it
- * imports is `viem`.
+ * it held; moving it here makes the claim structural, and what it imports is
+ * `viem` and the framework's own `RANDOM_LEVEL`.
  */
 
 /**
@@ -87,12 +88,37 @@ export type Occupant =
 	/**
 	 * The world itself, playing a key it holds.
 	 *
-	 * What it DOES with that key is the loop that plays it, and that loop is
-	 * deliberately the smallest thing that gives a cycle somebody to wait for:
-	 * no intelligence, no difficulty, no interface. The NPCs the plan's Phase 6
-	 * wants are a different job.
+	 * What it DOES with that key is the game's pass (its `offline-players.ts`),
+	 * at the seat's LEVEL: absent means `random`, today's derived turn and the
+	 * smallest thing that gives a cycle somebody to wait for; another level is
+	 * the game's strategy (`$lib/game/core/strategy`). A level is chosen at the
+	 * lobby with the seats, and it changes how the seat plays, never which key
+	 * it plays with, so an AI seat is a world seat and not a kind of its own.
 	 */
-	| {kind: 'the-world'; privateKey: `0x${string}`; address: `0x${string}`};
+	| {
+			kind: 'the-world';
+			privateKey: `0x${string}`;
+			address: `0x${string}`;
+			level?: string;
+	  }
+	/**
+	 * A human at ANOTHER browser, seated at a table for a fixed set of players
+	 * by their own stake (`$lib/game/lobby/table`). Nothing here plays for
+	 * them: the seat is only who the cycle waits for. `player` is their
+	 * identity as the contract keys it: an account widened to a number, or a
+	 * token, whichever the game plays as.
+	 */
+	| {kind: 'remote-human'; player: bigint}
+	/**
+	 * ANOTHER human at THIS device (hotseat): the seats after the first that
+	 * people take turns at, passing the device between them. `account` is the
+	 * index of their account in the wallet the world announces (`you` is index
+	 * 0), because that wallet is what they play through, exactly as `you` does:
+	 * one account per player (the template's D4), switched at each handover
+	 * (`$lib/game/lobby/hotseat`). Like `you`, no key here and no address until
+	 * the world has booted and the wallet has derived it.
+	 */
+	| {kind: 'local-human'; account: number};
 
 /** One place at the table. */
 export type Seat = {occupant: Occupant};
@@ -242,20 +268,125 @@ function playedKey(index: number): {
 }
 
 /**
- * Lay out a table of `seats`.
+ * How many humans at this device a table of `seats` can hold, given what the
+ * game says it can play (`atMost`): at least one (you), at most every seat.
  *
- * SEAT ONE IS YOURS, always, and the rest are the world's. That is a fact
- * about today's two occupants rather than a rule: when a seat can hold a
- * second human, this is the one function that changes, and it changes by
- * taking what each seat holds as an argument instead of assuming it.
+ * TOTAL for the same reason as {@link clampSeats}: one input comes out of
+ * `localStorage`.
  */
-export function tableOf(seats: number): Table {
+export function clampHumans(
+	humans: unknown,
+	seats: number,
+	atMost: number = 1,
+): number {
+	const parsed =
+		typeof humans === 'number'
+			? humans
+			: typeof humans === 'string'
+				? Number(humans)
+				: Number.NaN;
+	const ceiling = Math.max(1, Math.min(clampSeats(seats), Math.floor(atMost)));
+	if (!Number.isFinite(parsed)) return 1;
+	return Math.min(ceiling, Math.max(1, Math.floor(parsed)));
+}
+
+/**
+ * Lay out a table of `seats`, `humans` of them at this device.
+ *
+ * SEAT ONE IS YOURS, always; the next `humans - 1` are the other people at
+ * this device (hotseat), each the wallet's account at its seat's index; the
+ * rest are the world's. A world seat keeps the key it had at the same position
+ * among the WORLD'S seats, so a table without hotseat plays exactly the
+ * addresses it always has.
+ *
+ * `levels` are the world's seats' levels, in seat order (see
+ * {@link clampLevels}); a seat at `random`, or past the end of the list, has
+ * no `level` at all, which is what every table before levels was. A level
+ * never moves a key: the addresses are the same whatever the levels.
+ */
+export function tableOf(
+	seats: number,
+	humans: number = 1,
+	levels: readonly string[] = [],
+): Table {
 	const count = clampSeats(seats);
+	const here = clampHumans(humans, count, count);
 	const table: Seat[] = [{occupant: {kind: 'you'}}];
-	for (let index = 0; index < count - 1; index++) {
-		table.push({occupant: {kind: 'the-world', ...playedKey(index)}});
+	for (let account = 1; account < here; account++) {
+		table.push({occupant: {kind: 'local-human', account}});
+	}
+	for (let index = 0; index < count - here; index++) {
+		const level = levels[index];
+		table.push({
+			occupant: {
+				kind: 'the-world',
+				...playedKey(index),
+				...(level !== undefined && level !== RANDOM_LEVEL ? {level} : {}),
+			},
+		});
 	}
 	return table;
+}
+
+/**
+ * The world's seats' levels, one per world seat, from whatever was stored or
+ * chosen.
+ *
+ * TOTAL, like {@link clampSeats}: the input comes out of `localStorage`. Not an
+ * array, malformed JSON, an entry that is not a level the game `offers`, and a
+ * missing entry are each read as `random`; the list is cut or padded to
+ * `worldSeats`. A game that offers no levels gets `random` everywhere.
+ */
+export function clampLevels(
+	levels: unknown,
+	worldSeats: number,
+	offers: readonly AiLevel[],
+): string[] {
+	let parsed: unknown = levels;
+	if (typeof levels === 'string') {
+		try {
+			parsed = JSON.parse(levels);
+		} catch {
+			parsed = [];
+		}
+	}
+	const list = Array.isArray(parsed) ? parsed : [];
+	const known = new Set(offers.map((level) => level.id));
+	return Array.from({length: Math.max(0, Math.floor(worldSeats))}, (_, i) => {
+		const level = list[i];
+		return typeof level === 'string' && known.has(level) ? level : RANDOM_LEVEL;
+	});
+}
+
+/**
+ * The humans at this device, in seat order: `you` first (account 0), then each
+ * `local-human`. Each with the index of its account in the world's wallet.
+ */
+export function humansAtThisDevice(
+	table: Table,
+): readonly {seat: number; account: number}[] {
+	const humans: {seat: number; account: number}[] = [];
+	table.forEach((seat, index) => {
+		if (seat.occupant.kind === 'you') humans.push({seat: index, account: 0});
+		else if (seat.occupant.kind === 'local-human') {
+			humans.push({seat: index, account: seat.occupant.account});
+		}
+	});
+	return humans;
+}
+
+/**
+ * THE KEY THAT SENDS THE HUMANS' REVEALS in a hotseat world
+ * (`$lib/game/core/local-revealer`): its own account, so the reveals are paid
+ * for by neither whoever happened to commit last nor anybody's stake, from the
+ * same well-known list as the world's seats, at an index no seat can reach (the
+ * world's seats stop at `FIRST_PLAYED_ACCOUNT + MOST_SEATS - 2`).
+ */
+export function localRevealerKey(): {
+	privateKey: `0x${string}`;
+	address: `0x${string}`;
+} {
+	return playedKey(MOST_SEATS);
 }
 
 /**
@@ -266,17 +397,50 @@ export function tableOf(seats: number): Table {
  * per member (fund it, stake for it, play it) asks the table who is there
  * instead of assuming that everyone except seat one is the world's.
  */
-export function seatsPlayedByTheWorld(
-	table: Table,
-): readonly {privateKey: `0x${string}`; address: `0x${string}`}[] {
-	const world: {privateKey: `0x${string}`; address: `0x${string}`}[] = [];
+export function seatsPlayedByTheWorld(table: Table): readonly {
+	privateKey: `0x${string}`;
+	address: `0x${string}`;
+	level?: string;
+}[] {
+	const world: {
+		privateKey: `0x${string}`;
+		address: `0x${string}`;
+		level?: string;
+	}[] = [];
 	for (const seat of table) {
 		if (seat.occupant.kind === 'the-world') {
 			world.push({
 				privateKey: seat.occupant.privateKey,
 				address: seat.occupant.address,
+				...(seat.occupant.level !== undefined
+					? {level: seat.occupant.level}
+					: {}),
 			});
 		}
 	}
 	return world;
+}
+
+/** A seat at a table for a fixed set of players: its occupant, or nobody yet. */
+export type TableSeat = {occupant: Occupant | undefined};
+
+/**
+ * A TABLE'S SEATS, as its roster holds them: each member a human, the one this
+ * browser plays as being `you`, and the seats nobody has taken yet empty.
+ * Members are the contract's identities, so `you` is this browser's identity
+ * as the contract keys it (`$lib/game/identity`'s `onchainIdentity`), which is
+ * the account widened to a number in a game that plays as the account and a
+ * token in one that plays as a token.
+ */
+export function tableAtRoster(
+	seats: number,
+	members: readonly bigint[],
+	you: bigint | undefined,
+): readonly TableSeat[] {
+	const table: TableSeat[] = members.map((member) => ({
+		occupant:
+			member === you ? {kind: 'you'} : {kind: 'remote-human', player: member},
+	}));
+	while (table.length < seats) table.push({occupant: undefined});
+	return table;
 }

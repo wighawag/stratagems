@@ -55,6 +55,21 @@ export function createImmediateBoardRenderer(params: {
 					context.globalAlpha = 1;
 				}
 
+				if (cell.planned && cell.next) {
+					// WHAT THE PLAN LEADS TO, from the contract's own rule (see
+					// `../preview.ts`): a smaller square at the fill the cell will have
+					// once the turn is revealed, in the planned colour so it never
+					// reads as confirmed. Absent until the sandbox answers, so the
+					// outline below is drawn at once and this a moment later.
+					context.globalAlpha = Math.min(
+						0.35 + 0.2 * cell.next.numClaimants,
+						0.95,
+					);
+					context.fillStyle = PLANNED_COLOUR;
+					context.fillRect(x - 0.2, y - 0.2, 0.4, 0.4);
+					context.globalAlpha = 1;
+				}
+
 				if (cell.planned) {
 					// Planned placements are outlined rather than filled so they never
 					// read as confirmed. Line width is in game units after the camera

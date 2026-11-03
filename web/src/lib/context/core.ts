@@ -55,6 +55,7 @@ import {
 import {hasFaucet} from '$lib/core/ui/faucet/index.js';
 import {createTopUpFlow} from '$lib/ui/credits/top-up-flow.js';
 import type {SignerGrant} from '$lib/ui/delegation/grant.js';
+import type {PlayerIdentity, RevealScheduler} from '$lib/game/core/seams';
 import {burnerOverride} from '$lib';
 import {resolveBurnerWallet} from './burner.js';
 import {
@@ -203,6 +204,20 @@ export type CoreServices = {
 	 * it here without this type changing. See the note above.
 	 */
 	appConfig: ResolvedAppConfig;
+	/**
+	 * The table this context is at, if it is at one: a game for a fixed set
+	 * of players at an address of its own (`$lib/game/lobby/table`), which is
+	 * then `deployments`' game too.
+	 */
+	table: `0x${string}` | undefined;
+	/**
+	 * WHO REVEALS FOR THIS WORLD'S PLAYERS, when the WORLD has someone: the local
+	 * revealer of a world with several people at one device (hotseat,
+	 * `$lib/game/core/local-revealer`). The skeleton uses it in place of the
+	 * game's own scheduler. Undefined everywhere else, which is every world but
+	 * that one.
+	 */
+	scheduler: RevealScheduler<PlayerIdentity> | undefined;
 };
 
 /**
@@ -1207,6 +1222,10 @@ export function createCoreContext<App extends AppContext>(params: {
 	 * was built against, which is the only world most apps have.
 	 */
 	establishConnection?: ConnectionFactory;
+	/** The table this context is at: see `CoreServices.table`. */
+	table?: `0x${string}`;
+	/** Who reveals for this world's players: see `CoreServices.scheduler`. */
+	scheduler?: RevealScheduler<PlayerIdentity>;
 }): {
 	context: CoreContext & Omit<App, 'start'>;
 	start: () => () => void;
@@ -1544,6 +1563,8 @@ export function createCoreContext<App extends AppContext>(params: {
 		canReadChain,
 		hasAppRpc,
 		appConfig,
+		table: params.table,
+		scheduler: params.scheduler,
 	});
 	// `start` is lifecycle rather than context, so it is held back from the
 	// spread below; everything else, `onchainState` included, goes into the
@@ -1658,6 +1679,7 @@ export function createCoreContext<App extends AppContext>(params: {
 		nonceCache,
 		refreshChainData,
 		hasAppRpc,
+		table: params.table,
 		canReadChain,
 		forceRpcFailure,
 		offline,

@@ -453,6 +453,14 @@ export function describeSavedTurn(state: SavedTurn): HudModel['savedTurn'] {
 	}
 }
 
+/**
+ * What the HUD says while the account's data loads (after any account switch, a
+ * hotseat handover's included): the submission takes no plan until it has, so a
+ * click on the board then is not planned (`SubmissionStore.ready`).
+ */
+export const LOADING_ACCOUNT =
+	"Loading your account's data: a cell clicked now is not planned.";
+
 export function createHud(context: Context): Readable<HudModel> {
 	const {game} = context;
 
@@ -471,6 +479,7 @@ export function createHud(context: Context): Readable<HudModel> {
 			game.acquisition,
 			game.recovery,
 			game.savedTurn,
+			game.submission.ready,
 		],
 		([
 			$twoPhase,
@@ -486,6 +495,7 @@ export function createHud(context: Context): Readable<HudModel> {
 			$acquisition,
 			$recovery,
 			$savedTurn,
+			$ready,
 		]): HudModel => {
 			const savedTurn = describeSavedTurn($savedTurn as SavedTurn);
 			const submission = describeSubmission($submission);
@@ -557,6 +567,8 @@ export function createHud(context: Context): Readable<HudModel> {
 				reserveLabel:
 					reserveAmount === undefined ? '-' : STAKE.amount(reserveAmount),
 				warning:
+					// First: until it is loaded a click plans nothing at all.
+					(!$ready ? LOADING_ACCOUNT : undefined) ??
 					describePlanLimit($count, $maxActions as number | undefined) ??
 					(reserveAmount !== undefined && $cost > reserveAmount
 						? STAKE.notEnough
