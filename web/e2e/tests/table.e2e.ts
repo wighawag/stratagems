@@ -9,8 +9,9 @@ import {
 
 /**
  * A TABLE, end to end, in two browsers: a game for a fixed set of players at
- * an address of its own, created from the lobby, joined by its link, started by
- * its creator, played, and a vanished member forfeited.
+ * an address of its own, created from the lobby to play three cycles, joined by
+ * its link, started by its creator, played, a vanished member forfeited, and
+ * played to its end.
  *
  * TWO BROWSERS BECAUSE THAT IS WHAT A TABLE IS. Every rule here is about the
  * OTHER player: the early advance waits for everyone, the clock is what moves a
@@ -114,7 +115,7 @@ describe('A table for a fixed set of players', () => {
 	// its first account is nobody else's.
 	test.use({walletAccountIndex: 9});
 
-	test('is created, joined by link, started, advanced early and by the clock, and a vanished member forfeited', async ({
+	test('is created, joined by link, started, advanced early and by the clock, a vanished member forfeited, and played to its end', async ({
 		connectedPage,
 		browser,
 		authoriseBrowser,
@@ -126,6 +127,9 @@ describe('A table for a fixed set of players', () => {
 		// CREATE, from the lobby.
 		await host.goto('/lobby/');
 		await host.getByTestId('table-seats-2').click();
+		// THREE CYCLES, the fewest this story needs: one advanced early, one by
+		// the clock, and the one the forfeit is in, after which it has ended.
+		await host.getByTestId('table-cycles').fill('3');
 		await host.getByTestId('table-create').click();
 		await host.waitForURL(/[?&]game=0x[0-9a-fA-F]{40}/, {timeout: 90_000});
 		const table = new URL(host.url()).searchParams.get('game');
@@ -134,6 +138,9 @@ describe('A table for a fixed set of players', () => {
 		// BEFORE THE START THE PAGE IS THE TABLE'S LOBBY: what it plays by, who
 		// is seated, and the seat to take.
 		await expect(host.getByTestId('table-lobby')).toBeVisible();
+		await expect(
+			host.getByTestId('table-lobby').getByTestId('table-cycles'),
+		).toHaveText('3');
 
 		// The context is AT the table: its game is the table's address, so every
 		// transaction below goes there and nowhere else.
@@ -205,6 +212,10 @@ describe('A table for a fixed set of players', () => {
 			});
 			const first = await cycleOf(host);
 			expect(first.commiting).toBe(true);
+			await expect(host.getByTestId('table-progress')).toHaveText(
+				'Cycle 1 of 3',
+				{timeout: 30_000},
+			);
 
 			// CYCLE ONE, ADVANCED EARLY: both commit, so the reveal phase opens
 			// before the commit phase's nominal end, and both reveal, so the next
@@ -299,5 +310,26 @@ describe('A table for a fixed set of players', () => {
 				timeout: 60_000,
 			})
 			.toBe(1);
+
+		// THE LAST CYCLE, alone: the one member left commits and reveals, both
+		// phases close early, and the table has played its three cycles.
+		await expect(host.getByTestId('table-progress')).toHaveText('Cycle 3 of 3');
+		await readyToPlay(host);
+		await planOnCanvas(host, {x: 90, y: 60});
+		await commitNow(host);
+		await expect
+			.poll(async () => (await submissionStep(host)).step, {
+				message: 'the last turn should be revealed',
+				timeout: 90_000,
+			})
+			.toBe('Revealed');
+		await expect(host.getByTestId('table-progress')).toHaveText(
+			'Ended after 3 cycles',
+			{timeout: 60_000},
+		);
+		// After the end the board takes no turn, and the creator has nobody to
+		// forfeit.
+		expect(await canPlay(host)).toBe(false);
+		await expect(host.getByTestId('table-forfeit')).toHaveCount(0);
 	});
 });

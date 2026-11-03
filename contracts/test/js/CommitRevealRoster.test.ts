@@ -578,9 +578,9 @@ describe('a closed roster on the commit-reveal base', function () {
 		expect((await game.read.end()).ended).toEqual(true);
 		await expect(game.act.commit(game.creator)).toBeRejectedWith(/GameEnded/);
 		await expect(game.act.advance()).toBeRejectedWith(/GameEnded/);
-		await expect(
-			game.act.forfeit(game.creator, game.alice),
-		).toBeRejectedWith(/GameEnded/);
+		await expect(game.act.forfeit(game.creator, game.alice)).toBeRejectedWith(
+			/GameEnded/,
+		);
 		// A missed reveal is still settled after the end.
 		await game.act.forfeitMissedReveal(game.bob);
 		const commitment = (await game.env.read(game.Stub, {

@@ -369,9 +369,7 @@ describe('games for a fixed set of players', function () {
 		expect(
 			await table.env.read(table.Table, {functionName: 'hasEnded'}),
 		).toEqual(true);
-		await expect(table.commit(table.creator, [])).toBeRejectedWith(
-			/GameEnded/,
-		);
+		await expect(table.commit(table.creator, [])).toBeRejectedWith(/GameEnded/);
 		await expect(table.advance()).toBeRejectedWith(/GameEnded/);
 		await table.env.execute(table.Table, {
 			account: table.alice,

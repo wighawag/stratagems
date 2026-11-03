@@ -1,14 +1,21 @@
 import {describe, it, expect, vi} from 'vitest';
 import {get, writable} from 'svelte/store';
 import {
+	clampTableCycles,
 	createTableStore,
+	DEFAULT_TABLE_CYCLES,
 	describeDuration,
+	describeTableProgress,
+	FEWEST_TABLE_CYCLES,
 	isMember,
+	MOST_TABLE_CYCLES,
+	NO_GAME_OPTIONS,
 	memberLabel,
 	readTables,
 	tableAllowsPlay,
 	tableFromParam,
 	tableScreenOf,
+	tableProgressOf,
 	tableSettingsOf,
 	type Roster,
 	type TableState,
@@ -30,6 +37,55 @@ import {tableAtRoster} from '$lib/game/lobby/seats';
 const ALICE = '0x00000000000000000000000000000000000a11ce' as const;
 const BOB = '0x0000000000000000000000000000000000000b0b' as const;
 const TABLE = '0x1111111111111111111111111111111111111111' as const;
+
+/** A roster not started yet, with whatever a test says on top. */
+function rosterOf(overrides: Partial<Roster> = {}): Roster {
+	return {
+		creator: ALICE,
+		seats: 3,
+		started: false,
+		cycles: 10,
+		startedWith: 0,
+		members: [],
+		cycleNumber: 5n,
+		lastCycleNumber: 0n,
+		ended: false,
+		gameOptions: NO_GAME_OPTIONS,
+		...overrides,
+	};
+}
+
+/** A reader answering the lobby's three views from one roster. */
+function lobbyReader(rosterAt: (address: string) => Roster) {
+	return vi.fn(
+		async (request: {
+			address: string;
+			functionName: string;
+			args?: readonly unknown[];
+		}): Promise<unknown> => {
+			const roster = rosterAt(request.address);
+			if (request.functionName === 'getRoster') {
+				return [
+					{
+						creator: roster.creator,
+						seats: roster.seats,
+						started: roster.started,
+						cycles: roster.cycles,
+						startedWith: roster.startedWith,
+					},
+					roster.members,
+				];
+			}
+			if (request.functionName === 'getEnd') {
+				return [roster.cycleNumber, roster.lastCycleNumber, roster.ended];
+			}
+			if (request.functionName === 'getGameOptions') {
+				return roster.gameOptions;
+			}
+			throw new Error(`unexpected ${request.functionName}`);
+		},
+	);
+}
 
 describe('the table a page is at', () => {
 	it('is the address `?game=` names', () => {
@@ -76,12 +132,7 @@ describe('a roster laid out as seats', () => {
 	});
 
 	it('is a member check that agrees with the layout', () => {
-		const roster: Roster = {
-			creator: ALICE,
-			seats: 3,
-			started: false,
-			members: [BigInt(ALICE)],
-		};
+		const roster = rosterOf({members: [BigInt(ALICE)]});
 		expect(isMember(roster, BigInt(ALICE))).toBe(true);
 		expect(isMember(roster, BigInt(BOB))).toBe(false);
 		expect(isMember(roster, undefined)).toBe(false);
@@ -100,6 +151,13 @@ describe('the tables a factory lists', () => {
 			'0x0000000000000000000000000000000000000002',
 			'0x0000000000000000000000000000000000000003',
 		] as const;
+		const lobby = lobbyReader((address) =>
+			rosterOf({
+				seats: 2,
+				started: address === games[0],
+				members: [BigInt(ALICE)],
+			}),
+		);
 		const readContract = vi.fn(
 			async (request: {
 				address: string;
@@ -111,11 +169,7 @@ describe('the tables a factory lists', () => {
 					const [start, limit] = request.args as [bigint, bigint];
 					return games.slice(Number(start), Number(start + limit));
 				}
-				// getRoster
-				return [
-					{creator: ALICE, seats: 2, started: request.address === games[0]},
-					[BigInt(ALICE)],
-				];
+				return lobby(request);
 			},
 		);
 		const tables = await readTables({readContract} as never, TABLE, {
@@ -123,7 +177,12 @@ describe('the tables a factory lists', () => {
 		});
 		// The two most recent, so the window starts at the second game.
 		expect(tables.map((table) => table.address)).toEqual([games[2], games[1]]);
-		expect(tables[0]).toMatchObject({creator: ALICE, seats: 2, started: false});
+		expect(tables[0]).toMatchObject({
+			creator: ALICE,
+			seats: 2,
+			started: false,
+			cycles: 10,
+		});
 	});
 });
 
@@ -132,10 +191,7 @@ describe('a table store', () => {
 		const accountStore = writable(account);
 		// A game that plays as the account: the identity follows it.
 		const you = writable(account === undefined ? undefined : BigInt(account));
-		const readContract = vi.fn(async () => [
-			{creator: roster.creator, seats: roster.seats, started: roster.started},
-			roster.members,
-		]);
+		const readContract = lobbyReader(() => roster);
 		const table = createTableStore({
 			deps: {
 				publicClient: {readContract},
@@ -148,12 +204,7 @@ describe('a table store', () => {
 	}
 
 	it('tells the creator they start it, and a seated guest that they are seated', async () => {
-		const roster: Roster = {
-			creator: ALICE,
-			seats: 3,
-			started: false,
-			members: [BigInt(ALICE), BigInt(BOB)],
-		};
+		const roster = rosterOf({members: [BigInt(ALICE), BigInt(BOB)]});
 		const {table, accountStore, you} = storeWith(roster, ALICE);
 		await table.update();
 		let state = get(table);
@@ -194,18 +245,19 @@ describe('a table store', () => {
 describe('a table before its start', () => {
 	const loaded = (overrides: {
 		started?: boolean;
+		ended?: boolean;
 		members?: bigint[];
 		seats?: number;
 		isCreator?: boolean;
 		seated?: boolean;
 	}): TableState => {
 		const members = overrides.members ?? [BigInt(ALICE)];
-		const roster: Roster = {
-			creator: ALICE,
+		const roster = rosterOf({
 			seats: overrides.seats ?? 3,
 			started: overrides.started ?? false,
+			ended: overrides.ended ?? false,
 			members,
-		};
+		});
 		return {
 			step: 'Loaded',
 			roster,
@@ -223,6 +275,19 @@ describe('a table before its start', () => {
 		expect(tableAllowsPlay(loaded({seated: true}))).toBe(false);
 		expect(tableAllowsPlay(loaded({started: true, seated: false}))).toBe(false);
 		expect(tableAllowsPlay(loaded({started: true, seated: true}))).toBe(true);
+		// After its last cycle the contract refuses every commitment.
+		expect(
+			tableAllowsPlay(loaded({started: true, seated: true, ended: true})),
+		).toBe(false);
+	});
+
+	it('keeps the board for a member once it has ended, and tells anyone else it has', () => {
+		expect(
+			tableScreenOf(loaded({started: true, seated: true, ended: true})),
+		).toEqual({screen: 'playing'});
+		const closed = tableScreenOf(loaded({started: true, ended: true}));
+		if (closed.screen !== 'closed') throw new Error(closed.screen);
+		expect(closed.status).toMatch(/has ended/);
 	});
 
 	it('shows its lobby until it starts, the board to a member after, and a closed door to anyone else', () => {
@@ -287,5 +352,43 @@ describe('a table before its start', () => {
 		expect(describeDuration(45)).toBe('45 seconds');
 		expect(describeDuration(180)).toBe('3 minutes');
 		expect(describeDuration(86400)).toBe('24 hours');
+	});
+});
+
+describe("a table's end", () => {
+	it('counts the cycle it plays from one, out of how many, from the last cycle the start fixed', () => {
+		expect(tableProgressOf(rosterOf())).toBeUndefined();
+		const started = rosterOf({
+			started: true,
+			cycles: 3,
+			lastCycleNumber: 12n,
+		});
+		expect(tableProgressOf({...started, cycleNumber: 10n})).toEqual({
+			step: 'playing',
+			cycle: 1,
+			of: 3,
+		});
+		expect(tableProgressOf({...started, cycleNumber: 12n})).toEqual({
+			step: 'playing',
+			cycle: 3,
+			of: 3,
+		});
+		const ended = tableProgressOf({...started, cycleNumber: 13n, ended: true});
+		expect(ended).toEqual({step: 'ended', of: 3});
+		expect(describeTableProgress({step: 'playing', cycle: 2, of: 3})).toBe(
+			'Cycle 2 of 3',
+		);
+		expect(describeTableProgress({step: 'ended', of: 3})).toBe(
+			'Ended after 3 cycles',
+		);
+	});
+
+	it('offers a count of cycles inside its bounds, the default for anything unreadable', () => {
+		expect(clampTableCycles(7)).toBe(7);
+		expect(clampTableCycles(0)).toBe(FEWEST_TABLE_CYCLES);
+		expect(clampTableCycles(1e6)).toBe(MOST_TABLE_CYCLES);
+		expect(clampTableCycles(4.7)).toBe(4);
+		expect(clampTableCycles('9')).toBe(DEFAULT_TABLE_CYCLES);
+		expect(clampTableCycles(NaN)).toBe(DEFAULT_TABLE_CYCLES);
 	});
 });

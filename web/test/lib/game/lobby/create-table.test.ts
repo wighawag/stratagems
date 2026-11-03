@@ -1,7 +1,12 @@
 import {describe, expect, it, vi} from 'vitest';
 import {get, readable} from 'svelte/store';
 import {encodeAbiParameters, encodeEventTopics, parseAbi} from 'viem';
-import {createTablesLobby, FACTORY_ABI} from '$lib/game/lobby/table';
+import {
+	createTablesLobby,
+	DEFAULT_TABLE_CYCLES,
+	FACTORY_ABI,
+	NO_GAME_OPTIONS,
+} from '$lib/game/lobby/table';
 import {InsufficientFundsError} from '$lib/core/transaction';
 
 /**
@@ -18,7 +23,7 @@ const CREATOR = '0x000000000000000000000000000000000000c0de' as const;
 function gameCreatedLog() {
 	const topics = encodeEventTopics({
 		abi: parseAbi([
-			'event GameCreated(address indexed game, address indexed creator, uint8 seats)',
+			'event GameCreated(address indexed game, address indexed creator, uint8 seats, uint16 cycles, bytes32 gameOptions)',
 		]),
 		eventName: 'GameCreated',
 		args: {game: TABLE, creator: CREATOR},
@@ -26,7 +31,10 @@ function gameCreatedLog() {
 	return {
 		address: FACTORY,
 		topics,
-		data: encodeAbiParameters([{type: 'uint8'}], [2]),
+		data: encodeAbiParameters(
+			[{type: 'uint8'}, {type: 'uint16'}, {type: 'bytes32'}],
+			[2, DEFAULT_TABLE_CYCLES, NO_GAME_OPTIONS],
+		),
 		blockNumber: 1n,
 		transactionHash: `0x${'11'.repeat(32)}`,
 		logIndex: 0,
@@ -78,7 +86,12 @@ describe('creating a table', () => {
 		expect(request.contract.address).toBe(FACTORY);
 		expect(request.contract.abi).toBe(FACTORY_ABI);
 		expect(request.contract.functionName).toBe('createGame');
-		expect(request.contract.args).toEqual([2]);
+		// No count and no options: the default count, and none.
+		expect(request.contract.args).toEqual([
+			2,
+			DEFAULT_TABLE_CYCLES,
+			NO_GAME_OPTIONS,
+		]);
 		expect(config.sender).toBe(CREATOR);
 		expect(config.balance).toBe(deps.accountBalance);
 		// what the check returned is what is sent
@@ -98,5 +111,18 @@ describe('creating a table', () => {
 		expect(await store.create(2)).toBeUndefined();
 		expect(writeContract).not.toHaveBeenCalled();
 		expect(get(store.creating)).toEqual({step: 'Idle'});
+	});
+
+	it("sends the creator's count of cycles, kept inside the bounds, and the game's options", async () => {
+		const {store, deps} = setup(async (request) => request.contract);
+		const options = `0x${'00'.repeat(31)}2a` as const;
+		await store.create(3, {cycles: 4, gameOptions: options});
+		expect(
+			deps.balanceCheck.ensureCanAfford.mock.calls[0][0].contract.args,
+		).toEqual([3, 4, options]);
+		await store.create(3, {cycles: 1000});
+		expect(
+			deps.balanceCheck.ensureCanAfford.mock.calls[1][0].contract.args,
+		).toEqual([3, 100, NO_GAME_OPTIONS]);
 	});
 });
