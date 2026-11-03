@@ -29,6 +29,10 @@ const {deployAll} = setupFixtures(provider);
 
 const SECRET =
 	'0x00000000000000000000000000000000000000000000000000000000000ab0b1';
+/** How many cycles a table plays when a test does not say: more than any test reaches. */
+const CYCLES = 100;
+const NO_OPTIONS =
+	'0x0000000000000000000000000000000000000000000000000000000000000000' as const;
 
 type Cycle = {
 	cycleNumber: bigint;
@@ -37,7 +41,11 @@ type Cycle = {
 	phaseEnd: bigint;
 };
 
-async function createTable(seats: number) {
+async function createTable(
+	seats: number,
+	cycles = CYCLES,
+	gameOptions: `0x${string}` = NO_OPTIONS,
+) {
 	const fixtures = await networkHelpers.loadFixture(deployAll);
 	const {env} = fixtures;
 	const [creator, alice, bob, carol] =
@@ -48,14 +56,20 @@ async function createTable(seats: number) {
 	const receipt = await env.execute(Factory, {
 		account: creator,
 		functionName: 'createGame',
-		args: [seats],
+		args: [seats, cycles, gameOptions],
 	});
 	const [created] = parseEventLogs({
 		abi: Factory.abi,
 		logs: receipt.logs as Parameters<typeof parseEventLogs>[0]['logs'],
 		eventName: 'GameCreated',
 	}) as unknown as {
-		args: {game: `0x${string}`; creator: string; seats: number};
+		args: {
+			game: `0x${string}`;
+			creator: string;
+			seats: number;
+			cycles: number;
+			gameOptions: string;
+		};
 	}[];
 	const Table = {address: created.args.game, abi: Implementation.abi};
 
@@ -71,9 +85,21 @@ async function createTable(seats: number) {
 			},
 		roster: async () =>
 			(await env.read(Table, {functionName: 'getRoster'})) as [
-				{creator: string; seats: number; started: boolean},
+				{
+					creator: string;
+					seats: number;
+					started: boolean;
+					cycles: number;
+					startedWith: number;
+				},
 				bigint[],
 			],
+		end: async () => {
+			const [cycleNumber, lastCycleNumber, ended] = (await env.read(Table, {
+				functionName: 'getEnd',
+			})) as [bigint, bigint, boolean];
+			return {cycleNumber, lastCycleNumber, ended};
+		},
 		cell: async (cellID: bigint) =>
 			(await env.read(Table, {functionName: 'getCell', args: [cellID]})) as {
 				totalStake: bigint;
@@ -164,7 +190,7 @@ describe('games for a fixed set of players', function () {
 			table.env.execute(table.Table, {
 				account: table.alice,
 				functionName: 'initializeLobby',
-				args: [table.alice, 2],
+				args: [table.alice, 2, CYCLES, NO_OPTIONS],
 			}),
 		).toBeRejectedWith(/RosterAlreadyOpened/);
 	});
@@ -203,7 +229,7 @@ describe('games for a fixed set of players', function () {
 			table.env.execute(WorldAsTable, {
 				account: table.alice,
 				functionName: 'initializeLobby',
-				args: [table.alice, 2],
+				args: [table.alice, 2, CYCLES, NO_OPTIONS],
 			}),
 		).toBeRejected();
 		// A member of the world is a member at once: no start.
@@ -300,6 +326,68 @@ describe('games for a fixed set of players', function () {
 		expect(fourth.cycleNumber).toEqual(third.cycleNumber + 1n);
 		expect((await table.read.cell(5n)).numClaimants).toEqual(1);
 		await expect(table.join(table.bob)).toBeRejectedWith(/GameAlreadyStarted/);
+	});
+
+	it('ends a table after the cycles its creator chose: the last reveals land, then no commit or advance, and a missed reveal is still settled', async function () {
+		const options =
+			'0x00000000000000000000000000000000000000000000000000000000000c0de5' as const;
+		const table = await createTable(2, 2, options);
+		expect(table.created.args.cycles).toEqual(2);
+		expect(table.created.args.gameOptions).toEqual(options);
+		expect(
+			await table.env.read(table.Table, {functionName: 'getGameOptions'}),
+		).toEqual(options);
+		await table.join(table.creator);
+		await table.join(table.alice);
+		await table.start(table.creator);
+		const [roster] = await table.read.roster();
+		expect(roster.cycles).toEqual(2);
+		expect(roster.startedWith).toEqual(2);
+
+		// Cycle one of two, closed early.
+		const first = await table.read.cycle();
+		await table.commit(table.creator, [{cellID: 1n}]);
+		await table.commit(table.alice, [{cellID: 2n}]);
+		await table.advance();
+		await table.reveal(table.creator, [{cellID: 1n}]);
+		await table.reveal(table.alice, [{cellID: 2n}]);
+		await table.advance();
+
+		// The last cycle: Alice commits and never reveals.
+		const last = await table.read.cycle();
+		expect(last.cycleNumber).toEqual(first.cycleNumber + 1n);
+		expect((await table.read.end()).lastCycleNumber).toEqual(last.cycleNumber);
+		await table.commit(table.creator, [{cellID: 3n}]);
+		await table.commit(table.alice, [{cellID: 4n}]);
+		await table.advance();
+		await table.reveal(table.creator, [{cellID: 3n}]);
+		expect((await table.read.cell(3n)).numClaimants).toEqual(1);
+		const revealEnd = (await table.read.cycle()).phaseEnd;
+		await table.advanceToTime(Number(revealEnd), true);
+
+		expect((await table.read.end()).ended).toEqual(true);
+		expect(
+			await table.env.read(table.Table, {functionName: 'hasEnded'}),
+		).toEqual(true);
+		await expect(table.commit(table.creator, [])).toBeRejectedWith(
+			/GameEnded/,
+		);
+		await expect(table.advance()).toBeRejectedWith(/GameEnded/);
+		await table.env.execute(table.Table, {
+			account: table.alice,
+			functionName: 'forfeitMissedReveal',
+			args: [idOf(table.alice)],
+		});
+		const commitment = (await table.env.read(table.Table, {
+			functionName: 'getCommitment',
+			args: [idOf(table.alice)],
+		})) as {cycleNumber: bigint};
+		expect(commitment.cycleNumber).toEqual(0n);
+		// The persistent world beside it never ends.
+		const WorldAsTable = {address: table.Game.address, abi: table.Table.abi};
+		await expect(
+			table.env.read(WorldAsTable, {functionName: 'hasEnded'}),
+		).toBeRejected();
 	});
 
 	it("keeps a table's commit and worst reveal under the lobby's declared gas", async function () {
