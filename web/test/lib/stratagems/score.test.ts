@@ -14,7 +14,17 @@ import {
 	unsettledPositions,
 	valueAtEnd,
 } from '$lib/stratagems/score';
-import {ALICE, at, BOB, boardAfter, CAROL, GEM, MAX_LIFE} from './board';
+import type {BoardState} from '$lib/stratagems/board/indexed-board';
+import {
+	ALICE,
+	at,
+	BOB,
+	boardAfter,
+	CAROL,
+	emptyBoardData,
+	GEM,
+	MAX_LIFE,
+} from './board';
 import {pokeCells} from './simulation';
 
 const lower = (a: string) => a.toLowerCase();
@@ -136,4 +146,86 @@ describe('net gems and the ranking', () => {
 		]);
 		expect(settleBatches([], 2)).toEqual([]);
 	});
+});
+
+describe('the value at the end, in batches (step L4, G2)', () => {
+	/** Pairs of enemies side by side, each the other's one enemy: every one dies, paying the other. */
+	function pairs(n: number): BoardState['data'] {
+		const data = emptyBoardData();
+		const owners = [ALICE, BOB, CAROL];
+		const cell = (enemyMap: number, color: number) => ({
+			lastCycleUpdate: 100,
+			cycleWhenTokenIsAdded: 100,
+			producingCycles: 0,
+			color,
+			life: 2,
+			delta: -1,
+			enemyMap,
+			distribution: 0,
+			stake: 1,
+		});
+		for (let k = 0; k < n / 2; k++) {
+			const x = (k % 15) * 3;
+			const y = Math.floor(k / 15) * 2;
+			data.cells[at(x, y).toString()] = cell(8, 1);
+			data.owners[at(x, y).toString()] = lower(owners[k % 3]) as `0x${string}`;
+			data.cells[at(x + 1, y).toString()] = cell(2, 2);
+			data.owners[at(x + 1, y).toString()] = lower(
+				owners[(k + 1) % 3],
+			) as `0x${string}`;
+		}
+		return data;
+	}
+
+	it('is the same in batches as in one call, even where a batch splits a pair', async () => {
+		// a played board with neighbours across batches, and pairs split by an odd batch
+		const played = await boardAfter(
+			[
+				{
+					cycle: 10,
+					moves: [
+						{player: ALICE, x: 1, y: 1, color: Color.Blue},
+						{player: BOB, x: 0, y: 1, color: Color.Red},
+						{player: BOB, x: 2, y: 1, color: Color.Red},
+						{player: BOB, x: 1, y: 0, color: Color.Red},
+						{player: CAROL, x: 1, y: 2, color: Color.Green},
+					],
+				},
+			],
+			11,
+		);
+		for (const data of [played.data, pairs(60)]) {
+			const one = await valueAtEnd({
+				data,
+				cycleNumber: 100,
+				maxLife: MAX_LIFE,
+				numTokensPerGems: GEM,
+				simulate: pokeCells,
+				batch: 1000,
+			});
+			for (const batch of [1, 3, 7]) {
+				const batched = await valueAtEnd({
+					data,
+					cycleNumber: 100,
+					maxLife: MAX_LIFE,
+					numTokensPerGems: GEM,
+					simulate: pokeCells,
+					batch,
+				});
+				expect(batched, `batches of ${batch}`).toEqual(one);
+			}
+		}
+	});
+
+	it('values 300 cells, which one call cannot', async () => {
+		const value = await valueAtEnd({
+			data: pairs(300),
+			cycleNumber: 100,
+			maxLife: MAX_LIFE,
+			numTokensPerGems: GEM,
+			simulate: pokeCells,
+		});
+		// every gem of the 300 is paid to the other of its pair
+		expect([...value.values()].reduce((a, b) => a + b, 0n)).toBe(300n * GEM);
+	}, 60_000);
 });

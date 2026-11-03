@@ -11,6 +11,7 @@
 	import {getAppContext} from '$lib';
 	import Button from '$lib/shadcn/ui/button/button.svelte';
 	import {describeLeaderboard} from './panels';
+	import {describeTableValuation} from '../table-end';
 
 	const {game} = getAppContext();
 	// at a table there are no points and nothing earned: ranked by net gems,
@@ -22,6 +23,10 @@
 			numTokensPerGems: game.config.numTokensPerGems,
 		}),
 	);
+	// at a table, what its numbers are as of (they are valued in the background)
+	const valuation = game.tableEnd
+		? derived(game.tableEnd, describeTableValuation)
+		: undefined;
 	let open = $state(false);
 </script>
 
@@ -44,6 +49,14 @@
 					{atTable ? 'Nobody holds a cell yet.' : 'Nobody has scored yet.'}
 				</p>
 			{:else}
+				{#if valuation && $valuation}
+					<p
+						class="mb-2 text-xs text-muted-foreground"
+						data-testid="leaderboard-valuation"
+					>
+						{$valuation}
+					</p>
+				{/if}
 				<table class="w-full text-xs">
 					<thead class="text-muted-foreground">
 						<tr>

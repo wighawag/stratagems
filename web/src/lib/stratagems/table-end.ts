@@ -8,7 +8,9 @@
  * members' reserves and collision credits, whether the table is settled, and
  * the recorded scores and winners are read from the table here, each time the
  * table store or the board moves. What the board still holds is valued by
- * `./score.ts`'s `valueAtEnd`, in the sandbox, when the board changes.
+ * `./score.ts`'s `valueAtEnd` in batches, its EVM in the sandbox's Worker so
+ * the page never waits on it (step L4, G1), each time the board changes, the
+ * latest board's value winning.
  *
  * ANYONE MAY SETTLE (the contract's rule), so the action is offered to every
  * member while cells are unsettled, batched to {@link SETTLE_BATCH}; the call
@@ -65,8 +67,16 @@ export type TableEndState =
 			unsettled: number;
 			/** The ranking: live net gems until settled, then the recorded scores. */
 			rows: readonly TableScoreRow[];
-			/** Whether the live values have been computed for this board. */
+			/** Whether the live values have been computed for any board yet. */
 			valued: boolean;
+			/**
+			 * The board cycle the live values are as of: the ranking shows the
+			 * last value while the next is computed (in batches, in the
+			 * sandbox's Worker), which takes about a second on 300 cells.
+			 */
+			valuedAt?: number;
+			/** The same, counted as the table counts its cycles (1 to its last). */
+			valuedAtTableCycle?: number;
 	  };
 
 export type TableEnd = Readable<TableEndState> & {
@@ -274,6 +284,20 @@ export function createTableEnd(params: {
 				unsettled,
 				rows,
 				valued: $value !== undefined,
+				...($value
+					? {
+							valuedAt: $value.board.cycleNumber,
+							valuedAtTableCycle: Math.min(
+								roster.cycles,
+								Math.max(
+									1,
+									$value.board.cycleNumber -
+										Number(roster.lastCycleNumber) +
+										roster.cycles,
+								),
+							),
+						}
+					: {}),
 			};
 		},
 	);
@@ -379,6 +403,16 @@ export function createTableEnd(params: {
 				simulate: params.simulate,
 			}),
 	};
+}
+
+/** What the leaderboard says its numbers are, at a table. Pure. */
+export function describeTableValuation(
+	state: TableEndState,
+): string | undefined {
+	if (state.step !== 'Loaded' || !state.started) return undefined;
+	if (state.settled) return 'Final scores, as the table recorded them.';
+	if (state.valuedAtTableCycle === undefined) return 'Valuing the board...';
+	return `Net gems as the end would pay them, as of cycle ${state.valuedAtTableCycle}.`;
 }
 
 /** What the HUD says about a table's end. Pure. */

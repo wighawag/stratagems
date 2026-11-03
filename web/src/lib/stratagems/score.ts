@@ -50,6 +50,18 @@ export function unsettledPositions(data: BoardState['data']): bigint[] {
 }
 
 /**
+ * HOW MANY CELLS ONE SANDBOX CALL POKES (step L4, G2 of its log). One call
+ * over the whole board costs gas superlinearly in its size (measured with the
+ * table's simulation on pairs of dying enemies: 5.9 M gas on 30 cells, 14.5 M
+ * on 60, past the node's 30 M call allowance from about 100), so a call over
+ * 100 cells reverts and 300 take 6.3 s even with the allowance lifted. In
+ * batches the cost is linear, and the batches are CHAINED: each runs over the
+ * cells the previous ones left, exactly as a settlement in batches does on
+ * chain, so a share a batch has paid is not paid again by the next.
+ */
+export const PROJECTION_BATCH = 40;
+
+/**
  * WHAT EVERY ACCOUNT WOULD RECEIVE IF THE BOARD WERE SETTLED `maxLife` CYCLES
  * after `cycleNumber`, with nobody moving: the shares the dead pay their
  * killers, and every survivor's stake to its owner, in token units, keyed by
@@ -61,6 +73,8 @@ export async function valueAtEnd(params: {
 	maxLife: number;
 	numTokensPerGems: bigint;
 	simulate: SimulatePoke;
+	/** Cells a call: {@link PROJECTION_BATCH} unless a test says otherwise. */
+	batch?: number;
 }): Promise<Map<string, bigint>> {
 	const value = new Map<string, bigint>();
 	const positions = unsettledPositions(params.data);
@@ -69,19 +83,37 @@ export async function valueAtEnd(params: {
 		const key = to.toLowerCase();
 		value.set(key, (value.get(key) ?? 0n) + amount);
 	};
-	const board = storedCellsOf(params.data, touchedBy(positions));
-	const outcome = await params.simulate(
-		board,
-		params.cycleNumber + params.maxLife,
-		positions,
-	);
-	for (const payout of outcome.payouts) add(payout.to, payout.amount);
-	const settled = new Set(positions.map((p) => p.toString()));
-	for (const stored of outcome.cells) {
-		if (!settled.has(stored.position.toString())) continue;
-		if (stored.cell.color === 0 || stored.cell.life === 0) continue;
-		if (stored.owner === zeroAddress) continue;
-		add(stored.owner, BigInt(stored.cell.stake) * params.numTokensPerGems);
+	// the board as the batches leave it, never the caller's
+	const working: BoardState['data'] = {
+		...params.data,
+		cells: {...params.data.cells},
+		owners: {...params.data.owners},
+	};
+	const cycle = params.cycleNumber + params.maxLife;
+	const size = params.batch ?? PROJECTION_BATCH;
+	for (let i = 0; i < positions.length; i += size) {
+		const batch = positions.slice(i, i + size);
+		const outcome = await params.simulate(
+			storedCellsOf(working, touchedBy(batch)),
+			cycle,
+			batch,
+		);
+		for (const payout of outcome.payouts) add(payout.to, payout.amount);
+		for (const stored of outcome.cells) {
+			const key = stored.position.toString();
+			if (stored.cell.color === 0 && !(key in working.cells)) continue;
+			working.cells[key] = {...stored.cell};
+			if (stored.owner !== zeroAddress) {
+				working.owners[key] = stored.owner.toLowerCase() as `0x${string}`;
+			}
+		}
+	}
+	for (const position of positions) {
+		const key = position.toString();
+		const cell = working.cells[key];
+		const owner = working.owners[key];
+		if (!cell || cell.color === 0 || cell.life === 0 || !owner) continue;
+		add(owner, BigInt(cell.stake) * params.numTokensPerGems);
 	}
 	return value;
 }

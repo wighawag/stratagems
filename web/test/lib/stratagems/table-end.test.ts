@@ -4,7 +4,11 @@
  * settled, the winner (or the tie) and the withdrawal.
  */
 import {describe, expect, it} from 'vitest';
-import {describeTableEnd, type TableEndState} from '$lib/stratagems/table-end';
+import {
+	describeTableEnd,
+	describeTableValuation,
+	type TableEndState,
+} from '$lib/stratagems/table-end';
 import {ALICE, BOB} from './board';
 
 const lower = (a: string) => a.toLowerCase() as `0x${string}`;
@@ -68,5 +72,18 @@ describe("a table's end", () => {
 		);
 		expect(tie?.status).toMatch(/A tie between/);
 		expect(tie?.canWithdraw).toBe(false);
+	});
+});
+
+describe("what a table's leaderboard says its numbers are", () => {
+	it('values in the background, as of a cycle, then says the scores are final', () => {
+		expect(describeTableValuation(loaded({started: false}))).toBeUndefined();
+		expect(describeTableValuation(loaded({}))).toBe('Valuing the board...');
+		expect(
+			describeTableValuation(loaded({valuedAt: 50, valuedAtTableCycle: 2})),
+		).toBe('Net gems as the end would pay them, as of cycle 2.');
+		expect(describeTableValuation(loaded({settled: true}))).toMatch(
+			/^Final scores/,
+		);
 	});
 });

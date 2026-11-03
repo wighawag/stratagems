@@ -640,17 +640,28 @@ describe('A stratagems table for a fixed set of players', () => {
 					}
 					return data;
 				};
-				const result: Record<number, number | string> = {};
+				const result: Record<string, number | string> = {};
 				for (const n of [30, 60, 100, 300]) {
 					const data = boardOf(n);
+					// the longest the page's own thread went without running, while
+					// the projection ran: what a player would feel as a dropped frame
+					let longest = 0;
+					let last = performance.now();
+					const ticker = setInterval(() => {
+						const now = performance.now();
+						longest = Math.max(longest, now - last);
+						last = now;
+					}, 5);
 					try {
-						await context.game.tableEnd.project(data, 100);
 						const started = performance.now();
 						await context.game.tableEnd.project(data, 100);
 						result[n] = performance.now() - started;
+						result[`${n}-longest-gap`] = longest;
 					} catch (error) {
 						result[n] =
 							`failed: ${String((error as Error).message).slice(0, 80)}`;
+					} finally {
+						clearInterval(ticker);
 					}
 				}
 				return result;
@@ -658,14 +669,21 @@ describe('A stratagems table for a fixed set of players', () => {
 			console.log(
 				`[table e2e] the projection in the browser (ms): ${JSON.stringify(timings)}`,
 			);
+			// L4-21 AS RESTATED (G1, the user, 2026-11-03): valued in the
+			// background, so the page never blocks over 50 ms, and 300 cells
+			// within one reveal phase (15 s here)
 			expect(
 				typeof timings[300],
 				'L4-21: the projection on 300 cells completes',
 			).toBe('number');
 			expect(
 				timings[300] as number,
-				'L4-21: the projection on 300 cells',
-			).toBeLessThan(250);
+				'L4-21: 300 cells valued within one reveal phase',
+			).toBeLessThan(15_000);
+			expect(
+				timings['300-longest-gap'] as number,
+				"L4-21: the page's thread never blocked over 50 ms",
+			).toBeLessThan(50);
 
 			// a member takes their gems out once settled
 			const withdraw = host.getByTestId('table-withdraw');
