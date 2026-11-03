@@ -444,6 +444,17 @@ describe('A stratagems table for a fixed set of players', () => {
 					timeout: 60_000,
 				})
 				.toBe(true);
+			// both pages on the cycle the start anchored, its full commit phase
+			// ahead: a plan made on the clock read before the anchor is dropped
+			// with that cycle
+			for (const page of [host, guest]) {
+				await expect
+					.poll(async () => (await gameStep(page)).timeLeft, {
+						message: 'the page should read the anchored cycle',
+						timeout: 30_000,
+					})
+					.toBeGreaterThan(30);
+			}
 			await expect(host.getByTestId('table-progress')).toHaveText(
 				'Cycle 1 of 2',
 				{
