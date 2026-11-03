@@ -29,9 +29,11 @@
 		 * browser in the same transaction.
 		 */
 		takeSeat?: Snippet;
+		/** What the game's options at this table mean (`TableLobby.options.describe`). */
+		details?: readonly {label: string; value: string}[];
 	}
 
-	let {table, inviteLink, settings, takeSeat}: Props = $props();
+	let {table, inviteLink, settings, takeSeat, details = []}: Props = $props();
 	const screen = $derived(table.screen);
 	const action = $derived(table.action);
 
@@ -67,6 +69,10 @@
 				<dd>{$screen.seats}</dd>
 				<dt class="text-muted-foreground">Cycles</dt>
 				<dd data-testid="table-cycles">{$table.roster.cycles}</dd>
+				{#each details as detail (detail.label)}
+					<dt class="text-muted-foreground">{detail.label}</dt>
+					<dd>{detail.value}</dd>
+				{/each}
 				<dt class="text-muted-foreground">To commit a turn</dt>
 				<dd>{describeDuration(settings.commitPhaseDuration)}</dd>
 				<dt class="text-muted-foreground">To reveal it</dt>
