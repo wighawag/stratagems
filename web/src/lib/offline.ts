@@ -283,6 +283,10 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 
 	// SYNCHRONOUS, AND AFTER THE WORLD: the context reads the deployment while
 	// constructing (the template's argument).
+	// THE AI SEATS' DECISIONS, measured (step A2, A2-8): read by the e2e off the
+	// console handle below, and by nothing else.
+	const decisions: DecisionMeasure[] = [];
+
 	const context = createContext({
 		establishConnection: world.establishConnection,
 		...(revealer ? {scheduler: revealer.scheduler} : {}),
@@ -294,6 +298,8 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 			(globalThis as unknown as Record<string, unknown>).offlineWorld = {
 				world,
 				context: context.context,
+				// how long each AI seat's decision took (step A2, A2-8), for the e2e
+				decisions,
 			};
 		} catch {
 			// A console convenience is never worth failing a boot for.
@@ -390,7 +396,9 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 
 	// THE OTHER PLAYERS, started with the board and stopped with it.
 	const played = playedByTheWorld(table);
-	const decider = playedSeatDecider(world, played);
+	const decider = playedSeatDecider(world, played, {
+		onDecided: (measure) => decisions.push(measure),
+	});
 	const players = createOfflinePlayers({
 		provider: world.provider,
 		deployments: world.deployments,

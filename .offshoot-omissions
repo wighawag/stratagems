@@ -151,6 +151,11 @@ web/e2e/tests/offline.e2e.ts
 # offers hotseat; stratagems' own is e2e/tests/stratagems-hotseat.e2e.ts
 # (step H2). FOR EVER, like the game.
 web/e2e/tests/offline-hotseat.e2e.ts
+# The template's AI suite (step A1) skips while a world offers no levels, and
+# reads the reference game's `getCell` after the skip, so it fails once
+# stratagems' world offers them; stratagems' own is
+# e2e/tests/stratagems-offline-ai.e2e.ts (step A2). FOR EVER, like the game.
+web/e2e/tests/offline-ai.e2e.ts
 web/e2e/tests/out-of-gas.e2e.ts
 web/e2e/fixtures/game.ts
 # The template's table suite (step L1) plays the reference game at a table, with

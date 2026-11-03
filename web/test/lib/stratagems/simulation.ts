@@ -17,7 +17,8 @@ import type {StratagemsSimulator} from '$lib/stratagems/strategy';
 
 export const SIMULATION_MAX_LIFE = 7;
 
-const CONFIG = {
+/** The config the unit tests' simulation is deployed with. */
+export const SIMULATION_CONFIG = {
 	tokens: zeroAddress,
 	burnAddress: zeroAddress,
 	startTime: 0n,
@@ -39,7 +40,7 @@ function create() {
 			simulation: {
 				creationCode: Simulation.bytecode as `0x${string}`,
 				abi: Simulation.abi,
-				args: [CONFIG],
+				args: [SIMULATION_CONFIG],
 			},
 		},
 		node: () => createNode({}),
