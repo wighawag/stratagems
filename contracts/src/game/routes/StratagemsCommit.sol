@@ -8,7 +8,7 @@ contract StratagemsCommit is IStratagemsCommit, UsingStratagemsSetters {
     constructor(Config memory config) UsingStratagemsSetters(config) {}
 
     /// @inheritdoc IStratagemsCommit
-    function addToReserve(uint256 player, uint256 tokensAmountToAdd) external {
+    function addToReserve(uint256 player, uint256 tokensAmountToAdd) external virtual {
         if (tokensAmountToAdd > 0) {
             _addToReserve(player, tokensAmountToAdd);
             TOKENS.transferFrom(msg.sender, address(this), tokensAmountToAdd);
@@ -20,7 +20,7 @@ contract StratagemsCommit is IStratagemsCommit, UsingStratagemsSetters {
         uint256 player,
         uint256 tokensAmountToAdd,
         address payable stipendTo
-    ) external payable {
+    ) external payable virtual {
         if (tokensAmountToAdd > 0) {
             _addToReserve(player, tokensAmountToAdd);
             TOKENS.transferFrom(msg.sender, address(this), tokensAmountToAdd);
@@ -57,7 +57,7 @@ contract StratagemsCommit is IStratagemsCommit, UsingStratagemsSetters {
         uint256 bond,
         uint256 tokensAmountToAdd,
         address payable payee
-    ) external payable {
+    ) external payable virtual {
         uint256 resolved = _playerOf(msg.sender, player);
         if (tokensAmountToAdd > 0) {
             _addToReserve(resolved, tokensAmountToAdd);
@@ -75,7 +75,7 @@ contract StratagemsCommit is IStratagemsCommit, UsingStratagemsSetters {
     }
 
     /// @inheritdoc IStratagemsCommit
-    function withdrawFromReserve(uint256 amount) external {
+    function withdrawFromReserve(uint256 amount) external virtual {
         uint256 player = uint256(uint160(msg.sender));
         if (amount == type(uint256).max) {
             // everything no commitment bonds

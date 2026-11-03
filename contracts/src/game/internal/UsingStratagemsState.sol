@@ -51,7 +51,7 @@ abstract contract UsingStratagemsState is
     /// @notice The current cycle, in the 24 bits a cell stores it in.
     /// @dev Cycles start at 2, as alpha1's epochs did. 24 bits of 24-hour
     ///      cycles is about 45,000 years; refused rather than wrapped.
-    function _currentCycle() internal view returns (uint24 cycle, bool commiting) {
+    function _currentCycle() internal view virtual returns (uint24 cycle, bool commiting) {
         (uint64 cycleNumber, bool isCommiting) = _cycleNumber();
         if (cycleNumber > type(uint24).max) {
             revert CycleTooFar(cycleNumber);

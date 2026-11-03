@@ -10,9 +10,11 @@ import {getConfig} from './.config/index.js';
  *
  * A table is an ADDRESS of its own, an EIP-1167 clone of one implementation
  * made by the base's `CommitRevealGameFactory`, which also opens its roster.
- * The implementation is the world's routes (without Debug) plus the base's
- * lobby route, `CommitRevealLobby`, behind a router WITHOUT a proxy: nothing
- * upgrades a table. Every table plays by the implementation's immutables, so
+ * The implementation is the world's routes (without Debug) with the table's
+ * rules compiled in (`src/game/table/`, step L4), its own `StratagemsTable`
+ * route (the settlement and the winners), plus the base's lobby route,
+ * `CommitRevealLobby`, behind a router WITHOUT a proxy: nothing upgrades a
+ * table. The world deploys none of the table's routes. Every table plays by the implementation's immutables, so
  * its config (below) is the factory's linked data, where a client finds it.
  *
  * Named 021 and not 030 because `.offshoot-omissions` deletes the template's
@@ -92,11 +94,20 @@ export default deployScript(
 			'StratagemsTableImplementation',
 			{account: deployer},
 			[
-				{name: 'Getters', artifact: artifacts.StratagemsGetters, args: [config]},
-				{name: 'Commit', artifact: artifacts.StratagemsCommit, args: [config]},
-				{name: 'Reveal', artifact: artifacts.StratagemsReveal, args: [config]},
-				{name: 'Poke', artifact: artifacts.StratagemsPoke, args: [config]},
-				{name: 'ERC721', artifact: artifacts.StratagemsERC721 as any, args: [config]},
+				// the world's routes with the table's rules compiled in (step L4: a
+				// fixed stake, payouts credited to reserves, a board sized to the
+				// gems, the final board after the end), and its own route: the
+				// settlement, the scores and the winners. NOT THE ERC721 ROUTE: no
+				// client reads a table's cells as tokens, and with it the router
+				// would route 56 selectors, past the 48 that solidity-proxy 0.5.2's
+				// Router10X60 routes correctly (it packs selectors 49 to 60 into
+				// its eighth word, `tmp_sigs_07`, so they and others are lost; the
+				// plan's step L4 log has the finding)
+				{name: 'Getters', artifact: artifacts.StratagemsTableGetters, args: [config]},
+				{name: 'Commit', artifact: artifacts.StratagemsTableCommit, args: [config]},
+				{name: 'Reveal', artifact: artifacts.StratagemsTableReveal, args: [config]},
+				{name: 'Poke', artifact: artifacts.StratagemsTablePoke, args: [config]},
+				{name: 'Table', artifact: artifacts.StratagemsTable, args: [config]},
 				{name: 'Delegation', artifact: artifacts.StratagemsDelegation as any, args: []},
 				// the base's own lobby route, the same for every game: it takes only
 				// the cycle's half of the config

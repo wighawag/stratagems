@@ -200,7 +200,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         address player,
         uint24 cycle,
         Move memory move
-    ) internal returns (uint256 tokensPlaced, uint256 tokensReturned) {
+    ) internal virtual returns (uint256 tokensPlaced, uint256 tokensReturned) {
         (Cell memory currentState, bool justDied) = _getUpdatedCell(move.position, cycle);
 
         CellAtCycleStart memory start = _cellsAtCycleStart[move.position];
@@ -265,7 +265,7 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         Cell memory currentState,
         uint8 distribution,
         address ownerAtStart
-    ) internal returns (uint256 tokensPlaced) {
+    ) internal virtual returns (uint256 tokensPlaced) {
         unchecked {
             (int8 newDelta, uint8 newEnemyMap) = _propagate(
                 transferCollection,
