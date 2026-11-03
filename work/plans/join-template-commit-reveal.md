@@ -124,7 +124,8 @@ Candidates already visible, each to be judged when its step comes (not decided h
 - [x] **Step X1** (mostly in the template tree): the indexer host: a node `with/indexer` hosting a game's etherfold processor in its three places, stratagems stemming from `with/fuzd-pixi-indexer`
 - [x] **Step L1** (in the template tree): games with a fixed set of players, created by anyone: a factory cloning a lobby implementation, a closed roster (seats taken by staking, started by the creator once two are seated), the timed cycle with early advance (`$lib/indexer`'s stamp taught it) and the creator's bounded forfeit, and an online lobby; the reference game its first user
 - [x] **Step L2**: stratagems' lobby games on L1, beside the persistent world (which stays the main mode), and a `lan` environment for a node of the user's own
-- [ ] **Step L3**: stratagems as a game of the user's `ethereum-lan-node` box (a flake output with `passthru.lan`: its deterministic deploy and its static `lan` build), installed on the box by the user (decided 2026-11-01, PL2-8d; specified in its own context after L2)
+- [ ] **Step L3**: stratagems packaged as a game of the user's `ethereum-lan-node` box (a flake output with `passthru.lan`: its deterministic deploy and its static `lan` build), checked in a NixOS VM and rehearsed in two browsers, without the box (decided 2026-11-01, PL2-8d; specified and decided 2026-11-03, L3-1 to L3-12)
+- [ ] **Step L3-box** (needs the user, deferred like D-live; needs L3): the package installed on the user's box through my-boxes (L3-10), and a table played there from two phones
 - [x] **Step H1** (in the template tree): hotseat in the offline world: several humans at one device, one account each, a local revealer, a pass-the-device handover; the reference game its first user
 - [x] **Step H2**: stratagems' offline world on H1
 - [x] **Step H1b** (in the template tree, asked for by the user after H2): the handover waits for the person's account data, and the submission says when it can take a plan (`SubmissionStore.ready`), read by the reference game's planning and stratagems'
@@ -948,7 +949,7 @@ Decided by the user on 2026-11-01 (PL2-8d of Step L), after L2 has rehearsed the
 
 What L2 leaves it (2026-11-02): the `lan` deploy is deterministic (29 addresses identical after a reset of the chain), and its records must be deleted after a reset (the genesis does not change, so rocketh reuses them); the `lan` build is same-host; `web/e2e/lan/` is the two-browser rehearsal, run by hand against a chain and a faucet already running, which passed on a geth dev chain from the box's genesis with the box's own flags; the box's faucet needs `CORS_ORIGINS` (ethereum-lan-node's `faucet.corsOrigins`, `*` by default, built in L2 on a preview branch there); the box's deploy (`passthru.lan.deploy`) gets a fresh state directory on a reset, so its records go with the chain, which is what deterministic deploys want; `pnpm build lan` also pre-indexes the chain, which a box's empty chain does not need.
 
-**L3 specified 2026-11-03 (PROPOSED: L3-1 to L3-12 await the user's answer).** L3 needs L2 (the `lan` environment, the same-host build, the rehearsal), ticked. It does not need L4, H2 or A1, but takes what they built, since the package is built from the integration branch's head.
+**L3 specified 2026-11-03; Decided by the user the same day: L3-1 to L3-12 as proposed ("all good").** L3 needs L2 (the `lan` environment, the same-host build, the rehearsal), ticked. It does not need L4, H2 or A1, but takes what they built, since the package is built from the integration branch's head.
 
 **What decides L3's shape** (measured 2026-11-03, read-only, on the integration branch ea7bba47, ethereum-lan-node `main` 538bd15, conquest-demo `main` 793f2b8, my-boxes 12e9925, and the installed toolchain):
 
@@ -963,7 +964,7 @@ What L2 leaves it (2026-11-02): the `lan` deploy is deterministic (29 addresses 
 - **A rehearsal of the real artifact needs the node on 8545**, because its pages name `//:8545`, and 8545 belongs to another project on this machine. A NixOS VM test has its own 8545: ethereum-lan-node's `nix/tests/vm.nix` runs the whole box (chain, faucet, games, a hwsim hotspot) and is the model.
 - **The box is not ready for it**: my-boxes pins ethereum-lan-node at a7b8f68, before 538bd15 (the faucet's `corsOrigins`, which L2 found a game cannot do without), and hosts only `games.conquest` (web port 8001). stratagems is public (`github:` works, conquest is `git+ssh:`), and the code is on `join-template-commit-reveal`, not on `main`, which stays untouched until the join is done.
 
-**Proposed** (each with the alternative rejected):
+**Decided** (each with the alternative rejected):
 
 - **L3-1, home: stratagems**, `flake.nix` and `nix/lan.nix` at its root on the integration branch, after conquest-demo's. The template tree has no flake and no `lan` environment, and half the build is stratagems' own (its `common` and `indexer` workspaces, `stratagems-generated.mjs`, the processor bundle). Recorded under Later: a shared game package at template-commit-reveal once a second commit-reveal game goes on the box. Rather than the template first (one user is not a seam yet).
 - **L3-2, the toolchain**: inputs `nixpkgs` nixos-26.05 (the box's) and `ethereum-lan-node` (its genesis for the build's chain, its module and faucet for the checks; `inputs.nixpkgs.follows`); `pnpm_10` and `nodejs_24`; `fetchPnpmDeps` with `pnpmWorkspaces = ["stratagems-web..."]`. Rather than `nodejs_22` as conquest-demo (not what the suites run on), or a copy of the genesis in stratagems (it would drift from the box's).
@@ -978,7 +979,7 @@ What L2 leaves it (2026-11-02): the `lan` deploy is deterministic (29 addresses 
 - **L3-11, the box half is a step of its own**: **L3** is the package and the checks (L3-1 to L3-9), ticked without the box; **L3-box** (needs the user, deferred like D-live) is L3-10. Rather than one step that stays unticked until the next event.
 - **L3-12, not this step**: a shared game package in the template tree, a version from the environment in the stem's svelte config, a short world cycle on `lan`, a server-side indexer, fuzd on the box.
 
-**Start here** (L3, once L3-1 to L3-12 are answered).
+**Start here** (L3).
 
 ```sh
 git -C ~/dev/github/wighawag/stratagems fetch origin --prune
@@ -3067,3 +3068,5 @@ Every other line of the previous entry stands, the pushes it lists included (str
 ### 2026-11-03, step L3 specified (PROPOSED, NOT landed: awaiting the user's answer to L3-1 to L3-12)
 
 The first unticked step, L3, had a paragraph and no "Start here", so this session measured and specified it instead of building it, read-only, on the integration branch ea7bba47, ethereum-lan-node `main` 538bd15, conquest-demo `main` 793f2b8 and my-boxes 12e9925. Checks first: the main checkout clean, `main` equal to `origin/main` (f1b5d6cf), the integration branch equal to its origin and containing `origin/main`. The section "Step L3" now has "What decides L3's shape", L3-1 to L3-12, a "Start here", its items and its "Done when". The findings that shape it: the box runs a game's deploy read-only in a systemd sandbox, writable only in a state directory a reset wipes, so `hardhat deploy` cannot be the deploy and rocketh's CLI (`--deployments`) is the candidate, measured first; nothing commits the `lan` addresses the web embeds, so the build deploys to a throwaway geth from the box's genesis, which the box's README already suggests; Hardhat 3.18 takes a compiler `path`, so solc 0.8.24 is a fixed-output fetch; the artifact's pages name `//:8545`, which another project holds on this machine, so the real artifact is checked in a NixOS VM and the browser rehearsal takes a one-parameter override; the offline world (hotseat, AI) was never rehearsed over plain http, since H2 and A1 landed after L2; and my-boxes pins ethereum-lan-node before the faucet's CORS that L2 found a game needs. L3-11 proposes splitting the box's install into a deferred step of its own (L3-box), so the package can be ticked without the box; the Steps list changes only once that is answered. Branch `specify-L3`, not pushed. Next: the user's answers, then this branch lands and L3 is built.
+
+**Decided, 2026-11-03**: the user answered "all good" to L3-1 to L3-12, together with A2's answers. The Steps list now has L3 (the package and its checks) and L3-box (the user's install, deferred like D-live), per L3-11. This branch lands as a specification; L3 itself is unbuilt.
