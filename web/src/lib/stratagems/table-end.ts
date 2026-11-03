@@ -101,6 +101,8 @@ type Chain = {
 	reserves: Map<string, bigint>;
 	credits: Map<string, bigint>;
 	settled: boolean;
+	/** The contract's count of cells still holding a stake. */
+	unsettled: number;
 	scores?: {players: readonly bigint[]; scores: readonly bigint[]};
 	winners: readonly bigint[];
 };
@@ -116,6 +118,10 @@ export function createTableEnd(params: {
 	send: WalletSend;
 	/** Called after a settlement or a withdrawal lands. */
 	onChanged?: () => void;
+	/** Fold the board again now, rather than at the next poll. */
+	refreshBoard?: () => Promise<void>;
+	/** How long to wait for the board between two rounds of a settlement. */
+	settleRetryMs?: number;
 }): TableEnd {
 	const {publicClient, table, contract} = params;
 	const read = (functionName: string, args?: readonly unknown[]) =>
@@ -138,10 +144,11 @@ export function createTableEnd(params: {
 		if (!state || !state.roster.started) return;
 		const members = state.roster.members;
 		try {
-			const [reserves, credits, settled] = await Promise.all([
+			const [reserves, credits, settled, unsettled] = await Promise.all([
 				Promise.all(members.map((m) => read('getReserve', [m]))),
 				Promise.all(members.map((m) => read('getCollisionCredit', [m]))),
 				read('isSettled'),
+				read('unsettledCells'),
 			]);
 			const next: Chain = {
 				reserves: new Map(
@@ -151,6 +158,7 @@ export function createTableEnd(params: {
 					members.map((m, i) => [addressOf(m), credits[i] as bigint]),
 				),
 				settled: settled as boolean,
+				unsettled: Number(unsettled as bigint),
 				winners: [],
 			};
 			if (next.settled) {
@@ -248,10 +256,13 @@ export function createTableEnd(params: {
 					}),
 				);
 			}
+			// the contract's count, which a board still folding the last reveals
+			// cannot be behind
 			const unsettled =
-				$onchain.step === 'Loaded'
+				$chain?.unsettled ??
+				($onchain.step === 'Loaded'
 					? unsettledPositions($onchain.data).length
-					: 0;
+					: 0);
 			return {
 				step: 'Loaded',
 				options: $options,
@@ -267,24 +278,48 @@ export function createTableEnd(params: {
 		},
 	);
 
+	/**
+	 * THE POSITIONS COME FROM THE BOARD THIS BROWSER FOLDED, and the contract
+	 * cannot list its cells, so a board still folding the last reveals would
+	 * leave cells out (measured: the first two-browser run settled 3 of 4 and
+	 * stopped short of the scores). So it settles in rounds: what the board
+	 * lists, then the contract's count read back, and while cells remain, the
+	 * board folded again and the cells not yet sent, until none is left.
+	 */
 	async function settle() {
-		const $board = get(params.onchainState);
-		if ($board.step !== 'Loaded') return;
 		settling.set({step: 'Sending'});
+		const sent = new Set<string>();
+		const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 		try {
-			const positions = unsettledPositions($board.data);
-			const batches = settleBatches(positions, SETTLE_BATCH);
-			// an empty board still has to be finalised: one call with no cell
-			for (const batch of batches.length === 0 ? [[]] : batches) {
-				await params.send(
-					{
-						address: contract.address,
-						abi: contract.abi,
-						functionName: 'settle',
-						args: [batch],
-					},
-					'The settlement',
-				);
+			for (let round = 0; round < 10; round++) {
+				const $board = get(params.onchainState);
+				const positions =
+					$board.step === 'Loaded'
+						? unsettledPositions($board.data).filter(
+								(p) => !sent.has(p.toString()),
+							)
+						: [];
+				const remaining = Number((await read('unsettledCells')) as bigint);
+				if (remaining === 0 && (await read('isSettled'))) break;
+				if (positions.length === 0 && remaining !== 0) {
+					await params.refreshBoard?.();
+					await pause(params.settleRetryMs ?? 1500);
+					continue;
+				}
+				const batches = settleBatches(positions, SETTLE_BATCH);
+				// an empty board still has to be finalised: one call with no cell
+				for (const batch of batches.length === 0 ? [[]] : batches) {
+					await params.send(
+						{
+							address: contract.address,
+							abi: contract.abi,
+							functionName: 'settle',
+							args: [batch],
+						},
+						'The settlement',
+					);
+					for (const p of batch) sent.add(p.toString());
+				}
 			}
 			settling.set({step: 'Idle'});
 			await update();

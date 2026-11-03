@@ -460,6 +460,7 @@ export function createGameContext(core: CoreServices): GameContext {
 					void board.update();
 					void reserve.update();
 				},
+				refreshBoard: () => board.update(),
 			})
 		: undefined;
 	const leaderboard = createLeaderboard({

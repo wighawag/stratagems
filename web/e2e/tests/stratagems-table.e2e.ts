@@ -462,7 +462,10 @@ describe('A stratagems table for a fixed set of players', () => {
 								stop();
 								return value?.currentCycleNumber as number | undefined;
 							}),
-						{message: 'the page should read the anchored cycle', timeout: 30_000},
+						{
+							message: 'the page should read the anchored cycle',
+							timeout: 30_000,
+						},
 					)
 					.toBe(anchored);
 			}
@@ -542,34 +545,6 @@ describe('A stratagems table for a fixed set of players', () => {
 				timeout: 60_000,
 			});
 			await host.getByTestId('table-settle').click();
-			for (let i = 0; i < 20; i++) {
-				const debug = await host.evaluate(async () => {
-					const context = (globalThis as unknown as {context: any}).context;
-					const game = context.deployments.get().contracts.Stratagems;
-					const read = (functionName: string) =>
-						context.publicClient.readContract({address: game.address, abi: game.abi, functionName});
-					let settling: any;
-					const stop = context.game.tableEnd.settling.subscribe((v: unknown) => (settling = v));
-					stop();
-					let board: any;
-					const stopBoard = context.onchainState.subscribe((v: unknown) => (board = v));
-					stopBoard();
-					const cells =
-						board.step === 'Loaded'
-							? Object.entries(board.data.cells).map(([k, c]: [string, any]) => `${k}:${c.color}/${c.life}/${c.stake}`)
-							: [];
-					return JSON.stringify({
-						settling,
-						unsettled: String(await read('unsettledCells')),
-						settled: await read('isSettled'),
-						end: (await read('getEnd')).map(String),
-						cells,
-					});
-				});
-				console.log(`[table e2e] settle ${i}: ${debug}`);
-				if (debug.includes('"settled":true')) break;
-				await host.waitForTimeout(2000);
-			}
 			for (const page of [host, guest]) {
 				await expect(page.getByTestId('table-end-status')).toContainText(
 					/^Settled\./,
