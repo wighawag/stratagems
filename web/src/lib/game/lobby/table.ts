@@ -88,7 +88,65 @@ export type TableLobby = {
 		deployments: TypedDeployments,
 		table: `0x${string}`,
 	): TypedDeployments;
+	/**
+	 * What the creator chooses for the GAME at a table, if the game reads
+	 * anything (its `gameOptions`): the lobby asks for each field and sends
+	 * what `encode` makes of the answers. A game that reads none leaves it out,
+	 * and its tables are created with {@link NO_GAME_OPTIONS}.
+	 */
+	options?: TableOptions;
 };
+
+/** One number the creator chooses for the game, as the lobby asks for it. */
+export type TableOptionField = {
+	id: string;
+	label: string;
+	min: number;
+	max: number;
+	default: number;
+	/** Said after the number, e.g. `gems` or `%`. */
+	unit?: string;
+};
+
+/** A game's options at a table: what to ask, how to send it, how to say it. */
+export type TableOptions = {
+	fields: readonly TableOptionField[];
+	/** The `bytes32` the game's contract reads, from one value per field. */
+	encode(values: Readonly<Record<string, number>>): `0x${string}`;
+	/** What a table's options mean, as a person reads them; nothing when unreadable. */
+	describe(
+		gameOptions: `0x${string}`,
+	): readonly {label: string; value: string}[];
+};
+
+/** Every field at its default. */
+export function defaultOptionValues(
+	options: TableOptions,
+): Record<string, number> {
+	return Object.fromEntries(options.fields.map((f) => [f.id, f.default]));
+}
+
+/** A value the field allows: a whole number inside its bounds, its default otherwise. */
+export function clampOptionValue(
+	field: TableOptionField,
+	value: unknown,
+): number {
+	const n = typeof value === 'number' ? Math.floor(value) : NaN;
+	if (!Number.isFinite(n)) return field.default;
+	return Math.min(field.max, Math.max(field.min, n));
+}
+
+/** The options to send, every value clamped to its field. */
+export function encodeTableOptions(
+	options: TableOptions,
+	values: Readonly<Record<string, unknown>>,
+): `0x${string}` {
+	return options.encode(
+		Object.fromEntries(
+			options.fields.map((f) => [f.id, clampOptionValue(f, values[f.id])]),
+		),
+	);
+}
 
 /** The table a query parameter names, if it names one. */
 export function tableFromParam(param: unknown): `0x${string}` | undefined {
