@@ -131,7 +131,8 @@ abstract contract UsingCommitReveal is
     //-------------------------------------------------------------------------
 
     /// @notice Make this a game for a fixed set of members: `seats` of them,
-    ///         seated by funding a reserve, started by `creator`.
+    ///         seated by funding a reserve, started by `creator`, ending
+    ///         `cycles` cycles after its start, with `options` for the game.
     /// @dev OPT-IN, AND ONCE. A game that never calls this (the persistent
     ///      world) has open entry, exactly as before rosters existed. A game
     ///      cloned per table calls it from its initialiser, in the same
@@ -143,9 +144,16 @@ abstract contract UsingCommitReveal is
     ///      leaving (before the start the seat can be taken again, after it
     ///      nobody joins); the creator starts the game once two are seated
     ///      ({_startGame}), and may forfeit a member who has not acted
-    ///      ({_forfeitMember}).
-    function _openRoster(address creator, uint8 seats) internal {
-        CommitReveal.openRoster(creator, seats);
+    ///      ({_forfeitMember}); after its last cycle nobody commits, advances
+    ///      or is forfeited ({_hasEnded}), while that cycle's reveals and every
+    ///      missed reveal's settlement still go through.
+    function _openRoster(
+        address creator,
+        uint8 seats,
+        uint16 cycles,
+        bytes32 options
+    ) internal {
+        CommitReveal.openRoster(creator, seats, cycles, options);
     }
 
     /// @notice Seat a player, and wait for them if the game has started (or
@@ -192,6 +200,30 @@ abstract contract UsingCommitReveal is
 
     function _members() internal view returns (uint256[] memory) {
         return CommitReveal.members();
+    }
+
+    /// @notice WHAT THE GAME READS AT THIS TABLE, as its creator chose it.
+    /// @dev Opaque to the base, and the only way a game's routes learn
+    ///      anything chosen at creation: each route is its own contract
+    ///      behind the router, so the lobby's route cannot call a game's hook.
+    ///      A game decodes it in its own routes (and refuses what it cannot
+    ///      read); zero under open entry, and wherever the creator sent none.
+    function _gameOptions() internal view returns (bytes32) {
+        return CommitReveal.gameOptions();
+    }
+
+    /// @notice THE END'S HOOK: the last cycle this game plays, or zero if it
+    ///         has none (open entry, or a roster not started yet).
+    function _lastCycleNumber() internal view returns (uint64) {
+        return CommitReveal.lastCycleNumber();
+    }
+
+    /// @notice THE END'S HOOK: whether the game has played its last cycle.
+    /// @dev A comparison, never an event: nothing runs at the moment a game
+    ///      ends, so a game's own routes (a settlement, a score) ask this.
+    function _hasEnded() internal view returns (bool) {
+        (uint64 cycleNumber, ) = _cycleNumber();
+        return CommitReveal.isPastTheEnd(cycleNumber);
     }
 
     /// @dev The creator, or a revert: under open entry there is nobody to

@@ -117,6 +117,13 @@ interface UsingCommitRevealErrors {
     /// @notice a roster must hold at least two members
     error InvalidSeats(uint8 seats);
 
+    /// @notice a game for a fixed set of members plays at least one cycle
+    error InvalidCycles(uint16 cycles);
+
+    /// @notice this game has played its last cycle: no commitment, advance or
+    ///         forfeit any more
+    error GameEnded(uint64 lastCycleNumber);
+
     /// @notice the game has started, so its roster is closed
     error GameAlreadyStarted();
 
