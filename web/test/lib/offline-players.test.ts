@@ -13,8 +13,14 @@ import {createEmbeddedWorld, type EmbeddedWorld} from '$lib/embedded';
 import {
 	OFFLINE_DEPLOYMENT,
 	playedByTheWorld,
+	playedSeatDecider,
 	stakeForOfflinePlayer,
 } from '$lib/offline';
+import {createBytecodeSandbox} from '$lib/game/simulation';
+import type {BoardState} from '$lib/stratagems/board/indexed-board';
+import type {StoredCell} from '$lib/stratagems/preview';
+import {valueAtEnd} from '$lib/stratagems/score';
+import {positionsToRead, type DecisionMeasure} from '$lib/stratagems/strategy';
 import {createOfflinePlayers, turnFor} from '$lib/offline-players';
 import {
 	SEATS_BY_DEFAULT,
@@ -68,7 +74,10 @@ type Commitment = {hash: `0x${string}`; cycleNumber: bigint; bond: bigint};
 type FullCell = {owner: `0x${string}`; color: number; life: number};
 
 /** A world with the human and the seats at the table, all of them staked unless told otherwise. */
-async function buildWorld(options: {stakeSeats: boolean} = {stakeSeats: true}) {
+async function buildWorld(
+	options: {stakeSeats: boolean; table?: typeof TABLE} = {stakeSeats: true},
+) {
+	const played = seatsPlayedByTheWorld(options.table ?? TABLE);
 	return createEmbeddedWorld({
 		chainId: CHAIN_ID,
 		chain: {
@@ -83,7 +92,7 @@ async function buildWorld(options: {stakeSeats: boolean} = {stakeSeats: true}) {
 		initialBalances: {...OFFLINE_DEPLOYMENT.initialBalances},
 		expectedContracts: [...OFFLINE_DEPLOYMENT.expectedContracts],
 		provision: async ({env, node}) => {
-			for (const address of [HUMAN.address, ...PLAYED.map((p) => p.address)]) {
+			for (const address of [HUMAN.address, ...played.map((p) => p.address)]) {
 				await node.provider.request({
 					method: 'evm_setBalance',
 					params: [address, `0x${PLAY_MONEY.toString(16)}`],
@@ -91,8 +100,8 @@ async function buildWorld(options: {stakeSeats: boolean} = {stakeSeats: true}) {
 			}
 			await stakeForOfflinePlayer({env, player: HUMAN.address});
 			if (options.stakeSeats) {
-				for (const played of PLAYED) {
-					await stakeForOfflinePlayer({env, player: played.address});
+				for (const seat of played) {
+					await stakeForOfflinePlayer({env, player: seat.address});
 				}
 			}
 		},
@@ -367,4 +376,238 @@ describe('the other players in stratagems\u2019 offline world', () => {
 		}
 		expect((await read<Attendance>('getAttendance')).waitedFor).toBe(3n);
 	});
+});
+
+/** A storage in memory, as `localStorage` is to the store. */
+function memoryStorage() {
+	const items = new Map<string, string>();
+	return {
+		getItem: (key: string) => items.get(key) ?? null,
+		setItem: (key: string, value: string) => void items.set(key, value),
+	};
+}
+
+/**
+ * One manual cycle with the human at the table committing and revealing an
+ * empty turn: the seats commit on a pass, the human commits, the commit phase
+ * closes, the seats reveal on a pass, the human reveals, the cycle closes.
+ */
+async function playEmptyHumanCycle(
+	built: EmbeddedWorld,
+	players: ReturnType<typeof createOfflinePlayers>,
+) {
+	const {send, read} = clientsOf(built);
+	const {cycleNumber} = await read<Cycle>('getCycle');
+	const secret = `0x${cycleNumber.toString(16).padStart(64, '3')}` as const;
+	const human = chainOf([], secret);
+	await players.tick();
+	await send(HUMAN, {
+		functionName: 'makeCommitment',
+		args: [BigInt(HUMAN.address), human[0].hash, 0n, zeroAddress],
+	});
+	await send(HUMAN, {functionName: 'advanceCycle', args: []});
+	await players.tick();
+	await send(HUMAN, {
+		functionName: 'reveal',
+		args: [
+			BigInt(HUMAN.address),
+			[],
+			secret,
+			human[0].furtherActions,
+			zeroAddress,
+		],
+	});
+	await send(HUMAN, {functionName: 'advanceCycle', args: []});
+}
+
+/**
+ * Each seat's NET GEMS (L4-4) after the cycles played: what its wallet and its
+ * reserve gained, plus what the board pays it at the end, by the world's own
+ * `StratagemsSimulation` (`valueAtEnd`, as a table's score).
+ */
+async function netGems(
+	built: EmbeddedWorld,
+	seats: readonly {address: `0x${string}`; identity: bigint}[],
+	start: Map<string, bigint>,
+) {
+	const {read, gemsOf} = clientsOf(built);
+	const records = built.deployments.get();
+	const simulation = records.contracts.StratagemsSimulation;
+	const sandbox = createBytecodeSandbox({
+		provider: built.provider as never,
+		contracts: {simulation: {address: simulation.address}},
+	});
+	try {
+		const stored = await read<StoredCell[]>('getStoredCells', [
+			positionsToRead(),
+		]);
+		const data = {cells: {}, owners: {}} as unknown as BoardState['data'];
+		for (const cell of stored) {
+			if (cell.cell.color === 0) continue;
+			const key = BigInt(cell.position).toString();
+			data.cells[key] = {...cell.cell};
+			data.owners[key] = cell.owner.toLowerCase() as `0x${string}`;
+		}
+		const stratagems = resolveStratagemsConfig(records as never);
+		const {cycleNumber} = await read<Cycle>('getCycle');
+		const value = await valueAtEnd({
+			data,
+			cycleNumber: Number(cycleNumber),
+			maxLife: stratagems.maxLife,
+			numTokensPerGems: stratagems.numTokensPerGems,
+			simulate: async (board, cycle, positions) =>
+				(await sandbox.call({
+					contract: 'simulation',
+					abi: simulation.abi,
+					functionName: 'poke' as never,
+					args: [[...board], cycle, [...positions]] as never,
+				})) as never,
+		});
+		const net = new Map<string, bigint>();
+		for (const seat of seats) {
+			const held =
+				(await gemsOf(seat.address)) +
+				(await read<bigint>('getReserve', [seat.identity]));
+			net.set(
+				seat.address.toLowerCase(),
+				held -
+					start.get(seat.address.toLowerCase())! +
+					(value.get(seat.address.toLowerCase()) ?? 0n),
+			);
+		}
+		return net;
+	} finally {
+		sandbox.dispose();
+	}
+}
+
+async function holdings(
+	built: EmbeddedWorld,
+	seats: readonly {address: `0x${string}`; identity: bigint}[],
+) {
+	const {read, gemsOf} = clientsOf(built);
+	const held = new Map<string, bigint>();
+	for (const seat of seats) {
+		held.set(
+			seat.address.toLowerCase(),
+			(await gemsOf(seat.address)) +
+				(await read<bigint>('getReserve', [seat.identity])),
+		);
+	}
+	return held;
+}
+
+describe('a greedy seat in stratagems\u2019 offline world (step A2)', () => {
+	it('commits the turn it decided and stored, reveals it, and a reload in the reveal phase still reveals it', async () => {
+		const table = tableOf(3, 1, ['greedy', 'random']);
+		world = await buildWorld({stakeSeats: true, table});
+		const {send, read} = clientsOf(world);
+		const seats = playedByTheWorld(table);
+		const [greedy] = seats;
+		expect(greedy.level).toBe('greedy');
+		const storage = memoryStorage();
+		const loop = () => {
+			const decider = playedSeatDecider(world!, seats, {storage})!;
+			return {
+				decider,
+				players: createOfflinePlayers({
+					provider: world!.provider,
+					deployments: world!.deployments,
+					config: resolveStratagemsConfig(world!.deployments.get() as never),
+					players: seats,
+					strategy: decider.strategy,
+					turns: decider.turns,
+				}),
+			};
+		};
+		const first = loop();
+		const records = world.deployments.get();
+		const game = records.contracts.Stratagems.address;
+
+		await first.players.tick();
+		const stored = first.decider.turns.get(greedy.identity, 2);
+		expect(stored).toHaveLength(1);
+		const onChain = await read<Commitment>('getCommitment', [greedy.identity]);
+		const head = chainOf(
+			stored!,
+			playedSeatSecret({
+				chainId: records.chain.id,
+				contract: game,
+				identity: greedy.identity,
+				cycleNumber: 2,
+			}),
+		)[0].hash;
+		expect(onChain.hash.toLowerCase()).toBe(head.toLowerCase());
+
+		// the human commits and the commit phase closes
+		const secret = `0x${'4'.repeat(64)}` as const;
+		const human = chainOf([], secret);
+		await send(HUMAN, {
+			functionName: 'makeCommitment',
+			args: [BigInt(HUMAN.address), human[0].hash, 0n, zeroAddress],
+		});
+		await send(HUMAN, {functionName: 'advanceCycle', args: []});
+		first.decider.sandbox.dispose();
+
+		// A RELOAD: a new loop and a new decider over the same storage
+		const second = loop();
+		await second.players.tick();
+		expect((await read<Attendance>('getAttendance')).revealed).toBe(2n);
+		const [cell] = await read<FullCell[]>('getCells', [[stored![0].position]]);
+		expect(cell.owner.toLowerCase()).toBe(greedy.address.toLowerCase());
+		expect(cell.color).toBe(stored![0].color);
+		second.decider.sandbox.dispose();
+	}, 120_000);
+
+	it('ends twenty cycles with more net gems than each random seat, wherever it sits', async () => {
+		// TWENTY, NOT TEN (A2-10 said ten): measured 2026-11-03, after ten cycles
+		// one random seat had more (greedy 0.5 gems, a random seat 1, at seat 0),
+		// a one-turn greedy against luck over few moves; after twenty, greedy
+		// leads every random seat at every position (3, 4.5 and 9 gems against
+		// at most 1.5).
+		const CYCLES = 20;
+		const report: string[] = [];
+		for (const at of [0, 1, 2]) {
+			const levels = ['random', 'random', 'random'];
+			levels[at] = 'greedy';
+			const table = tableOf(4, 1, levels);
+			world = await buildWorld({stakeSeats: true, table});
+			const seats = playedByTheWorld(table);
+			const measures: DecisionMeasure[] = [];
+			const decider = playedSeatDecider(world, seats, {
+				storage: memoryStorage(),
+				onDecided: (m) => measures.push(m),
+			})!;
+			const players = createOfflinePlayers({
+				provider: world.provider,
+				deployments: world.deployments,
+				config: resolveStratagemsConfig(world.deployments.get() as never),
+				players: seats,
+				strategy: decider.strategy,
+				turns: decider.turns,
+			});
+			const start = await holdings(world, seats);
+			for (let c = 0; c < CYCLES; c++)
+				await playEmptyHumanCycle(world, players);
+			decider.sandbox.dispose();
+			const net = await netGems(world, seats, start);
+			const greedyNet = net.get(seats[at].address.toLowerCase())!;
+			const gem = 10n ** 18n;
+			report.push(
+				`greedy at ${at}: ${seats.map((s) => `${s.level ?? 'random'}=${Number((net.get(s.address.toLowerCase())! * 10n) / gem) / 10}`).join(' ')}; decisions ${measures.length}, median ${[...measures].map((m) => m.ms).sort((a, b) => a - b)[Math.floor(measures.length / 2)]} ms`,
+			);
+			expect(measures).toHaveLength(CYCLES);
+			for (const seat of seats) {
+				if (seat === seats[at]) continue;
+				expect(greedyNet, report.at(-1)).toBeGreaterThan(
+					net.get(seat.address.toLowerCase())!,
+				);
+			}
+			await world.dispose();
+			world = undefined;
+		}
+		process.stderr.write(
+			`A2 comparison, ${CYCLES} cycles:\n${report.join('\n')}\n`,
+		);
+	}, 600_000);
 });

@@ -53,7 +53,12 @@ export const STRATAGEMS_LEVELS: readonly AiLevel[] = [
  */
 export const GREEDY_CANDIDATES = 12;
 
-/** How far from the origin a played move may land, on each axis (the offline world's 13 by 13 block). */
+/**
+ * How far from the origin a played move may land, in cells, on each axis: the
+ * camera opens on 24 by 24 cells (`game-config.ts`), so a 13 by 13 block around
+ * the origin is always on screen. `random`'s derived turn (`offline-players.ts`)
+ * lands in it, and so do greedy's candidates.
+ */
 export const PLAYED_TURN_SPREAD = 13;
 
 /** What `StratagemsSimulation.resolveMoves` and `poke` answer. */

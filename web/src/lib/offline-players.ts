@@ -8,6 +8,13 @@ import {
 	type SerialisedLoop,
 } from '$lib/game/core/played';
 import {playedSeatSecret} from '$lib/game/core/secret';
+import {
+	decidePlayedTurn,
+	RANDOM_LEVEL,
+	seededRandom,
+	type PlayedTurnStore,
+	type Strategy,
+} from '$lib/game/core/strategy';
 import {createCycleReader} from '$lib/game/core/commit-reveal/cycle';
 import {
 	buildCommitmentChain,
@@ -21,6 +28,7 @@ import {
 import {MOVE_ENCODING, type Move} from '$lib/stratagems/moves';
 import {defaultColorOf} from '$lib/stratagems/faction';
 import {testGemsDistributor} from '$lib/stratagems/test-gems';
+import {PLAYED_TURN_SPREAD} from '$lib/stratagems/strategy';
 
 /**
  * THE OTHER PLAYERS IN STRATAGEMS' OFFLINE WORLD, because a commit-reveal game
@@ -54,6 +62,14 @@ import {testGemsDistributor} from '$lib/stratagems/test-gems';
  *   both ways. Only if that fails does it commit the empty turn, which keeps the
  *   cycle moving.
  *
+ * - A SEAT AT ANOTHER LEVEL (step A2: `greedy`) asks stratagems' strategy
+ *   (`$lib/stratagems/strategy`, through `$lib/game/core/strategy`) once per
+ *   cycle, in the commit phase, and STORES the turn before it commits it (A1-4):
+ *   a turn that read the board cannot be derived again once the board moved.
+ *   The derived turn stays a candidate beside the stored one, so a lost record
+ *   still opens what `random` would have committed, and a `random` seat stores
+ *   nothing and plays exactly as before.
+ *
  * AND BECAUSE IT IS DERIVED, THE DERIVATION IS A WIRE: a build that changes
  * {@link turnFor} or `playedSeatSecret` cannot open a commitment an earlier build
  * left on chain, which under the manual policy freezes the world. The commit
@@ -68,6 +84,8 @@ export type OfflinePlayer = {
 	address: `0x${string}`;
 	/** The identity as the contract spells it: the account, widened. */
 	identity: bigint;
+	/** How it plays (step A2): absent or `random` is the derived turn. */
+	level?: string;
 };
 
 /** What `getCommitment` hands back. */
@@ -79,13 +97,6 @@ const NO_PAYEE = '0x0000000000000000000000000000000000000000' as const;
 const ERC20 = parseAbi([
 	'function balanceOf(address owner) view returns (uint256)',
 ]);
-
-/**
- * How far from the origin a played move may land, in cells, on each axis: the
- * camera opens on 24 by 24 cells (`game-config.ts`), so a 13 by 13 block around
- * the origin is always on screen.
- */
-const PLAYED_TURN_SPREAD = 13;
 
 /**
  * WHERE A PLAYED TURN COMES FROM, deterministically: one move, its cell a pure
@@ -128,8 +139,15 @@ export function createOfflinePlayers(params: {
 	pollInterval?: number;
 	/** Called after a pass in which a player actually SENT something. */
 	onActed?: () => void;
+	/**
+	 * How a seat at a level other than `random` decides its turn (step A2).
+	 * Without it (or without `turns`) every seat plays `random`.
+	 */
+	strategy?: Strategy<Move>;
+	/** Where a decided turn is kept before it is committed (A1-4). */
+	turns?: PlayedTurnStore<Move>;
 }): SerialisedLoop {
-	const {provider, deployments, config, players} = params;
+	const {provider, deployments, config, players, strategy, turns} = params;
 
 	const records = deployments.get();
 	const game = {
@@ -197,15 +215,79 @@ export function createOfflinePlayers(params: {
 	}
 
 	/**
-	 * Every turn this file could have committed for a player in a cycle: its
-	 * move, and the empty turn it falls back to when it could not afford the move
-	 * even after restaking. The reveal lets the hash decide between them.
+	 * Every turn this file could have committed for a player in a cycle: the one
+	 * it decided and stored (a seat above `random`), its derived move, and the
+	 * empty turn it falls back to when it could not afford the move even after
+	 * restaking. The reveal lets the hash decide between them.
 	 */
-	function candidateTurns(player: OfflinePlayer, cycleNumber: number) {
-		return [
-			turnFor({game: game.address, identity: player.identity, cycleNumber}),
-			[],
-		];
+	function candidateTurns(
+		player: OfflinePlayer,
+		cycleNumber: number,
+	): (readonly Move[])[] {
+		const derived = turnFor({
+			game: game.address,
+			identity: player.identity,
+			cycleNumber,
+		});
+		const stored = decides(player)
+			? turns?.get(player.identity, cycleNumber)
+			: undefined;
+		return stored ? [stored, derived, []] : [derived, []];
+	}
+
+	/** Whether this seat asks the strategy rather than playing `random`. */
+	function decides(player: OfflinePlayer): boolean {
+		return (
+			strategy !== undefined &&
+			turns !== undefined &&
+			player.level !== undefined &&
+			player.level !== RANDOM_LEVEL
+		);
+	}
+
+	/**
+	 * The move this seat wants this cycle. At `random`, the derived one. At
+	 * another level, the strategy's, decided once and stored before it is
+	 * returned, so a commit never carries a turn that is not stored. A strategy
+	 * that throws (its sandbox did not start, a read failed) is answered with the
+	 * derived turn, stored in its place: a seat that does not commit freezes the
+	 * manual cycle for everybody.
+	 */
+	async function wantedTurn(
+		player: OfflinePlayer,
+		cycleNumber: number,
+	): Promise<readonly Move[]> {
+		const derived = turnFor({
+			game: game.address,
+			identity: player.identity,
+			cycleNumber,
+		});
+		if (!decides(player) || !strategy || !turns) return derived;
+		return decidePlayedTurn({
+			store: turns,
+			strategy: async (input) => {
+				try {
+					return await strategy(input);
+				} catch (err) {
+					console.warn(
+						'an offline player could not decide its turn, and plays the derived one',
+						err,
+					);
+					return derived;
+				}
+			},
+			identity: player.identity,
+			cycleNumber,
+			level: player.level ?? RANDOM_LEVEL,
+			random: seededRandom({
+				chainId: records.chain.id,
+				contract: game.address,
+				identity: player.identity,
+				cycleNumber,
+			}),
+			// One move, as `random` plays: both levels spend alike (A2-3).
+			budget: {actionsAtMost: 1},
+		});
 	}
 
 	/**
@@ -232,15 +314,16 @@ export function createOfflinePlayers(params: {
 	async function turnToCommit(
 		player: OfflinePlayer,
 		cycleNumber: number,
-	): Promise<{actions: Move[]; bond: bigint}> {
-		const [wanted] = candidateTurns(player, cycleNumber);
-		const cost = costOfMoves(config, wanted.length);
+	): Promise<{actions: readonly Move[]; bond: bigint}> {
+		// every level plays one move, so what it costs is known before deciding
+		const cost = costOfMoves(config, 1);
 		let reserve = await reserveOf(player);
 		if (reserve < cost) {
 			await restake(player);
 			reserve = await reserveOf(player);
 		}
 		if (reserve >= cost) {
+			const wanted = await wantedTurn(player, cycleNumber);
 			return {actions: wanted, bond: bondFor(config, wanted.length, reserve)};
 		}
 		return {actions: [], bond: 0n};

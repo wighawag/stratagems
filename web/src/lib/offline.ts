@@ -23,6 +23,18 @@ import {isTableContract} from '$lib/stratagems/table';
 import {createContext} from '$lib/context/index';
 import type {Context} from '$lib/context/types';
 import {createOfflinePlayers, type OfflinePlayer} from '$lib/offline-players';
+import {createPublicClient, custom} from 'viem';
+import {createPlayedTurnStore, RANDOM_LEVEL} from '$lib/game/core/strategy';
+import {createBytecodeSandbox} from '$lib/game/simulation';
+import {
+	createStratagemsStrategy,
+	STRATAGEMS_LEVELS,
+	type DecisionMeasure,
+	type StratagemsSimulator,
+} from '$lib/stratagems/strategy';
+import {STRATAGEMS_STORAGE} from '$lib/stratagems/submission-storage';
+import {defaultColorOf} from '$lib/stratagems/faction';
+import type {StoredCell} from '$lib/stratagems/preview';
 import {pokeWhenTheHumanActs} from '$lib/game/core/played';
 import {
 	MOST_SEATS,
@@ -125,6 +137,22 @@ const PLAY_MONEY = 10n ** 24n;
  * byte-identical lobby off this module (`$lib/offline-lobby`).
  */
 export const LOCAL_HUMANS_AT_MOST = MOST_SEATS;
+
+/**
+ * THE LEVELS A WORLD SEAT MAY PLAY AT, chosen per seat at the lobby (step A2):
+ * `random` (today's derived turn, the default) and `greedy`
+ * (`$lib/stratagems/strategy`). Read by the byte-identical lobby off this
+ * module, as `LOCAL_HUMANS_AT_MOST` is.
+ */
+export const AI_LEVELS = STRATAGEMS_LEVELS;
+
+/**
+ * Where a played seat's decided turn is kept, beside this world's other keys:
+ * a storage that lost it has lost the chain id too, and so the world. A WIRE
+ * from its first build (step A2), like the record it holds
+ * (`$lib/game/core/strategy`).
+ */
+export const PLAYED_TURNS_STORAGE_KEY = 'offline-world:played-turns';
 
 /**
  * THE DEPLOYMENT AN OFFLINE GAME IS, as one exported value, so the world test
@@ -361,13 +389,16 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 			: undefined;
 
 	// THE OTHER PLAYERS, started with the board and stopped with it.
+	const played = playedByTheWorld(table);
+	const decider = playedSeatDecider(world, played);
 	const players = createOfflinePlayers({
 		provider: world.provider,
 		deployments: world.deployments,
 		config: resolveStratagemsConfig(world.deployments.get() as never),
-		players: playedByTheWorld(table),
+		players: played,
 		// A played commit can complete unanimity just as the human's can.
 		onActed: () => void context.context.game.cycleAdvance.check(),
+		...(decider ? {strategy: decider.strategy, turns: decider.turns} : {}),
 	});
 
 	const ready: OfflineWorldStatus = {
@@ -389,6 +420,9 @@ async function buildOfflineWorld(table: Table): Promise<OfflineWorldStatus> {
 					stopRevealer();
 					stopPoke();
 					stopPlayers();
+					// The seats' sandbox stops with the board; a later decision starts
+					// it again.
+					decider?.sandbox.dispose();
 					stopContext();
 				};
 			},
@@ -656,13 +690,97 @@ export function offlineIdentityOf(player: `0x${string}`): bigint {
 	return BigInt(player);
 }
 
-/** The seats the world plays, with the identity each of their keys plays as. */
+/** The seats the world plays, with the identity each of their keys plays as, and their level. */
 export function playedByTheWorld(table: Table): readonly OfflinePlayer[] {
 	return seatsPlayedByTheWorld(table).map((seat) => ({
 		privateKey: seat.privateKey,
 		address: seat.address,
 		identity: offlineIdentityOf(seat.address),
+		...(seat.level !== undefined ? {level: seat.level} : {}),
 	}));
+}
+
+/**
+ * HOW THE WORLD'S SEATS DECIDE, when one of them plays at a level other than
+ * `random` (step A2, A2-6 and A2-7): stratagems' strategy over the world's own
+ * provider, the board read AS STORED (`getStoredCells`), scored by
+ * `StratagemsSimulation`'s bytecode in a sandbox of the seats' own (not the
+ * player's preview sandbox, which is the game context's and rebuilt with it),
+ * and the store their decided turns are kept in. Undefined when every seat
+ * plays `random`, so such a world builds no sandbox and stores nothing.
+ *
+ * EXPORTED for the world test, which builds the seats exactly as this does.
+ * Handed the provider and nothing of the page (PA6).
+ */
+export function playedSeatDecider(
+	world: Pick<EmbeddedWorld, 'provider' | 'deployments'>,
+	played: readonly OfflinePlayer[],
+	options: {
+		storage?: Pick<Storage, 'getItem' | 'setItem'>;
+		onDecided?: (measure: DecisionMeasure) => void;
+	} = {},
+) {
+	if (played.every((seat) => (seat.level ?? RANDOM_LEVEL) === RANDOM_LEVEL)) {
+		return undefined;
+	}
+	const records = world.deployments.get();
+	const game = records.contracts.Stratagems;
+	const simulationRecord = records.contracts.StratagemsSimulation;
+	const sandbox = createBytecodeSandbox({
+		provider: world.provider as never,
+		contracts: {simulation: {address: simulationRecord.address}},
+	});
+	const publicClient = createPublicClient({
+		chain: {
+			id: records.chain.id,
+			name: records.chain.name,
+			nativeCurrency: records.chain.nativeCurrency,
+			rpcUrls: {default: {http: [] as string[]}},
+		},
+		transport: custom(world.provider as never),
+	});
+	const call = (functionName: 'resolveMoves' | 'poke', args: unknown[]) =>
+		sandbox.call({
+			contract: 'simulation',
+			abi: simulationRecord.abi,
+			functionName: functionName as never,
+			args: args as never,
+		}) as unknown as Promise<{
+			cells: readonly StoredCell[];
+			payouts: readonly {to: `0x${string}`; amount: bigint}[];
+			cost: bigint;
+		}>;
+	const simulator: StratagemsSimulator = {
+		resolveMoves: (board, player, cycle, moves) =>
+			call('resolveMoves', [[...board], player, cycle, [...moves]]),
+		poke: (board, cycle, positions) =>
+			call('poke', [[...board], cycle, [...positions]]),
+	};
+	const config = resolveStratagemsConfig(records as never);
+	const strategy = createStratagemsStrategy({
+		readBoard: async (positions) =>
+			(await publicClient.readContract({
+				address: game.address,
+				abi: game.abi,
+				functionName: 'getStoredCells',
+				args: [[...positions]],
+			} as never)) as readonly StoredCell[],
+		simulator,
+		config: {
+			maxLife: config.maxLife,
+			numTokensPerGems: config.numTokensPerGems,
+		},
+		colorOf: defaultColorOf,
+		onDecided: options.onDecided,
+	});
+	const turns = createPlayedTurnStore({
+		storage: options.storage ?? localStorage,
+		key: PLAYED_TURNS_STORAGE_KEY,
+		chainId: records.chain.id,
+		contract: game.address,
+		format: STRATAGEMS_STORAGE,
+	});
+	return {strategy, turns, sandbox};
 }
 
 /**
