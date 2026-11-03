@@ -22,6 +22,8 @@
 		clampTableCycles,
 		createTablesLobby,
 		DEFAULT_TABLE_CYCLES,
+		defaultOptionValues,
+		encodeTableOptions,
 		FEWEST_TABLE_CYCLES,
 		FEWEST_TABLE_SEATS,
 		MOST_TABLE_CYCLES,
@@ -41,6 +43,11 @@
 	);
 	let seats = $state(3);
 	let cycles = $state(DEFAULT_TABLE_CYCLES);
+	// the game's own choices, if it has any (`TableLobby.options`)
+	const gameOptions = lobby?.options;
+	let optionValues = $state<Record<string, number>>(
+		gameOptions ? defaultOptionValues(gameOptions) : {},
+	);
 
 	const linkTo = (table: string) => route(`/play/?game=${table}`);
 	const short = (address: string) =>
@@ -49,6 +56,9 @@
 	async function create() {
 		const table = await tablesLobby?.create(seats, {
 			cycles: clampTableCycles(cycles),
+			...(gameOptions
+				? {gameOptions: encodeTableOptions(gameOptions, optionValues)}
+				: {}),
 		});
 		// A table is a context of its own: a page load, not a navigation.
 		if (table) location.assign(linkTo(table));
@@ -101,6 +111,29 @@
 				data-testid="table-cycles"
 				bind:value={cycles}
 			/>
+			{#if gameOptions}
+				{#each gameOptions.fields as field (field.id)}
+					<label
+						class="mt-4 block text-sm font-medium"
+						for={`table-option-${field.id}`}
+						>{field.label}
+						<span class="font-normal text-muted-foreground"
+							>({field.min} to {field.max}{field.unit
+								? ` ${field.unit}`
+								: ''})</span
+						></label
+					>
+					<input
+						id={`table-option-${field.id}`}
+						class="mt-2 w-24 rounded-md border bg-background px-2 py-1 text-sm"
+						type="number"
+						min={field.min}
+						max={field.max}
+						data-testid={`table-option-${field.id}`}
+						bind:value={optionValues[field.id]}
+					/>
+				{/each}
+			{/if}
 			<Button
 				class="mt-4 block"
 				data-testid="table-create"

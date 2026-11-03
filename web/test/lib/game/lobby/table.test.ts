@@ -1,7 +1,10 @@
 import {describe, it, expect, vi} from 'vitest';
 import {get, writable} from 'svelte/store';
 import {
+	clampOptionValue,
 	clampTableCycles,
+	defaultOptionValues,
+	encodeTableOptions,
 	createTableStore,
 	DEFAULT_TABLE_CYCLES,
 	describeDuration,
@@ -18,6 +21,7 @@ import {
 	tableProgressOf,
 	tableSettingsOf,
 	type Roster,
+	type TableOptions,
 	type TableState,
 } from '$lib/game/lobby/table';
 import {tableAtRoster} from '$lib/game/lobby/seats';
@@ -390,5 +394,38 @@ describe("a table's end", () => {
 		expect(clampTableCycles(4.7)).toBe(4);
 		expect(clampTableCycles('9')).toBe(DEFAULT_TABLE_CYCLES);
 		expect(clampTableCycles(NaN)).toBe(DEFAULT_TABLE_CYCLES);
+	});
+});
+
+describe("a game's options at a table", () => {
+	const options: TableOptions = {
+		fields: [
+			{
+				id: 'stake',
+				label: 'Stake',
+				min: 1,
+				max: 100,
+				default: 10,
+				unit: 'gems',
+			},
+			{id: 'gap', label: 'Gap', min: 0, max: 200, default: 50, unit: '%'},
+		],
+		encode: (values) =>
+			`0x${((BigInt(values.gap) << 32n) | BigInt(values.stake)).toString(16).padStart(64, '0')}`,
+		describe: () => [],
+	};
+
+	it('starts every field at its default, and keeps a value inside its bounds', () => {
+		expect(defaultOptionValues(options)).toEqual({stake: 10, gap: 50});
+		expect(clampOptionValue(options.fields[0], 0)).toBe(1);
+		expect(clampOptionValue(options.fields[0], 250)).toBe(100);
+		expect(clampOptionValue(options.fields[1], 12.9)).toBe(12);
+		expect(clampOptionValue(options.fields[1], undefined)).toBe(50);
+	});
+
+	it('encodes what the creator chose, each value clamped to its field first', () => {
+		expect(encodeTableOptions(options, {stake: 7, gap: 1000})).toBe(
+			`0x${((200n << 32n) | 7n).toString(16).padStart(64, '0')}`,
+		);
 	});
 });
