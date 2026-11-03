@@ -50,6 +50,7 @@ import {
 import {
 	createCycleAdvance,
 	type Attendance,
+	type AutoAdvance,
 	type CycleAdvanceStore,
 } from './advance';
 import {
@@ -98,6 +99,12 @@ import {
 	type CameraWatcher,
 } from '$lib/game/render/camera';
 import {createViewState, type ViewMerge} from '$lib/view';
+import {
+	createTableStore,
+	tableAllowsPlay,
+	type TableState,
+	type TableStore,
+} from '$lib/game/lobby/table';
 import {createPollingOnchainState} from '$lib/onchain/state';
 
 // ---------------------------------------------------------------------------
@@ -470,6 +477,13 @@ export type CommitRevealGameParts<T extends GameTypes> = {
 		 * its own contract, never the framework's: see `advance.ts`.
 		 */
 		contractIsTheJudge: boolean;
+		/**
+		 * WHEN THIS BROWSER PUSHES THE CYCLE (`advance.ts`'s `AutoAdvance`).
+		 * Defaults to pushing only where nothing else will (a Manual cycle); a
+		 * game on the hybrid policy that wants a phase to close the moment
+		 * everyone has acted says `eagerly`.
+		 */
+		auto?: AutoAdvance;
 	};
 	/**
 	 * Actions per reveal chunk, when the game chains its reveal. Bounds how much
@@ -593,6 +607,12 @@ export type CommitRevealGame<T extends GameTypes> = {
 		readyToPlay: Readable<boolean>;
 		/** Where the saved turn is, for the HUD to say: see {@link SavedTurn}. */
 		savedTurn: Readable<SavedTurn>;
+		/**
+		 * The table this game is at (`?game=<address>`), if it is at one: its
+		 * roster, its lobby screen and the creator's powers. See
+		 * `$lib/game/lobby/table`.
+		 */
+		table: TableStore | undefined;
 	};
 	/** The board as the chain says it. What FETCHES reads this. */
 	onchainState: OnchainStateStore<T['board']>;
@@ -633,6 +653,17 @@ export function createCommitRevealGame<T extends GameTypes>(
 	const {identity} = parts;
 	const chainId = core.deployments.get().chain.id;
 
+	// WHO ELSE REVEALS: the WORLD'S revealer when it has one (a hotseat world,
+	// `CoreServices.scheduler`), in place of the game's own; and then this
+	// browser reveals only as a fallback, or the person who committed last
+	// would race the revealer for the same reveal. The game's scheduler
+	// otherwise (a layer's, `with/fuzd`), and the game's choice of when.
+	const scheduler: RevealScheduler<T['identity'], ExtensionsOf<T>> | undefined =
+		core.scheduler ?? parts.scheduler;
+	const autoReveal = core.scheduler
+		? ('fallback' as const)
+		: parts.submission?.autoReveal;
+
 	// Chain-synced, unlike the UI clock: the phases are defined against block
 	// timestamps, and a drifting browser clock would show the wrong phase.
 	const chainTime = createChainTime({
@@ -671,6 +702,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 		advance: parts.cycle.advance,
 		refreshCycle,
 		contractIsTheJudge: parts.cycle.contractIsTheJudge,
+		auto: parts.cycle.auto,
 	});
 
 	const {camera, cameraControl} = createCamera(parts.camera);
@@ -756,16 +788,14 @@ export function createCommitRevealGame<T extends GameTypes>(
 		// missed-reveal reader already reads: it decides between two stored
 		// turns for one cycle, and takes up a commit that was never recorded.
 		liveCommitment: missedReveal.commitment,
-		...(parts.scheduler ? {scheduler: parts.scheduler} : {}),
+		...(scheduler ? {scheduler} : {}),
 		...(parts.submission?.commitWhenIdle
 			? {commitWhenIdle: parts.submission.commitWhenIdle}
 			: {}),
 		// WHEN THIS BROWSER REVEALS is the game's choice (P7): `fallback` where a
 		// scheduler is expected to reveal, `immediately` otherwise. Before this the
 		// skeleton passed only `commitWhenIdle`, so no game could choose.
-		...(parts.submission?.autoReveal
-			? {autoReveal: parts.submission.autoReveal}
-			: {}),
+		...(autoReveal ? {autoReveal} : {}),
 		...(parts.submission?.fallbackRevealAfter !== undefined
 			? {fallbackRevealAfter: parts.submission.fallbackRevealAfter}
 			: {}),
@@ -848,10 +878,29 @@ export function createCommitRevealGame<T extends GameTypes>(
 	);
 	const onlyInPlayPhase = parts.onlyInPlayPhase ?? false;
 	const savedTurn = derived(core.accountData.lifecycle$, savedTurnOf);
+	// AT A TABLE (`$lib/game/lobby/table`): its roster, polled beside the game,
+	// with the creator's two transactions, which move the cycle, so it is read
+	// again after either lands. Every game at a table has this and none writes
+	// it: a member is the game's identity as the contract keys it.
+	const table = core.table
+		? createTableStore({
+				deps: core,
+				table: core.table,
+				you: derived(parts.identity, ($identity) =>
+					$identity === undefined ? undefined : BigInt($identity),
+				),
+				onChanged: () => void cycleAdvance.check(),
+			})
+		: undefined;
+	// No turn there until it has started, and then only from a member: before
+	// that the contract refuses every commitment, so a plan could only revert.
+	const tableState: Readable<TableState | undefined> =
+		table ?? readable(undefined);
 	const readyToPlay = derived(
-		[setup, phase, savedTurn],
-		([$setup, $phase, $savedTurn]) =>
+		[setup, phase, savedTurn, tableState],
+		([$setup, $phase, $savedTurn, $table]) =>
 			$savedTurn.status === 'ready' &&
+			tableAllowsPlay($table) &&
 			canTakeTurnNow({setup: $setup, phase: $phase, onlyInPlayPhase}),
 	);
 
@@ -861,6 +910,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 	function start() {
 		const stopSubmission = submission.start();
 		const stopCycleAdvance = cycleAdvance.start();
+		const stopTable = table?.startPolling();
 
 		// A click is only a click to the canvas; what it MEANS is the game's, and
 		// it means nothing until the player could commit it.
@@ -914,6 +964,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 		return () => {
 			stopSubmission();
 			stopCycleAdvance();
+			stopTable?.();
 			eventEmitter.off('clicked', onClicked);
 			unsubscribeIdentity();
 			unsubscribeSubmission();
@@ -941,6 +992,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 			acquisition,
 			setup,
 			readyToPlay,
+			table,
 			savedTurn,
 		},
 		onchainState,

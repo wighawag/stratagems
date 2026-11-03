@@ -104,4 +104,36 @@ interface UsingCommitRevealErrors {
 
     /// @notice some of this cycle's commitments have not been revealed yet
     error StillWaitingToReveal(uint64 revealed, uint64 committed);
+
+    /// @notice this game has open entry, so it has no roster to act on
+    error NoRoster();
+
+    /// @notice this game's roster was already opened
+    error RosterAlreadyOpened();
+
+    /// @notice a roster needs a creator, who is the only one who can start it
+    error InvalidCreator();
+
+    /// @notice a roster must hold at least two members
+    error InvalidSeats(uint8 seats);
+
+    /// @notice a game for a fixed set of members plays at least one cycle
+    error InvalidCycles(uint16 cycles);
+
+    /// @notice this game has played its last cycle: no commitment, advance or
+    ///         forfeit any more
+    error GameEnded(uint64 lastCycleNumber);
+
+    /// @notice the game has started, so its roster is closed
+    error GameAlreadyStarted();
+
+    /// @notice every seat of this game is taken
+    error GameFull(uint8 seats);
+
+    /// @notice a game starts with at least two members seated
+    error NotEnoughMembers(uint256 seated);
+
+    /// @notice this member has acted in the current phase, so the creator
+    ///         cannot forfeit them
+    error MemberHasActed(uint256 player, uint64 cycleNumber);
 }

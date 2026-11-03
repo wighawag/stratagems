@@ -210,24 +210,25 @@ export function createCommitRevealContractAdapter<
 			// and how much, which the commitment then carries, so paying and
 			// committing are one transaction. Its failure fails nothing: the turn
 			// commits unpaid and is reported unscheduled. A manually advanced chain
-			// has no reveal time to schedule for, so nothing is asked.
-			const request: RevealScheduleRequest<TIdentity> | undefined =
-				scheduler && revealDueAt !== undefined
-					? {
-							identity,
-							cycleNumber,
-							revealDueAt,
-							transactions: buildRevealTransactions({
-								contract,
-								encoding,
-								actionsPerReveal,
-								revealGas: gas.reveal,
-								player: params.onchainIdentity(identity),
-								actions,
-								secret,
-							}),
-						}
-					: undefined;
+			// has no reveal time, and the request says so (`revealDueAt`
+			// undefined): a scheduler that watches the chain takes it, one that
+			// needs a time refuses it in `prepare`.
+			const request: RevealScheduleRequest<TIdentity> | undefined = scheduler
+				? {
+						identity,
+						cycleNumber,
+						...(revealDueAt !== undefined ? {revealDueAt} : {}),
+						transactions: buildRevealTransactions({
+							contract,
+							encoding,
+							actionsPerReveal,
+							revealGas: gas.reveal,
+							player: params.onchainIdentity(identity),
+							actions,
+							secret,
+						}),
+					}
+				: undefined;
 			let payment: SchedulerPayment | undefined;
 			if (scheduler && request) {
 				try {

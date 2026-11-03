@@ -1,5 +1,7 @@
 import {createLobby, type LobbyStore} from '$lib/game/lobby/lobby';
+import type {AiLevel} from '$lib/game/core/strategy';
 import {createWorldClaim, letGoOfWorld} from '$lib/embedded/claim';
+import * as offline from '$lib/offline';
 import {CHAIN_ID_STORAGE_KEY, startOfflineWorld} from '$lib/offline';
 
 /**
@@ -30,6 +32,48 @@ import {CHAIN_ID_STORAGE_KEY, startOfflineWorld} from '$lib/offline';
  * provisioned.
  */
 const SEATS_STORAGE_KEY = 'offline-world:seats';
+
+/**
+ * How many of those seats are people at this device (hotseat). A wire like the
+ * seats key, beside it, and read as 1 when absent: every world built before
+ * hotseat had one.
+ */
+const HUMANS_STORAGE_KEY = 'offline-world:humans';
+
+/**
+ * THE MOST PEOPLE AT THIS DEVICE THIS GAME'S WORLD CAN PLAY, which its own
+ * `$lib/offline` says by exporting `LOCAL_HUMANS_AT_MOST` (its world is what
+ * gives each of them an account, a stake and a turn). READ OFF THE MODULE
+ * rather than imported by name, as `context/index.ts` reads a game's `lobby`:
+ * a game whose world has no hotseat declares nothing, and this file stays one
+ * git object in every game. Asked with `in` first because a module mock (vitest's)
+ * throws on reading an export it was not given, where a real module answers
+ * `undefined`.
+ */
+const LOCAL_HUMANS_AT_MOST =
+	'LOCAL_HUMANS_AT_MOST' in offline
+		? ((offline as unknown as {LOCAL_HUMANS_AT_MOST?: number})
+				.LOCAL_HUMANS_AT_MOST ?? 1)
+		: 1;
+
+/**
+ * Each world seat's level, as a JSON array of level ids. A wire like the seats
+ * key, beside it, and read as every seat `random` when absent: every world
+ * built before levels played `random`.
+ */
+const LEVELS_STORAGE_KEY = 'offline-world:levels';
+
+/**
+ * THE LEVELS THIS GAME'S WORLD SEATS MAY PLAY AT, which its `$lib/offline`
+ * says by exporting `AI_LEVELS` (its world is what plays them, with the game's
+ * own strategy). Read off the module for the reason `LOCAL_HUMANS_AT_MOST` is:
+ * a game whose world offers none declares nothing, and this file stays one git
+ * object in every game.
+ */
+const AI_LEVELS: readonly AiLevel[] =
+	'AI_LEVELS' in offline
+		? ((offline as unknown as {AI_LEVELS?: readonly AiLevel[]}).AI_LEVELS ?? [])
+		: [];
 
 /**
  * The boot this tab started, if any: what letting the world go waits for.
@@ -84,6 +128,10 @@ const lobby: LobbyStore = createLobby({
 		}
 	},
 	seatsStorageKey: SEATS_STORAGE_KEY,
+	humansStorageKey: HUMANS_STORAGE_KEY,
+	humansAtMost: LOCAL_HUMANS_AT_MOST,
+	levelsStorageKey: LEVELS_STORAGE_KEY,
+	levels: AI_LEVELS,
 });
 
 /**
