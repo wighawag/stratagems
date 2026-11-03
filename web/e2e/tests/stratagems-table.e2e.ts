@@ -172,6 +172,9 @@ async function accountOf(page: Page): Promise<string> {
 }
 
 describe('A stratagems table for a fixed set of players', () => {
+	// ONE AFTER THE OTHER: both stories play as the same claimed account, and
+	// two of its transactions at once would race for its nonce
+	test.describe.configure({mode: 'serial'});
 	// The creator's account, a claim `test/e2e-account-claims.test.ts` checks.
 	// The guest's is NOT a claim: it connects in a browser context of its own,
 	// whose burner generates a fresh mnemonic, so its accounts are nobody else's.
@@ -641,6 +644,19 @@ describe('A stratagems table for a fixed set of players', () => {
 					return data;
 				};
 				const result: Record<string, number | string> = {};
+				// the page's own longest gap with nothing projected, as a baseline
+				{
+					let longest = 0;
+					let last = performance.now();
+					const ticker = setInterval(() => {
+						const now = performance.now();
+						longest = Math.max(longest, now - last);
+						last = now;
+					}, 5);
+					await new Promise((r) => setTimeout(r, 3000));
+					clearInterval(ticker);
+					result['idle-longest-gap'] = longest;
+				}
 				for (const n of [30, 60, 100, 300]) {
 					const data = boardOf(n);
 					// the longest the page's own thread went without running, while
