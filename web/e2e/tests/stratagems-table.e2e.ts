@@ -611,31 +611,32 @@ describe('A stratagems table for a fixed set of players', () => {
 						(BigInt.asUintN(32, BigInt(y)) << 32n) +
 						BigInt.asUintN(32, BigInt(x))
 					).toString();
+				// A BOARD THE RULES COULD HAVE MADE: pairs of enemies side by side
+				// (each the other's one enemy, so both die and pay each other),
+				// three columns apart so no pair touches another
 				const boardOf = (n: number) => {
 					const data = {
 						cells: {} as Record<string, unknown>,
 						owners: {} as Record<string, string>,
 					};
-					let seed = 7;
-					const rand = (k: number) => (seed = (seed * 48271) % 2147483647) % k;
-					const side = Math.ceil(Math.sqrt(n * 1.5));
-					let placed = 0;
-					while (placed < n) {
-						const key = id(rand(side), rand(side));
-						if (data.cells[key]) continue;
-						data.cells[key] = {
-							lastCycleUpdate: 100,
-							cycleWhenTokenIsAdded: 100,
-							producingCycles: 0,
-							color: 1 + rand(5),
-							life: 1 + rand(7),
-							delta: 0,
-							enemyMap: 0,
-							distribution: 0,
-							stake: 1,
-						};
-						data.owners[key] = owners[rand(3)];
-						placed++;
+					const cell = (enemyMap: number, color: number) => ({
+						lastCycleUpdate: 100,
+						cycleWhenTokenIsAdded: 100,
+						producingCycles: 0,
+						color,
+						life: 2,
+						delta: -1,
+						enemyMap,
+						distribution: 0,
+						stake: 1,
+					});
+					for (let k = 0; k < n / 2; k++) {
+						const x = (k % 15) * 3;
+						const y = Math.floor(k / 15) * 2;
+						data.cells[id(x, y)] = cell(8, 1);
+						data.owners[id(x, y)] = owners[k % 3];
+						data.cells[id(x + 1, y)] = cell(2, 2);
+						data.owners[id(x + 1, y)] = owners[(k + 1) % 3];
 					}
 					return data;
 				};
