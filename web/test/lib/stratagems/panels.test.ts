@@ -182,6 +182,7 @@ describe('the other panels', () => {
 				points: '3',
 				lands: 2,
 				mine: false,
+				winner: false,
 			},
 			{
 				rank: 2,
@@ -190,8 +191,47 @@ describe('the other panels', () => {
 				points: '0',
 				lands: 0,
 				mine: true,
+				winner: false,
 			},
 		]);
+	});
+
+	it("label a table's leaderboard by net gems, signed, and its winners", () => {
+		const [first, second] = describeLeaderboard(
+			[
+				{
+					player: ALICE,
+					earned: 0n,
+					points: 0n,
+					lands: 3,
+					mine: false,
+					score: GEM + GEM / 2n,
+					winner: true,
+				},
+				{
+					player: BOB,
+					earned: 0n,
+					points: 0n,
+					lands: 0,
+					mine: true,
+					score: -GEM,
+					winner: false,
+				},
+			],
+			{decimals: 18, numTokensPerGems: GEM},
+		);
+		expect(first).toMatchObject({
+			rank: 1,
+			score: '+1.50',
+			winner: true,
+			lands: 3,
+		});
+		expect(second).toMatchObject({
+			rank: 2,
+			player: 'you',
+			score: '-1.00',
+			winner: false,
+		});
 	});
 
 	it('offer test gems where available, with a hint when the wallet is short', () => {

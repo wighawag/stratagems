@@ -4,7 +4,16 @@
  */
 import {describe, expect, it} from 'vitest';
 import type {TypedDeployments} from '$lib/deployments-store';
-import {stratagemsLobby, hasTables} from '$lib/stratagems/table';
+import {
+	decodeStratagemsOptions,
+	encodeStratagemsOptions,
+	hasTables,
+	onTableBoard,
+	STRATAGEMS_TABLE_OPTIONS,
+	stratagemsLobby,
+	tableBoardOf,
+	tableStakeOf,
+} from '$lib/stratagems/table';
 import {createStakeAcquisition} from '$lib/stratagems/stake';
 import {resolveStratagemsConfig} from '$lib/stratagems/game-config';
 import generated from '$lib/deployments';
@@ -70,5 +79,79 @@ describe('the stake (PL2-1)', () => {
 		const config = resolveStratagemsConfig(deployments);
 		const acquisition = createStakeAcquisition({config, deployments});
 		expect(acquisition.allowance).toBeUndefined();
+	});
+});
+
+describe("a table's options and board (step L4)", () => {
+	it('encodes the stake and the gap where the contract reads them, and back', () => {
+		const options = {stakeGems: 10, gapPercent: 50};
+		const encoded = encodeStratagemsOptions(options);
+		expect(encoded).toBe(`0x${'0'.repeat(54)}320000000a`);
+		expect(decodeStratagemsOptions(encoded)).toEqual(options);
+		expect(
+			STRATAGEMS_TABLE_OPTIONS.encode({stakeGems: 10, gapPercent: 50}),
+		).toBe(encoded);
+		// what the contract refuses, the client does not read
+		expect(decodeStratagemsOptions(`0x${'0'.repeat(64)}`)).toBeUndefined();
+		expect(decodeStratagemsOptions(`0x01${'0'.repeat(62)}`)).toBeUndefined();
+		expect(STRATAGEMS_TABLE_OPTIONS.describe(encoded)).toEqual([
+			{label: 'Stake a seat', value: '10 gems'},
+			{label: 'Board', value: '50% beyond a cell a gem'},
+		]);
+		expect(tableStakeOf(options, 10n ** 18n)).toBe(10n * 10n ** 18n);
+	});
+
+	it('sizes the board as the contract does, for 2 to 8 seats and gaps of 0 and 50', () => {
+		// the contract's answers, from `Stratagems.table.test.ts` (10 gems a seat)
+		const side = (seats: number, gap: number) =>
+			Math.ceil(Math.sqrt(Math.ceil((seats * 10 * (100 + gap)) / 100)));
+		for (let seats = 2; seats <= 8; seats++) {
+			for (const gap of [0, 50]) {
+				const board = tableBoardOf(seats, {stakeGems: 10, gapPercent: gap})!;
+				expect(board.side, `${seats} seats, ${gap}%`).toBe(side(seats, gap));
+				expect(board.min).toBe(-Math.floor(board.side / 2));
+				expect(board.max - board.min + 1).toBe(board.side);
+			}
+		}
+		// exactly a cell a gem on a square
+		expect(tableBoardOf(2, {stakeGems: 8, gapPercent: 0})).toEqual({
+			min: -2,
+			max: 1,
+			side: 4,
+		});
+		expect(tableBoardOf(0, {stakeGems: 8, gapPercent: 0})).toBeUndefined();
+		expect(onTableBoard({min: -2, max: 1}, 1, -2)).toBe(true);
+		expect(onTableBoard({min: -2, max: 1}, 2, 0)).toBe(false);
+		expect(onTableBoard(undefined, 1000, 0)).toBe(true);
+	});
+
+	it('asks the lobby for the stake and the gap, at their defaults', () => {
+		expect(
+			stratagemsLobby.options?.fields.map((f) => [f.id, f.default]),
+		).toEqual([
+			['stakeGems', 10],
+			['gapPercent', 50],
+		]);
+	});
+
+	it("stakes the table's own amount once it is read", () => {
+		const atTable = stratagemsLobby.deploymentsAt(deployments, TABLE);
+		const config = resolveStratagemsConfig(atTable);
+		let stake: bigint | undefined;
+		const acquisition = createStakeAcquisition({
+			config,
+			deployments: atTable,
+			atTable: true,
+			stakeAmount: () => stake,
+		});
+		expect(acquisition.allowance?.amount).toBe(config.stakeAmount);
+		stake = 10n * config.numTokensPerGems;
+		expect(acquisition.allowance?.amount).toBe(stake);
+		const request = acquisition.request({
+			owner: TABLE,
+			stipendTo: undefined,
+			stipend: 0n,
+		} as never);
+		expect((request.args as unknown[])[1]).toBe(stake);
 	});
 });

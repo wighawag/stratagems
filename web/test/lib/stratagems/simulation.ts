@@ -79,3 +79,21 @@ export async function contractCellAtCycle(
 	});
 	return {cell: {...projected}, justDied};
 }
+
+/** `poke`: the cells after poking `positions` at `cycle`, and who is paid what. */
+export async function pokeCells(
+	board: readonly StoredCell[],
+	cycle: number,
+	positions: readonly bigint[],
+): Promise<{
+	cells: readonly StoredCell[];
+	payouts: readonly {to: `0x${string}`; amount: bigint}[];
+}> {
+	const outcome = await simulation().call({
+		contract: 'simulation',
+		abi: Simulation.abi,
+		functionName: 'poke',
+		args: [[...board], cycle, [...positions]],
+	});
+	return {cells: outcome.cells, payouts: outcome.payouts};
+}

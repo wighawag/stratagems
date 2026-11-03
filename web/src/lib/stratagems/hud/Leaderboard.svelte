@@ -1,6 +1,7 @@
 <!--
 	The leaderboard, a drawer toggled from the HUD (P3 of step 6c): every player
-	the rewards generator knows, ranked by gems earned. Logic-less: the ranking is
+	the rewards generator knows, ranked by gems earned; at a table, every member
+	ranked by net gems (step L4). Logic-less: the ranking is
 	`../leaderboard.ts`'s, the labels `./panels.ts`'s; `open` is local UI state.
 -->
 <svelte:options runes={true} />
@@ -12,7 +13,8 @@
 	import {describeLeaderboard} from './panels';
 
 	const {game} = getAppContext();
-	// at a table there are no points and nothing earned: ranked by lands (PL2-7)
+	// at a table there are no points and nothing earned: ranked by net gems,
+	// lands a column beside (step L4, L4-18)
 	const atTable = game.atTable;
 	const rows = derived(game.leaderboard, ($rows) =>
 		describeLeaderboard($rows, {
@@ -48,6 +50,9 @@
 							<th class="text-left">#</th>
 							<th class="text-left">Player</th>
 							<th class="text-right">Cells</th>
+							{#if atTable}
+								<th class="text-right">Net gems</th>
+							{/if}
 							{#if !atTable}
 								<th class="text-right">Points</th>
 								<th class="text-right">Earned</th>
@@ -58,8 +63,13 @@
 						{#each $rows as row (row.rank)}
 							<tr class={row.mine ? 'font-semibold text-amber-400' : ''}>
 								<td>{row.rank}</td>
-								<td>{row.player}</td>
+								<td>{row.player}{row.winner ? ' (winner)' : ''}</td>
 								<td class="text-right">{row.lands}</td>
+								{#if atTable}
+									<td class="text-right" data-testid="leaderboard-score"
+										>{row.score ?? '-'}</td
+									>
+								{/if}
 								{#if !atTable}
 									<td class="text-right">{row.points}</td>
 									<td class="text-right">{row.earned}</td>

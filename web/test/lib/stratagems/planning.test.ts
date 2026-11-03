@@ -13,6 +13,7 @@ import {
 	REFUSED_LOADING,
 	REFUSED_ACCOUNT_LOADING,
 	REFUSED_OTHERS,
+	REFUSED_OFF_BOARD,
 } from '$lib/stratagems/planning';
 import {ALICE, BOB, MAX_LIFE, at, boardAfter, boardStore} from './board';
 
@@ -98,6 +99,7 @@ function setup(params?: {
 	max?: number;
 	faction?: number;
 	board?: ReturnType<typeof boardStore>;
+	bounds?: Readable<{min: number; max: number} | undefined>;
 }) {
 	const submission = fakeSubmission();
 	const identity = writable<GameIdentity | undefined>(ALICE);
@@ -111,12 +113,34 @@ function setup(params?: {
 		identity,
 		faction,
 		maxLife: MAX_LIFE,
+		...(params?.bounds ? {bounds: params.bounds} : {}),
 	});
 	return {submission, planning, identity};
 }
 
 const moves = (submission: {value: SubmissionState<Move>}) =>
 	'actions' in submission.value ? submission.value.actions : [];
+
+describe("a table's board (step L4)", () => {
+	it('refuses a cell outside its square, and says why, and takes one inside', () => {
+		const bounds = writable<{min: number; max: number} | undefined>({
+			min: -3,
+			max: 9,
+		});
+		const {submission, planning} = setup({bounds});
+		planning.click(at(10, 0));
+		expect(moves(submission)).toEqual([]);
+		expect(get(planning.selected)?.reason).toBe(REFUSED_OFF_BOARD);
+		planning.click(at(9, 9));
+		expect(moves(submission)).toEqual([
+			{position: at(9, 9), color: Color.Green},
+		]);
+		// before the start nobody knows the square: no bound yet
+		bounds.set(undefined);
+		planning.click(at(50, 50));
+		expect(moves(submission).length).toBe(2);
+	});
+});
 
 describe('what a click means', () => {
 	it("plans an allowed cell in the player's faction, and takes it back on a second click", () => {

@@ -124,20 +124,37 @@ export type LeaderboardModelRow = {
 	points: string;
 	lands: number;
 	mine: boolean;
+	/** At a table: net gems, signed. */
+	score?: string;
+	/** At a settled table: one of its winners. */
+	winner: boolean;
 };
 
 export function describeLeaderboard(
 	rows: readonly LeaderboardRow[],
 	params: {decimals: number; numTokensPerGems: bigint},
 ): LeaderboardModelRow[] {
-	return rows.map((row, index) => ({
-		rank: index + 1,
-		player: row.mine ? 'you' : shortAddress(row.player),
-		earned: Number(formatUnits(row.earned, params.decimals)).toFixed(2),
-		points: pointsLabel(row.points, params.numTokensPerGems),
-		lands: row.lands,
-		mine: row.mine,
-	}));
+	return rows
+		.map((row) => ({
+			rank: 0,
+			player: row.mine ? 'you' : shortAddress(row.player),
+			earned: Number(formatUnits(row.earned, params.decimals)).toFixed(2),
+			points: pointsLabel(row.points, params.numTokensPerGems),
+			lands: row.lands,
+			mine: row.mine,
+			score:
+				row.score === undefined
+					? undefined
+					: gemsLabel(row.score, params.decimals),
+			winner: row.winner ?? false,
+		}))
+		.map((row, index) => ({...row, rank: index + 1}));
+}
+
+/** Net gems as a player reads them: signed, two decimals. */
+export function gemsLabel(value: bigint, decimals: number): string {
+	const n = Number(formatUnits(value, decimals));
+	return `${n > 0 ? '+' : ''}${n.toFixed(2)}`;
 }
 
 export type TestGemsModel =

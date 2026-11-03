@@ -28,6 +28,8 @@
 	import TablePanel from '$lib/game/lobby/ui/TablePanel.svelte';
 	import TableLobby from '$lib/game/lobby/ui/TableLobby.svelte';
 	import {tableSettingsOf} from '$lib/game/lobby/table';
+	import TableEnd from './TableEnd.svelte';
+	import {STRATAGEMS_TABLE_OPTIONS} from '../table';
 
 	const context = getAppContext();
 	const {game} = context;
@@ -55,6 +57,13 @@
 	const tableSettings = tableSettingsOf(game.config.cycle);
 	const inTableLobby = $derived(
 		game.table !== undefined && $tableScreen?.screen !== 'playing',
+	);
+	// what this table's options mean (its stake, its board), for its lobby
+	const table = game.table;
+	const tableDetails = $derived(
+		$table?.step === 'Loaded'
+			? STRATAGEMS_TABLE_OPTIONS.describe($table.roster.gameOptions)
+			: [],
 	);
 
 	const toneClass: Record<string, string> = {
@@ -139,13 +148,17 @@
 			table={game.table}
 			inviteLink={typeof location === 'undefined' ? '' : location.href}
 			settings={tableSettings}
+			details={tableDetails}
 		>
 			{#snippet takeSeat()}
 				{@render setupControls()}
 			{/snippet}
 		</TableLobby>
 	{:else if game.table}
-		<div class="pointer-events-auto absolute right-3 bottom-3">
+		<div
+			class="pointer-events-auto absolute right-3 bottom-3 flex flex-col items-end gap-2"
+		>
+			<TableEnd />
 			<TablePanel table={game.table} />
 		</div>
 	{/if}
@@ -318,15 +331,18 @@
 				<!-- The same rail as the setup gate, so a top-up is one transaction
 				     too and cannot be started twice. It refuses while a previous one is
 				     still settling, which is why the label follows the flow. -->
-				<Button
-					size="sm"
-					variant="secondary"
-					data-testid="acquire-more-stake"
-					disabled={$hud.acquiring !== undefined}
-					onclick={() => acquisition.buy()}
-				>
-					{$hud.acquiring ?? 'Add stake'}
-				</Button>
+				<!-- Not at a table: a seat holds exactly its stake (step L4). -->
+				{#if !game.atTable}
+					<Button
+						size="sm"
+						variant="secondary"
+						data-testid="acquire-more-stake"
+						disabled={$hud.acquiring !== undefined}
+						onclick={() => acquisition.buy()}
+					>
+						{$hud.acquiring ?? 'Add stake'}
+					</Button>
+				{/if}
 			</div>
 
 			<div class="mt-3"><TestGems /></div>

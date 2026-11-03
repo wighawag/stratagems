@@ -194,3 +194,35 @@ describe('the leaderboard at a table (step L2, PL2-7)', () => {
 		);
 	});
 });
+
+describe('the leaderboard at a table, by net gems (step L4, L4-18)', () => {
+	it("keeps the table's ranking order, with each member's lands beside it", async () => {
+		const played = await board();
+		played.data.points.shared = {};
+		const rows = leaderboardOf({
+			board: played,
+			player: BOB,
+			maxLife: MAX_LIFE,
+			tableScores: [
+				{player: BOB.toLowerCase() as `0x${string}`, score: 5n, winner: true},
+				{
+					player: ALICE.toLowerCase() as `0x${string}`,
+					score: -5n,
+					winner: false,
+				},
+			],
+		});
+		expect(
+			rows.map((row) => [
+				row.player,
+				row.score,
+				row.lands,
+				row.mine,
+				row.winner,
+			]),
+		).toEqual([
+			[BOB.toLowerCase(), 5n, 1, true, true],
+			[ALICE.toLowerCase(), -5n, 2, false, false],
+		]);
+	});
+});

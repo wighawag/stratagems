@@ -14,12 +14,19 @@
  * It moves whenever any player's points change, which is every reveal.
  *
  * `lands` counts the player's cells alive at the board's cycle.
+ *
+ * AT A TABLE, BY NET GEMS (step L4, L4-18): what the game gave each member less
+ * what it took, each living cell valued as the end would value it now, so the
+ * live ranking is the one that decides (`./score.ts`, `./table-end.ts`); lands
+ * stay a column. Once the table is settled, the scores the chain recorded.
  */
 import {derived, type Readable} from 'svelte/store';
 import {cellAtCycle} from 'stratagems-common';
 import type {OnchainStateStore, OnchainStateValue} from '$lib/game/core/seams';
 import type {GameIdentity} from '$lib/game/identity';
 import type {BoardState} from './board/indexed-board';
+import type {TableEnd} from './table-end';
+import type {TableScoreRow} from './score';
 
 /** `RewardsGenerator`'s constants. */
 const PRECISION = 10n ** 24n;
@@ -37,6 +44,10 @@ export type LeaderboardRow = {
 	lands: number;
 	/** The row of the player viewing. */
 	mine: boolean;
+	/** At a table: net gems, in token units (live, then final once settled). */
+	score?: bigint;
+	/** At a settled table: one of its winners. */
+	winner?: boolean;
 };
 
 /**
@@ -51,6 +62,8 @@ export function leaderboardOf(params: {
 	player?: `0x${string}`;
 	maxLife: number;
 	byLands?: boolean;
+	/** At a table, the ranking by net gems (`./table-end.ts`): it decides the order. */
+	tableScores?: readonly TableScoreRow[];
 }): LeaderboardRow[] {
 	const {data, cycleNumber} = params.board;
 	const viewer = params.player?.toLowerCase();
@@ -62,6 +75,18 @@ export function leaderboardOf(params: {
 		if (!owner) continue;
 		const {cell} = cellAtCycle(data.cells[key], cycleNumber, params.maxLife);
 		if (cell.life > 0) lands.set(owner, (lands.get(owner) ?? 0) + 1);
+	}
+
+	if (params.tableScores) {
+		return params.tableScores.map((row) => ({
+			player: row.player,
+			earned: 0n,
+			points: 0n,
+			lands: lands.get(row.player.toLowerCase()) ?? 0,
+			mine: row.player.toLowerCase() === viewer,
+			score: row.score,
+			winner: row.winner,
+		}));
 	}
 
 	if (params.byLands) {
@@ -131,10 +156,27 @@ export function createLeaderboard(params: {
 	maxLife: number;
 	/** At a table: ranked by lands, see `leaderboardOf`. */
 	byLands?: boolean;
+	/** At a table since step L4: ranked by net gems instead. */
+	tableEnd?: TableEnd;
 }): Readable<LeaderboardRow[]> {
 	const board: Readable<OnchainStateValue<BoardState>> = {
 		subscribe: params.onchainState.subscribe,
 	};
+	const tableEnd = params.tableEnd;
+	if (tableEnd) {
+		return derived(
+			[board, params.identity, tableEnd],
+			([$board, $identity, $end]) =>
+				$board.step === 'Loaded' && $end.step === 'Loaded'
+					? leaderboardOf({
+							board: $board,
+							player: $identity,
+							maxLife: params.maxLife,
+							tableScores: $end.rows,
+						})
+					: [],
+		);
+	}
 	return derived([board, params.identity], ([$board, $identity]) =>
 		$board.step === 'Loaded'
 			? leaderboardOf({

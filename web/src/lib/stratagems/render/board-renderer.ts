@@ -52,6 +52,8 @@ export function createBoardRenderer(params: {
 	focus: FocusStore;
 	/** The faction wash, a toggle (off by default). */
 	factionWash: Readable<boolean>;
+	/** At a table, the square its moves must land in: drawn as its edge (step L4). */
+	bounds?: Readable<{min: number; max: number} | undefined>;
 }): GameRenderer<Container> {
 	const {cellSize, maxLife, focus} = params;
 
@@ -260,7 +262,17 @@ export function createBoardRenderer(params: {
 			const links = new Graphics();
 			const cellLayer = new Container();
 			const fx = new Container();
-			world.addChild(wood, lines, factionWash, ivoryWash, links, cellLayer, fx);
+			const edge = new Graphics();
+			world.addChild(
+				wood,
+				lines,
+				edge,
+				factionWash,
+				ivoryWash,
+				links,
+				cellLayer,
+				fx,
+			);
 			layers = {
 				factionWash,
 				ivoryWash,
@@ -288,6 +300,23 @@ export function createBoardRenderer(params: {
 					factionWash.visible = $on;
 					if ($on) washDirty = true;
 				}),
+				// A TABLE'S EDGE: half a cell outside its outermost intersections,
+				// where a stone placed beyond would sit.
+				...(params.bounds
+					? [
+							params.bounds.subscribe(($bounds) => {
+								edge.clear();
+								if (!$bounds) return;
+								const from = ($bounds.min - 0.5) * cellSize;
+								const size = ($bounds.max - $bounds.min + 1) * cellSize;
+								edge.rect(from, from, size, size).stroke({
+									width: cellSize * 0.08,
+									color: 0x2a1a08,
+									alpha: 0.85,
+								});
+							}),
+						]
+					: []),
 			);
 
 			// hover and tap: which gem's owner is lit (P9-5)

@@ -46,9 +46,16 @@ export function createStakeAcquisition(params: {
 	deployments: TypedDeployments;
 	/** At a table, which is paid by an allowance (see the header). */
 	atTable?: boolean;
+	/**
+	 * What a seat stakes at a table, EXACTLY (step L4, L4-23: the contract
+	 * refuses any other amount), once its options are read; the world's
+	 * `stakeAmount` until then and everywhere else.
+	 */
+	stakeAmount?: () => bigint | undefined;
 }): Acquisition {
 	const {config, deployments} = params;
 	const Stratagems = deployments.contracts.Stratagems;
+	const amount = () => params.stakeAmount?.() ?? config.stakeAmount;
 	return {
 		address: Stratagems.address,
 		functionName: 'addToReserveAndFund',
@@ -56,17 +63,22 @@ export function createStakeAcquisition(params: {
 		stipend: config.stipend,
 		gas: params.atTable ? DEPOSIT_GAS + APPROVAL_GAS : DEPOSIT_GAS,
 		...(params.atTable
-			? {allowance: {token: config.tokenAddress, amount: config.stakeAmount}}
+			? {
+					allowance: {
+						token: config.tokenAddress,
+						// read when the stake is taken, which is after the table's
+						// options are
+						get amount() {
+							return amount();
+						},
+					},
+				}
 			: {}),
 		// `stipendTo` and `stipend` move together (the rail's `stipendFor`): with
 		// no key to register, nothing is sent and the contract forwards nothing.
 		request: ({owner, stipendTo, stipend}) => ({
 			abi: Stratagems.abi as Abi,
-			args: [
-				onchainIdentity(owner),
-				config.stakeAmount,
-				stipendTo ?? zeroAddress,
-			],
+			args: [onchainIdentity(owner), amount(), stipendTo ?? zeroAddress],
 			value: acquisitionTotal({price: 0n, stipend}),
 		}),
 	};
@@ -95,7 +107,10 @@ export function stakeNeeded(reserve: {
 export function stakeWords(
 	config: StratagemsConfig,
 	native: {symbol: string; decimals: number},
+	/** At a table, what a seat stakes, once read (step L4). */
+	stakeAmount?: () => bigint | undefined,
 ) {
+	const stake = () => stakeAmount?.() ?? config.stakeAmount;
 	const amount = (value: bigint): string =>
 		`${formatUnits(value, config.currency.decimals)} gems`;
 	return {
@@ -109,8 +124,8 @@ export function stakeWords(
 				'A commitment bonds gems from your reserve, and they are forfeit if you never reveal: that is what makes a commitment worth anything. One transaction moves gems from your wallet into a reserve in your name, which only you can withdraw, and funds the key this browser plays with.',
 			action(): string {
 				return config.stipend > 0n
-					? `Stake ${amount(config.stakeAmount)} + ${formatUnits(config.stipend, native.decimals)} ${native.symbol} of gas`
-					: `Stake ${amount(config.stakeAmount)}`;
+					? `Stake ${amount(stake())} + ${formatUnits(config.stipend, native.decimals)} ${native.symbol} of gas`
+					: `Stake ${amount(stake())}`;
 			},
 		},
 

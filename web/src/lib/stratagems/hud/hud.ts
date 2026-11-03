@@ -6,7 +6,7 @@
  * whether committing is still possible, what the submission costs - happens
  * here, in plain TypeScript that can be read and tested without a browser.
  */
-import {derived, type Readable} from 'svelte/store';
+import {derived, get, type Readable} from 'svelte/store';
 import {stakeWords} from '../stake';
 
 /** The stake's words, which are the game's (`../stake.ts`). */
@@ -519,9 +519,11 @@ export function describeRevealSchedule(
 
 export function createHud(context: Context): Readable<HudModel> {
 	const {game} = context;
+	const tableStake = game.tableEnd?.stake;
 	const STAKE = stakeWords(
 		game.config,
 		context.deployments.get().chain.nativeCurrency,
+		tableStake ? () => get(tableStake) : undefined,
 	);
 
 	return derived(

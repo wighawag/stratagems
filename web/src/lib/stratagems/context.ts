@@ -102,6 +102,8 @@ import {createFaction, type FactionStore} from './faction';
 import {createWalletSend} from './wallet';
 import {createWinnings, type WinningsStore} from './winnings';
 import {createLeaderboard, type LeaderboardRow} from './leaderboard';
+import {createTableEnd, type TableBoard, type TableEnd} from './table-end';
+import type {PokeOutcome} from './score';
 import {createTestGems, type TestGemsStore} from './test-gems';
 import {createSyncing, type SyncingModel} from './syncing';
 import {holdResolvingCycle, holdPlanUntilBoardReleases} from './hold';
@@ -164,6 +166,11 @@ export type Game = CommitRevealGame<StratagemsGame>['game'] & {
 	 * leaderboard ranks by lands and shows neither points nor earnings.
 	 */
 	atTable: boolean;
+	/**
+	 * At a table (step L4): its board's bounds, the stake of a seat, the live
+	 * ranking by net gems, and once it has ended, the settlement.
+	 */
+	tableEnd?: TableEnd;
 	/** What the indexer is doing while the board is behind the chain. */
 	syncing: Readable<SyncingModel>;
 	/**
@@ -265,6 +272,22 @@ export function createGameContext(core: CoreServices): GameContext {
 			simulation: {address: deployments.contracts.StratagemsSimulation.address},
 		},
 	});
+	const simulatePoke = async (
+		board: Parameters<SimulateMoves>[0],
+		cycleNumber: number,
+		positions: readonly bigint[],
+	): Promise<PokeOutcome> =>
+		(await sandbox.call({
+			contract: 'simulation',
+			abi: deployments.contracts.StratagemsSimulation.abi,
+			functionName: 'poke',
+			args: [[...board], cycleNumber, [...positions]],
+		})) as unknown as PokeOutcome;
+	// AT A TABLE its square and its stake are read from its roster once it is
+	// loaded (`./table-end.ts`), which is after the planner and the renderer
+	// are built: they read these, set when the table end is.
+	const tableBoard = writable<TableBoard | undefined>(undefined);
+	let tableStake: bigint | undefined;
 	const simulate: SimulateMoves = async (board, player, cycleNumber, moves) =>
 		(
 			await sandbox.call({
@@ -354,6 +377,8 @@ export function createGameContext(core: CoreServices): GameContext {
 				config,
 				deployments,
 				atTable: core.table !== undefined,
+				// a seat stakes exactly the table's amount (L4-23)
+				...(core.table ? {stakeAmount: () => tableStake} : {}),
 			}),
 			grant: SIGNER_GRANT,
 		},
@@ -367,6 +392,7 @@ export function createGameContext(core: CoreServices): GameContext {
 				identity: activeIdentity,
 				faction,
 				maxLife: config.maxLife,
+				...(core.table ? {bounds: tableBoard} : {}),
 			});
 			const preview = createMovesPreview({
 				plan: planning.plan,
@@ -385,6 +411,7 @@ export function createGameContext(core: CoreServices): GameContext {
 				maxLife: config.maxLife,
 				focus,
 				factionWash,
+				...(core.table ? {bounds: tableBoard} : {}),
 			}),
 		// Cells are centred on their integer coordinate.
 		click: (position, {planning}) =>
@@ -419,11 +446,28 @@ export function createGameContext(core: CoreServices): GameContext {
 		send,
 		onCollected: () => void board.update(),
 	});
+	const tableEnd = crg.game.table
+		? createTableEnd({
+				publicClient: core.publicClient as never,
+				table: crg.game.table,
+				contract: contract as never,
+				onchainState: {subscribe: crg.onchainState.subscribe},
+				maxLife: config.maxLife,
+				numTokensPerGems: config.numTokensPerGems,
+				simulate: simulatePoke,
+				send,
+				onChanged: () => {
+					void board.update();
+					void reserve.update();
+				},
+			})
+		: undefined;
 	const leaderboard = createLeaderboard({
 		onchainState: crg.onchainState,
 		identity: activeIdentity,
 		maxLife: config.maxLife,
 		byLands: core.table !== undefined,
+		...(tableEnd ? {tableEnd} : {}),
 	});
 	const testGems = createTestGems({
 		deployments,
@@ -464,10 +508,19 @@ export function createGameContext(core: CoreServices): GameContext {
 			focus,
 			factionWash,
 			atTable: core.table !== undefined,
+			...(tableEnd ? {tableEnd} : {}),
 		},
 		render: crg.render,
 		start: () => {
 			const stop = crg.start();
+			const stopTable = tableEnd
+				? [
+						tableEnd.board.subscribe(($board) => tableBoard.set($board)),
+						tableEnd.stake.subscribe(($stake) => (tableStake = $stake)),
+						// the ranking polls while the game runs, whoever shows it
+						tableEnd.subscribe(() => {}),
+					]
+				: [];
 			// fuzd says it will not reveal: this browser does, at once (P7).
 			const stopFallback = scheduler
 				? revealOnScheduleFailure({
@@ -476,6 +529,7 @@ export function createGameContext(core: CoreServices): GameContext {
 					})
 				: () => {};
 			return () => {
+				for (const unsubscribe of stopTable) unsubscribe();
 				stopFallback();
 				stop();
 			};

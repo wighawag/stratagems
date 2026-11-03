@@ -24,6 +24,7 @@ import {derived, get, writable, type Readable} from 'svelte/store';
 import {
 	Color,
 	EVIL_OWNER_ADDRESS,
+	bigIntIDToXY,
 	cellAtCycle,
 	type ContractCell,
 } from 'stratagems-common';
@@ -34,6 +35,7 @@ import type {BoardState} from './board/indexed-board';
 import type {Move} from './moves';
 import {MAX_MOVES_PER_TURN} from './game-config';
 import type {LocalPlan} from './view';
+import {onTableBoard} from './table';
 
 export function isPlannable(state: SubmissionState<Move>): boolean {
 	return (
@@ -122,6 +124,12 @@ export const REFUSED_LIMIT = 'That is as many moves as one turn can hold.';
 export const REFUSED_LOADING =
 	'The board is still loading. Try again in a moment.';
 /**
+ * A click outside a table's board (step L4, L4-24): the contract would skip
+ * the move, so it is refused here rather than planned for nothing.
+ */
+export const REFUSED_OFF_BOARD =
+	"Outside this table's board: every move must land inside its edge.";
+/**
  * A click while the account's data loads (after every account switch, a
  * hotseat handover's included, step H1b): the submission takes no plan until
  * it has (`SubmissionStore.ready`), so it is refused and said, like the board's.
@@ -166,6 +174,8 @@ export function createPlanning(params: {
 	/** The colour a placement takes: the player's faction. */
 	faction: Readable<number | undefined>;
 	maxLife: number;
+	/** At a table, the square its moves must land in (none: anywhere). */
+	bounds?: Readable<{min: number; max: number} | undefined>;
 }): PlanningStore {
 	const {submission, onchainState, identity} = params;
 	const board: Readable<OnchainStateValue<BoardState>> = {
@@ -265,6 +275,11 @@ export function createPlanning(params: {
 		const $board = get(board);
 		if ($board.step !== 'Loaded') {
 			refuse(position, REFUSED_LOADING);
+			return;
+		}
+		const {x, y} = bigIntIDToXY(position);
+		if (params.bounds && !onTableBoard(get(params.bounds), x, y)) {
+			refuse(position, REFUSED_OFF_BOARD);
 			return;
 		}
 		const judgement = judge(position, $board, player);
