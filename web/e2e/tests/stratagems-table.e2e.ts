@@ -640,22 +640,32 @@ describe('A stratagems table for a fixed set of players', () => {
 					}
 					return data;
 				};
-				const result: Record<number, number> = {};
-				for (const n of [30, 300]) {
+				const result: Record<number, number | string> = {};
+				for (const n of [30, 60, 100, 300]) {
 					const data = boardOf(n);
-					await context.game.tableEnd.project(data, 100);
-					const started = performance.now();
-					await context.game.tableEnd.project(data, 100);
-					result[n] = performance.now() - started;
+					try {
+						await context.game.tableEnd.project(data, 100);
+						const started = performance.now();
+						await context.game.tableEnd.project(data, 100);
+						result[n] = performance.now() - started;
+					} catch (error) {
+						result[n] =
+							`failed: ${String((error as Error).message).slice(0, 80)}`;
+					}
 				}
 				return result;
 			});
 			console.log(
-				`[table e2e] the projection in the browser: 30 cells ${timings[30].toFixed(0)} ms, 300 cells ${timings[300].toFixed(0)} ms`,
+				`[table e2e] the projection in the browser (ms): ${JSON.stringify(timings)}`,
 			);
-			expect(timings[300], 'L4-21: the projection on 300 cells').toBeLessThan(
-				250,
-			);
+			expect(
+				typeof timings[300],
+				'L4-21: the projection on 300 cells completes',
+			).toBe('number');
+			expect(
+				timings[300] as number,
+				'L4-21: the projection on 300 cells',
+			).toBeLessThan(250);
 
 			// a member takes their gems out once settled
 			const withdraw = host.getByTestId('table-withdraw');
