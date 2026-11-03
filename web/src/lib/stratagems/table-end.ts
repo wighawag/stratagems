@@ -82,6 +82,16 @@ export type TableEnd = Readable<TableEndState> & {
 	withdraw(): Promise<void>;
 	/** Read the table's reserves and scores again. */
 	update(): Promise<void>;
+	/**
+	 * What `data` would pay each account once settled `maxLife` cycles after
+	 * `cycleNumber` (`./score.ts`'s `valueAtEnd`, in this table's sandbox):
+	 * what the live ranking values the board with, and what step L4's gate
+	 * times in the browser.
+	 */
+	project(
+		data: BoardState['data'],
+		cycleNumber: number,
+	): Promise<Map<string, bigint>>;
 };
 
 const addressOf = (player: bigint): `0x${string}` =>
@@ -325,6 +335,14 @@ export function createTableEnd(params: {
 		settle,
 		withdraw,
 		update,
+		project: (data, cycleNumber) =>
+			valueAtEnd({
+				data,
+				cycleNumber,
+				maxLife: params.maxLife,
+				numTokensPerGems: params.numTokensPerGems,
+				simulate: params.simulate,
+			}),
 	};
 }
 
