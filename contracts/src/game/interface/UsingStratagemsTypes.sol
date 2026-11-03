@@ -80,6 +80,17 @@ interface UsingStratagemsTypes is UsingCommitRevealTypes {
         uint8 life;
     }
 
+    /// @notice A cell as the game stores it: its record, its owner, and its start record.
+    /// @dev What `StratagemsSimulation` takes, and what `getStoredCells` answers.
+    ///      `start.cycle` other than the cycle simulated: no move has touched it
+    ///      in that cycle (the record the first move of a cycle writes, {CellAtCycleStart}).
+    struct StoredCell {
+        uint64 position;
+        address owner;
+        Cell cell;
+        CellAtCycleStart start;
+    }
+
     struct TokenTransfer {
         address payable to;
         uint256 amount;

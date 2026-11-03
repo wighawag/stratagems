@@ -24,6 +24,21 @@ contract StratagemsGetters is IStratagemsGetters, UsingStratagemsState {
     }
 
     /// @inheritdoc IStratagemsGetters
+    function getStoredCells(uint256[] memory ids) external view returns (StoredCell[] memory cells) {
+        uint256 numCells = ids.length;
+        cells = new StoredCell[](numCells);
+        for (uint256 i = 0; i < numCells; i++) {
+            uint256 id = ids[i];
+            cells[i] = StoredCell({
+                position: uint64(id),
+                owner: _ownerOf(id),
+                cell: _cells[id],
+                start: _cellsAtCycleStart[id]
+            });
+        }
+    }
+
+    /// @inheritdoc IStratagemsGetters
     function getReserve(uint256 player) external view returns (uint256 amount) {
         return _reserveOf(player);
     }

@@ -16,6 +16,14 @@ interface IStratagemsGetters is UsingStratagemsTypes, UsingStratagemsEvents, Usi
     /// @notice the cells at the current cycle
     function getCells(uint256[] memory ids) external view returns (FullCell[] memory cells);
 
+    /// @notice the cells AS STORED, not brought to the current cycle: each one's record, its
+    ///         owner and its start record, which is what `StratagemsSimulation` takes.
+    /// @dev Bringing a cell to a cycle is what `getCells` does, and it is lossy for a cell that
+    ///      died since its last write: its life reads zero, and the death, which only a later
+    ///      write pays to the killers, is seen by nothing after it. A client projecting the board
+    ///      (step A2's AI seats) reads this instead.
+    function getStoredCells(uint256[] memory ids) external view returns (StoredCell[] memory cells);
+
     /// @notice the tokens `player` holds in the game's reserve (a bond included)
     function getReserve(uint256 player) external view returns (uint256 amount);
 

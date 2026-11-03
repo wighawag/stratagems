@@ -30,16 +30,6 @@ import "../../utils/PositionUtils.sol";
 contract StratagemsSimulation is UsingStratagemsSetters {
     using PositionUtils for uint64;
 
-    /// @notice A cell as the game stores it: its record, its owner, and its start record.
-    /// @dev `start.cycle` zero: no move has touched it in the cycle simulated
-    ///      (the record the first move of a cycle writes, {CellAtCycleStart}).
-    struct StoredCell {
-        uint64 position;
-        address owner;
-        Cell cell;
-        CellAtCycleStart start;
-    }
-
     struct Payout {
         address to;
         uint256 amount;
