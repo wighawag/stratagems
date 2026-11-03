@@ -39,6 +39,10 @@ const COMMIT_PHASE = 100;
 const REVEAL_PHASE = 50;
 const SECRET =
 	'0x00000000000000000000000000000000000000000000000000000000000057b0';
+/** How many cycles a roster plays when a test does not say: more than any test reaches. */
+const CYCLES = 100;
+const NO_OPTIONS =
+	'0x0000000000000000000000000000000000000000000000000000000000000000' as const;
 
 type Order = {kind: number; quantity: bigint};
 
@@ -108,15 +112,19 @@ type Cycle = {
 	phaseEnd: bigint;
 };
 
-/** A stub with a roster of `seats`, opened by `creator`. */
-async function setup(seats = 3) {
+/** A stub with a roster of `seats` playing `cycles` cycles, opened by `creator`. */
+async function setup(
+	seats = 3,
+	cycles = CYCLES,
+	gameOptions: `0x${string}` = NO_OPTIONS,
+) {
 	const fixtures = await networkHelpers.loadFixture(deployStub);
 	const {env, Stub, unnamedAccounts} = fixtures;
 	const [creator, alice, bob, carol, stranger] = unnamedAccounts;
 	await env.execute(Stub, {
 		account: creator,
 		functionName: 'openRoster',
-		args: [creator, seats],
+		args: [creator, seats, cycles, gameOptions],
 	});
 
 	const read = {
@@ -124,11 +132,25 @@ async function setup(seats = 3) {
 			const [roster, members] = (await env.read(Stub, {
 				functionName: 'getRoster',
 			})) as [
-				{creator: `0x${string}`; seats: number; started: boolean},
+				{
+					creator: `0x${string}`;
+					seats: number;
+					started: boolean;
+					cycles: number;
+					startedWith: number;
+				},
 				bigint[],
 			];
 			return {...roster, members};
 		},
+		end: async () => {
+			const [cycleNumber, lastCycleNumber, ended] = (await env.read(Stub, {
+				functionName: 'getEnd',
+			})) as [bigint, bigint, boolean];
+			return {cycleNumber, lastCycleNumber, ended};
+		},
+		gameOptions: async () =>
+			(await env.read(Stub, {functionName: 'getGameOptions'})) as string,
 		attendance: async () =>
 			(await env.read(Stub, {functionName: 'getAttendance'})) as {
 				waitedFor: bigint;
@@ -175,6 +197,12 @@ async function setup(seats = 3) {
 			}),
 		advance: () =>
 			env.execute(Stub, {account: stranger, functionName: 'advanceCycle'}),
+		forfeitMissedReveal: (account: `0x${string}`) =>
+			env.execute(Stub, {
+				account,
+				functionName: 'forfeitMissedReveal',
+				args: [idOf(account)],
+			}),
 	};
 
 	return {
@@ -198,8 +226,8 @@ async function setup(seats = 3) {
 }
 
 /** A three-seat game, its creator and two others seated, started. */
-async function started() {
-	const game = await setup(3);
+async function started(cycles = CYCLES) {
+	const game = await setup(3, cycles);
 	await game.act.join(game.creator);
 	await game.act.join(game.alice);
 	await game.act.join(game.bob);
@@ -216,23 +244,31 @@ describe('a closed roster on the commit-reveal base', function () {
 			env.execute(Stub, {
 				account: creator,
 				functionName: 'openRoster',
-				args: [creator, 1],
+				args: [creator, 1, CYCLES, NO_OPTIONS],
 			}),
 		).toBeRejectedWith(/InvalidSeats/);
 		await expect(
 			env.execute(Stub, {
 				account: creator,
 				functionName: 'openRoster',
-				args: [zeroAddress, 2],
+				args: [zeroAddress, 2, CYCLES, NO_OPTIONS],
 			}),
 		).toBeRejectedWith(/InvalidCreator/);
+		// Every table ends: a roster of no cycles is refused.
+		await expect(
+			env.execute(Stub, {
+				account: creator,
+				functionName: 'openRoster',
+				args: [creator, 2, 0, NO_OPTIONS],
+			}),
+		).toBeRejectedWith(/InvalidCycles/);
 
 		const game = await setup(2);
 		await expect(
 			game.env.execute(game.Stub, {
 				account: game.creator,
 				functionName: 'openRoster',
-				args: [game.creator, 2],
+				args: [game.creator, 2, CYCLES, NO_OPTIONS],
 			}),
 		).toBeRejectedWith(/RosterAlreadyOpened/);
 	});
@@ -250,7 +286,7 @@ describe('a closed roster on the commit-reveal base', function () {
 			env.execute(Stub, {
 				account: creator,
 				functionName: 'openRoster',
-				args: [creator, 2],
+				args: [creator, 2, CYCLES, NO_OPTIONS],
 			}),
 		).toBeRejectedWith(/GameAlreadyStarted/);
 	});
@@ -346,6 +382,10 @@ describe('a closed roster on the commit-reveal base', function () {
 			'GameStarted',
 			'CycleAdvanced',
 		]);
+		expect(events[2].args.members).toEqual(2n);
+		expect(events[2].args.lastCycleNumber).toEqual(
+			cycle.cycleNumber + BigInt(CYCLES) - 1n,
+		);
 		expect(events[3].args.cycleNumber).toEqual(cycle.cycleNumber);
 		expect(events[3].args.commiting).toEqual(true);
 		expect(String(events[3].args.pushedBy).toLowerCase()).toEqual(
@@ -462,6 +502,128 @@ describe('a closed roster on the commit-reveal base', function () {
 		await expect(game.act.join(game.bob)).toBeRejectedWith(
 			/GameAlreadyStarted/,
 		);
+	});
+
+	it('records how many cycles it plays, its options, and who was seated at the start', async function () {
+		const options =
+			'0x00000000000000000000000000000000000000000000000000000000c0ffee01' as const;
+		const game = await setup(4, 7, options);
+		await game.act.join(game.creator);
+		await game.act.join(game.alice);
+		await game.act.join(game.bob);
+		let roster = await game.read.roster();
+		expect(roster.cycles).toEqual(7);
+		expect(roster.startedWith).toEqual(0);
+		expect(await game.read.gameOptions()).toEqual(options);
+		expect((await game.read.end()).lastCycleNumber).toEqual(0n);
+		expect((await game.read.end()).ended).toEqual(false);
+
+		await game.act.start(game.creator);
+		roster = await game.read.roster();
+		expect(roster.startedWith).toEqual(3);
+		const {cycleNumber, lastCycleNumber, ended} = await game.read.end();
+		expect(lastCycleNumber).toEqual(cycleNumber + 6n);
+		expect(ended).toEqual(false);
+		// Leaving after the start does not change who it started with.
+		await game.act.withdraw(game.bob, 10n);
+		expect((await game.read.roster()).startedWith).toEqual(3);
+	});
+
+	it('emits the cycles and the options when the roster opens', async function () {
+		const fixtures = await networkHelpers.loadFixture(deployStub);
+		const {env, Stub, unnamedAccounts} = fixtures;
+		const [creator] = unnamedAccounts;
+		const options =
+			'0x0000000000000000000000000000000000000000000000000000000000000abc' as const;
+		const receipt = await env.execute(Stub, {
+			account: creator,
+			functionName: 'openRoster',
+			args: [creator, 3, 12, options],
+		});
+		const [opened] = parseEventLogs({
+			abi: Stub.abi as Abi,
+			logs: receipt.logs as Parameters<typeof parseEventLogs>[0]['logs'],
+		}) as unknown as {eventName: string; args: Record<string, unknown>}[];
+		expect(opened.eventName).toEqual('RosterOpened');
+		expect(opened.args.seats).toEqual(3);
+		expect(opened.args.cycles).toEqual(12);
+		expect(opened.args.gameOptions).toEqual(options);
+	});
+
+	it('ends after its last cycle: its reveals still land, then no commit, advance or forfeit', async function () {
+		const game = await started(2);
+		const first = await game.read.cycle();
+		const members = [game.creator, game.alice, game.bob];
+
+		// Cycle one of two, closed early.
+		for (const member of members) await game.act.commit(member);
+		await game.act.advance();
+		for (const member of members) await game.act.reveal(member);
+		await game.act.advance();
+		const last = await game.read.cycle();
+		expect(last.cycleNumber).toEqual(first.cycleNumber + 1n);
+		expect((await game.read.end()).lastCycleNumber).toEqual(last.cycleNumber);
+		expect((await game.read.end()).ended).toEqual(false);
+
+		// The last cycle: Bob commits and never reveals.
+		for (const member of members) await game.act.commit(member);
+		await game.act.advance();
+		await game.act.reveal(game.creator);
+		await game.act.reveal(game.alice);
+		await expect(game.act.advance()).toBeRejectedWith(/StillWaitingToReveal/);
+		await goTo(Number((await game.read.cycle()).phaseEnd));
+
+		const after = await game.read.cycle();
+		expect(after.cycleNumber).toEqual(last.cycleNumber + 1n);
+		expect((await game.read.end()).ended).toEqual(true);
+		await expect(game.act.commit(game.creator)).toBeRejectedWith(/GameEnded/);
+		await expect(game.act.advance()).toBeRejectedWith(/GameEnded/);
+		await expect(game.act.forfeit(game.creator, game.alice)).toBeRejectedWith(
+			/GameEnded/,
+		);
+		// A missed reveal is still settled after the end.
+		await game.act.forfeitMissedReveal(game.bob);
+		const commitment = (await game.env.read(game.Stub, {
+			functionName: 'getCommitment',
+			args: [idOf(game.bob)],
+		})) as {cycleNumber: bigint};
+		expect(commitment.cycleNumber).toEqual(0n);
+		// And it stays ended, however long the clock runs.
+		await goTo(Number(after.phaseEnd) + (COMMIT_PHASE + REVEAL_PHASE) * 5);
+		expect((await game.read.end()).ended).toEqual(true);
+		await expect(game.act.commit(game.alice)).toBeRejectedWith(/GameEnded/);
+	});
+
+	it('ends as soon as its last cycle is closed early', async function () {
+		const game = await started(1);
+		const members = [game.creator, game.alice, game.bob];
+		const only = await game.read.cycle();
+		for (const member of members) await game.act.commit(member);
+		await game.act.advance();
+		for (const member of members) await game.act.reveal(member);
+		expect((await game.read.end()).ended).toEqual(false);
+		// Closing the last cycle is not an advance past it.
+		await game.act.advance();
+		const after = await game.read.cycle();
+		expect(after.cycleNumber).toEqual(only.cycleNumber + 1n);
+		expect((await game.read.end()).ended).toEqual(true);
+		await expect(game.act.advance()).toBeRejectedWith(/GameEnded/);
+	});
+
+	it('has no end under open entry', async function () {
+		const fixtures = await networkHelpers.loadFixture(deployStub);
+		const {env, Stub, unnamedAccounts} = fixtures;
+		const [alice] = unnamedAccounts;
+		await env.execute(Stub, {
+			account: alice,
+			functionName: 'deposit',
+			args: [idOf(alice), 10n],
+		});
+		const [, lastCycleNumber, ended] = (await env.read(Stub, {
+			functionName: 'getEnd',
+		})) as [bigint, bigint, boolean];
+		expect(lastCycleNumber).toEqual(0n);
+		expect(ended).toEqual(false);
 	});
 
 	it('refuses the roster routes on a game with open entry', async function () {
