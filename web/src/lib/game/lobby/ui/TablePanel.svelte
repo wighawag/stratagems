@@ -1,6 +1,7 @@
 <!--
-	A STARTED TABLE'S SEATS, and the creator's forfeit, over the board. Before
-	the start the table's page is `TableLobby.svelte`.
+	A STARTED TABLE'S SEATS, how far it is ("cycle 2 of 10", or ended), and the
+	creator's forfeit, over the board. Before the start the table's page is
+	`TableLobby.svelte`.
 
 	Renders `$lib/game/lobby/table`'s store and decides nothing: whom the
 	creator may forfeit is the contract's rule, so a press the contract refuses
@@ -8,7 +9,12 @@
 -->
 <script lang="ts">
 	import Button from '$lib/shadcn/ui/button/button.svelte';
-	import {memberLabel, type TableStore} from '$lib/game/lobby/table';
+	import {
+		describeTableProgress,
+		memberLabel,
+		tableProgressOf,
+		type TableStore,
+	} from '$lib/game/lobby/table';
 
 	interface Props {
 		table: TableStore;
@@ -31,8 +37,13 @@
 	{:else if $table.step === 'Failed'}
 		<p class="text-xs text-red-400">{$table.message}</p>
 	{:else}
+		{@const progress = tableProgressOf($table.roster)}
 		<p class="text-xs text-muted-foreground">
-			{$table.roster.members.length} playing
+			{$table.roster.members.length} playing{#if progress}, <span
+					data-testid="table-progress"
+					data-ended={progress.step === 'ended'}
+					>{describeTableProgress(progress)}</span
+				>{/if}
 		</p>
 		<ul class="mt-2 flex flex-col gap-1" data-testid="table-seats">
 			{#each $table.table as seat, index (index)}
@@ -46,7 +57,7 @@
 							{memberLabel(seat.occupant.player)}
 						{/if}
 					</span>
-					{#if $table.isCreator && $table.roster.started && seat.occupant?.kind === 'remote-human'}
+					{#if $table.isCreator && $table.roster.started && !$table.roster.ended && seat.occupant?.kind === 'remote-human'}
 						<Button
 							size="sm"
 							variant="outline"
