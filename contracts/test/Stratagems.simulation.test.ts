@@ -184,6 +184,12 @@ async function expectSimulated(env: Env, centres: bigint[], simulate: (board: an
 	const touched = touchedBy(centres);
 	const board = await storedCells(env, touched);
 
+	// the public view of the stored records (step A2, A2-6): what a client hands
+	// the simulation, the debug route's raw records exactly, a cell that died
+	// unpoked included (its `getCells` answer is advanced, and loses the death)
+	const viewed = await (env.Stratagems as any).read.getStoredCells([touched]);
+	expect(normalise(viewed as any[]), 'getStoredCells').to.deep.equal(normalise(board));
+
 	// the projection, on every cell read: the simulation's `cellAtCycle` is the getters'
 	const cycleNumber = await (env.Stratagems as any).read.getCycleNumber();
 	const projected = await (env.Stratagems as any).read.getCells([touched]);
