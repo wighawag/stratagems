@@ -17,6 +17,12 @@
  * free; the creator starts it once two are seated, and may forfeit a member
  * who has not committed in the current commit phase. This module reads the
  * roster and sends the creator's two transactions; it decides none of it.
+ *
+ * A TABLE ENDS after the number of cycles its creator chose: after the last
+ * one the contract refuses every commitment, advance and forfeit
+ * (`CommitReveal.start` fixes the last cycle). And it carries the GAME'S own
+ * options (`gameOptions`, a `bytes32` the base stores and never reads), which
+ * only the game's module encodes and decodes; the reference game sends none.
  */
 import {derived, get, writable, type Readable} from 'svelte/store';
 import {parseAbi, parseEventLogs, isAddress} from 'viem';
@@ -29,22 +35,45 @@ import {tableAtRoster, type TableSeat} from './seats';
 
 /** The lobby's routes, as `ICommitRevealLobby` declares them. */
 export const LOBBY_ABI = parseAbi([
-	'function getRoster() view returns ((address creator, uint8 seats, bool started) roster, uint256[] members)',
+	'function getRoster() view returns ((address creator, uint8 seats, bool started, uint16 cycles, uint8 startedWith) roster, uint256[] members)',
+	'function getEnd() view returns (uint64 cycleNumber, uint64 lastCycleNumber, bool ended)',
+	'function getGameOptions() view returns (bytes32)',
 	'function start() returns (uint64 cycleNumber)',
 	'function forfeitMember(uint256 player)',
 ]);
 
 /** The factory, as `CommitRevealGameFactory` declares it. */
 export const FACTORY_ABI = parseAbi([
-	'function createGame(uint8 seats) returns (address game)',
+	'function createGame(uint8 seats, uint16 cycles, bytes32 gameOptions) returns (address game)',
 	'function numGames() view returns (uint256)',
 	'function getGames(uint256 start, uint256 limit) view returns (address[] games)',
-	'event GameCreated(address indexed game, address indexed creator, uint8 seats)',
+	'event GameCreated(address indexed game, address indexed creator, uint8 seats, uint16 cycles, bytes32 gameOptions)',
 ]);
 
 /** The fewest and most seats a table offers; the contract refuses fewer than two. */
 export const FEWEST_TABLE_SEATS = 2;
 export const MOST_TABLE_SEATS = 8;
+
+/**
+ * How many cycles a table may be created to play. The contract refuses only
+ * zero (every table ends); the bounds are the client's: at the slowest
+ * durations a table is deployed with (180 + 60 s) the most is under seven
+ * hours, the default (10) forty minutes, less with early advance.
+ */
+export const FEWEST_TABLE_CYCLES = 2;
+export const MOST_TABLE_CYCLES = 100;
+export const DEFAULT_TABLE_CYCLES = 10;
+
+/** The options of a game that reads none: what the reference game sends. */
+export const NO_GAME_OPTIONS =
+	'0x0000000000000000000000000000000000000000000000000000000000000000' as const;
+
+/** A count of cycles the lobby offers, or the default for anything else. */
+export function clampTableCycles(cycles: unknown): number {
+	const n = typeof cycles === 'number' ? Math.floor(cycles) : NaN;
+	if (!Number.isFinite(n)) return DEFAULT_TABLE_CYCLES;
+	return Math.min(MOST_TABLE_CYCLES, Math.max(FEWEST_TABLE_CYCLES, n));
+}
 
 /**
  * A GAME'S TABLES: where its factory is, and the deployment record of one of
@@ -66,13 +95,25 @@ export function tableFromParam(param: unknown): `0x${string}` | undefined {
 	return typeof param === 'string' && isAddress(param) ? param : undefined;
 }
 
-/** A table's roster, as the contract holds it. */
+/** A table's roster, as the contract holds it, and where it is against its end. */
 export type Roster = {
 	creator: `0x${string}`;
 	seats: number;
 	started: boolean;
+	/** How many cycles it plays from its start. */
+	cycles: number;
+	/** How many were seated when it started (zero before). */
+	startedWith: number;
 	/** Who holds a seat, as the contract keys them. */
 	members: readonly bigint[];
+	/** The cycle the chain is in, as of this read. */
+	cycleNumber: bigint;
+	/** The last cycle it plays; zero before the start. */
+	lastCycleNumber: bigint;
+	/** Whether it has played its last cycle. */
+	ended: boolean;
+	/** The game's own options, as created: see {@link NO_GAME_OPTIONS}. */
+	gameOptions: `0x${string}`;
 };
 
 type Reader = Pick<CoreServices['publicClient'], 'readContract'>;
@@ -81,20 +122,76 @@ export async function readRoster(
 	publicClient: Reader,
 	table: `0x${string}`,
 ): Promise<Roster> {
-	const [roster, members] = (await publicClient.readContract({
-		address: table,
-		abi: LOBBY_ABI,
-		functionName: 'getRoster',
-	})) as readonly [
-		{creator: `0x${string}`; seats: number; started: boolean},
-		readonly bigint[],
-	];
+	const [[roster, members], [cycleNumber, lastCycleNumber, ended], options] =
+		(await Promise.all([
+			publicClient.readContract({
+				address: table,
+				abi: LOBBY_ABI,
+				functionName: 'getRoster',
+			}),
+			publicClient.readContract({
+				address: table,
+				abi: LOBBY_ABI,
+				functionName: 'getEnd',
+			}),
+			publicClient.readContract({
+				address: table,
+				abi: LOBBY_ABI,
+				functionName: 'getGameOptions',
+			}),
+		])) as [
+			readonly [
+				{
+					creator: `0x${string}`;
+					seats: number;
+					started: boolean;
+					cycles: number;
+					startedWith: number;
+				},
+				readonly bigint[],
+			],
+			readonly [bigint, bigint, boolean],
+			`0x${string}`,
+		];
 	return {
 		creator: roster.creator,
 		seats: Number(roster.seats),
 		started: roster.started,
+		cycles: Number(roster.cycles),
+		startedWith: Number(roster.startedWith),
 		members,
+		cycleNumber,
+		lastCycleNumber,
+		ended,
+		gameOptions: options,
 	};
+}
+
+/**
+ * HOW FAR A STARTED TABLE IS: the cycle it plays (counted from one) out of
+ * how many, or that it has ended. Nothing before the start, when the first
+ * cycle is not fixed yet.
+ */
+export type TableProgress =
+	{step: 'playing'; cycle: number; of: number} | {step: 'ended'; of: number};
+
+export function tableProgressOf(roster: Roster): TableProgress | undefined {
+	if (!roster.started || roster.lastCycleNumber === 0n) return undefined;
+	if (roster.ended) return {step: 'ended', of: roster.cycles};
+	const first = roster.lastCycleNumber - BigInt(roster.cycles) + 1n;
+	const cycle = Number(roster.cycleNumber - first) + 1;
+	return {
+		step: 'playing',
+		cycle: Math.min(roster.cycles, Math.max(1, cycle)),
+		of: roster.cycles,
+	};
+}
+
+/** The progress as a person reads it, for a panel or a list. */
+export function describeTableProgress(progress: TableProgress): string {
+	return progress.step === 'ended'
+		? `Ended after ${progress.of} cycles`
+		: `Cycle ${progress.cycle} of ${progress.of}`;
 }
 
 /** A table as the lobby lists it. */
@@ -157,7 +254,7 @@ export type TablesState =
 
 export type CreateTableState =
 	| {step: 'Idle'}
-	| {step: 'Creating'; seats: number}
+	| {step: 'Creating'; seats: number; cycles: number}
 	| {step: 'Created'; table: `0x${string}`}
 	| {step: 'Failed'; message: string};
 
@@ -165,8 +262,15 @@ export type TablesLobby = {
 	tables: Readable<TablesState>;
 	creating: Readable<CreateTableState>;
 	refresh(): Promise<void>;
-	/** Create a table of `seats`, the connected ACCOUNT its creator; resolves to its address. */
-	create(seats: number): Promise<`0x${string}` | undefined>;
+	/**
+	 * Create a table of `seats` playing `cycles` (the default when omitted),
+	 * with the game's own options (none when omitted), the connected ACCOUNT
+	 * its creator; resolves to its address.
+	 */
+	create(
+		seats: number,
+		options?: {cycles?: number; gameOptions?: `0x${string}`},
+	): Promise<`0x${string}` | undefined>;
 };
 
 /**
@@ -203,8 +307,13 @@ export function createTablesLobby(params: {
 		}
 	}
 
-	async function create(seats: number) {
-		creating.set({step: 'Creating', seats});
+	async function create(
+		seats: number,
+		options?: {cycles?: number; gameOptions?: `0x${string}`},
+	) {
+		const cycles = clampTableCycles(options?.cycles ?? DEFAULT_TABLE_CYCLES);
+		const gameOptions = options?.gameOptions ?? NO_GAME_OPTIONS;
+		creating.set({step: 'Creating', seats, cycles});
 		try {
 			await deps.connection.ensureConnected();
 			const executor = get(deps.accountExecutor);
@@ -223,7 +332,7 @@ export function createTablesLobby(params: {
 						address: factory(),
 						abi: FACTORY_ABI,
 						functionName: 'createGame',
-						args: [seats],
+						args: [seats, cycles, gameOptions],
 						account: executor.account,
 					},
 				},
@@ -423,14 +532,20 @@ function messageOf(error: unknown): string {
 // ---------------------------------------------------------------------------
 
 /**
- * WHETHER THE BOARD TAKES A TURN AT THIS TABLE: only once it has started, and
- * only from a member. Before the start the contract refuses a commitment from
- * anyone (nobody is waited for yet), and after it from anyone not seated, so a
- * plan made then could only revert. `undefined` is a game with no table.
+ * WHETHER THE BOARD TAKES A TURN AT THIS TABLE: only once it has started, only
+ * from a member, and never once it has ended. Before the start the contract
+ * refuses a commitment from anyone (nobody is waited for yet), after it from
+ * anyone not seated, and after the last cycle from everyone, so a plan made
+ * then could only revert. `undefined` is a game with no table.
  */
 export function tableAllowsPlay(state: TableState | undefined): boolean {
 	if (state === undefined) return true;
-	return state.step === 'Loaded' && state.roster.started && state.seated;
+	return (
+		state.step === 'Loaded' &&
+		state.roster.started &&
+		!state.roster.ended &&
+		state.seated
+	);
 }
 
 /** What every table of this game plays by: the lobby implementation's config. */
@@ -488,11 +603,15 @@ export function tableScreenOf(state: TableState): TableScreen {
 	const {roster, seated, isCreator} = state;
 	const taken = roster.members.length;
 	if (roster.started) {
+		// A member keeps the board after the end: the final board, and whatever
+		// the game shows of it, are theirs to see.
 		return seated
 			? {screen: 'playing'}
 			: {
 					screen: 'closed',
-					status: 'This game has started, and you are not one of its players.',
+					status: roster.ended
+						? 'This game has ended, and you were not one of its players.'
+						: 'This game has started, and you are not one of its players.',
 				};
 	}
 	const seatFree = taken < roster.seats;

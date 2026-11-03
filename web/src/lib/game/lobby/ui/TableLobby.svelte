@@ -65,6 +65,8 @@
 			<dl class="mt-4 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
 				<dt class="text-muted-foreground">Seats</dt>
 				<dd>{$screen.seats}</dd>
+				<dt class="text-muted-foreground">Cycles</dt>
+				<dd data-testid="table-cycles">{$table.roster.cycles}</dd>
 				<dt class="text-muted-foreground">To commit a turn</dt>
 				<dd>{describeDuration(settings.commitPhaseDuration)}</dd>
 				<dt class="text-muted-foreground">To reveal it</dt>
