@@ -447,13 +447,24 @@ describe('A stratagems table for a fixed set of players', () => {
 			// both pages on the cycle the start anchored, its full commit phase
 			// ahead: a plan made on the clock read before the anchor is dropped
 			// with that cycle
+			const anchored = (await cycleOf(host)).cycleNumber;
 			for (const page of [host, guest]) {
 				await expect
-					.poll(async () => (await gameStep(page)).timeLeft, {
-						message: 'the page should read the anchored cycle',
-						timeout: 30_000,
-					})
-					.toBeGreaterThan(30);
+					.poll(
+						() =>
+							page.evaluate(() => {
+								const context = (globalThis as unknown as {context: any})
+									.context;
+								let value: any;
+								const stop = context.game.cycleInfo.subscribe(
+									(v: unknown) => (value = v),
+								);
+								stop();
+								return value?.currentCycleNumber as number | undefined;
+							}),
+						{message: 'the page should read the anchored cycle', timeout: 30_000},
+					)
+					.toBe(anchored);
 			}
 			await expect(host.getByTestId('table-progress')).toHaveText(
 				'Cycle 1 of 2',
