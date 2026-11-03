@@ -84,6 +84,10 @@ library CommitReveal {
         uint256[] members;
         /// @notice Where a member is in {members}, plus one; zero is unseated.
         mapping(uint256 player => uint256 indexPlusOne) seatOf;
+        /// @notice What a game's own rules read at this table, set with its
+        ///         roster and never again; the base does not interpret it.
+        /// @dev Appended, for the same reason as {roster}.
+        bytes32 gameOptions;
     }
 
     /// keccak256(abi.encode(uint256(keccak256("etherplay.storage.CommitReveal")) - 1)) & ~bytes32(uint256(0xff))
@@ -239,12 +243,39 @@ library CommitReveal {
         return layout().seatOf[player] != 0;
     }
 
+    function gameOptions() internal view returns (bytes32) {
+        return layout().gameOptions;
+    }
+
+    /// @notice The last cycle this game plays, or zero if it has no end (open
+    ///         entry, or a roster not started yet).
+    function lastCycleNumber() internal view returns (uint64) {
+        return layout().cycleState.lastCycleNumber;
+    }
+
+    /// @notice Whether `cycleNumber` is past the last cycle this game plays.
+    function isPastTheEnd(uint64 cycleNumber) internal view returns (bool) {
+        uint64 last = layout().cycleState.lastCycleNumber;
+        return last != 0 && cycleNumber > last;
+    }
+
     /// @notice Give a game a closed roster. Once, and before anyone joined.
+    /// @param cycles How many cycles it plays from its start: at least one,
+    ///        since a game for a fixed set of members that never ends can
+    ///        never name a winner.
+    /// @param options What the GAME reads at this table (a stake, a board's
+    ///        size), stored here because a game's route cannot be called from
+    ///        the lobby's: see {UsingCommitReveal-_gameOptions}.
     /// @dev A ROSTER IS A WHOLE MODE, NOT A SETTING: who the cycle waits for
     ///      starts as nobody and becomes the members only when the creator
     ///      starts the game, so a game cannot switch to it once open entry has
     ///      let somebody in.
-    function openRoster(address creator, uint8 seats) internal {
+    function openRoster(
+        address creator,
+        uint8 seats,
+        uint16 cycles,
+        bytes32 options
+    ) internal {
         Layout storage $ = layout();
         if ($.roster.seats != 0) {
             revert E.RosterAlreadyOpened();
@@ -252,14 +283,26 @@ library CommitReveal {
         if (seats < 2) {
             revert E.InvalidSeats(seats);
         }
+        if (cycles == 0) {
+            revert E.InvalidCycles(cycles);
+        }
         if (creator == address(0)) {
             revert E.InvalidCreator();
         }
         if ($.waitedFor != 0) {
             revert E.GameAlreadyStarted();
         }
-        $.roster = T.Roster({creator: creator, seats: seats, started: false});
-        emit Ev.RosterOpened(creator, seats);
+        $.roster = T.Roster({
+            creator: creator,
+            seats: seats,
+            started: false,
+            cycles: cycles,
+            startedWith: 0
+        });
+        if (options != bytes32(0)) {
+            $.gameOptions = options;
+        }
+        emit Ev.RosterOpened(creator, seats, cycles, options);
     }
 
     /// @notice Seat a player who has just funded a reserve, if they need one.
@@ -326,6 +369,10 @@ library CommitReveal {
     ///      of the deployment's commit phase does not give its first turn a few
     ///      seconds. It emits {Ev-CycleAdvanced} for the same reason an advance
     ///      does: a reader folding the anchor needs no other event.
+    ///
+    ///      THE END IS FIXED HERE, as a cycle number: the roster's `cycles`
+    ///      counted from the first. Nothing runs when the game ends, since the
+    ///      clock is lazy; each action compares its cycle with this one.
     function start(
         Clock memory clock,
         T.Cycle memory current,
@@ -344,11 +391,14 @@ library CommitReveal {
             revert E.NotEnoughMembers(seated);
         }
         $.roster.started = true;
+        $.roster.startedWith = uint8(seated);
         for (uint256 i = 0; i < seated; i++) {
             startWaitingFor($.members[i]);
         }
 
         cycleNumber = current.cycleNumber + 1;
+        uint64 last = cycleNumber + opened.cycles - 1;
+        $.cycleState.lastCycleNumber = last;
         $.cycleState.anchorCycleNumber = cycleNumber;
         if (clock.policy == T.CyclePolicy.Manual) {
             $.cycleState.commiting = true;
@@ -356,7 +406,7 @@ library CommitReveal {
             $.cycleState.anchoredAt = uint64(time);
         }
 
-        emit Ev.GameStarted(opened.creator, seated);
+        emit Ev.GameStarted(opened.creator, seated, last);
         emit Ev.CycleAdvanced(cycleNumber, true, opened.creator);
     }
 
@@ -384,6 +434,11 @@ library CommitReveal {
         }
         if ($.seatOf[player] == 0) {
             revert E.NotInGame(player);
+        }
+        // After the end nothing is unblocked by it, and a member forfeited
+        // then would only be one fewer member when the game counts who played.
+        if (isPastTheEnd(cycleNumber)) {
+            revert E.GameEnded($.cycleState.lastCycleNumber);
         }
         if (!commiting) {
             revert E.InRevealPhase(cycleNumber);
@@ -425,11 +480,16 @@ library CommitReveal {
         uint64 cycleNumber,
         bool commiting
     ) internal {
+        Layout storage $ = layout();
+        // The slot the cycle was read from, so this costs a warm read; first,
+        // so that after the end every commitment is told the game has ended.
+        uint64 last = $.cycleState.lastCycleNumber;
+        if (last != 0 && cycleNumber > last) {
+            revert E.GameEnded(last);
+        }
         if (!commiting) {
             revert E.InRevealPhase(cycleNumber);
         }
-
-        Layout storage $ = layout();
         if (!$.isWaitedFor[player]) {
             revert E.NotInGame(player);
         }
@@ -750,6 +810,12 @@ library CommitReveal {
         }
 
         Layout storage $ = layout();
+        // AFTER THE LAST CYCLE NOTHING MOVES. Closing the last cycle early, once
+        // all its reveals are in, is not refused: it ends the game sooner, and
+        // a later reader sees the same end either way.
+        if (isPastTheEnd(current.cycleNumber)) {
+            revert E.GameEnded($.cycleState.lastCycleNumber);
+        }
         T.Attendance memory present = attendance(current.cycleNumber);
 
         // No closed set, no denominator. Without this one caller could push an

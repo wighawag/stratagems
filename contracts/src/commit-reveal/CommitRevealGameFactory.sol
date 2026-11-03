@@ -21,11 +21,14 @@ import {ICommitRevealLobby} from "./interfaces/ICommitRevealLobby.sol";
 ///      clone of one implementation plays by the same ones; a different config
 ///      is a different implementation, and a factory of its own.
 contract CommitRevealGameFactory {
-    /// @notice A game was created, with `seats` seats, by `creator`.
+    /// @notice A game was created, with `seats` seats, by `creator`, to play
+    ///         `cycles` cycles with the game's own `gameOptions`.
     event GameCreated(
         address indexed game,
         address indexed creator,
-        uint8 seats
+        uint8 seats,
+        uint16 cycles,
+        bytes32 gameOptions
     );
 
     /// @notice the lobby implementation every game here is a clone of
@@ -37,14 +40,27 @@ contract CommitRevealGameFactory {
         IMPLEMENTATION = implementation;
     }
 
-    /// @notice Create a game of `seats` seats, with the caller as its creator.
+    /// @notice Create a game of `seats` seats playing `cycles` cycles, with
+    ///         the caller as its creator.
+    /// @param gameOptions What the game's own rules read at this table (zero
+    ///        for none); the game refuses what it cannot read, when it reads
+    ///        it, and the factory checks nothing of it.
     /// @dev The creator is the CALLER, never a parameter: naming somebody else
     ///      would hand them a game they did not ask for.
-    function createGame(uint8 seats) external returns (address game) {
+    function createGame(
+        uint8 seats,
+        uint16 cycles,
+        bytes32 gameOptions
+    ) external returns (address game) {
         game = Clones.clone(IMPLEMENTATION);
-        ICommitRevealLobby(game).initializeLobby(msg.sender, seats);
+        ICommitRevealLobby(game).initializeLobby(
+            msg.sender,
+            seats,
+            cycles,
+            gameOptions
+        );
         _games.push(game);
-        emit GameCreated(game, msg.sender, seats);
+        emit GameCreated(game, msg.sender, seats, cycles, gameOptions);
     }
 
     /// @notice How many games this factory has created.

@@ -24,8 +24,13 @@ contract CommitRevealLobby is ICommitRevealLobby, UsingCommitReveal {
     constructor(CommitRevealConfig memory config) UsingCommitReveal(config) {}
 
     /// @inheritdoc ICommitRevealLobby
-    function initializeLobby(address creator, uint8 seats) external {
-        _openRoster(creator, seats);
+    function initializeLobby(
+        address creator,
+        uint8 seats,
+        uint16 cycles,
+        bytes32 gameOptions
+    ) external {
+        _openRoster(creator, seats, cycles, gameOptions);
     }
 
     /// @inheritdoc ICommitRevealLobby
@@ -45,5 +50,26 @@ contract CommitRevealLobby is ICommitRevealLobby, UsingCommitReveal {
         returns (Roster memory roster, uint256[] memory members)
     {
         return (_roster(), _members());
+    }
+
+    /// @inheritdoc ICommitRevealLobby
+    function getEnd()
+        external
+        view
+        returns (uint64 cycleNumber, uint64 lastCycleNumber, bool ended)
+    {
+        (cycleNumber, ) = _cycleNumber();
+        lastCycleNumber = _lastCycleNumber();
+        ended = lastCycleNumber != 0 && cycleNumber > lastCycleNumber;
+    }
+
+    /// @inheritdoc ICommitRevealLobby
+    function hasEnded() external view returns (bool) {
+        return _hasEnded();
+    }
+
+    /// @inheritdoc ICommitRevealLobby
+    function getGameOptions() external view returns (bytes32) {
+        return _gameOptions();
     }
 }
