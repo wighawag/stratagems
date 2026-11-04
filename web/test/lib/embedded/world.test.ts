@@ -82,10 +82,11 @@ describe('this game\u2019s offline world', () => {
 		expect(inTab.contracts.Game.address).toMatch(/^0x[0-9a-fA-F]{40}$/);
 
 		// NOT "at a different ADDRESS from the build-time one", which would be
-		// false: the deploy is deterministic - same deployer, same nonces, a
-		// CREATE2 implementation - so an embedded world lands its contracts at
-		// exactly the addresses a fresh local deploy does. What makes these
-		// records THIS world's is that the code is there, on this chain.
+		// false: the deploy is deterministic (every contract through the CREATE2
+		// factory, see "Deterministic deployments" in README.md), so an embedded
+		// world lands its contracts at exactly the addresses a fresh local
+		// deploy does. What makes these records THIS world's is that the code
+		// is there, on this chain.
 		for (const name of ['Game', 'GameToken', 'StakeSale'] as const) {
 			const code = await world.provider.request({
 				method: 'eth_getCode',
