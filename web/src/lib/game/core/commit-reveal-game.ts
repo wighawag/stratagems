@@ -33,6 +33,7 @@
  * nothing here starts IO, which belongs to `start()`. See ADR-0002 (jolly-roger).
  */
 import {derived, get, readable, type Readable} from 'svelte/store';
+import {hasFaucet} from '$lib/core/ui/faucet/index.js';
 import type {CoreServices} from '$lib/context/core';
 import type {AccountDataLifecycle} from '$lib/account/lifecycle';
 import {isRegistered, type DelegationValue} from '$lib/onchain/delegation';
@@ -746,6 +747,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 		// The stake exists the moment the transaction lands, so re-reading is what
 		// takes the player past the setup gate and onto the board.
 		onAcquired: () => void parts.stake.refresh(),
+		faucetCanFund: hasFaucet,
 	});
 
 	const storage = currentIdentityStorage<TIdentity, TAction, TExtensions>(
