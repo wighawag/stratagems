@@ -7,7 +7,7 @@
 {
   # fetchPnpmDeps' hash of the packages pnpm-lock.yaml names. After any
   # lockfile change, including one merged from the template, set it to
-  # sha256-TgUKDpXQGm3qAxmaaQeaUl9KoUkoB99R10X0Lk8Ha14= and run
+  # sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= and run
   #
   #   nix build git+file://$PWD#lan.pnpmDeps
   #
