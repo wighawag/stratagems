@@ -29,6 +29,9 @@ export default deployScript(
 				// matches exactly, so a figure copied anywhere else is a figure that
 				// can drift into reverting every purchase.
 				linkedData: config,
+				// Deterministic (CREATE2), like every contract here: see
+				// "Deterministic deployments" in README.md.
+				deterministic: true,
 			},
 		);
 	},
