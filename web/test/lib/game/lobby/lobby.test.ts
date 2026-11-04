@@ -244,7 +244,9 @@ describe('the lobby with levels for the world seats', () => {
 		{id: 'greedy', label: 'Greedy'},
 	];
 
-	function levelledGame(params: {alreadyHere?: boolean} = {}) {
+	function levelledGame(
+		params: {alreadyHere?: boolean; defaultLevel?: string} = {},
+	) {
 		const started: Table[] = [];
 		let here = params.alreadyHere ?? false;
 		const lobby = createLobby({
@@ -256,6 +258,7 @@ describe('the lobby with levels for the world seats', () => {
 			humansAtMost: 10,
 			levelsStorageKey: LEVELS_KEY,
 			levels: OFFERS,
+			defaultLevel: params.defaultLevel,
 		});
 		return {lobby, started};
 	}
@@ -325,6 +328,30 @@ describe('the lobby with levels for the world seats', () => {
 		const garbled = levelledGame({alreadyHere: true});
 		garbled.lobby.enter();
 		expect(get(garbled.lobby).levels).toEqual(['random', 'random']);
+	});
+
+	it('starts a fresh choice at the game\u2019s default level, and pads a growing table with it', () => {
+		const {lobby, started} = levelledGame({defaultLevel: 'greedy'});
+		lobby.enter();
+		expect(get(lobby).levels).toEqual(['greedy', 'greedy']);
+		lobby.chooseLevel(0, 'random');
+		lobby.chooseSeats(4);
+		expect(get(lobby).levels).toEqual(['random', 'greedy', 'greedy']);
+		lobby.sitDown(get(lobby).seats);
+		expect(worldLevels(started[0])).toEqual([undefined, 'greedy', 'greedy']);
+	});
+
+	it('restores a world as it was built, whatever the default: absent is random', () => {
+		store.set(SEATS_KEY, '3');
+		const back = levelledGame({alreadyHere: true, defaultLevel: 'greedy'});
+		back.lobby.enter();
+		expect(get(back.lobby).levels).toEqual(['random', 'random']);
+	});
+
+	it('reads a default it does not offer as random', () => {
+		const {lobby} = levelledGame({defaultLevel: 'genius'});
+		lobby.enter();
+		expect(get(lobby).levels).toEqual(['random', 'random']);
 	});
 
 	it('forgets the levels with the seats when the player leaves', () => {
