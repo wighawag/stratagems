@@ -7,7 +7,7 @@ import {
 	tableOf,
 	type Table,
 } from './seats';
-import type {AiLevel} from '../core/strategy';
+import {RANDOM_LEVEL, type AiLevel} from '../core/strategy';
 
 /**
  * THE LOBBY: how many seats are at the table, decided before the game exists.
@@ -177,6 +177,13 @@ export type LobbyDeps = {
 	levelsStorageKey?: string;
 	/** The levels the game's world seats may play at. Absent or empty: none. */
 	levels?: readonly AiLevel[];
+	/**
+	 * The level a world seat STARTS AT in a fresh choice, before the player
+	 * picks one: the game's own, since it knows which level is the one worth
+	 * playing. Absent, or a level it does not offer: `random`. A world being
+	 * restored is never read with it (see `clampLevels`).
+	 */
+	defaultLevel?: string;
 };
 
 export type LobbyStore = Readable<LobbyState> & {
@@ -233,12 +240,15 @@ export type LobbyStore = Readable<LobbyState> & {
 export function createLobby(deps: LobbyDeps): LobbyStore {
 	const atMost = Math.max(1, Math.floor(deps.humansAtMost ?? 1));
 	const offers = deps.levels ?? [];
+	/** What a seat the player has not chosen for yet starts at. */
+	const choosing = deps.defaultLevel ?? RANDOM_LEVEL;
 	const seated = (
 		step: LobbyState['step'],
 		seats: number,
 		humans: number,
 		levels: unknown,
-	) => seatedAt(step, seats, humans, atMost, levels, offers);
+		padding: string = choosing,
+	) => seatedAt(step, seats, humans, atMost, levels, offers, padding);
 	const lobby = writable<LobbyState>(
 		seated('Opening', SEATS_BY_DEFAULT, 1, []),
 	);
@@ -276,8 +286,9 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 		seats: number = SEATS_BY_DEFAULT,
 		humans: number = get(lobby).humans,
 		levels: unknown = get(lobby).levels,
+		padding: string = choosing,
 	): void {
-		const state = seated('Sat', seats, humans, levels);
+		const state = seated('Sat', seats, humans, levels, padding);
 		if (typeof localStorage !== 'undefined') {
 			localStorage.setItem(deps.seatsStorageKey, String(state.seats));
 			if (deps.humansStorageKey) {
@@ -303,7 +314,9 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 				lobby.set(seated('Choosing', SEATS_BY_DEFAULT, 1, []));
 				return;
 			}
-			sitDown(already.seats, already.humans, already.levels);
+			// A RESTORE, so what the record does not say is `random`: that is
+			// how the world it describes was built.
+			sitDown(already.seats, already.humans, already.levels, RANDOM_LEVEL);
 		},
 		chooseSeats(seats: number): void {
 			const {humans, levels} = get(lobby);
@@ -320,7 +333,7 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 			next[worldSeat] = level;
 			lobby.set(seated('Choosing', seats, humans, next));
 		},
-		sitDown,
+		sitDown: (seats, humans, levels) => sitDown(seats, humans, levels),
 		leaveTheTable(): void {
 			deps.forgetGame();
 			if (typeof localStorage !== 'undefined') {
@@ -344,12 +357,14 @@ function seatedAt(
 	humansAtMost: number,
 	levels: unknown,
 	offers: readonly AiLevel[],
+	padding: string,
 ): LobbyState {
 	const count = clampSeats(seats);
 	const here = clampHumans(humans, count, humansAtMost);
 	// A SEAT KEEPS ITS LEVEL while the others change: the list is per world
-	// seat, cut or padded with `random` when the count of them moves.
-	const worldLevels = clampLevels(levels, count - here, offers);
+	// seat, cut when the count of them falls, and padded with `padding` (the
+	// game's default in a choice, `random` in a restore) when it grows.
+	const worldLevels = clampLevels(levels, count - here, offers, padding);
 	return {
 		step,
 		seats: count,
