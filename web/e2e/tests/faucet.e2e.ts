@@ -3,7 +3,7 @@ import {stake, submissionStep} from '../fixtures/game';
 
 // Its own account, which no other suite funds, so it starts EMPTY: see
 // test/e2e-account-claims.test.ts.
-test.use({walletAccountIndex: 10});
+test.use({walletAccountIndex: 8});
 
 const FAUCET_URL = (globalThis as any).process.env.E2E_FAUCET_URL as
 	string | undefined;
