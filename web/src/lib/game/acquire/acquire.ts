@@ -496,6 +496,14 @@ export function createAcquisition(params: {
 	grant: SignerGrant;
 	/** Called once it is on chain, so the game's own read can catch up. */
 	onAcquired?: () => void;
+	/**
+	 * Whether a faucet can fund the account first (the app has one). Then an
+	 * EMPTY account is still offered as the payer, and paying from it opens
+	 * the insufficient-funds dialog, whose "Get ETH" is that faucet. Without
+	 * it, a fresh burner with no other wallet (every player on a LAN box) had
+	 * no way to pay at all.
+	 */
+	faucetCanFund?: boolean;
 }): AcquisitionStore {
 	const {deps, acquisition, owner} = params;
 
@@ -657,6 +665,7 @@ export function createAcquisition(params: {
 			accountSpendable: spendable >= total ? spendable : 0n,
 			ownerCanSend: $account.status === 'ready',
 			walletsAvailable: get(deps.payment.connection).wallets.length,
+			faucetCanFund: params.faucetCanFund,
 		});
 	}
 
