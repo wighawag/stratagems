@@ -70,6 +70,11 @@ export default deployScript(
 					],
 				},
 			],
+			// The router and every route. Deterministic (CREATE2), like every
+			// contract here: see "Deterministic deployments" in README.md.
+			// A route identical to the world's (Delegation) lands at the address
+			// the world's already has, and is shared: a route holds no state.
+			{deterministic: true},
 		);
 
 		await deploy<Abi_CommitRevealGameFactory>(
@@ -84,6 +89,7 @@ export default deployScript(
 				// composed at run time from its address and THIS record, as the
 				// world is from `Game`'s.
 				linkedData: {...config, ...clientGas},
+				deterministic: true,
 			},
 		);
 	},
