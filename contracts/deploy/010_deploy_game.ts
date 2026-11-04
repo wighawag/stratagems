@@ -74,8 +74,10 @@ export default deployScript(
 			'Game',
 			{
 				account: deployer,
-				artifact: (name, params) =>
-					deployViaRouter<Abi_IGame>(name, params, routes),
+				// The options are passed on: they carry `deterministic` to the
+				// router and its routes.
+				artifact: (name, params, options) =>
+					deployViaRouter<Abi_IGame>(name, params, routes, options),
 				args: [config],
 			},
 			{
@@ -84,6 +86,10 @@ export default deployScript(
 				// client needs. `linkedData` is the deployment record's, not the
 				// contract's, so it may say more than the constructor took.
 				linkedData: {...config, ...clientGas},
+				// The proxy, the router and every route. Deterministic
+				// (CREATE2), like every contract here: see "Deterministic
+				// deployments" in README.md.
+				deterministic: true,
 			},
 		);
 	},

@@ -160,6 +160,18 @@ export const config = {
 	// web/src/lib/core/connection/credits.ts falls back to native currency
 	// unless it knows what an action actually costs.
 	chains: {
+		// A LAN box (github:wighawag/ethereum-lan-node): its dev chain, which no
+		// public chain list knows. nix/lan.nix deploys for it at build time, as
+		// the `lan` environment (contracts/scripts/deploy-lan-build.ts).
+		19216801: {
+			info: {
+				id: 19216801,
+				name: 'LAN',
+				nativeCurrency: {name: 'Ether', symbol: 'ETH', decimals: 18},
+				rpcUrls: {default: {http: ['http://ethereum.local:8545']}},
+				testnet: true,
+			},
+		},
 		31337: {
 			properties: {
 				// The worst gas price this chain is expected to charge, in wei.
