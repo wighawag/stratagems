@@ -200,3 +200,9 @@ web/test/lib/context/fatal.test.ts
 #     step 9 (the twgl renderer behind the template's render seam).
 web/test/identity-boundary.test.ts
 web/test/render-host-boundary.test.ts
+
+# THE STEM NODE'S README, replaced by this repo's description of the node it
+# actually stands on: `README.fuzd-pixi-indexer.md` (e5869d46, 2026-10-31), which
+# is `with/fuzd-pixi` plus `with/indexer`. Recorded 2026-11-04, when the
+# omissions check first saw it in a cascade from `with/fuzd-pixi`.
+README.fuzd-pixi.md
