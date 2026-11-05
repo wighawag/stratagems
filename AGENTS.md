@@ -38,6 +38,11 @@ for tests: `pnpm test`
 
 - The two boundary tests and this section are INHERITED from `template-svelte`, the root of this template tree, where they are also enforced. A change to either that is meaningful for a sibling belongs there rather than here, or every sibling silently misses it.
 
+## Contracts
+
+- **Deploy every contract with `deterministic: true`, and give every other transaction of a deploy script a `guard`** (`execute(..., {guard: {kind: 'call', functionName, args, equals}})`). The LAN package (`nix build .#lan`, see "On a LAN box, with no internet" in README.md) replays the deploy on a box's chain: it needs addresses that depend only on the init code, and a guard to know whether a setup call already happened. `contracts/test/js/DeterministicDeploys.test.ts` fails otherwise. Under CREATE2 a constructor's `msg.sender` is the factory, so never use it as the deployer.
+- **`nix/lan.nix` and `nix/lan-deploy.sh` are generic**: a game's specifics go in `nix/game.nix`. Build with `nix build git+file://$PWD#lan` (git add new files first), never a `path:` flake reference.
+
 ## The words
 
 **`CONTEXT.md` at the root is the glossary, and it is opinionated on purpose.**

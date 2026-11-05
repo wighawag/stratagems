@@ -4,11 +4,17 @@ export default deployScript(
 	async ({deploy, namedAccounts}) => {
 		const {deployer} = namedAccounts;
 
-		await deploy('GameToken', {
-			account: deployer,
-			artifact: artifacts.GameToken,
-			args: [],
-		});
+		// Deterministic (CREATE2), like every contract here: see "Deterministic
+		// deployments" in README.md.
+		await deploy(
+			'GameToken',
+			{
+				account: deployer,
+				artifact: artifacts.GameToken,
+				args: [],
+			},
+			{deterministic: true},
+		);
 	},
 	{tags: ['GameToken', 'GameToken_deploy']},
 );

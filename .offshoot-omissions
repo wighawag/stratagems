@@ -139,3 +139,11 @@ web/test/routes/demo
 # inherited and kept because pending OPERATIONS are the app's, not the demo's).
 web/test/lib/onchain/state.test.ts
 web/test/lib/view/pending-operations.test.ts
+
+# The faucet suite (an empty burner acquiring its stake): all ten accounts the
+# burner can sign with are claimed by this branch's suites (fuzd's take 7 and
+# 8), and test/e2e-account-claims.test.ts allows one suite per account. The
+# path it covers is main's acquisition rail, which this branch does not change
+# (fuzd changes who sends the reveal), and it runs on main and with/pixi-js.
+# `scripts/rehearse-lan.sh` therefore needs this branch's suites named.
+web/e2e/tests/faucet.e2e.ts
