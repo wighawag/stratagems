@@ -28,6 +28,8 @@ overrides:
   phin@<3.7.1: '>=3.7.1'
   cookie@<0.7.0: ^0.7.0
 
+packageExtensionsChecksum: sha256-METwWSfF+ne83WaIkdtegSPX5rx1LZX0+QjXVptQiKI=
+
 importers:
 
   .:
@@ -12203,6 +12205,7 @@ snapshots:
     dependencies:
       '@babel/traverse': 7.25.9
       '@noble/curves': 1.9.7
+      '@noble/hashes': 1.8.0
       buffer: 6.0.3
     transitivePeerDependencies:
       - supports-color
