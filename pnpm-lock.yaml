@@ -7,6 +7,8 @@ settings:
 overrides:
   cookie@<0.7.0: ^0.7.0
 
+packageExtensionsChecksum: sha256-METwWSfF+ne83WaIkdtegSPX5rx1LZX0+QjXVptQiKI=
+
 importers:
 
   .:
@@ -152,7 +154,7 @@ importers:
     devDependencies:
       fuzd:
         specifier: ^0.12.0
-        version: 0.12.0(@libsql/core@0.18.0)(hono@4.13.3)(lightningcss@1.33.0)(typescript@6.0.3)
+        version: 0.12.0(@libsql/core@0.18.0)(hono@4.13.3)(typescript@6.0.3)
 
   web:
     devDependencies:
@@ -4314,13 +4316,13 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@fuzd/server@0.12.1(lightningcss@1.33.0)(typescript@6.0.3)':
+  '@fuzd/server@0.12.1(typescript@6.0.3)':
     dependencies:
       '@fuzd/chain-protocol': 0.11.1(@types/node@26.2.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@4.4.3)
       '@fuzd/common': 0.11.1
       '@fuzd/executor': 0.11.1(@types/node@26.2.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@4.4.3)
       '@fuzd/scheduler': 0.11.1(@types/node@26.2.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@4.4.3)
-      '@fuzd/tlock-decrypter': 0.11.1(lightningcss@1.33.0)(typescript@6.0.3)(zod@4.4.3)
+      '@fuzd/tlock-decrypter': 0.11.1(typescript@6.0.3)(zod@4.4.3)
       '@hono/swagger-ui': 0.5.3(hono@4.13.3)
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
@@ -4365,7 +4367,7 @@ snapshots:
       - zod-openapi
       - zod-to-json-schema
 
-  '@fuzd/tlock-decrypter@0.11.1(lightningcss@1.33.0)(typescript@6.0.3)(zod@4.4.3)':
+  '@fuzd/tlock-decrypter@0.11.1(typescript@6.0.3)(zod@4.4.3)':
     dependencies:
       '@fuzd/common': 0.11.1
       '@fuzd/scheduler': 0.11.1(@types/node@26.2.0)(lightningcss@1.33.0)(typescript@6.0.3)(zod@4.4.3)
@@ -5845,6 +5847,7 @@ snapshots:
     dependencies:
       '@babel/traverse': 7.29.12
       '@noble/curves': 1.9.7
+      '@noble/hashes': 1.8.0
       buffer: 6.0.3
     transitivePeerDependencies:
       - supports-color
@@ -6096,9 +6099,9 @@ snapshots:
 
   function-bind@1.1.2: {}
 
-  fuzd@0.12.0(@libsql/core@0.18.0)(hono@4.13.3)(lightningcss@1.33.0)(typescript@6.0.3):
+  fuzd@0.12.0(@libsql/core@0.18.0)(hono@4.13.3)(typescript@6.0.3):
     dependencies:
-      '@fuzd/server': 0.12.1(lightningcss@1.33.0)(typescript@6.0.3)
+      '@fuzd/server': 0.12.1(typescript@6.0.3)
       '@hono/node-server': 1.19.17(hono@4.13.3)
       '@libsql/client': 0.18.0
       commander: 12.1.0

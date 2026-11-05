@@ -19,3 +19,17 @@ overrides:
   # template do not inherit the vulnerable resolution. Range key rather than a
   # bare name, so it disarms itself once SvelteKit moves past 0.6.x: delete it then.
   'cookie@<0.7.0': '^0.7.0'
+
+packageExtensions:
+  # drand-client@1.2.5 (fuzd > tlock-js > drand-client) imports
+  # @noble/hashes/sha256 without declaring @noble/hashes, so it resolves
+  # whichever version pnpm hoists into node_modules/.pnpm/node_modules. Here
+  # that is 1.x and it works by luck: as soon as anything in a workspace built
+  # on this branch needs @noble/hashes 2.x (which has no ./sha256 export), 2.x
+  # can be the hoisted one and fuzd crashes at startup with
+  # ERR_PACKAGE_PATH_NOT_EXPORTED. It did, on with/fuzd-pixi-indexer, where
+  # micro-eth-signer brings in 2.2.0. Declaring the dependency pins it to 1.x
+  # whatever else gets hoisted. Delete once drand-client declares it itself.
+  'drand-client@1':
+    dependencies:
+      '@noble/hashes': '^1.4.0'
