@@ -16,7 +16,7 @@
   # built the template, a descendant's stale hash quietly gets the TEMPLATE's
   # packages. Two lockfiles can also name the same packages, and so share a
   # hash.
-  pnpmDepsHash = "sha256-YwsVCMJ+xQKTifULnNJSXqq6RLmCut4Qy1UUAH70Hac=";
+  pnpmDepsHash = "sha256-ZlvP+9DYHADDCKSDX24LQ4ozThlzwv9vd3u5TgUvgg8=";
 
   # Optional, shown with their defaults:
   #
