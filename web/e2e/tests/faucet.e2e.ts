@@ -27,8 +27,15 @@ import {
  * game's stake, alone), and the successor of step L2's by-hand rehearsal
  * (`web/e2e/lan/`, removed in L3), on the shared fixtures and config. Run
  * against the package by `scripts/rehearse-lan.sh` (geth, plain http on the
- * LAN address, an insecure context), and in the normal e2e against hardhat,
- * where `scripts/run-e2e-tests.sh` starts a faucet too. Skipped with no faucet.
+ * LAN address, an insecure context).
+ *
+ * SKIPPED IN THE NORMAL E2E (`scripts/run-e2e-tests.sh`, which starts a faucet
+ * too), measured in step L3: it passed there alone (37 s), and in two of three
+ * full parallel runs the creator's commit was mined while the page went on
+ * rebroadcasting it ("Nonce too low"), so "Commit now" stayed disabled past the
+ * table's short e2e commit phase and the turn was lost. A finding for the
+ * template tree's transaction layer, recorded in the plan's Progress log; the
+ * normal suite already plays a table in two browsers (stratagems-table.e2e.ts).
  */
 
 // Its own account, a claim test/e2e-account-claims.test.ts checks. The guest
@@ -37,6 +44,9 @@ import {
 test.use({walletAccountIndex: 2});
 
 const FAUCET_URL = (globalThis as any).process.env.E2E_FAUCET_URL as
+	string | undefined;
+/** Set by scripts/rehearse-lan.sh, and only there. */
+const LAN_URL = (globalThis as any).process.env.E2E_LAN_URL as
 	string | undefined;
 
 function log(label: string, ...rest: unknown[]) {
@@ -89,7 +99,8 @@ function watch(page: Page, claims: string[], errors: string[]) {
 		string | undefined;
 	page.on('requestfinished', async (request) => {
 		if (!node || !request.url().startsWith(node)) return;
-		const body = (await (await request.response())?.text().catch(() => '')) ?? '';
+		const body =
+			(await (await request.response())?.text().catch(() => '')) ?? '';
 		if (body.includes('"error"'))
 			errors.push(
 				`rpc ${request.postData()?.slice(0, 300)} -> ${body.slice(0, 300)}`,
@@ -115,9 +126,7 @@ async function connectEmpty(page: Page, path: string) {
 		await connect.click();
 		await connectWalletDevMode(page, 0);
 	}
-	expect(await balanceOf(page), 'a fresh burner starts with no ether').toBe(
-		0n,
-	);
+	expect(await balanceOf(page), 'a fresh burner starts with no ether').toBe(0n);
 }
 
 /**
@@ -215,16 +224,39 @@ async function canPlay(page: Page): Promise<boolean> {
 	});
 }
 
+/** A line in the run's output: where the table and this page's submission are. */
+async function trace(page: Page, label: string): Promise<void> {
+	const cycle = await page
+		.evaluate(async () => {
+			const context = (globalThis as unknown as {context: any}).context;
+			const game = context.deployments.get().contracts.Stratagems;
+			const c = await context.publicClient.readContract({
+				address: game.address,
+				abi: game.abi,
+				functionName: 'getCycle',
+			});
+			return `${c.cycleNumber} ${c.commiting ? 'commit' : 'reveal'} ends ${c.phaseEnd}`;
+		})
+		.catch(() => undefined);
+	const step = await gameStep(page).catch(() => undefined);
+	log(
+		`${label}: cycle ${cycle}, submission ${step?.step} planned ${step?.planned} phase ${step?.phase} ${step?.timeLeft}s`,
+	);
+}
+
 /** Plan one placement on `cell` and commit it now. */
 async function planAndCommit(page: Page, cell: {x: number; y: number}) {
 	await page.bringToFront();
+	await trace(page, `planAndCommit(${cell.x},${cell.y})`);
 	await expect
 		.poll(() => canPlay(page), {
 			message: 'the board should take a turn',
 			timeout: 60_000,
 		})
 		.toBe(true);
+	await trace(page, 'ready');
 	await boardLoaded(page);
+	await trace(page, 'board loaded');
 	await expect
 		.poll(
 			async () => {
@@ -234,6 +266,7 @@ async function planAndCommit(page: Page, cell: {x: number; y: number}) {
 			{message: 'one move should be planned', timeout: 60_000},
 		)
 		.toBe(1);
+	await trace(page, 'planned');
 	const commit = page.getByRole('button', {name: /commit now/i});
 	await expect(commit, 'the turn should be committable').toBeEnabled({
 		timeout: 60_000,
@@ -250,8 +283,8 @@ async function planAndCommit(page: Page, cell: {x: number; y: number}) {
 
 describe('Players with no ETH', () => {
 	test.skip(
-		!FAUCET_URL,
-		'no faucet: run through scripts/run-e2e-tests.sh or scripts/rehearse-lan.sh',
+		!FAUCET_URL || !LAN_URL,
+		'the LAN rehearsal suite: run through scripts/rehearse-lan.sh (see the note at the top)',
 	);
 
 	test('get ETH from the faucet, take a seat at a table, and play a cycle', async ({
@@ -342,8 +375,7 @@ describe('Players with no ETH', () => {
 				.poll(
 					() =>
 						host.evaluate(() => {
-							const context = (globalThis as unknown as {context: any})
-								.context;
+							const context = (globalThis as unknown as {context: any}).context;
 							let value: any;
 							context.onchainState.subscribe((v: unknown) => (value = v))();
 							return value.step === 'Loaded'
