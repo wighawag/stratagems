@@ -336,11 +336,20 @@ export function tableOf(
  * array, malformed JSON, an entry that is not a level the game `offers`, and a
  * missing entry are each read as `random`; the list is cut or padded to
  * `worldSeats`. A game that offers no levels gets `random` everywhere.
+ *
+ * `padding` is what a MISSING entry becomes, and only a missing one: a seat
+ * the list does not reach yet (a fresh choice, or a count that just grew),
+ * which a game may start at its own default level. Never what a stored record
+ * is read with: a record is how a world WAS BUILT, and an absent or unreadable
+ * entry there was `random` (every world before levels played it), so a
+ * restore passes nothing and gets `random`. A padding the game does not offer
+ * is `random` too.
  */
 export function clampLevels(
 	levels: unknown,
 	worldSeats: number,
 	offers: readonly AiLevel[],
+	padding: string = RANDOM_LEVEL,
 ): string[] {
 	let parsed: unknown = levels;
 	if (typeof levels === 'string') {
@@ -352,7 +361,9 @@ export function clampLevels(
 	}
 	const list = Array.isArray(parsed) ? parsed : [];
 	const known = new Set(offers.map((level) => level.id));
+	const pad = known.has(padding) ? padding : RANDOM_LEVEL;
 	return Array.from({length: Math.max(0, Math.floor(worldSeats))}, (_, i) => {
+		if (i >= list.length) return pad;
 		const level = list[i];
 		return typeof level === 'string' && known.has(level) ? level : RANDOM_LEVEL;
 	});

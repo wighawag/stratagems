@@ -160,6 +160,32 @@ export const config = {
 	// web/src/lib/core/connection/credits.ts falls back to native currency
 	// unless it knows what an action actually costs.
 	chains: {
+		// A LAN box (github:wighawag/ethereum-lan-node): its dev chain, which no
+		// public chain list knows. nix/lan.nix deploys for it at build time, as
+		// the `lan` environment (contracts/scripts/deploy-lan-build.ts).
+		19216801: {
+			info: {
+				id: 19216801,
+				name: 'LAN',
+				nativeCurrency: {name: 'Ether', symbol: 'ETH', decimals: 18},
+				rpcUrls: {default: {http: ['http://ethereum.local:8545']}},
+				testnet: true,
+			},
+			properties: {
+				// The box's genesis starts the base fee at 1 gwei
+				// (`baseFeePerGas` 0x3b9aca00 in ethereum-lan-node's
+				// nix/genesis.json), and on a quiet dev chain it only falls from
+				// there, so 1 gwei is the worst it charges. WITHOUT IT the chain
+				// falls back on `defaultChainProperties`, a thousandth of a gwei:
+				// credits were priced a million times too cheap and a purchase's
+				// stipend for the playing key came to almost nothing, so the key
+				// could not even authorise itself (measured in reveal-or-die's
+				// LAN rehearsal, 2026-11-04).
+				expectedWorstGasPrice: parseEther('1', 'gwei'),
+				creditsGasMultiplier: COMMIT_GAS + REVEAL_GAS,
+				supportsSendRawTransactionSync: false,
+			},
+		},
 		31337: {
 			properties: {
 				// The worst gas price this chain is expected to charge, in wei.
