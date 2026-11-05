@@ -9,6 +9,8 @@ node_modules
 # rocketh
 generated
 deployments/localhost
+deployments/lan
+deployments/lan.transactions.json
 
 # hardhat
 /coverage

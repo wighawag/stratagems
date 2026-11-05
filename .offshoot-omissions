@@ -199,3 +199,9 @@ web/static/icon.svg
 # render-host-boundary was here until step 9 (2026-10-31): it read the selector
 # by a hard-coded path, which the template now finds through the play page's
 # import, so it runs here unedited against lib/stratagems/render.
+
+# THE STEM NODE'S README, replaced by this repo's description of the node it
+# actually stands on: `README.fuzd-pixi-indexer.md` (e5869d46, 2026-10-31), which
+# is `with/fuzd-pixi` plus `with/indexer`. Recorded 2026-11-04, when the
+# omissions check first saw it in a cascade from `with/fuzd-pixi`.
+README.fuzd-pixi.md

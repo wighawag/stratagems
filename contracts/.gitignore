@@ -8,6 +8,7 @@
 generated
 deployments/localhost
 deployments/lan
+deployments/lan.transactions.json
 _metadata
 
 # hardhat

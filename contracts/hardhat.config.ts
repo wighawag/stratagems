@@ -36,10 +36,15 @@ const config: HardhatUserConfig = {
 		profiles: {
 			default: {
 				version: '0.8.24',
+				// A solc to use instead of downloading one, for a build with no
+				// network (the Nix package for a LAN box, nix/lan.nix, gives it the
+				// official WASM build). Keep it in step with `version`.
+				path: process.env.SOLC_PATH || undefined,
 				settings: compilerSettings,
 			},
 			production: {
 				version: '0.8.24',
+				path: process.env.SOLC_PATH || undefined,
 				settings: compilerSettings,
 			},
 		},
