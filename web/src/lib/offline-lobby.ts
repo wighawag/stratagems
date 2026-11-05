@@ -76,6 +76,16 @@ const AI_LEVELS: readonly AiLevel[] =
 		: [];
 
 /**
+ * THE LEVEL A WORLD SEAT STARTS AT in a fresh choice, which its `$lib/offline`
+ * says by exporting `AI_DEFAULT_LEVEL`; read off the module like `AI_LEVELS`,
+ * and `random` when it declares none.
+ */
+const AI_DEFAULT_LEVEL: string | undefined =
+	'AI_DEFAULT_LEVEL' in offline
+		? (offline as unknown as {AI_DEFAULT_LEVEL?: string}).AI_DEFAULT_LEVEL
+		: undefined;
+
+/**
  * The boot this tab started, if any: what letting the world go waits for.
  *
  * Kept HERE rather than read off the world's status store, because the lobby is
@@ -132,6 +142,7 @@ const lobby: LobbyStore = createLobby({
 	humansAtMost: LOCAL_HUMANS_AT_MOST,
 	levelsStorageKey: LEVELS_STORAGE_KEY,
 	levels: AI_LEVELS,
+	defaultLevel: AI_DEFAULT_LEVEL,
 });
 
 /**
