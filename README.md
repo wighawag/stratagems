@@ -185,7 +185,42 @@ pnpm contracts:verify <network> etherscan --endpoint <api endpoint url>
 
 ## On an ethereum-lan-node box
 
-stratagems' tables (games for a fixed set of players, created from `/lobby/` and joined by link) can be played on a LAN with no internet, on a box running [ethereum-lan-node](https://github.com/wighawag/ethereum-lan-node): geth in dev mode (chain 19216801, a block every 2 s), a faucet on port 34010, everything over plain `http://`. The persistent world is deployed there too, with its day-long cycles. Packaging stratagems as one of the box's games is a separate step; this is how to deploy to a box and build for it by hand.
+stratagems' tables (games for a fixed set of players, created from `/lobby/` and joined by link) and its offline world (hotseat and AI seats, a chain inside the tab) can be played on a LAN with no internet, on a box running [ethereum-lan-node](https://github.com/wighawag/ethereum-lan-node): geth in dev mode (chain 19216801, a block every 2 s), a faucet on port 34010, everything over plain `http://`. The persistent world is deployed there too, with its day-long cycles.
+
+### The package
+
+```bash
+nix build git+file://$PWD#lan
+```
+
+builds the game as one of the box's games, with no network (`nix/lan.nix`, the template's; what is stratagems' own is in `nix/game.nix`): the contracts compiled with the official solc 0.8.24 WASM build, deployed into a throwaway chain with the box's chain id to learn their addresses, the web app built against them (`web/.env.lan`), and the indexer's processor bundle beside it. The result holds:
+
+- `web/`, the static site, served by the box with `/404.html` as its fallback;
+- `bin/stratagems-deploy`, which replays the recorded deploy on the box's chain (24 contracts and 4 setup calls, every one CREATE2 or guarded): it refuses another chain id or another block 0, sends nothing on a second run, and so runs on every boot and after a reset;
+- `passthru.lan`, the title and description the box's page shows.
+
+After any change to `pnpm-lock.yaml`, recompute `pnpmDepsHash` in `nix/game.nix` as its comment says. The deploys are deterministic only on `lan` (the `deterministic` tag in `contracts/rocketh/config.ts`): every other environment keeps the addresses it has, and `contracts/test/js/DeterministicDeploys.test.ts` fails if a deploy script stops being replayable there.
+
+To rehearse it on this machine, without the box: `bash scripts/rehearse-lan.sh e2e/tests/faucet.e2e.ts e2e/tests/stratagems-hotseat.e2e.ts e2e/tests/stratagems-offline-ai.e2e.ts`. It starts geth from the box's genesis, the package's deploy (twice), the box's faucet and caddy on this machine's LAN address (ports 8545, 34010 and 28600 there, which must be free), and runs those suites in a browser that can reach nothing else: two empty burners funded by the faucet at a table, a cycle played, and the offline world in the same insecure context.
+
+### On the box (my-boxes)
+
+The box's configuration takes the package as a flake input and names it as a game, after `conquest`:
+
+```nix
+# inputs (not following the fleet's nixpkgs)
+stratagems.url = "github:wighawag/stratagems?ref=join-template-commit-reveal&rev=<the landed revision>";
+
+# the box
+services.ethereumLanNode.games.stratagems = {
+  package = inputs.stratagems.packages.x86_64-linux.lan;
+  webPort = 8002;
+};
+```
+
+with port 8002 opened by its surface check, and ethereum-lan-node at 538bd15 or later (the faucet's `corsOrigins`, below). The input moves to `main` once the join is merged.
+
+### By hand, from a laptop
 
 1. Point the `lan` environment at the box, in `contracts/.env.local` (the defaults in `contracts/.env` are `http://ethereum.local:8545` and the box's public `test ... junk` mnemonic, which its genesis funds):
 
@@ -200,17 +235,21 @@ stratagems' tables (games for a fixed set of players, created from `/lobby/` and
    pnpm --filter ./web build lan
    ```
 
-   The deploys are DETERMINISTIC (CREATE2 through the proxy the box predeploys), so the addresses the build embeds are the same on every box and after every reset of its chain. `pnpm build lan` would also try to pre-index the chain into the build; a box's chain starts empty, so building the web app alone is enough and the indexer folds the chain in the browser.
+   The addresses the build embeds are the same on every box and after every reset of its chain. `pnpm build lan` would also try to pre-index the chain into the build; a box's chain starts empty, so building the web app alone is enough and the indexer folds the chain in the browser.
 
 3. Serve `web/build` from the box on a port of its own. Every URL in the `lan` build is same-host (`web/.env.lan`: the node at `//:8545`, the faucet at `//:34010`), so one build works on the hotspot address, on a venue's network and by name.
 
-**After a reset of the box's chain, delete `contracts/deployments/lan` before deploying again.** The genesis is the same, so rocketh cannot tell the chain was reset and reuses records whose contracts no longer exist. The deterministic deploy then puts every contract back at the same address.
+**After a reset of the box's chain, delete `contracts/deployments/lan` before deploying again.** The genesis is the same, so rocketh cannot tell the chain was reset and reuses records whose contracts no longer exist. The package's deploy keeps its records in the box's state directory, which a reset wipes, so this is only for a deploy from a laptop.
 
-What a box needs, found by the rehearsal of step L2 (a geth dev chain from the box's genesis, its faucet package, the `lan` build served over plain http on a LAN address, two browsers):
+### What a box needs
+
+Found by the rehearsals of steps L2 and L3:
 
 - **The faucet must allow other origins** (`CORS_ORIGINS`): a game is served on another port than the faucet, so it is another origin, and without it the app's "Get ETH" fails with "Failed to fetch". ethereum-lan-node sets it from its `faucet.corsOrigins` option, `*` by default.
 - **geth mines no transaction whose tip is below 1,000,000 wei**, and will not be configured lower. On an idle chain every fee-history reward is zero, so the app takes the node's own `eth_maxPriorityFeePerGas` as the least tip it sends.
-- **It is not a secure context**: no `crypto.subtle`, no `crypto.randomUUID`, no service worker, no `navigator.locks`. The app works without them; the offline world (which a table does not use) is the one part that wants `navigator.locks`.
+- **The records must name the box's genesis**: an indexer refuses a node whose block 0 is not the one its records name, so the package's build gives them the box's genesis hash, and its deploy checks the box's block 0 against it.
+- **It is not a secure context**: no `crypto.subtle`, no `crypto.randomUUID`, no service worker, no `navigator.locks`. The app works without them, the offline world included: without `navigator.locks` its one-tab claim is not guarded, rather than refused.
+- **One faucet claim is one stake**: the chain is priced at 1 gwei (the box's genesis base fee), so a stake forwards about 0.717 ETH to the browser's key (step L2's measure at that price), of the claim's 1 ETH.
 
 ## 🙌🎉 How You Can Contribute
 
