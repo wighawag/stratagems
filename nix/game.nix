@@ -7,7 +7,7 @@
 {
   # fetchPnpmDeps' hash of the packages pnpm-lock.yaml names. After any
   # lockfile change, including one merged from the template, set it to
-  # sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= and run
+  # sha256-O3NGJaU/T7kxb9T4ScjgeCThHILdq+7rI4B4Quesdwo= and run
   #
   #   nix build git+file://$PWD#lan.pnpmDeps
   #
@@ -16,7 +16,7 @@
   # built the template, a descendant's stale hash quietly gets the TEMPLATE's
   # packages. Two lockfiles can also name the same packages, and so share a
   # hash.
-  pnpmDepsHash = "sha256-TgUKDpXQGm3qAxmaaQeaUl9KoUkoB99R10X0Lk8Ha14=";
+  pnpmDepsHash = "sha256-O3NGJaU/T7kxb9T4ScjgeCThHILdq+7rI4B4Quesdwo=";
 
   # Optional, shown with their defaults:
   #
