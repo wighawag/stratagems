@@ -18,6 +18,17 @@ export default deployScript(
 			await execute(GemsGenerator, {
 				functionName: 'update',
 				account: deployer,
+				// A GAS LIMIT OF ITS OWN, not the node's estimate: what `update` costs
+				// depends on the time since the last update, and the offline world's
+				// in-tab node estimates at the LAST MINED block's timestamp
+				// (web/src/lib/embedded/node.ts), which is the last update's when that
+				// block touched the generator, so the estimate takes the cheap path and
+				// the transaction, mined later, runs out of gas ("The offline world did
+				// not start" after a reload, found in step L3 of
+				// work/plans/join-template-commit-reveal.md once a guarded setup call no
+				// longer mined a block before it). Measured 50,415 gas at most (the first
+				// update after the deploy), 33,315 after.
+				gas: 100_000n,
 			});
 		}
 
