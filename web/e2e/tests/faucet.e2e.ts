@@ -24,8 +24,8 @@ import {
  * seat by staking, and one cycle is played.
  *
  * This repo's version of the template's suite (which acquires the reference
- * game's stake, alone), and the successor of step L2's by-hand
- * `web/e2e/lan/lan-rehearsal.ts`, on the shared fixtures and config. Run
+ * game's stake, alone), and the successor of step L2's by-hand rehearsal
+ * (`web/e2e/lan/`, removed in L3), on the shared fixtures and config. Run
  * against the package by `scripts/rehearse-lan.sh` (geth, plain http on the
  * LAN address, an insecure context), and in the normal e2e against hardhat,
  * where `scripts/run-e2e-tests.sh` starts a faucet too. Skipped with no faucet.
