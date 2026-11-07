@@ -28,6 +28,8 @@ overrides:
   phin@<3.7.1: '>=3.7.1'
   cookie@<0.7.0: ^0.7.0
 
+packageExtensionsChecksum: sha256-METwWSfF+ne83WaIkdtegSPX5rx1LZX0+QjXVptQiKI=
+
 importers:
 
   .:
@@ -35,6 +37,9 @@ importers:
       ask-env:
         specifier: ^0.0.1
         version: 0.0.1
+      expand-vars:
+        specifier: ^0.1.0
+        version: 0.1.0
       ldenv:
         specifier: ^0.3.10
         version: 0.3.10
@@ -4318,6 +4323,11 @@ packages:
 
   exif-parser@0.1.12:
     resolution: {integrity: sha512-c2bQfLNbMzLPmzQuOr8fy0csy84WmwnER81W88DzTp9CYNPJ6yzOj2EZAh9pywYpqHnshVLHQJ8WzldAyfY+Iw==}
+
+  expand-vars@0.1.0:
+    resolution: {integrity: sha512-bAtah13rDo+QT79NMuWzKveZxxoUBXhupK5pIQIq5MMm86Ea/rXWVAwD2sCCpox7Xj5LxnF+NXBI9c5jf7WTTw==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   expect-type@1.4.0:
     resolution: {integrity: sha512-KfYbmpRm0VbLjEvVa9yGwCi9GI34xvi7A/HXYWQO65CSD2u3MczUJSuwXKFIxlGsgBQizV9q5J9NHj4VG0n+pA==}
@@ -11448,6 +11458,7 @@ snapshots:
     dependencies:
       '@babel/traverse': 7.25.9
       '@noble/curves': 1.9.7
+      '@noble/hashes': 1.8.0
       buffer: 6.0.3
     transitivePeerDependencies:
       - supports-color
@@ -11756,6 +11767,10 @@ snapshots:
 
   exif-parser@0.1.12: {}
 
+  expand-vars@0.1.0:
+    dependencies:
+      cross-spawn: 7.0.6
+
   expect-type@1.4.0: {}
 
   extend@3.0.2: {}
@@ -11883,7 +11898,7 @@ snapshots:
 
   foreground-child@3.1.1:
     dependencies:
-      cross-spawn: 7.0.3
+      cross-spawn: 7.0.6
       signal-exit: 4.1.0
 
   foreground-child@3.3.1:
