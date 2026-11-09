@@ -38,7 +38,6 @@
 	import DefaultHead from '../../lib/metadata/DefaultHead.svelte';
 	import Context from '$lib/context/Context.svelte';
 	import {Spinner} from '$lib/shadcn/ui/spinner';
-	import AlertCircleIcon from '@lucide/svelte/icons/alert-circle';
 	import {offlineWorld} from '$lib/offline';
 	import {SEAT_CHOICES} from '$lib/game/lobby/seats';
 	import {
@@ -54,6 +53,8 @@
 	import Play from '../play/+page.svelte';
 	import {hotseat} from '$lib/game/lobby/hotseat';
 	import Handover from '$lib/game/lobby/ui/Handover.svelte';
+	import OfflineWorldFailed from '$lib/ui/offline-world/OfflineWorldFailed.svelte';
+	import {offlineWorldExits, tryTheWorldAgain} from '$lib/offline-exits';
 
 	onMount(() => {
 		void offlineLobby.enter();
@@ -213,19 +214,15 @@
 		</p>
 	</div>
 {:else if $offlineWorld.step === 'Failed'}
-	<div class="container mx-auto max-w-2xl px-4 py-16">
-		<div
-			class="flex items-start gap-3 rounded-lg border border-destructive/50 p-4"
-		>
-			<AlertCircleIcon class="mt-0.5 size-5 shrink-0 text-destructive" />
-			<div>
-				<p class="font-semibold">The offline world did not start.</p>
-				<p class="mt-1 text-sm text-muted-foreground">
-					{$offlineWorld.error}
-				</p>
-			</div>
-		</div>
-	</div>
+	<!-- A FAILED BOOT OFFERS THE WAYS OUT: trying the same world again, and
+	     leaving the table for a new one. Which of them is `$lib/offline-exits`'s
+	     decision; Home alone would only boot the same failing world again. -->
+	<OfflineWorldFailed
+		error={$offlineWorld.error}
+		exits={offlineWorldExits($offlineWorld, $offlineLobby)}
+		onTryAgain={tryTheWorldAgain}
+		onLeave={() => offlineLobby.leaveTheTable()}
+	/>
 {:else}
 	<div
 		class="container mx-auto flex max-w-2xl flex-col items-center gap-3 px-4 py-24 text-center"
