@@ -16,9 +16,6 @@ importers:
       expand-vars:
         specifier: ^0.1.0
         version: 0.1.0
-      jolly-roger-contracts:
-        specifier: workspace:*
-        version: link:contracts
       ldenv:
         specifier: ^0.6.0
         version: 0.6.0
@@ -28,6 +25,9 @@ importers:
       syncpack:
         specifier: ^15.3.3
         version: 15.3.3
+      template-commit-reveal-contracts:
+        specifier: workspace:*
+        version: link:contracts
       zellij-launcher:
         specifier: ^0.0.1
         version: 0.0.1
