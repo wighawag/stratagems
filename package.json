@@ -4,6 +4,9 @@
 	"description": "Template to develop fully decentralised app and games",
 	"private": true,
 	"type": "module",
+	"lan": {
+		"pnpmDepsHash": "sha256-Ja+Hpr1ETprSV/dsMjDwWQ+9G4Tz7/LGE4IfcmA6olA="
+	},
 	"packageManager": "pnpm@10.28.1",
 	"devDependencies": {
 		"ask-env": "^0.0.1",
