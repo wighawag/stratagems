@@ -8,7 +8,7 @@
   },
   "packageManager": "pnpm@10.28.1",
   "devDependencies": {
-    "jolly-roger-contracts": "workspace:*",
+    "template-commit-reveal-contracts": "workspace:*",
     "expand-vars": "^0.1.0",
     "ldenv": "^0.6.0",
     "set-defaults": "^0.0.5",
