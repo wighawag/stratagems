@@ -17,7 +17,7 @@ import {
 	announceEmbeddedWallet,
 	type EmbeddedWallet,
 } from '$lib/embedded/wallet';
-import {createIndexedDBPersistence} from 'webevm';
+import {offlineWorldNode} from '$lib/offline-node';
 import {createIndexedDBDeploymentStore} from '@rocketh/web';
 import {isTableContract} from '$lib/stratagems/table';
 import {createContext} from '$lib/context/index';
@@ -513,17 +513,24 @@ async function openWorld(
 		db: `offline-world-deployments:${chainId}`,
 	});
 
+	// THE PROBE RUNS WHERE THE WORLD'S NODE WILL (a Worker, in a browser), so
+	// loading the dump does not stall the page either, and it is GONE before
+	// the real node opens the same database: disposed, every request it was
+	// sent settled, and its Worker terminated (`released`). It only reads, so
+	// nothing of it could be saved over the real node's chain anyway; waiting
+	// is what makes that a fact rather than an argument. See `$lib/offline-node`.
+	const db = `offline-world-chain:${chainId}`;
+	const probeNode = offlineWorldNode({db});
 	const probe = await startEmbeddedNode({
 		chainId,
-		persistence: createIndexedDBPersistence({
-			db: `offline-world-chain:${chainId}`,
-		}),
+		createNode: probeNode.createNode,
+		persistence: probeNode.persistence,
 	});
 	const coherent = await restoreIsCoherent({
 		provider: probe.provider,
 		vfs: deploymentStore.vfs,
-	});
-	await probe.dispose();
+	}).finally(() => probe.dispose());
+	await probeNode.released();
 	if (!coherent) {
 		status.set({step: 'Booting', what: 'starting a new world'});
 		const fresh = mintChainId();
@@ -531,6 +538,7 @@ async function openWorld(
 		return openWorld(fresh, table);
 	}
 
+	const worldNode = offlineWorldNode({db});
 	return createEmbeddedWorld({
 		chainId,
 		chain: {
@@ -557,9 +565,10 @@ async function openWorld(
 		accounts: {...OFFLINE_DEPLOYMENT.accounts},
 		initialBalances: {...OFFLINE_DEPLOYMENT.initialBalances},
 		expectedContracts: [...OFFLINE_DEPLOYMENT.expectedContracts],
-		persistence: createIndexedDBPersistence({
-			db: `offline-world-chain:${chainId}`,
-		}),
+		// IN A WORKER whenever there is one, with its IndexedDB persistence built
+		// inside it; on this thread otherwise. See `$lib/offline-node`.
+		createNode: worldNode.createNode,
+		persistence: worldNode.persistence,
 		deploymentStore,
 		provision: (params) => provisionOfflinePlayer({...params, chainId, table}),
 	});
