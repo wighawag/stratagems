@@ -249,12 +249,15 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      comlink:
+        specifier: ^4.4.2
+        version: 4.4.2
       eip-1193:
         specifier: ^0.7.4
         version: 0.7.4
       fake-indexeddb:
-        specifier: ^6.2.5
-        version: 6.2.7
+        specifier: ^6.2.8
+        version: 6.2.8
       faucet-client:
         specifier: ^0.1.0
         version: 0.1.0
@@ -350,7 +353,7 @@ importers:
         version: 3.0.0(svelte@5.56.9)(vitest@4.1.11)
       webevm:
         specifier: ^0.9.1
-        version: 0.9.1
+        version: 0.9.1(comlink@4.4.2)
 
 packages:
 
@@ -1770,6 +1773,9 @@ packages:
     resolution: {integrity: sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==}
     engines: {node: '>= 0.8'}
 
+  comlink@4.4.2:
+    resolution: {integrity: sha512-OxGdvBmJuNKSCMO4NTl1L47VRp6xn2wG4F/2hYzB6tiCb709otOxtEYCSvK80PtjODfXXZu8ds+Nw5kVCjqd2g==}
+
   commander@10.0.1:
     resolution: {integrity: sha512-y4Mg2tXshplEbSGzx7amzPwKKOCGuoSRP/CjEdwwk0FOGlUbq6lKuoyDZTNZkmxHdJtp54hdfY/JUrdL7Xfdug==}
     engines: {node: '>=14'}
@@ -1971,8 +1977,8 @@ packages:
     resolution: {integrity: sha512-KfYbmpRm0VbLjEvVa9yGwCi9GI34xvi7A/HXYWQO65CSD2u3MczUJSuwXKFIxlGsgBQizV9q5J9NHj4VG0n+pA==}
     engines: {node: '>=12.0.0'}
 
-  fake-indexeddb@6.2.7:
-    resolution: {integrity: sha512-g0ghQ+BmU3CSZaHup5FigEAAtCmtNyxkrmID7OAeK2qONHghw1aQ2l2T1RxmfhP1H1tEXVRWArUTGVCk5832ww==}
+  fake-indexeddb@6.2.8:
+    resolution: {integrity: sha512-mpVW/HLUqwKXJ6F/s0hMgdK1eQfM4ncTHDioNGHWL0WKV3VcZCoZq1NKgboBbAge07aRCO7L48yziKssL59XEQ==}
     engines: {node: '>=18'}
 
   fast-equals@5.4.1:
@@ -2066,8 +2072,8 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  graphql@16.14.2:
-    resolution: {integrity: sha512-Chq1s4CY7jmh8gO2qvLIJyfCDIN+EHLFW/9iShnp1z8FjBQMoodWP1kDC36VAMXXIvAjj4ARa7ntfAV2BrjsbA==}
+  graphql@16.15.0:
+    resolution: {integrity: sha512-32kz9FecohDiC/tgcViwnRXM7HFBVTPiW7pHO+DikKOI5KjhU/jNULOReXsrFqt2WAYbE9xFXsTffJw6iTO8qw==}
     engines: {node: ^12.22.0 || ^14.16.0 || ^16.0.0 || >=17.0.0}
 
   handlebars@4.7.10:
@@ -3488,8 +3494,8 @@ snapshots:
     dependencies:
       '@etherfold/accessor': 0.1.2(vitest@4.1.11)
       '@etherfold/state-store': 0.5.1
-      '@pothos/core': 4.16.0(graphql@16.14.2)
-      graphql: 16.14.2
+      '@pothos/core': 4.16.0(graphql@16.15.0)
+      graphql: 16.15.0
     optionalDependencies:
       '@etherfold/browser': 0.13.0(typescript@6.0.3)(vitest@4.1.11)(zod@3.25.76)
       vitest: 4.1.11(@types/node@26.2.0)(@vitest/browser-playwright@4.1.11)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12))
@@ -3498,8 +3504,8 @@ snapshots:
     dependencies:
       '@etherfold/accessor': 0.1.2(vitest@4.1.11)
       '@etherfold/state-store': 0.5.1
-      '@pothos/core': 4.16.0(graphql@16.14.2)
-      graphql: 16.14.2
+      '@pothos/core': 4.16.0(graphql@16.15.0)
+      graphql: 16.15.0
     optionalDependencies:
       '@etherfold/browser': 0.13.0(typescript@6.0.3)(vitest@4.1.11)(zod@4.4.3)
       vitest: 4.1.11(@types/node@26.2.0)(@vitest/browser-playwright@4.1.11)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12))
@@ -4100,9 +4106,9 @@ snapshots:
 
   '@polka/url@1.0.0-next.29': {}
 
-  '@pothos/core@4.16.0(graphql@16.14.2)':
+  '@pothos/core@4.16.0(graphql@16.15.0)':
     dependencies:
-      graphql: 16.14.2
+      graphql: 16.15.0
 
   '@rocketh/core@0.25.0(typescript@6.0.3)(zod@3.25.76)':
     dependencies:
@@ -4753,6 +4759,8 @@ snapshots:
     dependencies:
       delayed-stream: 1.0.0
 
+  comlink@4.4.2: {}
+
   commander@10.0.1: {}
 
   commander@12.1.0: {}
@@ -4965,7 +4973,7 @@ snapshots:
 
   expect-type@1.4.0: {}
 
-  fake-indexeddb@6.2.7: {}
+  fake-indexeddb@6.2.8: {}
 
   fast-equals@5.4.1: {}
 
@@ -5074,7 +5082,7 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  graphql@16.14.2: {}
+  graphql@16.15.0: {}
 
   handlebars@4.7.10:
     dependencies:
@@ -6124,7 +6132,7 @@ snapshots:
       - debug
       - supports-color
 
-  webevm@0.9.1:
+  webevm@0.9.1(comlink@4.4.2):
     dependencies:
       '@eip-1193/over-port': 0.2.0
       '@ethereumjs/block': 10.1.3
@@ -6138,6 +6146,8 @@ snapshots:
       '@ethereumjs/vm': 10.1.3
       '@noble/hashes': 2.2.0
       revm-wasm: 0.3.1
+    optionalDependencies:
+      comlink: 4.4.2
     transitivePeerDependencies:
       - supports-color
 
