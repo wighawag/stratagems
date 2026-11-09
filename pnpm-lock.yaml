@@ -52,6 +52,9 @@ importers:
       sharp:
         specifier: ^0.33.4
         version: 0.33.4
+      stratagems-contracts:
+        specifier: workspace:*
+        version: link:contracts
       syncpack:
         specifier: ^12.3.2
         version: 12.3.2(typescript@6.0.3)
