@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "lan": {
+    "pnpmDepsHash": "sha256-TgUKDpXQGm3qAxmaaQeaUl9KoUkoB99R10X0Lk8Ha14="
+  },
   "packageManager": "pnpm@10.28.1",
   "devDependencies": {
     "expand-vars": "^0.1.0",
