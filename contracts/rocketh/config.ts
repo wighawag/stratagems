@@ -81,11 +81,22 @@ export const config = {
 			},
 			deleteDeploymentsIfDifferentGenesisHash: true,
 			properties: {
-				// geth's dev chain: a base fee of a few wei and its miner's least tip,
-				// 1,000,000 wei (0.001 gwei), measured in step L2's rehearsal. Ten
-				// times that sizes the stake's stipend at about 0.007 ETH; at 1 gwei
-				// it was 0.717 ETH, most of the box faucet's 1 ETH claim.
-				expectedWorstGasPrice: parseEther('0.01', 'gwei'),
+				// The box's genesis starts the base fee at 1 gwei
+				// (`baseFeePerGas` 0x3b9aca00 in ethereum-lan-node's
+				// nix/genesis.json), and on a quiet dev chain it only falls from
+				// there, so 1 gwei is the worst it charges. WITHOUT IT the chain
+				// falls back on `defaultChainProperties`, a thousandth of a gwei:
+				// credits were priced a million times too cheap and a purchase's
+				// stipend for the playing key came to almost nothing, so the key
+				// could not even authorise itself (measured in reveal-or-die's
+				// LAN rehearsal, 2026-11-04).
+				//
+				// stratagems had 0.01 gwei here from step L2, where a geth dev chain
+				// that had run a while showed a base fee of a few wei; a fresh box
+				// starts at 1 gwei (step L3, L3-17 of
+				// work/plans/join-template-commit-reveal.md). At 1 gwei the stake's
+				// stipend is about 0.717 ETH, inside the box faucet's 1 ETH claim.
+				expectedWorstGasPrice: parseEther('1', 'gwei'),
 				creditsGasMultiplier: CLIENT_GAS.commitGas + CLIENT_GAS.revealGas,
 				supportsSendRawTransactionSync: false,
 			},

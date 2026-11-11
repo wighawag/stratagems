@@ -81,6 +81,7 @@
   },
   "scripts": {
     "prepare": "pwag static/icon.png src/web-config.json",
+    "generate-pwa-icons": "pwag static/icon.png src/web-config.json",
     "dev": "echo 'waiting for src/lib/deployments.ts and the processor bundle...'; wait-on src/lib/deployments.ts ../indexer/dist/processor.bundle.js && node scripts/processor-bundle.js && ldenv vite dev",
     "build": "pnpm run prepare && node scripts/processor-bundle.js && ldenv vite build @@",
     "preview": "ldenv vite preview",
