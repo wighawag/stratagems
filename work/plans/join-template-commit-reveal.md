@@ -124,7 +124,7 @@ Candidates already visible, each to be judged when its step comes (not decided h
 - [x] **Step X1** (mostly in the template tree): the indexer host: a node `with/indexer` hosting a game's etherfold processor in its three places, stratagems stemming from `with/fuzd-pixi-indexer`
 - [x] **Step L1** (in the template tree): games with a fixed set of players, created by anyone: a factory cloning a lobby implementation, a closed roster (seats taken by staking, started by the creator once two are seated), the timed cycle with early advance (`$lib/indexer`'s stamp taught it) and the creator's bounded forfeit, and an online lobby; the reference game its first user
 - [x] **Step L2**: stratagems' lobby games on L1, beside the persistent world (which stays the main mode), and a `lan` environment for a node of the user's own
-- [ ] **Step L3**: stratagems packaged as a game of the user's `ethereum-lan-node` box (a flake output with `passthru.lan`: its deterministic deploy and its static `lan` build), checked in a NixOS VM and rehearsed in two browsers, without the box (decided 2026-11-01, PL2-8d; specified and decided 2026-11-03, L3-1 to L3-12; specified again on the template's LAN package, which the merge of 2026-11-05 brought, and decided 2026-11-05, L3-13 to L3-23)
+- [ ] **Step L3**: stratagems packaged as a game of the user's `ethereum-lan-node` box (a flake output with `passthru.lan`: its deterministic deploy and its static `lan` build), checked in a NixOS VM and rehearsed in two browsers, without the box (decided 2026-11-01, PL2-8d; specified and decided 2026-11-03, L3-1 to L3-12; specified again on the template's LAN package, which the merge of 2026-11-05 brought, and decided 2026-11-05, L3-13 to L3-23; specified a third time on ethereum-lan-node's `lib.mkRockethGame`, where the package moved on 2026-11-07, and decided 2026-11-11, L3-24 to L3-31)
 - [ ] **Step L3-box** (needs the user, deferred like D-live; needs L3): the package installed on the user's box through my-boxes (L3-10), and a table played there from two phones
 - [x] **Step H1** (in the template tree): hotseat in the offline world: several humans at one device, one account each, a local revealer, a pass-the-device handover; the reference game its first user
 - [x] **Step H2**: stratagems' offline world on H1
@@ -1032,6 +1032,53 @@ ip route get 1.1.1.1 | head -1; ss -ltn | grep -E ":(8545|34010|28600) "   # the
 5. The README's "On an ethereum-lan-node box" says the package is built (`nix build .#lan`) and what my-boxes adds (L3-10); L3-box's section is written for the user.
 
 **Done when** (L3): `DeterministicDeploys.test.ts` passes in the contracts suite, and a deploy script made non-deterministic or unguarded fails it; `nix build git+file://$PWD#lan` succeeds from a clean checkout; under `rehearse-lan.sh` the package's deploy deploys everything and then sends 0, `faucet.e2e.ts` passes (a guest funded by the faucet takes a seat, a cycle is played), and the offline world plays a cycle with a hotseat human and an AI seat; contracts unchanged apart from the new test, check 0 errors and 0 warnings, unit unchanged; `check-dangling-imports` and `check-omissions` clean; nothing pushed but the integration branch and the template pushes the user approved.
+
+
+**L3 specified a third time 2026-11-11; Decided by the user the same day: L3-24 to L3-31 as proposed ("Go").** After the second specification was built (on `step-L3`, parked with the merge of 2026-11-05), jolly-roger moved the LAN package out of the template tree into ethereum-lan-node (758593a0 on 2026-11-07, 2d5a5272 on 2026-11-09, ethereum-lan-node 53b4aa2 and 9062861), and the cascade brought that to `main`: `nix/lan.nix`, `nix/lan-deploy.sh`, `nix/game.nix` and `contracts/scripts/lan/` are gone, `flake.nix` is one call to `lib.mkRockethGame`, a game's values are its root `package.json`'s `"lan"` field, and `DeterministicDeploys.test.ts` went with them (the check runs inside `nix build`). The three fixes the parked step had built in `nix/lan.nix` were in none of it.
+
+**What decides L3's shape now** (measured 2026-11-11, `main` 5ec833af, ethereum-lan-node `main` 9062861, jolly-roger `main` dc208e10):
+
+- **`lib.mkRockethGame`** (ethereum-lan-node `nix/rocketh-game/default.nix`): `preBuild` runs before the contracts compile, then the build-time deploy, the export to the web only, `tsc`, then the web build; no hook between the export and the web build, no genesis hash in the records, and only `npm_config_manage_package_manager_versions` in the environment, which `pnpm run` hands its scripts empty.
+- **Its export keeps a chain's properties** (`chains[CHAIN_ID] = {...chains[CHAIN_ID], info}`), so stratagems' `lan` price in `contracts/rocketh/config.ts` still reaches the web build; its `info` names the RPC `http://ethereum.local:8545`, where the box's DNS answers `ethereum.lan`.
+- **The `"lan"` field on `main`** holds `pnpmDepsHash` (`sha256-Ja+Hpr1E...`, stale: the lockfile gives `sha256-mBeZfj3N...`) and `solc` (0.8.24, right).
+- **The box's genesis hash** is `0xf4804c2a...0401` from geth 1.17.3 and 1.17.8 alike (`geth --state.scheme hash init`, then block 0 read by `geth console --exec`, which works with no network).
+
+**Decided** (each with the alternative rejected):
+
+- **L3-24, the three fixes at ethereum-lan-node** (`nix/rocketh-game/`, branch `l3-hooks`, its push asked for): `preWebBuild` in the `"lan"` field, run after the export and `tsc`, before the web build; the box's genesis hash computed by the flake (`packages.genesis-hash`, from its own `nix/genesis.json` with its geth) and passed by `lib.mkRockethGame`, written into the records' `.chain` and the transactions file, and checked by the deploy against the box's block 0; `manage-package-manager-versions=false` in a user `.npmrc`. Also its export's RPC url `ethereum.lan`. Then stratagems' `flake.lock` bumped to it. Rather than a `preBuild` running a second throwaway deploy, or stratagems overriding `buildPhase` (both couple to the function's internals), or a genesis hash written as a constant (it would drift from the genesis).
+- **L3-25, L3-16 dropped**: no `DeterministicDeploys.test.ts`; the check is `nix build .#lan` refusing an unguarded or non-deterministic deploy and naming the transaction. Rather than a stratagems-only copy (it imports a replay check no longer in this repo).
+- **L3-26, the guards and `update`'s gas limit kept** (from `step-L3`, 511b140f without the test, 1a85b14d).
+- **L3-27, the game's values in the `"lan"` field**: `description` and `preWebBuild` (as L3-19 had it, on one line), the hash recomputed. Rather than `nix/game.nix` (gone).
+- **L3-28, L3-17 stands** (1 gwei on 19216801), measured to reach the web build through the export.
+- **L3-29, a new branch `step-L3b`** from `main`, the parked branch's stratagems-only commits cherry-picked (the guards, the gas limit, the price and `generate-pwa-icons`, `faucet.e2e.ts` and its skip, `web/e2e/lan` retired, the README rewritten for `mkRockethGame`). Rather than resetting `step-L3` (destructive).
+- **L3-30, the obsolete preview branches** (`pl3/*` in jolly-roger, template-commit-reveal and stratagems, built on `nix/lan.nix`): never pushed; kept until the user says whether to delete them.
+- **L3-31, the check**: L3-22's rehearsal, unchanged.
+
+**Start here** (L3, third specification).
+
+```sh
+git -C ~/dev/github/wighawag/stratagems fetch origin --prune
+git -C ~/dev/github/wighawag/ethereum-lan-node fetch origin --prune
+git -C ~/dev/github/wighawag/stratagems show origin/main:flake.nix | grep -n "mkRockethGame"   # the package is ethereum-lan-node's
+git -C ~/dev/github/wighawag/ethereum-lan-node show origin/main:nix/rocketh-game/default.nix | grep -n "preWebBuild\|genesisHash\|npmrc"   # the three fixes (L3-24): present once l3-hooks is pushed
+grep -n '"lan"' -A8 ~/dev/github/wighawag/stratagems/package.json   # the game's values (L3-27)
+ip route get 1.1.1.1 | head -1; ss -ltn | grep -E ":(8545|34010|28600) "   # the rehearsal's ports, free
+```
+
+**Do** (branch `step-L3b`): L3-24 at ethereum-lan-node, then L3-25 to L3-29 here; `nix build` with `--override-input ethereum-lan-node git+file://<l3-hooks worktree>` until that branch is pushed, then `nix flake update ethereum-lan-node` and the build again from a clean checkout; `rehearse-lan.sh` with `E2E_LAN_PACKAGE` and `E2E_LAN_NODE` naming the same; the normal e2e.
+
+**Done when** (L3, third specification): `nix build git+file://$PWD#lan` succeeds from a clean checkout with the `flake.lock` naming a pushed ethereum-lan-node, and fails, naming the transaction, with a guard removed; under `rehearse-lan.sh` the package's deploy sends 28 and then 0, `faucet.e2e.ts` passes, and the offline world plays a cycle with a hotseat human and an AI seat; contracts unchanged (25 node-runner cases, 100 passed and 67 skipped), check 0 errors and 0 warnings, unit unchanged; `check-dangling-imports` and `check-omissions` clean; ethereum-lan-node's push approved by the user.
+
+### Step L3-box: the package on the user's box (the user's)
+
+Needs L3 landed and its ethereum-lan-node push made. In `~/dev/github/wighawag/my-boxes`, under that repo's own protocol, every push asked for (L3-10):
+
+1. ethereum-lan-node bumped from a7b8f68 to 538bd15 or later (the faucet's `corsOrigins`); the package itself is built by the revision stratagems' own `flake.lock` names.
+2. A flake input `stratagems.url = "github:wighawag/stratagems"` (`main`), not following the fleet's nixpkgs (as conquest-demo's comment there says).
+3. `services.ethereumLanNode.games.stratagems = {package = inputs.stratagems.packages.x86_64-linux.lan; webPort = 8002;};`, and 8002 opened by its surface check.
+4. Deployed to the box; on its hotspot, from two phones: the page on 8002, "Get ETH" from the faucet, a table created from `/lobby/`, joined by its link, started, and one cycle played; the offline world opened on one of them.
+
+**Done when**: the box serves the page, `stratagems-deploy` succeeded on boot (its log: "24 contracts and 4 setup calls ... (28 sent now)" on the first boot, "(0 sent now)" on the next), and a cycle was played at a table from two phones.
 
 ### Step L4: a table ends, and has a winner
 
@@ -3203,3 +3250,19 @@ The user had been running `main`, found the legacy connection modal stuck (`web3
 **Measured**: check 0 errors, 0 warnings; unit 2088 + 76; `check-dangling-imports` clean; `check-omissions 5c8b2d83` reports `contracts/test/js/DeterministicDeploys.test.ts` absent and unlisted, as before the merge (L3 brings it in); `pnpm format:check` warns on four files, all unchanged by the merge. **The e2e** (RPC 8557, app 4183, the faucet 34110, all free before and after): the full suite 61 passed and 2 flaky in 21.4 min under load (both `stratagems-table.e2e.ts`, passing on retry); that file alone with no retries, on the merge: failed once (a reveal one cycle late, 972707 against 972706), then passed twice; on the pre-merge head 221b0981: passed once. The merge's code change runs only during SSR, and the 2026-11-05 between-steps entry above saw the same file flake, so it is recorded as the known flake: **the table e2e is timing-sensitive on a loaded machine, a candidate for its own look.**
 
 **Also done**: 71 worktrees under `~/dev/worktrees/stratagems/` removed (14 GB to 1.6 GB), each first checked clean, merged or pushed, with nothing running in it and no `.env.local`; no branch deleted (`specify-9` keeps one unmerged commit, an earlier draft of step 9's specification).
+
+### 2026-11-11, step L3: specified a third time and built on ethereum-lan-node's `lib.mkRockethGame` (NOT landed: awaiting the user's approval of ethereum-lan-node's push)
+
+The session's re-derivation found L3's premises gone (the package moved to ethereum-lan-node on 2026-11-07, see L3's third specification); the user answered "Go" to L3-24 to L3-31. Built on `step-L3b` (worktree `~/dev/worktrees/stratagems/step-L3b`, from `main` 5ec833af) and ethereum-lan-node `l3-hooks` (worktree `~/dev/worktrees/ethereum-lan-node/l3-hooks`, from `origin/main` 9062861), nothing pushed.
+
+**ethereum-lan-node, three commits** (ethereum-lan-node has no AGENTS.md or work protocol): a2746c0 `preWebBuild` (documented in the function and the README) and the user `.npmrc`; 2b7b90c `packages.genesis-hash` (the flake's geth, `0xf4804c2a...0401`, the same with 1.17.3 and 1.17.8), passed by `lib.mkRockethGame` as `genesisHash`, written into `deployments/lan/.chain` and the transactions file by `build/deploy.ts`, checked by `deploy.sh` against block 0; e9032da the export's RPC url `ethereum.lan`. `nix flake check --no-build` passes, alejandra clean; the VM test (`checks.vm`, the example game) not run.
+
+**stratagems**: 8b7a3f69 the guards (L3-26, no test file, L3-25); 773062a6 `update`'s gas limit; a20f35bb 1 gwei and `generate-pwa-icons` (L3-28); 5d552b10 the `"lan"` field's `description` and `preWebBuild`, and the hash `sha256-mBeZfj3Nt+6KQ4LngPZZaqwEgzC59UjVT5d4vDDq9us=` (main's `sha256-Ja+Hpr1E...` was stale: the fake-hash route, as the function says); b3ce8cb1, 5a45cbbd, 2b54b2f9 `faucet.e2e.ts`, `web/e2e/lan` retired, the skip in the normal e2e; e93c76c4 and a8592a60 the README, rewritten for `mkRockethGame` and `main`.
+
+**The package** (`nix build git+file://$PWD#lan --override-input ethereum-lan-node git+file://.../l3-hooks`): **2 m 46 s** (the pnpm dependencies 84 s before, and nixpkgs-unstable's nodejs 24.21.0 built from source the first time), **closure 190.9 MiB** (`web/` 55 MB), `lan.transactions.json` chain 19216801, the box's genesis hash, **28 transactions** (24 CREATE2, 4 guarded), the addresses step L2 measured (TestTokens `0xa3f7B581...B647`, Stratagems `0x9F9271d6...4dcF`, StratagemsTableFactory `0xa594ef5c...47cC`); the genesis hash in the web's deployments chunk, `processor.bundle.js` and the icons in `web/`. **With `002`'s guard removed the build fails**: "block 5 has a transaction a LAN box could not replay ... every other transaction must be an `execute` with a `guard`".
+
+**The rehearsal** (`scripts/rehearse-lan.sh` with `E2E_LAN_PACKAGE` that build and `E2E_LAN_NODE` the `l3-hooks` worktree; geth on 192.168.1.122:8545, the faucet on 34010, caddy on 28600, free before and after): the first run failed fetching the faucet's npm dependencies (an HTTP/2 stream error from the registry), the second: the deploy **28 sent, then 0 sent**; `faucet.e2e.ts` **passed** (1.2 min, `secure: false, locks: false, serviceWorker: false`), `stratagems-hotseat.e2e.ts` and `stratagems-offline-ai.e2e.ts` **passed**: 3 passed, 2 m 32 s.
+
+**Measured**: contracts **25 passing** (node runner) and **100 passed, 67 skipped** (vitest), unchanged; check **0 errors and 0 warnings**; unit **2101 + 79** (no file under `web/src` or `web/test` changed); `check-dangling-imports` clean; `check-omissions` against the stem d20cd0fa covers all 92 paths; prettier clean on every changed file; no em dash. **The normal e2e** (RPC 8557, app 4183, the faucet 34110, free before and after): **63 passed, 1 skipped** (`faucet.e2e.ts`, by its reason) in 10.8 min, first run.
+
+**Not done, so not ticked**: the `flake.lock` still names ethereum-lan-node 9062861, so a clean checkout's `nix build .#lan` fails at the web build until `l3-hooks` is pushed. **Awaiting approval**: ethereum-lan-node `main` 9062861..e9032da (a fast-forward). Then `nix flake update ethereum-lan-node` here, the build from a clean checkout, the tick, and `main` fast-forwarded to `step-L3b`. Also for the user (L3-30): delete or keep `step-L3` and the `pl3/*` preview branches and their worktrees (jolly-roger, template-commit-reveal, stratagems), all superseded and never pushed.
