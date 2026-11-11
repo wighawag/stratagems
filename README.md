@@ -193,13 +193,13 @@ stratagems' tables (games for a fixed set of players, created from `/lobby/` and
 nix build git+file://$PWD#lan
 ```
 
-builds the game as one of the box's games, with no network (`nix/lan.nix`, the template's; what is stratagems' own is in `nix/game.nix`): the contracts compiled with the official solc 0.8.24 WASM build, deployed into a throwaway chain with the box's chain id to learn their addresses, the web app built against them (`web/.env.lan`), and the indexer's processor bundle beside it. The result holds:
+builds the game as one of the box's games, with no network, by ethereum-lan-node's `lib.mkRockethGame` (`flake.nix`, the template tree's; what is stratagems' own is the `"lan"` field of the root `package.json`: its pnpm dependencies' hash, its solc, its description, and its `preWebBuild`, which exports the addresses to the indexer too and builds `common`, the indexer and its processor bundle before the web app): the contracts compiled with the official solc 0.8.24 WASM build, deployed into a throwaway chain with the box's chain id to learn their addresses, the web app built against them (`web/.env.lan`), and the indexer's processor bundle beside it. The result holds:
 
 - `web/`, the static site, served by the box with `/404.html` as its fallback;
 - `bin/stratagems-deploy`, which replays the recorded deploy on the box's chain (24 contracts and 4 setup calls, every one CREATE2 or guarded): it refuses another chain id or another block 0, sends nothing on a second run, and so runs on every boot and after a reset;
 - `passthru.lan`, the title and description the box's page shows.
 
-After any change to `pnpm-lock.yaml`, recompute `pnpmDepsHash` in `nix/game.nix` as its comment says. The deploys are deterministic only on `lan` (the `deterministic` tag in `contracts/rocketh/config.ts`): every other environment keeps the addresses it has, and `contracts/test/js/DeterministicDeploys.test.ts` fails if a deploy script stops being replayable there.
+After any change to `pnpm-lock.yaml`, recompute `pnpmDepsHash`: set it to `sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=` and run `nix build git+file://$PWD#lan.pnpmDeps`, which fails with the right value (a build that passes proves nothing: Nix trusts a hash it has seen). The deploys are deterministic only on `lan` (the `deterministic` tag in `contracts/rocketh/config.ts`): every other environment keeps the addresses it has. No contract test checks that the `lan` deploy stays replayable: `nix build` refuses a deploy that is not, and names the transaction, so build it after changing a deploy script.
 
 To rehearse it on this machine, without the box: `bash scripts/rehearse-lan.sh e2e/tests/faucet.e2e.ts e2e/tests/stratagems-hotseat.e2e.ts e2e/tests/stratagems-offline-ai.e2e.ts`. It starts geth from the box's genesis, the package's deploy (twice), the box's faucet and caddy on this machine's LAN address (ports 8545, 34010 and 28600 there, which must be free), and runs those suites in a browser that can reach nothing else: two empty burners funded by the faucet at a table, a cycle played, and the offline world in the same insecure context.
 
@@ -209,7 +209,7 @@ The box's configuration takes the package as a flake input and names it as a gam
 
 ```nix
 # inputs (not following the fleet's nixpkgs)
-stratagems.url = "github:wighawag/stratagems?ref=join-template-commit-reveal&rev=<the landed revision>";
+stratagems.url = "github:wighawag/stratagems";
 
 # the box
 services.ethereumLanNode.games.stratagems = {
@@ -218,7 +218,7 @@ services.ethereumLanNode.games.stratagems = {
 };
 ```
 
-with port 8002 opened by its surface check, and ethereum-lan-node at 538bd15 or later (the faucet's `corsOrigins`, below). The input moves to `main` once the join is merged.
+with port 8002 opened by its surface check, and the box's ethereum-lan-node recent enough for the faucet's `corsOrigins` (538bd15, below); the package itself is built by the ethereum-lan-node stratagems' own `flake.lock` names, whatever the box runs.
 
 ### By hand, from a laptop
 
