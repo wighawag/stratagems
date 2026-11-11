@@ -5,11 +5,13 @@
 	"private": true,
 	"type": "module",
 	"lan": {
-		"pnpmDepsHash": "sha256-Ja+Hpr1ETprSV/dsMjDwWQ+9G4Tz7/LGE4IfcmA6olA=",
+		"pnpmDepsHash": "sha256-mBeZfj3Nt+6KQ4LngPZZaqwEgzC59UjVT5d4vDDq9us=",
 		"solc": {
 			"version": "0.8.24+commit.e11b9ed9",
 			"hash": "sha256-EbBUtVJz7FX2qz9EXrDrLIOiP+1D0QB500rD6r5u2LE="
-		}
+		},
+		"description": "Create a table from the lobby and invite the room, or play hotseat and against the AI offline",
+		"preWebBuild": "(cd contracts && pnpm exec rocketh-export -e lan --ts ../indexer/src/contracts.ts) && pnpm --filter ./common build && pnpm --filter ./indexer build && node web/scripts/processor-bundle.js"
 	},
 	"packageManager": "pnpm@10.28.1",
 	"devDependencies": {
