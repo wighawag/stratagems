@@ -172,32 +172,33 @@ export default deployScript(
 			args: [{...config, startTime: BigInt(config.startTime)}],
 		}, {deterministic});
 
+		// GUARDED rather than read and compared here: the same skip on a redeploy,
+		// and a LAN box replays each call only when its effect is missing
+		// (`rocketh/guard-recording.ts`).
 		const desiredWeight = parseEther('1');
-		const weight = await env.read(generator, {
-			functionName: 'games',
-			args: [stratagems.address],
+		await env.execute(generator, {
+			account: deployer,
+			functionName: 'enableGame',
+			args: [stratagems.address, desiredWeight],
+			guard: {
+				kind: 'call',
+				functionName: 'games',
+				args: [stratagems.address],
+				equals: desiredWeight,
+			},
 		});
 
-		if (weight != desiredWeight) {
-			await env.execute(generator, {
-				account: deployer,
-				functionName: 'enableGame',
-				args: [stratagems.address, desiredWeight],
-			});
-		}
-
-		const globalApproval = await env.read(testTokens, {
-			functionName: 'globalApprovals',
-			args: [stratagems.address],
+		await env.execute(testTokens, {
+			account: deployer,
+			functionName: 'authorizeGlobalApprovals',
+			args: [[stratagems.address], true],
+			guard: {
+				kind: 'call',
+				functionName: 'globalApprovals',
+				args: [stratagems.address],
+				equals: true,
+			},
 		});
-
-		if (!globalApproval) {
-			await env.execute(testTokens, {
-				account: deployer,
-				functionName: 'authorizeGlobalApprovals',
-				args: [[stratagems.address], true],
-			});
-		}
 
 		// NO `enableRequireAuthorization` (step L2, PL2-1 of
 		// work/plans/join-template-commit-reveal.md). It was alpha1's guard against

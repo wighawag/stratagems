@@ -49,10 +49,22 @@ export default deployScript(
 			},
 		);
 		if (deterministic) {
+			// GUARDED BY ITS ONLY EFFECT, `_init`, which has no view: it is the whole of
+			// slot 0 in `RewardsGenerator`'s storage layout (offset 0, the next variable,
+			// `_global`, a struct, starts slot 1; `Proxied` keeps its own in EIP-1967
+			// slots), so the word is 1 once it ran. Read on the proxy, where the
+			// storage is. A LAN box replays the call only when the word is not that
+			// (`rocketh/guard-recording.ts`).
 			await execute(generator, {
 				functionName: 'postUpgrade',
 				args: [...args] as any,
 				account: deployer,
+				guard: {
+					kind: 'storage',
+					slot: '0x0000000000000000000000000000000000000000000000000000000000000000',
+					as: 'bool',
+					equals: true,
+				},
 			});
 		}
 	},

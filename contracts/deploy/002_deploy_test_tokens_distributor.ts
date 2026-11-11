@@ -27,10 +27,18 @@ export default deployScript(
 				args: [TestTokens.address, parseEther('32')],
 			}, {deterministic});
 
+			// GUARDED, so a redeploy skips it once done, and so a LAN box replays it
+			// only when its effect is missing (`rocketh/guard-recording.ts`).
 			await execute(TestTokens, {
 				functionName: 'authorizeMinters',
 				args: [[TestTokensDistributor.address], true],
 				account: deployer,
+				guard: {
+					kind: 'call',
+					functionName: 'authorizedMinters',
+					args: [TestTokensDistributor.address],
+					equals: true,
+				},
 			});
 		}
 	},
