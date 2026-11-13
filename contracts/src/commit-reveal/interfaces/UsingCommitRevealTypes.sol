@@ -149,6 +149,14 @@ interface UsingCommitRevealTypes {
         /// @notice how many members were seated when it started, which those
         ///         who leave afterwards do not change (zero before the start)
         uint8 startedWith;
+        /// @notice the block the roster was opened in, which for a table is
+        ///         the block it was created in: nothing of it can be logged
+        ///         before, so it is where a client starts reading its history
+        /// @dev `block.number`, which is the chain's own block on Ethereum and
+        ///      on OP-stack chains (Base), but an approximation of the L1 block
+        ///      on Arbitrum, where a game would have to ask `ArbSys` instead.
+        ///      48 bits, so the roster stays in one slot.
+        uint48 openedAtBlock;
     }
 
     /// @notice THE HEAD OF A HASH CHAIN, plus what is riding on it.

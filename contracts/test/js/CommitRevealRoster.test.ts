@@ -138,6 +138,7 @@ async function setup(
 					started: boolean;
 					cycles: number;
 					startedWith: number;
+					openedAtBlock: number;
 				},
 				bigint[],
 			];
@@ -527,6 +528,27 @@ describe('a closed roster on the commit-reveal base', function () {
 		// Leaving after the start does not change who it started with.
 		await game.act.withdraw(game.bob, 10n);
 		expect((await game.read.roster()).startedWith).toEqual(3);
+	});
+
+	it('records the block it was opened in, which is where a client starts reading it', async function () {
+		const fixtures = await networkHelpers.loadFixture(deployStub);
+		const {env, Stub, unnamedAccounts} = fixtures;
+		const [creator] = unnamedAccounts;
+		// Blocks after the deployment, as a table created later has.
+		for (let i = 0; i < 5; i++) await provider.request({method: 'evm_mine'});
+		const receipt = await env.execute(Stub, {
+			account: creator,
+			functionName: 'openRoster',
+			args: [creator, 3, CYCLES, NO_OPTIONS],
+		});
+		const [roster] = (await env.read(Stub, {
+			functionName: 'getRoster',
+		})) as [{openedAtBlock: number}, bigint[]];
+		expect(BigInt(roster.openedAtBlock)).toEqual(BigInt(receipt.blockNumber));
+		// It is the roster's, not the deployment's.
+		expect(
+			BigInt(roster.openedAtBlock) > BigInt(Stub.receipt!.blockNumber),
+		).toEqual(true);
 	});
 
 	it('emits the cycles and the options when the roster opens', async function () {
