@@ -19,8 +19,10 @@
 	import VersionAndInstallNotfications from '$lib/core/service-worker/VersionAndInstallNotfications.svelte';
 	import NavigationProgress from '$lib/components/NavigationProgress.svelte';
 
-	import {createContext} from '$lib/context/index.js';
+	import {fatalOf, openContext} from '$lib/context/index.js';
 	import Context from '$lib/context/Context.svelte';
+	import TableGate from '$lib/context/TableGate.svelte';
+	import {url} from '$lib/kit/paths';
 	import InitError from '$lib/context/InitError.svelte';
 	import Navbar from '$lib/ui/navbar/navbar.svelte';
 	import SurfaceNavbar from '$lib/ui/navbar/SurfaceNavbar.svelte';
@@ -47,8 +49,13 @@
 	// Built once, synchronously, on the server as well as in the browser: every
 	// service idles when browser APIs are absent, so the page (and its metadata)
 	// prerenders instead of waiting behind a splash. Readiness arrives through
-	// the stores. See ADR-0002 (`work` branch).
-	const context = createContext();
+	// the stores. See ADR-0002 (`work` branch). The one exception is a TABLE
+	// (`?game=`, which only a browser sees): its context waits for the table to
+	// be resolved, behind `TableGate` (see `$lib/context/table-gate.ts`).
+	const opening = openContext();
+	const context = $derived(
+		$opening.step === 'Ready' ? $opening.context : undefined,
+	);
 
 	// WHICH CHROME THIS SURFACE GETS, which is the app's unless the page being
 	// shown declared its own. The decision is `chromeFor`'s and nothing is decided
@@ -60,7 +67,7 @@
 	// Set when the app cannot run at all. Env-derived reasons are known at
 	// construction (so the error also prerenders); the `?burner=true` one is
 	// raised from start(), which swaps the app out for the error screen.
-	const {fatal} = context.context;
+	const fatal = fatalOf(opening);
 
 	// Provide ambient capabilities to core UI components.
 	provideRoute(route);
@@ -82,7 +89,13 @@
 
 {#if $fatal}
 	<InitError message={$fatal} />
-{:else}
+{:else if $opening.step !== 'Ready'}
+	<TableGate
+		opening={$opening}
+		retry={opening.retry}
+		lobbyHref={url('/lobby/')}
+	/>
+{:else if context}
 	<Context {context}>
 		<!-- Wires SvelteKit to the navigation service the context holds, and
 		     provides it as a capability. First, so anything below can rely on the
@@ -178,7 +191,7 @@
 
 	     The ledger is passed in because this is OUTSIDE `<Context>`: a layer
 	     container is a sibling of it, so there is no app context to ask here. -->
-	{#if sendingIndicatorSlot(sendingIndicator) === 'overlay'}
+	{#if context && sendingIndicatorSlot(sendingIndicator) === 'overlay'}
 		<SendingIndicator
 			inFlight={context.context.inFlight}
 			placement="floating"
