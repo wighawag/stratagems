@@ -17,12 +17,24 @@
  * - the publication: none, which is the context's to skip (`createIndexedBoard`
  *   at a table), since a table's record has the world's name.
  *
+ * AND WHERE ITS HISTORY STARTS (step T2): both contracts the indexer folds
+ * (`Stratagems` and `GemsGenerator`, here `NoRewards`) start at the block the
+ * table was created in, which the page resolved before composing it
+ * (`$lib/context`'s table gate). Etherfold starts at the source's EARLIEST
+ * `startBlock`, so leaving `NoRewards` at its own deployment would fold every
+ * block since anyway.
+ *
  * Everything else (the tokens, the distributor) is the world's.
  */
 import type {TypedDeployments} from '$lib/deployments-store';
 import type {TableLobby, TableOptions} from '$lib/game/lobby/table';
 
-type Contract = {address: `0x${string}`; abi: unknown; linkedData?: unknown};
+type Contract = {
+	address: `0x${string}`;
+	abi: unknown;
+	linkedData?: unknown;
+	startBlock?: number;
+};
 
 function contractNamed(deployments: TypedDeployments, name: string): Contract {
 	const contract = (
@@ -178,6 +190,8 @@ export const stratagemsLobby: TableLobby = {
 	options: STRATAGEMS_TABLE_OPTIONS,
 	factory: (deployments) =>
 		contractNamed(deployments, 'StratagemsTableFactory'),
+	implementation: (deployments) =>
+		contractNamed(deployments, 'StratagemsTableImplementation'),
 	deploymentsAt(deployments, table) {
 		const implementation = contractNamed(
 			deployments,
@@ -190,14 +204,18 @@ export const stratagemsLobby: TableLobby = {
 				...deployments.contracts,
 				Stratagems: {
 					...implementation,
-					address: table,
+					address: table.address,
+					startBlock: table.openedAtBlock,
 					linkedData: factory.linkedData,
 				},
 				StratagemsSimulation: contractNamed(
 					deployments,
 					'StratagemsTableSimulation',
 				),
-				GemsGenerator: contractNamed(deployments, 'NoRewards'),
+				GemsGenerator: {
+					...contractNamed(deployments, 'NoRewards'),
+					startBlock: table.openedAtBlock,
+				},
 			},
 		} as unknown as TypedDeployments;
 	},

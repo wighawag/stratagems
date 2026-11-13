@@ -4,6 +4,7 @@
  */
 import {describe, expect, it} from 'vitest';
 import type {TypedDeployments} from '$lib/deployments-store';
+import {indexingSource} from 'stratagems-indexer';
 import {
 	decodeStratagemsOptions,
 	encodeStratagemsOptions,
@@ -20,13 +21,20 @@ import generated from '$lib/deployments';
 
 const deployments = generated as unknown as TypedDeployments;
 const TABLE = '0x00000000000000000000000000000000000ab1e5' as const;
+/** The table as the page's gate resolved it (step T2). */
+const RESOLVED = {address: TABLE, openedAtBlock: 123_456};
 const contracts = deployments.contracts as unknown as Record<
 	string,
-	{address: string; abi: unknown; linkedData?: Record<string, unknown>}
+	{
+		address: string;
+		abi: unknown;
+		linkedData?: Record<string, unknown>;
+		startBlock?: number;
+	}
 >;
 
 describe("a table's record", () => {
-	const atTable = stratagemsLobby.deploymentsAt(deployments, TABLE);
+	const atTable = stratagemsLobby.deploymentsAt(deployments, RESOLVED);
 	const table = atTable.contracts as unknown as typeof contracts;
 
 	it('puts Stratagems at the table, with the implementation ABI and the factory config', () => {
@@ -56,11 +64,26 @@ describe("a table's record", () => {
 		// the world's record is untouched
 		expect(contracts.Stratagems.address).not.toBe(TABLE);
 	});
+
+	it('starts every contract the indexer folds at the block the table was created in (step T2)', () => {
+		expect(stratagemsLobby.implementation(deployments).address).toBe(
+			contracts.StratagemsTableImplementation.address,
+		);
+		expect(table.Stratagems.startBlock).toBe(123_456);
+		// etherfold starts at the source's EARLIEST start block, so NoRewards
+		// left at its deployment would fold every block since
+		expect(table.GemsGenerator.startBlock).toBe(123_456);
+		expect(
+			indexingSource(atTable as never).contracts.map((c) => c.startBlock),
+		).toEqual([123_456, 123_456]);
+		// the world's records keep theirs
+		expect(contracts.NoRewards.startBlock).not.toBe(123_456);
+	});
 });
 
 describe('the stake (PL2-1)', () => {
 	it('at a table, asks the rail for an allowance of exactly the stake, on the tokens, for the table', () => {
-		const atTable = stratagemsLobby.deploymentsAt(deployments, TABLE);
+		const atTable = stratagemsLobby.deploymentsAt(deployments, RESOLVED);
 		const config = resolveStratagemsConfig(atTable);
 		const acquisition = createStakeAcquisition({
 			config,
@@ -135,7 +158,7 @@ describe("a table's options and board (step L4)", () => {
 	});
 
 	it("stakes the table's own amount once it is read", () => {
-		const atTable = stratagemsLobby.deploymentsAt(deployments, TABLE);
+		const atTable = stratagemsLobby.deploymentsAt(deployments, RESOLVED);
 		const config = resolveStratagemsConfig(atTable);
 		let stake: bigint | undefined;
 		const acquisition = createStakeAcquisition({

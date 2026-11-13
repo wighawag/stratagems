@@ -89,6 +89,8 @@ async function withATableOfThree() {
 		bob,
 		carol,
 		creationGas: creationReceipt.gasUsed,
+		createdIn: creationReceipt.blockNumber,
+		implementationDeployedIn: BigInt(implementation.receipt!.blockNumber),
 		takeSeat,
 		lastApproval: () => lastApproval!,
 	};
@@ -105,7 +107,8 @@ function turn(x: number, y: number, color: number) {
 
 describe('a table', function () {
 	it('is an address of its own, created by the factory with the table config and no rewards', async function () {
-		const {env, Factory, Table, noRewards, creator} = await loadFixture(withATableOfThree);
+		const {env, Factory, Table, noRewards, creator, createdIn, implementationDeployedIn} =
+			await loadFixture(withATableOfThree);
 		expect(Table.address).not.toEqual(env.Stratagems.address);
 		expect(await Factory.read.getGames([0n, 10n])).toEqual([Table.address]);
 
@@ -122,6 +125,10 @@ describe('a table', function () {
 		expect(roster.seats).to.equal(3);
 		expect(roster.started).to.equal(false);
 		expect(members).toEqual([]);
+		// where its history starts (step T2): the block it was created in, which
+		// its record's start block is, and not the implementation's deployment
+		expect(BigInt(roster.openedAtBlock)).to.equal(createdIn);
+		expect(createdIn > implementationDeployedIn).to.equal(true);
 		// the world keeps open entry: it has no lobby route at all
 		expect((await env.TestTokens.read.globalApprovals([Table.address]))).to.equal(false);
 	});
