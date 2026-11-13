@@ -297,7 +297,8 @@ library CommitReveal {
             seats: seats,
             started: false,
             cycles: cycles,
-            startedWith: 0
+            startedWith: 0,
+            openedAtBlock: uint48(block.number)
         });
         if (options != bytes32(0)) {
             $.gameOptions = options;
