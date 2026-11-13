@@ -49,8 +49,17 @@ async function expectRefused(page: Page, reason: RegExp) {
 
 describe('an invite link that is not a table', () => {
 	test('is refused when nothing is at its address', async ({page}) => {
+		// The prerendered page is the app at no table, and a table's first render
+		// is the gate: Svelte replaces the branch, and must not call it a mismatch.
+		const complaints: string[] = [];
+		const record = (text: string) => {
+			if (/hydrat/i.test(text)) complaints.push(text);
+		};
+		page.on('console', (message) => record(message.text()));
+		page.on('pageerror', (error) => record(String(error)));
 		await page.goto('/?game=0x000000000000000000000000000000000000dEaD');
 		await expectRefused(page, /There is no contract at this address/);
+		expect(complaints).toEqual([]);
 	});
 
 	test("is refused when its contract is not one of this game's tables", async ({
