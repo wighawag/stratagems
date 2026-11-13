@@ -16,7 +16,8 @@
  * matters: the game needs the connection, and the health/refresh wiring needs
  * the game's chain reads. See the injection point in `core.ts`.
  */
-import {readable} from 'svelte/store';
+import {derived, readable, type Readable} from 'svelte/store';
+import type {EIP1193Provider} from 'viem';
 import {createCoreContext, type ConnectionFactory} from './core.js';
 import * as app from '$app-specific';
 import {createAppContext, SIGNER_GRANT} from '$app-specific';
@@ -26,7 +27,18 @@ import {params} from '$lib';
 import {deployments} from '$lib/deployments-store';
 import {establishRemoteConnection} from '$lib/core/connection/remote';
 import type {DeploymentsStore} from '$lib/core/connection/types';
-import {tableFromParam, type TableLobby} from '$lib/game/lobby/table';
+import {
+	tableFromParam,
+	type ResolvedTable,
+	type TableLobby,
+} from '$lib/game/lobby/table';
+import {
+	createContextOpening,
+	tableReaderFor,
+	type ContextOpeningStore,
+} from './table-gate.js';
+import {resolveURLForThisPage} from '$lib/core/env/same-host';
+import {PUBLIC_NODE_URL} from '$env/static/public';
 
 /**
  * THE GAME'S TABLES, if it has any: the `lobby` its `$app-specific` module
@@ -39,7 +51,8 @@ export const lobby: TableLobby | undefined = (
 
 /**
  * The table this page is at: `?game=<address>`, when the game has tables.
- * Read once, as the context is, so moving between tables is a page load.
+ * Read once, as the context is, so moving between tables is a page load. An
+ * address, and no more: what is there is {@link openContext}'s to find out.
  */
 export function tableOfThisPage(): `0x${string}` | undefined {
 	return lobby ? tableFromParam(params.game) : undefined;
@@ -48,7 +61,7 @@ export function tableOfThisPage(): `0x${string}` | undefined {
 /** The remote chain, with the game at `table`: the world's records, made the table's by the game. */
 function establishTableConnection(
 	lobbyOfTheGame: TableLobby,
-	table: `0x${string}`,
+	table: ResolvedTable,
 ): ConnectionFactory {
 	const records = lobbyOfTheGame.deploymentsAt(deployments.get(), table);
 	const store: DeploymentsStore = {
@@ -79,6 +92,12 @@ export function createContext(options?: {
 	 * hotseat world's local revealer): see `CoreServices.scheduler`.
 	 */
 	scheduler?: RevealScheduler<PlayerIdentity>;
+	/**
+	 * THE TABLE this page is at, RESOLVED ({@link openContext}): the record is
+	 * composed with the game at its address and its history starting at the
+	 * block it was created in. Omitted, the page is at the game's world.
+	 */
+	table?: ResolvedTable;
 }): {
 	context: Context;
 	start: () => () => void;
@@ -92,14 +111,59 @@ export function createContext(options?: {
 	// with the game at the table's address. A second context beside the app's
 	// would be a second connection to the same wallet and a second writer of
 	// the same account data.
-	const table = options?.establishConnection ? undefined : tableOfThisPage();
+	const table = options?.establishConnection ? undefined : options?.table;
 	return createCoreContext({
 		createApp: createAppContext,
 		signerGrant: SIGNER_GRANT,
 		establishConnection:
 			options?.establishConnection ??
 			(table && lobby ? establishTableConnection(lobby, table) : undefined),
-		table,
+		table: table?.address,
 		...(options?.scheduler ? {scheduler: options.scheduler} : {}),
+	});
+}
+
+export type PageContext = ReturnType<typeof createContext>;
+
+/**
+ * THIS PAGE'S CONTEXT, through the table gate (`./table-gate.ts`): `Ready` at
+ * once, built synchronously, on a page at no table (and on the server, which
+ * never sees a query); at a table, `Opening` until the table is resolved, then
+ * `Ready` with the context composed at it, or `NotATable`, or `Unreachable`.
+ * What the layout builds; a route that composes another world calls
+ * {@link createContext} with its own connection instead.
+ */
+export function openContext(): ContextOpeningStore<PageContext> {
+	const table = tableOfThisPage();
+	return createContextOpening<PageContext>({
+		table,
+		implementation: () => lobby!.implementation(deployments.get()).address,
+		reader: () =>
+			tableReaderFor({
+				nodeURL: resolveURLForThisPage(PUBLIC_NODE_URL),
+				chain: deployments.get().chain,
+				injected:
+					typeof window === 'undefined'
+						? undefined
+						: (window as unknown as {ethereum?: EIP1193Provider}).ethereum,
+			}),
+		compose: (resolved) =>
+			createContext(resolved ? {table: resolved} : undefined),
+	});
+}
+
+/**
+ * The context's `fatal`, once there is a context: nothing is fatal while a
+ * table is being opened (the gate says what is happening instead).
+ */
+export function fatalOf(
+	opening: Readable<{step: string; context?: PageContext}>,
+): Readable<string | undefined> {
+	return derived(opening, ($opening, set) => {
+		if ($opening.step !== 'Ready' || !$opening.context) {
+			set(undefined);
+			return;
+		}
+		return $opening.context.context.fatal.subscribe(set);
 	});
 }
