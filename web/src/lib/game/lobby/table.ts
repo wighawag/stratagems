@@ -3,14 +3,20 @@
  * address of its own (the commit-reveal base's `CommitRevealGameFactory`
  * clones a game's lobby implementation per table).
  *
- * A TABLE IS AN ADDRESS, AND THAT IS ALL THE CLIENT NEEDS TO KNOW. Everything
- * it keys by is the game contract's address already (the stored submission,
- * the delegation, the reveal service's slot, an indexer), so a table is the
- * app composed with a deployment record whose game is at the table's address:
- * `?game=<address>` on any page, read once when the context is built
- * (`$lib/context/index.ts`). Which record that is, is the GAME's answer
- * ({@link TableLobby}, exported as `lobby` by its `$app-specific` module): the
- * names of its lobby implementation and its factory are its own.
+ * A TABLE IS AN ADDRESS, AND THAT IS ALMOST ALL THE CLIENT NEEDS TO KNOW.
+ * Everything it keys by is the game contract's address already (the stored
+ * submission, the delegation, the reveal service's slot, an indexer), so a
+ * table is the app composed with a deployment record whose game is at the
+ * table's address: `?game=<address>` on any page. Which record that is, is the
+ * GAME's answer ({@link TableLobby}, exported as `lobby` by its `$app-specific`
+ * module): the names of its lobby implementation and its factory are its own.
+ *
+ * THE ONE THING MORE IS WHERE IT STARTS. A record's `startBlock` is where a
+ * reader of its history begins, and a table's is the block it was created in,
+ * not its implementation's deployment: so the page RESOLVES the table before
+ * composing its context ({@link resolveTable}, run by `$lib/context`'s gate),
+ * which also checks that the address is a clone of this game's own
+ * implementation, since a stake there approves it.
  *
  * THE ROSTER'S RULES ARE THE CONTRACT'S (`UsingCommitReveal._openRoster`): a
  * seat is taken by staking while the table has not started and a seat is
@@ -35,7 +41,7 @@ import {tableAtRoster, type TableSeat} from './seats';
 
 /** The lobby's routes, as `ICommitRevealLobby` declares them. */
 export const LOBBY_ABI = parseAbi([
-	'function getRoster() view returns ((address creator, uint8 seats, bool started, uint16 cycles, uint8 startedWith) roster, uint256[] members)',
+	'function getRoster() view returns ((address creator, uint8 seats, bool started, uint16 cycles, uint8 startedWith, uint48 openedAtBlock) roster, uint256[] members)',
 	'function getEnd() view returns (uint64 cycleNumber, uint64 lastCycleNumber, bool ended)',
 	'function getGameOptions() view returns (bytes32)',
 	'function start() returns (uint64 cycleNumber)',
@@ -83,10 +89,17 @@ export function clampTableCycles(cycles: unknown): number {
 export type TableLobby = {
 	/** The factory every table of this game is created by. */
 	factory(deployments: TypedDeployments): {address: `0x${string}`};
-	/** The world's record, with the game at `table`: its lobby implementation's ABI and its factory's config. */
+	/** The lobby implementation every table of this game is a clone of. */
+	implementation(deployments: TypedDeployments): {address: `0x${string}`};
+	/**
+	 * The world's record, with the game at the table: its lobby
+	 * implementation's ABI and its factory's config, and as its `startBlock`
+	 * the table's own ({@link ResolvedTable}), on EVERY contract of the record
+	 * a reader folds the table's history from.
+	 */
 	deploymentsAt(
 		deployments: TypedDeployments,
-		table: `0x${string}`,
+		table: ResolvedTable,
 	): TypedDeployments;
 	/**
 	 * What the creator chooses for the GAME at a table, if the game reads
@@ -172,6 +185,8 @@ export type Roster = {
 	ended: boolean;
 	/** The game's own options, as created: see {@link NO_GAME_OPTIONS}. */
 	gameOptions: `0x${string}`;
+	/** The block the roster was opened in: the table's creation. */
+	openedAtBlock: number;
 };
 
 type Reader = Pick<CoreServices['publicClient'], 'readContract'>;
@@ -205,6 +220,7 @@ export async function readRoster(
 					started: boolean;
 					cycles: number;
 					startedWith: number;
+					openedAtBlock: number;
 				},
 				readonly bigint[],
 			],
@@ -222,6 +238,86 @@ export async function readRoster(
 		lastCycleNumber,
 		ended,
 		gameOptions: options,
+		openedAtBlock: Number(roster.openedAtBlock),
+	};
+}
+
+// ---------------------------------------------------------------------------
+// Resolving a table before its page is composed
+// ---------------------------------------------------------------------------
+
+/** A table, as the page composes it: where it is, and where its history starts. */
+export type ResolvedTable = {
+	address: `0x${string}`;
+	/** The block its roster was opened in, which is its record's `startBlock`. */
+	openedAtBlock: number;
+};
+
+export type TableResolution =
+	| {kind: 'table'; table: ResolvedTable}
+	| {kind: 'not-a-table'; address: `0x${string}`; reason: string};
+
+/**
+ * THE RUNTIME CODE OF AN EIP-1167 CLONE of `implementation`, which is what
+ * `CommitRevealGameFactory` deploys (OpenZeppelin's `Clones.clone`): 45 bytes,
+ * the implementation's address in the middle.
+ */
+export function cloneCodeOf(implementation: `0x${string}`): `0x${string}` {
+	return `0x363d3d373d3d3d363d73${implementation.slice(2).toLowerCase()}5af43d82803e903d91602b57fd5bf3`;
+}
+
+type TableResolver = Pick<
+	CoreServices['publicClient'],
+	'readContract' | 'getCode'
+>;
+
+/**
+ * WHAT IS AT AN INVITE LINK'S ADDRESS: a table of this game, with the block it
+ * was created in, or not a table. A clone of this game's own implementation
+ * runs this game's rules, so staking there is what the player meant; anything
+ * else (another contract, an empty address, a clone of something else) is
+ * refused before a single control exists. Throws when the chain could not be
+ * read, which is not an answer about the address.
+ *
+ * The code alone does not say the FACTORY made it (anyone may clone the
+ * implementation and open its roster), and need not: what a stake trusts is
+ * the code it runs.
+ */
+export async function resolveTable(
+	reader: TableResolver,
+	address: `0x${string}`,
+	implementation: `0x${string}`,
+): Promise<TableResolution> {
+	const code = await reader.getCode({address});
+	if (!code || code === '0x') {
+		return {
+			kind: 'not-a-table',
+			address,
+			reason: 'There is no contract at this address.',
+		};
+	}
+	if (code.toLowerCase() !== cloneCodeOf(implementation)) {
+		return {
+			kind: 'not-a-table',
+			address,
+			reason: "The contract at this address is not one of this game's tables.",
+		};
+	}
+	const [roster] = (await reader.readContract({
+		address,
+		abi: LOBBY_ABI,
+		functionName: 'getRoster',
+	})) as readonly [{seats: number; openedAtBlock: number}, readonly bigint[]];
+	if (Number(roster.seats) === 0) {
+		return {
+			kind: 'not-a-table',
+			address,
+			reason: 'This table was never opened.',
+		};
+	}
+	return {
+		kind: 'table',
+		table: {address, openedAtBlock: Number(roster.openedAtBlock)},
 	};
 }
 

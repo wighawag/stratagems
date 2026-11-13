@@ -15,6 +15,8 @@ import {
 	NO_GAME_OPTIONS,
 	memberLabel,
 	readTables,
+	cloneCodeOf,
+	resolveTable,
 	tableAllowsPlay,
 	tableFromParam,
 	tableScreenOf,
@@ -55,6 +57,7 @@ function rosterOf(overrides: Partial<Roster> = {}): Roster {
 		lastCycleNumber: 0n,
 		ended: false,
 		gameOptions: NO_GAME_OPTIONS,
+		openedAtBlock: 42,
 		...overrides,
 	};
 }
@@ -76,6 +79,7 @@ function lobbyReader(rosterAt: (address: string) => Roster) {
 						started: roster.started,
 						cycles: roster.cycles,
 						startedWith: roster.startedWith,
+						openedAtBlock: roster.openedAtBlock,
 					},
 					roster.members,
 				];
@@ -186,6 +190,8 @@ describe('the tables a factory lists', () => {
 			seats: 2,
 			started: false,
 			cycles: 10,
+			// where its history starts, read with its roster
+			openedAtBlock: 42,
 		});
 	});
 });
@@ -427,5 +433,84 @@ describe("a game's options at a table", () => {
 		expect(encodeTableOptions(options, {stake: 7, gap: 1000})).toBe(
 			`0x${((200n << 32n) | 7n).toString(16).padStart(64, '0')}`,
 		);
+	});
+});
+
+describe('an invite link resolved before its page is composed', () => {
+	const IMPLEMENTATION = '0x2222222222222222222222222222222222222222' as const;
+	const OTHER = '0x3333333333333333333333333333333333333333' as const;
+
+	function readerWith(code: string | undefined, roster = rosterOf()) {
+		return {
+			getCode: vi.fn(async () => code as `0x${string}` | undefined),
+			readContract: lobbyReader(() => roster),
+		};
+	}
+
+	it('is a table, starting at the block its roster was opened in, when its code is a clone of the implementation', async () => {
+		const reader = readerWith(
+			cloneCodeOf(IMPLEMENTATION).toUpperCase().replace('0X', '0x'),
+			rosterOf({openedAtBlock: 777}),
+		);
+		expect(await resolveTable(reader as never, TABLE, IMPLEMENTATION)).toEqual({
+			kind: 'table',
+			table: {address: TABLE, openedAtBlock: 777},
+		});
+	});
+
+	it('is the 45-byte EIP-1167 runtime with the implementation in the middle', () => {
+		const code = cloneCodeOf(IMPLEMENTATION);
+		expect((code.length - 2) / 2).toBe(45);
+		expect(code).toContain(IMPLEMENTATION.slice(2));
+	});
+
+	it('is not a table when nothing is there, or something else is', async () => {
+		for (const code of [undefined, '0x']) {
+			const reader = readerWith(code);
+			const resolution = await resolveTable(
+				reader as never,
+				TABLE,
+				IMPLEMENTATION,
+			);
+			expect(resolution.kind).toBe('not-a-table');
+			expect(reader.readContract).not.toHaveBeenCalled();
+		}
+		// a clone of another implementation runs another game's rules
+		const clone = await resolveTable(
+			readerWith(cloneCodeOf(OTHER)) as never,
+			TABLE,
+			IMPLEMENTATION,
+		);
+		expect(clone).toMatchObject({
+			kind: 'not-a-table',
+			reason: "The contract at this address is not one of this game's tables.",
+		});
+		const contract = await resolveTable(
+			readerWith('0x6080604052') as never,
+			TABLE,
+			IMPLEMENTATION,
+		);
+		expect(contract.kind).toBe('not-a-table');
+	});
+
+	it('is not a table when the clone never had its roster opened', async () => {
+		const resolution = await resolveTable(
+			readerWith(cloneCodeOf(IMPLEMENTATION), rosterOf({seats: 0})) as never,
+			TABLE,
+			IMPLEMENTATION,
+		);
+		expect(resolution).toMatchObject({kind: 'not-a-table'});
+	});
+
+	it('throws when the chain cannot be read, which says nothing of the address', async () => {
+		const reader = {
+			getCode: async () => {
+				throw new Error('fetch failed');
+			},
+			readContract: vi.fn(),
+		};
+		await expect(
+			resolveTable(reader as never, TABLE, IMPLEMENTATION),
+		).rejects.toThrow('fetch failed');
 	});
 });
