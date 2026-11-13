@@ -7,13 +7,18 @@
  * the base's `CommitRevealLobby`), and the config every table plays by, which
  * `contracts/deploy/030_deploy_lobby.ts` records on the factory. The simulation
  * route the preview runs is the lobby implementation's, built with that config.
- * Everything else (the token, the sale) is the world's.
+ * Its `startBlock` is the table's own, the block it was created in, so a
+ * reader of its history (the indexer at `with/indexer`) starts there rather
+ * than at the implementation's deployment. Everything else (the token, the
+ * sale) is the world's.
  */
 import type {TypedDeployments} from '$lib/deployments-store';
 import type {TableLobby} from '$lib/game/lobby/table';
 
 export const placementLobby: TableLobby = {
 	factory: (deployments) => deployments.contracts.GameFactory,
+	implementation: (deployments) =>
+		deployments.contracts.GameLobbyImplementation,
 	deploymentsAt(deployments, table) {
 		const {contracts} = deployments;
 		return {
@@ -22,7 +27,8 @@ export const placementLobby: TableLobby = {
 				...contracts,
 				Game: {
 					...contracts.GameLobbyImplementation,
-					address: table,
+					address: table.address,
+					startBlock: table.openedAtBlock,
 					linkedData: contracts.GameFactory.linkedData,
 				},
 				Game_Implementation_Router_Simulation_Route:

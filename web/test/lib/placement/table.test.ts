@@ -11,7 +11,7 @@ import {placementLobby} from '$lib/placement/table';
 const TABLE = '0x1111111111111111111111111111111111111111' as const;
 
 describe("the reference game's table record", () => {
-	it('is the world record with the game at the table, as a clone of the lobby implementation', () => {
+	it('is the world record with the game at the table, as a clone of the lobby implementation, starting at its creation', () => {
 		const world = {
 			chain: {id: 1},
 			contracts: {
@@ -19,6 +19,7 @@ describe("the reference game's table record", () => {
 				GameLobbyImplementation: {
 					address: '0ximplementation',
 					abi: ['lobby'],
+					startBlock: 10,
 				},
 				GameFactory: {address: '0xfactory', linkedData: {lobby: true}},
 				Game_Implementation_Router_Simulation_Route: {address: '0xworldsim'},
@@ -28,15 +29,18 @@ describe("the reference game's table record", () => {
 				Token: {address: '0xtoken'},
 			},
 		};
-		const record = placementLobby.deploymentsAt(
-			world as never,
-			TABLE,
-		) as never as typeof world & {
+		const record = placementLobby.deploymentsAt(world as never, {
+			address: TABLE,
+			openedAtBlock: 1234,
+		}) as never as typeof world & {
 			contracts: {Game: {address: string; abi: string[]; linkedData: unknown}};
 		};
+		// Its history starts where the table was created, not where its
+		// implementation was deployed.
 		expect(record.contracts.Game).toEqual({
 			address: TABLE,
 			abi: ['lobby'],
+			startBlock: 1234,
 			linkedData: {lobby: true},
 		});
 		expect(
@@ -48,6 +52,9 @@ describe("the reference game's table record", () => {
 		expect(record.contracts.Token).toBe(world.contracts.Token);
 		expect(placementLobby.factory(world as never)).toBe(
 			world.contracts.GameFactory,
+		);
+		expect(placementLobby.implementation(world as never)).toBe(
+			world.contracts.GameLobbyImplementation,
 		);
 	});
 });
