@@ -1,5 +1,12 @@
 import type {Page} from '@playwright/test';
-import {test, expect, describe, connectPageAs} from '../fixtures/test';
+import {
+	test,
+	expect,
+	describe,
+	connectPageAs,
+	isWalletConnected,
+	waitForAppReady,
+} from '../fixtures/test';
 import {
 	authoriseToPlay,
 	boardLoaded,
@@ -7,6 +14,7 @@ import {
 	gameStep,
 	getTestGems,
 	stake,
+	planCell,
 } from '../fixtures/stratagems';
 
 /**
@@ -104,6 +112,24 @@ async function trace(page: Page, label: string): Promise<void> {
 	);
 }
 
+/**
+ * The lobby, with the connection back. `goto` is a page load, after which the
+ * connected account is RESTORED, not kept: a create clicked before that is
+ * asked to connect a wallet, and opens the account picker instead of a table
+ * (measured 2026-11-12 in the full suite, the second story's host showing
+ * "Connect a wallet to create a table" for its whole 90 s).
+ */
+async function openLobby(page: Page): Promise<void> {
+	await page.goto('/lobby/');
+	await waitForAppReady(page);
+	await expect
+		.poll(() => isWalletConnected(page), {
+			message: 'the lobby should have its account back',
+			timeout: 30_000,
+		})
+		.toBe(true);
+}
+
 /** Plan one placement on `cell`, a cell of this player's alone this cycle. */
 async function planAt(page: Page, cell: {x: number; y: number}) {
 	await page.bringToFront();
@@ -112,15 +138,7 @@ async function planAt(page: Page, cell: {x: number; y: number}) {
 	await trace(page, 'ready');
 	await boardLoaded(page);
 	await trace(page, 'board loaded');
-	await expect
-		.poll(
-			async () => {
-				if ((await gameStep(page)).planned === 0) await clickCell(page, cell);
-				return (await gameStep(page)).planned;
-			},
-			{message: 'one move should be planned', timeout: 30_000},
-		)
-		.toBe(1);
+	await planCell(page, cell, {timeout: 30_000});
 	await trace(page, 'planned');
 }
 
@@ -190,7 +208,7 @@ describe('A stratagems table for a fixed set of players', () => {
 		const host = connectedPage;
 
 		// CREATE, from the lobby.
-		await host.goto('/lobby/');
+		await openLobby(host);
 		await host.getByTestId('table-seats-2').click();
 		await host.getByTestId('table-create').click();
 		await host.waitForURL(/[?&]game=0x[0-9a-fA-F]{40}/, {timeout: 90_000});
@@ -394,7 +412,7 @@ describe('A stratagems table for a fixed set of players', () => {
 
 		// CREATE: two seats, two cycles, 4 gems a seat and no gap, so the board
 		// is 8 cells a square of 3: x and y from -1 to 1 (L4-24)
-		await host.goto('/lobby/');
+		await openLobby(host);
 		await host.getByTestId('table-seats-2').click();
 		await host.getByTestId('table-cycles').fill('2');
 		await host.getByTestId('table-option-stakeGems').fill('4');

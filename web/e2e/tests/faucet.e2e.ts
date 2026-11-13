@@ -9,10 +9,10 @@ import {
 import {
 	authoriseToPlay,
 	boardLoaded,
-	clickCell,
 	gameStep,
 	getTestGems,
 	stake,
+	planCell,
 } from '../fixtures/stratagems';
 
 /**
@@ -257,15 +257,7 @@ async function planAndCommit(page: Page, cell: {x: number; y: number}) {
 	await trace(page, 'ready');
 	await boardLoaded(page);
 	await trace(page, 'board loaded');
-	await expect
-		.poll(
-			async () => {
-				if ((await gameStep(page)).planned === 0) await clickCell(page, cell);
-				return (await gameStep(page)).planned;
-			},
-			{message: 'one move should be planned', timeout: 60_000},
-		)
-		.toBe(1);
+	await planCell(page, cell, {timeout: 60_000});
 	await trace(page, 'planned');
 	const commit = page.getByRole('button', {name: /commit now/i});
 	await expect(commit, 'the turn should be committable').toBeEnabled({

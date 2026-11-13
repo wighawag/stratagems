@@ -326,6 +326,38 @@ export async function clickCell(
 	await clickCanvas(page, offset);
 }
 
+/**
+ * PLAN ONE MOVE ON `cell`, clicking it AT MOST ONCE PER SETTLED READ.
+ *
+ * A click on a planned cell UNPLANS it (`planning.ts`'s `click`), and the
+ * renderer handles a click on a frame of its own, which under load comes after
+ * the test's next read. Re-clicking whenever a read says nothing is planned
+ * therefore clicked twice and planned nothing: the second click landed on the
+ * first's move (measured 2026-11-12, `stratagems-table.e2e.ts` in the full
+ * suite, `planned` read as 1 and then 0 with no other event). So each click is
+ * given time to land before the next is judged necessary, and the plan is held
+ * for a moment at the end to prove no late click is still coming.
+ */
+export async function planCell(
+	page: Page,
+	cell: {x: number; y: number},
+	options: {timeout?: number} = {},
+): Promise<void> {
+	const deadline = Date.now() + (options.timeout ?? 60_000);
+	const planned = async () => (await gameStep(page)).planned;
+	while ((await planned()) === 0) {
+		if (Date.now() > deadline) break;
+		await clickCell(page, cell);
+		await expect
+			.poll(planned, {timeout: 5_000})
+			.toBe(1)
+			.catch(() => undefined);
+	}
+	await expect.poll(planned, {message: 'one move should be planned'}).toBe(1);
+	await page.waitForTimeout(500);
+	expect(await planned(), 'the move should stay planned').toBe(1);
+}
+
 /** A cell's packed position, as `stratagems-common`'s `xyToBigIntID`. */
 export function positionOf(cell: {x: number; y: number}): bigint {
 	return (
