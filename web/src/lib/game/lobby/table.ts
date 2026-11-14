@@ -119,7 +119,15 @@ export type TableOptionField = {
 	default: number;
 	/** Said after the number, e.g. `gems` or `%`. */
 	unit?: string;
+	/**
+	 * The only values allowed, each with what the creator reads: the lobby asks
+	 * with a select instead of a number, and any other value is the default.
+	 */
+	choices?: readonly TableOptionChoice[];
 };
+
+/** One value a field with choices allows, and how the lobby names it. */
+export type TableOptionChoice = {value: number; label: string};
 
 /** A game's options at a table: what to ask, how to send it, how to say it. */
 export type TableOptions = {
@@ -139,11 +147,22 @@ export function defaultOptionValues(
 	return Object.fromEntries(options.fields.map((f) => [f.id, f.default]));
 }
 
-/** A value the field allows: a whole number inside its bounds, its default otherwise. */
+/**
+ * A value the field allows: one of its choices when it has some, else a whole
+ * number inside its bounds; its default otherwise. A select answers a string,
+ * so a field with choices reads one.
+ */
 export function clampOptionValue(
 	field: TableOptionField,
 	value: unknown,
 ): number {
+	if (field.choices) {
+		const n =
+			typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
+		return field.choices.some((choice) => choice.value === n)
+			? (n as number)
+			: field.default;
+	}
 	const n = typeof value === 'number' ? Math.floor(value) : NaN;
 	if (!Number.isFinite(n)) return field.default;
 	return Math.min(field.max, Math.max(field.min, n));
