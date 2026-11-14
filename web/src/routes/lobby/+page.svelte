@@ -113,25 +113,42 @@
 			/>
 			{#if gameOptions}
 				{#each gameOptions.fields as field (field.id)}
-					<label
-						class="mt-4 block text-sm font-medium"
-						for={`table-option-${field.id}`}
-						>{field.label}
-						<span class="font-normal text-muted-foreground"
-							>({field.min} to {field.max}{field.unit
-								? ` ${field.unit}`
-								: ''})</span
-						></label
-					>
-					<input
-						id={`table-option-${field.id}`}
-						class="mt-2 w-24 rounded-md border bg-background px-2 py-1 text-sm"
-						type="number"
-						min={field.min}
-						max={field.max}
-						data-testid={`table-option-${field.id}`}
-						bind:value={optionValues[field.id]}
-					/>
+					{#if field.choices}
+						<label
+							class="mt-4 block text-sm font-medium"
+							for={`table-option-${field.id}`}>{field.label}</label
+						>
+						<select
+							id={`table-option-${field.id}`}
+							class="mt-2 rounded-md border bg-background px-2 py-1 text-sm"
+							data-testid={`table-option-${field.id}`}
+							bind:value={optionValues[field.id]}
+						>
+							{#each field.choices as choice (choice.value)}
+								<option value={choice.value}>{choice.label}</option>
+							{/each}
+						</select>
+					{:else}
+						<label
+							class="mt-4 block text-sm font-medium"
+							for={`table-option-${field.id}`}
+							>{field.label}
+							<span class="font-normal text-muted-foreground"
+								>({field.min} to {field.max}{field.unit
+									? ` ${field.unit}`
+									: ''})</span
+							></label
+						>
+						<input
+							id={`table-option-${field.id}`}
+							class="mt-2 w-24 rounded-md border bg-background px-2 py-1 text-sm"
+							type="number"
+							min={field.min}
+							max={field.max}
+							data-testid={`table-option-${field.id}`}
+							bind:value={optionValues[field.id]}
+						/>
+					{/if}
 				{/each}
 			{/if}
 			<Button
