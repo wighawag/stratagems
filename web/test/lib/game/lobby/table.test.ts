@@ -23,6 +23,7 @@ import {
 	tableProgressOf,
 	tableSettingsOf,
 	type Roster,
+	type TableOptionField,
 	type TableOptions,
 	type TableState,
 } from '$lib/game/lobby/table';
@@ -432,6 +433,44 @@ describe("a game's options at a table", () => {
 	it('encodes what the creator chose, each value clamped to its field first', () => {
 		expect(encodeTableOptions(options, {stake: 7, gap: 1000})).toBe(
 			`0x${((200n << 32n) | 7n).toString(16).padStart(64, '0')}`,
+		);
+	});
+
+	const mode: TableOptionField = {
+		id: 'mode',
+		label: 'Mode',
+		min: 0,
+		max: 2,
+		default: 0,
+		choices: [
+			{value: 0, label: 'Avatars'},
+			{value: 2, label: 'Tokens'},
+		],
+	};
+
+	it('keeps a field with choices to one of them, its default otherwise', () => {
+		expect(clampOptionValue(mode, 2)).toBe(2);
+		expect(clampOptionValue(mode, 0)).toBe(0);
+		// inside the bounds, but not a choice
+		expect(clampOptionValue(mode, 1)).toBe(0);
+		expect(clampOptionValue(mode, 7)).toBe(0);
+		expect(clampOptionValue(mode, undefined)).toBe(0);
+		// a select answers a string
+		expect(clampOptionValue(mode, '2')).toBe(2);
+	});
+
+	it('encodes the chosen choice', () => {
+		const withMode: TableOptions = {
+			fields: [mode],
+			encode: (values) =>
+				`0x${BigInt(values.mode).toString(16).padStart(64, '0')}`,
+			describe: () => [],
+		};
+		expect(encodeTableOptions(withMode, {mode: '2'})).toBe(
+			`0x${'2'.padStart(64, '0')}`,
+		);
+		expect(encodeTableOptions(withMode, {mode: 1})).toBe(
+			`0x${'0'.padStart(64, '0')}`,
 		);
 	});
 });
