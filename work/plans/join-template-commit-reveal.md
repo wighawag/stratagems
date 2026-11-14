@@ -135,7 +135,7 @@ Candidates already visible, each to be judged when its step comes (not decided h
 - [x] **Step T2** (half in the template tree, asked for by the user on 2026-11-03, after A2; specified and decided 2026-11-12, T2-1 to T2-9): a table opens at the block it was created in: the lobby's initializer records `block.number` in the `Roster` (`uint48 openedAtBlock`, in the slot's 7 spare bytes), and at a table the page resolves the table BEFORE composing its context (its code the clone of the game's implementation, its roster's block), so the table's deployment record is true (its `startBlock` the table's) and a link to anything else is refused. Rejected: the block in the invite link (anyone sharing it could hide history), a factory mapping (an extra storage write), scanning for `GameCreated` (range-limited, the same problem), an asynchronous source in `$lib/indexer` (it fixes one reader and leaves the record false)
 - [x] **Step E1** (asked for by the user on 2026-11-12, after T2): the e2e cases that failed under load in the full suite, on `main` as on T2, fixed in the tests: a move planned by clicking at most once per settled read, the lobby used once its account is restored, the AI story's decisions under a ceiling
 - [x] **Step R1a** (in reveal-or-die, bomber-world by cascade; decided 2026-11-12, R-1 to R-8, see "Step R"): the loot in reveal-or-die's world: every seat carries a stake, a dead avatar leaves a body holding it, a move onto a body claims it, the claimants of its first claimed cycle split it after the cycle, a dead carrier's body carries its claims, and an exit cashes out (the maintainer's design of 2026-11-04 and 11-05). To be specified first
-- [ ] **Step R1b** (in reveal-or-die, after R1a): tables in reveal-or-die, in two modes chosen at creation: avatar mode (the deposited NFT is the stake, a tally) and token mode (a fixed ETH stake a seat, the avatar for display only), no exit, ended at the last cycle or with one alive, each survivor withdrawing their stake and what they collected. To be specified after R1a
+- [ ] **Step R1b** (in reveal-or-die, after R1a): tables in reveal-or-die, in two modes chosen at creation: avatar mode (the deposited NFT is the stake, a tally) and token mode (a fixed ETH stake a seat, the avatar for display only), no exit, ended at the last cycle or with one alive, each survivor withdrawing their stake and what they collected (specified and decided 2026-11-13, R1b-1 to R1b-19: avatar mode pays the avatar's R1a stake in ETH rather than a tally, a mode chosen through `gameOptions` and a select upstream, a close and leftovers pulled by anyone)
 - [ ] **Step R2** (in bomber-world, after R1b): bomb kills feed the same bodies, its tables by cascade, the order argument for blast deaths re-checked. To be specified after R1b
 - [ ] **Step D-live** (needs the user, deferred by them on 2026-10-30 until the steps that do not need them are done; needs X2, which changes the contracts it deploys): items 5 and 6 of step D's section, the hosted fuzd upgraded and the live deploy, then one turn played on Base (the deploy includes the tables since L2's PL2-3)
 - [x] **Step 11**: Svelte conventions (absorbed by 6c: measured empty on 2026-10-26, see its section)
@@ -1510,6 +1510,69 @@ Asked for by the user on 2026-11-12, after T2 ("reveal-or-die should inherit the
 - **R1a-8, the client**: bodies drawn with their value, Collect offered where the avatar stands, the carried and pending value in the HUD, the chain settled for the player, the burn for the stake in the avatar's panel; the offline world's AI seats unchanged.
 - **R1a-9, the tests**: the mint fixes the stake, a holder's burn pays it and the id cannot come back; two collectors split a body; a later claim gets nothing; more bodies than a turn can name; a release refused while the body has claims of its own; a dead carrier's body passes its stake and its carried value; a withdrawal pays the collected value and the avatar keeps its stake; the order replay; a reveal with `MAX_COLLECTS` claims under the declared gas; client unit tests; an e2e (one avatar left to die, another collecting it, exiting and paid, its avatar's stake unchanged); bomber-world verified after the cascade.
 - **R1a-10, where**: reveal-or-die, a task `stake-in-the-avatar` on its `work`, then bomber-world by cascade; every push asked for per repo; the avatars, the sale and the game redeployed, which costs nothing since none is live.
+
+**Step R1b, specified and decided by the user on 2026-11-13** (proposed by this plan's session of that day, answered "go"; R1b needs R1a, ticked).
+
+**What decides R1b's shape** (measured 2026-11-13, read-only: reveal-or-die `origin/main` 070176ee, compiled in a throwaway worktree; template-commit-reveal `origin/main` dc4b08bc):
+
+- **R-4's "avatar mode ... a tally" predates R1a.** Since R1a every avatar carries an ETH stake (`Avatars.stakeOf`, fixed at mint) and a body's pot is real ETH (`_releaseBody` burns it and receives the stake), so avatar mode pays real money as the world does.
+- **A seated avatar that never enters cannot die**: `_getResolvedAvatar` gives `life = 1` to an avatar not `inGame`. At a table that is an exploit (stay out of the world, enter at the last cycle, survive, take the leftovers).
+- **Nothing in the game is `virtual`** (`UsingGameInternal`), `_exit` is `pure`, and `_withdraw` refuses an avatar in the world, so a survivor cannot be paid at a table without table-only overrides.
+- **`_members()` shrinks on a forfeit**: `CommitReveal.forfeitMember` calls `releaseSeat`, so a list read from it misses a forfeited member's body; attendance shrinks the same way and on `releaseDeadAvatar`.
+- **The framework's client has one factory per game** (`TableLobby.factory`, `.implementation`) and numeric options only (`TableOptionField {min, max, default}`, an `<input type="number">` in `web/src/routes/lobby/+page.svelte`); `MOST_TABLE_SEATS` is 8 (client only; the chain's bound is the `uint8`).
+- **A purchase can seat at a table in one transaction**: `SaleViaNativePayment.purchase(to, ...)` mints to `to`, and `GameDeposit.onERC721Received` records the owner from `data` on a mint.
+- **The world**: `Timed`, `numMoves` 10, `numMissesAllowed` 3, `actionsPerReveal` 14, the avatar's stake 0.0001 ETH on localhost. The template's tables run `TimedWithEarlyAdvance`.
+- **Deployed sizes** (EIP-170, 24,576 bytes): `GameReveal` 18,823, `GameDeposit` 10,279, `GameLoot` 8,765, `GameGetters` 9,457, `GameCommit` 6,790, `CommitRevealLobby` 9,819.
+- **Names taken**: reveal-or-die omits the stem's `030_deploy_lobby.ts`, `Lobby.test.ts`, `table.e2e.ts` and `table-link.e2e.ts`, so its own files need other names.
+- **Baselines**: reveal-or-die contracts 68 passing, unit 2217 + 78, check 0 and 0, e2e 55 passed and 2 skipped; bomber-world contracts 70, unit 2307 + 78, e2e 57 passed and 2 skipped. reveal-or-die has the `lan` flake output.
+
+**Decided** (each with the alternative rejected):
+
+- **R1b-1, the mode is a game option**: `gameOptions` decodes as `{uint8 mode}` (0 avatar, 1 ETH, every other byte zero), refused where it is read (deposit, join); one implementation, one factory. Rather than an implementation and a factory per mode (`TableLobby` has one factory).
+- **R1b-2, avatar mode pays real ETH**, the avatar's R1a stake; a deposit is refused unless `stakeOf(id)` equals the table's stake, so every seat risks the same. Rather than a tally (less than what is at stake) or any stake (unequal seats).
+- **R1b-3, ETH mode's seat**: `join()` payable with exactly the table's stake; the seat id is the account's address as a `uint256`, one seat per account; its look generated from that id (the look of an NFT the player owns, read and never sent, is later). Rather than an NFT id as the seat (two players collide after a transfer) or a counter.
+- **R1b-4, the table's stake is the deployment's**: `data.Table.stake`, equal to the sale's stake, recorded in the factory's linked data. Rather than an amount per table, for now.
+- **R1b-5, the death clock starts at the table's start** for every seated avatar: one that never enters dies after the allowance, its body off the board, its value a leftover (R1b-9). Rather than entry restricted to the first cycle (two rules where one does) or immortality outside the world (the exploit above).
+- **R1b-6, no exit at a table**: `_exit` dropped there, as any refused action is, and never offered by the client; a withdrawal before the start frees the seat; after it, nobody withdraws until the close (R1b-7).
+- **R1b-7, the close**: `closeTable()`, by anyone, once the base's last cycle has passed or at most one seated avatar is alive (a loop over the seated list, R1b-8, at most `seats`), records the end cycle, the survivors (alive at that cycle) and the leftover bodies; commits are refused after it (one stored flag). Rather than an O(seats) check inside every commit, or attendance (forfeits and unreleased dead skew it).
+- **R1b-8, the table's own seated list**: pushed at a deposit or a join, removed only by a withdrawal before the start, kept through a creator's forfeit. Rather than `_members()`.
+- **R1b-9, leftovers (R-3)**: after the close, `releaseLeftover(body)` by anyone, for each dead body never claimed (never-entered ones included): avatar mode burns it for its stake, ETH mode takes the table's stake, plus what the body carries, into a leftover pot; refused while the body has open claims (R1a-6, bottom up). A survivor's withdrawal waits until every leftover is released, then pays the stake (the NFT back in avatar mode, ETH in ETH mode), what it carries, and the pot divided by the survivors; the remainder stays in the game. A body claimed in the last cycle settles as an R1a claim. Rather than a pull per survivor and body (survivors times bodies transactions) or a split inside the close (unbounded chains).
+- **R1b-10, nobody survives**: each leftover is paid to its own owner at its release. Rather than locked in the table or given to the creator.
+- **R1b-11, table-only routes, as L4-13**: a mixin `UsingGameTable` (namespaced storage, ERC-7201) overriding the world's internals made `virtual` (`_getResolvedAvatar`, `_exit`, `_releaseBody` and `_getBody`, `_withdraw`, `_commitTurn`), and a `GameTable` route (`join`, `closeTable`, `releaseLeftover`, the views); the world's bytecode identical but for the metadata hash; stop and report if a table route exceeds 24,576 bytes.
+- **R1b-12, the table's config** `data.Table`: `TimedWithEarlyAdvance`, the world's durations, `numMoves` 10, `actionsPerReveal` 14, `numMissesAllowed` 1 (R-6). Rather than the world's `Timed` (a table of two waiting out every phase).
+- **R1b-13, the `numMoves` option** (the maintainer, 2026-11-04) is deferred; R1b's only option is the mode.
+- **R1b-14, upstream first**: an optional `choices` on `TableOptionField` (rendered as a select), at template-commit-reveal `main`, the reference game unchanged, cascaded to the six `with/*` nodes, the three games and stratagems; reveal-or-die's mode uses it. Rather than a 0-to-1 number field.
+- **R1b-15, names**: `030_deploy_tables.ts`, `GameTableImplementation` (a router, no proxy), `GameTableFactory`, `Tables.test.ts`, `tables.e2e.ts`, `world/table.ts`; every contract `deterministic: true`, every setup call guarded, the LAN build checked.
+- **R1b-16, the client**: `world/table.ts` exports `lobby`, re-exported from `world/game.ts`, so "Tables" appears; a seat in avatar mode is a purchase with `to` the table, or a deposit of an avatar held; in ETH mode "Join" for the stake; the HUD shows how many are alive, no exit, and after the end "Close the table", the leftovers released bottom up (R1a's chain), and "Take your winnings" with the amount. No AI at online tables.
+- **R1b-17, the tests**: contracts (the mode refused where read; the stake equal; a never-entered avatar dying; an exit dropped; a close with one alive and one at the last cycle with two; a forfeited member's body counted; a leftover refused with open claims; the pot and its remainder; nobody surviving refunds; the payouts in both modes; the order replay at a table; the world's bytecode and reveal gas unchanged); client unit tests; `tables.e2e.ts`, one story per mode: two players, one stops revealing and dies, the table closes early, the leftover released, the survivor paid (avatar mode: the NFT back and the other's stake; ETH mode: twice the stake), the dead paid nothing.
+- **R1b-18, bomber-world** takes R1b by cascade, compiles and verifies, and exports no `lobby` until R2 re-checks blast deaths at a table.
+- **R1b-19, where**: the task `tables-for-reveal-or-die` on reveal-or-die's `work`, rewritten with R1b-1 to R1b-18; R1b-14 a task on template-commit-reveal's `work`; preview branches `pr1b/<branch>` under `~/dev/worktrees/<repo>/pr1b/`; branch `step-R1b` here; every push asked for per repo.
+
+**Start here** (R1b).
+
+```sh
+git -C ~/dev/github/wighawag/reveal-or-die fetch origin --prune
+git -C ~/dev/github/wighawag/bomber-world fetch origin --prune
+git -C ~/dev/github/wighawag/template-commit-reveal fetch origin --prune
+git -C ~/dev/github/wighawag/reveal-or-die rev-parse --short origin/main            # 070176ee on 2026-11-13
+git -C ~/dev/github/wighawag/template-commit-reveal rev-parse --short origin/main   # dc4b08bc on 2026-11-13
+git -C ~/dev/github/wighawag/reveal-or-die show origin/work:work/tasks/backlog/tables-for-reveal-or-die.md | tail -20   # the task R1b rewrites
+git -C ~/dev/github/wighawag/reveal-or-die show origin/main:contracts/src/game/internal/UsingGameInternal.sol | grep -n "virtual\|life = 1"   # no virtual; the never-entered avatar's life (R1b-5, R1b-11)
+git -C ~/dev/github/wighawag/reveal-or-die show origin/main:contracts/src/commit-reveal/CommitReveal.sol | grep -n -A30 "function forfeitMember" | grep releaseSeat   # why the seated list is the table's (R1b-8)
+git -C ~/dev/github/wighawag/reveal-or-die show origin/main:web/src/lib/game/lobby/table.ts | grep -n -A8 "export type TableOptionField"   # numeric only (R1b-14)
+git -C ~/dev/github/wighawag/reveal-or-die show origin/main:contracts/src/avatars/SaleViaNativePayment.sol | grep -n -A3 "function purchase("   # `to` (R1b-16)
+git -C ~/dev/github/wighawag/reveal-or-die show origin/main:.offshoot-omissions | grep -v "^#" | grep -i "lobby\|table"   # the names taken (R1b-15)
+```
+
+**Do** (R1b; each repo by its own AGENTS.md and `work` protocol, one commit per item, every push asked for):
+
+1. Re-derive: the commands above and the baselines (reveal-or-die and bomber-world contracts, check, unit, e2e; template `main`'s verify).
+2. Test-first at template-commit-reveal `main`: R1b-14, then cascaded to the six `with/*` nodes, reveal-or-die, bomber-world and stratagems, each verified.
+3. Test-first in reveal-or-die: `Tables.test.ts` (R1b-17's contract cases) first, then the `virtual` keywords and the world's bytecode and reveal gas compared with the baseline, then R1b-1 to R1b-12 and R1b-15 (`UsingGameTable`, the table routes, `GameTable`, `030_deploy_tables.ts`, `data.Table`), the route sizes measured.
+4. The client in reveal-or-die (R1b-16) with its unit tests; `tables.e2e.ts`; the full e2e; `nix build git+file://$PWD#lan`.
+5. Cascade to bomber-world (R1b-18), verified.
+
+**Done when** (R1b), all measured: at the template, `choices` with its unit test and every node verifying; in reveal-or-die, contracts 68 plus the new cases, the world's routes byte-identical but for the metadata hash and its reveal gas unchanged, every table route under 24,576 bytes, check 0 errors and 0 warnings, unit 2217 + 78 plus the new cases, the full e2e at its baseline plus `tables.e2e.ts` (RPC 8557, app 4183), the LAN build passing, dangling imports and omissions clean; bomber-world verifying without "Tables"; here, the template's cascade merged with check and unit green; every push approved by the user.
 
 ### Step D-live: the deployment itself (needs the user)
 
@@ -3406,3 +3469,14 @@ Built in reveal-or-die from `origin/main` c596f966 on `pr1a/main`, cascaded to b
 **Awaiting approval, every one a fast-forward of its `origin` head**: reveal-or-die `main` c596f966..070176ee and `work` 417b1b44..71d8089a; bomber-world `main` 4a44e654..26d6520d; then stratagems `main` to this branch's head, by the landing. No branch created on a remote or deleted. Once pushed, R1a is ticked and this branch lands. Next: R1b (tables in reveal-or-die), to be specified.
 
 **Pushed, 2026-11-12, with the user's approval** ("You can commit and push"), each checked against the `origin` head fetched just before and each a fast-forward: reveal-or-die `main` c596f966..070176ee and `work` 417b1b44..71d8089a; bomber-world `main` 4a44e654..26d6520d. Landed: R1a ticked, stratagems `main` fast-forwarded to `step-R1a` and pushed. The `pr1a/*` preview branches and worktrees equal their pushed branches and are safe to remove. Next: Step R1b (tables in reveal-or-die), which has no "Start here" yet, so its session specifies it first.
+
+### 2026-11-13, step R1b specified and decided (R1b-1 to R1b-19)
+
+R1b had no "Start here", so this session measured (reveal-or-die `origin/main` 070176ee, compiled in a throwaway worktree since removed; template-commit-reveal `origin/main` dc4b08bc) and proposed; the user answered "go". Nothing built. The specification is in "Step R", after R1a's decisions.
+
+- **A premise R1a changed**: R-4's avatar mode "a tally" was written before avatars carried an ETH stake; R1b-2 pays that stake instead.
+- **Surprises**: a seated avatar that never enters cannot die (`_getResolvedAvatar` gives `life = 1` outside the world), which at a table would let a player hide and enter at the last cycle (R1b-5); the creator's forfeit releases a seat, so `_members()` cannot list a table's bodies (R1b-8); nothing in reveal-or-die's game is `virtual` yet (R1b-11).
+- **Measured**: `GameReveal` 18,823 bytes deployed (5.7 KB under EIP-170), `GameDeposit` 10,279, `GameLoot` 8,765; the baselines are in "What decides R1b's shape".
+- **A LAN-readiness prompt the user had meant to send earlier** (stratagems at a37e37af: deterministic deploys, guards, chain 19216801, `nix/game.nix`'s hash and solc) was checked against `main` and is already done by L3 (2026-11-11): `contracts/deploy/.config` chooses `deterministic` per environment, `011`, `020` and `002` are guarded, `rocketh/config.ts` has chain 19216801, and the package is ethereum-lan-node's `lib.mkRockethGame` with the root `package.json`'s `"lan"` field (`nix/` no longer exists here). No step added; L3-box (the user's box) is what remains of it.
+
+Next: R1b, built as specified.
