@@ -30,12 +30,12 @@ import {readFileSync} from 'node:fs';
  * not an instruction. Until a gap closes its game is offered the world only.
  * An entry whose game now offers tables offline fails below: delete it, here
  * at the template, so the deletion cascades.
+ *
+ * EMPTY since stratagems' plan, step OT3, which closed the last two
+ * (reveal-or-die's, and bomber-world's by cascade): every game in the tree
+ * offers its tables offline. The list stays for a game that joins short.
  */
-const KNOWN_GAPS: Record<string, string> = {
-	'reveal-or-die-monorepo': "stratagems' plan, step OT3",
-	'bomber-world-monorepo':
-		"stratagems' plan, step OT3 (reveal-or-die's tables, by cascade)",
-};
+const KNOWN_GAPS: Record<string, string> = {};
 
 const root = new URL('../..', import.meta.url).pathname;
 const repo = (
