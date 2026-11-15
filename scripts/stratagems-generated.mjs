@@ -46,7 +46,6 @@ try {
 				'--filter',
 				'./contracts',
 				'export',
-				'-e',
 				EPHEMERAL,
 				'--ts',
 				'../indexer/src/contracts.ts,../web/src/lib/deployments.ts',

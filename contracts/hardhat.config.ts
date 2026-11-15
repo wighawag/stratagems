@@ -10,8 +10,9 @@ import {addForkConfiguration, addNetworksFromEnv} from 'hardhat-deploy/helpers';
 
 loadEnv();
 
-// `pnpm local_node` mines on a timer when BLOCK_TIME (seconds) is set, and on every
-// transaction otherwise. Only the `node` network: the tests keep instant mining.
+// The `node` network mines on a timer when BLOCK_TIME (seconds) is set, and on every
+// transaction otherwise; `pnpm node:local` sets it to 1 unless the environment has it.
+// Only the `node` network: the tests keep instant mining.
 const blockTime = process.env['BLOCK_TIME'] ? parseInt(process.env['BLOCK_TIME']) : undefined;
 
 // ONE set of compiler settings for every profile: `hardhat deploy` to a live network
@@ -81,7 +82,7 @@ const config: HardhatUserConfig = {
 					chainType: 'l1',
 					allowBlocksWithSameTimestamp: true,
 				},
-				// `pnpm local_node` (hardhat node): what `localhost` connects to
+				// `pnpm node:local` (hardhat node): what `localhost` connects to
 				node: {
 					type: 'edr-simulated',
 					chainType: 'l1',

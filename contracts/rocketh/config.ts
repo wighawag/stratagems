@@ -22,7 +22,7 @@ export const config = {
 	},
 	// the deploy scripts branch on these tags (`deploy/.config`)
 	environments: {
-		// the local dev node (`pnpm local_node`)
+		// the local dev node (`pnpm node:local`)
 		localhost: {
 			chain: 31337,
 		},
@@ -54,7 +54,7 @@ export const config = {
 		},
 	},
 	chains: {
-		// The local chain (`pnpm local_node`, the e2e), with the two properties the
+		// The local chain (`pnpm node:local`, the e2e), with the two properties the
 		// template's client prices the browser's key with, exported with the
 		// deployments and read by the web app (as the template's config declares
 		// them): `expectedWorstGasPrice` sizes the gas stipend the stake forwards

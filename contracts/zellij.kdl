@@ -8,7 +8,7 @@ layout {
 				args "test"
 			}
 			pane name="local node" command="pnpm"  {
-				args "local_node"
+				args "node:local"
 			}
 		}
 	}

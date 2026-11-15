@@ -13,6 +13,9 @@
 		"description": "Create a table from the lobby and invite the room, or play hotseat and against the AI offline",
 		"preWebBuild": "(cd contracts && pnpm exec rocketh-export -e lan --ts ../indexer/src/contracts.ts) && pnpm --filter ./common build && pnpm --filter ./indexer build && node web/scripts/processor-bundle.js"
 	},
+	"e2e": {
+		"linkBuilt": ["common/dist", "indexer/dist"]
+	},
 	"packageManager": "pnpm@10.28.1",
 	"devDependencies": {
 		"stratagems-contracts": "workspace:*",
@@ -37,16 +40,16 @@
 		"format": "prettier --write . && pnpm -r format",
 		"format:check": "prettier --check . && pnpm -r format:check",
 		"---------------------- INTERNAL ----------------------": "",
-		"_contracts:deploy:watch": "pnpm --filter ./contracts deploy:watch $MODE ~~ pnpm run export -e $MODE --ts ../indexer/src/contracts.ts,../web/src/lib/deployments.ts ~~",
-		"_contracts:deploy": "pnpm run --filter ./contracts deploy $MODE  ~~ pnpm run export -e $MODE --ts ../indexer/src/contracts.ts,../web/src/lib/deployments.ts ~~",
+		"_contracts:deploy:watch": "pnpm --filter ./contracts deploy:watch $MODE ~~ pnpm run export $MODE --ts ../indexer/src/contracts.ts,../web/src/lib/deployments.ts ~~",
+		"_contracts:deploy": "pnpm run --filter ./contracts deploy $MODE  ~~ pnpm run export $MODE --ts ../indexer/src/contracts.ts,../web/src/lib/deployments.ts ~~",
 		"---------------------- UTILITIES ----------------------": "",
-		"local_node": "ldenv pnpm --filter ./contracts local_node",
+		"local_node": "ldenv pnpm --filter ./contracts node:local",
 		"contracts:compile": "pnpm --filter ./contracts compile",
 		"contracts:compile:watch": "pnpm --filter ./contracts compile:watch",
 		"web:dev": "pnpm --filter ./web dev",
 		"indexer:dev": "pnpm --filter ./indexer dev",
 		"common:dev": "pnpm --filter ./common dev",
-		"contracts:export": "ldenv -d localhost pnpm run --filter ./contracts export -e @@MODE --ts ../indexer/src/contracts.ts,../web/src/lib/deployments.ts @@",
+		"contracts:export": "ldenv -d localhost pnpm run --filter ./contracts export @@MODE --ts ../indexer/src/contracts.ts,../web/src/lib/deployments.ts @@",
 		"contracts:test": "pnpm --filter ./contracts test",
 		"contracts:execute": "pnpm --filter ./contracts execute",
 		"contracts:docs": "ldenv -d localhost pnpm run --filter ./contracts docgen @@MODE -o ../docs/contracts",

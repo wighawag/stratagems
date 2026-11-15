@@ -40,7 +40,7 @@ pnpm watch_compile
 
 - on localhost
 
-  This assume you have a local node running : `pnpm local_node`
+  This assume you have a local node running : `pnpm node:local`
 
   ```bash
   pnpm run deploy localhost

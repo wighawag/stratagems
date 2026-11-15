@@ -396,11 +396,7 @@ else
     # interleaves with the test report, and on shutdown the node's own pnpm
     # wrapper prints "ELIFECYCLE Command failed" as it is killed - which reads
     # like the run failed even when every test passed and the script exits 0.
-    # STRATAGEMS: its node is `local_node` (the `node` network of its
-    # hardhat.config.ts), mining a block every BLOCK_TIME seconds: the template's
-    # `local` network mines every second for the reason written there (the app's
-    # clock), and stratagems' indexer needs blocks to see the chain move as well.
-    BLOCK_TIME=1 setsid pnpm run local_node --port "$RPC_PORT" >"$NODE_LOG" 2>&1 &
+    setsid pnpm run node:local --port "$RPC_PORT" >"$NODE_LOG" 2>&1 &
     NODE_PID=$!
 
     # Resolve the group the node actually landed in. Guard against ever
@@ -492,19 +488,6 @@ echo -e "\n${GREEN}📋 Compiling contracts...${NC}"
 cd "$CONTRACTS_DIR"
 pnpm compile
 
-# STRATAGEMS: what its web needs beside the deployments and the contracts
-# package is `common/` and the indexer, built (and gitignored) in the main
-# checkout and independent of any deployment: the processor bundle is keyed by
-# its own bytes, the indexing source is built from the export. Linked before
-# the package's `tsc`, which resolves the workspace's packages too.
-for built in common/dist indexer/dist; do
-    if [ ! -d "$REPO_DIR/$built" ]; then
-        echo -e "${RED}✗ ${REPO_DIR}/$built is missing. Run pnpm i first.${NC}"
-        exit 1
-    fi
-    ln -s "$REPO_DIR/$built" "$WORKTREE_DIR/$built"
-done
-
 # Build the WORKTREE's contracts package: its exports (deploy scripts, rocketh
 # config, artifacts) resolve into `dist`, which a fresh worktree does not have,
 # and it must come from the artifacts just compiled. `tsc` and not
@@ -525,8 +508,7 @@ pnpm run deploy localhost --skip-prompts --no-compile
 # Export deployments
 echo -e "\n${GREEN}📋 Exporting deployments...${NC}"
 cd "$CONTRACTS_DIR"
-# STRATAGEMS: its `export` is `rocketh-export` itself, so the environment is `-e`.
-pnpm export -e localhost --ts ../web/src/lib/deployments.ts
+pnpm export localhost --ts ../web/src/lib/deployments.ts
 echo -e "${GREEN}✓ Contracts deployed and exported${NC}"
 
 # Build web app
