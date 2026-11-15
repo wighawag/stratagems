@@ -39,7 +39,8 @@
 	import Context from '$lib/context/Context.svelte';
 	import {Spinner} from '$lib/shadcn/ui/spinner';
 	import {offlineWorld} from '$lib/offline';
-	import {SEAT_CHOICES} from '$lib/game/lobby/seats';
+	import {FEWEST_TABLE_CYCLES, MOST_TABLE_CYCLES} from '$lib/game/lobby/table';
+	import TableOptionFields from '$lib/game/lobby/ui/TableOptionFields.svelte';
 	import {
 		THE_KEY_THIS_BROWSER_PLAYS_WITH,
 		offlineLobby,
@@ -130,14 +131,41 @@
 	     player decides here. Which is why this renders a count and a table and
 	     asks the lobby for both. -->
 	<div class="container mx-auto max-w-2xl px-4 py-24 text-center">
-		<h1 class="text-lg font-semibold">How many at the table?</h1>
+		{#if $offlineLobby.modeChoices.length > 1}
+			<!-- A TABLE OR THE WORLD, when this game's world can play its tables:
+			     a table first. Asked only when there is a choice. -->
+			<h1 class="text-lg font-semibold">A table or the world?</h1>
+			<div class="mt-4 flex flex-wrap justify-center gap-2">
+				{#each $offlineLobby.modeChoices as mode (mode)}
+					<Button
+						size="sm"
+						variant={mode === $offlineLobby.mode ? 'default' : 'outline'}
+						data-testid={`mode-${mode}`}
+						onclick={() => offlineLobby.chooseMode(mode)}
+						>{mode === 'table' ? 'A table' : 'The world'}</Button
+					>
+				{/each}
+			</div>
+			<p class="mx-auto mt-2 max-w-md text-xs text-muted-foreground">
+				{$offlineLobby.mode === 'table'
+					? 'A table plays the number of cycles you choose, then ends.'
+					: 'The world never ends: play it for as long as you like.'}
+			</p>
+		{/if}
+		<h1
+			class={$offlineLobby.modeChoices.length > 1
+				? 'mt-8 text-lg font-semibold'
+				: 'text-lg font-semibold'}
+		>
+			How many at the table?
+		</h1>
 		<p class="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
 			A chain will be created in this browser and this game's own deploy scripts
 			run against it. Every seat is given a stake, which is what makes the cycle
 			wait for them. Nothing leaves the tab.
 		</p>
 		<div class="mt-6 flex flex-wrap justify-center gap-2">
-			{#each SEAT_CHOICES as choice (choice)}
+			{#each $offlineLobby.seatChoices as choice (choice)}
 				<Button
 					size="sm"
 					variant={choice === $offlineLobby.seats ? 'default' : 'outline'}
@@ -146,6 +174,32 @@
 				>
 			{/each}
 		</div>
+		{#if $offlineLobby.mode === 'table'}
+			<!-- A TABLE'S OWN CHOICES: how many cycles it plays, and the game's
+			     options, asked as the online lobby asks them. -->
+			<label class="mt-6 block text-sm font-medium" for="table-cycles"
+				>How many cycles? <span class="font-normal text-muted-foreground"
+					>({FEWEST_TABLE_CYCLES} to {MOST_TABLE_CYCLES}; the game ends after
+					the last)</span
+				></label
+			>
+			<input
+				id="table-cycles"
+				class="mt-2 w-24 rounded-md border bg-background px-2 py-1 text-center text-sm"
+				type="number"
+				min={FEWEST_TABLE_CYCLES}
+				max={MOST_TABLE_CYCLES}
+				data-testid="table-cycles"
+				value={$offlineLobby.cycles}
+				oninput={(event) =>
+					offlineLobby.chooseCycles(event.currentTarget.valueAsNumber)}
+			/>
+			<TableOptionFields
+				fields={$offlineLobby.optionFields}
+				values={$offlineLobby.optionValues}
+				onchange={(id, value) => offlineLobby.chooseOption(id, value)}
+			/>
+		{/if}
 		{#if $offlineLobby.humansAtMost > 1}
 			<!-- HOTSEAT, when this game's world can play it: how many of the seats
 			     are people at this device, passing it between them. -->

@@ -1,4 +1,4 @@
-import {test, expect, describe} from '../fixtures/test';
+import {test, expect, describe, chooseTheWorld} from '../fixtures/test';
 import type {Page} from '@playwright/test';
 
 /**
@@ -35,6 +35,7 @@ describe('One tab per offline world', () => {
 	}) => {
 		await page.goto('/offline/');
 		await expect(page.getByTestId('sit-down')).toBeVisible({timeout: 60_000});
+		await chooseTheWorld(page);
 		await page.getByTestId('sit-down').click();
 		await expect(page.getByText(WORLD_UP)).toBeVisible({timeout: 120_000});
 		const world = await chainIdOf(page);

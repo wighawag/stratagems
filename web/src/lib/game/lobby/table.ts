@@ -582,6 +582,11 @@ export type TableStore = Readable<TableState> & {
 	start(): Promise<void>;
 	/** The creator forfeits a member who has not committed in this commit phase. */
 	forfeit(member: bigint): Promise<void>;
+	/**
+	 * How a member is named: as the world names its seat where it does (an
+	 * offline table), else by {@link memberLabel}.
+	 */
+	labelOf(member: bigint): string;
 	startPolling(): () => void;
 };
 
@@ -604,6 +609,11 @@ export function createTableStore(params: {
 	you: Readable<bigint | undefined>;
 	/** Called after the creator's transactions land, so the game re-reads its cycle. */
 	onChanged?: () => void;
+	/**
+	 * How a member is named where the world knows better than their identity
+	 * (`CoreServices.tableSeatLabels`); `undefined` falls back to it.
+	 */
+	labels?: (member: bigint) => string | undefined;
 	pollInterval?: number;
 }): TableStore {
 	const {deps, table} = params;
@@ -676,6 +686,7 @@ export function createTableStore(params: {
 		start: () => send('start', {functionName: 'start'}),
 		forfeit: (member) =>
 			send('forfeit', {functionName: 'forfeitMember', args: [member]}),
+		labelOf: (member) => params.labels?.(member) ?? memberLabel(member),
 		startPolling() {
 			void update();
 			const timer = setInterval(

@@ -1,4 +1,4 @@
-import {test, expect, describe} from '../fixtures/test';
+import {test, expect, describe, chooseTheWorld} from '../fixtures/test';
 
 /**
  * A WHOLE ROUND AGAINST A CHAIN IN THIS TAB.
@@ -79,6 +79,7 @@ describe('Playing offline', () => {
 		await expect(page.getByText('How many at the table?')).toBeVisible({
 			timeout: 60_000,
 		});
+		await chooseTheWorld(page);
 		await page.getByTestId('sit-down').click();
 
 		// The world is up: this strip is rendered only once the chain, the deploy
