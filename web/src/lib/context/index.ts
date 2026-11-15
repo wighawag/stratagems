@@ -96,8 +96,18 @@ export function createContext(options?: {
 	 * THE TABLE this page is at, RESOLVED ({@link openContext}): the record is
 	 * composed with the game at its address and its history starting at the
 	 * block it was created in. Omitted, the page is at the game's world.
+	 *
+	 * WITH A CONNECTION OF ITS OWN, the connection is the table's already (an
+	 * offline world composes it over the table's record) and this only says
+	 * the game is at a table, so the table's roster and its creator's powers
+	 * come with it.
 	 */
 	table?: ResolvedTable;
+	/**
+	 * How the table's members are named, where the world knows better than
+	 * their identity: see `CoreServices.tableSeatLabels`.
+	 */
+	seatLabels?: (player: bigint) => string | undefined;
 }): {
 	context: Context;
 	start: () => () => void;
@@ -110,8 +120,10 @@ export function createContext(options?: {
 	// AT A TABLE, the whole page is: one connection and one account's data,
 	// with the game at the table's address. A second context beside the app's
 	// would be a second connection to the same wallet and a second writer of
-	// the same account data.
-	const table = options?.establishConnection ? undefined : options?.table;
+	// the same account data. A connection handed in is the table's own (an
+	// offline table's, composed over its record by the world); otherwise the
+	// remote chain's, with the world's records made the table's.
+	const table = options?.table;
 	return createCoreContext({
 		createApp: createAppContext,
 		signerGrant: SIGNER_GRANT,
@@ -119,6 +131,7 @@ export function createContext(options?: {
 			options?.establishConnection ??
 			(table && lobby ? establishTableConnection(lobby, table) : undefined),
 		table: table?.address,
+		...(options?.seatLabels ? {tableSeatLabels: options.seatLabels} : {}),
 		...(options?.scheduler ? {scheduler: options.scheduler} : {}),
 	});
 }

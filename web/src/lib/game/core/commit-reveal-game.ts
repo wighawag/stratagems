@@ -892,6 +892,7 @@ export function createCommitRevealGame<T extends GameTypes>(
 					$identity === undefined ? undefined : BigInt($identity),
 				),
 				onChanged: () => void cycleAdvance.check(),
+				...(core.tableSeatLabels ? {labels: core.tableSeatLabels} : {}),
 			})
 		: undefined;
 	// No turn there until it has started, and then only from a member: before

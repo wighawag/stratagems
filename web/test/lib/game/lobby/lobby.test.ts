@@ -1,7 +1,12 @@
 import {describe, it, expect, beforeEach, afterEach, vi} from 'vitest';
 import {get} from 'svelte/store';
-import {createLobby} from '$lib/game/lobby/lobby';
-import type {Table} from '$lib/game/lobby/seats';
+import {createLobby, type TableChoice} from '$lib/game/lobby/lobby';
+import {SEAT_CHOICES, type Table} from '$lib/game/lobby/seats';
+import {
+	DEFAULT_TABLE_CYCLES,
+	MOST_TABLE_CYCLES,
+	NO_GAME_OPTIONS,
+} from '$lib/game/lobby/table';
 
 /**
  * THE LOBBY, WITHOUT A GAME BEHIND IT.
@@ -360,5 +365,224 @@ describe('the lobby with levels for the world seats', () => {
 		const {lobby} = levelledGame({alreadyHere: true});
 		lobby.leaveTheTable();
 		expect(store.has(LEVELS_KEY)).toBe(false);
+	});
+});
+
+/**
+ * A TABLE OR THE WORLD (stratagems' plan, step OT1): a game whose tables can
+ * be played offline is offered both, a table first, and every record the
+ * choice makes is written on the sit-down, the world's included, so that after
+ * one boot nothing a browser holds is implicit.
+ */
+const MODE_KEY = 'a-game:mode';
+const CYCLES_KEY = 'a-game:cycles';
+const OPTIONS_KEY = 'a-game:game-options';
+
+function tabledGame(
+	params: {
+		alreadyHere?: boolean;
+		tables?: boolean;
+		options?: boolean;
+	} = {},
+) {
+	const started: Table[] = [];
+	const tables: TableChoice[] = [];
+	let here = params.alreadyHere ?? false;
+	const lobby = createLobby({
+		gameAlreadyHere: () => here,
+		startGame: (table) => void started.push(table),
+		forgetGame: () => void (here = false),
+		seatsStorageKey: SEATS_KEY,
+		humansStorageKey: HUMANS_KEY,
+		humansAtMost: 8,
+		modeStorageKey: MODE_KEY,
+		cyclesStorageKey: CYCLES_KEY,
+		gameOptionsStorageKey: OPTIONS_KEY,
+		...(params.tables === false
+			? {}
+			: {
+					tables: {
+						start: (choice: TableChoice) => void tables.push(choice),
+						...(params.options
+							? {
+									options: {
+										fields: [
+											{id: 'size', label: 'Size', min: 1, max: 9, default: 4},
+											{
+												id: 'mode',
+												label: 'Mode',
+												min: 0,
+												max: 1,
+												default: 0,
+												choices: [
+													{value: 0, label: 'A'},
+													{value: 1, label: 'B'},
+												],
+											},
+										],
+										encode: (values: Readonly<Record<string, number>>) =>
+											`0x${values.size.toString(16).padStart(62, '0')}${values.mode
+												.toString(16)
+												.padStart(2, '0')}` as `0x${string}`,
+										describe: () => [],
+									},
+								}
+							: {}),
+					},
+				}),
+	});
+	return {lobby, started, tables, isHere: () => here};
+}
+
+describe('a table or the world', () => {
+	it('offers a table first, and the world, to a game that has tables here', () => {
+		const {lobby} = tabledGame();
+		lobby.enter();
+		expect(get(lobby)).toMatchObject({
+			step: 'Choosing',
+			mode: 'table',
+			modeChoices: ['table', 'world'],
+			cycles: DEFAULT_TABLE_CYCLES,
+		});
+		expect(get(lobby).seatChoices).toEqual([2, 3, 4, 5, 6, 7, 8]);
+	});
+
+	it('offers the world only, and asks nothing, to a game without', () => {
+		const {lobby} = tabledGame({tables: false});
+		lobby.enter();
+		expect(get(lobby)).toMatchObject({mode: 'world', modeChoices: ['world']});
+		lobby.chooseMode('table');
+		expect(get(lobby).mode).toBe('world');
+		expect(get(lobby).seatChoices).toEqual(SEAT_CHOICES);
+	});
+
+	it('takes the online table\u2019s seats at a table, and the world\u2019s in the world', () => {
+		const {lobby} = tabledGame();
+		lobby.enter();
+		lobby.chooseSeats(2);
+		expect(get(lobby).seats).toBe(2);
+		lobby.chooseSeats(10);
+		expect(get(lobby).seats).toBe(8);
+		lobby.chooseSeats(2);
+		lobby.chooseMode('world');
+		// The world's floor is three: two is a duel.
+		expect(get(lobby).seats).toBe(3);
+		lobby.chooseSeats(10);
+		expect(get(lobby).seats).toBe(10);
+		lobby.chooseMode('table');
+		expect(get(lobby).seats).toBe(8);
+	});
+
+	it('creates a table of the seats, the cycles and the game\u2019s options chosen, clamped, and records each', () => {
+		const {lobby, started, tables} = tabledGame({options: true});
+		lobby.enter();
+		lobby.chooseSeats(2);
+		lobby.chooseHumans(1);
+		lobby.chooseCycles('500');
+		lobby.chooseOption('size', 42);
+		lobby.chooseOption('mode', '1');
+		lobby.chooseOption('unknown', 3);
+		lobby.sitDown(get(lobby).seats, get(lobby).humans, get(lobby).levels);
+
+		expect(started).toHaveLength(0);
+		expect(tables).toHaveLength(1);
+		expect(tables[0].table.map((seat) => seat.occupant.kind)).toEqual([
+			'you',
+			'the-world',
+		]);
+		expect(tables[0].cycles).toBe(MOST_TABLE_CYCLES);
+		// size clamped to 9, mode the choice 1
+		expect(tables[0].gameOptions).toBe(
+			`0x${(9).toString(16).padStart(62, '0')}01`,
+		);
+		expect(get(lobby)).toMatchObject({step: 'Sat', cycles: MOST_TABLE_CYCLES});
+		expect(store.get(MODE_KEY)).toBe('table');
+		expect(store.get(CYCLES_KEY)).toBe(String(MOST_TABLE_CYCLES));
+		expect(store.get(OPTIONS_KEY)).toBe(tables[0].gameOptions);
+		expect(store.get(SEATS_KEY)).toBe('2');
+		expect(store.get(HUMANS_KEY)).toBe('1');
+	});
+
+	it('creates a table with no options for a game that reads none', () => {
+		const {lobby, tables} = tabledGame();
+		lobby.enter();
+		lobby.sitDown(3);
+		expect(tables[0]).toMatchObject({
+			cycles: DEFAULT_TABLE_CYCLES,
+			gameOptions: NO_GAME_OPTIONS,
+		});
+	});
+
+	it('builds the world when the world is chosen, and records that too', () => {
+		const {lobby, started, tables} = tabledGame();
+		lobby.enter();
+		lobby.chooseMode('world');
+		lobby.sitDown(4);
+		expect(tables).toHaveLength(0);
+		expect(started).toHaveLength(1);
+		expect(store.get(MODE_KEY)).toBe('world');
+		expect(store.get(OPTIONS_KEY)).toBe(NO_GAME_OPTIONS);
+	});
+
+	it('goes back into a table that is here, with what it was created with', () => {
+		const options = `0x${'0'.repeat(62)}07` as const;
+		store.set(SEATS_KEY, '2');
+		store.set(HUMANS_KEY, '1');
+		store.set(MODE_KEY, 'table');
+		store.set(CYCLES_KEY, '4');
+		store.set(OPTIONS_KEY, options);
+		const {lobby, started, tables} = tabledGame({
+			alreadyHere: true,
+			options: true,
+		});
+		lobby.enter();
+		expect(started).toHaveLength(0);
+		expect(tables).toEqual([
+			expect.objectContaining({cycles: 4, gameOptions: options}),
+		]);
+		expect(tables[0].table).toHaveLength(2);
+	});
+
+	it('reads a world from before modes as the world, and writes every record it read a default for', () => {
+		// A PRE-OT1 WORLD: seats and a chain, nothing else. Its first boot is
+		// the world (all it could be), and writes each record, so the next boot
+		// reads nothing implicit.
+		store.set(SEATS_KEY, '4');
+		const {lobby, started, tables} = tabledGame({alreadyHere: true});
+		lobby.enter();
+		expect(tables).toHaveLength(0);
+		expect(started[0]).toHaveLength(4);
+		expect(store.get(MODE_KEY)).toBe('world');
+		expect(store.get(HUMANS_KEY)).toBe('1');
+		expect(store.get(CYCLES_KEY)).toBe(String(DEFAULT_TABLE_CYCLES));
+		expect(store.get(OPTIONS_KEY)).toBe(NO_GAME_OPTIONS);
+	});
+
+	it('writes the levels of a pre-OT1 world too, as random', () => {
+		store.set(SEATS_KEY, '3');
+		const lobby = createLobby({
+			gameAlreadyHere: () => true,
+			startGame: () => {},
+			forgetGame: () => {},
+			seatsStorageKey: SEATS_KEY,
+			levelsStorageKey: 'a-game:levels',
+			levels: [{id: 'greedy', label: 'Greedy'}],
+			modeStorageKey: MODE_KEY,
+		});
+		lobby.enter();
+		expect(store.get('a-game:levels')).toBe('["random","random"]');
+		expect(store.get(MODE_KEY)).toBe('world');
+	});
+
+	it('forgets the mode, the cycles and the options with the seats', () => {
+		store.set(SEATS_KEY, '2');
+		store.set(MODE_KEY, 'table');
+		store.set(CYCLES_KEY, '4');
+		store.set(OPTIONS_KEY, NO_GAME_OPTIONS);
+		const {lobby} = tabledGame({alreadyHere: true});
+		lobby.leaveTheTable();
+		for (const key of [SEATS_KEY, MODE_KEY, CYCLES_KEY, OPTIONS_KEY]) {
+			expect(store.has(key), key).toBe(false);
+		}
 	});
 });

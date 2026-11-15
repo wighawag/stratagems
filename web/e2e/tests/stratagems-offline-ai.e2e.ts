@@ -1,6 +1,6 @@
 import type {Page} from '@playwright/test';
 import {mnemonicToAccount} from 'viem/accounts';
-import {test, expect, describe} from '../fixtures/test';
+import {test, expect, describe, chooseTheWorld} from '../fixtures/test';
 
 /**
  * AI SEATS IN STRATAGEMS' OFFLINE WORLD: one person against two world seats at
@@ -213,6 +213,7 @@ describe('AI seats in stratagems\u2019 offline world', () => {
 		await expect(page.getByText('How many at the table?')).toBeVisible({
 			timeout: 60_000,
 		});
+		await chooseTheWorld(page);
 		await page.getByTestId('seats-3').click();
 		await page.getByTestId('level-0-greedy').click();
 		await page.getByTestId('level-1-greedy').click();
