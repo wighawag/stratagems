@@ -218,6 +218,27 @@ export const SEAT_CHOICES: readonly number[] = Array.from(
 );
 
 /**
+ * The fewest and most seats a lobby offers, which differ by MODE: the world's
+ * are {@link WORLD_SEATS}, and a table in the offline world takes the online
+ * table's (`$lib/game/lobby/lobby`'s `TABLE_SEATS`), where two is allowed
+ * because a table's roster is closed and one person with one AI is a game.
+ * Every count below is clamped to the bounds it is given, the world's when
+ * none is.
+ */
+export type SeatBounds = {fewest: number; most: number};
+
+/** The world's bounds: see {@link FEWEST_SEATS} and {@link MOST_SEATS}. */
+export const WORLD_SEATS: SeatBounds = {fewest: FEWEST_SEATS, most: MOST_SEATS};
+
+/** Every count between `bounds`, for whatever renders the choice. */
+export function seatChoicesWithin(bounds: SeatBounds): readonly number[] {
+	return Array.from(
+		{length: bounds.most - bounds.fewest + 1},
+		(_, i) => bounds.fewest + i,
+	);
+}
+
+/**
  * Bring any number into range.
  *
  * TOTAL, because the inputs are not trustworthy: one comes out of
@@ -227,17 +248,22 @@ export const SEAT_CHOICES: readonly number[] = Array.from(
  * is the same answer the chain-id store gives to a stored id it could not have
  * minted: carry on with something this code can reason about.
  */
-export function clampSeats(seats: unknown): number {
+export function clampSeats(
+	seats: unknown,
+	bounds: SeatBounds = WORLD_SEATS,
+): number {
 	const parsed =
 		typeof seats === 'number'
 			? seats
 			: typeof seats === 'string'
 				? Number(seats)
 				: Number.NaN;
-	if (!Number.isFinite(parsed)) return SEATS_BY_DEFAULT;
+	if (!Number.isFinite(parsed)) {
+		return Math.min(bounds.most, Math.max(bounds.fewest, SEATS_BY_DEFAULT));
+	}
 	const whole = Math.floor(parsed);
-	if (whole < FEWEST_SEATS) return FEWEST_SEATS;
-	if (whole > MOST_SEATS) return MOST_SEATS;
+	if (whole < bounds.fewest) return bounds.fewest;
+	if (whole > bounds.most) return bounds.most;
 	return whole;
 }
 
@@ -278,6 +304,7 @@ export function clampHumans(
 	humans: unknown,
 	seats: number,
 	atMost: number = 1,
+	bounds: SeatBounds = WORLD_SEATS,
 ): number {
 	const parsed =
 		typeof humans === 'number'
@@ -285,7 +312,10 @@ export function clampHumans(
 			: typeof humans === 'string'
 				? Number(humans)
 				: Number.NaN;
-	const ceiling = Math.max(1, Math.min(clampSeats(seats), Math.floor(atMost)));
+	const ceiling = Math.max(
+		1,
+		Math.min(clampSeats(seats, bounds), Math.floor(atMost)),
+	);
 	if (!Number.isFinite(parsed)) return 1;
 	return Math.min(ceiling, Math.max(1, Math.floor(parsed)));
 }
@@ -308,9 +338,10 @@ export function tableOf(
 	seats: number,
 	humans: number = 1,
 	levels: readonly string[] = [],
+	bounds: SeatBounds = WORLD_SEATS,
 ): Table {
-	const count = clampSeats(seats);
-	const here = clampHumans(humans, count, count);
+	const count = clampSeats(seats, bounds);
+	const here = clampHumans(humans, count, count, bounds);
 	const table: Seat[] = [{occupant: {kind: 'you'}}];
 	for (let account = 1; account < here; account++) {
 		table.push({occupant: {kind: 'local-human', account}});

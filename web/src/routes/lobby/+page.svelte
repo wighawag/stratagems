@@ -29,6 +29,7 @@
 		MOST_TABLE_CYCLES,
 		MOST_TABLE_SEATS,
 	} from '$lib/game/lobby/table';
+	import TableOptionFields from '$lib/game/lobby/ui/TableOptionFields.svelte';
 
 	const context = getAppContext();
 	const tablesLobby = lobby
@@ -45,7 +46,7 @@
 	let cycles = $state(DEFAULT_TABLE_CYCLES);
 	// the game's own choices, if it has any (`TableLobby.options`)
 	const gameOptions = lobby?.options;
-	let optionValues = $state<Record<string, number>>(
+	let optionValues = $state<Record<string, number | string>>(
 		gameOptions ? defaultOptionValues(gameOptions) : {},
 	);
 
@@ -112,44 +113,11 @@
 				bind:value={cycles}
 			/>
 			{#if gameOptions}
-				{#each gameOptions.fields as field (field.id)}
-					{#if field.choices}
-						<label
-							class="mt-4 block text-sm font-medium"
-							for={`table-option-${field.id}`}>{field.label}</label
-						>
-						<select
-							id={`table-option-${field.id}`}
-							class="mt-2 rounded-md border bg-background px-2 py-1 text-sm"
-							data-testid={`table-option-${field.id}`}
-							bind:value={optionValues[field.id]}
-						>
-							{#each field.choices as choice (choice.value)}
-								<option value={choice.value}>{choice.label}</option>
-							{/each}
-						</select>
-					{:else}
-						<label
-							class="mt-4 block text-sm font-medium"
-							for={`table-option-${field.id}`}
-							>{field.label}
-							<span class="font-normal text-muted-foreground"
-								>({field.min} to {field.max}{field.unit
-									? ` ${field.unit}`
-									: ''})</span
-							></label
-						>
-						<input
-							id={`table-option-${field.id}`}
-							class="mt-2 w-24 rounded-md border bg-background px-2 py-1 text-sm"
-							type="number"
-							min={field.min}
-							max={field.max}
-							data-testid={`table-option-${field.id}`}
-							bind:value={optionValues[field.id]}
-						/>
-					{/if}
-				{/each}
+				<TableOptionFields
+					fields={gameOptions.fields}
+					values={optionValues}
+					onchange={(id, value) => (optionValues[id] = value)}
+				/>
 			{/if}
 			<Button
 				class="mt-4 block"

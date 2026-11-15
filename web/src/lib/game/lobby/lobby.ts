@@ -1,12 +1,26 @@
 import {get, writable, type Readable} from 'svelte/store';
 import {
 	SEATS_BY_DEFAULT,
+	WORLD_SEATS,
 	clampHumans,
 	clampLevels,
 	clampSeats,
+	seatChoicesWithin,
 	tableOf,
+	type SeatBounds,
 	type Table,
 } from './seats';
+import {
+	DEFAULT_TABLE_CYCLES,
+	FEWEST_TABLE_SEATS,
+	MOST_TABLE_SEATS,
+	NO_GAME_OPTIONS,
+	clampTableCycles,
+	defaultOptionValues,
+	encodeTableOptions,
+	type TableOptionField,
+	type TableOptions,
+} from './table';
 import {RANDOM_LEVEL, type AiLevel} from '../core/strategy';
 
 /**
@@ -69,6 +83,30 @@ import {RANDOM_LEVEL, type AiLevel} from '../core/strategy';
  * pick the name would mean a rename here could do that to every game at once.
  */
 
+/**
+ * WHAT IS BUILT AROUND THE SEATS: a TABLE (a game for a fixed set of players,
+ * created by the first person, started once everyone is seated and ended after
+ * the cycles chosen: `./table`) or the WORLD (the persistent game, which never
+ * ends). A game whose tables can be played offline offers both, a table first;
+ * a game without, the world only, and the question is not asked.
+ */
+export type LobbyMode = 'table' | 'world';
+
+/** The seats a table offers: the online table's, two to eight. */
+export const TABLE_SEATS: SeatBounds = {
+	fewest: FEWEST_TABLE_SEATS,
+	most: MOST_TABLE_SEATS,
+};
+
+/** What a table is created with, once its seats are taken. */
+export type TableChoice = {
+	table: Table;
+	/** How many cycles it plays, clamped to what the online lobby allows. */
+	cycles: number;
+	/** The game's own options, as the `bytes32` it is created with. */
+	gameOptions: `0x${string}`;
+};
+
 export type LobbyState = {
 	/**
 	 * `Opening` is BEFORE THE BROWSER HAS LOOKED, and it is load-bearing rather
@@ -86,8 +124,23 @@ export type LobbyState = {
 	 * game from then on.
 	 */
 	step: 'Opening' | 'Choosing' | 'Sat';
+	/** A table or the world: see {@link LobbyMode}. */
+	mode: LobbyMode;
+	/** The modes offered, the table first. One means the question is not asked. */
+	modeChoices: readonly LobbyMode[];
 	/** How many seats. */
 	seats: number;
+	/** Every count of seats offered in this mode. */
+	seatChoices: readonly number[];
+	/**
+	 * How many cycles a table plays, as chosen: clamped when the table is
+	 * created rather than while it is typed. Unused by the world.
+	 */
+	cycles: number;
+	/** The game's own options at a table (`lobby.options`); empty if none. */
+	optionFields: readonly TableOptionField[];
+	/** The value chosen for each of them, as entered (clamped when sent). */
+	optionValues: Readonly<Record<string, number | string>>;
 	/**
 	 * How many of them are people at this device (hotseat): 1 unless the game
 	 * can play more and the player chose more.
@@ -106,6 +159,21 @@ export type LobbyState = {
 	levelChoices: readonly AiLevel[];
 	/** Who is in each of them. See `./seats`. */
 	table: Table;
+};
+
+/**
+ * THE TABLES A GAME OFFERS OFFLINE: how one is set up, and what the creator
+ * chooses for the game there. A lobby given this offers a table, first; one
+ * given nothing offers the world only.
+ */
+export type LobbyTables = {
+	/**
+	 * Set a table up around these seats, once they are taken. Fire and forget,
+	 * as {@link LobbyDeps.startGame}.
+	 */
+	start(choice: TableChoice): void;
+	/** The game's own options at a table, if it reads any. */
+	options?: TableOptions;
 };
 
 /**
@@ -178,6 +246,26 @@ export type LobbyDeps = {
 	/** The levels the game's world seats may play at. Absent or empty: none. */
 	levels?: readonly AiLevel[];
 	/**
+	 * The game's tables, when it can play them here: the lobby then asks "a
+	 * table or the world?", a table in a fresh choice. Absent: the world only.
+	 */
+	tables?: LobbyTables;
+	/**
+	 * Where to remember which mode the game here was built in (`table` or
+	 * `world`). A WIRE like the seats key, and WRITTEN on every sit-down, the
+	 * world included: a game from before modes has none, is read as the world
+	 * (which is all it could be), and has it written on its first boot, so
+	 * after one boot no record is implicit.
+	 */
+	modeStorageKey?: string;
+	/** Where to remember the cycles a table was created to play. A wire. */
+	cyclesStorageKey?: string;
+	/**
+	 * Where to remember the game's options a table was created with, as the
+	 * `bytes32` sent. A wire.
+	 */
+	gameOptionsStorageKey?: string;
+	/**
 	 * The level a world seat STARTS AT in a fresh choice, before the player
 	 * picks one: the game's own, since it knows which level is the one worth
 	 * playing. Absent, or a level it does not offer: `random`. A world being
@@ -198,8 +286,14 @@ export type LobbyStore = Readable<LobbyState> & {
 	 * they were in the middle of making, or re-offer one they had already made.
 	 */
 	enter(): void;
+	/** A table or the world: a mode not offered is ignored. */
+	chooseMode(mode: LobbyMode): void;
 	/** Pick a different number of seats, before sitting down at them. */
 	chooseSeats(seats: number): void;
+	/** How many cycles a table plays (clamped when it is created). */
+	chooseCycles(cycles: number | string): void;
+	/** A value for one of the game's options at a table. */
+	chooseOption(id: string, value: number | string): void;
 	/** Pick how many of the seats are people at this device (hotseat). */
 	chooseHumans(humans: number): void;
 	/**
@@ -242,16 +336,48 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 	const offers = deps.levels ?? [];
 	/** What a seat the player has not chosen for yet starts at. */
 	const choosing = deps.defaultLevel ?? RANDOM_LEVEL;
+	const modes: readonly LobbyMode[] = deps.tables
+		? ['table', 'world']
+		: ['world'];
+	const optionFields = deps.tables?.options?.fields ?? [];
+	const freshOptions = (): Record<string, number | string> =>
+		deps.tables?.options ? defaultOptionValues(deps.tables.options) : {};
+	/** The choices other than the seats, carried from state to state. */
+	type Choices = Pick<LobbyState, 'mode' | 'cycles' | 'optionValues'>;
 	const seated = (
 		step: LobbyState['step'],
+		choices: Choices,
 		seats: number,
 		humans: number,
 		levels: unknown,
 		padding: string = choosing,
-	) => seatedAt(step, seats, humans, atMost, levels, offers, padding);
+	) =>
+		seatedAt(
+			step,
+			{...choices, modeChoices: modes, optionFields},
+			seats,
+			humans,
+			atMost,
+			levels,
+			offers,
+			padding,
+		);
+	/** A fresh choice: a table when the game offers one. */
+	const fresh = (): Choices => ({
+		mode: modes[0],
+		cycles: DEFAULT_TABLE_CYCLES,
+		optionValues: freshOptions(),
+	});
 	const lobby = writable<LobbyState>(
-		seated('Opening', SEATS_BY_DEFAULT, 1, []),
+		seated('Opening', fresh(), SEATS_BY_DEFAULT, 1, []),
 	);
+	const choicesOf = (state: LobbyState): Choices => ({
+		mode: state.mode,
+		cycles: state.cycles,
+		optionValues: state.optionValues,
+	});
+	const read = (key: string | undefined) =>
+		key ? localStorage.getItem(key) : null;
 
 	/**
 	 * Whether there is a table to go back to, and how big it was.
@@ -262,22 +388,38 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 	 * silent reuse this file exists to avoid. The humans' count is read with it,
 	 * and its absence means one (a game from before hotseat).
 	 */
+	//
+	// AND WITH IT EVERY OTHER RECORD, each read with the default a game from
+	// before it was built at: the mode as the world (all such a game could
+	// be), the cycles as the default and the options as none (a world reads
+	// neither). The sit-down that follows WRITES them all, so the tolerance
+	// acts once per browser and then has nothing left to read.
 	function tableAlreadyHere():
-		{seats: number; humans: number; levels: unknown} | undefined {
+		| {choices: Choices; seats: number; humans: number; levels: unknown}
+		| undefined {
 		if (typeof localStorage === 'undefined') return undefined;
 		if (!deps.gameAlreadyHere()) return undefined;
 		const seats = localStorage.getItem(deps.seatsStorageKey);
 		if (seats === null) return undefined;
-		const humans = deps.humansStorageKey
-			? localStorage.getItem(deps.humansStorageKey)
-			: null;
-		const levels = deps.levelsStorageKey
-			? localStorage.getItem(deps.levelsStorageKey)
-			: null;
-		const count = clampSeats(seats);
+		const humans = read(deps.humansStorageKey);
+		const levels = read(deps.levelsStorageKey);
+		// A TABLE THIS BUILD CANNOT PLAY is read as the world: a game that
+		// stopped offering tables offline. Not a case any build here produces.
+		const mode: LobbyMode =
+			read(deps.modeStorageKey) === 'table' && modes.includes('table')
+				? 'table'
+				: 'world';
+		const bounds = boundsOf(mode);
+		const count = clampSeats(seats, bounds);
+		const cycles = read(deps.cyclesStorageKey);
 		return {
+			choices: {
+				mode,
+				cycles: clampTableCycles(cycles === null ? NaN : Number(cycles)),
+				optionValues: freshOptions(),
+			},
 			seats: count,
-			humans: clampHumans(humans ?? 1, count, atMost),
+			humans: clampHumans(humans ?? 1, count, atMost, bounds),
 			levels,
 		};
 	}
@@ -287,8 +429,21 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 		humans: number = get(lobby).humans,
 		levels: unknown = get(lobby).levels,
 		padding: string = choosing,
+		choices: Choices = choicesOf(get(lobby)),
+		restoredOptions?: string | null,
 	): void {
-		const state = seated('Sat', seats, humans, levels, padding);
+		const state = seated('Sat', choices, seats, humans, levels, padding);
+		const cycles = clampTableCycles(state.cycles);
+		// THE OPTIONS SENT: what a restore stored, else what was chosen, encoded
+		// by the game; none at the world, or for a game that reads none.
+		const gameOptions =
+			state.mode !== 'table'
+				? NO_GAME_OPTIONS
+				: isBytes32(restoredOptions)
+					? restoredOptions
+					: deps.tables?.options
+						? encodeTableOptions(deps.tables.options, state.optionValues)
+						: NO_GAME_OPTIONS;
 		if (typeof localStorage !== 'undefined') {
 			localStorage.setItem(deps.seatsStorageKey, String(state.seats));
 			if (deps.humansStorageKey) {
@@ -300,9 +455,22 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 					JSON.stringify(state.levels),
 				);
 			}
+			if (deps.modeStorageKey) {
+				localStorage.setItem(deps.modeStorageKey, state.mode);
+			}
+			if (deps.cyclesStorageKey) {
+				localStorage.setItem(deps.cyclesStorageKey, String(cycles));
+			}
+			if (deps.gameOptionsStorageKey) {
+				localStorage.setItem(deps.gameOptionsStorageKey, gameOptions);
+			}
 		}
-		lobby.set(state);
-		deps.startGame(state.table);
+		lobby.set({...state, cycles});
+		if (state.mode === 'table' && deps.tables) {
+			deps.tables.start({table: state.table, cycles, gameOptions});
+		} else {
+			deps.startGame(state.table);
+		}
 	}
 
 	return {
@@ -311,38 +479,78 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 			if (get(lobby).step !== 'Opening') return;
 			const already = tableAlreadyHere();
 			if (already === undefined) {
-				lobby.set(seated('Choosing', SEATS_BY_DEFAULT, 1, []));
+				lobby.set(seated('Choosing', fresh(), SEATS_BY_DEFAULT, 1, []));
 				return;
 			}
 			// A RESTORE, so what the record does not say is `random`: that is
 			// how the world it describes was built.
-			sitDown(already.seats, already.humans, already.levels, RANDOM_LEVEL);
+			sitDown(
+				already.seats,
+				already.humans,
+				already.levels,
+				RANDOM_LEVEL,
+				already.choices,
+				read(deps.gameOptionsStorageKey),
+			);
+		},
+		chooseMode(mode: LobbyMode): void {
+			if (!modes.includes(mode)) return;
+			const state = get(lobby);
+			lobby.set(
+				seated(
+					'Choosing',
+					{...choicesOf(state), mode},
+					state.seats,
+					state.humans,
+					state.levels,
+				),
+			);
 		},
 		chooseSeats(seats: number): void {
-			const {humans, levels} = get(lobby);
-			lobby.set(seated('Choosing', seats, humans, levels));
+			const state = get(lobby);
+			lobby.set(
+				seated('Choosing', choicesOf(state), seats, state.humans, state.levels),
+			);
+		},
+		chooseCycles(cycles: number | string): void {
+			const parsed = typeof cycles === 'string' ? Number(cycles) : cycles;
+			lobby.update((state) => ({...state, cycles: parsed}));
+		},
+		chooseOption(id: string, value: number | string): void {
+			if (!optionFields.some((field) => field.id === id)) return;
+			lobby.update((state) => ({
+				...state,
+				optionValues: {...state.optionValues, [id]: value},
+			}));
 		},
 		chooseHumans(humans: number): void {
-			const {seats, levels} = get(lobby);
-			lobby.set(seated('Choosing', seats, humans, levels));
+			const state = get(lobby);
+			lobby.set(
+				seated('Choosing', choicesOf(state), state.seats, humans, state.levels),
+			);
 		},
 		chooseLevel(worldSeat: number, level: string): void {
-			const {seats, humans, levels} = get(lobby);
-			const next = [...levels];
+			const state = get(lobby);
+			const next = [...state.levels];
 			if (worldSeat < 0 || worldSeat >= next.length) return;
 			next[worldSeat] = level;
-			lobby.set(seated('Choosing', seats, humans, next));
+			lobby.set(
+				seated('Choosing', choicesOf(state), state.seats, state.humans, next),
+			);
 		},
 		sitDown: (seats, humans, levels) => sitDown(seats, humans, levels),
 		leaveTheTable(): void {
 			deps.forgetGame();
 			if (typeof localStorage !== 'undefined') {
-				localStorage.removeItem(deps.seatsStorageKey);
-				if (deps.humansStorageKey) {
-					localStorage.removeItem(deps.humansStorageKey);
-				}
-				if (deps.levelsStorageKey) {
-					localStorage.removeItem(deps.levelsStorageKey);
+				for (const key of [
+					deps.seatsStorageKey,
+					deps.humansStorageKey,
+					deps.levelsStorageKey,
+					deps.modeStorageKey,
+					deps.cyclesStorageKey,
+					deps.gameOptionsStorageKey,
+				]) {
+					if (key) localStorage.removeItem(key);
 				}
 			}
 			if (typeof location !== 'undefined') location.reload();
@@ -350,8 +558,21 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 	};
 }
 
+/** The seats a mode offers: a table's are the online table's. */
+function boundsOf(mode: LobbyMode): SeatBounds {
+	return mode === 'table' ? TABLE_SEATS : WORLD_SEATS;
+}
+
+function isBytes32(value: unknown): value is `0x${string}` {
+	return typeof value === 'string' && /^0x[0-9a-fA-F]{64}$/.test(value);
+}
+
 function seatedAt(
 	step: LobbyState['step'],
+	choices: Pick<
+		LobbyState,
+		'mode' | 'modeChoices' | 'cycles' | 'optionFields' | 'optionValues'
+	>,
 	seats: number,
 	humans: number,
 	humansAtMost: number,
@@ -359,15 +580,18 @@ function seatedAt(
 	offers: readonly AiLevel[],
 	padding: string,
 ): LobbyState {
-	const count = clampSeats(seats);
-	const here = clampHumans(humans, count, humansAtMost);
+	const bounds = boundsOf(choices.mode);
+	const count = clampSeats(seats, bounds);
+	const here = clampHumans(humans, count, humansAtMost, bounds);
 	// A SEAT KEEPS ITS LEVEL while the others change: the list is per world
 	// seat, cut when the count of them falls, and padded with `padding` (the
 	// game's default in a choice, `random` in a restore) when it grows.
 	const worldLevels = clampLevels(levels, count - here, offers, padding);
 	return {
 		step,
+		...choices,
 		seats: count,
+		seatChoices: seatChoicesWithin(bounds),
 		humans: here,
 		humansAtMost,
 		humanChoices: Array.from(
@@ -376,6 +600,6 @@ function seatedAt(
 		),
 		levels: worldLevels,
 		levelChoices: offers,
-		table: tableOf(count, here, worldLevels),
+		table: tableOf(count, here, worldLevels, bounds),
 	};
 }

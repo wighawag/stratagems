@@ -593,6 +593,18 @@ async function isWalletConnected(page: Page): Promise<boolean> {
  * it is in the DOM on every page, and it does not depend on a breakpoint or on
  * copy.
  */
+/**
+ * THE WORLD, in an offline lobby that offers a table first (a game whose world
+ * can play its tables: `$lib/offline-lobby`). Pressed when it is offered and
+ * nothing otherwise, so a suite written for the offline WORLD goes on testing
+ * the world in every game, whether it offers tables offline or not. Call it
+ * once the lobby is on screen, before choosing seats (a mode has its own).
+ */
+export async function chooseTheWorld(page: Page): Promise<void> {
+	const world = page.getByTestId('mode-world');
+	if ((await world.count()) > 0) await world.click();
+}
+
 export async function waitForAppReady(page: Page, timeout = 30_000) {
 	await expect(
 		page.locator(`${WALLET_STATUS} button:disabled`),
