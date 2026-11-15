@@ -25,6 +25,7 @@ import deployDistributor from 'stratagems-contracts/deploy/002_deploy_test_token
 import deployGems from 'stratagems-contracts/deploy/010_deploy_gems.js';
 import deployGenerator from 'stratagems-contracts/deploy/011_deploy_gems_generator.js';
 import deployGame from 'stratagems-contracts/deploy/020_deploy_game.js';
+import deployTables from 'stratagems-contracts/deploy/021_deploy_tables.js';
 import {
 	connectToIndexerHost,
 	createBrowserStateStore,
@@ -48,7 +49,6 @@ import {
 	expectedContractNames,
 	type EmbeddedWorld,
 } from '$lib/embedded';
-import {isTableContract} from '$lib/stratagems/table';
 import {createBytecodeSandbox} from '$lib/game/simulation';
 import {createNode} from 'webevm';
 
@@ -81,6 +81,7 @@ async function bootWorld(): Promise<EmbeddedWorld> {
 			{id: '010_deploy_gems', module: deployGems},
 			{id: '011_deploy_gems_generator', module: deployGenerator},
 			{id: '020_deploy_game', module: deployGame},
+			{id: '021_deploy_tables', module: deployTables},
 		],
 		accounts: {
 			deployer: KEYS[0],
@@ -90,10 +91,8 @@ async function bootWorld(): Promise<EmbeddedWorld> {
 		initialBalances: Object.fromEntries(
 			KEYS.map((key) => [privateKeyToAccount(key).address, 10n ** 24n]),
 		),
-		// the offline world has no tables (step L2's PL2-3)
-		expectedContracts: expectedContractNames().filter(
-			(name) => !isTableContract(name),
-		),
+		// the whole deployment, the tables included (step OT2, OT2-1)
+		expectedContracts: expectedContractNames(),
 	});
 }
 

@@ -49,14 +49,9 @@ function contractNamed(deployments: TypedDeployments, name: string): Contract {
 }
 
 /**
- * Whether `name` is one of the contracts `021_deploy_tables.ts` deploys, which
- * the offline world does not (an in-tab chain has nobody to invite: PL2-3).
+ * Whether this deployment has tables at all: every deployment of stratagems
+ * since step OT2 (the offline world's too), and none built before step L2.
  */
-export function isTableContract(name: string): boolean {
-	return name.startsWith('StratagemsTable') || name === 'NoRewards';
-}
-
-/** Whether this deployment has tables at all (the offline world has none). */
 export function hasTables(deployments: TypedDeployments): boolean {
 	return 'StratagemsTableFactory' in deployments.contracts;
 }

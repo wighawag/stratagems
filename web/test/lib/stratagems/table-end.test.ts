@@ -4,9 +4,12 @@
  * settled, the winner (or the tie) and the withdrawal.
  */
 import {describe, expect, it} from 'vitest';
+import {writable} from 'svelte/store';
 import {
 	describeTableEnd,
 	describeTableValuation,
+	settleOnceEnded,
+	type TableEnd,
 	type TableEndState,
 } from '$lib/stratagems/table-end';
 import {ALICE, BOB} from './board';
@@ -85,5 +88,36 @@ describe("what a table's leaderboard says its numbers are", () => {
 		expect(describeTableValuation(loaded({settled: true}))).toMatch(
 			/^Final scores/,
 		);
+	});
+});
+
+describe('the offline tab settling the table itself (step OT2, OT2-5)', () => {
+	function aTableEnd(initial: TableEndState) {
+		const state = writable(initial);
+		let settles = 0;
+		const tableEnd = {
+			subscribe: state.subscribe,
+			settle: async () => void settles++,
+		} as unknown as TableEnd;
+		return {state, tableEnd, settles: () => settles};
+	}
+
+	it('settles once the table has ended, and only once however often the state moves', () => {
+		const t = aTableEnd({step: 'Unavailable'});
+		const stop = settleOnceEnded(t.tableEnd);
+		t.state.set(loaded({}));
+		t.state.set(loaded({started: false, ended: false}));
+		expect(t.settles()).toBe(0);
+		t.state.set(loaded({ended: true, unsettled: 4}));
+		t.state.set(loaded({ended: true, unsettled: 2}));
+		t.state.set(loaded({ended: true, unsettled: 0}));
+		expect(t.settles()).toBe(1);
+		stop();
+	});
+
+	it('sends nothing on a table already settled', () => {
+		const t = aTableEnd(loaded({ended: true, settled: true}));
+		settleOnceEnded(t.tableEnd)();
+		expect(t.settles()).toBe(0);
 	});
 });

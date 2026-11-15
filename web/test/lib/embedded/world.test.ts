@@ -5,8 +5,11 @@ import buildTimeDeployments from '$lib/deployments';
 import {config, extensions} from 'stratagems-contracts/rocketh/config.js';
 import {
 	OFFLINE_DEPLOYMENT,
+	TABLE_STORAGE_KEY,
+	stakeForEveryoneAtTheTable,
 	stakeForEveryoneInTheWorld,
 	stakeForOfflinePlayer,
+	tableBoardAt,
 } from '$lib/offline';
 import {
 	MOST_SEATS,
@@ -15,6 +18,21 @@ import {
 	tableOf,
 } from '$lib/game/lobby/seats';
 import {resolveStratagemsConfig} from '$lib/stratagems/game-config';
+import {createPublicClient, createWalletClient, custom} from 'viem';
+import {privateKeyToAccount} from 'viem/accounts';
+import {lobby as gameLobby} from '$lib/context/index';
+import {TABLE_SEATS} from '$lib/game/lobby/lobby';
+import {
+	openOfflineTable,
+	startOfflineTableOnce,
+	type OfflineTableCreator,
+} from '$lib/game/lobby/offline-table';
+import {readRoster} from '$lib/game/lobby/table';
+import {
+	encodeStratagemsOptions,
+	DEFAULT_TABLE_GAP_PERCENT,
+	DEFAULT_TABLE_STAKE_GEMS,
+} from '$lib/stratagems/table';
 
 // No `.svelte.` infix, so this runs in the `server` project: node, no DOM, and
 // webevm's core runs there, so a WHOLE WORLD (a chain, stratagems' real deploy,
@@ -296,5 +314,250 @@ describe('stratagems\u2019 offline world', () => {
 				args: [BigInt(HUMAN)],
 			}),
 		).toBe(resolveStratagemsConfig(deployments as never).stakeAmount);
+	});
+});
+
+/**
+ * A TABLE IN STRATAGEMS' OFFLINE WORLD (step OT2, OT2-1 to OT2-3): the tables
+ * deployed on the world's Manual cycle, the world's table created by its first
+ * person, every seat staked AT THE TABLE with exactly its stake by the tokens'
+ * beneficiary (nobody in the world's `Stratagems`), started by the tab, its
+ * address recorded; and a reload that finds it again repeating nothing. The
+ * browser's half (the wallet, the context on the table's record, the played
+ * seats, the settlement) is the e2e's, `stratagems-offline-table.e2e.ts`.
+ */
+describe('a table in stratagems\u2019 offline world', () => {
+	// the first person: a key of its own, neither a payer nor a seat the world
+	// plays (those are hardhat's development accounts from the third on), as
+	// the world's generated wallet is not
+	const CREATOR_KEY =
+		'0x3333333333333333333333333333333333333333333333333333333333333333' as const;
+	const CREATOR = {
+		privateKey: CREATOR_KEY,
+		address: privateKeyToAccount(CREATOR_KEY).address,
+	} as const;
+	const OPTIONS = encodeStratagemsOptions({
+		stakeGems: DEFAULT_TABLE_STAKE_GEMS,
+		gapPercent: DEFAULT_TABLE_GAP_PERCENT,
+	});
+	const seatsOf = () => tableOf(3, 1, [], TABLE_SEATS);
+
+	async function tableWorld() {
+		world = await buildWorld({
+			provision: async ({node}) => {
+				await node.provider.request({
+					method: 'evm_setBalance',
+					params: [CREATOR.address, `0x${(10n ** 24n).toString(16)}`],
+				} as never);
+			},
+		});
+		const records = world.deployments.get();
+		const chain = {
+			id: records.chain.id,
+			name: records.chain.name,
+			nativeCurrency: records.chain.nativeCurrency,
+			rpcUrls: {default: {http: [] as string[]}},
+		};
+		const reader = createPublicClient({
+			chain,
+			transport: custom(world.provider as never),
+		});
+		const account = privateKeyToAccount(CREATOR.privateKey);
+		const client = createWalletClient({
+			account,
+			chain,
+			transport: custom(world.provider as never),
+		});
+		let sends = 0;
+		const creator: OfflineTableCreator = {
+			address: CREATOR.address,
+			writeContract: (request) => {
+				sends++;
+				return client.writeContract({
+					...request,
+					account,
+					chain: null,
+				} as never);
+			},
+		};
+		const store = new Map<string, string>();
+		const storage = {
+			getItem: (key: string) => store.get(key) ?? null,
+			setItem: (key: string, value: string) => void store.set(key, value),
+		};
+		/** What the beneficiary has sent: every approve and stake is one. */
+		const payerSends = async () =>
+			Number(
+				BigInt(
+					(await world!.provider.request({
+						method: 'eth_getTransactionCount',
+						params: [BENEFICIARY_ADDRESS, 'latest'],
+					})) as string,
+				),
+			);
+		return {
+			records,
+			reader,
+			creator,
+			storage,
+			store,
+			sends: () => sends,
+			payerSends,
+			factory: gameLobby!.factory(records).address,
+			implementation: gameLobby!.implementation(records).address,
+		};
+	}
+
+	async function boot(
+		at: Awaited<ReturnType<typeof tableWorld>>,
+		seats = seatsOf(),
+	) {
+		const opened = await openOfflineTable({
+			reader: at.reader as never,
+			creator: at.creator,
+			factory: at.factory,
+			implementation: at.implementation,
+			storage: at.storage,
+			storageKey: TABLE_STORAGE_KEY,
+			seats: seats.length,
+			cycles: 2,
+			gameOptions: OPTIONS,
+		});
+		if (opened.kind !== 'table') return {opened, started: false};
+		await stakeForEveryoneAtTheTable({
+			env: world!.env,
+			table: opened.table.address,
+			player: CREATOR.address,
+			seats,
+		});
+		const started = await startOfflineTableOnce({
+			reader: at.reader as never,
+			creator: at.creator,
+			table: opened.table.address,
+		});
+		return {opened, started};
+	}
+
+	function tableOn(at: Awaited<ReturnType<typeof tableWorld>>, address: `0x${string}`) {
+		return {
+			address,
+			abi: (
+				at.records.contracts as unknown as Record<string, {abi: unknown}>
+			).StratagemsTableImplementation.abi,
+		};
+	}
+
+	it('deploys the tables on the world\u2019s MANUAL cycle', async () => {
+		const at = await tableWorld();
+		const linked = (
+			at.records.contracts as unknown as Record<
+				string,
+				{linkedData: Record<string, unknown>}
+			>
+		).StratagemsTableFactory.linkedData;
+		expect(Number(linked.cyclePolicy)).toBe(1);
+		expect(BigInt(linked.commitPhaseDuration as string)).toBe(0n);
+		expect(BigInt(linked.revealPhaseDuration as string)).toBe(0n);
+		// and the client reads a table's record as the Manual cycle too
+		const atTable = gameLobby!.deploymentsAt(at.records, {
+			address: at.factory,
+			openedAtBlock: 0,
+		} as never);
+		const tableConfig = resolveStratagemsConfig(atTable as never);
+		expect(tableConfig.cycle.policy).toBe('manual');
+	});
+
+	it('creates the table from the first person, stakes every seat AT it with exactly its stake, starts it, and records its address', async () => {
+		const at = await tableWorld();
+		const seats = seatsOf();
+		const {opened, started} = await boot(at, seats);
+		expect(opened.kind).toBe('table');
+		if (opened.kind !== 'table') return;
+		expect(opened.created).toBe(true);
+		expect(started).toBe(true);
+		expect(at.store.get(TABLE_STORAGE_KEY)).toBe(opened.table.address);
+
+		const roster = await readRoster(at.reader as never, opened.table.address);
+		expect(roster.creator.toLowerCase()).toBe(CREATOR.address.toLowerCase());
+		expect(roster.started).toBe(true);
+		expect(roster.cycles).toBe(2);
+		expect(roster.members).toHaveLength(3);
+
+		const read = reader(world!);
+		const Table = tableOn(at, opened.table.address);
+		const stake = BigInt(DEFAULT_TABLE_STAKE_GEMS) * 10n ** 18n;
+		const attendance = (await read(Table, {
+			functionName: 'getAttendance',
+		})) as {waitedFor: bigint};
+		expect(attendance.waitedFor).toBe(3n);
+		for (const player of [
+			CREATOR.address,
+			...seatsPlayedByTheWorld(seats).map((seat) => seat.address),
+		]) {
+			expect(
+				await read(Table, {functionName: 'getReserve', args: [BigInt(player)]}),
+				player,
+			).toBe(stake);
+			// NOBODY IN THE WORLD'S `Stratagems`: a table world stakes at the table
+			expect(
+				await read(at.records.contracts.Stratagems, {
+					functionName: 'getReserve',
+					args: [BigInt(player)],
+				}),
+				player,
+			).toBe(0n);
+		}
+		const inTheWorld = (await read(at.records.contracts.Stratagems, {
+			functionName: 'getAttendance',
+		})) as {waitedFor: bigint};
+		expect(inTheWorld.waitedFor).toBe(0n);
+
+		// the board the played seats are handed: three seats of 10 gems and a
+		// 50% gap, 45 cells, a side of 7
+		expect(await tableBoardAt(world!.env, opened.table.address)).toEqual({
+			min: -3,
+			max: 3,
+		});
+	}, 60_000);
+
+	it('restores the same table on a reload, with no second create, approve, stake or start', async () => {
+		const at = await tableWorld();
+		const seats = seatsOf();
+		const first = await boot(at, seats);
+		const sent = at.sends();
+		const paid = await at.payerSends();
+		// one approve and three stakes
+		expect(paid).toBeGreaterThanOrEqual(4);
+		const address = (first.opened as {table: {address: `0x${string}`}}).table
+			.address;
+
+		const again = await boot(at, seats);
+		expect(again.opened).toMatchObject({
+			kind: 'table',
+			created: false,
+			table: {address},
+		});
+		expect(again.started).toBe(false);
+		expect(at.sends()).toBe(sent);
+		expect(await at.payerSends()).toBe(paid);
+		const games = (await at.reader.readContract({
+			address: at.factory,
+			abi: (
+				at.records.contracts as unknown as Record<string, {abi: unknown}>
+			).StratagemsTableFactory.abi as never,
+			functionName: 'numGames' as never,
+		})) as bigint;
+		expect(games).toBe(1n);
+	}, 60_000);
+
+	it('refuses a stored table the chain does not hold', async () => {
+		const at = await tableWorld();
+		at.store.set(
+			TABLE_STORAGE_KEY,
+			'0x00000000000000000000000000000000000000aa',
+		);
+		const {opened} = await boot(at);
+		expect(opened.kind).toBe('incoherent');
+		expect(at.sends()).toBe(0);
 	});
 });

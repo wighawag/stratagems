@@ -12,10 +12,19 @@ import {config, extensions} from 'stratagems-contracts/rocketh/config.js';
 import {createEmbeddedWorld, type EmbeddedWorld} from '$lib/embedded';
 import {
 	OFFLINE_DEPLOYMENT,
+	TABLE_STORAGE_KEY,
 	playedByTheWorld,
 	playedSeatDecider,
+	stakeForEveryoneAtTheTable,
 	stakeForOfflinePlayer,
+	tableBoardAt,
 } from '$lib/offline';
+import {readable} from 'svelte/store';
+import type {DeploymentsStore} from '$lib/deployments-store';
+import {lobby as gameLobby} from '$lib/context/index';
+import {TABLE_SEATS} from '$lib/game/lobby/lobby';
+import {openOfflineTable} from '$lib/game/lobby/offline-table';
+import {encodeStratagemsOptions} from '$lib/stratagems/table';
 import {createBytecodeSandbox} from '$lib/game/simulation';
 import type {BoardState} from '$lib/stratagems/board/indexed-board';
 import type {StoredCell} from '$lib/stratagems/preview';
@@ -200,6 +209,50 @@ describe('a played seat\u2019s turn', () => {
 				expect(turn[0].color).toBe(defaultColorOf(played.address));
 			}
 		}
+	});
+
+	/**
+	 * THE WORLD'S DERIVATION IS A WIRE: a world's played seat must open, after
+	 * an upgrade, the commitment an earlier build made. Pinned to what the build
+	 * before step OT2 derived (measured on it), so a change to `turnFor` for
+	 * tables that moves a world's move fails here.
+	 */
+	it('is, in a world, exactly the move the builds before tables derived', () => {
+		const game = '0x00000000000000000000000000000000000000aa' as const;
+		const pinned: [bigint, number, number, number, number][] = [
+			[0x3c44cdddb6a900fa2b585dd299e03d12fa4293bcn, 2, 2, 4, 2],
+			[0x3c44cdddb6a900fa2b585dd299e03d12fa4293bcn, 3, 1, 3, 2],
+			[0x3c44cdddb6a900fa2b585dd299e03d12fa4293bcn, 17, 0, -5, 2],
+			[0x90f79bf6eb2c4f870365e785982e1f101e93b906n, 2, -4, -3, 2],
+			[0x90f79bf6eb2c4f870365e785982e1f101e93b906n, 3, 4, 4, 2],
+			[0x90f79bf6eb2c4f870365e785982e1f101e93b906n, 17, 6, -6, 2],
+		];
+		for (const [identity, cycleNumber, x, y, color] of pinned) {
+			const [move] = turnFor({game, identity, cycleNumber});
+			expect(bigIntIDToXY(move.position)).toEqual({x, y});
+			expect(move.color).toBe(color);
+		}
+	});
+
+	it('lands on a table’s board when it is given one, every cell of it reachable', () => {
+		const game = '0x00000000000000000000000000000000000000bb' as const;
+		// a table of two at the defaults: a side of 6, x and y in -3..2
+		const board = {min: -3, max: 2};
+		const seen = new Set<string>();
+		for (const played of PLAYED) {
+			const identity = BigInt(played.address);
+			for (let cycleNumber = 1; cycleNumber < 400; cycleNumber++) {
+				const turn = turnFor({game, identity, cycleNumber, board});
+				expect(turn).toEqual(turnFor({game, identity, cycleNumber, board}));
+				const {x, y} = bigIntIDToXY(turn[0].position);
+				expect(x).toBeGreaterThanOrEqual(board.min);
+				expect(x).toBeLessThanOrEqual(board.max);
+				expect(y).toBeGreaterThanOrEqual(board.min);
+				expect(y).toBeLessThanOrEqual(board.max);
+				seen.add(`${x},${y}`);
+			}
+		}
+		expect(seen.size).toBe(36);
 	});
 });
 
@@ -610,4 +663,275 @@ describe('a greedy seat in stratagems\u2019 offline world (step A2)', () => {
 			`A2 comparison, ${CYCLES} cycles:\n${report.join('\n')}\n`,
 		);
 	}, 600_000);
+});
+
+/**
+ * THE PLAYED SEATS AT A TABLE (step OT2, OT2-4): the table's life and no more
+ * (nothing committed before its start or after its end), no restake (its
+ * stake is fixed once started, so a seat that cannot afford a move commits the
+ * empty turn), and every derived move on the table's board.
+ */
+describe('the played seats at a table in stratagems\u2019 offline world', () => {
+	const AT_TABLE = tableOf(3, 1, [], TABLE_SEATS);
+	const SEATED = playedByTheWorld(AT_TABLE);
+
+	async function aTable(params: {
+		stakeGems: number;
+		gapPercent: number;
+		cycles: number;
+	}) {
+		world = await createEmbeddedWorld({
+			chainId: CHAIN_ID,
+			chain: {
+				name: 'Offline',
+				nativeCurrency: {name: 'Ether', symbol: 'ETH', decimals: 18},
+				properties: {...config.chains[31337].properties},
+			},
+			rocketh: {config: config as never, extensions},
+			environment: OFFLINE_DEPLOYMENT.environment,
+			scripts: [...OFFLINE_DEPLOYMENT.scripts],
+			accounts: {...OFFLINE_DEPLOYMENT.accounts},
+			initialBalances: {...OFFLINE_DEPLOYMENT.initialBalances},
+			expectedContracts: [...OFFLINE_DEPLOYMENT.expectedContracts],
+			provision: async ({node}) => {
+				for (const address of [
+					HUMAN.address,
+					...SEATED.map((p) => p.address),
+				]) {
+					await node.provider.request({
+						method: 'evm_setBalance',
+						params: [address, `0x${PLAY_MONEY.toString(16)}`],
+					} as never);
+				}
+			},
+		});
+		const built = world;
+		const worldRecords = built.deployments.get();
+		const chain = {
+			id: worldRecords.chain.id,
+			name: worldRecords.chain.name,
+			nativeCurrency: worldRecords.chain.nativeCurrency,
+			rpcUrls: {default: {http: [] as string[]}},
+		};
+		const publicClient = createPublicClient({
+			chain,
+			transport: custom(built.provider as never),
+		});
+		const human = createWalletClient({
+			account: HUMAN,
+			chain,
+			transport: custom(built.provider as never),
+		});
+		const store = new Map<string, string>();
+		const opened = await openOfflineTable({
+			reader: publicClient as never,
+			creator: {
+				address: HUMAN.address,
+				writeContract: (request) =>
+					human.writeContract({
+						...request,
+						account: HUMAN,
+						chain: null,
+					} as never),
+			},
+			factory: gameLobby!.factory(worldRecords).address,
+			implementation: gameLobby!.implementation(worldRecords).address,
+			storage: {
+				getItem: (key) => store.get(key) ?? null,
+				setItem: (key, value) => void store.set(key, value),
+			},
+			storageKey: TABLE_STORAGE_KEY,
+			seats: AT_TABLE.length,
+			cycles: params.cycles,
+			gameOptions: encodeStratagemsOptions(params),
+		});
+		if (opened.kind !== 'table') throw new Error(opened.reason);
+		await stakeForEveryoneAtTheTable({
+			env: built.env,
+			table: opened.table.address,
+			player: HUMAN.address,
+			seats: AT_TABLE,
+		});
+		const atTable = gameLobby!.deploymentsAt(worldRecords, opened.table);
+		const records = {
+			...readable(atTable),
+			get: () => atTable,
+		} as DeploymentsStore;
+		const table = {
+			address: records.get().contracts.Stratagems.address,
+			abi: records.get().contracts.Stratagems.abi,
+		};
+		const stratagems = resolveStratagemsConfig(atTable as never);
+
+		async function send(request: Record<string, unknown>): Promise<void> {
+			const hash = await human.writeContract({
+				...table,
+				chain: null,
+				account: HUMAN,
+				...request,
+			} as never);
+			const receipt = await publicClient.waitForTransactionReceipt({hash});
+			expect(receipt.status, String(request.functionName)).toBe('success');
+		}
+		async function read<T>(functionName: string, args: unknown[] = []) {
+			return (await publicClient.readContract({
+				...table,
+				functionName,
+				args,
+			} as never)) as T;
+		}
+		const sentBySeats = async () => {
+			let total = 0;
+			for (const seat of SEATED) {
+				total += Number(
+					await publicClient.getTransactionCount({address: seat.address}),
+				);
+			}
+			return total;
+		};
+		function playersOn(board?: {min: number; max: number}) {
+			return createOfflinePlayers({
+				provider: built.provider,
+				deployments: records,
+				config: stratagems,
+				players: SEATED,
+				...(board ? {board} : {}),
+			});
+		}
+		/** The human's half of a cycle: an empty turn committed, then revealed, each phase pushed on. */
+		async function humanCycle(players: ReturnType<typeof playersOn>) {
+			const secret = HUMAN_SECRET;
+			const turn = chainOf([], secret);
+			await players.tick();
+			await send({
+				functionName: 'makeCommitment',
+				args: [BigInt(HUMAN.address), turn[0].hash, 0n, zeroAddress],
+			});
+			await send({functionName: 'advanceCycle', args: []});
+			await players.tick();
+			await send({
+				functionName: 'reveal',
+				args: [
+					BigInt(HUMAN.address),
+					[],
+					secret,
+					turn[0].furtherActions,
+					zeroAddress,
+				],
+			});
+			await send({functionName: 'advanceCycle', args: []});
+		}
+		return {
+			built,
+			table,
+			records,
+			stratagems,
+			send,
+			read,
+			sentBySeats,
+			playersOn,
+			humanCycle,
+			gemsOf: (address: `0x${string}`) =>
+				publicClient.readContract({
+					address: worldRecords.contracts.TestTokens.address,
+					abi: worldRecords.contracts.TestTokens.abi,
+					functionName: 'balanceOf',
+					args: [address],
+				} as never) as Promise<bigint>,
+		};
+	}
+
+	it('commits nothing before the start, plays the board through its cycles, and nothing after the end', async () => {
+		const t = await aTable({stakeGems: 10, gapPercent: 50, cycles: 2});
+		// BEFORE THE START: nobody is waited for, and a commit would revert
+		const early = t.playersOn();
+		await early.tick();
+		await early.tick();
+		expect(await t.sentBySeats()).toBe(0);
+
+		await t.send({functionName: 'start', args: []});
+		const board = await tableBoardAt(t.built.env, t.table.address);
+		expect(board).toEqual({min: -3, max: 3});
+		const players = t.playersOn(board);
+
+		for (let played = 0; played < 2; played++) {
+			const {cycleNumber} = await t.read<Cycle>('getCycle');
+			await players.tick();
+			for (const seat of SEATED) {
+				const onChain = await t.read<Commitment>('getCommitment', [
+					seat.identity,
+				]);
+				expect(onChain.cycleNumber).toBe(cycleNumber);
+				const move = turnFor({
+					game: t.table.address,
+					identity: seat.identity,
+					cycleNumber: Number(cycleNumber),
+					board,
+				});
+				const {x, y} = bigIntIDToXY(move[0].position);
+				expect(x >= -3 && x <= 3 && y >= -3 && y <= 3).toBe(true);
+				const head = chainOf(
+					move,
+					playedSeatSecret({
+						chainId: t.records.get().chain.id,
+						contract: t.table.address,
+						identity: seat.identity,
+						cycleNumber: Number(cycleNumber),
+					}),
+				)[0].hash;
+				expect(onChain.hash.toLowerCase()).toBe(head.toLowerCase());
+			}
+			await t.humanCycle(players);
+		}
+		const [, , ended] = await t.read<[bigint, bigint, boolean]>('getEnd');
+		expect(ended).toBe(true);
+
+		// AFTER THE END: nothing more is sent, however often the seats look
+		const sent = await t.sentBySeats();
+		await players.tick();
+		await players.tick();
+		expect(await t.sentBySeats()).toBe(sent);
+	}, 120_000);
+
+	it('commits the empty turn rather than restaking, when its stake cannot cover a move', async () => {
+		// one gem a seat: the first move places it, and a table's stake is fixed
+		const t = await aTable({stakeGems: 1, gapPercent: 400, cycles: 3});
+		await t.send({functionName: 'start', args: []});
+		const board = await tableBoardAt(t.built.env, t.table.address);
+		const players = t.playersOn(board);
+		await t.humanCycle(players);
+
+		const {cycleNumber} = await t.read<Cycle>('getCycle');
+		const cost = 10n ** 18n;
+		await players.tick();
+		let emptied = 0;
+		for (const seat of SEATED) {
+			const reserve = await t.read<bigint>('getReserve', [seat.identity]);
+			const onChain = await t.read<Commitment>('getCommitment', [
+				seat.identity,
+			]);
+			expect(onChain.cycleNumber).toBe(cycleNumber);
+			const secret = playedSeatSecret({
+				chainId: t.records.get().chain.id,
+				contract: t.table.address,
+				identity: seat.identity,
+				cycleNumber: Number(cycleNumber),
+			});
+			if (reserve < cost) {
+				emptied++;
+				expect(onChain.hash.toLowerCase()).toBe(
+					chainOf([], secret)[0].hash.toLowerCase(),
+				);
+				expect(onChain.bond).toBe(0n);
+			}
+			// and no test gems taken: nothing to restake with
+			expect(await t.gemsOf(seat.address)).toBe(0n);
+		}
+		expect(emptied).toBeGreaterThan(0);
+		// the cycle still turns
+		await t.humanCycle(players);
+		expect((await t.read<Cycle>('getCycle')).cycleNumber).toBe(
+			cycleNumber + 1n,
+		);
+	}, 120_000);
 });

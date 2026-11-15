@@ -61,6 +61,24 @@ export const GREEDY_CANDIDATES = 12;
  */
 export const PLAYED_TURN_SPREAD = 13;
 
+/**
+ * A TABLE'S BOARD, inclusive on both axes (its contract's `getBoard()`,
+ * `./table.ts`'s `tableBoardOf`): at a table a played move lands on it rather
+ * than in the block above, since a move outside it is skipped (step OT2,
+ * OT2-4c). The world has none.
+ */
+export type BoardBounds = {min: number; max: number};
+
+/** The square the seats play in: the board, or the world's block around the origin. */
+function playedSquare(params: {
+	spread?: number;
+	board?: BoardBounds;
+}): BoardBounds {
+	if (params.board) return params.board;
+	const half = Math.floor((params.spread ?? PLAYED_TURN_SPREAD) / 2);
+	return {min: -half, max: half};
+}
+
 /** What `StratagemsSimulation.resolveMoves` and `poke` answer. */
 export type SimulationOutcome = {
 	cells: readonly StoredCell[];
@@ -114,12 +132,18 @@ export function within(centre: bigint, d: number): bigint[] {
 	);
 }
 
-/** The positions the strategy reads: the block, widened by 2 so every candidate's neighbourhood is in it. */
-export function positionsToRead(spread = PLAYED_TURN_SPREAD): bigint[] {
-	const half = Math.floor(spread / 2) + 2;
+/**
+ * The positions the strategy reads: the block (or a table's board), widened by
+ * 2 so every candidate's neighbourhood is in it.
+ */
+export function positionsToRead(
+	spread = PLAYED_TURN_SPREAD,
+	board?: BoardBounds,
+): bigint[] {
+	const {min, max} = playedSquare({spread, board});
 	const ids: bigint[] = [];
-	for (let y = -half; y <= half; y++) {
-		for (let x = -half; x <= half; x++) ids.push(xyToBigIntID(x, y));
+	for (let y = min - 2; y <= max + 2; y++) {
+		for (let x = min - 2; x <= max + 2; x++) ids.push(xyToBigIntID(x, y));
 	}
 	return ids;
 }
@@ -127,20 +151,26 @@ export function positionsToRead(spread = PLAYED_TURN_SPREAD): bigint[] {
 /**
  * THE CELLS GREEDY TRIES (A2-4), in the seat's seeded order: empty cells of the
  * block touching a coloured cell, at most `cap - 1` of them, then one empty cell
- * touching none (when there is one), or more frontier cells in its place.
+ * touching none (when there is one), or more frontier cells in its place. At a
+ * table, the cells of its board (`bounds`); none when it is full.
  */
 export function candidateCells(params: {
 	board: StoredBoard;
 	random: SeededRandom;
 	cap?: number;
 	spread?: number;
+	/** A table's board: the only cells a move there is not skipped on. */
+	bounds?: BoardBounds;
 }): bigint[] {
 	const cap = params.cap ?? GREEDY_CANDIDATES;
-	const half = Math.floor((params.spread ?? PLAYED_TURN_SPREAD) / 2);
+	const {min, max} = playedSquare({
+		spread: params.spread,
+		board: params.bounds,
+	});
 	const frontier: bigint[] = [];
 	const alone: bigint[] = [];
-	for (let y = -half; y <= half; y++) {
-		for (let x = -half; x <= half; x++) {
+	for (let y = min; y <= max; y++) {
+		for (let x = min; x <= max; x++) {
 			const position = xyToBigIntID(x, y);
 			if (coloured(params.board.get(position.toString()))) continue;
 			const touches = NEIGHBOURS.some(([dx, dy]) =>
@@ -262,6 +292,11 @@ export function createStratagemsStrategy(params: {
 	colorOf(account: `0x${string}`): number;
 	cap?: number;
 	onDecided?: (measure: DecisionMeasure) => void;
+	/**
+	 * A TABLE'S BOARD (OT2-4c): candidates on it only, and no move when it has
+	 * no empty cell. Absent in the world.
+	 */
+	board?: BoardBounds;
 }): Strategy<Move> {
 	return async ({identity, cycleNumber, random, budget}) => {
 		if (budget.actionsAtMost < 1) return [];
@@ -269,7 +304,9 @@ export function createStratagemsStrategy(params: {
 		const player =
 			`0x${identity.toString(16).padStart(40, '0')}` as `0x${string}`;
 		const color = params.colorOf(player);
-		const stored = await params.readBoard(positionsToRead());
+		const stored = await params.readBoard(
+			positionsToRead(PLAYED_TURN_SPREAD, params.board),
+		);
 		const board: StoredBoard = new Map(
 			stored
 				.filter(
@@ -277,7 +314,12 @@ export function createStratagemsStrategy(params: {
 				)
 				.map((cell) => [BigInt(cell.position).toString(), cell]),
 		);
-		const candidates = candidateCells({board, random, cap: params.cap});
+		const candidates = candidateCells({
+			board,
+			random,
+			cap: params.cap,
+			...(params.board ? {bounds: params.board} : {}),
+		});
 		let best: {position: bigint; score: bigint} | undefined;
 		if (candidates.length === 1) {
 			best = {position: candidates[0], score: 0n};

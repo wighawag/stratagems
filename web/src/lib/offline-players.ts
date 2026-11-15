@@ -28,7 +28,8 @@ import {
 import {MOVE_ENCODING, type Move} from '$lib/stratagems/moves';
 import {defaultColorOf} from '$lib/stratagems/faction';
 import {testGemsDistributor} from '$lib/stratagems/test-gems';
-import {PLAYED_TURN_SPREAD} from '$lib/stratagems/strategy';
+import {PLAYED_TURN_SPREAD, type BoardBounds} from '$lib/stratagems/strategy';
+import {LOBBY_ABI} from '$lib/game/lobby/table';
 
 /**
  * THE OTHER PLAYERS IN STRATAGEMS' OFFLINE WORLD, because a commit-reveal game
@@ -70,6 +71,14 @@ import {PLAYED_TURN_SPREAD} from '$lib/stratagems/strategy';
  *   still opens what `random` would have committed, and a `random` seat stores
  *   nothing and plays exactly as before.
  *
+ * - AT A TABLE (step OT2 of the plan, OT2-4) a seat plays the table's life and
+ *   no more: nothing committed before its start or after its end, as the
+ *   template's seats; NO RESTAKE, since a table's stake is fixed once it has
+ *   started (`TableStakeIsFixed`), so a seat that cannot afford its move
+ *   commits the empty turn, which keeps the Manual cycle moving; and every
+ *   move on the table's BOARD (`board`), the square the contract plays, since
+ *   a move outside it is skipped and would cost and do nothing.
+ *
  * AND BECAUSE IT IS DERIVED, THE DERIVATION IS A WIRE: a build that changes
  * {@link turnFor} or `playedSeatSecret` cannot open a commitment an earlier build
  * left on chain, which under the manual policy freezes the world. The commit
@@ -108,6 +117,12 @@ export function turnFor(params: {
 	game: `0x${string}`;
 	identity: bigint;
 	cycleNumber: number;
+	/**
+	 * A TABLE'S BOARD, inclusive on both axes: the move lands on it. Absent (the
+	 * world), the 13 by 13 block around the origin, exactly as every build
+	 * before tables derived it: the world's turn is a wire, pinned by a test.
+	 */
+	board?: BoardBounds;
 }): Move[] {
 	const seed = BigInt(
 		keccak256(
@@ -122,9 +137,12 @@ export function turnFor(params: {
 			),
 		),
 	);
-	const half = Math.floor(PLAYED_TURN_SPREAD / 2);
-	const x = Number(seed % BigInt(PLAYED_TURN_SPREAD)) - half;
-	const y = Number((seed >> 32n) % BigInt(PLAYED_TURN_SPREAD)) - half;
+	const side = params.board
+		? params.board.max - params.board.min + 1
+		: PLAYED_TURN_SPREAD;
+	const min = params.board ? params.board.min : -Math.floor(side / 2);
+	const x = Number(seed % BigInt(side)) + min;
+	const y = Number((seed >> 32n) % BigInt(side)) + min;
 	const account =
 		`0x${params.identity.toString(16).padStart(40, '0')}` as const;
 	return [{position: xyToBigIntID(x, y), color: defaultColorOf(account)}];
@@ -146,8 +164,14 @@ export function createOfflinePlayers(params: {
 	strategy?: Strategy<Move>;
 	/** Where a decided turn is kept before it is committed (A1-4). */
 	turns?: PlayedTurnStore<Move>;
+	/**
+	 * The board of the table this game is, read off it once started
+	 * (`getBoard()`): every derived move lands on it. Absent in the world.
+	 */
+	board?: BoardBounds;
 }): SerialisedLoop {
-	const {provider, deployments, config, players, strategy, turns} = params;
+	const {provider, deployments, config, players, strategy, turns, board} =
+		params;
 
 	const records = deployments.get();
 	const game = {
@@ -172,6 +196,31 @@ export function createOfflinePlayers(params: {
 	const readCycle = createCycleReader({publicClient, contract: game});
 
 	const sends = () => keys.sends() + (distributorKeys?.sends() ?? 0);
+
+	/**
+	 * WHETHER THIS GAME IS A TABLE: its record has the lobby's routes (`getEnd`),
+	 * which the world's has not, as the template's seats read it.
+	 */
+	const atTable = (game.abi as readonly {type?: string; name?: string}[]).some(
+		(entry) => entry.type === 'function' && entry.name === 'getEnd',
+	);
+	/**
+	 * Whether a commitment may be made this cycle: always in the world; at a
+	 * table, from its start to its last cycle, where the contract refuses every
+	 * other (`NotInGame` before, `GameEnded` after) and a pass would retry the
+	 * revert for ever.
+	 */
+	async function commitsAllowed(cycleNumber: number): Promise<boolean> {
+		if (!atTable) return true;
+		const [, lastCycleNumber, ended] = (await publicClient.readContract({
+			address: game.address,
+			abi: LOBBY_ABI,
+			functionName: 'getEnd',
+		})) as readonly [bigint, bigint, boolean];
+		return (
+			lastCycleNumber !== 0n && !ended && BigInt(cycleNumber) <= lastCycleNumber
+		);
+	}
 
 	function send(
 		player: OfflinePlayer,
@@ -228,6 +277,7 @@ export function createOfflinePlayers(params: {
 			game: game.address,
 			identity: player.identity,
 			cycleNumber,
+			...(board ? {board} : {}),
 		});
 		const stored = decides(player)
 			? turns?.get(player.identity, cycleNumber)
@@ -261,6 +311,7 @@ export function createOfflinePlayers(params: {
 			game: game.address,
 			identity: player.identity,
 			cycleNumber,
+			...(board ? {board} : {}),
 		});
 		if (!decides(player) || !strategy || !turns) return derived;
 		return decidePlayedTurn({
@@ -318,7 +369,9 @@ export function createOfflinePlayers(params: {
 		// every level plays one move, so what it costs is known before deciding
 		const cost = costOfMoves(config, 1);
 		let reserve = await reserveOf(player);
-		if (reserve < cost) {
+		// NOT AT A TABLE, whose stake is fixed once it started: there the empty
+		// turn below keeps the cycle moving (OT2-4b).
+		if (reserve < cost && !atTable) {
 			await restake(player);
 			reserve = await reserveOf(player);
 		}
@@ -421,7 +474,7 @@ export function createOfflinePlayers(params: {
 
 	async function act(
 		player: OfflinePlayer,
-		cycle: {cycleNumber: number; commiting: boolean},
+		cycle: {cycleNumber: number; commiting: boolean; mayCommit: boolean},
 	): Promise<void> {
 		const onChain = await commitmentOf(player);
 		// A COMMITMENT FROM A PAST CYCLE IS SETTLED RATHER THAN CARRIED: the
@@ -434,8 +487,9 @@ export function createOfflinePlayers(params: {
 			await settle(player, onChain);
 			return;
 		}
-		if (cycle.commiting) await commit(player, cycle.cycleNumber, onChain);
-		else await reveal(player, cycle.cycleNumber, onChain);
+		if (cycle.commiting) {
+			if (cycle.mayCommit) await commit(player, cycle.cycleNumber, onChain);
+		} else await reveal(player, cycle.cycleNumber, onChain);
 	}
 
 	async function pass(): Promise<boolean> {
@@ -445,6 +499,9 @@ export function createOfflinePlayers(params: {
 			const at = {
 				cycleNumber: cycle.cycleNumber,
 				commiting: cycle.isCommitPhase,
+				mayCommit: cycle.isCommitPhase
+					? await commitsAllowed(cycle.cycleNumber)
+					: false,
 			};
 			// In sequence: one chain in one tab, and a revert stops the pass.
 			for (const player of players) {

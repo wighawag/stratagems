@@ -405,6 +405,25 @@ export function createTableEnd(params: {
 	};
 }
 
+/**
+ * SETTLE THE TABLE ONCE IT HAS ENDED, by itself (step OT2, OT2-5): in the
+ * offline world, where the settlement is a press with one answer (anyone may
+ * send it, gas is free, and there is nobody else to), so the tab sends it
+ * through the same {@link TableEnd.settle} the HUD's button calls. ONCE per
+ * call of this (a boot): `settle` skips what is settled and sends nothing on a
+ * settled table, so a reload repeats nothing; a settlement that failed leaves
+ * the HUD's button, which still finds what is left. Answers the unsubscriber.
+ */
+export function settleOnceEnded(tableEnd: TableEnd): () => void {
+	let sent = false;
+	return tableEnd.subscribe((state) => {
+		if (sent || state.step !== 'Loaded') return;
+		if (!state.started || !state.ended || state.settled) return;
+		sent = true;
+		void tableEnd.settle();
+	});
+}
+
 /** What the leaderboard says its numbers are, at a table. Pure. */
 export function describeTableValuation(
 	state: TableEndState,

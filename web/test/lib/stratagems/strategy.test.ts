@@ -407,4 +407,120 @@ describe('a greedy decision', () => {
 	it('reads the block widened by 2', () => {
 		expect(positionsToRead()).toHaveLength(17 * 17);
 	});
+
+	it('reads a table’s board widened by 2', () => {
+		const ids = positionsToRead(undefined, {min: -3, max: 2});
+		expect(ids).toHaveLength(10 * 10);
+		for (const id of ids) {
+			const {x, y} = bigIntIDToXY(id);
+			expect(x >= -5 && x <= 4 && y >= -5 && y <= 4).toBe(true);
+		}
+	});
+});
+
+/** An empty stored cell, or one of `color` owned by `owner`. */
+function storedAt(
+	x: number,
+	y: number,
+	color = 0,
+	owner: `0x${string}` = zeroAddress,
+): StoredCell {
+	return {
+		position: xyToBigIntID(x, y),
+		owner,
+		cell: {
+			lastCycleUpdate: color === 0 ? 0 : 3,
+			cycleWhenTokenIsAdded: color === 0 ? 0 : 3,
+			producingCycles: 0,
+			color,
+			life: color === 0 ? 0 : 1,
+			delta: 0,
+			enemyMap: 0,
+			distribution: 0,
+			stake: color === 0 ? 0 : 1,
+		},
+		start: NO_START,
+	};
+}
+
+describe('at a table (step OT2, OT2-4c)', () => {
+	const bounds = {min: -3, max: 2};
+
+	it('tries only cells of the table’s board, the frontier and the lone cell alike', async () => {
+		const played = await playedBoard(7);
+		const board = storedBoardOf(played.data);
+		for (const identity of [1n, 2n, 3n]) {
+			const cells = candidateCells({
+				board,
+				random: random(identity),
+				cap: 12,
+				bounds,
+			});
+			expect(cells.length).toBeGreaterThan(0);
+			for (const p of cells) {
+				const {x, y} = bigIntIDToXY(p);
+				expect(x >= -3 && x <= 2 && y >= -3 && y <= 2, `${x},${y}`).toBe(
+					true,
+				);
+				expect(board.get(p.toString())?.cell.color ?? 0).toBe(0);
+			}
+		}
+	}, 60_000);
+
+	it('has no candidate on a full board, and plays no move there', async () => {
+		const full = new Map<string, StoredCell>();
+		for (let y = bounds.min; y <= bounds.max; y++) {
+			for (let x = bounds.min; x <= bounds.max; x++) {
+				const cell = storedAt(x, y, Color.Red, BOB as `0x${string}`);
+				full.set(cell.position.toString(), cell);
+			}
+		}
+		expect(candidateCells({board: full, random: random(1n), bounds})).toEqual(
+			[],
+		);
+		const strategy = createStratagemsStrategy({
+			readBoard: async (positions) =>
+				positions.map((position) => {
+					const {x, y} = bigIntIDToXY(position);
+					return full.get(position.toString()) ?? storedAt(x, y);
+				}),
+			simulator,
+			config: {maxLife: MAX_LIFE, numTokensPerGems: GEM},
+			colorOf: () => Color.Blue,
+			board: bounds,
+		});
+		const turn = await strategy({
+			identity: BigInt(ALICE),
+			cycleNumber: 20,
+			level: 'greedy',
+			random: random(1n),
+			budget: {actionsAtMost: 1},
+		});
+		expect(turn).toEqual([]);
+	});
+
+	it('decides a move on the board when it is handed one', async () => {
+		const played = await playedBoard(7);
+		const board = storedBoardOf(played.data);
+		const strategy = createStratagemsStrategy({
+			readBoard: async (positions) =>
+				positions.map((position) => {
+					const {x, y} = bigIntIDToXY(position);
+					return board.get(position.toString()) ?? storedAt(x, y);
+				}),
+			simulator,
+			config: {maxLife: MAX_LIFE, numTokensPerGems: GEM},
+			colorOf: () => Color.Blue,
+			board: bounds,
+		});
+		const [move] = await strategy({
+			identity: BigInt(CAROL),
+			cycleNumber: 20,
+			level: 'greedy',
+			random: random(1n),
+			budget: {actionsAtMost: 1},
+		});
+		const {x, y} = bigIntIDToXY(move.position);
+		expect(x >= -3 && x <= 2 && y >= -3 && y <= 2).toBe(true);
+	}, 60_000);
 });
