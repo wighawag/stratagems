@@ -18,8 +18,7 @@
 				"scripts/**",
 				"src/routes/version/**",
 				"src/svelte.d.ts",
-				"README.md",
-				"TODO.md"
+				"README.md"
 			],
 			"options": {
 				"printWidth": 120
