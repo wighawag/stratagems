@@ -10,7 +10,8 @@ import {test, expect, describe} from '../fixtures/test';
  * What it holds: the lobby offers a table first; the tab creates it from the
  * person's account, seats everyone at it (each with exactly the table's
  * stake) and starts it, so the page opens on its first cycle with no table
- * lobby in between; the panel names the seats as the lobby did; a cell outside
+ * lobby in between; the panel names the seats as the lobby did (You, The world
+ * (Greedy), and the random seat The world); a cell outside
  * the table's square is refused by the planner and one inside it is played; a
  * reload restores the SAME table on the cycle it was in; after the last cycle
  * the table ends, and the tab settles it with nobody pressing anything: the
@@ -179,7 +180,9 @@ describe('A stratagems table in the offline world', () => {
 		const seats = panel.getByTestId('table-seats');
 		await expect(seats).toContainText('You');
 		await expect(seats).toContainText('The world (Greedy)');
-		await expect(seats).toContainText('The world (Random)');
+		// a random seat is "The world", as the lobby names it (`random` is the
+		// level a seat plays with none chosen)
+		await expect(seats.getByText('The world', {exact: true})).toHaveCount(1);
 		const opened = (await tableOnChain(page))!;
 		expect(opened).toMatchObject({tables: 1, ended: false, settled: false});
 		expect(opened.last).toBe(opened.cycleNumber + 1);
