@@ -1,5 +1,6 @@
 import type {Page} from '@playwright/test';
 import {test, expect, describe} from '../fixtures/test';
+import {selectContract} from '../fixtures/contracts-page';
 
 /**
  * The transaction inspector, driven the way a user reaches it.
@@ -112,6 +113,12 @@ describe('Transaction inspector', () => {
 			'true',
 			{timeout: 30000},
 		);
+
+		// Put the page on the contract the write lives on. It opens on whichever
+		// contract sorts first, which is `Game` here and is not in a game whose
+		// contract sorts later (stratagems' `Gems` sorts before `Stratagems`);
+		// `fixtures/contracts-page.ts` says why a suite that means the game asks.
+		await selectContract(page);
 
 		const writeTab = page.getByRole('tab', {name: 'Write'});
 		await expect(writeTab).toBeVisible({timeout: 30000});
