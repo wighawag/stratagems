@@ -64,6 +64,18 @@ describe('offlineTableCreator', () => {
 		expect(
 			decodeFunctionData({abi: FACTORY_ABI, data: tx.data}).functionName,
 		).toBe('createGame');
+
+		// and with a value, as a game seats this account by it
+		await creator.writeContract({
+			address: factory,
+			abi: FACTORY_ABI,
+			functionName: 'createGame',
+			args: [3, 2, `0x${'00'.repeat(32)}`],
+			value: 7n,
+		});
+		const [paid] = sent.filter((r) => r.method === 'eth_sendTransaction')[1]
+			.params as [{value?: `0x${string}`}];
+		expect(BigInt(paid.value!)).toBe(7n);
 	});
 });
 
