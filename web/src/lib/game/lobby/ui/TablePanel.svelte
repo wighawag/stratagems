@@ -11,7 +11,6 @@
 	import Button from '$lib/shadcn/ui/button/button.svelte';
 	import {
 		describeTableProgress,
-		memberLabel,
 		tableProgressOf,
 		type TableStore,
 	} from '$lib/game/lobby/table';
@@ -54,7 +53,7 @@
 						{:else if seat.occupant.kind === 'you'}
 							You
 						{:else if seat.occupant.kind === 'remote-human'}
-							{memberLabel(seat.occupant.player)}
+							{table.labelOf(seat.occupant.player)}
 						{/if}
 					</span>
 					{#if $table.isCreator && $table.roster.started && !$table.roster.ended && seat.occupant?.kind === 'remote-human'}

@@ -251,6 +251,25 @@ describe('a table store', () => {
 		await table.update();
 		expect(get(table)).toEqual({step: 'Failed', message: 'execution reverted'});
 	});
+
+	it('names a member as the world names its seat, and by its identity otherwise', () => {
+		// AN OFFLINE TABLE (stratagems' plan, step OT1, OT1-7): its seats named as
+		// its lobby named them; online, no labels, and the identity as before.
+		const labelled = createTableStore({
+			deps: {publicClient: {}, account: writable(undefined)} as never,
+			table: TABLE,
+			you: writable(undefined),
+			labels: (member) => (member === BigInt(BOB) ? 'Player 2' : undefined),
+		});
+		expect(labelled.labelOf(BigInt(BOB))).toBe('Player 2');
+		expect(labelled.labelOf(BigInt(ALICE))).toBe(memberLabel(BigInt(ALICE)));
+		const online = createTableStore({
+			deps: {publicClient: {}, account: writable(undefined)} as never,
+			table: TABLE,
+			you: writable(undefined),
+		});
+		expect(online.labelOf(BigInt(BOB))).toBe(memberLabel(BigInt(BOB)));
+	});
 });
 
 describe('a table before its start', () => {

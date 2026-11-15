@@ -8,6 +8,8 @@ import {
 } from 'template-commit-reveal-contracts/rocketh/config.js';
 import {
 	OFFLINE_DEPLOYMENT,
+	TABLE_STORAGE_KEY,
+	stakeForEveryoneAtTheTable,
 	stakeForEveryoneInTheWorld,
 	stakeForOfflinePlayer,
 } from '$lib/offline';
@@ -18,6 +20,16 @@ import {
 	tableOf,
 } from '$lib/game/lobby/seats';
 import {resolvePlacementConfig} from '$lib/placement/config';
+import {createPublicClient, createWalletClient, custom} from 'viem';
+import {privateKeyToAccount} from 'viem/accounts';
+import {lobby as gameLobby} from '$lib/context/index';
+import {TABLE_SEATS} from '$lib/game/lobby/lobby';
+import {
+	openOfflineTable,
+	startOfflineTableOnce,
+	type OfflineTableCreator,
+} from '$lib/game/lobby/offline-table';
+import {readRoster, NO_GAME_OPTIONS} from '$lib/game/lobby/table';
 
 // No `.svelte.` infix, so this runs in the `server` project: node, no DOM.
 // That is not a compromise, it is the harness this deserves - webevm's core
@@ -297,5 +309,219 @@ describe('this game\u2019s offline world', () => {
 			args: [BigInt(player)],
 		})) as bigint;
 		expect(reserve).toBe(config.data.sale.default.amount);
+	});
+});
+
+/**
+ * A TABLE IN THE OFFLINE WORLD (stratagems' plan, step OT1): the world's
+ * table created by its first person, every seat staked AT THE TABLE (nobody in
+ * the world's `Game`), started by the tab, its address recorded; and a reload
+ * that finds it again repeating nothing. The browser's half (the wallet, the
+ * context on the table's record) is the e2e's, `offline-table.e2e.ts`.
+ */
+describe('a table in this game\u2019s offline world', () => {
+	const CREATOR = {
+		privateKey:
+			'0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d',
+		address: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+	} as const;
+
+	async function tableWorld() {
+		world = await buildWorld({
+			provision: async ({node}) => {
+				await node.provider.request({
+					method: 'evm_setBalance',
+					params: [CREATOR.address, `0x${(10n ** 24n).toString(16)}`],
+				} as never);
+			},
+		});
+		const records = world.deployments.get();
+		const chain = {
+			id: records.chain.id,
+			name: records.chain.name,
+			nativeCurrency: records.chain.nativeCurrency,
+			rpcUrls: {default: {http: [] as string[]}},
+		};
+		const reader = createPublicClient({
+			chain,
+			transport: custom(world.provider as never),
+		});
+		const account = privateKeyToAccount(CREATOR.privateKey);
+		const client = createWalletClient({
+			account,
+			chain,
+			transport: custom(world.provider as never),
+		});
+		let sends = 0;
+		const creator: OfflineTableCreator = {
+			address: CREATOR.address,
+			writeContract: (request) => {
+				sends++;
+				return client.writeContract({
+					...request,
+					account,
+					chain: null,
+				} as never);
+			},
+		};
+		const store = new Map<string, string>();
+		const storage = {
+			getItem: (key: string) => store.get(key) ?? null,
+			setItem: (key: string, value: string) => void store.set(key, value),
+		};
+		return {
+			records,
+			reader,
+			creator,
+			storage,
+			store,
+			sends: () => sends,
+			factory: gameLobby!.factory(records).address,
+			implementation: gameLobby!.implementation(records).address,
+		};
+	}
+
+	async function boot(
+		at: Awaited<ReturnType<typeof tableWorld>>,
+		seats = tableOf(3, 1, [], TABLE_SEATS),
+	) {
+		const opened = await openOfflineTable({
+			reader: at.reader as never,
+			creator: at.creator,
+			factory: at.factory,
+			implementation: at.implementation,
+			storage: at.storage,
+			storageKey: TABLE_STORAGE_KEY,
+			seats: seats.length,
+			cycles: 2,
+			gameOptions: NO_GAME_OPTIONS,
+		});
+		if (opened.kind !== 'table') return {opened, started: false};
+		await stakeForEveryoneAtTheTable({
+			env: world!.env,
+			table: opened.table.address,
+			player: CREATOR.address,
+			seats,
+		});
+		const started = await startOfflineTableOnce({
+			reader: at.reader as never,
+			creator: at.creator,
+			table: opened.table.address,
+		});
+		return {opened, started};
+	}
+
+	it('runs the world\u2019s tables on the MANUAL cycle, as the world', async () => {
+		const at = await tableWorld();
+		// The factory's record is every table's config, as the client reads it.
+		const linked = at.records.contracts.GameFactory.linkedData as {
+			cyclePolicy: string | number | bigint;
+			commitPhaseDuration: string | number | bigint;
+			revealPhaseDuration: string | number | bigint;
+		};
+		expect(BigInt(linked.cyclePolicy)).toBe(
+			BigInt(OFFLINE_DEPLOYMENT.data.Game.cyclePolicy),
+		);
+		expect(BigInt(linked.commitPhaseDuration)).toBe(0n);
+		expect(BigInt(linked.revealPhaseDuration)).toBe(0n);
+	});
+
+	it('creates the table from the first person, stakes every seat AT it, starts it, and records its address', async () => {
+		const at = await tableWorld();
+		const seats = tableOf(3, 1, [], TABLE_SEATS);
+		const {opened, started} = await boot(at, seats);
+		expect(opened.kind).toBe('table');
+		if (opened.kind !== 'table') return;
+		expect(opened.created).toBe(true);
+		expect(started).toBe(true);
+		expect(at.store.get(TABLE_STORAGE_KEY)).toBe(opened.table.address);
+
+		const roster = await readRoster(at.reader as never, opened.table.address);
+		expect(roster.creator.toLowerCase()).toBe(CREATOR.address.toLowerCase());
+		expect(roster.started).toBe(true);
+		expect(roster.cycles).toBe(2);
+		expect(roster.members).toHaveLength(3);
+
+		const read = (
+			world!.env as unknown as {
+				read: (deployment: unknown, args: unknown) => Promise<unknown>;
+			}
+		).read;
+		const Table = {
+			address: opened.table.address,
+			abi: at.records.contracts.GameLobbyImplementation.abi,
+		};
+		const attendance = (await read(Table, {
+			functionName: 'getAttendance',
+		})) as {waitedFor: bigint};
+		expect(attendance.waitedFor).toBe(3n);
+		// NOBODY IN THE WORLD'S `Game`: a table world stakes at the table only.
+		const inTheWorld = (await read(at.records.contracts.Game, {
+			functionName: 'getAttendance',
+		})) as {waitedFor: bigint};
+		expect(inTheWorld.waitedFor).toBe(0n);
+	}, 60_000);
+
+	it('restores the same table on a reload, with no second create, stake or start', async () => {
+		const at = await tableWorld();
+		const seats = tableOf(3, 1, [], TABLE_SEATS);
+		const first = await boot(at, seats);
+		const sent = at.sends();
+		const read = (
+			world!.env as unknown as {
+				read: (deployment: unknown, args: unknown) => Promise<unknown>;
+			}
+		).read;
+		const address = (first.opened as {table: {address: `0x${string}`}}).table
+			.address;
+		const Table = {
+			address,
+			abi: at.records.contracts.GameLobbyImplementation.abi,
+		};
+		const reserve = async () =>
+			(await read(Table, {
+				functionName: 'getReserve',
+				args: [BigInt(CREATOR.address)],
+			})) as bigint;
+		const staked = await reserve();
+		expect(staked).toBe(config.data.sale.default.amount);
+
+		const again = await boot(at, seats);
+		expect(again.opened).toMatchObject({
+			kind: 'table',
+			created: false,
+			table: {address},
+		});
+		expect(again.started).toBe(false);
+		expect(at.sends()).toBe(sent);
+		expect(await reserve()).toBe(staked);
+		const games = (await at.reader.readContract({
+			address: at.factory,
+			abi: at.records.contracts.GameFactory.abi as never,
+			functionName: 'numGames' as never,
+		})) as bigint;
+		expect(games).toBe(1n);
+
+		// And a table mined before its record was written is adopted, not
+		// created twice.
+		at.store.delete(TABLE_STORAGE_KEY);
+		const adopted = await boot(at, seats);
+		expect(adopted.opened).toMatchObject({kind: 'table', created: false});
+		expect(at.store.get(TABLE_STORAGE_KEY)).toBe(address);
+		expect(at.sends()).toBe(sent);
+	}, 60_000);
+
+	it('refuses a stored table the chain does not hold', async () => {
+		const at = await tableWorld();
+		at.store.set(
+			TABLE_STORAGE_KEY,
+			'0x00000000000000000000000000000000000000aa',
+		);
+		const {opened} = await boot(at);
+		expect(opened.kind).toBe('incoherent');
+		expect(at.sends()).toBe(0);
+
+		at.store.set(TABLE_STORAGE_KEY, 'not an address');
+		expect((await boot(at)).opened.kind).toBe('incoherent');
 	});
 });
