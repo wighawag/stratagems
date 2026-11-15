@@ -4,6 +4,7 @@
 	import Button from '$lib/shadcn/ui/button/button.svelte';
 	import DefaultHead from '../lib/metadata/DefaultHead.svelte';
 	import {brand} from '$lib/metadata/brand';
+	import {lobby} from '$lib/context/index';
 </script>
 
 <!-- THE GAME MENU, AND THE SAME FILE IN EVERY GAME. What differs between games is
@@ -37,6 +38,17 @@
 			size="lg"
 			class="h-14 w-full text-xl font-semibold">Online</Button
 		>
+		<!-- TABLES, when the game has them: games for a fixed set of players,
+		     created by anyone (`$lib/game/lobby/table`). A game with none exports
+		     no `lobby` and this entry is not there. -->
+		{#if lobby}
+			<Button
+				href={route('/lobby/')}
+				size="lg"
+				variant="outline"
+				class="h-14 w-full text-xl font-semibold">Tables</Button
+			>
+		{/if}
 		<!-- OFFLINE IS A WORLD, NOT A DEMO: a chain in this tab, which is a route of
 		     the game's own (`routes/offline/` and `$lib/offline.ts`), not the stem's
 		     `/offline-demo`.
