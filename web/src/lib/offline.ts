@@ -23,15 +23,15 @@ import {offlineWorldNode} from '$lib/offline-node';
 import {createIndexedDBDeploymentStore} from '@rocketh/web';
 import {createContext, lobby as gameLobby} from '$lib/context/index';
 import type {Context} from '$lib/context/types';
-import {createPublicClient, createWalletClient, custom} from 'viem';
+import {createPublicClient, custom} from 'viem';
 import {embeddedConnectionFactory} from '$lib/embedded/world';
 import type {DeploymentsStore} from '$lib/deployments-store';
 import type {TableChoice} from '$lib/game/lobby/lobby';
 import type {ResolvedTable} from '$lib/game/lobby/table';
 import {
-	openOfflineTable,
-	startOfflineTableOnce,
-	type OfflineTableCreator,
+	offlineSeatLabels,
+	offlineTableCreator,
+	seatTheOfflineTable,
 } from '$lib/game/lobby/offline-table';
 import {
 	createOfflinePlayers,
@@ -418,11 +418,17 @@ async function buildOfflineWorld(
 		...(resolved
 			? {
 					table: resolved,
-					seatLabels: await seatLabelsOf(
-						world,
+					seatLabels: await offlineSeatLabels({
 						table,
-						records.get().contracts.Game,
-					),
+						accounts: announcedWallet?.accounts,
+						identityOf: (player) =>
+							offlineIdentityOf({
+								env: world.env,
+								player,
+								game: records.get().contracts.Game,
+							}),
+						levels: AI_LEVELS,
+					}),
 				}
 			: {}),
 	});
@@ -834,8 +840,9 @@ async function openWorld(
  * THE WORLD'S TABLE, set up: created by the first person's account through the
  * world's own wallet, unless its record (or the factory) has it; every seat
  * staked at it, unless its reserve there is funded; started, unless it has
- * (`$lib/game/lobby/offline-table`). Each step asks the chain, so a reload or
- * an interrupted boot repeats nothing.
+ * (`$lib/game/lobby/offline-table`'s `seatTheOfflineTable`, around this game's
+ * own stake). Each step asks the chain, so a reload or an interrupted boot
+ * repeats nothing.
  */
 async function openTheTable(world: EmbeddedWorld, table: Table, at: TableAt) {
 	const wallet = announcedWallet;
@@ -848,11 +855,9 @@ async function openTheTable(world: EmbeddedWorld, table: Table, at: TableAt) {
 		chain,
 		transport: custom(world.provider as never),
 	});
-	const creator = creatorThrough(wallet, chain);
-	status.set({step: 'Booting', what: 'setting the table'});
-	const opened = await openOfflineTable({
+	return seatTheOfflineTable({
 		reader: reader as never,
-		creator,
+		creator: offlineTableCreator(wallet, chain),
 		factory: gameLobby.factory(records).address,
 		implementation: gameLobby.implementation(records).address,
 		storage: localStorage,
@@ -860,81 +865,16 @@ async function openTheTable(world: EmbeddedWorld, table: Table, at: TableAt) {
 		seats: table.length,
 		cycles: at.cycles,
 		gameOptions: at.gameOptions,
+		stake: (opened) =>
+			stakeForEveryoneAtTheTable({
+				env: world.env,
+				table: opened.address,
+				player: wallet.accounts[0],
+				humans: wallet.accounts,
+				seats: table,
+			}),
+		onStep: (what) => status.set({step: 'Booting', what}),
 	});
-	if (opened.kind !== 'table') return opened;
-	status.set({step: 'Booting', what: 'staking for everyone at the table'});
-	await stakeForEveryoneAtTheTable({
-		env: world.env,
-		table: opened.table.address,
-		player: wallet.accounts[0],
-		humans: wallet.accounts,
-		seats: table,
-	});
-	status.set({step: 'Booting', what: 'starting the table'});
-	await startOfflineTableOnce({
-		reader: reader as never,
-		creator,
-		table: opened.table.address,
-	});
-	return opened;
-}
-
-/**
- * The first person's account, as the table's creator: a wallet client over
- * the world's own wallet, which signs for it without asking (it holds the
- * key). Not the browser's key, which does not exist yet.
- */
-function creatorThrough(
-	wallet: EmbeddedWallet,
-	chain: ReturnType<typeof worldChain>,
-): OfflineTableCreator {
-	const address = wallet.accounts[0];
-	const client = createWalletClient({
-		account: address,
-		chain,
-		transport: custom(
-			(
-				wallet.handle.walletProvider as unknown as {
-					underlyingProvider: {request: (args: never) => Promise<unknown>};
-				}
-			).underlyingProvider as never,
-		),
-	});
-	return {
-		address,
-		writeContract: (request) =>
-			client.writeContract({...request, account: address} as never),
-	};
-}
-
-/**
- * HOW THE TABLE'S PANEL NAMES ITS SEATS, as the lobby does (OT1-7): the other
- * people at this device by their number, the world's seats as the world, with
- * their level. The person signed in is "You", as online.
- */
-async function seatLabelsOf(
-	world: EmbeddedWorld,
-	table: Table,
-	game: {address: `0x${string}`; abi: unknown},
-): Promise<(player: bigint) => string | undefined> {
-	const labels = new Map<bigint, string>();
-	const humans = humansAtThisDevice(table);
-	for (const human of humans) {
-		const address = announcedWallet?.accounts[human.account];
-		if (!address) continue;
-		labels.set(
-			await offlineIdentityOf({env: world.env, player: address, game}),
-			`Player ${human.account + 1}`,
-		);
-	}
-	for (const seat of seatsPlayedByTheWorld(table)) {
-		const level = AI_LEVELS.find((choice) => choice.id === seat.level);
-		labels.set(
-			await offlineIdentityOf({env: world.env, player: seat.address, game}),
-			level ? `The world (${level.label})` : 'The world',
-		);
-	}
-	return (player) => labels.get(player);
 }
 
 let announced: (() => void) | undefined;

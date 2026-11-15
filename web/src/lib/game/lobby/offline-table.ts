@@ -23,9 +23,18 @@
  * chain id, as an incoherent restore does (`$lib/embedded`'s
  * `restoreIsCoherent`). A table mined while the tab closed, before its record
  * was written, is found in the factory and adopted, so it is not created twice.
+ *
+ * AND THE BOOT'S GAME-AGNOSTIC HALF (stratagems' plan, step OT3, OT3-2): who
+ * creates the table (`offlineTableCreator`), the boot's three steps around the
+ * game's own stake (`seatTheOfflineTable`), and how the table's panel names
+ * its seats (`offlineSeatLabels`). Every game's `$lib/offline` held the same
+ * copy of these until then; what stays the game's is how a seat is staked and
+ * how an account's identity is spelled.
  */
-import {isAddress, parseEventLogs} from 'viem';
+import {createWalletClient, custom, isAddress, parseEventLogs} from 'viem';
 import type {CoreServices} from '$lib/context/core';
+import type {EmbeddedWallet} from '$lib/embedded/wallet';
+import {humansAtThisDevice, seatsPlayedByTheWorld, type Table} from './seats';
 import {
 	FACTORY_ABI,
 	LOBBY_ABI,
@@ -184,4 +193,109 @@ export async function startOfflineTableOnce(params: {
 		throw new Error("The world's table could not be started.");
 	}
 	return true;
+}
+
+/** The world's chain, as viem wants it for a client over the world's provider. */
+export type OfflineTableChain = {
+	id: number;
+	name: string;
+	nativeCurrency: {name: string; symbol: string; decimals: number};
+	rpcUrls: {default: {http: string[]}};
+};
+
+/**
+ * THE FIRST PERSON'S ACCOUNT, AS THE TABLE'S CREATOR: a wallet client over the
+ * world's own wallet, which signs for it without asking (it holds the key).
+ * Not the browser's key, which does not exist yet when the table is set.
+ */
+export function offlineTableCreator(
+	wallet: Pick<EmbeddedWallet, 'accounts' | 'handle'>,
+	chain: OfflineTableChain,
+): OfflineTableCreator {
+	const address = wallet.accounts[0];
+	const client = createWalletClient({
+		account: address,
+		chain,
+		transport: custom(
+			(
+				wallet.handle.walletProvider as unknown as {
+					underlyingProvider: {request: (args: never) => Promise<unknown>};
+				}
+			).underlyingProvider as never,
+		),
+	});
+	return {
+		address,
+		writeContract: (request) =>
+			client.writeContract({...request, account: address} as never),
+	};
+}
+
+/**
+ * SET THE WORLD'S TABLE: open it (`openOfflineTable`), have the game stake
+ * every seat at it (its `stake`, which asks the chain seat by seat, as a
+ * world's stake does), and start it once (`startOfflineTableOnce`). Each step
+ * asks the chain first, so a reload or a boot interrupted half way repeats
+ * nothing. A record the chain does not hold is answered as `incoherent`, with
+ * nothing staked or started.
+ */
+export async function seatTheOfflineTable(params: {
+	reader: Reader;
+	creator: OfflineTableCreator;
+	factory: `0x${string}`;
+	implementation: `0x${string}`;
+	storage: Pick<Storage, 'getItem' | 'setItem'>;
+	storageKey: string;
+	seats: number;
+	cycles: number;
+	gameOptions: `0x${string}`;
+	/** The game's half: every seat staked at the table, unless it is. */
+	stake: (table: ResolvedTable) => Promise<void>;
+	/** What the boot is doing, for the page that waits on it. */
+	onStep?: (what: string) => void;
+}): Promise<OfflineTableOpening> {
+	const {stake, onStep, ...opening} = params;
+	onStep?.('setting the table');
+	const opened = await openOfflineTable(opening);
+	if (opened.kind !== 'table') return opened;
+	onStep?.('staking for everyone at the table');
+	await stake(opened.table);
+	onStep?.('starting the table');
+	await startOfflineTableOnce({
+		reader: params.reader,
+		creator: params.creator,
+		table: opened.table.address,
+	});
+	return opened;
+}
+
+/**
+ * HOW THE TABLE'S PANEL NAMES ITS SEATS, as the offline lobby does (OT1-7): the
+ * other people at this device by their number, the world's seats as the world,
+ * with their level when the game offers levels. The person signed in is "You",
+ * as online, which the panel says itself. `identityOf` is the game's: how an
+ * account's player is spelled at this table (its address, an avatar id
+ * computed from it, or one the chain has to be asked for).
+ */
+export async function offlineSeatLabels(params: {
+	table: Table;
+	/** The world's wallet's accounts, in derivation order (a person's index). */
+	accounts: readonly `0x${string}`[] | undefined;
+	identityOf: (address: `0x${string}`) => bigint | Promise<bigint>;
+	levels?: readonly {id: string; label: string}[];
+}): Promise<(player: bigint) => string | undefined> {
+	const labels = new Map<bigint, string>();
+	for (const human of humansAtThisDevice(params.table)) {
+		const address = params.accounts?.[human.account];
+		if (!address) continue;
+		labels.set(await params.identityOf(address), `Player ${human.account + 1}`);
+	}
+	for (const seat of seatsPlayedByTheWorld(params.table)) {
+		const level = params.levels?.find((choice) => choice.id === seat.level);
+		labels.set(
+			await params.identityOf(seat.address),
+			level ? `The world (${level.label})` : 'The world',
+		);
+	}
+	return (player) => labels.get(player);
 }

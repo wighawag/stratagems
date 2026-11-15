@@ -25,8 +25,7 @@ import {privateKeyToAccount} from 'viem/accounts';
 import {lobby as gameLobby} from '$lib/context/index';
 import {TABLE_SEATS} from '$lib/game/lobby/lobby';
 import {
-	openOfflineTable,
-	startOfflineTableOnce,
+	seatTheOfflineTable,
 	type OfflineTableCreator,
 } from '$lib/game/lobby/offline-table';
 import {readRoster, NO_GAME_OPTIONS} from '$lib/game/lobby/table';
@@ -353,10 +352,12 @@ describe('a table in this game\u2019s offline world', () => {
 			transport: custom(world.provider as never),
 		});
 		let sends = 0;
+		const calls: string[] = [];
 		const creator: OfflineTableCreator = {
 			address: CREATOR.address,
 			writeContract: (request) => {
 				sends++;
+				calls.push(request.functionName);
 				return client.writeContract({
 					...request,
 					account,
@@ -376,6 +377,7 @@ describe('a table in this game\u2019s offline world', () => {
 			storage,
 			store,
 			sends: () => sends,
+			calls,
 			factory: gameLobby!.factory(records).address,
 			implementation: gameLobby!.implementation(records).address,
 		};
@@ -385,7 +387,11 @@ describe('a table in this game\u2019s offline world', () => {
 		at: Awaited<ReturnType<typeof tableWorld>>,
 		seats = tableOf(3, 1, [], TABLE_SEATS),
 	) {
-		const opened = await openOfflineTable({
+		// THE BOOT'S OWN STEPS, as `$lib/offline` runs them (OT3-2): the opening,
+		// this game's stake, and the start, each once.
+		const steps: string[] = [];
+		const callsBefore = at.calls.length;
+		const opened = await seatTheOfflineTable({
 			reader: at.reader as never,
 			creator: at.creator,
 			factory: at.factory,
@@ -395,20 +401,20 @@ describe('a table in this game\u2019s offline world', () => {
 			seats: seats.length,
 			cycles: 2,
 			gameOptions: NO_GAME_OPTIONS,
+			stake: (table) =>
+				stakeForEveryoneAtTheTable({
+					env: world!.env,
+					table: table.address,
+					player: CREATOR.address,
+					seats,
+				}),
+			onStep: (what) => steps.push(what),
 		});
-		if (opened.kind !== 'table') return {opened, started: false};
-		await stakeForEveryoneAtTheTable({
-			env: world!.env,
-			table: opened.table.address,
-			player: CREATOR.address,
-			seats,
-		});
-		const started = await startOfflineTableOnce({
-			reader: at.reader as never,
-			creator: at.creator,
-			table: opened.table.address,
-		});
-		return {opened, started};
+		return {
+			opened,
+			started: at.calls.slice(callsBefore).includes('start'),
+			steps,
+		};
 	}
 
 	it('runs the world\u2019s tables on the MANUAL cycle, as the world', async () => {
@@ -429,7 +435,12 @@ describe('a table in this game\u2019s offline world', () => {
 	it('creates the table from the first person, stakes every seat AT it, starts it, and records its address', async () => {
 		const at = await tableWorld();
 		const seats = tableOf(3, 1, [], TABLE_SEATS);
-		const {opened, started} = await boot(at, seats);
+		const {opened, started, steps} = await boot(at, seats);
+		expect(steps).toEqual([
+			'setting the table',
+			'staking for everyone at the table',
+			'starting the table',
+		]);
 		expect(opened.kind).toBe('table');
 		if (opened.kind !== 'table') return;
 		expect(opened.created).toBe(true);
