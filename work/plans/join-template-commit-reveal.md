@@ -140,7 +140,7 @@ Candidates already visible, each to be judged when its step comes (not decided h
 - [x] **Step OT1** (in the template tree, asked for by the user on 2026-11-14; decided OT-1 to OT-4, see "Step OT"): a table in the offline world, the lobby's default, with humans and AI seats, the world kept as the other choice; the reference game its first user. Specified and decided 2026-11-14, OT1-1 to OT1-13 (OT1-1, OT1-3 and OT1-7 revised after the user's questions)
 - [x] **Step OT2** (after OT1): stratagems' tables offline. Specified and decided 2026-11-15, OT2-1 to OT2-10 (see "Step OT", after OT1)
 - [x] **Step OT3** (in reveal-or-die, bomber-world by cascade; after OT1 and R2): reveal-or-die's tables offline in both modes. Specified and decided 2026-11-15, OT3-1 to OT3-14 (see "Step OT", after OT2)
-- [ ] **Step P1** (in reveal-or-die, bomber-world by cascade; asked for by the user on 2026-11-15 after OT3, "fix the gap in reveal-or-die"): "Stay put", an empty turn committed by a press, so a person can stand still under the Manual cycle (see "What OT3 leaves", (2))
+- [x] **Step P1** (in reveal-or-die, bomber-world by cascade; asked for by the user on 2026-11-15 after OT3, "fix the gap in reveal-or-die"): "Stay put", an empty turn committed by a press, so a person can stand still under the Manual cycle (see "What OT3 leaves", (2))
 - [ ] **Step D-live** (needs the user, deferred by them on 2026-10-30 until the steps that do not need them are done; needs X2, which changes the contracts it deploys): items 5 and 6 of step D's section, the hosted fuzd upgraded and the live deploy, then one turn played on Base (the deploy includes the tables since L2's PL2-3)
 - [x] **Step 11**: Svelte conventions (absorbed by 6c: measured empty on 2026-10-26, see its section)
 
@@ -3885,4 +3885,6 @@ Built as P1-1 to P1-3 say, from reveal-or-die `origin/main` 050961b1 and bomber-
 - No contract, deploy or lockfile change, so the LAN builds and `pnpmDepsHash` stand as OT3 measured them. RPC 8557, app 4183 and faucet 34110 free before and after every run.
 
 **Awaiting approval, every one a fast-forward of its `origin` head** (checked 2026-11-15): reveal-or-die `main` 050961b1..c4a96710 and `work` 4215c573..f5362d10; bomber-world `main` 37435af5..c220c5a3; then stratagems `main` to this branch's head, by the landing. Once pushed, P1 is ticked and this branch lands. Next after it: L3-box and D-live, both the user's.
+
+**Pushed, 2026-11-15, with the user's approval** ("I approve"), each checked against the `origin` head fetched just before and each a fast-forward: reveal-or-die `main` 050961b1..c4a96710 and `work` 4215c573..f5362d10; bomber-world `main` 37435af5..c220c5a3. Landed: P1 ticked, stratagems `main` fast-forwarded to `step-P1` and pushed. The `pp1/*` and `pot3/*` preview branches and worktrees equal their pushed branches and are safe to remove. Next: L3-box and D-live, both the user's.
 
