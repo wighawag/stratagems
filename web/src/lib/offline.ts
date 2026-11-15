@@ -23,15 +23,15 @@ import {createIndexedDBDeploymentStore} from '@rocketh/web';
 import {createContext, lobby as gameLobby} from '$lib/context/index';
 import type {Context} from '$lib/context/types';
 import {createOfflinePlayers, type OfflinePlayer} from '$lib/offline-players';
-import {createPublicClient, createWalletClient, custom} from 'viem';
+import {createPublicClient, custom} from 'viem';
 import {embeddedConnectionFactory} from '$lib/embedded/world';
 import type {DeploymentsStore} from '$lib/deployments-store';
 import type {TableChoice} from '$lib/game/lobby/lobby';
 import type {ResolvedTable} from '$lib/game/lobby/table';
 import {
-	openOfflineTable,
-	startOfflineTableOnce,
-	type OfflineTableCreator,
+	offlineSeatLabels,
+	offlineTableCreator,
+	seatTheOfflineTable,
 } from '$lib/game/lobby/offline-table';
 import {settleOnceEnded} from '$lib/stratagems/table-end';
 import type {BoardBounds} from '$lib/stratagems/strategy';
@@ -113,10 +113,10 @@ import {INDEXER_PREFIX} from '$lib/stratagems/board/prefix';
  *    every seat staked AT IT by the tokens' beneficiary with exactly the
  *    table's stake (nobody in the world's `Stratagems`), started by the tab,
  *    and settled by the tab once it has ended (`settleOnceEnded`). The
- *    framework does the creating, finding again and starting
- *    (`$lib/game/lobby/offline-table`); the boot is the template's worked
- *    example (`boot`, `openTheTable`, `creatorThrough`, `seatLabelsOf`), with
- *    stratagems' stake.
+ *    framework does the creating, finding again and starting, who creates it
+ *    and how its panel names the seats (`$lib/game/lobby/offline-table`, the
+ *    boot's shared half since step OT3); what is here is stratagems' stake
+ *    and its board.
  *
  * THE WORLD'S BOARD IS INDEXED IN THIS TAB, by its own worker and into a
  * database of its own kept across reloads (`$lib/indexer/worker-choice`, P8). Its
@@ -383,7 +383,17 @@ async function buildOfflineWorld(
 		...(revealer ? {scheduler: revealer.scheduler} : {}),
 		// AT A TABLE the context is the table's, with its roster and its
 		// creator's powers, its seats named as the lobby named them.
-		...(resolved ? {table: resolved, seatLabels: seatLabelsOf(table)} : {}),
+		...(resolved
+			? {
+					table: resolved,
+					seatLabels: await offlineSeatLabels({
+						table,
+						accounts: announcedWallet?.accounts,
+						identityOf: offlineIdentityOf,
+						levels: AI_LEVELS,
+					}),
+				}
+			: {}),
 	});
 	pokeAdvance = () => void context.context.game.cycleAdvance.check();
 
@@ -528,9 +538,7 @@ async function buildOfflineWorld(
 				});
 				const stopRevealer = revealer?.start() ?? (() => {});
 				const stopHotseat = hotseat?.start() ?? (() => {});
-				const stopSettling = tableEnd
-					? settleOnceEnded(tableEnd)
-					: () => {};
+				const stopSettling = tableEnd ? settleOnceEnded(tableEnd) : () => {};
 				return () => {
 					stopSettling();
 					stopHotseat();
@@ -707,11 +715,9 @@ async function openTheTable(world: EmbeddedWorld, table: Table, at: TableAt) {
 		chain,
 		transport: custom(world.provider as never),
 	});
-	const creator = creatorThrough(wallet, chain);
-	status.set({step: 'Booting', what: 'setting the table'});
-	const opened = await openOfflineTable({
+	const opened = await seatTheOfflineTable({
 		reader: reader as never,
-		creator,
+		creator: offlineTableCreator(wallet, chain),
 		factory: gameLobby.factory(records).address,
 		implementation: gameLobby.implementation(records).address,
 		storage: localStorage,
@@ -719,22 +725,17 @@ async function openTheTable(world: EmbeddedWorld, table: Table, at: TableAt) {
 		seats: table.length,
 		cycles: at.cycles,
 		gameOptions: at.gameOptions,
+		stake: (resolved) =>
+			stakeForEveryoneAtTheTable({
+				env: world.env,
+				table: resolved.address,
+				player: wallet.accounts[0],
+				humans: wallet.accounts,
+				seats: table,
+			}),
+		onStep: (what) => status.set({step: 'Booting', what}),
 	});
 	if (opened.kind !== 'table') return opened;
-	status.set({step: 'Booting', what: 'staking for everyone at the table'});
-	await stakeForEveryoneAtTheTable({
-		env: world.env,
-		table: opened.table.address,
-		player: wallet.accounts[0],
-		humans: wallet.accounts,
-		seats: table,
-	});
-	status.set({step: 'Booting', what: 'starting the table'});
-	await startOfflineTableOnce({
-		reader: reader as never,
-		creator,
-		table: opened.table.address,
-	});
 	return {
 		...opened,
 		board: await tableBoardAt(world.env, opened.table.address),
@@ -761,57 +762,6 @@ export async function tableBoardAt(
 		{functionName: 'getBoard'},
 	)) as readonly [number, number, bigint];
 	return side === 0n ? undefined : {min: Number(min), max: Number(max)};
-}
-
-/**
- * The first person's account, as the table's creator: a wallet client over
- * the world's own wallet, which signs for it without asking (it holds the
- * key). Not the browser's key, which does not exist yet.
- */
-function creatorThrough(
-	wallet: EmbeddedWallet,
-	chain: ReturnType<typeof worldChain>,
-): OfflineTableCreator {
-	const address = wallet.accounts[0];
-	const client = createWalletClient({
-		account: address,
-		chain,
-		transport: custom(
-			(
-				wallet.handle.walletProvider as unknown as {
-					underlyingProvider: {request: (args: never) => Promise<unknown>};
-				}
-			).underlyingProvider as never,
-		),
-	});
-	return {
-		address,
-		writeContract: (request) =>
-			client.writeContract({...request, account: address} as never),
-	};
-}
-
-/**
- * HOW THE TABLE'S PANEL NAMES ITS SEATS, as the lobby does (OT1-7): the other
- * people at this device by their number, the world's seats as the world, with
- * their level. The person signed in is "You", as online. Synchronous here:
- * stratagems is an address game, so an identity is the account.
- */
-function seatLabelsOf(table: Table): (player: bigint) => string | undefined {
-	const labels = new Map<bigint, string>();
-	for (const human of humansAtThisDevice(table)) {
-		const address = announcedWallet?.accounts[human.account];
-		if (!address) continue;
-		labels.set(offlineIdentityOf(address), `Player ${human.account + 1}`);
-	}
-	for (const seat of seatsPlayedByTheWorld(table)) {
-		const level = AI_LEVELS.find((choice) => choice.id === seat.level);
-		labels.set(
-			offlineIdentityOf(seat.address),
-			level ? `The world (${level.label})` : 'The world',
-		);
-	}
-	return (player) => labels.get(player);
 }
 
 let announced: (() => void) | undefined;
