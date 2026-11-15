@@ -114,10 +114,10 @@ describe('Transaction inspector', () => {
 			{timeout: 30000},
 		);
 
-		// STRATAGEMS: put the page on the game, which is not the contract it opens
-		// on here (`Gems` sorts first). `fixtures/contracts-page.ts` says why a
-		// suite that means the game must ask for it; this one did not, and passed
-		// on the template only because `Game` sorts first there.
+		// Put the page on the contract the write lives on. It opens on whichever
+		// contract sorts first, which is `Game` here and is not in a game whose
+		// contract sorts later (stratagems' `Gems` sorts before `Stratagems`);
+		// `fixtures/contracts-page.ts` says why a suite that means the game asks.
 		await selectContract(page);
 
 		const writeTab = page.getByRole('tab', {name: 'Write'});

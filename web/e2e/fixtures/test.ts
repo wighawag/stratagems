@@ -560,6 +560,11 @@ export interface WalletFixtures {
 // connected app reads as disconnected.
 const WALLET_STATUS = '[data-testid="wallet-status"]';
 
+/**
+ * Exported, with `connectWalletDevMode`, for a game's own fixtures, which
+ * connect a page of their own the way `connectPageAs` does (stratagems' did, as
+ * a modified copy of this file, until they were).
+ */
 export async function isWalletConnected(page: Page): Promise<boolean> {
 	const attr = await page
 		.locator(WALLET_STATUS)
