@@ -1,6 +1,6 @@
 import type {Page} from '@playwright/test';
 import {mnemonicToAccount} from 'viem/accounts';
-import {test, expect, describe} from '../fixtures/test';
+import {test, expect, describe, chooseTheWorld} from '../fixtures/test';
 
 /**
  * STRATAGEMS HOTSEAT IN THE OFFLINE WORLD, end to end (step H2 of
@@ -236,6 +236,9 @@ describe('Stratagems hotseat', () => {
 		await expect(page.getByText('How many at the table?')).toBeVisible({
 			timeout: 60_000,
 		});
+		// THE WORLD, which this story was written for: a table is offered first
+		// since step OT2 (`stratagems-offline-table.e2e.ts` plays it)
+		await chooseTheWorld(page);
 		await page.getByTestId('seats-3').click();
 		await page.getByTestId('humans-2').click();
 		await expect(page.getByText('Player 2', {exact: true})).toBeVisible();

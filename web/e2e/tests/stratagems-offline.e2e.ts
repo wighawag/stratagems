@@ -1,4 +1,4 @@
-import {test, expect, describe} from '../fixtures/test';
+import {test, expect, describe, chooseTheWorld} from '../fixtures/test';
 import type {Page} from '@playwright/test';
 
 /**
@@ -108,7 +108,12 @@ async function enterTheWorld(page: Page) {
 		'Everything below runs against a chain inside this tab',
 	);
 	await expect(lobby.or(bar)).toBeVisible({timeout: 120_000});
-	if (await lobby.isVisible()) await lobby.click();
+	if (await lobby.isVisible()) {
+		// THE WORLD, which this story was written for: a table is offered first
+		// since step OT2 (`stratagems-offline-table.e2e.ts` plays it)
+		await chooseTheWorld(page);
+		await lobby.click();
+	}
 	await expect(bar).toBeVisible({timeout: 120_000});
 }
 
