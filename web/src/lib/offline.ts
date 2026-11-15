@@ -416,7 +416,14 @@ async function buildOfflineWorld(
 		// AT A TABLE the context is the table's, with its roster and its
 		// creator's powers, its seats named as the lobby named them.
 		...(resolved
-			? {table: resolved, seatLabels: await seatLabelsOf(world, table)}
+			? {
+					table: resolved,
+					seatLabels: await seatLabelsOf(
+						world,
+						table,
+						records.get().contracts.Game,
+					),
+				}
 			: {}),
 	});
 	pokeAdvance = () => void context.context.game.cycleAdvance.check();
@@ -492,7 +499,11 @@ async function buildOfflineWorld(
 			const address = wallet.accounts[human.account];
 			seated.push({
 				address,
-				player: await offlineIdentityOf({env: world.env, player: address}),
+				player: await offlineIdentityOf({
+					env: world.env,
+					player: address,
+					game: records.get().contracts.Game,
+				}),
 				label: `Player ${human.account + 1}`,
 			});
 			status.set({
@@ -573,7 +584,11 @@ async function buildOfflineWorld(
 	 * while nothing is on screen. The WORLD still outlives the page (the chain
 	 * is not disposed when a router navigates away); what stops is the playing.
 	 */
-	const played = await playedByTheWorld({env: world.env, table});
+	const played = await playedByTheWorld({
+		env: world.env,
+		table,
+		game: records.get().contracts.Game,
+	});
 	const decider = playedSeatDecider(
 		{provider: world.provider, deployments: records},
 		played,
@@ -900,6 +915,7 @@ function creatorThrough(
 async function seatLabelsOf(
 	world: EmbeddedWorld,
 	table: Table,
+	game: {address: `0x${string}`; abi: unknown},
 ): Promise<(player: bigint) => string | undefined> {
 	const labels = new Map<bigint, string>();
 	const humans = humansAtThisDevice(table);
@@ -907,14 +923,14 @@ async function seatLabelsOf(
 		const address = announcedWallet?.accounts[human.account];
 		if (!address) continue;
 		labels.set(
-			await offlineIdentityOf({env: world.env, player: address}),
+			await offlineIdentityOf({env: world.env, player: address, game}),
 			`Player ${human.account + 1}`,
 		);
 	}
 	for (const seat of seatsPlayedByTheWorld(table)) {
 		const level = AI_LEVELS.find((choice) => choice.id === seat.level);
 		labels.set(
-			await offlineIdentityOf({env: world.env, player: seat.address}),
+			await offlineIdentityOf({env: world.env, player: seat.address, game}),
 			level ? `The world (${level.label})` : 'The world',
 		);
 	}
@@ -1260,10 +1276,18 @@ export async function stakeForOfflinePlayer(params: {
 export async function offlineIdentityOf(params: {
 	env: EmbeddedWorld['env'];
 	player: `0x${string}`;
+	/**
+	 * THE GAME THE IDENTITY IS IN: the world's `Game` when omitted, or the
+	 * world's table. Unused on this branch, where an identity is the account
+	 * wherever it plays; a branch whose identity is a token held in a game's
+	 * custody finds it in THIS game.
+	 */
+	game?: {address: `0x${string}`; abi: unknown};
 }): Promise<bigint> {
 	// `env` is named and unused on this branch, because the branch that needs it
 	// needs it in exactly this position. See above.
 	void params.env;
+	void params.game;
 	return BigInt(params.player);
 }
 
@@ -1271,6 +1295,8 @@ export async function offlineIdentityOf(params: {
 export async function playedByTheWorld(params: {
 	env: EmbeddedWorld['env'];
 	table: Table;
+	/** The game they play in: see {@link offlineIdentityOf}. */
+	game?: {address: `0x${string}`; abi: unknown};
 }): Promise<readonly OfflinePlayer[]> {
 	const resolved: OfflinePlayer[] = [];
 	for (const played of seatsPlayedByTheWorld(params.table)) {
@@ -1279,6 +1305,7 @@ export async function playedByTheWorld(params: {
 			identity: await offlineIdentityOf({
 				env: params.env,
 				player: played.address,
+				...(params.game ? {game: params.game} : {}),
 			}),
 			...(played.level !== undefined ? {level: played.level} : {}),
 		});
