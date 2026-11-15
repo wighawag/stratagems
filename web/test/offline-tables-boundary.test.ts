@@ -32,7 +32,6 @@ import {readFileSync} from 'node:fs';
  * at the template, so the deletion cascades.
  */
 const KNOWN_GAPS: Record<string, string> = {
-	stratagems: "stratagems' plan, step OT2",
 	'reveal-or-die-monorepo': "stratagems' plan, step OT3",
 	'bomber-world-monorepo':
 		"stratagems' plan, step OT3 (reveal-or-die's tables, by cascade)",
