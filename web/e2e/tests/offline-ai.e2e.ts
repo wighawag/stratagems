@@ -1,6 +1,6 @@
 import type {Page} from '@playwright/test';
 import {mnemonicToAccount} from 'viem/accounts';
-import {test, expect, describe} from '../fixtures/test';
+import {test, expect, describe, chooseTheWorld} from '../fixtures/test';
 
 /**
  * AI SEATS IN THE OFFLINE WORLD: one person against two world seats at the
@@ -194,6 +194,7 @@ describe('AI seats in the offline world', () => {
 		await expect(page.getByText('How many at the table?')).toBeVisible({
 			timeout: 60_000,
 		});
+		await chooseTheWorld(page);
 		await page.getByTestId('seats-3').click();
 		// A GAME WHOSE WORLD OFFERS NO LEVELS (its `$lib/offline` exports no
 		// `AI_LEVELS`) shows no choice, and this file arrives in it unchanged.
