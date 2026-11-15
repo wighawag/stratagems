@@ -9,7 +9,8 @@ import {expect, describe, it} from 'vitest';
 import {maxUint256, parseEther, parseEventLogs, zeroAddress} from 'viem';
 import type {Deployment} from 'rocketh/types';
 import {prepareCommitment, randomSecret, xyToBigIntID} from 'stratagems-common';
-import {fetchContract, getConnection, loadFixture, networkHelpers} from '../utils/connection.js';
+import {fetchContract, getConnection, hardhatProvider, loadFixture, networkHelpers} from '../utils/connection.js';
+import {loadAndExecuteDeploymentsFromFiles} from '../rocketh/environment.js';
 import * as abis from '../generated/abis/index.js';
 import {deployStratagemsWithTestConfig} from './utils/stratagems-test.js';
 
@@ -672,5 +673,121 @@ describe('a table ends, and has a winner', function () {
 		console.log(
 			`a chunk of 32 isolated placements: table ${tableGas}, world ${worldGas}, the table's rules ${tableGas - worldGas} (${(Number(tableGas - worldGas) / 32).toFixed(0)} a move)`,
 		);
+	});
+});
+
+/**
+ * A TABLE IN THE OFFLINE WORLD (step OT2 of the plan, OT2-1, OT2-2, OT2-5):
+ * the deploy the tab makes, under the `offline` environment itself, so a table
+ * runs the world's clock (the Manual cycle, both durations zero); its seats
+ * staked by the tokens' beneficiary with exactly the table's stake, after one
+ * ordinary allowance, as `web/src/lib/offline.ts` stakes them; started, played
+ * to its end by its members with nobody waiting on a clock, a commit then
+ * refused, settled by anyone, its scores recorded and a withdrawal allowed.
+ */
+describe('a table in the offline world', function () {
+	async function anOfflineTable() {
+		// `saveDeployments: false`: an `offline` deploy is the tab's, and its records
+		// belong in no checkout
+		const env = await loadAndExecuteDeploymentsFromFiles({
+			provider: hardhatProvider as any,
+			environment: 'offline',
+			saveDeployments: false,
+		});
+		const {publicClient, accounts} = await getConnection();
+		const [, beneficiary, ...others] = accounts as `0x${string}`[];
+		const Factory = await fetchContract(
+			env.deployments['StratagemsTableFactory'] as Deployment<typeof abis.CommitRevealGameFactory>,
+		);
+		const TestTokens = await fetchContract(env.deployments['TestTokens'] as Deployment<typeof abis.TestTokens>);
+		const players = others.slice(0, 3);
+		const [creator] = players;
+		const outsider = others[3];
+		const receipt = await publicClient.waitForTransactionReceipt({
+			hash: await Factory.write.createGame([3, 2, tableOptions(10, 50)], {account: creator}),
+		});
+		const [created] = parseEventLogs({abi: Factory.abi, logs: receipt.logs, eventName: 'GameCreated'});
+		const Table = (await fetchContract({
+			address: created.args.game,
+			abi: env.deployments['StratagemsTableImplementation'].abi as any,
+		})) as any;
+		return {env, Factory, TestTokens, Table, beneficiary, players, creator, outsider};
+	}
+
+	it('runs the Manual cycle, is seated by the beneficiary, played to its end, settled and withdrawn from', async function () {
+		const t = await loadFixture(anOfflineTable);
+		const config = await t.Table.read.getConfig();
+		expect(config.cyclePolicy).to.equal(1);
+		expect(config.commitPhaseDuration).to.equal(0n);
+		expect(config.revealPhaseDuration).to.equal(0n);
+		// the factory's record says so too, which is what a client reads
+		expect((t.env.deployments['StratagemsTableFactory'].linkedData as any).cyclePolicy).to.equal(1);
+
+		// seated as the tab seats them: one allowance, then exactly the stake each
+		const stake = 10n * GEM;
+		await t.TestTokens.write.approve([t.Table.address, stake * 3n], {account: t.beneficiary});
+		for (const p of t.players) {
+			await t.Table.write.addToReserve([BigInt(p), stake], {account: t.beneficiary});
+			expect(await t.Table.read.getReserve([BigInt(p)])).to.equal(stake);
+		}
+		await expect(t.Table.write.addToReserve([BigInt(t.creator), stake], {account: t.beneficiary})).rejects.toThrow(
+			/TableStakeIsFixed/,
+		);
+		await t.Table.write.start({account: t.creator});
+		const [roster] = await t.Table.read.getRoster();
+		expect(roster.started).to.equal(true);
+
+		// two cycles, each phase closed by its members: no clock moves here
+		const cycles: [x: number, y: number, color: number][][] = [
+			[
+				[0, 0, BLUE],
+				[1, 0, RED],
+				[-2, -2, 3],
+			],
+			[
+				[0, 1, BLUE],
+				[1, 1, RED],
+				[-2, -1, 3],
+			],
+		];
+		const placed: bigint[] = [];
+		for (const moves of cycles) {
+			const turns = moves.map(([x, y, color]) => turn(x, y, color));
+			for (let i = 0; i < 3; i++) {
+				await t.Table.write.makeCommitment([BigInt(t.players[i]), turns[i].hash, GEM, zeroAddress], {
+					account: t.players[i],
+				});
+			}
+			await t.Table.write.advanceCycle({account: t.outsider});
+			for (let i = 0; i < 3; i++) {
+				const c = turns[i];
+				await t.Table.write.reveal([BigInt(t.players[i]), c.moves, c.secret, c.furtherActions, zeroAddress], {
+					account: t.players[i],
+				});
+			}
+			await t.Table.write.advanceCycle({account: t.outsider});
+			placed.push(...moves.map(([x, y]) => xyToBigIntID(x, y)));
+		}
+		expect(await t.Table.read.hasEnded()).to.equal(true);
+		const late = prepareCommitment([], randomSecret());
+		await expect(
+			t.Table.write.makeCommitment([BigInt(t.creator), late.hash, 0n, zeroAddress], {account: t.creator}),
+		).rejects.toThrow(/GameEnded/);
+
+		await t.Table.write.settle([placed], {account: t.outsider});
+		expect(await t.Table.read.isSettled()).to.equal(true);
+		expect(await t.Table.read.unsettledCells()).to.equal(0n);
+		const [scorePlayers, scores] = (await t.Table.read.getScores()) as [bigint[], bigint[]];
+		expect(scorePlayers.length).to.equal(3);
+		const reserves = await Promise.all(t.players.map((p) => t.Table.read.getReserve([BigInt(p)]) as Promise<bigint>));
+		for (let i = 0; i < 3; i++) {
+			const index = t.players.findIndex((p) => BigInt(p) === scorePlayers[i]);
+			expect(scores[i]).to.equal(reserves[index] - stake);
+		}
+		expect(((await t.Table.read.winners()) as bigint[]).length > 0).to.equal(true);
+
+		const wallet = await t.TestTokens.read.balanceOf([t.creator]);
+		await t.Table.write.withdrawFromReserve([maxUint256], {account: t.creator});
+		expect(await t.TestTokens.read.balanceOf([t.creator])).to.equal(wallet + reserves[0]);
 	});
 });

@@ -20,11 +20,15 @@ import {getConfig} from './.config/index.js';
  * Named 021 and not 030 because `.offshoot-omissions` deletes the template's
  * `030_deploy_lobby.ts` by path on every cascade.
  *
- * Runs wherever the world's script runs, except the offline world: an in-tab
- * chain has nobody to invite (hotseat is step H's). The world is untouched: it
- * has no lobby route, so nothing can open a roster on it.
+ * Runs wherever the world's script runs, the offline world included (step OT2
+ * of the plan): a table there is played by the people at the device and the
+ * world's seats (`web/src/lib/offline.ts`'s `startOfflineTable`), on the
+ * world's own clock (see {@link tableCycleOf}). The world is untouched: it has
+ * no lobby route, so nothing can open a roster on it.
  */
 
+/** The base's `CyclePolicy.Manual`: the cycle moves when every member has acted and someone pushes it. */
+const MANUAL = 1;
 /** The base's `CyclePolicy.TimedWithEarlyAdvance`. */
 const TIMED_WITH_EARLY_ADVANCE = 2;
 
@@ -55,11 +59,28 @@ function tableDurations(envName: string): {commitPhaseDuration: bigint; revealPh
 	return {commitPhaseDuration: 180n, revealPhaseDuration: 60n};
 }
 
+/**
+ * A TABLE'S CLOCK, by environment: the timed cycle with early advance
+ * everywhere, at {@link tableDurations}, except in the OFFLINE WORLD, where a
+ * table runs the world's clock, the Manual cycle with both durations zero, for
+ * the world's reason (`020_deploy_game.ts`: an automined chain in a tab has no
+ * clock between transactions, and a game there is its players' to pace). One
+ * branch on the environment's NAME, as `020` branches, since stratagems'
+ * deploys read no `data` (step O's P2). Exported for the contract test.
+ */
+export function tableCycleOf(envName: string): {
+	cyclePolicy: number;
+	commitPhaseDuration: bigint;
+	revealPhaseDuration: bigint;
+} {
+	if (envName === 'offline') {
+		return {cyclePolicy: MANUAL, commitPhaseDuration: 0n, revealPhaseDuration: 0n};
+	}
+	return {cyclePolicy: TIMED_WITH_EARLY_ADVANCE, ...tableDurations(envName)};
+}
+
 export default deployScript(
 	async (env) => {
-		if (env.name === 'offline') {
-			return;
-		}
 		const {deploy, deployViaRouter, namedAccounts, get} = env;
 		const {deployer} = namedAccounts;
 		const {deterministic} = getConfig(env);
@@ -81,11 +102,10 @@ export default deployScript(
 			numTokensPerGems: BigInt(10) ** BigInt(worldConfig.currency.decimals),
 			burnAddress: checksumAddress(`0xDEADDEADDEADDEADDEADDEADDEADDEADDEADDEAD`),
 			startTime: TABLE_START_TIME,
-			...tableDurations(env.name),
+			...tableCycleOf(env.name),
 			maxLife: 7,
 			time: worldConfig.time as `0x${string}`,
 			actionsPerReveal: 32n,
-			cyclePolicy: TIMED_WITH_EARLY_ADVANCE,
 			// no rewards at a table, by design (PL2-2)
 			generator: noRewards.address,
 		};
