@@ -12,17 +12,6 @@
 			"options": {
 				"parser": "svelte"
 			}
-		},
-		{
-			"files": [
-				"scripts/**",
-				"src/routes/version/**",
-				"src/svelte.d.ts",
-				"README.md"
-			],
-			"options": {
-				"printWidth": 120
-			}
 		}
 	]
 }

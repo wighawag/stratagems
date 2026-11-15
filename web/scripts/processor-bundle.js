@@ -10,7 +10,9 @@ const from = new URL('../../indexer/dist/processor.bundle.js', import.meta.url);
 const to = new URL('../static/processor.bundle.js', import.meta.url);
 
 if (!existsSync(from)) {
-	console.error(`${from.pathname} does not exist: build the indexer first (pnpm indexer:build <mode>)`);
+	console.error(
+		`${from.pathname} does not exist: build the indexer first (pnpm indexer:build <mode>)`,
+	);
 	process.exit(1);
 }
 copyFileSync(from, to);
