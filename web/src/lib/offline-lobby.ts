@@ -1,6 +1,13 @@
-import {createLobby, type LobbyStore} from '$lib/game/lobby/lobby';
+import {
+	createLobby,
+	type LobbyStore,
+	type LobbyTables,
+	type TableChoice,
+} from '$lib/game/lobby/lobby';
 import type {AiLevel} from '$lib/game/core/strategy';
+import type {TableLobby} from '$lib/game/lobby/table';
 import {createWorldClaim, letGoOfWorld} from '$lib/embedded/claim';
+import * as app from '$app-specific';
 import * as offline from '$lib/offline';
 import {CHAIN_ID_STORAGE_KEY, startOfflineWorld} from '$lib/offline';
 
@@ -86,6 +93,60 @@ const AI_DEFAULT_LEVEL: string | undefined =
 		: undefined;
 
 /**
+ * A TABLE OR THE WORLD, and what a table was created with: wires like the
+ * seats key, beside it. The mode is written on every boot, the world's
+ * included, so a world from before tables (which has none) is read as the
+ * world once and then says so. See `$lib/game/lobby/lobby`.
+ */
+const MODE_STORAGE_KEY = 'offline-world:mode';
+const CYCLES_STORAGE_KEY = 'offline-world:cycles';
+const GAME_OPTIONS_STORAGE_KEY = 'offline-world:game-options';
+
+/**
+ * THE GAME'S TABLES, if it has any: the `lobby` its `$app-specific` module
+ * exports (`$lib/context/index` reads it the same way), off the module so a
+ * game with none declares nothing.
+ */
+const GAME_LOBBY: TableLobby | undefined =
+	'lobby' in app ? (app as unknown as {lobby?: TableLobby}).lobby : undefined;
+
+/**
+ * HOW THIS GAME'S WORLD SETS A TABLE UP, which its `$lib/offline` says by
+ * exporting `startOfflineTable` beside `startOfflineWorld` (how a seat is
+ * staked at a table is the game's, as what a world stakes is). Read off the
+ * module for the reason `LOCAL_HUMANS_AT_MOST` is.
+ *
+ * A GAME WITH ONLINE TABLES OFFERS THEM OFFLINE TOO, and that is an invariant
+ * rather than an option: `test/offline-tables-boundary.test.ts` fails a game
+ * that exports a `lobby` and no `startOfflineTable`, unless it is one of the
+ * gaps that test names (a game whose offline tables are still to be written).
+ * UNTIL ITS GAP CLOSES SUCH A GAME IS OFFERED THE WORLD ONLY, which is why
+ * both halves are asked for here: a table the world cannot boot would be a
+ * choice that fails after it is made.
+ */
+const START_OFFLINE_TABLE:
+	((choice: TableChoice) => ReturnType<typeof startOfflineWorld>) | undefined =
+	'startOfflineTable' in offline
+		? (
+				offline as unknown as {
+					startOfflineTable?: (
+						choice: TableChoice,
+					) => ReturnType<typeof startOfflineWorld>;
+				}
+			).startOfflineTable
+		: undefined;
+
+/**
+ * Where the world remembers its table's address (`$lib/offline`'s, which
+ * writes it), forgotten with the world. Read off the module: a game whose
+ * world has no tables has no such record.
+ */
+const TABLE_STORAGE_KEY: string | undefined =
+	'TABLE_STORAGE_KEY' in offline
+		? (offline as unknown as {TABLE_STORAGE_KEY?: string}).TABLE_STORAGE_KEY
+		: undefined;
+
+/**
  * The boot this tab started, if any: what letting the world go waits for.
  *
  * Kept HERE rather than read off the world's status store, because the lobby is
@@ -116,6 +177,16 @@ export const offlineWorldClaim = createWorldClaim({
 	letGo: () => letGoOfWorld(booting),
 });
 
+const tables: LobbyTables | undefined =
+	GAME_LOBBY && START_OFFLINE_TABLE
+		? {
+				start: (choice) => {
+					booting = START_OFFLINE_TABLE(choice);
+				},
+				...(GAME_LOBBY.options ? {options: GAME_LOBBY.options} : {}),
+			}
+		: undefined;
+
 const lobby: LobbyStore = createLobby({
 	// Both halves of "is there a world here" are this file's to answer, because
 	// the chain id is what the world keys everything by. See `$lib/offline`,
@@ -135,6 +206,8 @@ const lobby: LobbyStore = createLobby({
 	forgetGame: () => {
 		if (typeof localStorage !== 'undefined') {
 			localStorage.removeItem(CHAIN_ID_STORAGE_KEY);
+			// One table per world: leaving the table is leaving the world.
+			if (TABLE_STORAGE_KEY) localStorage.removeItem(TABLE_STORAGE_KEY);
 		}
 	},
 	seatsStorageKey: SEATS_STORAGE_KEY,
@@ -143,6 +216,10 @@ const lobby: LobbyStore = createLobby({
 	levelsStorageKey: LEVELS_STORAGE_KEY,
 	levels: AI_LEVELS,
 	defaultLevel: AI_DEFAULT_LEVEL,
+	...(tables ? {tables} : {}),
+	modeStorageKey: MODE_STORAGE_KEY,
+	cyclesStorageKey: CYCLES_STORAGE_KEY,
+	gameOptionsStorageKey: GAME_OPTIONS_STORAGE_KEY,
 });
 
 /**

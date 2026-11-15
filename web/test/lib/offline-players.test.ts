@@ -1,4 +1,5 @@
 import {describe, it, expect, afterEach} from 'vitest';
+import {advancePermitted} from '$lib/game/core/advance';
 import {
 	createPublicClient,
 	createWalletClient,
@@ -38,6 +39,16 @@ import type {Table} from '$lib/game/lobby/seats';
 // world actually committed with.
 import {playedSeatSecret} from '$lib/game/core/secret';
 import {positionOf} from '$lib/placement/cells';
+import {readable} from 'svelte/store';
+import {lobby as gameLobby} from '$lib/context/index';
+import {TABLE_SEATS} from '$lib/game/lobby/lobby';
+import {
+	openOfflineTable,
+	startOfflineTableOnce,
+} from '$lib/game/lobby/offline-table';
+import {NO_GAME_OPTIONS} from '$lib/game/lobby/table';
+import {stakeForEveryoneAtTheTable} from '$lib/offline';
+import type {DeploymentsStore} from '$lib/deployments-store';
 
 /**
  * THE OTHER PLAYERS, DRIVEN AGAINST A REAL CHAIN.
@@ -965,4 +976,202 @@ describe('the world seats at the greedy level', () => {
 		}
 		seats.dispose();
 	});
+});
+
+/**
+ * THE SEATS AT A TABLE (stratagems' plan, step OT1, OT1-8): they play its life
+ * and no more. Nothing committed before its start or after its last cycle,
+ * where the contract refuses every commitment and a pass would retry a revert
+ * for ever; what they committed in its last cycle is still revealed.
+ */
+describe('the world seats at a table', () => {
+	it('commit nothing before the start nor after the end, and reveal their last turn', async () => {
+		world = await createEmbeddedWorld({
+			chainId: CHAIN_ID,
+			chain: {
+				name: 'Offline',
+				nativeCurrency: {name: 'Ether', symbol: 'ETH', decimals: 18},
+				properties: {...config.chains[31337].properties},
+			},
+			rocketh: {config, extensions},
+			environment: OFFLINE_DEPLOYMENT.environment,
+			scripts: [...OFFLINE_DEPLOYMENT.scripts],
+			data: {...OFFLINE_DEPLOYMENT.data},
+			accounts: {...OFFLINE_DEPLOYMENT.accounts},
+			initialBalances: {...OFFLINE_DEPLOYMENT.initialBalances},
+			provision: async ({node}) => {
+				for (const address of [HUMAN.address, PLAYED[0].address]) {
+					await node.provider.request({
+						method: 'evm_setBalance',
+						params: [address, `0x${PLAY_MONEY.toString(16)}`],
+					} as never);
+				}
+			},
+		});
+		const seats = tableOf(2, 1, [], TABLE_SEATS);
+		const worldRecords = world.deployments.get();
+		const chain = {
+			id: worldRecords.chain.id,
+			name: worldRecords.chain.name,
+			nativeCurrency: worldRecords.chain.nativeCurrency,
+			rpcUrls: {default: {http: [] as string[]}},
+		};
+		const reader = createPublicClient({
+			chain,
+			transport: custom(world.provider as never),
+		});
+		const account = privateKeyToAccount(HUMAN.privateKey);
+		const client = createWalletClient({
+			account,
+			chain,
+			transport: custom(world.provider as never),
+		});
+		const creator = {
+			address: HUMAN.address,
+			writeContract: (request: Record<string, unknown>) =>
+				client.writeContract({...request, account, chain: null} as never),
+		};
+		const store = new Map<string, string>();
+		const opened = await openOfflineTable({
+			reader: reader as never,
+			creator,
+			factory: gameLobby!.factory(worldRecords).address,
+			implementation: gameLobby!.implementation(worldRecords).address,
+			storage: {
+				getItem: (key) => store.get(key) ?? null,
+				setItem: (key, value) => void store.set(key, value),
+			},
+			storageKey: 'offline-world:table',
+			seats: seats.length,
+			cycles: 2,
+			gameOptions: NO_GAME_OPTIONS,
+		});
+		if (opened.kind !== 'table') throw new Error(opened.reason);
+		await stakeForEveryoneAtTheTable({
+			env: world.env,
+			table: opened.table.address,
+			player: HUMAN.address,
+			seats,
+		});
+		const atTable = gameLobby!.deploymentsAt(worldRecords, opened.table);
+		const records = {
+			...readable(atTable),
+			get: () => atTable,
+		} as DeploymentsStore;
+		const placement = resolvePlacementConfig(atTable);
+		expect(placement.cycle.policy).toBe('manual');
+		const players = createOfflinePlayers({
+			provider: world.provider,
+			deployments: records,
+			config: placement,
+			players: await playedByTheWorld({
+				env: world.env,
+				table: seats,
+				game: atTable.contracts.Game,
+			}),
+			// Fired after any pass that SENT, a reverted send included: what
+			// says a pass tried nothing.
+			onActed: () => void acted++,
+		});
+		let acted = 0;
+		const game = {
+			address: atTable.contracts.Game.address,
+			abi: atTable.contracts.Game.abi,
+		};
+		const read = async <T>(functionName: string, args: unknown[] = []) =>
+			(await reader.readContract({
+				...game,
+				functionName,
+				args,
+			} as never)) as T;
+		const send = async (functionName: string, args: unknown[]) => {
+			const hash = await client.writeContract({
+				...game,
+				functionName,
+				args,
+				account,
+				chain: null,
+			} as never);
+			const receipt = await reader.waitForTransactionReceipt({hash});
+			expect(receipt.status, functionName).toBe('success');
+		};
+		const played = (
+			await playedByTheWorld({
+				env: world.env,
+				table: seats,
+				game: atTable.contracts.Game,
+			})
+		)[0];
+		const commitmentOf = () =>
+			read<Commitment>('getCommitment', [played.identity]);
+
+		// BEFORE THE START: nothing committed, nothing tried.
+		await players.tick();
+		expect((await commitmentOf()).cycleNumber).toBe(0n);
+		expect(acted).toBe(0);
+
+		await startOfflineTableOnce({
+			reader: reader as never,
+			creator,
+			table: opened.table.address,
+		});
+
+		const humanIdentity = await offlineIdentityOf({
+			env: world.env,
+			player: HUMAN.address,
+			game: atTable.contracts.Game,
+		});
+		const empty = buildPlacementChain({
+			actions: [],
+			secret: HUMAN_SECRET,
+			actionsPerReveal: placement.actionsPerReveal,
+		});
+		for (let cycle = 0; cycle < 2; cycle++) {
+			await players.tick();
+			expect((await read<Attendance>('getAttendance')).committed).toBe(1n);
+			await send('makeCommitment', [
+				humanIdentity,
+				empty[0].hash,
+				0n,
+				zeroAddress,
+			]);
+			await send('advanceCycle', []);
+			await players.tick();
+			expect((await read<Attendance>('getAttendance')).revealed).toBe(1n);
+			await send('reveal', [
+				humanIdentity,
+				[],
+				HUMAN_SECRET,
+				empty[0].furtherActions,
+				zeroAddress,
+			]);
+			await send('advanceCycle', []);
+		}
+		const [, , ended] = await read<[bigint, bigint, boolean]>('getEnd');
+		expect(ended).toBe(true);
+		const last = await commitmentOf();
+		expect(acted).toBeGreaterThan(0);
+		const actedInTheGame = acted;
+
+		// AFTER THE END: the pass sends nothing (a commit would revert `GameEnded`).
+		await players.tick();
+		await players.tick();
+		expect(acted).toBe(actedInTheGame);
+		expect(await commitmentOf()).toEqual(last);
+		const attendance = await read<Attendance>('getAttendance');
+		expect(attendance.committed).toBe(0n);
+		// AND THE ADVANCE CLIENT HAS NOTHING TO PUSH: under the manual policy a
+		// commit phase moves only once everyone has committed, which nobody can.
+		expect(
+			advancePermitted({
+				policy: 'manual',
+				isCommitPhase: true,
+				attendance: {
+					waitedFor: Number(attendance.waitedFor),
+					committed: Number(attendance.committed),
+					revealed: Number(attendance.revealed),
+				},
+			}).permitted,
+		).toBe(false);
+	}, 60_000);
 });

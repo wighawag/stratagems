@@ -19,6 +19,7 @@ import {
 	type Placement,
 } from '$lib/placement/commit-reveal';
 import {chunkDueNext} from '$lib/game/core/commit-reveal/chain';
+import {LOBBY_ABI} from '$lib/game/lobby/table';
 import {
 	RANDOM_LEVEL,
 	decidePlayedTurn,
@@ -236,6 +237,29 @@ export function createOfflinePlayers(params: {
 	// of them already ship a reader that answers it in the framework's own shape
 	// for the trackers. The played players were duplicating it instead of asking.
 	const readCycle = createCycleReader({publicClient, contract: game});
+
+	/**
+	 * AT A TABLE (`$lib/game/lobby/table`) THE SEATS PLAY ITS LIFE AND NO MORE:
+	 * nothing is committed before its start (nobody is waited for yet) nor
+	 * after its last cycle (it has ended), where the contract refuses every
+	 * commitment and a pass would retry a revert for ever; what they committed
+	 * is still revealed, and a past commitment still settled. A table is a game
+	 * whose record has the lobby's routes (`getEnd`), which the world's has not.
+	 */
+	const atTable = (game.abi as readonly {type?: string; name?: string}[]).some(
+		(entry) => entry.type === 'function' && entry.name === 'getEnd',
+	);
+	async function commitsAllowed(cycleNumber: number): Promise<boolean> {
+		if (!atTable) return true;
+		const [, lastCycleNumber, ended] = (await publicClient.readContract({
+			address: game.address,
+			abi: LOBBY_ABI,
+			functionName: 'getEnd',
+		})) as readonly [bigint, bigint, boolean];
+		return (
+			lastCycleNumber !== 0n && !ended && BigInt(cycleNumber) <= lastCycleNumber
+		);
+	}
 
 	function send(
 		player: OfflinePlayer,
@@ -537,7 +561,7 @@ export function createOfflinePlayers(params: {
 
 	async function act(
 		player: OfflinePlayer,
-		cycle: {cycleNumber: number; commiting: boolean},
+		cycle: {cycleNumber: number; commiting: boolean; mayCommit: boolean},
 	): Promise<void> {
 		const onChain = await commitmentOf(player);
 
@@ -557,8 +581,9 @@ export function createOfflinePlayers(params: {
 			return;
 		}
 
-		if (cycle.commiting) await commit(player, cycle.cycleNumber, onChain);
-		else await reveal(player, cycle.cycleNumber, onChain);
+		if (cycle.commiting) {
+			if (cycle.mayCommit) await commit(player, cycle.cycleNumber, onChain);
+		} else await reveal(player, cycle.cycleNumber, onChain);
 	}
 
 	/**
@@ -575,6 +600,9 @@ export function createOfflinePlayers(params: {
 			const at = {
 				cycleNumber: cycle.cycleNumber,
 				commiting: cycle.isCommitPhase,
+				mayCommit: cycle.isCommitPhase
+					? await commitsAllowed(cycle.cycleNumber)
+					: false,
 			};
 			// IN SEQUENCE, NOT IN PARALLEL. Each of these players is a separate
 			// account so their nonces do not collide, but they share one chain in

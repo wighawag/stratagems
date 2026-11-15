@@ -1,7 +1,8 @@
 import {expect} from 'earl';
 import {describe, it} from 'node:test'; // using node:test as hardhat v3 do not support vitest
 import {network} from 'hardhat';
-import {parseEventLogs, type Abi} from 'viem';
+import {parseEther, parseEventLogs, zeroAddress, type Abi} from 'viem';
+import {artifacts} from '../../rocketh/environment.js';
 import {
 	commitmentHashFor,
 	enterGame,
@@ -41,19 +42,84 @@ type Cycle = {
 	phaseEnd: bigint;
 };
 
+/**
+ * A LOBBY ON THE MANUAL CYCLE, both durations zero: what an offline world
+ * deploys for its table (the template's `web/src/lib/offline.ts`, its
+ * `data.Lobby`), which the shipped deployment does not, so a suite deploys it
+ * as `deployGameWith` deploys a world on another policy. Each its own names,
+ * for the reason given there.
+ */
+let manualLobbies = 0;
+async function deployManualLobby(fixtures: {
+	env: any;
+	GameToken: {address: `0x${string}`};
+	actionsPerReveal: bigint | number;
+}) {
+	const {env} = fixtures;
+	const config = {
+		startTime: 0n,
+		commitPhaseDuration: 0n,
+		revealPhaseDuration: 0n,
+		time: zeroAddress,
+		tokens: fixtures.GameToken.address,
+		placementCost: parseEther('1'),
+		actionsPerReveal: BigInt(fixtures.actionsPerReveal),
+		cyclePolicy: BigInt(CYCLE_POLICY.Manual),
+	};
+	manualLobbies++;
+	const Implementation = await env.deployViaRouter(
+		`ManualLobbyImplementation_${manualLobbies}`,
+		{account: env.namedAccounts.deployer},
+		[
+			{name: 'Getters', artifact: artifacts.GameGetters, args: [config]},
+			{name: 'Commit', artifact: artifacts.GameCommit, args: [config]},
+			{name: 'Reveal', artifact: artifacts.GameReveal, args: [config]},
+			{name: 'Delegation', artifact: artifacts.GameDelegation, args: []},
+			{
+				name: 'Lobby',
+				artifact: artifacts.CommitRevealLobby,
+				args: [
+					{
+						startTime: config.startTime,
+						commitPhaseDuration: config.commitPhaseDuration,
+						revealPhaseDuration: config.revealPhaseDuration,
+						time: config.time,
+						actionsPerReveal: config.actionsPerReveal,
+						cyclePolicy: config.cyclePolicy,
+					},
+				],
+			},
+		],
+	);
+	const Factory = await env.deploy(`ManualGameFactory_${manualLobbies}`, {
+		account: env.namedAccounts.deployer,
+		artifact: artifacts.CommitRevealGameFactory,
+		args: [Implementation.address],
+	});
+	return {
+		Implementation: Implementation as {address: `0x${string}`; abi: Abi},
+		Factory: Factory as {address: `0x${string}`; abi: Abi},
+	};
+}
+
 async function createTable(
 	seats: number,
 	cycles = CYCLES,
 	gameOptions: `0x${string}` = NO_OPTIONS,
+	options?: {manual?: boolean},
 ) {
 	const fixtures = await networkHelpers.loadFixture(deployAll);
 	const {env} = fixtures;
+	const manual = options?.manual
+		? await deployManualLobby(fixtures)
+		: undefined;
 	// Blocks between the deployment and the table, as a table created later has.
 	for (let i = 0; i < 3; i++) await provider.request({method: 'evm_mine'});
 	const [creator, alice, bob, carol] =
 		fixtures.unnamedAccounts as `0x${string}`[];
-	const Factory = env.get<Abi>('GameFactory');
-	const Implementation = env.get<Abi>('GameLobbyImplementation');
+	const Factory = manual?.Factory ?? env.get<Abi>('GameFactory');
+	const Implementation =
+		manual?.Implementation ?? env.get<Abi>('GameLobbyImplementation');
 
 	const receipt = await env.execute(Factory, {
 		account: creator,
@@ -401,6 +467,59 @@ describe('games for a fixed set of players', function () {
 		await expect(
 			table.env.read(WorldAsTable, {functionName: 'hasEnded'}),
 		).toBeRejected();
+	});
+
+	it('plays a MANUAL table, as an offline world deploys one, from its start to its end: every cycle closed by its members, none by a clock', async function () {
+		const table = await createTable(2, 2, NO_OPTIONS, {manual: true});
+		const config = (await table.env.read(table.Table, {
+			functionName: 'getConfig',
+		})) as {cyclePolicy: number};
+		expect(config.cyclePolicy).toEqual(CYCLE_POLICY.Manual);
+
+		// Seated as the offline world seats them: a stake bought at the table.
+		const price = BigInt((table.StakeSale.linkedData as {price: string}).price);
+		for (const account of [table.creator, table.alice]) {
+			await table.env.execute(table.StakeSale, {
+				account: table.creator,
+				functionName: 'purchaseAt',
+				args: [table.Table.address, account, zeroAddress, 0n],
+				value: price,
+			});
+		}
+		await expect(table.commit(table.alice, [])).toBeRejectedWith(/NotInGame/);
+		await table.start(table.creator);
+		expect((await table.read.attendance()).waitedFor).toEqual(2n);
+		const end = await table.read.end();
+		expect(end.ended).toEqual(false);
+		const first = await table.read.cycle();
+		expect(first.commiting).toEqual(true);
+		expect(end.lastCycleNumber).toEqual(first.cycleNumber + 1n);
+
+		for (let played = 0; played < 2; played++) {
+			const cycle = await table.read.cycle();
+			expect(cycle.cycleNumber).toEqual(first.cycleNumber + BigInt(played));
+			await table.commit(table.creator, [{cellID: BigInt(10 + played)}]);
+			// No clock: the phase waits for the last member, however long.
+			await expect(table.advance()).toBeRejectedWith(/StillWaitingToCommit/);
+			await table.advanceToTime((await table.getTimestamp()) + 100_000, true);
+			expect((await table.read.cycle()).commiting).toEqual(true);
+			await table.commit(table.alice, []);
+			await table.advance();
+			expect((await table.read.cycle()).commiting).toEqual(false);
+			await table.reveal(table.creator, [{cellID: BigInt(10 + played)}]);
+			await expect(table.advance()).toBeRejectedWith(/StillWaitingToReveal/);
+			await table.reveal(table.alice, []);
+			await table.advance();
+		}
+
+		expect((await table.read.end()).ended).toEqual(true);
+		expect(
+			await table.env.read(table.Table, {functionName: 'hasEnded'}),
+		).toEqual(true);
+		expect((await table.read.cell(10n)).numClaimants).toEqual(1);
+		expect((await table.read.cell(11n)).numClaimants).toEqual(1);
+		await expect(table.commit(table.creator, [])).toBeRejectedWith(/GameEnded/);
+		await expect(table.advance()).toBeRejectedWith(/GameEnded/);
 	});
 
 	it("keeps a table's commit and worst reveal under the lobby's declared gas", async function () {
