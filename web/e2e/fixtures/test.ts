@@ -560,7 +560,12 @@ export interface WalletFixtures {
 // connected app reads as disconnected.
 const WALLET_STATUS = '[data-testid="wallet-status"]';
 
-async function isWalletConnected(page: Page): Promise<boolean> {
+/**
+ * Exported, with `connectWalletDevMode`, for a game's own fixtures, which
+ * connect a page of their own the way `connectPageAs` does (stratagems' did, as
+ * a modified copy of this file, until they were).
+ */
+export async function isWalletConnected(page: Page): Promise<boolean> {
 	const attr = await page
 		.locator(WALLET_STATUS)
 		.getAttribute('data-connected')
@@ -808,7 +813,7 @@ async function pickSignableAccount(dialog: Locator, index: number) {
  * Rather than assuming an order, poll for whichever dialog is currently shown
  * and act on it, until no connect-flow dialog remains (or timeout).
  */
-async function connectWalletDevMode(
+export async function connectWalletDevMode(
 	page: Page,
 	accountIndex = 0,
 ): Promise<void> {
