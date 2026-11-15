@@ -1064,7 +1064,11 @@ describe('the world seats at a table', () => {
 			provider: world.provider,
 			deployments: records,
 			config: placement,
-			players: await playedByTheWorld({env: world.env, table: seats}),
+			players: await playedByTheWorld({
+				env: world.env,
+				table: seats,
+				game: atTable.contracts.Game,
+			}),
 			// Fired after any pass that SENT, a reverted send included: what
 			// says a pass tried nothing.
 			onActed: () => void acted++,
@@ -1091,7 +1095,13 @@ describe('the world seats at a table', () => {
 			const receipt = await reader.waitForTransactionReceipt({hash});
 			expect(receipt.status, functionName).toBe('success');
 		};
-		const played = (await playedByTheWorld({env: world.env, table: seats}))[0];
+		const played = (
+			await playedByTheWorld({
+				env: world.env,
+				table: seats,
+				game: atTable.contracts.Game,
+			})
+		)[0];
 		const commitmentOf = () =>
 			read<Commitment>('getCommitment', [played.identity]);
 
@@ -1109,6 +1119,7 @@ describe('the world seats at a table', () => {
 		const humanIdentity = await offlineIdentityOf({
 			env: world.env,
 			player: HUMAN.address,
+			game: atTable.contracts.Game,
 		});
 		const empty = buildPlacementChain({
 			actions: [],
