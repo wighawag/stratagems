@@ -113,7 +113,7 @@ for: no intelligence, no difficulty, no interface.
 _Avoid_: bot, NPC, AI, opponent, computer player, played player
 
 **Table**:
-One game for a fixed set of members, at an address of its own: created by anyone (its CREATOR) with a number of seats, its seats taken by staking at it, and started by the creator once two are seated, which closes its roster. A table is a clone of its game's lobby implementation made by the game's factory, so what the client knows of it is only its address (`?game=<address>`). The persistent world is not a table: it has open entry and no creator.
+One game for a fixed set of members, at an address of its own: created by anyone (its CREATOR) with a number of seats, its seats taken by staking at it, and started by the creator once two are seated, which closes its roster. A table is a clone of its game's lobby implementation made by the game's factory, so what the client knows of it is only its address (`?game=<address>`). The persistent world is not a table: it has open entry and no creator. An offline world may BE a table (the offline lobby asks "a table or the world?", a table first): one table on the world's chain, created by its first person and started by the tab once every seat is staked; a game with online tables offers them offline too.
 _Avoid_: room, match, instance, lobby (a table is IN its lobby until its creator starts it)
 
 **Hotseat**:
