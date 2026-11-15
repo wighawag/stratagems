@@ -141,8 +141,8 @@ Candidates already visible, each to be judged when its step comes (not decided h
 - [x] **Step OT2** (after OT1): stratagems' tables offline. Specified and decided 2026-11-15, OT2-1 to OT2-10 (see "Step OT", after OT1)
 - [x] **Step OT3** (in reveal-or-die, bomber-world by cascade; after OT1 and R2): reveal-or-die's tables offline in both modes. Specified and decided 2026-11-15, OT3-1 to OT3-14 (see "Step OT", after OT2)
 - [x] **Step P1** (in reveal-or-die, bomber-world by cascade; asked for by the user on 2026-11-15 after OT3, "fix the gap in reveal-or-die"): "Stay put", an empty turn committed by a press, so a person can stand still under the Manual cycle (see "What OT3 leaves", (2))
-- [ ] **Step C1** (in the template tree; asked for by the user on 2026-11-15, after P1): the seams stratagems' shared files need, upstream, so its copies become the stem's: the e2e script links a game's declared built packages, the fixtures export what a game's own fixtures use, and `pending-operation.e2e.ts` selects the game's contract. To be decided (C-1 to C-12, see "Step C")
-- [ ] **Step C2** (after C1): stratagems a clean extension of its stem: the drift taken back, its own scripts on the stem's interface, its legacy files pruned, every remaining difference catalogued and checked. To be decided (see "Step C")
+- [ ] **Step C1** (in the template tree; asked for by the user on 2026-11-15, after P1): the seams stratagems' shared files need, upstream, so its copies become the stem's: the e2e script links a game's declared built packages, the fixtures export what a game's own fixtures use, and `pending-operation.e2e.ts` selects the game's contract, and the drift check at the tree's root. Decided 2026-11-15, C-1 to C-12 (see "Step C")
+- [ ] **Step C2** (after C1): stratagems a clean extension of its stem: the drift taken back, its own scripts on the stem's interface, its legacy files pruned, every remaining difference catalogued and checked. Decided 2026-11-15 (see "Step C")
 - [ ] **Step D-live** (needs the user, deferred by them on 2026-10-30 until the steps that do not need them are done; needs X2, which changes the contracts it deploys): items 5 and 6 of step D's section, the hosted fuzd upgraded and the live deploy, then one turn played on Base (the deploy includes the tables since L2's PL2-3)
 - [x] **Step 11**: Svelte conventions (absorbed by 6c: measured empty on 2026-10-26, see its section)
 
@@ -1845,7 +1845,7 @@ Asked for by the user on 2026-11-15, after P1 ("Yes cleanup steps sounds good"),
 - **Legacy files nothing references** (`git grep` for each name, outside the lockfile and this plan): `.env.alpha1`, `.env.alpha1test`, `merge-push.sh`, `CHECKLIST.md`, `stratagems.code-workspace`, `vercel.json`, `dev/docker-compose.yml`, `dev/docker-compose-geth.yml`, `dev/docker-compose-ipfs.yml`, `contracts/foundry.toml`, `contracts/link-rocketh.sh`; `TODO.md` and `web/TODO.md` (only `web/.prettierrc` names them); `funding.json` (a funding manifest, read by nothing here but by its outside consumers). Referenced, so not legacy by this measure: `docs/` (`.github/workflows/github-pages.yml`), `rawAssets/` (the art's sources), `contracts/deployments/alpha1*` (history, by step 10b), `contracts/scripts/` (21 files, not read one by one yet).
 - **The history**: 1645 commits on `main` not in the stem (1433 non-merge), two root commits (stratagems' own history joined the tree at 32635ebf), about 333 non-merge commits since.
 
-**Proposed** (each with the alternative rejected; to be decided by the user):
+**Decided by the user on 2026-11-15: C-1 to C-12 as proposed ("Agree")**, each with the alternative rejected:
 
 - **C-1, the drift taken back**: the three old-stem files take the stem's current version (the menu gets "Tables"), and `connectedPage` the stem's `connectPageAs`, in C2. Rather than keeping them (each would conflict on every cascade, and the menu would go on missing a mode).
 - **C-2, a check for a file left behind**: a script beside `check-omissions.mjs` that fails when a modified shared file's blob is one the stem's history holds, run by `apply-omissions.sh` and by hand after a cascade; its home is the tree's root (`template-svelte`), where `check-omissions` lives, cascaded. Rather than measuring once (the defect is the tree's: every game merges "ours" at some point, and nothing fails when it does), or a home lower in the tree (two copies, the reason `check-omissions` moved to the root).
@@ -1859,6 +1859,49 @@ Asked for by the user on 2026-11-15, after P1 ("Yes cleanup steps sounds good"),
 - **C-10, the catalogue, checked**: `.offshoot-divergences` at the root, the counterpart of `.offshoot-omissions`: every shared file stratagems modifies, one line each with its reason, and a unit test failing when a modified shared file is not listed (or a listed one equals the stem's). Repo-local at first, with C-2's script reading it if the user wants it tree-wide. Rather than prose in AGENTS.md (unchecked, and it decays the way the omission lists did before they were checked).
 - **C-11, the history kept**: no rewrite and no squash; README's first section says how to read the repo against its stem (`git diff stem/with/fuzd-pixi-indexer main`, `.offshoot-omissions`, `.offshoot-divergences`, `git log --first-parent` since 32635ebf). Rather than a squashed branch (it would lose stratagems' history and every merge base a cascade needs).
 - **C-12, where and in what order**: C1 at jolly-roger (`pc1/integration`, then its `offshoot-fanout` path to template-commit-reveal) and template-commit-reveal (`pc1/<branch>` for `main` and the six nodes), each repo by its own work protocol, every node verified, the games (reveal-or-die, bomber-world) taking the cascade with no edit; C2 here on `step-C2`, merging C1, then C-1, C-4, C-7, C-9, C-10, C-11; every push asked for. Rather than one step (the template tree's changes are verified across nine repos and should land before the game takes them).
+
+**Start here** (C1). C1 needs P1 and every step above it but L3-box and D-live, all ticked; nothing it touches is changed by those two.
+
+```sh
+for r in jolly-roger template-svelte template-commit-reveal reveal-or-die bomber-world stratagems; do git -C ~/dev/github/wighawag/$r fetch origin --prune; done
+git -C ~/dev/github/wighawag/template-commit-reveal rev-parse --short origin/main origin/with/fuzd-pixi-indexer   # 94734fe5 a050fdc9 on 2026-11-15
+git -C ~/dev/github/wighawag/jolly-roger rev-parse --short origin/integration:scripts/run-e2e-tests.sh            # 37efd65a: the script's home (C-3)
+git -C ~/dev/github/wighawag/template-commit-reveal rev-parse --short origin/main:scripts/run-e2e-tests.sh        # 37efd65a too
+git -C ~/dev/github/wighawag/stratagems diff stem/with/fuzd-pixi-indexer origin/main -- scripts/run-e2e-tests.sh | grep -c "STRATAGEMS"   # 3 hunks (C-3, C-4)
+git -C ~/dev/github/wighawag/template-commit-reveal show origin/main:web/e2e/tests/pending-operation.e2e.ts | grep -c selectContract    # 0 (C-6)
+git -C ~/dev/github/wighawag/template-svelte ls-tree --name-only origin/HEAD scripts/ | grep omissions          # check-omissions.mjs, apply-omissions.sh: C-2's home
+```
+
+Read each repo's AGENTS.md and work protocol before touching it, and the `reconcile-template-tree` skill for the cascades. Check how the tree's root is named and reached (`template-svelte`, its default branch, its `offshoot` config) rather than assuming it: the commands above are measurements from 2026-11-15, and the root has not been touched by this plan before.
+
+**Do** (C1; preview branches `pc1/<branch>` in each repo under `~/dev/worktrees/<repo>/pc1/`, one commit per item, every push asked for; here the branch `step-C1`, for this plan only):
+
+1. Re-derive: the commands above; the baselines of every repo C1 touches (check, unit; the e2e where the item changes it). Find the cascade path from the root to template-commit-reveal (via jolly-roger) and which nodes it passes.
+2. C-2 at the root, test-first: the drift check (`scripts/check-stem-drift.mjs` or the name the root's conventions give it), run by `apply-omissions.sh` beside `check-dangling-imports`, failing when a modified file's blob is one the stem's history holds, its reasoning in its header as `check-omissions.mjs` has; its stem-less root case as `check-omissions` handles it. Run it in stratagems: it must report exactly the three files C-1 names.
+3. C-3 at jolly-roger, test-first where it has a test for the script: `linkBuilt` from the root `package.json`'s `"e2e"` field, each path linked from the main checkout into the e2e worktree, a missing one failing with its name; documented where `lan` is.
+4. C-5 and C-6 at template `main`: the two exports and the range check in `fixtures/test.ts`; `selectContract(page)` in `pending-operation.e2e.ts`; the template's full e2e.
+5. The cascade: root to jolly-roger to template-commit-reveal `main` and its six nodes, each verified (check 0 and 0, unit its baseline plus the new cases, the e2e on `main`, `with/nft-identity` and `with/fuzd-pixi-indexer`); reveal-or-die and bomber-world merged with no edit of their own, verified (check, unit, full e2e), their own drift reported by the new check and recorded, not fixed (not this step).
+
+**Done when** (C1), all measured: the drift check passes its tests at the root and reports exactly C-1's three files in stratagems; the e2e script links a game's `linkBuilt` and fails naming a missing path; `fixtures/test.ts` and `pending-operation.e2e.ts` changed at template `main`; every node and game the cascade reaches verifies at its baseline plus the new cases, `check-dangling-imports` and `check-omissions` clean; RPC 8557 and app 4183 free before and after; every push approved.
+
+**Start here** (C2). C2 needs C1 (pushed).
+
+```sh
+git -C ~/dev/github/wighawag/stratagems fetch stem --prune
+git -C ~/dev/github/wighawag/stratagems merge-base --is-ancestor stem/with/fuzd-pixi-indexer origin/main || echo "C1's cascade not merged yet: the first item"
+git -C ~/dev/github/wighawag/stratagems show origin/main:contracts/package.json | grep -n '"local_node\|"node:local\|"export"'   # local_node and bare rocketh-export (C-4)
+```
+
+**Do** (C2; the branch `step-C2`; one commit per item, every push asked for):
+
+1. Merge the stem's `with/fuzd-pixi-indexer` (C1); re-derive the diff against it (its added, deleted, renamed and modified files) and the baselines (check, unit, contracts, the full e2e).
+2. C-1: the drift check's files take the stem's; `connectedPage` the stem's; the full e2e, the menu's "Tables" seen.
+3. C-4: `node:local` and the stem's `export` interface in stratagems' contracts package, `linkBuilt` in its root `package.json`, the script byte-identical to the stem's, the zellij panes and `pnpm start` following; the full e2e.
+4. C-7: the stem's `PositionUtils.sol` and `StringUtils.sol` tried: contracts, gas pins and route sizes compared; taken or catalogued.
+5. C-9: each legacy file `git grep`ped again and deleted, the two TODOs read first, `contracts/scripts` read one by one; `pnpm install`, check, unit, contracts, the LAN build (`nix build git+file://$PWD#lan`, a deploy-adjacent tree touched).
+6. C-10 and C-11: `.offshoot-divergences` and its unit test (red before the list is complete), every remaining modified file listed with its reason; README's first section on reading the repo against its stem; the drift check clean.
+
+**Done when** (C2), all measured: the drift check reports nothing; `.offshoot-divergences` lists every modified shared file and its test passes; `scripts/run-e2e-tests.sh`, `fixtures/test.ts`, `pending-operation.e2e.ts`, the three drift files and (if C-7 takes them) the two Solidity utils byte-identical to the stem's; the menu offers "Tables"; check 0 and 0, unit and contracts no fewer than before plus the new cases, the full e2e as before, the LAN build passing, `check-dangling-imports` and `check-omissions` clean; RPC 8557 and app 4183 free before and after; every push approved.
 
 ### Step D-live: the deployment itself (needs the user)
 
@@ -3924,4 +3967,8 @@ The user asked for a cleanup after reading how stratagems differs from its stem.
 
 - **Measured**: the code is a clean extension (the stem's head merged, every deletion listed, 457 of 459 framework files byte-identical); 49 shared files are modified, of which three are the stem's own older version (a cascade resolved "ours"), the game menu among them, missing "Tables"; `connectedPage` is the stem's pre-2026-11-04 body; the e2e script carries three game hunks; eleven legacy files are referenced by nothing.
 - **Surprises**: the drift (no check in the tree sees it); `pending-operation.e2e.ts` passes at the template only because `Game` sorts first.
+
+### 2026-11-15, steps C1 and C2 decided
+
+The user answered "Agree" to C-1 to C-12, as proposed, and asked for the prompt to run them. Nothing built; "Start here", "Do" and "Done when" written for both, and the specification lands on `main`. Next: C1, in a fresh session, with the step prompt and the line `Do step C1.`
 
