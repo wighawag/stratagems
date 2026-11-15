@@ -31,7 +31,13 @@
  * copy of these until then; what stays the game's is how a seat is staked and
  * how an account's identity is spelled.
  */
-import {createWalletClient, custom, isAddress, parseEventLogs} from 'viem';
+import {
+	createWalletClient,
+	custom,
+	isAddress,
+	parseEventLogs,
+	type Abi,
+} from 'viem';
 import type {CoreServices} from '$lib/context/core';
 import type {EmbeddedWallet} from '$lib/embedded/wallet';
 import {humansAtThisDevice, seatsPlayedByTheWorld, type Table} from './seats';
@@ -51,15 +57,18 @@ type Reader = Pick<
 /**
  * WHO CREATES AND STARTS THE TABLE: the first person's account, sending
  * through the world's own wallet (in a test, a key). Its creator is whoever
- * sends `createGame`, and `start` is the creator's.
+ * sends `createGame`, and `start` is the creator's. Any contract and a value,
+ * because a game may seat that account through it too (an ETH seat is joined
+ * by its own account, paying the stake: reveal-or-die's).
  */
 export type OfflineTableCreator = {
 	address: `0x${string}`;
 	writeContract(request: {
 		address: `0x${string}`;
-		abi: typeof FACTORY_ABI | typeof LOBBY_ABI;
+		abi: Abi;
 		functionName: string;
 		args?: readonly unknown[];
+		value?: bigint;
 	}): Promise<`0x${string}`>;
 };
 
