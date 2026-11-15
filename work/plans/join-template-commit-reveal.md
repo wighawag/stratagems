@@ -138,7 +138,7 @@ Candidates already visible, each to be judged when its step comes (not decided h
 - [x] **Step R1b** (in reveal-or-die, after R1a): tables in reveal-or-die, in two modes chosen at creation: avatar mode (the deposited NFT is the stake, a tally) and token mode (a fixed ETH stake a seat, the avatar for display only), no exit, ended at the last cycle or with one alive, each survivor withdrawing their stake and what they collected (specified and decided 2026-11-13, R1b-1 to R1b-19: avatar mode pays the avatar's R1a stake in ETH rather than a tally, a mode chosen through `gameOptions` and a select upstream, a close and leftovers pulled by anyone)
 - [x] **Step R2** (in reveal-or-die then bomber-world, after R1b; specified and decided 2026-11-14, R2-1 to R2-11): a body collectable only from the cycle after its death and collecting ending the movement, at reveal-or-die and cascaded; then in bomber-world bomb kills feeding the same bodies, tested, the order argument for blast deaths rewritten, its tables shown (`lobby` exported, the table UI in its skinned `GameHud.svelte`, `tables.e2e.ts` run and a `tables-bombs.e2e.ts` of its own)
 - [x] **Step OT1** (in the template tree, asked for by the user on 2026-11-14; decided OT-1 to OT-4, see "Step OT"): a table in the offline world, the lobby's default, with humans and AI seats, the world kept as the other choice; the reference game its first user. Specified and decided 2026-11-14, OT1-1 to OT1-13 (OT1-1, OT1-3 and OT1-7 revised after the user's questions)
-- [ ] **Step OT2** (after OT1): stratagems' tables offline. Specified 2026-11-15 (PROPOSED, OT2-1 to OT2-10, awaiting the user's answer; see "Step OT", after OT1)
+- [ ] **Step OT2** (after OT1): stratagems' tables offline. Specified and decided 2026-11-15, OT2-1 to OT2-10 (see "Step OT", after OT1)
 - [ ] **Step OT3** (in reveal-or-die, bomber-world by cascade; after OT1 and R2): reveal-or-die's tables offline in both modes. To be specified first
 - [ ] **Step D-live** (needs the user, deferred by them on 2026-10-30 until the steps that do not need them are done; needs X2, which changes the contracts it deploys): items 5 and 6 of step D's section, the hosted fuzd upgraded and the live deploy, then one turn played on Base (the deploy includes the tables since L2's PL2-3)
 - [x] **Step 11**: Svelte conventions (absorbed by 6c: measured empty on 2026-10-26, see its section)
@@ -1705,7 +1705,7 @@ for r in stratagems reveal-or-die bomber-world; do git -C ~/dev/github/wighawag/
 
 **Done when** (OT1), all measured: the Manual table plays to its end in the contracts; `offline-table.e2e.ts` passes at the template with its full e2e, `offline.e2e.ts`, `offline-hotseat.e2e.ts`, `offline-ai.e2e.ts` and `offline-one-tab.e2e.ts` passing on the world; the unit cases of OT1-12 pass; every template node verifies (check 0 errors, unit no fewer than its baseline plus the new cases), reveal-or-die, bomber-world and stratagems with no edit of their own and no table offered; stratagems check 0 errors and 0 warnings, unit no fewer than 2116 + 79 plus the cascade's cases, the full e2e as its baseline; `check-dangling-imports` and `check-omissions` clean where they run; every push approved.
 
-**OT2 specified 2026-11-15 (PROPOSED, NOT decided: awaiting the user's answer to OT2-1 to OT2-10).** OT2 needs OT1 (the framework's offline table), L4 (stratagems' tables, their end and settlement), A2 (its AI), H2 (its hotseat), T2 (the resolve) and T1 (the claim), all ticked. It does not need R2, OT3, L3-box or D-live, which change nothing it touches.
+**OT2 specified 2026-11-15; Decided by the user the same day: OT2-1 to OT2-10 as proposed ("Go").** OT2 needs OT1 (the framework's offline table), L4 (stratagems' tables, their end and settlement), A2 (its AI), H2 (its hotseat), T2 (the resolve) and T1 (the claim), all ticked. It does not need R2, OT3, L3-box or D-live, which change nothing it touches.
 
 **What decides OT2's shape** (measured 2026-11-15, read-only: stratagems `origin/main` 66a4cbfa, which has merged template-commit-reveal `with/fuzd-pixi-indexer` 4c6b70dd, OT1's head there; template `main` 701420ce):
 
@@ -1721,7 +1721,7 @@ for r in stratagems reveal-or-die bomber-world; do git -C ~/dev/github/wighawag/
 - **`KNOWN_GAPS` names stratagems at the template** (`web/test/offline-tables-boundary.test.ts`, byte-identical here), and fails a listed game that offers tables offline: the entry's deletion and stratagems' table must arrive together.
 - **The baselines OT2 must keep** (as OT1 and R2 left them, re-measured in item 1): check 0 errors and 0 warnings; unit 2131 + 79; the full e2e 65 passed and 2 skipped (10.1 min at two workers); contracts as item 1 measures them.
 
-**Proposed** (each with the alternative rejected):
+**Decided** (each with the alternative rejected):
 
 - **OT2-1, the tables deployed offline, on the world's clock**: `021_deploy_tables.ts` runs under `offline` with `cyclePolicy` Manual and both durations zero, as `020` does for the world (one branch on the environment's name, its comment corrected), every other value as on any chain; `offline.ts` adds it to its scripts and `expectedContracts` drops the filter (all of `expectedContractNames()`), as `offline-indexer.test.ts` does. Rather than a second, offline-only table script, or reading the cycle from `data` (stratagems' deploys do not read it, step O's P2).
 - **OT2-2, a seat staked at the table by the beneficiary**: `stakeForEveryoneAtTheTable` walks the seats as the world's walk does; for each seat whose reserve AT THE TABLE is zero, the beneficiary stakes exactly the table's stake (`addToReserve(player, stakeGems * numTokensPerGems)`, read off the table's options), after one `approve(table, ...)` for what the unstaked seats need, skipped when the allowance covers it; nobody is staked in the world's `Stratagems`. Exported for the world test. Rather than test gems handed to each seat and staked by it (a transaction pair per seat, and a hotseat person's account would have to send before the boot ends), or `addToReserveAndFund` (no browser key exists yet to forward a stipend to, as the template's zero stipend says).
@@ -1734,7 +1734,7 @@ for r in stratagems reveal-or-die bomber-world; do git -C ~/dev/github/wighawag/
 - **OT2-9, the LAN package**: `021`'s change reaches only `offline`, and AGENTS.md asks for `nix build git+file://$PWD#lan` after any deploy script changes, so it is run; no lockfile change, so `pnpmDepsHash` stands. Rather than trusting that the branch is not taken there.
 - **OT2-10, not this step**: reveal-or-die's tables offline (OT3), the shared boot upstream (OT3 measures it), AI seats at online tables, the leaderboard naming seats as the panel does, an offline wording for `TableEnd`'s Withdraw, several tables in one world.
 
-**Start here** (OT2, once OT2-1 to OT2-10 are decided).
+**Start here** (OT2).
 
 ```sh
 git -C ~/dev/github/wighawag/stratagems fetch origin --prune
@@ -3752,3 +3752,7 @@ OT2 had no "Start here", so this session measured (read-only: stratagems `origin
 - **Measured**: the framework half needs nothing (the lobby, `offline-table.ts`, `createContext`'s `table` and `seatLabels`, the skeleton's labels); stratagems deploys no table offline (`021` returns under `offline`, its cycle fixed timed; `offline.ts` and `offline-indexer.test.ts` filter `isTableContract`); a seat at a table takes exactly the stake before the start, from a payer the table has an allowance from; `stratagemsLobby.deploymentsAt` already carries the table, its simulation and `NoRewards` to everything that reads a record.
 - **Surprises**: the played seats would play off a table's board (the 13 by 13 block against a side of 7 at the defaults, 120 of 169 cells off it, a move outside skipped by the contract); a seat that ran out would restake, revert (`TableStakeIsFixed`) and stop every seat after it each pass, freezing a Manual table; no stratagems test plays a Manual table; the plan held a stray diff3 marker line (`||||||| parent of a17e4ebc`, from R2's rebase onto OT1), removed here.
 - **Not measured**: where the table-end store is reachable from the composed context (OT2-5, item 1).
+
+### 2026-11-15, step OT2 decided
+
+The user answered "Go" to OT2-1 to OT2-10, as proposed, and asked for the specification to land on `main`. Nothing built. Next: OT2, built as specified in "Step OT", in a fresh session.
