@@ -1,0 +1,64 @@
+# The stem's files this repo carries MODIFIED, each with the reason it differs.
+#
+# WHAT THIS IS FOR. `.offshoot-omissions` lists what this repo does not carry
+# from its stem (template-commit-reveal `with/fuzd-pixi-indexer`); this lists
+# what it carries and changes. Everything else in the tree is either the stem's
+# byte for byte or this repo's own, so `git diff stem/with/fuzd-pixi-indexer
+# main` reads as: the additions (stratagems), the omissions (listed there) and
+# these. A modified file is a conflict on every cascade that touches it, so
+# each one here is a cost paid on purpose, and the reason says what it buys.
+#
+# AND IT IS CHECKED. `web/test/offshoot-divergences.test.ts` fails when a file
+# differs from the stem commit last merged and is not listed here, and when a
+# listed file no longer differs. `scripts/check-stem-drift.mjs` (run by
+# `scripts/apply-omissions.sh` during a merge) is the other half: a modified
+# file whose content is the stem's own older version, which a merge resolved
+# "ours" leaves behind, is drift rather than a divergence, and does not belong
+# here. Step C2 of work/plans/join-template-commit-reveal.md took three such
+# files back and wrote this list.
+#
+# FORMAT. One file per line: its path, then its reason. `#` starts a comment.
+
+# The repo's identity and its documents
+README.md                                 stratagems' README: the game, its modes, how to run it and read it against its stem
+AGENTS.md                                 the stem's text kept byte-identical below a correction section saying where it is false for stratagems
+.offshoot-omissions                       stratagems' own omissions (the reference game and what the game replaces)
+web/src/web-config.json                   the brand: stratagems' name, logo and description
+web/static/preview.png                    the brand: stratagems' social preview
+web/src/app.html                          Plausible analytics on stratagems' own domains
+
+# The workspace and its configuration
+package.json                              the root of a workspace with common/ and the indexer: their scripts, the "lan" and "e2e" fields
+pnpm-workspace.yaml                       common/ and indexer/ as workspace packages, and the fuzd services' named-logs overrides
+pnpm-lock.yaml                            the lockfile of this workspace's dependencies
+flake.lock                                the ethereum-lan-node revision stratagems' LAN package is built with (newer than the stem's, step L3)
+.gitignore                                also ignores .dev.vars, a legacy secrets file, so one left in a checkout is never committed
+dev/zellij.kdl                            the local stack's panes, with the indexer's and common/'s builds
+dev/zellij-attach.kdl                     the panes against an existing deployment, with the indexer
+dev/zellij-remote-chain.kdl               the panes against a remote chain with local services, with the indexer
+
+# The contracts package
+contracts/package.json                    stratagems-contracts: its name, dependencies, and scripts (two test runners, its docgen, its scripts' export)
+contracts/hardhat.config.ts               solc 0.8.24 with viaIR in every profile (the game does not compile without it), and the node network's BLOCK_TIME
+contracts/rocketh/config.ts               stratagems' accounts, environments and deploy data
+contracts/tsconfig.json                   compiles rocketh/ where the stem's compiles js/, which is omitted
+contracts/scripts/tsconfig.json           the operations scripts compile against deploy/, utils/ and the hardhat config
+contracts/.env                            ldenv reads the root .env too (ENV_ROOT_FOLDER), and the lan environment's defaults
+contracts/.gitignore                      also ignores .keys, scripts/data/contracts.ts and .data/, written by the operations scripts
+contracts/.prettierignore                 also ignores the docs' templates (*.hbs) and the package build
+contracts/.prettierrc                     stratagems' contracts and tests are formatted at 120 columns
+contracts/zellij.kdl                      the contracts' own panes: the tests and node:local
+
+# The web app
+web/package.json                          stratagems-web: its dependencies (pixi, Sentry, common/, the indexer) and scripts
+web/.env                                  ldenv reads the root .env too, and stratagems' snapshot service
+web/.gitignore                            also ignores the indexed states and the processor bundle, generated from common/ and the indexer
+web/.prettierignore                       also ignores the indexed states, the processor bundle and robots.txt
+web/svelte.config.js                      the $app-specific alias names stratagems' game.ts, not the reference game's
+web/vite.plugins.ts                       Sentry error reports when a token is set, in the file whose job is to differ
+web/src/routes/play/+page.svelte          the online game's page: stratagems' board and HUD
+web/src/lib/offline.ts                    the offline world's contracts, deploy and stake: a game's by design, at the stem's path
+web/src/lib/offline-players.ts            the offline world's played seats: a game's by design, at the stem's path
+web/test/lib/embedded/world.test.ts       the test of stratagems' offline.ts
+web/test/lib/offline-players.test.ts      the test of stratagems' offline-players.ts
+web/e2e/fixtures/contracts-page.ts        WRITE_CONTRACT is the game's contract, Stratagems
