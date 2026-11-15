@@ -37,6 +37,15 @@ Stratagems is an [Autonomous World](https://0xparc.org/blog/autonomous-worlds) a
 
 We expand on that idea in our latest essay: ["Natural Compoability in Autonomous Worlds"](https://etherplay.io/blog/natural-composability/).
 
+## 🧬 Reading this repository against its template
+
+stratagems is a game built on [template-commit-reveal](https://github.com/wighawag/template-commit-reveal), merged from its `with/fuzd-pixi-indexer` branch (the `stem` remote; the `offshoot` branch's `fanout.config.json` names it). Since step C2 of `work/plans/join-template-commit-reveal.md` (2026-11-15) the difference between the two is a clean extension, and it reads in four places:
+
+- `git diff stem/with/fuzd-pixi-indexer main`: the files added are stratagems' own (its contracts, `common/`, the indexer, `web/src/lib/stratagems/`, its e2e suites); every other file is the stem's byte for byte, but for the two lists below.
+- `.offshoot-omissions`: the stem's files stratagems does not carry, each with its reason (the template's reference game, and what the game replaces), checked by `web/test/offshoot-omissions.test.ts` and `scripts/check-omissions.mjs`.
+- `.offshoot-divergences`: the stem's files stratagems carries modified, each with its reason, checked by `web/test/offshoot-divergences.test.ts`; `scripts/check-stem-drift.mjs` refuses a file left at an older version of the stem's by a merge resolved "ours".
+- `git log --first-parent 32635ebf..main`: the history since stratagems' own history joined the template's (the merge 32635ebf, 2026-10-24), each cascade from the stem a merge. The history is kept as it was written, with no rewrite and no squash: every cascade needs its merge base, and the app as it was before the port is the tag `alpha1-final`.
+
 ## ♟️ What is stratagems exactly ?
 
 <img align="right" style="width:200px" src="docs/public/icon.png">
@@ -200,6 +209,8 @@ builds the game as one of the box's games, with no network, by ethereum-lan-node
 - `passthru.lan`, the title and description the box's page shows.
 
 After any change to `pnpm-lock.yaml`, recompute `pnpmDepsHash`: set it to `sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=` and run `nix build git+file://$PWD#lan.pnpmDeps`, which fails with the right value (a build that passes proves nothing: Nix trusts a hash it has seen). The deploys are deterministic only on `lan` (the `deterministic` tag in `contracts/rocketh/config.ts`): every other environment keeps the addresses it has. No contract test checks that the `lan` deploy stays replayable: `nix build` refuses a deploy that is not, and names the transaction, so build it after changing a deploy script.
+
+The e2e run reads the same file: `"e2e": {"linkBuilt": ["common/dist", "indexer/dist"]}` names what the web app imports from this workspace's own builds, which the run links from the main checkout into its git worktree (see `web/TESTING.md`, "The run happens in a git worktree").
 
 To rehearse it on this machine, without the box: `bash scripts/rehearse-lan.sh e2e/tests/faucet.e2e.ts e2e/tests/stratagems-hotseat.e2e.ts e2e/tests/stratagems-offline-ai.e2e.ts`. It starts geth from the box's genesis, the package's deploy (twice), the box's faucet and caddy on this machine's LAN address (ports 8545, 34010 and 28600 there, which must be free), and runs those suites in a browser that can reach nothing else: two empty burners funded by the faucet at a table, a cycle played, and the offline world in the same insecure context.
 
