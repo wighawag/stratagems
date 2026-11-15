@@ -166,11 +166,12 @@ describe('the offline world\u2019s lobby', () => {
 
 		// Leaving the table is leaving the world: every record goes, the table's
 		// address with it.
-		store.set('offline-world:chain-id', '9007199254740123');
+		const chainId = await chainIdKey();
+		store.set(chainId, '9007199254740123');
 		store.set('offline-world:table', '0x1234');
 		offlineLobby.leaveTheTable();
 		for (const key of [
-			'offline-world:chain-id',
+			chainId,
 			'offline-world:table',
 			'offline-world:mode',
 			'offline-world:cycles',
