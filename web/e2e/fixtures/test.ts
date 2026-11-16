@@ -610,6 +610,26 @@ export async function chooseTheWorld(page: Page): Promise<void> {
 	if ((await world.count()) > 0) await world.click();
 }
 
+/**
+ * A RELOAD OF THE OFFLINE ROUTE RESUMES ITS WORLD, because the route rewrote
+ * its URL to `?continue` once the table was settled (`$lib/game/lobby/arrival`);
+ * a visit without it, to a browser that holds a world, is asked whether to
+ * continue it or start a new one. Asserted before a suite reloads mid-game, so
+ * a reload that would land on that choice fails here, saying why, rather than
+ * as a board that never comes back.
+ */
+export async function expectTheReloadToResume(page: Page): Promise<void> {
+	await expect(page).toHaveURL(/[?&]continue(?:[=&#]|$)/);
+}
+
+/**
+ * ON A FRESH VISIT TO A BROWSER THAT HOLDS A WORLD, continue it: the choice
+ * the offline route offers (see {@link expectTheReloadToResume}).
+ */
+export async function continueTheSavedGame(page: Page): Promise<void> {
+	await page.getByTestId('continue-saved-game').click();
+}
+
 export async function waitForAppReady(page: Page, timeout = 30_000) {
 	await expect(
 		page.locator(`${WALLET_STATUS} button:disabled`),
