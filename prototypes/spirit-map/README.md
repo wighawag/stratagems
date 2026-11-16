@@ -37,3 +37,15 @@ Scene (`showcase` every state laid out, `skirmish` 1,165 cells, `stress` about 2
 ## Budget
 
 Everything is chunked by 16x16 cells so the camera culls, and the details thin out by distance (`LOD` in `src/overlays.ts`): stones under 15 units, props, motes and attacks under 34, spirits under 60. At the 20k overview only terrain and sea draw: A at res 3 is about 550k triangles, B about 1.6M (B is the more expensive at a distance). Real phone numbers are still to measure.
+
+## Round 2 (2026-11-16, after the user's review of round 1)
+
+Round 1's animations were cool but too much repeated everywhere (the user). Now **calm** by default (`lively` in the panel, or `?lively=1`, brings round 1's loops back):
+
+- At a turn (T), every living spirit fires ONE volley at its enemy edges (bolts, sparks where they land), then the land changes, then motes rise once where life came, embers fall where it went, dust where a cell died (`src/events.ts`). Between turns nothing loops but the ambient: the volcano's smoke (thinner, slower) and crater glow.
+- The focused cell (hover, or tap on a phone) shows its fights, in and out, looping while it is focused.
+- Spirits bob and turn slower and less, their glow no longer pulses; the pending standing stone pulses slower and softer.
+
+**Map only** (`?map=1`): the map alone, for a game built on top of the world that does not need stratagems' information. No spirits, standing stones, banners, fights, motes or planned moves, no card. Land, biomes, props, dead husks and volcanoes stay. **Hide life** (`?uniform=1`, with map only): every living cell drawn alike (as life 5, one gem), so neither life nor stake shows; dead cells stay as wasteland.
+
+Screenshots: `node shots-r2.mjs` (`shots/r2-*.png`).

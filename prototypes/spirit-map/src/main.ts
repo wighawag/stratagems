@@ -13,7 +13,9 @@ import {MapControls} from 'three/examples/jsm/controls/MapControls.js';
 import {BIOMES, SEA, SKY} from './biomes';
 import {ContinentTerrain} from './continent';
 import {DioramaTerrain} from './diorama';
-import {animateMaterials, fxUniforms, Overlays, type Layers} from './overlays';
+import {animateMaterials, Overlays, type Layers} from './overlays';
+import {fxUniforms} from './fx';
+import {Events, VOLLEY_S} from './events';
 import {Grid, key, ME, nextBoard, pressureOf, type Board, type Plans} from './rules';
 import {SCENES} from './scenes';
 import {uniforms, type Terrain} from './terrain';
@@ -34,7 +36,13 @@ const state = {
 	auto: false,
 	mode: 'look' as 'look' | 'place' | 'remove',
 	faction: 3,
-	layers: {props: true, stones: true, spirits: true, fx: true, attacks: true, flags: true} as Layers,
+	layers: {props: true, stones: true, spirits: true, fx: true, attacks: true, flags: true, ambient: true, plans: true} as Layers,
+	/** Loop every animation everywhere (the first round), or play them once, at the turn and on the focused cell. */
+	lively: params.get('lively') === '1',
+	/** The map alone, for a game built on top: no spirits, stones, banners, fights or plans. */
+	mapOnly: params.get('map') === '1',
+	/** With the map alone: every living cell drawn alike, so life and stake do not show either. */
+	uniform: params.get('uniform') === '1',
 };
 
 /* ---------- three ---------- */
@@ -117,7 +125,26 @@ let plans: Plans = new Map();
 let grid = new Grid(board);
 let terrain: Terrain = makeTerrain();
 const overlays = new Overlays();
-scene.add(terrain.group, overlays.group);
+const events = new Events();
+scene.add(terrain.group, overlays.group, events.group);
+
+/** The board as drawn: with the map alone and uniform, every living cell at one life and one gem. */
+function shown(b: Board): Board {
+	if (!(state.mapOnly && state.uniform)) return b;
+	const out: Board = new Map();
+	for (const [k, c] of b) out.set(k, c.life > 0 ? {...c, life: 5, stake: 1} : c);
+	return out;
+}
+
+function buildOverlays() {
+	overlays.build(grid, plans, terrain, state.variant, {lively: state.lively});
+}
+
+function layersNow(): Layers {
+	const L = state.layers;
+	if (!state.mapOnly) return L;
+	return {props: L.props, ambient: L.ambient, stones: false, spirits: false, fx: false, attacks: false, flags: false, plans: false};
+}
 
 function makeTerrain(): Terrain {
 	return state.variant === 'A' ? new ContinentTerrain(state.res) : new DioramaTerrain();
@@ -126,9 +153,10 @@ function makeTerrain(): Terrain {
 let buildMs = 0;
 function rebuild(prev?: Grid) {
 	const t0 = performance.now();
-	grid = new Grid(board);
+	grid = new Grid(shown(board));
 	terrain.build(grid, prev);
-	if (!prev) overlays.build(grid, plans, terrain, state.variant);
+	if (!prev) buildOverlays();
+	if (!prev) events.focus(undefined, board, terrain, state.variant);
 	buildMs = performance.now() - t0;
 }
 
@@ -154,16 +182,20 @@ function setVariant(v: Variant) {
 	renderPanel();
 }
 
-let morph: {start: number} | undefined;
+let morph: {start: number; prev: Grid} | undefined;
 const MORPH_MS = 1100;
 function turn() {
 	if (morph) return;
 	const prev = grid;
+	const fights = !state.mapOnly && state.layers.attacks && !state.lively;
+	// first the volley, on the board as it was; then the land changes
+	if (fights) events.volley(board, terrain, state.variant, uniforms.uTime.value);
+	events.focus(undefined, board, terrain, state.variant);
 	board = nextBoard(board, plans);
 	plans = new Map();
 	rebuild(prev);
 	terrain.setMorph(0);
-	morph = {start: performance.now()};
+	morph = {start: performance.now() + (fights ? VOLLEY_S * 1000 : 0), prev};
 }
 
 /* ---------- interaction ---------- */
@@ -181,12 +213,24 @@ function cellAt(ev: PointerEvent): [number, number] | undefined {
 	return [Math.round(p.x), Math.round(p.z)];
 }
 
+function setFocus(k: string | undefined) {
+	events.focus(state.lively || state.mapOnly || !state.layers.attacks ? undefined : k, board, terrain, state.variant);
+}
+
 renderer.domElement.addEventListener('pointermove', (ev) => {
-	if (ev.pointerType !== 'mouse' || ev.buttons) {
+	if (ev.pointerType !== 'mouse' || ev.buttons) return;
+	describe(ev);
+});
+
+/** The card and the focus for the cell under the pointer. */
+function describe(ev: PointerEvent) {
+	if (state.mapOnly) {
 		card.style.display = 'none';
+		setFocus(undefined);
 		return;
 	}
 	const at = cellAt(ev);
+	setFocus(at && board.has(key(at[0], at[1])) ? key(at[0], at[1]) : undefined);
 	const c = at && board.get(key(at[0], at[1]));
 	const plan = at && plans.get(key(at[0], at[1]));
 	if (!at || (!c && plan === undefined)) {
@@ -210,12 +254,17 @@ renderer.domElement.addEventListener('pointermove', (ev) => {
 	card.style.display = 'block';
 	card.style.left = ev.clientX + 14 + 'px';
 	card.style.top = ev.clientY + 14 + 'px';
-});
+}
 
 let down: {x: number; y: number} | undefined;
 renderer.domElement.addEventListener('pointerdown', (ev) => (down = {x: ev.clientX, y: ev.clientY}));
 renderer.domElement.addEventListener('pointerup', (ev) => {
-	if (!down || Math.hypot(ev.clientX - down.x, ev.clientY - down.y) > 6 || state.mode === 'look') return;
+	if (!down || Math.hypot(ev.clientX - down.x, ev.clientY - down.y) > 6) return;
+	if (state.mode === 'look') {
+		// a tap (no hover on a phone) focuses the cell
+		if (ev.pointerType !== 'mouse') describe(ev);
+		return;
+	}
 	const at = cellAt(ev);
 	if (!at) return;
 	const k = key(at[0], at[1]);
@@ -224,7 +273,7 @@ renderer.domElement.addEventListener('pointerup', (ev) => {
 	else if (state.mode === 'place' && (!c || c.life === 0)) plans.set(k, state.faction);
 	else if (state.mode === 'remove' && c) plans.set(k, 0);
 	else return;
-	overlays.build(grid, plans, terrain, state.variant);
+	buildOverlays();
 });
 
 addEventListener('keydown', (ev) => {
@@ -250,6 +299,13 @@ function syncUrl() {
 	const p = new URLSearchParams(location.search);
 	p.set('variant', state.variant);
 	p.set('scene', state.scene);
+	for (const [k, v] of [
+		['lively', state.lively],
+		['map', state.mapOnly],
+		['uniform', state.uniform],
+	] as const)
+		if (v) p.set(k, '1');
+		else p.delete(k);
 	history.replaceState(null, '', '?' + p.toString());
 	const v = VARIANTS.find((v) => v.key === state.variant)!;
 	document.getElementById('vlabel')!.textContent = `${v.key} (${v.name})`;
@@ -273,6 +329,11 @@ function renderPanel() {
 		<button id="shadows" class="${state.shadows ? 'on' : ''}">shadows</button>
 	</div>
 	<div class="row">
+		<button id="lively" class="${state.lively ? 'on' : ''}" title="loop every animation everywhere, or play them once at the turn and on the focused cell">${state.lively ? 'lively' : 'calm'}</button>
+		<button id="mapOnly" class="${state.mapOnly ? 'on' : ''}" title="the map alone, for a game on top">map only</button>
+		${state.mapOnly ? `<button id="uniform" class="${state.uniform ? 'on' : ''}" title="every living cell alike: no life, no stake">hide life</button>` : ''}
+	</div>
+	<div class="row">
 		${(['look', 'place', 'remove'] as const).map((m) => `<button data-mode="${m}" class="${state.mode === m ? 'on' : ''}">${m}</button>`).join('')}
 		<select id="faction">${[1, 2, 3, 4, 5].map((f) => `<option value="${f}" ${f === state.faction ? 'selected' : ''}>${BIOMES[f].name}</option>`).join('')}</select>
 	</div>
@@ -280,7 +341,8 @@ function renderPanel() {
 	<details class="legend"><summary>legend</summary>
 		Glacier=Blue, Mesa=Red, Forest=Green, Plains=Yellow, Mountains=Purple, Volcano=Evil.<br>
 		Life: props and height far away; close up, the ring of 7 stones (gold lit, pulsing gold = coming, pulsing red = going).<br>
-		Attacks: bolts from each living spirit to every enemy edge. Dead: grey husk, still counts.<br>
+		Attacks: calm plays one volley at each turn (bolts from each living spirit to every enemy edge), then motes where life came, embers where it went; hover or tap a cell to see its fights. Lively loops it all everywhere. Dead: grey husk, still counts.<br>
+		Map only: the land alone, for a game on top; hide life draws every living cell alike.<br>
 		Volcano: one smoke plume per gem at stake. Yours: a banner. Ghost = planned, red X = removal.<br>
 		Drag to pan, wheel or pinch to zoom, T for a turn, place/remove then click a cell.
 	</details>`;
@@ -322,6 +384,29 @@ function renderPanel() {
 		applyCamera();
 		renderPanel();
 	};
+	document.getElementById('lively')!.onclick = () => {
+		state.lively = !state.lively;
+		buildOverlays();
+		setFocus(undefined);
+		syncUrl();
+		renderPanel();
+	};
+	document.getElementById('mapOnly')!.onclick = () => {
+		state.mapOnly = !state.mapOnly;
+		card.style.display = 'none';
+		setFocus(undefined);
+		rebuild();
+		syncUrl();
+		renderPanel();
+	};
+	const uni = document.getElementById('uniform');
+	if (uni)
+		uni.onclick = () => {
+			state.uniform = !state.uniform;
+			rebuild();
+			syncUrl();
+			renderPanel();
+		};
 	document.getElementById('shadows')!.onclick = () => {
 		state.shadows = !state.shadows;
 		renderer.shadowMap.enabled = state.shadows;
@@ -363,8 +448,10 @@ function frame() {
 		const p = Math.min(1, (now - morph.start) / MORPH_MS);
 		terrain.setMorph(1 - (1 - p) ** 3);
 		if (p >= 1) {
+			const prev = morph.prev;
 			morph = undefined;
-			overlays.build(grid, plans, terrain, state.variant);
+			buildOverlays();
+			if (!state.lively && !state.mapOnly && state.layers.fx) events.changes(prev, grid, terrain, uniforms.uTime.value);
 		}
 	}
 	if (state.auto && !morph && now - lastAuto > 2600) {
@@ -391,7 +478,9 @@ function frame() {
 	sc.far = ext * 4 + 20;
 	sc.updateProjectionMatrix();
 
-	overlays.update(camera, state.layers);
+	overlays.update(camera, layersNow());
+	events.update(t);
+	events.group.visible = dist < 60;
 	renderer.render(scene, camera);
 
 	frames++;

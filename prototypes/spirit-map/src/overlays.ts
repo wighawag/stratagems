@@ -16,7 +16,8 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {BIOMES, col, DEAD} from './biomes';
 import {CHUNK, uniforms, type Terrain} from './terrain';
-import {hash2, key, MAX_LIFE, ME, pressureOf, type Board, type Grid, type Plans} from './rules';
+import {FxBuilder, fxGlow, fxSmoke} from './fx';
+import {hash2, key, MAX_LIFE, ME, pressureOf, type Board, type Cell, type Grid, type Plans} from './rules';
 
 export const LOD = {props: 34, stones: 15, spirits: 60, fx: 34, flags: 50};
 
@@ -111,8 +112,8 @@ function spiritMaterial() {
 				'#include <begin_vertex>',
 				`#include <begin_vertex>
 				float sp = instanceMatrix[3].x * 1.3 + instanceMatrix[3].z * 0.7;
-				transformed.y += sin(uTime * 2.0 + sp) * 0.35;
-				float a = uTime * 1.5 + sp;
+				transformed.y += sin(uTime * 1.2 + sp) * 0.12;
+				float a = uTime * 0.5 + sp;
 				transformed.xz = mat2(cos(a), -sin(a), sin(a), cos(a)) * transformed.xz;`,
 			);
 		shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance = vColor.rgb * 0.85;');
@@ -122,102 +123,15 @@ function spiritMaterial() {
 
 /** Called every frame: the pulses. */
 export function animateMaterials(t: number) {
-	const p = 0.5 + 0.5 * Math.sin(t * 4);
-	mats.stoneGrow.emissiveIntensity = 0.3 + 1.6 * p;
-	mats.stoneShrink.emissiveIntensity = 0.3 + 1.6 * p;
+	const p = 0.5 + 0.5 * Math.sin(t * 2.2);
+	mats.stoneGrow.emissiveIntensity = 0.35 + 0.8 * p;
+	mats.stoneShrink.emissiveIntensity = 0.35 + 0.8 * p;
 	mats.ghost.opacity = 0.25 + 0.2 * p;
-}
-
-/* ---------- particles ---------- */
-
-const FX_VERT = `
-uniform float uTime; uniform float uScale;
-attribute vec3 aB; attribute vec3 aColor; attribute vec4 aSeed;
-varying vec3 vColor; varying float vAlpha;
-void main(){
-	float phase = aSeed.x, speed = aSeed.y, kind = aSeed.z, size = aSeed.w;
-	float f = fract(uTime * speed + phase);
-	vec3 p = position; float a = 1.0; float s = size;
-	if (kind < 0.5) {
-		p += vec3(sin(f * 6.0 + phase * 20.0) * 0.05, f * 0.55, cos(f * 5.0 + phase * 13.0) * 0.05);
-		a = sin(3.14159 * f);
-	} else if (kind < 1.5) {
-		p += vec3(sin(phase * 40.0) * 0.12 * f, 0.5 * (1.0 - f) - 0.05, cos(phase * 30.0) * 0.12 * f);
-		a = sin(3.14159 * f);
-	} else if (kind < 2.5) {
-		p = mix(position, aB, f) + vec3(0.0, sin(3.14159 * f) * 0.22, 0.0);
-		a = smoothstep(0.0, 0.1, f) * (1.0 - smoothstep(0.9, 1.0, f));
-		s = size * (0.6 + 0.8 * f);
-	} else if (kind < 3.5) {
-		p += vec3(sin(f * 3.0 + phase * 9.0) * 0.15 * f, f * 1.5, cos(f * 2.0 + phase * 7.0) * 0.1 * f);
-		a = (1.0 - f) * smoothstep(0.0, 0.08, f) * 0.6;
-		s = size * (0.5 + 2.0 * f);
-	} else if (kind < 4.5) {
-		a = pow(1.0 - f, 3.0);
-		s = size * (0.5 + f * 1.4);
-	} else {
-		a = 0.5 + 0.3 * sin(uTime * 4.0 + phase * 6.28);
-	}
-	vColor = aColor; vAlpha = a;
-	vec4 mv = modelViewMatrix * vec4(p, 1.0);
-	gl_PointSize = s * uScale / -mv.z;
-	gl_Position = projectionMatrix * mv;
-}`;
-const FX_FRAG = `
-varying vec3 vColor; varying float vAlpha;
-void main(){
-	float d = length(gl_PointCoord - 0.5);
-	float k = smoothstep(0.5, 0.05, d);
-	gl_FragColor = vec4(vColor, vAlpha * k);
-}`;
-
-export const fxUniforms = {uScale: {value: 500}};
-
-const fxGlow = new THREE.ShaderMaterial({
-	vertexShader: FX_VERT,
-	fragmentShader: FX_FRAG,
-	uniforms: {uTime: uniforms.uTime, uScale: fxUniforms.uScale},
-	transparent: true,
-	depthWrite: false,
-	blending: THREE.AdditiveBlending,
-});
-const fxSmoke = new THREE.ShaderMaterial({
-	vertexShader: FX_VERT,
-	fragmentShader: FX_FRAG,
-	uniforms: {uTime: uniforms.uTime, uScale: fxUniforms.uScale},
-	transparent: true,
-	depthWrite: false,
-});
-
-class FxBuilder {
-	a: number[] = [];
-	b: number[] = [];
-	c: number[] = [];
-	s: number[] = [];
-	push(a: THREE.Vector3Like, b: THREE.Vector3Like, color: THREE.Color, phase: number, speed: number, kind: number, size: number) {
-		this.a.push(a.x, a.y, a.z);
-		this.b.push(b.x, b.y, b.z);
-		this.c.push(color.r, color.g, color.b);
-		this.s.push(phase, speed, kind, size);
-	}
-	build(material: THREE.Material): THREE.Points | undefined {
-		if (!this.a.length) return undefined;
-		const g = new THREE.BufferGeometry();
-		g.setAttribute('position', new THREE.Float32BufferAttribute(this.a, 3));
-		g.setAttribute('aB', new THREE.Float32BufferAttribute(this.b, 3));
-		g.setAttribute('aColor', new THREE.Float32BufferAttribute(this.c, 3));
-		g.setAttribute('aSeed', new THREE.Float32BufferAttribute(this.s, 4));
-		g.computeBoundingSphere();
-		if (g.boundingSphere) g.boundingSphere.radius += 2;
-		const p = new THREE.Points(g, material);
-		p.renderOrder = 2;
-		return p;
-	}
 }
 
 /* ---------- the chunk ---------- */
 
-export type Layers = {props: boolean; stones: boolean; spirits: boolean; fx: boolean; attacks: boolean; flags: boolean};
+export type Layers = {props: boolean; stones: boolean; spirits: boolean; fx: boolean; attacks: boolean; flags: boolean; ambient: boolean; plans: boolean};
 
 type Chunk = {
 	center: THREE.Vector3;
@@ -225,6 +139,7 @@ type Chunk = {
 	stones: THREE.Group;
 	spirits: THREE.Group;
 	fx: THREE.Group;
+	ambient: THREE.Group;
 	attacks: THREE.Group;
 	flags: THREE.Group;
 };
@@ -269,8 +184,9 @@ export function sizeOf(life: number): number {
 export class Overlays {
 	readonly group = new THREE.Group();
 	private chunks: Chunk[] = [];
+	private plans?: THREE.Group;
 
-	build(grid: Grid, plans: Plans, terrain: Terrain, variant: 'A' | 'B') {
+	build(grid: Grid, plans: Plans, terrain: Terrain, variant: 'A' | 'B', opts: {lively: boolean}) {
 		this.dispose();
 		const board = grid.board;
 		const per = new Map<string, Board>();
@@ -281,7 +197,6 @@ export class Overlays {
 			m.set(key(c.x, c.y), c);
 		}
 		const ringR = variant === 'B' ? 0.36 : 0.4;
-		const tmpC = new THREE.Color();
 		for (const [ck, cells] of per) {
 			const [cx, cy] = ck.split(',').map(Number);
 			const props = new Instances(),
@@ -290,12 +205,13 @@ export class Overlays {
 				flags = new Instances();
 			const motes = new FxBuilder(),
 				smoke = new FxBuilder(),
+				glow = new FxBuilder(),
 				bolts = new FxBuilder();
 			for (const c of cells.values()) {
 				const b = BIOMES[c.color];
 				const pr = pressureOf(board, c);
 				const dead = c.life <= 0;
-				const centre = variant === 'B' && (c.color === 5 || c.color === 6 || c.color === 1 || c.color === 2) ? terrain.heightAt(c.x, c.y) + (c.color === 5 ? 0.12 + 0.07 * c.life : c.color === 6 ? (0.7 + 0.12 * c.life) * 0.22 : 0.12) : terrain.heightAt(c.x, c.y);
+				const centre = centreOf(c, terrain, variant);
 				// props: one per point of life, two husks when dead
 				const count = dead ? 2 : c.life;
 				for (let i = 0; i < count; i++) {
@@ -320,65 +236,30 @@ export class Overlays {
 					stones.add(`stone-${kind}`, () => new THREE.CylinderGeometry(0.02, 0.032, 0.15, 4).translate(0, 0.065, 0), m, mat(sx, terrain.heightAt(sx, sz) - 0.01, sz, a, 1, tall, 1));
 				}
 				// the spirit
-				const spiritY = centre + 0.3;
+				const spiritY = centre + SPIRIT_UP;
 				if (!dead) {
 					const s = sizeOf(c.life);
 					spirits.add('spirit', () => new THREE.OctahedronGeometry(0.075, 0).scale(1, 1.5, 1), mats.spirit, mat(c.x, spiritY, c.y, 0, s, s, s), col(b.spirit));
-					motes.push({x: c.x, y: spiritY, z: c.y}, {x: 0, y: 0, z: 0}, col(b.spirit), hash2(c.x, c.y, 9), 1, 5, 0.32 * s);
+					motes.push({x: c.x, y: spiritY, z: c.y}, {x: 0, y: 0, z: 0}, col(b.spirit), hash2(c.x, c.y, 9), 1, 5, 0.22 * s);
 				}
-				// life coming or going
-				if (pr.trend === 'grow') {
-					for (let i = 0; i < 4; i++) {
-						const a = hash2(c.x, c.y, 60 + i) * 6.283,
-							r = 0.12 + 0.2 * hash2(c.x, c.y, 70 + i);
-						const px = c.x + Math.cos(a) * r,
-							pz = c.y + Math.sin(a) * r;
-						motes.push({x: px, y: terrain.heightAt(px, pz), z: pz}, {x: 0, y: 0, z: 0}, tmpC.set('#fff3a0').lerp(col(b.spirit), 0.4).clone(), hash2(c.x, c.y, 80 + i), 0.45, 0, 0.06);
-					}
-				} else if (pr.trend === 'shrink') {
-					for (let i = 0; i < 5; i++) {
-						const a = hash2(c.x, c.y, 60 + i) * 6.283,
-							r = 0.1 + 0.25 * hash2(c.x, c.y, 70 + i);
-						const px = c.x + Math.cos(a) * r,
-							pz = c.y + Math.sin(a) * r;
-						motes.push({x: px, y: terrain.heightAt(px, pz), z: pz}, {x: 0, y: 0, z: 0}, col(i % 2 ? '#ff4a2a' : '#ff9a4a'), hash2(c.x, c.y, 80 + i), 0.55, 1, 0.05);
-					}
-				}
+				// life coming or going, attacks: looping only when lively (calm plays them once, at the turn)
+				if (opts.lively && (pr.trend === 'grow' || pr.trend === 'shrink')) pushLifeChange(terrain, c, pr.trend, motes);
 				// volcano: the crater glows, a plume per gem at stake
 				if (c.color === 6 && !dead) {
 					if (variant === 'A') {
 						const cr = 0.15 + 0.03 * Math.min(c.stake, 6);
 						let rim = 0;
 						for (let i = 0; i < 6; i++) rim += terrain.heightAt(c.x + Math.cos(i) * cr * 0.85, c.y + Math.sin(i) * cr * 0.85) / 6;
-						spirits.add('lava', () => new THREE.CircleGeometry(1, 9).rotateX(-Math.PI / 2), mats.lava, mat(c.x, rim - 0.015, c.y, 0, cr * 0.9, 1, cr * 0.9));
+						props.add('lava', () => new THREE.CircleGeometry(1, 9).rotateX(-Math.PI / 2), mats.lava, mat(c.x, rim - 0.015, c.y, 0, cr * 0.9, 1, cr * 0.9));
 					}
-					motes.push({x: c.x, y: centre + 0.03, z: c.y}, {x: 0, y: 0, z: 0}, col('#ff5a1f'), hash2(c.x, c.y, 3), 1, 5, 0.35 + 0.05 * c.stake);
+					glow.push({x: c.x, y: centre + 0.03, z: c.y}, {x: 0, y: 0, z: 0}, col('#ff5a1f'), hash2(c.x, c.y, 3), 1, 5, 0.35 + 0.05 * c.stake);
 					for (let i = 0; i < c.stake; i++) {
-						for (let k = 0; k < 4; k++) {
-							smoke.push({x: c.x + (hash2(c.x, i, 4) - 0.5) * 0.12, y: centre + 0.05, z: c.y + (hash2(c.y, i, 5) - 0.5) * 0.12}, {x: 0, y: 0, z: 0}, col(k % 2 ? '#3a3534' : '#6a6260'), (i * 0.37 + k * 0.25) % 1, 0.18, 3, 0.16);
+						for (let k = 0; k < 3; k++) {
+							smoke.push({x: c.x + (hash2(c.x, i, 4) - 0.5) * 0.12, y: centre + 0.05, z: c.y + (hash2(c.y, i, 5) - 0.5) * 0.12}, {x: 0, y: 0, z: 0}, col(k % 2 ? '#3a3534' : '#6a6260'), (i * 0.37 + k * 0.33) % 1, 0.11, 3, 0.14);
 						}
 					}
 				}
-				// attacks: a living spirit sends bolts at every enemy edge
-				if (!dead) {
-					for (const [dx, dy] of [
-						[0, -1],
-						[1, 0],
-						[0, 1],
-						[-1, 0],
-					]) {
-						const n = board.get(key(c.x + dx, c.y + dy));
-						if (!n || n.color === c.color) continue;
-						const ex = c.x + dx * 0.5,
-							ez = c.y + dy * 0.5;
-						const ey = Math.max(terrain.heightAt(ex, ez), 0) + 0.08;
-						for (let k = 0; k < 2; k++) {
-							const ph = (hash2(c.x * 4 + dx, c.y * 4 + dy, k) + k * 0.5) % 1;
-							bolts.push({x: c.x, y: spiritY, z: c.y}, {x: ex, y: ey, z: ez}, col(b.spirit), ph, 0.6, 2, 0.09);
-							bolts.push({x: ex - dx * 0.04, y: ey, z: ez - dy * 0.04}, {x: 0, y: 0, z: 0}, col(b.spirit).clone().lerp(col('#ffffff'), 0.4), ph, 0.6, 4, 0.3);
-						}
-					}
-				}
+				if (opts.lively && !dead) pushAttacks(board, terrain, variant, c, bolts);
 				// yours: a banner
 				if (c.owner === ME) {
 					const fx = c.x - 0.3,
@@ -392,6 +273,7 @@ export class Overlays {
 				stones: new THREE.Group(),
 				spirits: new THREE.Group(),
 				fx: new THREE.Group(),
+				ambient: new THREE.Group(),
 				attacks: new THREE.Group(),
 				flags: new THREE.Group(),
 			};
@@ -402,10 +284,12 @@ export class Overlays {
 			const pm = motes.build(fxGlow);
 			if (pm) chunk.fx.add(pm);
 			const ps = smoke.build(fxSmoke);
-			if (ps) chunk.fx.add(ps);
+			if (ps) chunk.ambient.add(ps);
+			const pg = glow.build(fxGlow);
+			if (pg) chunk.ambient.add(pg);
 			const pb = bolts.build(fxGlow);
 			if (pb) chunk.attacks.add(pb);
-			for (const g of [chunk.props, chunk.stones, chunk.spirits, chunk.fx, chunk.attacks, chunk.flags]) this.group.add(g);
+			for (const g of [chunk.props, chunk.stones, chunk.spirits, chunk.fx, chunk.ambient, chunk.attacks, chunk.flags]) this.group.add(g);
 			this.chunks.push(chunk);
 		}
 		// planned moves: ghosts and fissures, always shown
@@ -422,7 +306,7 @@ export class Overlays {
 				ghosts.add('ghost-spirit', () => new THREE.OctahedronGeometry(0.075, 0).scale(1, 1.5, 1), mats.ghost, mat(x, Math.max(h, 0) + 0.45, y, 0, 0.7), col(BIOMES[color].spirit));
 			}
 		}
-		const always = new THREE.Group();
+		const always = (this.plans = new THREE.Group());
 		ghosts.into(always, false);
 		removals.into(always, false);
 		this.group.add(always);
@@ -430,6 +314,7 @@ export class Overlays {
 
 	/** Thin out by distance; `layers` are the panel's switches. */
 	update(camera: THREE.Camera, layers: Layers) {
+		if (this.plans) this.plans.visible = layers.plans;
 		const p = camera.position;
 		for (const c of this.chunks) {
 			const d = Math.max(0, p.distanceTo(c.center) - CHUNK * 0.7);
@@ -437,6 +322,7 @@ export class Overlays {
 			c.stones.visible = layers.stones && d < LOD.stones;
 			c.spirits.visible = layers.spirits && d < LOD.spirits;
 			c.fx.visible = layers.fx && d < LOD.fx;
+			c.ambient.visible = layers.ambient && d < LOD.fx;
 			c.attacks.visible = layers.attacks && d < LOD.fx;
 			c.flags.visible = layers.flags && d < LOD.flags;
 		}
@@ -458,4 +344,68 @@ function flagGeometry() {
 		baked(new THREE.BoxGeometry(0.14, 0.09, 0.008).translate(0.07, 0.28, 0), '#fff6df'),
 		baked(new THREE.BoxGeometry(0.03, 0.03, 0.012).translate(0.07, 0.28, 0), '#d4a73a'),
 	);
+}
+
+export const SPIRIT_UP = 0.3;
+
+/** The height of a cell's middle: the ground, or in B the top of its feature. */
+export function centreOf(c: Cell, terrain: Terrain, variant: 'A' | 'B'): number {
+	const h = terrain.heightAt(c.x, c.y);
+	if (variant !== 'B') return h;
+	if (c.color === 5) return h + 0.12 + 0.07 * c.life;
+	if (c.color === 6) return h + (0.7 + 0.12 * c.life) * 0.22;
+	if (c.color === 1 || c.color === 2) return h + 0.12;
+	return h;
+}
+
+export type Once = {start: number; duration: number};
+
+/** Motes rising where life comes, embers falling where it goes; looping, or once from `once.start`. */
+export function pushLifeChange(terrain: Terrain, c: Cell, trend: 'grow' | 'shrink' | 'death', fx: FxBuilder, once?: Once) {
+	const b = BIOMES[c.color];
+	const n = trend === 'grow' ? 5 : trend === 'shrink' ? 6 : 12;
+	for (let i = 0; i < n; i++) {
+		const a = hash2(c.x, c.y, 60 + i) * 6.283,
+			r = 0.1 + 0.25 * hash2(c.x, c.y, 70 + i);
+		const px = c.x + Math.cos(a) * r,
+			pz = c.y + Math.sin(a) * r;
+		const at = {x: px, y: terrain.heightAt(px, pz), z: pz};
+		const color = trend === 'grow' ? col('#fff3a0').clone().lerp(col(b.spirit), 0.4) : trend === 'shrink' ? col(i % 2 ? '#ff4a2a' : '#ff9a4a') : col(i % 2 ? '#5a5048' : '#8a7f72');
+		const kind = trend === 'grow' ? 0 : trend === 'shrink' ? 1 : 3;
+		const size = trend === 'death' ? 0.1 : trend === 'grow' ? 0.06 : 0.05;
+		if (once) {
+			const start = once.start + hash2(c.x, c.y, 80 + i) * once.duration * 0.4;
+			fx.push(at, {x: 0, y: 0, z: 0}, color, start, 1 / (once.duration * (trend === 'death' ? 0.5 : 1)), kind + 10, size);
+		} else fx.push(at, {x: 0, y: 0, z: 0}, color, hash2(c.x, c.y, 80 + i), trend === 'grow' ? 0.45 : 0.55, kind, size);
+	}
+}
+
+/** Bolts from a living spirit to every enemy edge, and the spark where each lands. */
+export function pushAttacks(board: Board, terrain: Terrain, variant: 'A' | 'B', c: Cell, fx: FxBuilder, once?: Once, toward?: {x: number; y: number}) {
+	const b = BIOMES[c.color];
+	const spiritY = centreOf(c, terrain, variant) + SPIRIT_UP;
+	for (const [dx, dy] of [
+		[0, -1],
+		[1, 0],
+		[0, 1],
+		[-1, 0],
+	]) {
+		const n = board.get(key(c.x + dx, c.y + dy));
+		if (!n || n.color === c.color) continue;
+		if (toward && (n.x !== toward.x || n.y !== toward.y)) continue;
+		const ex = c.x + dx * 0.5,
+			ez = c.y + dy * 0.5;
+		const ey = Math.max(terrain.heightAt(ex, ez), 0) + 0.08;
+		const spark = col(b.spirit).clone().lerp(col('#ffffff'), 0.4);
+		if (once) {
+			const start = once.start + hash2(c.x * 4 + dx, c.y * 4 + dy, 1) * once.duration * 0.3;
+			const d = once.duration * 0.7;
+			fx.push({x: c.x, y: spiritY, z: c.y}, {x: ex, y: ey, z: ez}, col(b.spirit), start, 1 / d, 12, 0.1);
+			fx.push({x: ex - dx * 0.04, y: ey, z: ez - dy * 0.04}, {x: 0, y: 0, z: 0}, spark, start + d, 1 / 0.5, 14, 0.35);
+		} else {
+			const ph = hash2(c.x * 4 + dx, c.y * 4 + dy, 0);
+			fx.push({x: c.x, y: spiritY, z: c.y}, {x: ex, y: ey, z: ez}, col(b.spirit), ph, 0.5, 2, 0.09);
+			fx.push({x: ex - dx * 0.04, y: ey, z: ez - dy * 0.04}, {x: 0, y: 0, z: 0}, spark, ph, 0.5, 4, 0.3);
+		}
+	}
 }
