@@ -6,8 +6,8 @@
  * whether committing is still possible, what the submission costs - happens
  * here, in plain TypeScript that can be read and tested without a browser.
  */
-import {derived, get, type Readable} from 'svelte/store';
-import {stakeWords} from '../stake';
+import {derived, get, readable, type Readable} from 'svelte/store';
+import {stakeWords, walletShortOfStake} from '../stake';
 
 /** The stake's words, which are the game's (`../stake.ts`). */
 export type StakeWords = ReturnType<typeof stakeWords>;
@@ -79,6 +79,13 @@ export type HudModel = {
 		busy?: boolean;
 		busyLabel?: string;
 		error?: string;
+		/**
+		 * The wallet holds fewer gems than a stake takes, in words, said under the
+		 * button. Said, not enforced: the button stays enabled, since gems may
+		 * come from elsewhere (another wallet paying, a balance read before they
+		 * landed), and the rail and the contract are what refuse.
+		 */
+		walletShort?: string;
 	};
 
 	/**
@@ -90,6 +97,8 @@ export type HudModel = {
 	 * with a reserve that is merely running low is not blocked on it.
 	 */
 	acquiring?: string;
+	/** The same as `setup.walletShort`, for "Add stake" beside the board. */
+	walletShort?: string;
 
 	plannedCount: number;
 	costLabel: string;
@@ -541,6 +550,8 @@ export function createHud(context: Context): Readable<HudModel> {
 			game.acquisition,
 			game.recovery,
 			game.revealSchedule,
+			// What a seat stakes is read after the HUD is made: the words follow it.
+			tableStake ?? readable(undefined),
 		],
 		([
 			$twoPhase,
@@ -580,10 +591,15 @@ export function createHud(context: Context): Readable<HudModel> {
 					busyLabel: acquisitionBusyLabel(acquisition),
 				},
 			);
+			const short = walletShortOfStake(reserve, STAKE.stakeAmount());
+			const walletShort =
+				short === undefined ? undefined : STAKE.walletShort(short);
 			if (needsSetup?.action === 'stake') {
 				needsSetup.busy = needsSetup.busyLabel !== undefined;
 				needsSetup.error =
 					acquisition.step === 'Error' ? acquisition.message : undefined;
+				// not while a stake is in flight: the gems have just left the wallet
+				if (!needsSetup.busy) needsSetup.walletShort = walletShort;
 			}
 
 			return {
@@ -601,6 +617,10 @@ export function createHud(context: Context): Readable<HudModel> {
 				planningForNextCycle: !playable && !needsSetup,
 				setup: needsSetup,
 				acquiring: acquisitionBusyLabel(acquisition),
+				walletShort:
+					acquisitionBusyLabel(acquisition) === undefined
+						? walletShort
+						: undefined,
 				// `hasLocalSigner` is `TARGET_STEP === 'SignedIn'`, and NOTHING ELSE.
 				// It is not about hosted sign-in, and core says so where it is
 				// defined: "Deliberately NOT 'is PUBLIC_WALLET_HOST set': a

@@ -99,6 +99,24 @@ export function stakeNeeded(reserve: {
 }
 
 /**
+ * Whether the wallet holds too few gems for a stake, and how many it holds when
+ * it does: the stake moves gems FROM the wallet (`addToReserveAndFund`'s
+ * `transferFrom`), so pressing it short of them only buys a revert
+ * (`NotEnoughTokens`). Undefined while the balance is unread, so the button is
+ * not held back by a read that has not landed.
+ */
+export function walletShortOfStake(
+	reserve: {step: string; tokenBalance?: bigint},
+	stakeAmount: bigint,
+): bigint | undefined {
+	return reserve.step === 'Loaded' &&
+		reserve.tokenBalance !== undefined &&
+		reserve.tokenBalance < stakeAmount
+		? reserve.tokenBalance
+		: undefined;
+}
+
+/**
  * The stake's vocabulary, for the HUD. `native` is the chain's currency,
  * in which the stipend is paid: the button states everything the wallet is
  * about to be asked for, gems AND gas, since one that understates the charge is
@@ -115,8 +133,14 @@ export function stakeWords(
 		`${formatUnits(value, config.currency.decimals)} gems`;
 	return {
 		amount,
+		/** What one stake moves into the reserve, here. */
+		stakeAmount: stake,
 
 		notEnough: 'Not enough in your reserve to bond this turn.',
+
+		walletShort(balance: bigint): string {
+			return `Your wallet holds ${amount(balance)} and a stake takes ${amount(stake())}.`;
+		},
 
 		setup: {
 			headline: 'Stake gems before you play',

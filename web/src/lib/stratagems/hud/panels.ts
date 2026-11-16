@@ -162,7 +162,11 @@ export type TestGemsModel =
 	| {
 			label: string;
 			busy: boolean;
-			/** Said when the wallet holds too few gems to stake. */
+			/**
+			 * Said when the wallet holds too few gems to stake. The numbers are the
+			 * stake button's to say (`hud.ts`, `walletShort`), which knows a table's
+			 * stake; this says only where to get them.
+			 */
 			hint?: string;
 			error?: string;
 	  };
@@ -175,19 +179,17 @@ export function describeTestGems(params: {
 	stakeAmount: bigint;
 	currency: {decimals: number};
 }): TestGemsModel {
-	const {state, tokenBalance, stakeAmount, currency} = params;
+	const {state, tokenBalance, stakeAmount} = params;
 	if (!('available' in state)) return undefined;
-	const gems = (value: bigint) => formatUnits(value, currency.decimals);
 	return {
 		label:
 			state.step === 'Sending'
 				? 'Getting test gems...'
 				: `Get ${TOPUP_GEMS} test gems`,
 		busy: state.step === 'Sending',
-		// the distributor hands out less than a stake, so the numbers are said
 		hint:
 			tokenBalance !== undefined && tokenBalance < stakeAmount
-				? `Your wallet holds ${gems(tokenBalance)} gems and a stake takes ${gems(stakeAmount)}. This deployment hands out test gems for free.`
+				? 'This deployment hands out test gems for free.'
 				: undefined,
 		error: state.step === 'Error' ? state.message : undefined,
 	};

@@ -101,6 +101,14 @@
 			>
 				{$hud.setup.busyLabel ?? $hud.setup.actionLabel}
 			</Button>
+			{#if $hud.setup.walletShort}
+				<p
+					class="mt-2 max-w-sm text-xs text-muted-foreground"
+					data-testid="stake-wallet-short"
+				>
+					{$hud.setup.walletShort}
+				</p>
+			{/if}
 			{#if $hud.setup.error}
 				<p class="mt-2 max-w-sm text-xs text-red-400">{$hud.setup.error}</p>
 			{/if}
@@ -344,6 +352,14 @@
 					</Button>
 				{/if}
 			</div>
+			{#if !game.atTable && $hud.walletShort}
+				<p
+					class="mt-2 max-w-sm text-xs text-muted-foreground"
+					data-testid="add-stake-wallet-short"
+				>
+					{$hud.walletShort}
+				</p>
+			{/if}
 
 			<div class="mt-3"><TestGems /></div>
 
