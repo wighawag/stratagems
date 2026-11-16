@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+		<title>PROTOTYPE: stratagems spirit map</title>
+		<style>
+			html,
+			body {
+				margin: 0;
+				height: 100%;
+				overflow: hidden;
+				background: #1c5a82;
+				font: 13px/1.35 system-ui, sans-serif;
+				color: #f4efe4;
+				touch-action: none;
+			}
+			canvas {
+				display: block;
+			}
+			#panel {
+				position: fixed;
+				top: 8px;
+				left: 8px;
+				width: 230px;
+				max-height: calc(100% - 80px);
+				overflow: auto;
+				background: rgba(14, 30, 44, 0.82);
+				border-radius: 10px;
+				padding: 8px 10px;
+				backdrop-filter: blur(4px);
+			}
+			#panel.closed > :not(.head) {
+				display: none;
+			}
+			#panel .head {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				font-weight: 600;
+				cursor: pointer;
+			}
+			#panel label {
+				display: flex;
+				gap: 6px;
+				align-items: center;
+				margin: 3px 0;
+			}
+			#panel select,
+			#panel button {
+				font: inherit;
+				background: #24435c;
+				color: inherit;
+				border: 1px solid #3d6683;
+				border-radius: 6px;
+				padding: 2px 6px;
+			}
+			#panel .row {
+				display: flex;
+				gap: 4px;
+				flex-wrap: wrap;
+				margin: 4px 0;
+			}
+			#panel button.on {
+				background: #c9a23a;
+				color: #1a1a1a;
+			}
+			#panel .stats {
+				font: 11px ui-monospace, monospace;
+				opacity: 0.85;
+				white-space: pre;
+			}
+			#panel .legend {
+				font-size: 11px;
+				opacity: 0.85;
+			}
+			#card {
+				position: fixed;
+				pointer-events: none;
+				background: rgba(14, 30, 44, 0.9);
+				border-radius: 8px;
+				padding: 6px 8px;
+				font-size: 12px;
+				white-space: pre;
+				display: none;
+			}
+			#switcher {
+				position: fixed;
+				bottom: 14px;
+				left: 50%;
+				transform: translateX(-50%);
+				display: flex;
+				gap: 6px;
+				align-items: center;
+				background: #111;
+				color: #fff;
+				border-radius: 999px;
+				padding: 6px 10px;
+				box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+				font-weight: 600;
+			}
+			#switcher button {
+				background: #333;
+				color: #fff;
+				border: 0;
+				border-radius: 999px;
+				width: 28px;
+				height: 28px;
+				font-size: 15px;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="panel"></div>
+		<div id="card"></div>
+		<div id="switcher"><button id="prev">&larr;</button><span id="vlabel"></span><button id="next">&rarr;</button></div>
+		<script type="module" src="/src/main.ts"></script>
+	</body>
+</html>
