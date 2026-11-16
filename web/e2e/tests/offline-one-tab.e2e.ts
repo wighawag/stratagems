@@ -1,4 +1,10 @@
-import {test, expect, describe, chooseTheWorld} from '../fixtures/test';
+import {
+	test,
+	expect,
+	describe,
+	chooseTheWorld,
+	expectTheReloadToResume,
+} from '../fixtures/test';
 import type {Page} from '@playwright/test';
 
 /**
@@ -40,6 +46,9 @@ describe('One tab per offline world', () => {
 		await expect(page.getByText(WORLD_UP)).toBeVisible({timeout: 120_000});
 		const world = await chainIdOf(page);
 		expect(world).toMatch(/^\d+$/);
+		// Letting the world go reloads this tab at `?continue`; it lands on the
+		// refusal below either way, since the claim is the take-over's.
+		await expectTheReloadToResume(page);
 
 		// THE SECOND TAB IS REFUSED, and offered neither the world nor a new one:
 		// the chooser would let it write a seat count over a world it cannot play.
