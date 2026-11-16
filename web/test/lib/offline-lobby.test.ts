@@ -100,6 +100,10 @@ afterEach(async () => {
 	vi.unstubAllGlobals();
 });
 
+/** A visit to `/offline/`, and one to `/offline/?continue` (a reload). */
+const ARRIVING = {continueRequested: false};
+const RELOADING = {continueRequested: true};
+
 async function lobby() {
 	imported = await import('$lib/offline-lobby');
 	return imported.offlineLobby;
@@ -138,7 +142,7 @@ describe('the offline world\u2019s lobby', () => {
 		vi.doMock('$lib/offline', () => mockedWorld(withTables));
 		vi.doMock('$app-specific', () => ({lobby: aGameLobby}));
 		const offlineLobby = await lobby();
-		await offlineLobby.enter();
+		await offlineLobby.enter(ARRIVING);
 		expect(get(offlineLobby)).toMatchObject({
 			step: 'Choosing',
 			mode: 'table',
@@ -189,7 +193,7 @@ describe('the offline world\u2019s lobby', () => {
 		// `startOfflineTable`. A table the world could not boot is not offered.
 		vi.doMock('$app-specific', () => ({lobby: aGameLobby}));
 		const offlineLobby = await lobby();
-		await offlineLobby.enter();
+		await offlineLobby.enter(ARRIVING);
 		expect(get(offlineLobby)).toMatchObject({
 			mode: 'world',
 			modeChoices: ['world'],
@@ -200,7 +204,7 @@ describe('the offline world\u2019s lobby', () => {
 	it('offers the world only to a world that can play a table of a game with none', async () => {
 		vi.doMock('$lib/offline', () => mockedWorld(withTables));
 		const offlineLobby = await lobby();
-		await offlineLobby.enter();
+		await offlineLobby.enter(ARRIVING);
 		expect(get(offlineLobby).modeChoices).toEqual(['world']);
 		vi.doMock('$lib/offline', () => mockedWorld());
 	});
@@ -229,10 +233,78 @@ describe('the offline world\u2019s lobby', () => {
 		store.set('offline-world:seats', '4');
 
 		const offlineLobby = await lobby();
-		await offlineLobby.enter();
+		await offlineLobby.enter(RELOADING);
 
 		expect(get(offlineLobby)).toMatchObject({step: 'Sat', seats: 4});
 		expect(started[0].table).toHaveLength(4);
+	});
+
+	it('offers continuing the world here, or a new one, to a visit that does not ask to continue', async () => {
+		// THE ARRIVAL: a player who had played before opened offline mode, found
+		// themselves in an old world, and concluded it had no configuration. So
+		// the world is described and nothing boots until they choose.
+		store.set(await chainIdKey(), '9007199254740123');
+		store.set('offline-world:seats', '4');
+
+		const offlineLobby = await lobby();
+		await offlineLobby.enter(ARRIVING);
+
+		expect(get(offlineLobby)).toMatchObject({
+			step: 'Saved',
+			mode: 'world',
+			seats: 4,
+		});
+		expect(started).toHaveLength(0);
+
+		offlineLobby.continueTheSavedGame();
+		expect(get(offlineLobby)).toMatchObject({step: 'Sat', seats: 4});
+		expect(started).toHaveLength(1);
+		expect(started[0].table).toHaveLength(4);
+		expect(store.get(await chainIdKey())).toBe('9007199254740123');
+	});
+
+	it('forgets the world here for a new game exactly as leaving does, with no reload, and shows the setup', async () => {
+		vi.doMock('$lib/offline', () => mockedWorld(withTables));
+		vi.doMock('$app-specific', () => ({lobby: aGameLobby}));
+		const chainId = await chainIdKey();
+		const records = {
+			[chainId]: '9007199254740123',
+			'offline-world:table': '0x1234',
+			'offline-world:seats': '3',
+			'offline-world:humans': '1',
+			'offline-world:levels': '["random","random"]',
+			'offline-world:mode': 'table',
+			'offline-world:cycles': '4',
+			'offline-world:game-options': `0x${'0'.repeat(64)}`,
+		};
+		for (const [key, value] of Object.entries(records)) store.set(key, value);
+
+		const offlineLobby = await lobby();
+		await offlineLobby.enter(ARRIVING);
+		expect(get(offlineLobby)).toMatchObject({
+			step: 'Saved',
+			mode: 'table',
+			seats: 3,
+			cycles: 4,
+		});
+
+		offlineLobby.startANewGame();
+		for (const key of Object.keys(records)) {
+			expect(store.has(key), key).toBe(false);
+		}
+		expect(reloads).toBe(0);
+		expect(get(offlineLobby).step).toBe('Choosing');
+		expect(started).toHaveLength(0);
+		expect(tablesStarted).toHaveLength(0);
+		vi.doMock('$lib/offline', () => mockedWorld());
+		vi.doMock('$app-specific', () => ({}));
+	});
+
+	it('shows the setup to a visit asking to continue a world that is not here', async () => {
+		const offlineLobby = await lobby();
+		await offlineLobby.enter(RELOADING);
+		expect(get(offlineLobby).step).toBe('Choosing');
+		expect(started).toHaveLength(0);
 	});
 
 	it('forgets the chain id when the player leaves, which is what makes it a NEW world', async () => {
@@ -288,7 +360,7 @@ describe('the offline world\u2019s lobby', () => {
 		await anotherTabHolds();
 
 		const offlineLobby = await lobby();
-		await offlineLobby.enter();
+		await offlineLobby.enter(ARRIVING);
 
 		expect(started).toHaveLength(0);
 		expect(get(offlineLobby).step).toBe('Opening');
@@ -296,13 +368,28 @@ describe('the offline world\u2019s lobby', () => {
 		expect(store.get('offline-world:seats')).toBe('4');
 	});
 
+	it('never starts a world while another tab has it, even when asked to continue', async () => {
+		store.set(await chainIdKey(), '9007199254740123');
+		store.set('offline-world:seats', '4');
+		await anotherTabHolds();
+
+		const offlineLobby = await lobby();
+		await offlineLobby.enter(RELOADING);
+
+		expect(started).toHaveLength(0);
+		expect(get(offlineLobby).step).toBe('Opening');
+		expect(get(imported!.offlineWorldClaim).step).toBe('Refused');
+	});
+
 	it('takes the world over, then boots it by the ordinary restore', async () => {
+		// A visit that did not ask to continue, refused, then taking the world
+		// over: taking it over is the choice, so it boots without asking.
 		store.set(await chainIdKey(), '9007199254740123');
 		store.set('offline-world:seats', '4');
 		const {reloaded} = await anotherTabHolds();
 
 		const offlineLobby = await lobby();
-		await offlineLobby.enter();
+		await offlineLobby.enter(ARRIVING);
 		expect(started).toHaveLength(0);
 
 		await imported!.takeTheWorldOver();
@@ -339,7 +426,7 @@ describe('the offline world\u2019s lobby', () => {
 		});
 
 		const offlineLobby = await lobby();
-		await offlineLobby.enter();
+		await offlineLobby.enter(RELOADING);
 		expect(started).toHaveLength(1);
 
 		const {createWorldClaim} = await import('$lib/embedded/claim');

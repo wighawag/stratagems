@@ -22,6 +22,7 @@ import {
 	type TableOptions,
 } from './table';
 import {RANDOM_LEVEL, type AiLevel} from '../core/strategy';
+import {openingOf} from './arrival';
 
 /**
  * THE LOBBY: how many seats are at the table, decided before the game exists.
@@ -36,14 +37,19 @@ import {RANDOM_LEVEL, type AiLevel} from '../core/strategy';
  *
  * WHICH IS WHY A GAME THAT EXISTS IS NOT SILENTLY REUSED AT A NEW COUNT. A
  * booted game keeps the membership it was provisioned with, and this says so: a
- * browser that already has one goes straight back into it at the count it was
- * built with, and the only way to a different count is to leave the table,
- * which is an explicit press that throws that game away.
+ * browser that already has one goes back into it at the count it was built
+ * with, and the only way to a different count is to start a new game (on
+ * arrival) or to leave the table (in it), each an explicit press that throws
+ * that game away.
  *
- * AND IT IS NOT A GATE ON THE WAY BACK IN. The choice is made once, on a first
- * visit; a reload restores the game and boots straight into it, because asking
- * a returning player the question they already answered is exactly the kind of
- * dialog-with-one-answer this slice removed from the board.
+ * AN ARRIVAL ASKS, A RELOAD DOES NOT. A browser that holds a game and ARRIVES
+ * is offered the choice between continuing it and starting a new one (the
+ * `Saved` step), because a player who finds themselves silently in an old game
+ * concludes there was nothing to choose. A RELOAD restores the game and boots
+ * straight into it, because asking a returning player the question they
+ * already answered is exactly the kind of dialog-with-one-answer this slice
+ * removed from the board. Which one it is, the caller says (`enter`'s
+ * arrival); the rule is `./arrival`'s.
  *
  * HOTSEAT IS ONE MORE NUMBER HERE AND NOTHING ELSE. How many of the seats are
  * people at this device is decided with the seats and for the same reason (each
@@ -119,11 +125,14 @@ export type LobbyState = {
 	 * rather than feared: a run that chose eight seats got three, silently,
 	 * because the click landed before hydration.
 	 *
-	 * `Choosing` is the only state with a decision left in it. `Sat` means the
-	 * table is settled and the game is building or built; the route shows the
-	 * game from then on.
+	 * `Saved` is an arrival at a browser that holds a game: continue it, or
+	 * start a new one. Its other fields describe that game as it was built (the
+	 * mode, the seats and who is in them, a table's cycles), so the choice can
+	 * say what is being continued. `Choosing` is the setup, the state with the
+	 * table left to decide. `Sat` means the table is settled and the game is
+	 * building or built; the route shows the game from then on.
 	 */
-	step: 'Opening' | 'Choosing' | 'Sat';
+	step: 'Opening' | 'Saved' | 'Choosing' | 'Sat';
 	/** A table or the world: see {@link LobbyMode}. */
 	mode: LobbyMode;
 	/** The modes offered, the table first. One means the question is not asked. */
@@ -278,14 +287,30 @@ export type LobbyStore = Readable<LobbyState> & {
 	/**
 	 * Open the lobby, which is the only thing a route does on mount.
 	 *
-	 * Boots straight into the game already here, or offers the choice.
+	 * With a game already here: boots straight into it when the arrival asks to
+	 * continue (a reload), and offers continuing it or a new one otherwise
+	 * (`Saved`). With none, or one that cannot be restored: the setup. See
+	 * `./arrival`. An arrival not given asks to continue, which is what every
+	 * lobby did before the choice existed.
 	 *
 	 * ONCE, AND ONLY OUT OF `Opening`. A lobby is app-scoped, like the game it
 	 * starts, so a player who navigates away and comes back mounts the route
 	 * again - and a second pass that reset the state would throw away a choice
 	 * they were in the middle of making, or re-offer one they had already made.
 	 */
-	enter(): void;
+	enter(arrival?: {continueRequested: boolean}): void;
+	/**
+	 * Continue the game this browser holds, from the `Saved` choice: the boot a
+	 * reload does. Ignored in any other step.
+	 */
+	continueTheSavedGame(): void;
+	/**
+	 * Throw the game this browser holds away, from the `Saved` choice, and show
+	 * the setup: forgotten exactly as {@link LobbyStore.leaveTheTable} forgets it,
+	 * but with no reload, because nothing of it was booted in this page yet. Ask
+	 * the player first: it discards a game. Ignored in any other step.
+	 */
+	startANewGame(): void;
 	/** A table or the world: a mode not offered is ignored. */
 	chooseMode(mode: LobbyMode): void;
 	/** Pick a different number of seats, before sitting down at them. */
@@ -394,11 +419,19 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 	// be), the cycles as the default and the options as none (a world reads
 	// neither). The sit-down that follows WRITES them all, so the tolerance
 	// acts once per browser and then has nothing left to read.
-	function tableAlreadyHere():
-		| {choices: Choices; seats: number; humans: number; levels: unknown}
-		| undefined {
+	type Restored = {
+		choices: Choices;
+		seats: number;
+		humans: number;
+		levels: unknown;
+	};
+	function tableAlreadyHere(): Restored | undefined {
 		if (typeof localStorage === 'undefined') return undefined;
 		if (!deps.gameAlreadyHere()) return undefined;
+		return recordsOfTheGameHere();
+	}
+	/** The records of the game here, read; undefined when it cannot be restored. */
+	function recordsOfTheGameHere(): Restored | undefined {
 		const seats = localStorage.getItem(deps.seatsStorageKey);
 		if (seats === null) return undefined;
 		const humans = read(deps.humansStorageKey);
@@ -473,27 +506,96 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 		}
 	}
 
+	/**
+	 * WHILE THE SAVED GAME IS BEING DECIDED, THE SETUP'S ACTIONS ARE IGNORED.
+	 * The game is still here, so a choice of seats then a sit-down would boot it
+	 * at a count it was not built with: the silent reuse this file exists to
+	 * avoid. A new count is reached by `startANewGame`, which forgets it first.
+	 */
+	const decidingTheSavedGame = () => get(lobby).step === 'Saved';
+
+	/** The setup, with nothing chosen yet. */
+	const setup = () =>
+		lobby.set(seated('Choosing', fresh(), SEATS_BY_DEFAULT, 1, []));
+
+	/**
+	 * Boot the game here, from its records. A RESTORE, so what the record does
+	 * not say is `random`: that is how the world it describes was built.
+	 */
+	function restore(already: Restored): void {
+		sitDown(
+			already.seats,
+			already.humans,
+			already.levels,
+			RANDOM_LEVEL,
+			already.choices,
+			read(deps.gameOptionsStorageKey),
+		);
+	}
+
+	/** Forget the game here and every record of it: leaving, or a new game. */
+	function forgetEverything(): void {
+		deps.forgetGame();
+		if (typeof localStorage !== 'undefined') {
+			for (const key of [
+				deps.seatsStorageKey,
+				deps.humansStorageKey,
+				deps.levelsStorageKey,
+				deps.modeStorageKey,
+				deps.cyclesStorageKey,
+				deps.gameOptionsStorageKey,
+			]) {
+				if (key) localStorage.removeItem(key);
+			}
+		}
+	}
+
 	return {
 		subscribe: lobby.subscribe,
-		enter(): void {
+		enter(arrival = {continueRequested: true}): void {
 			if (get(lobby).step !== 'Opening') return;
-			const already = tableAlreadyHere();
-			if (already === undefined) {
-				lobby.set(seated('Choosing', fresh(), SEATS_BY_DEFAULT, 1, []));
-				return;
+			const saved =
+				typeof localStorage !== 'undefined' && deps.gameAlreadyHere();
+			const already = saved ? recordsOfTheGameHere() : undefined;
+			const opening = openingOf({
+				saved,
+				restorable: already !== undefined,
+				continueRequested: arrival.continueRequested,
+			});
+			if (opening === 'setup' || already === undefined) {
+				setup();
+			} else if (opening === 'continue') {
+				restore(already);
+			} else {
+				// THE CHOICE, described by the game it would continue: its own
+				// records, read as the restore would read them.
+				lobby.set(
+					seated(
+						'Saved',
+						already.choices,
+						already.seats,
+						already.humans,
+						already.levels,
+						RANDOM_LEVEL,
+					),
+				);
 			}
-			// A RESTORE, so what the record does not say is `random`: that is
-			// how the world it describes was built.
-			sitDown(
-				already.seats,
-				already.humans,
-				already.levels,
-				RANDOM_LEVEL,
-				already.choices,
-				read(deps.gameOptionsStorageKey),
-			);
+		},
+		continueTheSavedGame(): void {
+			if (get(lobby).step !== 'Saved') return;
+			// Read again rather than off the state: the records are the authority,
+			// and the state only describes them.
+			const already = tableAlreadyHere();
+			if (already === undefined) setup();
+			else restore(already);
+		},
+		startANewGame(): void {
+			if (get(lobby).step !== 'Saved') return;
+			forgetEverything();
+			setup();
 		},
 		chooseMode(mode: LobbyMode): void {
+			if (decidingTheSavedGame()) return;
 			if (!modes.includes(mode)) return;
 			const state = get(lobby);
 			lobby.set(
@@ -507,16 +609,19 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 			);
 		},
 		chooseSeats(seats: number): void {
+			if (decidingTheSavedGame()) return;
 			const state = get(lobby);
 			lobby.set(
 				seated('Choosing', choicesOf(state), seats, state.humans, state.levels),
 			);
 		},
 		chooseCycles(cycles: number | string): void {
+			if (decidingTheSavedGame()) return;
 			const parsed = typeof cycles === 'string' ? Number(cycles) : cycles;
 			lobby.update((state) => ({...state, cycles: parsed}));
 		},
 		chooseOption(id: string, value: number | string): void {
+			if (decidingTheSavedGame()) return;
 			if (!optionFields.some((field) => field.id === id)) return;
 			lobby.update((state) => ({
 				...state,
@@ -524,12 +629,14 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 			}));
 		},
 		chooseHumans(humans: number): void {
+			if (decidingTheSavedGame()) return;
 			const state = get(lobby);
 			lobby.set(
 				seated('Choosing', choicesOf(state), state.seats, humans, state.levels),
 			);
 		},
 		chooseLevel(worldSeat: number, level: string): void {
+			if (decidingTheSavedGame()) return;
 			const state = get(lobby);
 			const next = [...state.levels];
 			if (worldSeat < 0 || worldSeat >= next.length) return;
@@ -538,21 +645,12 @@ export function createLobby(deps: LobbyDeps): LobbyStore {
 				seated('Choosing', choicesOf(state), state.seats, state.humans, next),
 			);
 		},
-		sitDown: (seats, humans, levels) => sitDown(seats, humans, levels),
+		sitDown: (seats, humans, levels) => {
+			if (decidingTheSavedGame()) return;
+			sitDown(seats, humans, levels);
+		},
 		leaveTheTable(): void {
-			deps.forgetGame();
-			if (typeof localStorage !== 'undefined') {
-				for (const key of [
-					deps.seatsStorageKey,
-					deps.humansStorageKey,
-					deps.levelsStorageKey,
-					deps.modeStorageKey,
-					deps.cyclesStorageKey,
-					deps.gameOptionsStorageKey,
-				]) {
-					if (key) localStorage.removeItem(key);
-				}
-			}
+			forgetEverything();
 			if (typeof location !== 'undefined') location.reload();
 		},
 	};
