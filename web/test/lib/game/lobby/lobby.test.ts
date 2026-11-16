@@ -128,6 +128,59 @@ describe('the lobby', () => {
 		expect(started[0]).toHaveLength(4);
 	});
 
+	it('offers continuing a game that is here, or a new one, to an arrival', () => {
+		store.set(SEATS_KEY, '4');
+		const {lobby, started} = fakeGame({alreadyHere: true});
+		lobby.enter({continueRequested: false});
+
+		expect(get(lobby)).toMatchObject({step: 'Saved', seats: 4});
+		expect(get(lobby).table).toHaveLength(4);
+		expect(started).toHaveLength(0);
+
+		// What it offers is not a setup: a choice of seats is ignored until the
+		// player has chosen a new game. Continuing boots the game here, at ITS
+		// count, exactly as a reload does.
+		lobby.chooseSeats(6);
+		lobby.chooseHumans(2);
+		lobby.sitDown(6);
+		expect(get(lobby)).toMatchObject({step: 'Saved', seats: 4});
+		expect(started).toHaveLength(0);
+		expect(store.get(SEATS_KEY)).toBe('4');
+		lobby.continueTheSavedGame();
+		expect(get(lobby)).toMatchObject({step: 'Sat', seats: 4});
+		expect(started[0]).toHaveLength(4);
+	});
+
+	it('starts a new game from the choice by forgetting the one here, with no reload', () => {
+		store.set(SEATS_KEY, '4');
+		const world = fakeGame({alreadyHere: true});
+		world.lobby.enter({continueRequested: false});
+		world.lobby.startANewGame();
+
+		expect(world.isHere()).toBe(false);
+		expect(store.has(SEATS_KEY)).toBe(false);
+		expect(reloads).toBe(0);
+		expect(get(world.lobby).step).toBe('Choosing');
+		expect(world.started).toHaveLength(0);
+	});
+
+	it('does nothing on continue or a new game outside the choice', () => {
+		const {lobby, started, isHere} = fakeGame({alreadyHere: true});
+		lobby.continueTheSavedGame();
+		lobby.startANewGame();
+		expect(get(lobby).step).toBe('Opening');
+		expect(started).toHaveLength(0);
+		expect(isHere()).toBe(true);
+	});
+
+	it('shows the setup to an arrival at a game here that cannot be restored', () => {
+		// A chain id with no seat record: nothing to continue, so no choice.
+		const {lobby, started} = fakeGame({alreadyHere: true});
+		lobby.enter({continueRequested: false});
+		expect(get(lobby).step).toBe('Choosing');
+		expect(started).toHaveLength(0);
+	});
+
 	it('ignores a remembered count with no game behind it', () => {
 		// Both or neither: a seat record alone is not a game to carry on with, and
 		// acting on it would boot a brand new game at a count nobody was asked

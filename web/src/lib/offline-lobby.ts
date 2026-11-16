@@ -226,24 +226,30 @@ const lobby: LobbyStore = createLobby({
  * The lobby, behind the claim: entering asks for the world first, and a tab
  * refused it never reaches the chooser or the boot. Everything else is the
  * framework's lobby unchanged.
+ *
+ * THE ARRIVAL IS THE ROUTE'S TO SAY, from its URL (`$lib/game/lobby/arrival`):
+ * a visit that asks to continue (a reload) boots the world here, any other
+ * offers continuing it or a new one. Required here rather than defaulted, so a
+ * caller cannot forget which of the two it is.
  */
 export const offlineLobby: Omit<LobbyStore, 'enter'> & {
-	enter(): Promise<void>;
+	enter(arrival: {continueRequested: boolean}): Promise<void>;
 } = {
 	...lobby,
-	async enter(): Promise<void> {
-		if (await offlineWorldClaim.claim()) lobby.enter();
+	async enter(arrival): Promise<void> {
+		if (await offlineWorldClaim.claim()) lobby.enter(arrival);
 	},
 };
 
 /**
- * Take the world over from the tab that has it, then open the lobby here as an
- * ordinary visit would: a world already in this browser boots by the restore,
- * so the player lands in the same world, not a new one.
+ * Take the world over from the tab that has it, then open the lobby here as a
+ * reload would: a world already in this browser boots by the restore, so the
+ * player lands in the same world, not a new one. Taking it over IS the choice
+ * to continue it, so it is not asked again.
  */
 export async function takeTheWorldOver(): Promise<void> {
 	await offlineWorldClaim.takeOver();
-	lobby.enter();
+	lobby.enter({continueRequested: true});
 }
 
 /**

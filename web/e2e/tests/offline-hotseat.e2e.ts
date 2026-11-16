@@ -1,6 +1,12 @@
 import type {Page} from '@playwright/test';
 import {mnemonicToAccount} from 'viem/accounts';
-import {test, expect, describe, chooseTheWorld} from '../fixtures/test';
+import {
+	test,
+	expect,
+	describe,
+	chooseTheWorld,
+	expectTheReloadToResume,
+} from '../fixtures/test';
 
 /**
  * HOTSEAT IN THE OFFLINE WORLD: two people at one device and one world seat,
@@ -224,6 +230,7 @@ describe('Hotseat in the offline world', () => {
 			'Pass the device to Player 2',
 			{timeout: 60_000},
 		);
+		await expectTheReloadToResume(page);
 		await page.reload();
 		await begin(page, 'Player 2');
 		await expect.poll(() => whoPlays(page), {timeout: 30_000}).toBe(second);
