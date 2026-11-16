@@ -1,5 +1,10 @@
 import type {Page} from '@playwright/test';
-import {test, expect, describe} from '../fixtures/test';
+import {
+	test,
+	expect,
+	describe,
+	expectTheReloadToResume,
+} from '../fixtures/test';
 
 /**
  * A TABLE IN THE OFFLINE WORLD (stratagems' plan, step OT1): one person, one
@@ -142,6 +147,7 @@ describe('A table in the offline world', () => {
 		);
 
 		// A RELOAD INSIDE THE TABLE: the same table, on the cycle it was in.
+		await expectTheReloadToResume(page);
 		await page.reload();
 		await expect(page.getByText(WORLD_UP)).toBeVisible({timeout: 120_000});
 		await expect(panel.getByTestId('table-progress')).toHaveText(
