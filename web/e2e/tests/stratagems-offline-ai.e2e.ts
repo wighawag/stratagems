@@ -1,6 +1,12 @@
 import type {Page} from '@playwright/test';
 import {mnemonicToAccount} from 'viem/accounts';
-import {test, expect, describe, chooseTheWorld} from '../fixtures/test';
+import {
+	test,
+	expect,
+	describe,
+	chooseTheWorld,
+	expectTheReloadToResume,
+} from '../fixtures/test';
 
 /**
  * AI SEATS IN STRATAGEMS' OFFLINE WORLD: one person against two world seats at
@@ -253,6 +259,7 @@ describe('AI seats in stratagems\u2019 offline world', () => {
 			.toEqual({cycleNumber: 3, commiting: false});
 		await expect.poll(() => revealed(page), {timeout: 60_000}).toBe(1);
 		for (const cell of second) expect(await colourOf(page, cell)).toBe(0);
+		await expectTheReloadToResume(page);
 		await page.reload();
 
 		// The cycle closes all the same: the seats revealed what they stored.
