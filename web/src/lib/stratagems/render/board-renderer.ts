@@ -27,6 +27,7 @@ import {
 	gemColourNumber,
 	HOSHI_EVERY,
 	isGhost,
+	dimmingFocusOf,
 	isLit,
 	linksOf,
 	pulse,
@@ -72,7 +73,8 @@ export function createBoardRenderer(params: {
 		maxLife,
 		zoom,
 		focusOwner,
-		isLit: (cell) => focusOwner !== undefined && isLit(cell, focusOwner),
+		isLit: (cell) =>
+			focusOwner !== undefined && isLit(cell, focusOwner, latest?.player),
 	});
 
 	const cells = createStatefulRenderer<
@@ -117,8 +119,10 @@ export function createBoardRenderer(params: {
 			const lit =
 				focusOwner === undefined ||
 				(link.kind === 'bridge'
-					? isLit(a, focusOwner) && isLit(b, focusOwner)
-					: isLit(a, focusOwner) || isLit(b, focusOwner));
+					? isLit(a, focusOwner, latest.player) &&
+						isLit(b, focusOwner, latest.player)
+					: isLit(a, focusOwner, latest.player) ||
+						isLit(b, focusOwner, latest.player));
 			const alpha = (lit ? 1 : 0.15) * (link.planned ? 0.45 : 1);
 			const horizontal = link.ay === link.by;
 			const [x1, y1, x2, y2] = horizontal
@@ -252,6 +256,18 @@ export function createBoardRenderer(params: {
 	}
 
 	let unsubscribes: (() => void)[] = [];
+	let focusKey: string | undefined;
+
+	/** Whose gems are lit, from the focused cell as the view has it now. */
+	function refocus() {
+		const cell =
+			focusKey === undefined ? undefined : latest?.cells.get(focusKey);
+		const owner = dimmingFocusOf(cell, latest?.player);
+		if (owner === focusOwner) return;
+		focusOwner = owner;
+		restyle = true;
+		drawLinks();
+	}
 
 	return {
 		onAppStarted(world) {
@@ -290,15 +306,13 @@ export function createBoardRenderer(params: {
 			unsubscribes.push(
 				params.viewState.subscribe(($view) => {
 					if ($view.step !== 'Loaded') latest = undefined;
+					// the focused cell may have changed hands: planned on, or revealed
+					refocus();
 					drawLinks();
 				}),
 				focus.subscribe(($key) => {
-					const cell = $key === undefined ? undefined : latest?.cells.get($key);
-					const owner = cell?.owner;
-					if (owner === focusOwner) return;
-					focusOwner = owner;
-					restyle = true;
-					drawLinks();
+					focusKey = $key;
+					refocus();
 				}),
 				params.factionWash.subscribe(($on) => {
 					factionWash.visible = $on;

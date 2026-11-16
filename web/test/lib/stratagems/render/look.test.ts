@@ -9,6 +9,9 @@ import {
 	isGhost,
 	isRemoval,
 	isLit,
+	dimmingFocusOf,
+	drawnTrend,
+	focusOwnerOf,
 	linksOf,
 	marksFilled,
 	pendingMark,
@@ -190,9 +193,31 @@ describe('the gems colours', () => {
 	});
 });
 
+describe("a ghost's trend", () => {
+	it('shows whether the planned gem will grow or lose life, once the preview has said', () => {
+		expect(
+			drawnTrend(cell(0, 0, {planned: 1, color: 1, life: 1, trend: 'shrink'})),
+		).toBe('shrink');
+		expect(
+			drawnTrend(cell(0, 0, {planned: 1, color: 1, life: 1, trend: 'grow'})),
+		).toBe('grow');
+		// not answered yet: the cell has no colour of its own, and no trend to show
+		expect(
+			drawnTrend(cell(0, 0, {planned: 1, color: 0, life: 0, trend: 'dead'})),
+		).toBeUndefined();
+		// a planned gem on a dead cell, before the preview: the dead cell's trend is not the gem's
+		expect(
+			drawnTrend(cell(0, 0, {planned: 1, color: 2, life: 0, trend: 'dead'})),
+		).toBeUndefined();
+		expect(drawnTrend(cell(0, 0, {trend: 'shrink'}))).toBe('shrink');
+	});
+});
+
 describe('a ghost the preview has not answered for', () => {
 	it('is drawn in the colour planned on a cell of no colour, and in the cell colour otherwise', () => {
 		expect(stoneColour(cell(0, 0, {color: 0, life: 0, planned: 2}))).toBe(2);
+		// planned on a dead gem of another colour, before the preview
+		expect(stoneColour(cell(0, 0, {color: 3, life: 0, planned: 2}))).toBe(2);
 		// the preview's colour wins, a collision's Evil included
 		expect(stoneColour(cell(0, 0, {color: 6, planned: 2}))).toBe(6);
 		expect(stoneColour(cell(0, 0, {color: 1}))).toBe(1);
@@ -298,6 +323,26 @@ describe('ownership', () => {
 		expect(isLit(cell(0, 0, {owner: ALICE}), ALICE)).toBe(true);
 		expect(isLit(cell(0, 0, {owner: BOB}), ALICE)).toBe(false);
 		expect(isLit(cell(0, 0, {owner: EVIL, color: 6}), EVIL)).toBe(true);
+	});
+
+	it("counts a planned gem as its planner's, whatever the cell held", () => {
+		// planned by Alice on Bob's dead gem, before the preview answers
+		const planned = cell(0, 0, {owner: BOB, color: 2, life: 0, planned: 1});
+		expect(focusOwnerOf(planned, ALICE)).toBe(ALICE);
+		expect(isLit(planned, ALICE, ALICE)).toBe(true);
+		expect(isLit(planned, BOB, ALICE)).toBe(false);
+		// nobody viewing: the cell's owner, as before
+		expect(focusOwnerOf(planned, undefined)).toBe(BOB);
+	});
+
+	it("dims nothing for the viewer's own gem, which the ivory wash marks already", () => {
+		expect(dimmingFocusOf(cell(0, 0, {owner: ALICE}), ALICE)).toBeUndefined();
+		// nor for a planned gem, the viewer's, on another player's dead gem
+		expect(
+			dimmingFocusOf(cell(0, 0, {owner: BOB, life: 0, planned: 1}), ALICE),
+		).toBeUndefined();
+		expect(dimmingFocusOf(cell(0, 0, {owner: BOB}), ALICE)).toBe(BOB);
+		expect(dimmingFocusOf(undefined, ALICE)).toBeUndefined();
 	});
 
 	it('finds the cell under a point by its whole square, with no gap between neighbours', () => {

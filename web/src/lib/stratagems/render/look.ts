@@ -54,13 +54,28 @@ export function isGhost(cell: CellView): boolean {
  * The colour a cell's stone is drawn in. A ghost the preview has not answered
  * for (before the sandbox does, or a turn planned too late to have one through
  * its cycle's resolution, `../hold.ts`) sits on a cell that may have no colour
- * yet: it is drawn in the colour planned, or it would not be drawn at all. The
- * view keeps the cell's own colour, which the panels describe.
+ * yet, or a dead gem's: it is drawn in the colour planned, or it would not be
+ * drawn at all, or drawn as the dead gem. The view keeps the cell's own colour,
+ * which the panels describe.
  */
 export function stoneColour(cell: CellView): number {
-	return isGhost(cell) && cell.color === Color.None
+	// no life: the preview has not made it the planned gem yet (an empty cell,
+	// or a dead one of any colour), so its colour is the cell's, not the plan's
+	return isGhost(cell) && (cell.color === Color.None || cell.life <= 0)
 		? (cell.planned as number)
 		: cell.color;
+}
+
+/**
+ * Where a gem's life is drawn going (the light ring for growing, the red rim
+ * for shrinking), or nothing. A ghost shows it too once the preview has said
+ * what the placement will be (its colour is the preview's): whether the gem it
+ * plans will lose life is the point of looking at it. A ghost the preview has
+ * not answered for (no colour of its own yet) has no trend to show.
+ */
+export function drawnTrend(cell: CellView): CellView['trend'] | undefined {
+	if (!isGhost(cell)) return cell.trend;
+	return cell.color === Color.None || cell.life <= 0 ? undefined : cell.trend;
 }
 
 /** A planned removal: drawn as a red cross over the gem. */
@@ -247,11 +262,42 @@ export function startsDying(previous: CellView, next: CellView): boolean {
 
 const EVIL_OWNER = EVIL_OWNER_ADDRESS.toLowerCase();
 
+/**
+ * Whose a cell is, for the focus: a planned gem is the viewer's, who planned it,
+ * whatever the cell held before (a dead gem of another player it is placed on,
+ * whose owner the view keeps until the preview answers).
+ */
+export function focusOwnerOf(
+	cell: CellView,
+	viewer: string | undefined,
+): string | undefined {
+	return isGhost(cell) && viewer !== undefined ? viewer : cell.owner;
+}
+
+/**
+ * Whose gems the board lights, dimming every other, for the focused cell; none
+ * for the viewer's own: their gems already stand out by the ivory wash under
+ * them, and dimming everyone else's for a hover over one's own gem only hides
+ * the board (a planned gem, faint already, included).
+ */
+export function dimmingFocusOf(
+	cell: CellView | undefined,
+	viewer: string | undefined,
+): string | undefined {
+	if (!cell) return undefined;
+	const owner = focusOwnerOf(cell, viewer)?.toLowerCase();
+	return owner === viewer?.toLowerCase() ? undefined : owner;
+}
+
 /** Whether a cell is lit while `owner`'s gems are focused. */
-export function isLit(cell: CellView, owner: string): boolean {
+export function isLit(
+	cell: CellView,
+	owner: string,
+	viewer?: string,
+): boolean {
 	const focus = owner.toLowerCase();
-	if (focus === EVIL_OWNER) return cell.color === Color.Evil;
-	return cell.owner?.toLowerCase() === focus;
+	if (focus === EVIL_OWNER) return cell.color === Color.Evil && !isGhost(cell);
+	return focusOwnerOf(cell, viewer)?.toLowerCase() === focus;
 }
 
 /** The key of the cell whose whole square holds a point, in cells. */

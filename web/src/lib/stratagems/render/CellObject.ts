@@ -13,6 +13,7 @@ import {Container, Graphics, Sprite, type Texture} from 'pixi.js';
 import type {CellView} from '../view';
 import {
 	crackPaths,
+	drawnTrend,
 	DYING_MS,
 	dyingFrame,
 	gemColourNumber,
@@ -181,7 +182,7 @@ export class CellObject {
 			return;
 		}
 
-		const trend = ghost ? undefined : cell.trend;
+		const trend = drawnTrend(cell);
 		if (trend === 'grow') this.sprite(glowTexture(), scale * 1.02);
 		if (cell.mine && !ghost && zoom.bezel) this.sprite(bezelTexture(), scale);
 		if (look.focusOwner !== undefined && look.isLit(cell) && !ghost) {
