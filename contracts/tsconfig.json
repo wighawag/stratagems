@@ -14,5 +14,12 @@
 		"rootDir": ".",
 		"types": ["node"]
 	},
-	"include": ["deploy", "generated", "js", "utils", "hardhat.config.ts"]
+	"include": [
+		"deploy",
+		"generated/artifacts/index.ts",
+		"generated/abis/index.ts",
+		"js",
+		"utils",
+		"hardhat.config.ts"
+	]
 }
