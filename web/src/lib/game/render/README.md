@@ -121,11 +121,11 @@ Three layers, none of which know about any rendering library:
 
 Same shape as `gestures.ts`, twice more: a pure recogniser that turns raw input into a `ControlIntent`, and a small DOM half that feeds it. Nothing here knows what a piece, a round or a cycle is.
 
-| file         | pure half                                                     | DOM half                       |
-| ------------ | ------------------------------------------------------------- | ------------------------------ |
-| `intents.ts` | the vocabulary: `direction`, `confirm`, `secondary`, `cancel`, and `action` for any further one the game names | none |
-| `keys.ts`    | `recognizeKey(sample)`                                        | `attachKeys(target, onIntent)` |
-| `gamepad.ts` | `createGamepadRecognizer().poll(pads)`                        | `attachGamepad(onIntent)`      |
+| file         | pure half                                                                                                      | DOM half                       |
+| ------------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `intents.ts` | the vocabulary: `direction`, `confirm`, `secondary`, `cancel`, and `action` for any further one the game names | none                           |
+| `keys.ts`    | `recognizeKey(sample)`                                                                                         | `attachKeys(target, onIntent)` |
+| `gamepad.ts` | `createGamepadRecognizer().poll(pads)`                                                                         | `attachGamepad(onIntent)`      |
 
 **The mapping from an intent to a game action stays in the game.** Directional / confirm / cancel input is generic to any board game on this template; "step north" and "commit the round" are not - both are what a PARTICULAR GAME calls a control, which is why `round` here is the word `CONTEXT.md` reserves for games rather than one a vocabulary sweep missed (`intents.ts` quotes the same pair for the same reason). That is the whole line, and it is what lets one mapping serve a keyboard, a gamepad and an on-screen d-pad without three copies of the game's rules.
 
