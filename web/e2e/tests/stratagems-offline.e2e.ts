@@ -1,4 +1,10 @@
-import {test, expect, describe, chooseTheWorld} from '../fixtures/test';
+import {
+	test,
+	expect,
+	describe,
+	chooseTheWorld,
+	continueTheSavedGame,
+} from '../fixtures/test';
 import type {Page} from '@playwright/test';
 
 /**
@@ -102,13 +108,18 @@ async function clickCell(page: Page, cell: {x: number; y: number}) {
 
 async function enterTheWorld(page: Page) {
 	await page.goto('/offline/');
-	// A NEW WORLD asks how many sit at the table; a remembered one boots.
+	// A NEW WORLD asks how many sit at the table; a remembered one is offered
+	// to continue (a fresh visit to `/offline/` is asked, only `?continue`
+	// resumes without asking), and continued.
 	const lobby = page.getByTestId('sit-down');
+	const saved = page.getByTestId('continue-saved-game');
 	const bar = page.getByText(
 		'Everything below runs against a chain inside this tab',
 	);
-	await expect(lobby.or(bar)).toBeVisible({timeout: 120_000});
-	if (await lobby.isVisible()) {
+	await expect(lobby.or(saved).or(bar)).toBeVisible({timeout: 120_000});
+	if (await saved.isVisible()) {
+		await continueTheSavedGame(page);
+	} else if (await lobby.isVisible()) {
 		// THE WORLD, which this story was written for: a table is offered first
 		// since step OT2 (`stratagems-offline-table.e2e.ts` plays it)
 		await chooseTheWorld(page);
