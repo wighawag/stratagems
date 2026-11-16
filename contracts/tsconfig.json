@@ -14,5 +14,12 @@
 		"rootDir": ".",
 		"types": ["node"]
 	},
-	"include": ["deploy", "generated", "rocketh", "utils", "hardhat.config.ts"]
+	"include": [
+		"deploy",
+		"generated/artifacts/index.ts",
+		"generated/abis/index.ts",
+		"rocketh",
+		"utils",
+		"hardhat.config.ts"
+	]
 }

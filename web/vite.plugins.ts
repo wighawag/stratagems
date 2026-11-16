@@ -2,6 +2,7 @@ import type {PluginOption} from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import {sentryVitePlugin} from '@sentry/vite-plugin';
 import {assetpackPlugin} from './vite.assetpack.js';
+import {processorBundlePlugin} from './vite.processor-bundle.js';
 
 /**
  * The vite plugins THIS project adds to the template's.
@@ -97,5 +98,9 @@ export function extraPlugins(): PluginOption[] {
 		// why this is one unconditional line: the decision lives with the paths it
 		// depends on, in `vite.assetpack.ts`.
 		assetpackPlugin(),
+		// STRATAGEMS' OWN: in dev, `processor.bundle.js` is served from the
+		// indexer's watch build (see `vite.processor-bundle.ts`); `false` under
+		// vitest.
+		processorBundlePlugin(),
 	];
 }

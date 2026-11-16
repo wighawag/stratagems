@@ -4,6 +4,9 @@
 // Copied, never rebuilt: a published snapshot is keyed by the SHA-256 of the
 // bundle's bytes (etherfold ADR-0086, ADR-0095), so the tab has to run exactly the
 // file `pnpm indexer:index` ran. `pnpm indexer:build <mode>` produces it.
+//
+// For a build. In dev nothing is copied: `vite.processor-bundle.ts` serves the
+// bundle straight from indexer/dist, so a copy left here is never what runs.
 import {copyFileSync, existsSync} from 'node:fs';
 
 const from = new URL('../../indexer/dist/processor.bundle.js', import.meta.url);

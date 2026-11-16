@@ -41,7 +41,7 @@ dev/zellij-remote-chain.kdl               the panes against a remote chain with 
 contracts/package.json                    stratagems-contracts: its name, dependencies, and scripts (two test runners, its docgen, its scripts' export)
 contracts/hardhat.config.ts               solc 0.8.24 with viaIR in every profile (the game does not compile without it), and the node network's BLOCK_TIME
 contracts/rocketh/config.ts               stratagems' accounts, environments and deploy data
-contracts/tsconfig.json                   compiles rocketh/ where the stem's compiles js/, which is omitted
+contracts/tsconfig.json                   compiles rocketh/ where the stem's compiles js/, which is omitted, and generated/ only from its two indexes, so a file hardhat-deploy left there from an earlier compile is not compiled (its folder is never cleaned)
 contracts/scripts/tsconfig.json           the operations scripts compile against deploy/, utils/ and the hardhat config
 contracts/.env                            ldenv reads the root .env too (ENV_ROOT_FOLDER), and the lan environment's defaults
 contracts/.gitignore                      also ignores .keys, scripts/data/contracts.ts and .data/, written by the operations scripts
@@ -55,7 +55,7 @@ web/.env                                  ldenv reads the root .env too, and str
 web/.gitignore                            also ignores the indexed states and the processor bundle, generated from common/ and the indexer
 web/.prettierignore                       also ignores the indexed states, the processor bundle and robots.txt
 web/svelte.config.js                      the $app-specific alias names stratagems' game.ts, not the reference game's
-web/vite.plugins.ts                       Sentry error reports when a token is set, in the file whose job is to differ
+web/vite.plugins.ts                       Sentry error reports when a token is set, the worker and build settings, and the processor bundle served in dev, in the file whose job is to differ
 web/src/routes/play/+page.svelte          the online game's page: stratagems' board and HUD
 web/src/lib/offline.ts                    the offline world's contracts, deploy and stake: a game's by design, at the stem's path
 web/src/lib/offline-players.ts            the offline world's played seats: a game's by design, at the stem's path
