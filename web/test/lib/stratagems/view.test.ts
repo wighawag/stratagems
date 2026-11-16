@@ -242,3 +242,42 @@ describe('who made an Evil cell, while the indexer still knows', () => {
 		expect(cell(await evilBoard(false), 0, 0).makers).toBeUndefined();
 	});
 });
+
+describe('a planned move the preview has not answered for', () => {
+	// before the sandbox answers, and through a resolving cycle whose turn had
+	// no preview as the hold began (`hold.ts`)
+	async function unpreviewed(planned: {x: number; y: number; color: number}) {
+		const onchain = await boardAfter(
+			[{cycle: 1, moves: [{player: ALICE, x: 0, y: 0, color: RED}]}],
+			2,
+		);
+		return mergeBoardView({
+			onchain,
+			local: {
+				player: BOB,
+				planned: [{position: at(planned.x, planned.y), color: planned.color}],
+			},
+			cycleNumber: 2,
+			maxLife: MAX_LIFE,
+		});
+	}
+
+	it("keeps the cell's own colour, which the panels describe: the renderer draws the ghost in the planned one", async () => {
+		expect(
+			cell(await unpreviewed({x: 3, y: 3, color: BLUE}), 3, 3),
+		).toMatchObject({color: 0, life: 0, planned: BLUE, owner: undefined});
+	});
+
+	it('says whether the moves drawn are a turn held while its cycle resolves', async () => {
+		const onchain = await boardAfter([], 2);
+		const at2 = (held?: boolean) =>
+			mergeBoardView({
+				onchain,
+				local: {planned: [], ...(held ? {held} : {})},
+				cycleNumber: 2,
+				maxLife: MAX_LIFE,
+			}).resolving;
+		expect(at2()).toBe(false);
+		expect(at2(true)).toBe(true);
+	});
+});

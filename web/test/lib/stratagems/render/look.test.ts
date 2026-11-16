@@ -14,6 +14,10 @@ import {
 	pendingMark,
 	pulse,
 	startsDying,
+	startsMaterialising,
+	stoneColour,
+	materialisingFrame,
+	GHOST_ALPHA,
 	stoneScale,
 	zoomOf,
 	type HoverState,
@@ -183,6 +187,77 @@ describe('the gems colours', () => {
 		expect(new Set(tones).size).toBe(5);
 		for (const tone of tones) expect(tone).toMatch(/^#[0-9a-f]{6}$/);
 		expect(gemColour(6)).toBe('#2a2a2a');
+	});
+});
+
+describe('a ghost the preview has not answered for', () => {
+	it('is drawn in the colour planned on a cell of no colour, and in the cell colour otherwise', () => {
+		expect(stoneColour(cell(0, 0, {color: 0, life: 0, planned: 2}))).toBe(2);
+		// the preview's colour wins, a collision's Evil included
+		expect(stoneColour(cell(0, 0, {color: 6, planned: 2}))).toBe(6);
+		expect(stoneColour(cell(0, 0, {color: 1}))).toBe(1);
+		// a removal is a cross over the gem, which keeps its colour
+		expect(stoneColour(cell(0, 0, {color: 1, planned: 0}))).toBe(1);
+		expect(stoneColour(cell(0, 0, {color: 0, life: 0}))).toBe(0);
+	});
+
+	it('is the size of a gem at life 1 when the cell has no life yet', () => {
+		const far = zoomOf(0);
+		expect(
+			stoneScale(cell(0, 0, {color: 0, life: 0, planned: 2}), far, MAX),
+		).toBe(stoneScale(cell(0, 0, {life: 1}), far, MAX));
+	});
+});
+
+describe('the planned gem becoming real', () => {
+	const ghost = cell(0, 0, {planned: 2, color: 2, life: 2});
+
+	it('materialises at the release, when the ghost the cycle resolved is found a living gem', () => {
+		expect(
+			startsMaterialising(ghost, cell(0, 0, {color: 2, life: 2}), true),
+		).toBe(true);
+		// a collision makes it Evil: it still came into existence
+		expect(
+			startsMaterialising(ghost, cell(0, 0, {color: 6, life: 2}), true),
+		).toBe(true);
+		// a ghost drawn in the colour planned, with no preview behind it
+		expect(
+			startsMaterialising(
+				cell(0, 0, {planned: 2, color: 0, life: 0}),
+				cell(0, 0, {color: 2, life: 1}),
+				true,
+			),
+		).toBe(true);
+	});
+
+	it('does not when the player takes a move back in play, a re-placement of a gem already there included', () => {
+		expect(
+			startsMaterialising(ghost, cell(0, 0, {color: 2, life: 2}), false),
+		).toBe(false);
+	});
+
+	it('does not for a removal, a gem that was already real, or a ghost still planned', () => {
+		expect(
+			startsMaterialising(
+				cell(0, 0, {planned: 0}),
+				cell(0, 0, {color: 0}),
+				true,
+			),
+		).toBe(false);
+		expect(startsMaterialising(cell(0, 0), cell(0, 0, {life: 4}), true)).toBe(
+			false,
+		);
+		expect(startsMaterialising(ghost, ghost, true)).toBe(false);
+		expect(
+			startsMaterialising(ghost, cell(0, 0, {color: 0, life: 0}), true),
+		).toBe(false);
+	});
+
+	it('fills in from the ghost to a whole gem, and settles at its own size', () => {
+		expect(materialisingFrame(0)).toEqual({alpha: GHOST_ALPHA, scale: 1});
+		expect(materialisingFrame(0.5).scale).toBeGreaterThan(1);
+		expect(materialisingFrame(1).alpha).toBe(1);
+		expect(materialisingFrame(1).scale).toBeCloseTo(1);
 	});
 });
 

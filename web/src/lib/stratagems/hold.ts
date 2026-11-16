@@ -25,7 +25,23 @@ export const holdResolvingCycle: HoldResolvingCycle<BoardState> = ({
 	latest,
 }) => ({data: shown.data, cycleNumber: latest.cycleNumber});
 
-/** The player's turn, kept on screen until the board releases the cycle it is in. */
+/**
+ * The player's turn, kept on screen until the board releases the cycle it is in,
+ * with what it will do (its preview) as it stood when the hold began.
+ *
+ * THE PREVIEW IS FROZEN WITH THE TURN. Two things take the live one away during
+ * the hold, and either made the turn vanish from the board while it resolved:
+ * the submission's `Revealed` carries no moves, so a preview of the moves
+ * planned NOW is a preview of nothing; and the preview runs on the indexer's
+ * board, not the held one, so the reveals landing (this player's own included)
+ * would be drawn into it. When the hold begins (the lock) no reveal of the cycle
+ * has landed, so the preview then is the turn on the board it was planned on.
+ * A turn with no preview by then (planned at the last moment) is drawn as
+ * planned, the ghost in its colour (`render/look.ts`, `stoneColour`), rather
+ * than with a preview that could already hold someone else's reveal. So is a
+ * turn whose hold this page did not see begin (a reload in the reveal phase):
+ * the preview it finds may be run on reveals that have already landed.
+ */
 export function holdPlanUntilBoardReleases(params: {
 	submission: Readable<SubmissionState<Move>>;
 	plan: Readable<LocalPlan>;
@@ -35,16 +51,40 @@ export function holdPlanUntilBoardReleases(params: {
 		submission: params.submission,
 		holding: params.holding,
 	});
-	// the plan's preview goes with it when the turn held is the turn planned
-	return derived([params.plan, held], ([$plan, $held]): LocalPlan =>
-		$held === undefined
-			? $plan
-			: {
-					planned: $held,
-					player: $plan.player,
-					...($plan.preview && sameMoves($held, $plan.planned)
-						? {preview: $plan.preview}
-						: {}),
-				},
+	let frozen: {cycleNumber: number; preview?: LocalPlan['preview']} | undefined;
+	// `null` until anything is seen, so a hold found at load did not begin here
+	let lastHolding: number | undefined | null = null;
+	let beganHere: number | undefined;
+	return derived(
+		[params.plan, held, params.holding],
+		([$plan, $held, $holding]): LocalPlan => {
+			if ($holding !== lastHolding) {
+				beganHere =
+					lastHolding === undefined && $holding !== undefined
+						? $holding
+						: undefined;
+				lastHolding = $holding;
+			}
+			if ($held === undefined || $holding === undefined) {
+				frozen = undefined;
+				return $plan;
+			}
+			const current =
+				$plan.preview && sameMoves($held, $plan.planned)
+					? $plan.preview
+					: undefined;
+			if (frozen?.cycleNumber !== $holding) {
+				frozen = {
+					cycleNumber: $holding,
+					preview: beganHere === $holding ? current : undefined,
+				};
+			}
+			return {
+				planned: $held,
+				player: $plan.player,
+				held: true,
+				...(frozen.preview ? {preview: frozen.preview} : {}),
+			};
+		},
 	);
 }

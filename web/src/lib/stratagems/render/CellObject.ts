@@ -16,6 +16,11 @@ import {
 	DYING_MS,
 	dyingFrame,
 	gemColourNumber,
+	GHOST_ALPHA,
+	MATERIALISING_MS,
+	materialisingFrame,
+	startsMaterialising,
+	stoneColour,
 	isDead,
 	isGhost,
 	isRemoval,
@@ -81,6 +86,8 @@ export class CellObject {
 	private ivory?: Sprite;
 	private faction?: Sprite;
 	private dying?: Dying;
+	/** Set while a ghost becomes its gem: when it started (on the first tick). */
+	private materialising?: {startMs: number | undefined};
 
 	constructor(
 		cell: CellView,
@@ -94,14 +101,23 @@ export class CellObject {
 		this.build();
 	}
 
-	/** A new state of the cell: plays the crack when it has just died. */
-	update(cell: CellView, look: CellLook): void {
+	/**
+	 * A new state of the cell: plays the crack when it has just died, and the
+	 * ghost filling in when a planned gem has just become real (only in the
+	 * update that `released` a resolving cycle, see `startsMaterialising`).
+	 */
+	update(cell: CellView, look: CellLook, released = false): void {
 		const previous = this.cell;
 		this.cell = cell;
 		this.look = look;
 		this.endDying();
+		this.endMaterialising();
 		this.build();
 		if (startsDying(previous, cell)) this.startDying(previous);
+		else if (startsMaterialising(previous, cell, released)) {
+			this.materialising = {startMs: undefined};
+			this.applyMaterialising(0);
+		}
 	}
 
 	/** The zoom class or the focus changed: draw again, no animation. */
@@ -119,10 +135,17 @@ export class CellObject {
 			sprite.scale.set(baseScale * (1 + 0.35 * pulse));
 		}
 		if (this.dying) this.animateDying(timeMs);
+		if (this.materialising) {
+			this.materialising.startMs ??= timeMs;
+			const p = (timeMs - this.materialising.startMs) / MATERIALISING_MS;
+			if (p >= 1) this.endMaterialising();
+			else this.applyMaterialising(p);
+		}
 	}
 
 	destroy(): void {
 		this.endDying();
+		this.materialising = undefined;
 		this.ivory?.destroy();
 		this.faction?.destroy();
 		if (this.ivory || this.faction) this.layers.markWashDirty();
@@ -147,7 +170,8 @@ export class CellObject {
 		const {cell, look} = this;
 		const {zoom, maxLife} = look;
 		this.buildWashes();
-		if (cell.color === 0) return;
+		const colour = stoneColour(cell);
+		if (colour === 0) return;
 
 		const ghost = isGhost(cell);
 		const scale = stoneScale(cell, zoom, maxLife);
@@ -165,12 +189,12 @@ export class CellObject {
 		}
 		const marks = zoom.dial && !ghost ? marksFilled(cell) : undefined;
 		const stone = this.sprite(
-			stoneTexture(cell.color, {marks, maxLife, stake: cell.stake}),
+			stoneTexture(colour, {marks, maxLife, stake: cell.stake}),
 			scale,
 		);
 		if (ghost) {
-			stone.alpha = 0.42;
-			this.sprite(ghostRingTexture(cell.color), 1);
+			stone.alpha = GHOST_ALPHA;
+			this.sprite(ghostRingTexture(colour), 1);
 		}
 		const mark = zoom.dial ? pendingMark(cell, maxLife) : undefined;
 		if (mark) {
@@ -229,6 +253,23 @@ export class CellObject {
 		sprite.position.set(this.root.position.x, this.root.position.y);
 		parent.addChild(sprite);
 		return sprite;
+	}
+
+	// ------------------------------------------------------ materialising
+
+	/** The whole cell, faded and swollen by the frame at `p`, around its centre. */
+	private applyMaterialising(p: number): void {
+		const frame = materialisingFrame(p);
+		this.dim();
+		this.root.alpha *= frame.alpha;
+		this.root.scale.set(frame.scale);
+	}
+
+	private endMaterialising(): void {
+		if (!this.materialising) return;
+		this.materialising = undefined;
+		this.root.scale.set(1);
+		this.dim();
 	}
 
 	// ------------------------------------------------------------ the crack

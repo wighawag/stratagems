@@ -157,6 +157,36 @@ describe('Stratagems', () => {
 			})
 			.toBe('Revealed');
 
+		// UNTIL THE CYCLE IS OVER the turn stays on the board as planned, in its
+		// colour: `Revealed` carries no moves, and the planned gems used to vanish
+		// there, for the rest of the reveal phase (2026-11-16). Read with the phase
+		// in one evaluation, so a phase that ends meanwhile is not mistaken for it.
+		const held = (await page.evaluate(`(() => {
+			const read = (store) => { let v; store.subscribe((x) => (v = x))(); return v; };
+			const context = globalThis.context;
+			const view = read(context.viewState);
+			const cells = ${JSON.stringify(moves.map((move) => move.position))}.map((position) => {
+				const cell = view.step === 'Loaded' ? view.cells.get(position) : undefined;
+				return cell ? {planned: cell.planned, color: cell.color} : undefined;
+			});
+			return {phase: read(context.game.threePhase).phase, cells};
+		})()`)) as {
+			phase: string;
+			cells: ({planned?: number; color: number} | undefined)[];
+		};
+		if (held.phase === 'reveal') {
+			expect(
+				held.cells,
+				'the revealed turn should stay drawn until the cycle is over',
+			).toEqual(moves.map(() => ({planned: picked, color: picked})));
+		} else {
+			// said, so a run that never gets to check it shows in the report
+			test.info().annotations.push({
+				type: 'skipped-check',
+				description: `the reveal phase was over (${held.phase}) before the held turn could be read`,
+			});
+		}
+
 		// Once the cycle is over the board releases it, and each cell is what the
 		// indexer folded from the reveal: the faction's colour, alive, theirs.
 		const owner = account.toLowerCase();

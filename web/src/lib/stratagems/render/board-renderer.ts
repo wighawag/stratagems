@@ -59,6 +59,8 @@ export function createBoardRenderer(params: {
 
 	let layers: (BoardLayers & {links: Graphics}) | undefined;
 	let latest: BoardView | undefined;
+	/** This update is the one in which the board released a resolving cycle. */
+	let released = false;
 	let zoom: Zoom = zoomOf(0);
 	let focusOwner: string | undefined;
 	let washDirty = false;
@@ -82,11 +84,13 @@ export function createBoardRenderer(params: {
 	>({
 		viewState: params.viewState,
 		entities: (view) => {
+			// the board released a resolving cycle: the ghosts it held become gems
+			released = latest?.resolving === true && !view.resolving;
 			latest = view;
 			return view.cells;
 		},
 		add: ({entity, surface}) => new CellObject(entity, look(), surface),
-		update: ({entity, object}) => object.update(entity, look()),
+		update: ({entity, object}) => object.update(entity, look(), released),
 		remove: ({object}) => object.destroy(),
 		tick: ({frame, objects}) => {
 			const shared = pulse(frame.timeMs);

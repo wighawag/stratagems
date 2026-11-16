@@ -50,6 +50,19 @@ export function isGhost(cell: CellView): boolean {
 	return cell.planned !== undefined && cell.planned !== Color.None;
 }
 
+/**
+ * The colour a cell's stone is drawn in. A ghost the preview has not answered
+ * for (before the sandbox does, or a turn planned too late to have one through
+ * its cycle's resolution, `../hold.ts`) sits on a cell that may have no colour
+ * yet: it is drawn in the colour planned, or it would not be drawn at all. The
+ * view keeps the cell's own colour, which the panels describe.
+ */
+export function stoneColour(cell: CellView): number {
+	return isGhost(cell) && cell.color === Color.None
+		? (cell.planned as number)
+		: cell.color;
+}
+
 /** A planned removal: drawn as a red cross over the gem. */
 export function isRemoval(cell: CellView): boolean {
 	return cell.planned === Color.None;
@@ -71,7 +84,10 @@ export function stoneScale(
 	maxLife: number,
 ): number {
 	if (isDead(cell) && !isGhost(cell)) return zoom.dial ? 0.9 : 0.62;
-	return zoom.dial ? 1 : sizeOf(cell.life, maxLife);
+	// a ghost on an empty cell has no life yet: drawn as the gem it would be at 1
+	return zoom.dial
+		? 1
+		: sizeOf(isGhost(cell) ? Math.max(cell.life, 1) : cell.life, maxLife);
 }
 
 /**
@@ -275,6 +291,50 @@ export function hoverStep(state: HoverState, event: HoverEvent): HoverState {
 				? {}
 				: state;
 	}
+}
+
+/**
+ * Whether a planned gem has just become a real one: the ghost the player saw
+ * through the cycle's resolution, released by the board with the cycle (see
+ * `../hold.ts`), now drawn as the gem the reveal put there. The board plays it
+ * coming into full existence rather than swapping one for the other.
+ *
+ * ONLY AT THE RELEASE (`released`: the view held a resolving turn and holds it
+ * no longer). A ghost also leaves in play, when the player takes the move back,
+ * and one planned on their own living gem (a re-placement) then shows the gem
+ * that was there all along: nothing came into existence.
+ */
+export function startsMaterialising(
+	previous: CellView,
+	next: CellView,
+	released: boolean,
+): boolean {
+	return (
+		released &&
+		isGhost(previous) &&
+		!isGhost(next) &&
+		next.color !== Color.None &&
+		next.life > 0
+	);
+}
+
+/** How long a ghost takes to become its gem. */
+export const MATERIALISING_MS = 700;
+
+/** The ghost's opacity (`CellObject`'s), where materialising starts. */
+export const GHOST_ALPHA = 0.42;
+
+/**
+ * Materialising at progress `p` (0 to 1): the gem fills in from the ghost's
+ * opacity, and swells a little past its size before it settles.
+ */
+export function materialisingFrame(p: number): {alpha: number; scale: number} {
+	const t = Math.min(1, Math.max(0, p));
+	const eased = 1 - (1 - t) * (1 - t);
+	return {
+		alpha: GHOST_ALPHA + (1 - GHOST_ALPHA) * eased,
+		scale: 1 + 0.12 * Math.sin(Math.PI * t),
+	};
 }
 
 /** How long a dying gem takes to crack and sink into its husk. */

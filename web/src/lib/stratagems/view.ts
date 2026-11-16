@@ -67,6 +67,12 @@ export type BoardView = {
 	cells: Map<string, CellView>;
 	/** Who is viewing, lower-case, when anyone is. */
 	player?: `0x${string}`;
+	/**
+	 * The planned moves drawn are a turn held while its cycle resolves (see
+	 * `LocalPlan.held`): the renderer plays the ghosts becoming gems when this
+	 * goes back to false, at the board's release.
+	 */
+	resolving?: boolean;
 };
 
 /** The plan as the view needs it: the moves, whose they are, and what they will do. */
@@ -78,6 +84,11 @@ export type LocalPlan = {
 	 * answered for exactly these moves (`./preview.ts`, `withPreview`).
 	 */
 	preview?: MovesPreview;
+	/**
+	 * The moves are the turn held on screen while the board withholds the
+	 * cycle it is in (`./hold.ts`), not a plan still being made.
+	 */
+	held?: boolean;
 };
 
 function countBits(map: number): number {
@@ -198,5 +209,5 @@ export function mergeBoardView(params: {
 				: {}),
 		});
 	}
-	return {cells, player};
+	return {cells, player, resolving: local.held === true};
 }
