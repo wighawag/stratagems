@@ -27,6 +27,8 @@ const list = [
 	['r3-A-impact', 'variant=A&scene=showcase&x=27&z=4&d=11', volleyAt(0.68)],
 	['r3-A-skirmish', 'variant=A&scene=skirmish'],
 	['r3-A-far', 'variant=A&scene=skirmish&x=22&z=16&d=50'],
+	['r4-A-mountain-border', 'variant=A&scene=skirmish&x=25&z=20&d=8'],
+	['r4-B-mountain-border', 'variant=B&scene=skirmish&x=25&z=20&d=8'],
 ].filter(([n]) => n.includes(only));
 for (const [n, q, fn] of list) await shot(n, q, fn);
 await b.close();

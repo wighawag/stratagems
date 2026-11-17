@@ -102,7 +102,7 @@ const mats = {
 	front: new THREE.MeshBasicMaterial({color: '#ff4a2a', transparent: true, opacity: 0.85}),
 	grow: new THREE.MeshBasicMaterial({color: '#ffe066'}),
 	shrink: new THREE.MeshBasicMaterial({color: '#ff3b2a'}),
-	border: new THREE.MeshBasicMaterial({color: '#ffd36a'}),
+	border: borderMaterial(),
 	flag: new THREE.MeshStandardMaterial({vertexColors: true, flatShading: true, roughness: 0.6}),
 };
 
@@ -166,6 +166,7 @@ class Instances {
 			e.colors?.forEach((c, i) => mesh.setColorAt(i, c));
 			mesh.castShadow = shadows;
 			mesh.receiveShadow = shadows;
+			if (!e.mat.depthTest) mesh.renderOrder = 3;
 			mesh.computeBoundingSphere();
 			if (mesh.boundingSphere) mesh.boundingSphere.radius += 0.6;
 			group.add(mesh);
@@ -212,7 +213,7 @@ export class Overlays {
 				flags = new Instances(),
 				fronts = new Instances(),
 				trend = new Instances(),
-				border = new Instances();
+				border = new BorderBuilder();
 			const motes = new FxBuilder(),
 				smoke = new FxBuilder(),
 				glow = new FxBuilder(),
@@ -316,7 +317,7 @@ export class Overlays {
 			flags.into(chunk.flags);
 			fronts.into(chunk.fronts, false);
 			trend.into(chunk.trend, false);
-			border.into(chunk.border, false);
+			border.into(chunk.border);
 			const pm = motes.build(fxGlow);
 			if (pm) chunk.fx.add(pm);
 			const ps = smoke.build(fxSmoke);
@@ -387,6 +388,21 @@ function flagGeometry() {
 
 export const SPIRIT_UP = 0.3;
 
+/** The border's width and height multiplier: grows as the camera pulls back, so it stays a line you can see. */
+export const borderWidth = {value: 1};
+
+function borderMaterial() {
+	// a ribbon lying on the ground: each vertex carries the direction to widen in
+	const m = new THREE.MeshBasicMaterial({color: '#ffd36a', side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4});
+	m.onBeforeCompile = (shader) => {
+		shader.uniforms.uWidth = borderWidth;
+		shader.vertexShader = shader.vertexShader
+			.replace('#include <common>', '#include <common>\nuniform float uWidth;\nattribute vec2 aSide;')
+			.replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed.xz += aSide * 0.028 * uWidth;');
+	};
+	return m;
+}
+
 /** The height of a cell's middle: the ground, or in B the top of its feature. */
 export function centreOf(c: Cell, terrain: Terrain, variant: 'A' | 'B'): number {
 	const h = terrain.heightAt(c.x, c.y);
@@ -454,13 +470,63 @@ function arrowGeometry() {
 	return new THREE.ConeGeometry(0.06, 0.1, 4).translate(0, 0.05, 0);
 }
 
+/** A ribbon of quads, widened in the shader so it keeps a readable width at any zoom. */
+class BorderBuilder {
+	pos: number[] = [];
+	side: number[] = [];
+	idx: number[] = [];
+	private quad(p: number[][], sides: number[][]) {
+		const base = this.pos.length / 3;
+		for (let i = 0; i < 4; i++) {
+			this.pos.push(...p[i]);
+			this.side.push(...sides[i]);
+		}
+		this.idx.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
+	}
+	/** A line along the ground from a to b, sampled so it follows the terrain, a square cap at each end. */
+	line(ax: number, az: number, bx: number, bz: number, height: (x: number, z: number) => number) {
+		const len = Math.hypot(bx - ax, bz - az);
+		const tx = (bx - ax) / len,
+			tz = (bz - az) / len;
+		const nx = -tz,
+			nz = tx;
+		const n = Math.max(1, Math.ceil(len / 0.12));
+		let prev: number[] | undefined;
+		for (let k = 0; k <= n; k++) {
+			const x = ax + ((bx - ax) * k) / n,
+				z = az + ((bz - az) * k) / n;
+			const p = [x, height(x, z), z];
+			if (prev) this.quad([prev, prev, p, p], [[nx, nz], [-nx, -nz], [nx, nz], [-nx, -nz]]);
+			if (k === 0 || k === n) {
+				const s = k === 0 ? -1 : 1;
+				this.quad([p, p, p, p], [[nx, nz], [-nx, -nz], [nx + s * tx, nz + s * tz], [-nx + s * tx, -nz + s * tz]]);
+			}
+			prev = p;
+		}
+	}
+	into(group: THREE.Group) {
+		if (!this.pos.length) return;
+		const g = new THREE.BufferGeometry();
+		g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
+		g.setAttribute('aSide', new THREE.Float32BufferAttribute(this.side, 2));
+		g.setIndex(this.idx);
+		g.computeBoundingSphere();
+		if (g.boundingSphere) g.boundingSphere.radius += 0.3;
+		const mesh = new THREE.Mesh(g, mats.border);
+		mesh.renderOrder = 2;
+		group.add(mesh);
+	}
+}
+
 /**
  * Your territory's border: a gold line just inside every edge of your cells
- * that does not touch another of yours, in three pieces that follow the ground.
+ * that does not touch another of yours, lying on the ground (never below the
+ * sea), continuing into the next cell where the territory goes on.
  */
-function addBorder(board: Board, terrain: Terrain, c: Cell, out: Instances) {
-	const IN = 0.42;
+function addBorder(board: Board, terrain: Terrain, c: Cell, out: BorderBuilder) {
+	const IN = 0.4;
 	const mine = (x: number, y: number) => board.get(key(x, y))?.owner === ME;
+	const height = (x: number, z: number) => Math.max(terrain.heightAt(x, z), 0.04) + 0.03;
 	for (const [dx, dy] of [
 		[0, -1],
 		[1, 0],
@@ -478,14 +544,6 @@ function addBorder(board: Board, terrain: Terrain, c: Cell, out: Instances) {
 		};
 		const a = -ext(-1),
 			b = ext(1);
-		for (let k = 0; k < 3; k++) {
-			const t0 = a + ((b - a) * k) / 3,
-				t1 = a + ((b - a) * (k + 1)) / 3;
-			const tm = (t0 + t1) / 2;
-			const px = c.x + dx * IN + tx * tm,
-				pz = c.y + dy * IN + ty * tm;
-			const h = Math.max(terrain.heightAt(px, pz), terrain.heightAt(c.x, c.y) - 0.05, 0) + 0.03;
-			out.add('border', () => new THREE.BoxGeometry(1, 0.035, 0.05), mats.border, mat(px, h, pz, tx ? 0 : Math.PI / 2, t1 - t0 + 0.02, 1, 1));
-		}
+		out.line(c.x + dx * IN + tx * a, c.y + dy * IN + ty * a, c.x + dx * IN + tx * b, c.y + dy * IN + ty * b, height);
 	}
 }

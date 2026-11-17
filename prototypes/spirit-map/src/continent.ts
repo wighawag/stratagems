@@ -8,7 +8,7 @@
  * cells so the camera culls what it does not see.
  */
 import * as THREE from 'three';
-import {BIOMES, col, groundColour, IVORY, SCORCH, SEABED_DEEP, SEABED_SHALLOW} from './biomes';
+import {BIOMES, col, groundColour, SCORCH, SEABED_DEEP, SEABED_SHALLOW} from './biomes';
 import {hash2, noise, type Grid} from './rules';
 import {CHUNK, chunksOf, SEABED, uniforms, type Terrain} from './terrain';
 
@@ -163,7 +163,7 @@ export function faceColour(s: Sample, u: number, v: number, out: THREE.Color, gr
 		if (s.rift > 0.15) out.lerp(SCORCH, Math.min(0.85, s.rift * 1.2));
 		if (grid?.wash && Math.max(Math.abs(u - s.x1), Math.abs(v - s.y1)) < 0.5) {
 			const i = grid.index(s.x1, s.y1);
-			if (i >= 0 && grid.mine[i]) out.lerp(IVORY, 0.38);
+			if (i >= 0 && grid.mine[i]) out.offsetHSL(0, 0.08, 0.06);
 		}
 	}
 	const j = 0.93 + 0.14 * hash2(Math.floor(u * 97), Math.floor(v * 89), 3);

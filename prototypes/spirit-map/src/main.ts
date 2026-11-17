@@ -13,7 +13,7 @@ import {MapControls} from 'three/examples/jsm/controls/MapControls.js';
 import {BIOMES, SEA, SKY} from './biomes';
 import {ContinentTerrain} from './continent';
 import {DioramaTerrain} from './diorama';
-import {animateMaterials, Overlays, type Layers} from './overlays';
+import {animateMaterials, borderWidth, Overlays, type Layers} from './overlays';
 import {fxUniforms} from './fx';
 import {Events, VOLLEY_S} from './events';
 import {Grid, key, ME, nextBoard, pressureOf, type Board, type Plans} from './rules';
@@ -37,8 +37,8 @@ const state = {
 	mode: 'look' as 'look' | 'place' | 'remove',
 	faction: 3,
 	layers: {props: true, stones: true, spirits: true, fx: true, attacks: true, flags: true, ambient: true, plans: true, fronts: true, trend: true, border: true} as Layers,
-	/** Your cells washed in ivory, at every zoom. */
-	wash: params.get('wash') !== '0',
+	/** Your cells a touch brighter, same hue (off: round 3's ivory was too pale). */
+	wash: params.get('wash') === '1',
 	/** Loop every animation everywhere (the first round), or play them once, at the turn and on the focused cell. */
 	lively: params.get('lively') === '1',
 	/** The map alone, for a game built on top: no spirits, stones, banners, fights or plans. */
@@ -345,7 +345,7 @@ function renderPanel() {
 		Glacier=Blue, Mesa=Red, Forest=Green, Plains=Yellow, Mountains=Purple, Volcano=Evil.<br>
 		Life: props and height far away; close up, the ring of 7 stones (gold lit, pulsing gold = coming, pulsing red = going).<br>
 		Attacks: calm plays one volley at each turn (bolts from each living spirit to every enemy edge), then motes where life came, embers where it went; hover or tap a cell to see its fights. Lively loops it all everywhere. Dead: grey husk, still counts.<br>
-		Fronts: a red seam on every edge between two colours. Arrows: gold up where life grows, red down where it shrinks. Yours: an ivory wash and a gold border round your territory, plus banners close up.<br>
+		Fronts: a red seam on every edge between two colours. Arrows: gold up where life grows, red down where it shrinks. Yours: a gold border round your territory (thicker as you zoom out), banners close up.<br>
 		Map only: the land alone, for a game on top; hide life draws every living cell alike.<br>
 		Volcano: one smoke plume per gem at stake. Yours: a banner. Ghost = planned, red X = removal.<br>
 		Drag to pan, wheel or pinch to zoom, T for a turn, place/remove then click a cell.
@@ -489,6 +489,7 @@ function frame() {
 	sc.updateProjectionMatrix();
 
 	overlays.update(camera, layersNow());
+	borderWidth.value = THREE.MathUtils.clamp(dist / 11, 1, 6);
 	events.update(t);
 	events.group.visible = dist < 60;
 	renderer.render(scene, camera);

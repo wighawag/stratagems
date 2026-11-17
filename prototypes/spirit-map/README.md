@@ -59,3 +59,10 @@ The attacks were hard to see, growth against shrinkage could be clearer, and you
 - **Yours**: an ivory wash on your land at every zoom (the Go board's choice, `wash`), a gold border just inside the edge of your territory (`border`), and bigger banners.
 
 Screenshots: `node shots-r3.mjs`; it pins the shader clock (`window.timeOverride`) to catch the volley in flight.
+
+## Round 4 (2026-11-17)
+
+- The ivory wash was too pale (the user): your land keeps its biome's colour. `wash` (off by default, `?wash=1`) now only brightens it a touch, same hue.
+- **The gold border is the mark of your territory**: a ribbon lying on the ground just inside its edge, following the terrain (sampled every 0.12 of a cell, so no steps), never below the sea, square caps at its ends, and widened in the shader as the camera pulls back so it stays a line you can see. Round 3's flat pieces stepped and overlapped on slopes; a line drawn over everything at one height slid against the land with the camera (parallax) and was dimmed by the sea drawn after it.
+
+Screenshots: `node shots-r3.mjs` (`r4-*`: borders in the mountains).

@@ -8,7 +8,7 @@
  */
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import {BIOMES, col, DEAD, groundColour, IVORY, LAVA} from './biomes';
+import {BIOMES, col, DEAD, groundColour, LAVA} from './biomes';
 import {hash2, ME, type Grid} from './rules';
 import {CHUNK, uniforms, type Terrain} from './terrain';
 
@@ -139,7 +139,7 @@ export class DioramaTerrain implements Terrain {
 				rot: 0,
 				kind: 'pillar',
 				hs: 1,
-				color: grid.wash && c.owner === ME ? groundColour(c.color, c.life, ground).clone().lerp(IVORY, 0.38) : groundColour(c.color, c.life, ground).clone(),
+				color: grid.wash && c.owner === ME ? groundColour(c.color, c.life, ground).clone().offsetHSL(0, 0.08, 0.06) : groundColour(c.color, c.life, ground).clone(),
 			});
 			const cap = CAP_OF[c.color];
 			if (cap) {
