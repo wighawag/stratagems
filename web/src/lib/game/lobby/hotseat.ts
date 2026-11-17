@@ -276,12 +276,16 @@ export function createHotseat(params: {
 	/**
 	 * THE GAME IS SHOWN ONLY WHILE THE CONNECTION IS THE PERSON WITH THE DEVICE,
 	 * decided synchronously from the connection rather than after a poll. A
-	 * connection that moves to somebody else's account while a person plays (it
-	 * has been measured to: `@etherplay/connect`'s auto-connect, started when
-	 * the page loaded with the previous person stored as the last account,
-	 * landing after a later switch) would otherwise put that somebody's turn on
-	 * screen; covered in the same update, it never reaches the game, and the
-	 * switch below puts the right account back.
+	 * connection that moves to somebody else's account while a person plays
+	 * would otherwise put that somebody's turn on screen; covered in the same
+	 * update, it never reaches the game, and the switch below puts the right
+	 * account back. It was measured to happen on `@etherplay/connect` 0.17.0,
+	 * whose auto-connect, started when the page loaded with the previous person
+	 * stored as the last account, landed after a later switch; 0.17.1 fixed
+	 * that (a slow attempt no longer lands over a newer one). The cover stays:
+	 * it answers ANY move of the connection away from the person with the
+	 * device (an account switched by hand in the wallet included), not only
+	 * that race.
 	 *
 	 * AND ONLY ONCE THAT PERSON'S ACCOUNT DATA HAS LOADED (stratagems' port plan,
 	 * step H1b): until then their submission reads `Idle` and drops every plan,
