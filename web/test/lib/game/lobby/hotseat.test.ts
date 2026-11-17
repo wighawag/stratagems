@@ -161,8 +161,10 @@ describe('a hotseat', () => {
 	});
 
 	it('covers the game the moment the connection is somebody else, and puts the account back', async () => {
-		// Measured: a connection's auto-connect, started when the page loaded
-		// with the previous person stored, landed after a later switch.
+		// Measured on @etherplay/connect 0.17.0 (fixed in 0.17.1): a connection's
+		// auto-connect, started when the page loaded with the previous person
+		// stored, landed after a later switch. Any other move of the connection
+		// away from the person with the device is covered the same way.
 		const {hotseat, switched, signedIn} = fakeWorld(
 			commitPhase([false, false, false]),
 		);
