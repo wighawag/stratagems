@@ -82,6 +82,10 @@ export class Grid {
 	readonly color: Uint8Array;
 	readonly life: Uint8Array;
 	readonly stake: Uint8Array;
+	/** The viewer's cells. */
+	readonly mine: Uint8Array;
+	/** Draw the viewer's cells washed in ivory. */
+	wash = false;
 
 	constructor(
 		readonly board: Board,
@@ -106,11 +110,13 @@ export class Grid {
 		this.color = new Uint8Array(n);
 		this.life = new Uint8Array(n);
 		this.stake = new Uint8Array(n);
+		this.mine = new Uint8Array(n);
 		for (const c of board.values()) {
 			const i = this.index(c.x, c.y);
 			this.color[i] = c.color;
 			this.life[i] = c.life;
 			this.stake[i] = c.stake;
+			this.mine[i] = c.owner === ME ? 1 : 0;
 		}
 	}
 

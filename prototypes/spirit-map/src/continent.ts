@@ -8,7 +8,7 @@
  * cells so the camera culls what it does not see.
  */
 import * as THREE from 'three';
-import {BIOMES, col, groundColour, SCORCH, SEABED_DEEP, SEABED_SHALLOW} from './biomes';
+import {BIOMES, col, groundColour, IVORY, SCORCH, SEABED_DEEP, SEABED_SHALLOW} from './biomes';
 import {hash2, noise, type Grid} from './rules';
 import {CHUNK, chunksOf, SEABED, uniforms, type Terrain} from './terrain';
 
@@ -135,7 +135,7 @@ export function sample(grid: Grid, u: number, v: number, out: Sample): Sample {
 
 const tmp = new THREE.Color();
 
-export function faceColour(s: Sample, u: number, v: number, out: THREE.Color): THREE.Color {
+export function faceColour(s: Sample, u: number, v: number, out: THREE.Color, grid?: Grid): THREE.Color {
 	const {h, c1, l1} = s;
 	const b = BIOMES[c1];
 	if (h < -0.03 || !b) {
@@ -161,6 +161,10 @@ export function faceColour(s: Sample, u: number, v: number, out: THREE.Color): T
 			}
 		}
 		if (s.rift > 0.15) out.lerp(SCORCH, Math.min(0.85, s.rift * 1.2));
+		if (grid?.wash && Math.max(Math.abs(u - s.x1), Math.abs(v - s.y1)) < 0.5) {
+			const i = grid.index(s.x1, s.y1);
+			if (i >= 0 && grid.mine[i]) out.lerp(IVORY, 0.38);
+		}
 	}
 	const j = 0.93 + 0.14 * hash2(Math.floor(u * 97), Math.floor(v * 89), 3);
 	return out.multiplyScalar(j);
@@ -215,7 +219,7 @@ export class ContinentTerrain implements Terrain {
 				const cu = (a[0] + b[0] + d[0]) / 3,
 					cv = (a[1] + b[1] + d[1]) / 3;
 				sample(grid, cu, cv, s);
-				faceColour(s, cu, cv, c);
+				faceColour(s, cu, cv, c, grid);
 				for (const p of [a, b, d]) {
 					pos[t * 3] = p[0];
 					pos[t * 3 + 1] = p[2];

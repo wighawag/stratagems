@@ -49,3 +49,13 @@ Round 1's animations were cool but too much repeated everywhere (the user). Now 
 **Map only** (`?map=1`): the map alone, for a game built on top of the world that does not need stratagems' information. No spirits, standing stones, banners, fights, motes or planned moves, no card. Land, biomes, props, dead husks and volcanoes stay. **Hide life** (`?uniform=1`, with map only): every living cell drawn alike (as life 5, one gem), so neither life nor stake shows; dead cells stay as wasteland.
 
 Screenshots: `node shots-r2.mjs` (`shots/r2-*.png`).
+
+## Round 3 (2026-11-16)
+
+The attacks were hard to see, growth against shrinkage could be clearer, and your cells too (the user):
+
+- **Fights**: a red seam on every edge between two colours, always there, so the fronts read at a glance without any animation (`fronts`). The volley's bolts are comets (a bright head, five trailing points), twice the size, and land in a big white and red flash.
+- **Growing or shrinking**: a gold arrow up or a red arrow down above every spirit whose life will change (`arrows`), visible as far as the spirits are; the stones stay for the exact count close up.
+- **Yours**: an ivory wash on your land at every zoom (the Go board's choice, `wash`), a gold border just inside the edge of your territory (`border`), and bigger banners.
+
+Screenshots: `node shots-r3.mjs`; it pins the shader clock (`window.timeOverride`) to catch the volley in flight.

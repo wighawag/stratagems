@@ -98,6 +98,8 @@ export const BIOMES: Record<number, Biome> = {
 	},
 };
 
+/** The wash under your cells, as on the Go board. */
+export const IVORY = new THREE.Color('#fff4d8');
 export const DEAD = new THREE.Color('#8a847a');
 export const SCORCH = new THREE.Color('#4a3530');
 export const LAVA = new THREE.Color('#ff5a1f');

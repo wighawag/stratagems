@@ -19,7 +19,7 @@ import {CHUNK, uniforms, type Terrain} from './terrain';
 import {FxBuilder, fxGlow, fxSmoke} from './fx';
 import {hash2, key, MAX_LIFE, ME, pressureOf, type Board, type Cell, type Grid, type Plans} from './rules';
 
-export const LOD = {props: 34, stones: 15, spirits: 60, fx: 34, flags: 50};
+export const LOD = {props: 34, stones: 15, spirits: 60, fx: 34, flags: 50, fronts: 60};
 
 function baked(geo: THREE.BufferGeometry, color: string | THREE.Color): THREE.BufferGeometry {
 	const g = geo.index ? geo.toNonIndexed() : geo;
@@ -99,6 +99,10 @@ const mats = {
 	ghost: new THREE.MeshBasicMaterial({transparent: true, opacity: 0.4, depthWrite: false}),
 	removal: new THREE.MeshBasicMaterial({color: '#ff3020'}),
 	lava: new THREE.MeshBasicMaterial({color: '#ff6a1f'}),
+	front: new THREE.MeshBasicMaterial({color: '#ff4a2a', transparent: true, opacity: 0.85}),
+	grow: new THREE.MeshBasicMaterial({color: '#ffe066'}),
+	shrink: new THREE.MeshBasicMaterial({color: '#ff3b2a'}),
+	border: new THREE.MeshBasicMaterial({color: '#ffd36a'}),
 	flag: new THREE.MeshStandardMaterial({vertexColors: true, flatShading: true, roughness: 0.6}),
 };
 
@@ -131,7 +135,7 @@ export function animateMaterials(t: number) {
 
 /* ---------- the chunk ---------- */
 
-export type Layers = {props: boolean; stones: boolean; spirits: boolean; fx: boolean; attacks: boolean; flags: boolean; ambient: boolean; plans: boolean};
+export type Layers = {props: boolean; stones: boolean; spirits: boolean; fx: boolean; attacks: boolean; flags: boolean; ambient: boolean; plans: boolean; fronts: boolean; trend: boolean; border: boolean};
 
 type Chunk = {
 	center: THREE.Vector3;
@@ -142,6 +146,9 @@ type Chunk = {
 	ambient: THREE.Group;
 	attacks: THREE.Group;
 	flags: THREE.Group;
+	fronts: THREE.Group;
+	trend: THREE.Group;
+	border: THREE.Group;
 };
 
 class Instances {
@@ -202,7 +209,10 @@ export class Overlays {
 			const props = new Instances(),
 				stones = new Instances(),
 				spirits = new Instances(),
-				flags = new Instances();
+				flags = new Instances(),
+				fronts = new Instances(),
+				trend = new Instances(),
+				border = new Instances();
 			const motes = new FxBuilder(),
 				smoke = new FxBuilder(),
 				glow = new FxBuilder(),
@@ -241,6 +251,9 @@ export class Overlays {
 					const s = sizeOf(c.life);
 					spirits.add('spirit', () => new THREE.OctahedronGeometry(0.075, 0).scale(1, 1.5, 1), mats.spirit, mat(c.x, spiritY, c.y, 0, s, s, s), col(b.spirit));
 					motes.push({x: c.x, y: spiritY, z: c.y}, {x: 0, y: 0, z: 0}, col(b.spirit), hash2(c.x, c.y, 9), 1, 5, 0.22 * s);
+					// where its life goes: a gold arrow up, a red arrow down, above the spirit
+					if (pr.trend === 'grow') trend.add('arrow-up', arrowGeometry, mats.grow, mat(c.x, spiritY + 0.26, c.y, Math.PI / 4, 1.4));
+					else if (pr.trend === 'shrink') trend.add('arrow-down', () => arrowGeometry().rotateX(Math.PI), mats.shrink, mat(c.x, spiritY + 0.26, c.y, Math.PI / 4, 1.4));
 				}
 				// life coming or going, attacks: looping only when lively (calm plays them once, at the turn)
 				if (opts.lively && (pr.trend === 'grow' || pr.trend === 'shrink')) pushLifeChange(terrain, c, pr.trend, motes);
@@ -264,7 +277,24 @@ export class Overlays {
 				if (c.owner === ME) {
 					const fx = c.x - 0.3,
 						fz = c.y + 0.3;
-					flags.add('flag', flagGeometry, mats.flag, mat(fx, terrain.heightAt(fx, fz) - 0.01, fz, 0.3));
+					flags.add('flag', flagGeometry, mats.flag, mat(fx, terrain.heightAt(fx, fz) - 0.01, fz, 0.3, 1.5));
+					addBorder(board, terrain, c, border);
+				}
+				// the front: a glowing seam on every edge between two colours (each pair once)
+				for (const [dx, dy] of [
+					[1, 0],
+					[0, 1],
+				]) {
+					const n = board.get(key(c.x + dx, c.y + dy));
+					if (!n || n.color === c.color) continue;
+					const ex = c.x + dx * 0.5,
+						ez = c.y + dy * 0.5;
+					for (let k = -1; k <= 1; k++) {
+						const px = ex + (dy ? k * 0.28 : 0),
+							pz = ez + (dx ? k * 0.28 : 0);
+						const h = Math.max(terrain.heightAt(px, pz), variant === 'B' ? Math.min(terrain.heightAt(c.x, c.y), terrain.heightAt(n.x, n.y)) : 0);
+						fronts.add('front', () => new THREE.BoxGeometry(0.06, 0.03, 0.27), mats.front, mat(px, h + 0.02, pz, dx ? 0 : Math.PI / 2, 1, 1, 1));
+					}
 				}
 			}
 			const chunk: Chunk = {
@@ -276,11 +306,17 @@ export class Overlays {
 				ambient: new THREE.Group(),
 				attacks: new THREE.Group(),
 				flags: new THREE.Group(),
+				fronts: new THREE.Group(),
+				trend: new THREE.Group(),
+				border: new THREE.Group(),
 			};
 			props.into(chunk.props);
 			stones.into(chunk.stones, false);
 			spirits.into(chunk.spirits, false);
 			flags.into(chunk.flags);
+			fronts.into(chunk.fronts, false);
+			trend.into(chunk.trend, false);
+			border.into(chunk.border, false);
 			const pm = motes.build(fxGlow);
 			if (pm) chunk.fx.add(pm);
 			const ps = smoke.build(fxSmoke);
@@ -289,7 +325,7 @@ export class Overlays {
 			if (pg) chunk.ambient.add(pg);
 			const pb = bolts.build(fxGlow);
 			if (pb) chunk.attacks.add(pb);
-			for (const g of [chunk.props, chunk.stones, chunk.spirits, chunk.fx, chunk.ambient, chunk.attacks, chunk.flags]) this.group.add(g);
+			for (const g of [chunk.props, chunk.stones, chunk.spirits, chunk.fx, chunk.ambient, chunk.attacks, chunk.flags, chunk.fronts, chunk.trend, chunk.border]) this.group.add(g);
 			this.chunks.push(chunk);
 		}
 		// planned moves: ghosts and fissures, always shown
@@ -325,6 +361,9 @@ export class Overlays {
 			c.ambient.visible = layers.ambient && d < LOD.fx;
 			c.attacks.visible = layers.attacks && d < LOD.fx;
 			c.flags.visible = layers.flags && d < LOD.flags;
+			c.fronts.visible = layers.fronts && d < LOD.fronts;
+			c.trend.visible = layers.trend && d < LOD.spirits;
+			c.border.visible = layers.border;
 		}
 	}
 
@@ -400,12 +439,53 @@ export function pushAttacks(board: Board, terrain: Terrain, variant: 'A' | 'B', 
 		if (once) {
 			const start = once.start + hash2(c.x * 4 + dx, c.y * 4 + dy, 1) * once.duration * 0.3;
 			const d = once.duration * 0.7;
-			fx.push({x: c.x, y: spiritY, z: c.y}, {x: ex, y: ey, z: ez}, col(b.spirit), start, 1 / d, 12, 0.1);
-			fx.push({x: ex - dx * 0.04, y: ey, z: ez - dy * 0.04}, {x: 0, y: 0, z: 0}, spark, start + d, 1 / 0.5, 14, 0.35);
+			for (let k = 0; k < 6; k++) fx.push({x: c.x, y: spiritY, z: c.y}, {x: ex, y: ey, z: ez}, k ? col(b.spirit) : spark, start + k * 0.035, 1 / d, 12, 0.2 * (1 - k * 0.13));
+			fx.push({x: ex - dx * 0.04, y: ey, z: ez - dy * 0.04}, {x: 0, y: 0, z: 0}, spark, start + d, 1 / 0.6, 14, 0.7);
+			fx.push({x: ex - dx * 0.04, y: ey, z: ez - dy * 0.04}, {x: 0, y: 0, z: 0}, col('#ff4a2a'), start + d, 1 / 0.9, 14, 1.1);
 		} else {
 			const ph = hash2(c.x * 4 + dx, c.y * 4 + dy, 0);
-			fx.push({x: c.x, y: spiritY, z: c.y}, {x: ex, y: ey, z: ez}, col(b.spirit), ph, 0.5, 2, 0.09);
-			fx.push({x: ex - dx * 0.04, y: ey, z: ez - dy * 0.04}, {x: 0, y: 0, z: 0}, spark, ph, 0.5, 4, 0.3);
+			for (let k = 0; k < 6; k++) fx.push({x: c.x, y: spiritY, z: c.y}, {x: ex, y: ey, z: ez}, k ? col(b.spirit) : spark, ph - k * 0.02, 0.5, 2, 0.16 * (1 - k * 0.13));
+			fx.push({x: ex - dx * 0.04, y: ey, z: ez - dy * 0.04}, {x: 0, y: 0, z: 0}, spark, ph, 0.5, 4, 0.5);
+		}
+	}
+}
+
+function arrowGeometry() {
+	return new THREE.ConeGeometry(0.06, 0.1, 4).translate(0, 0.05, 0);
+}
+
+/**
+ * Your territory's border: a gold line just inside every edge of your cells
+ * that does not touch another of yours, in three pieces that follow the ground.
+ */
+function addBorder(board: Board, terrain: Terrain, c: Cell, out: Instances) {
+	const IN = 0.42;
+	const mine = (x: number, y: number) => board.get(key(x, y))?.owner === ME;
+	for (const [dx, dy] of [
+		[0, -1],
+		[1, 0],
+		[0, 1],
+		[-1, 0],
+	]) {
+		if (mine(c.x + dx, c.y + dy)) continue;
+		const tx = -dy,
+			ty = dx;
+		const ext = (s: number) => {
+			const nx = c.x + s * tx,
+				ny = c.y + s * ty;
+			if (!mine(nx, ny)) return IN;
+			return mine(nx + dx, ny + dy) ? 1 - IN : 0.5;
+		};
+		const a = -ext(-1),
+			b = ext(1);
+		for (let k = 0; k < 3; k++) {
+			const t0 = a + ((b - a) * k) / 3,
+				t1 = a + ((b - a) * (k + 1)) / 3;
+			const tm = (t0 + t1) / 2;
+			const px = c.x + dx * IN + tx * tm,
+				pz = c.y + dy * IN + ty * tm;
+			const h = Math.max(terrain.heightAt(px, pz), terrain.heightAt(c.x, c.y) - 0.05, 0) + 0.03;
+			out.add('border', () => new THREE.BoxGeometry(1, 0.035, 0.05), mats.border, mat(px, h, pz, tx ? 0 : Math.PI / 2, t1 - t0 + 0.02, 1, 1));
 		}
 	}
 }
