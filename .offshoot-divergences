@@ -122,10 +122,15 @@ web/vite.plugins.ts                                    the sprite pipeline's plu
 web/src/lib/placement/render/index.ts                  the reference game's board drawn by the pixi host instead of the immediate one
 
 [with/indexer]
-# AND BELOW THIS LINE, WHAT `with/indexer` MODIFIES FROM `main`: the game's
-# state folded by an etherfold processor, in a worker in the tab, beside the
-# direct read (README.indexer.md).
+# AND BELOW THIS LINE, WHAT `with/indexer` MODIFIES FROM ITS TWO STEMS, `main`
+# and `upstream/with/indexer` (jolly-roger `with/indexer`, which brings the
+# framework half: the host, the follower, the worker choice, the store). A file
+# is listed only when it differs from both. What this node adds is the
+# commit-reveal half: the game's state folded by an etherfold processor, in a
+# worker in the tab, beside the direct read (README.indexer.md).
 
+.offshoot-omissions                                    jolly-roger's indexer demo (the greetings' counts, its tests and suite) and main's Sepolia records, which upstream/with/indexer brings and this repo cannot build
+README.indexer.md                                      this node's account of the two halves: the commit-reveal one here, the framework one from upstream/with/indexer, and why a second root
 package.json                                           the LAN package's pnpmDepsHash for this branch's lockfile
 pnpm-lock.yaml                                         etherfold's packages and libSQL
 contracts/package.json                                 etherfold's packages and the ./utils/* export, for indexInProcess in Node
@@ -139,6 +144,7 @@ web/src/lib/placement/context.ts                       the reference game reads 
 # ITS STEMS, `with/fuzd`, `with/pixi-js` and `with/indexer`: where they meet,
 # a file holds all of them. Every other file is one stem's.
 
+.offshoot-omissions                                    with/fuzd's omission (the faucet suite) and with/indexer's (jolly-roger's indexer demo), together
 package.json                                           the LAN package's pnpmDepsHash for the three stems' lockfile together
 pnpm-lock.yaml                                         the three stems' dependencies (fuzd, pixi, etherfold), resolved together
 web/package.json                                       the three stems' dependencies together

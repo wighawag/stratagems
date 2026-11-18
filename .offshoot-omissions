@@ -147,3 +147,21 @@ web/test/lib/view/pending-operations.test.ts
 # (fuzd changes who sends the reveal), and it runs on main and with/pixi-js.
 # `scripts/rehearse-lan.sh` therefore needs this branch's suites named.
 web/e2e/tests/faucet.e2e.ts
+
+# FROM `with/indexer`'S SECOND STEM, `upstream/with/indexer` (jolly-roger
+# `with/indexer`, plan F1b), and so on `with/indexer` and the branches built on
+# it, never on `main`: jolly-roger's demo of the indexer, which counts the
+# greetings each account has sent, and the tests that fold GreetingsRegistry. The
+# contract is omitted above, so none of them can build or run here. The framework
+# half they exercise (`$lib/indexer/indexed.ts`, `contracts/utils/in-process-chain.ts`)
+# is kept, and tested at its home; the reference game's own processor is
+# `$lib/placement/indexer/`, tested by `test/lib/placement/indexer.test.ts`.
+web/src/lib/onchain/indexer
+web/test/lib/onchain/indexer.test.ts
+web/test/lib/indexer/indexed.test.ts
+web/e2e/tests/greeting-counts.e2e.ts
+# And jolly-roger `main`'s Sepolia deployment of GreetingsRegistry, which
+# `with/indexer` carries from `main` and which jolly-roger's `integration`, this
+# repo's first stem, already drops (its `with/local-signer` entry): these records
+# describe a contract this repo does not have.
+contracts/deployments/sepolia
