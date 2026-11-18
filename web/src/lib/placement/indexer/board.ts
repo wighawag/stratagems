@@ -17,12 +17,29 @@ import {
 	type BlockTimestamps,
 	type IndexedStateStore,
 	type IndexerHost,
+	type IndexerWorker,
 } from '$lib/indexer';
+import {isEmbeddedChainId} from '$lib/embedded/chain-id';
 import type {CycleConfig} from '$lib/game/core/cycle';
 import type {BoardState} from '$lib/placement/state';
 import {INDEXER_PREFIX} from './prefix';
 import {boardFollower} from './queries';
 import {indexingSource, STREAM_FINALITY, type ContractsInfo} from './source';
+
+/**
+ * Which worker folds this deployment's board, and its name. A chain in this tab
+ * (the offline world, `isEmbeddedChainId`) gets the world worker: which chains
+ * are a world is the app's to say, and jolly-roger's `worker-choice.ts` calls
+ * none a world by default.
+ */
+export function boardWorker(deployments: ContractsInfo): IndexerWorker {
+	return indexerWorkerFor(
+		INDEXER_PREFIX,
+		deployments,
+		deployments.contracts.Game.address,
+		{isWorld: isEmbeddedChainId},
+	);
+}
 
 export function createIndexedBoard(params: {
 	/** The framework's chain provider (`connection.provider`). */
@@ -38,11 +55,7 @@ export function createIndexedBoard(params: {
 		provider: params.provider,
 		publicClient: params.publicClient,
 		cycle: params.cycle,
-		worker: indexerWorkerFor(
-			INDEXER_PREFIX,
-			params.deployments,
-			params.deployments.contracts.Game.address,
-		),
+		worker: boardWorker(params.deployments),
 		startWorker: (worker) =>
 			worker.kind === 'world'
 				? new Worker(new URL('./indexer.world.worker.ts', import.meta.url), {
