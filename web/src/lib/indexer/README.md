@@ -32,7 +32,7 @@ board: () =>
 		provider: core.connection.provider,
 		publicClient: core.publicClient,
 		cycle: config.cycle,
-		worker: indexerWorkerFor('mygame', deployments, gameAddress),
+		worker: indexerWorkerFor('mygame', deployments, gameAddress, {isWorld: isEmbeddedChainId}),
 		startWorker: (worker) =>
 			worker.kind === 'world'
 				? new Worker(new URL('./indexer.world.worker.ts', import.meta.url), {type: 'module', name: worker.name})
@@ -49,8 +49,11 @@ The reference game on this node is the worked example: `$lib/placement/indexer/`
 
 ## What the framework does
 
+Two homes (`README.indexer.md` at the root says why). From jolly-roger `with/indexer`, by this repo's `upstream/with/indexer`, and the same in every app that indexes: `./host.ts`, `./follower.ts`, `./worker-choice.ts`, `./indexed.ts` and `contracts/utils/`. From this node, because they are commit-reveal's: `./indexed-state.ts`, `./cycle-stamp.ts` and `./index.ts`.
+
 - **`./host.ts`**: the two worker bodies. A live chain's: ONE TAB INDEXES and the others read (etherfold ADR-0097) under an election named per deployment, a database per stream, a published snapshot installed when the tab names a publication (the processor may then be the PUBLISHED BUNDLE, whose bytes are its identity: `processorBundle: {url: new URL('processor.bundle.js', appRoot())}`). An offline world's: no election, no publication, its database named by the world and kept across reloads.
-- **`./worker-choice.ts`**: which worker a deployment runs and its name (`<prefix>-<chainId>-<game>` for a live chain, `<prefix>-world-<chainId>` for a world), and `deleteWorldIndex` for a forgotten world.
+- **`./worker-choice.ts`**: which worker a deployment runs and its name (`<prefix>-<chainId>-<game>` for a live chain, `<prefix>-world-<chainId>` for a world), and `deleteWorldIndex` for a forgotten world. Which chains are a world is the game's to say: pass `{isWorld: isEmbeddedChainId}` (from `$lib/embedded/chain-id`), or every chain is taken for a live one, the offline world's included.
+- **`./indexed.ts`**: `createIndexed`, jolly-roger's store of an app's indexed read (the follower's last read, the worker's progress, the refusal and failure statuses), for state that is not a game's board. A game's board uses `./indexed-state.ts`, which adds the cycle stamp.
 - **`./indexed-state.ts`**: the `OnchainStateStore` the skeleton reads: the port to the worker, the follower, the worker's progress, the refusal and failure statuses, and the CYCLE STAMP (`./cycle-stamp.ts`: the block's timestamp under the timed policy, the game's folded `CycleAdvanced` under Manual, both under the hybrid policy).
 - **`./follower.ts`**: one full read, then only the parts whose entities moved, pinned by block HASH so a reorg between the signal and the read is refused and read again rather than composed, serialised so an older answer never lands after a newer one.
 - **`contracts/utils/indexer.ts`**: `indexInProcess`, the same processor in Node over SQLite, for contracts tests, unit tests and scripts.

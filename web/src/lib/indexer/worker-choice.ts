@@ -1,7 +1,8 @@
 /**
  * WHICH INDEXER WORKER A GAME'S STATE RUNS, and the name it is given.
  *
- * - A chain in this tab (an offline world, `isEmbeddedChainId`) is indexed by
+ * - A chain in this tab (an offline world: the app says which chains are one,
+ *   `isWorld`; template-commit-reveal passes `isEmbeddedChainId`) is indexed by
  *   the game's WORLD worker (`hostWorldIndexer`): no tab election, since no
  *   other tab can reach this tab's chain, and no publication, since nobody
  *   publishes a snapshot of a world. Its IndexedDB database is named after the
@@ -20,8 +21,12 @@
  *
  * `prefix` is the GAME's: a short lower-case word naming it (stratagems says
  * `stratagems`), so two games served from one origin never share a database.
+ *
+ * WHICH CHAINS ARE A WORLD IS INJECTED (`isWorld`), and by default none is:
+ * this module is jolly-roger's, `with/indexer`, which stems from `main` and so
+ * has no chain in the tab. An app that has one (`with/embedded-chain`, and
+ * template-commit-reveal's offline world) passes its own test.
  */
-import {isEmbeddedChainId} from '$lib/embedded/chain-id';
 
 export type IndexerWorker = {
 	kind: 'world' | 'live';
@@ -37,13 +42,19 @@ export function worldIndexDatabasePrefix(
 	return `${prefix}-world-${chainId}`;
 }
 
+export type IndexerWorkerOptions = {
+	/** Whether a chain id is a chain in this tab (an offline world); never, when left out. */
+	isWorld?: (chainId: number) => boolean;
+};
+
 export function indexerWorkerFor(
 	prefix: string,
 	deployment: {chain: {id: number}},
 	gameAddress: `0x${string}`,
+	options: IndexerWorkerOptions = {},
 ): IndexerWorker {
 	const chainId = deployment.chain.id;
-	if (isEmbeddedChainId(chainId)) {
+	if (options.isWorld?.(chainId)) {
 		return {kind: 'world', name: worldIndexDatabasePrefix(prefix, chainId)};
 	}
 	return {

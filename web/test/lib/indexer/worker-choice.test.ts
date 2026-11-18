@@ -5,10 +5,15 @@ import {
 	indexerWorkerFor,
 	worldIndexDatabasePrefix,
 } from '$lib/indexer/worker-choice';
-import {
-	MAX_EMBEDDED_CHAIN_ID,
-	MIN_EMBEDDED_CHAIN_ID,
-} from '$lib/embedded/chain-id';
+
+/**
+ * Which chains are a world is the APP's to say (`indexerWorkerFor`'s
+ * `isWorld`): template-commit-reveal passes `isEmbeddedChainId`. These tests
+ * name a range of their own, so this file needs no embedded chain.
+ */
+const MIN_WORLD_ID = 9_007_199_254_740_000;
+const MAX_WORLD_ID = 9_007_199_254_740_991;
+const isWorld = (id: number) => id >= MIN_WORLD_ID && id <= MAX_WORLD_ID;
 
 const PREFIX = 'mygame';
 const GAME = '0x00000000000000000000000000000000000000Aa' as const;
@@ -29,17 +34,33 @@ async function names(): Promise<string[]> {
 }
 
 describe("a game's indexer worker", () => {
-	it('an embedded chain gets the world worker, named by its chain id', () => {
-		for (const id of [MIN_EMBEDDED_CHAIN_ID, MAX_EMBEDDED_CHAIN_ID]) {
-			expect(indexerWorkerFor(PREFIX, {chain: {id}}, GAME)).toEqual({
+	it('a chain the app calls a world gets the world worker, named by its chain id', () => {
+		for (const id of [MIN_WORLD_ID, MAX_WORLD_ID]) {
+			expect(indexerWorkerFor(PREFIX, {chain: {id}}, GAME, {isWorld})).toEqual({
 				kind: 'world',
 				name: `mygame-world-${id}`,
 			});
 		}
 	});
 
+	it('no chain is a world unless the app says which are', () => {
+		for (const id of [MIN_WORLD_ID, 31337]) {
+			expect(indexerWorkerFor(PREFIX, {chain: {id}}, GAME)).toEqual({
+				kind: 'live',
+				name: `mygame-${id}-${GAME.toLowerCase()}`,
+			});
+		}
+		expect(
+			indexerWorkerFor(PREFIX, {chain: {id: MIN_WORLD_ID}}, GAME, {
+				isWorld: () => false,
+			}).kind,
+		).toBe('live');
+	});
+
 	it('any other chain gets the live worker, its election named per deployment', () => {
-		const local = indexerWorkerFor(PREFIX, {chain: {id: 31337}}, GAME);
+		const local = indexerWorkerFor(PREFIX, {chain: {id: 31337}}, GAME, {
+			isWorld,
+		});
 		expect(local).toEqual({
 			kind: 'live',
 			name: `mygame-31337-${GAME.toLowerCase()}`,
@@ -59,8 +80,8 @@ describe("a game's indexer worker", () => {
 	});
 
 	it('forgetting a world deletes its databases, and only its', async () => {
-		const world = MIN_EMBEDDED_CHAIN_ID + 5;
-		const other = MIN_EMBEDDED_CHAIN_ID + 50;
+		const world = MIN_WORLD_ID + 5;
+		const other = MIN_WORLD_ID + 50;
 		await openDatabase(`${worldIndexDatabasePrefix(PREFIX, world)}-stream-a`);
 		await openDatabase(`${worldIndexDatabasePrefix(PREFIX, world)}-stream-b`);
 		await openDatabase(`${worldIndexDatabasePrefix(PREFIX, other)}-stream-a`);
@@ -91,7 +112,7 @@ describe("a game's indexer worker", () => {
 	});
 
 	it("another game's world of the same id is not this game's", async () => {
-		const world = MIN_EMBEDDED_CHAIN_ID + 9;
+		const world = MIN_WORLD_ID + 9;
 		await openDatabase(`${worldIndexDatabasePrefix('other', world)}-stream`);
 		await deleteWorldIndex(PREFIX, world);
 		await new Promise((resolve) => setTimeout(resolve, 20));
@@ -101,7 +122,7 @@ describe("a game's indexer worker", () => {
 	});
 
 	it('a world whose id is a prefix of another is not the other', async () => {
-		const world = MIN_EMBEDDED_CHAIN_ID + 7;
+		const world = MIN_WORLD_ID + 7;
 		await openDatabase(`${worldIndexDatabasePrefix(PREFIX, world)}0-stream`);
 		await deleteWorldIndex(PREFIX, world);
 		await new Promise((resolve) => setTimeout(resolve, 20));
