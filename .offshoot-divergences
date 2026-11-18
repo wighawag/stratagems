@@ -133,3 +133,13 @@ contracts/tsconfig.json                                compiles utils/ (indexInP
 web/package.json                                       etherfold's browser packages
 web/src/lib/offline.ts                                 the offline world's indexer worker, so its board folds as online
 web/src/lib/placement/context.ts                       the reference game reads its board from its processor, held to the contract's storage
+
+[with/fuzd-pixi-indexer]
+# AND BELOW THIS LINE, WHAT `with/fuzd-pixi-indexer` MODIFIES FROM ALL THREE
+# ITS STEMS, `with/fuzd`, `with/pixi-js` and `with/indexer`: where they meet,
+# a file holds all of them. Every other file is one stem's.
+
+package.json                                           the LAN package's pnpmDepsHash for the three stems' lockfile together
+pnpm-lock.yaml                                         the three stems' dependencies (fuzd, pixi, etherfold), resolved together
+web/package.json                                       the three stems' dependencies together
+web/src/lib/placement/context.ts                       fuzd's scheduler and the indexed board composed together in the reference game
