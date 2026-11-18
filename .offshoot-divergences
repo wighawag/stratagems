@@ -91,3 +91,13 @@ web/test/lib/context/world-connection.test.ts          the delegation pair is th
 web/test/lib/embedded/deployments.test.ts              the expected contract is the Game, not GreetingsRegistry
 web/test/lib/embedded/world.test.ts                    this game's offline world and its table world, created, staked, restored
 web/test/lib/view/operation.test.ts                    cycle, not epoch
+
+[with/pixi-js]
+# AND BELOW THIS LINE, WHAT `with/pixi-js` MODIFIES FROM `main`: the pixi
+# render host, the art pipeline and its sprites.
+
+package.json                                           the LAN package's pnpmDepsHash for this branch's lockfile
+pnpm-lock.yaml                                         pixi.js and the asset pipeline
+web/package.json                                       pixi.js and the asset pipeline
+web/vite.plugins.ts                                    the sprite pipeline's plugin, in the one slot whose job is to differ
+web/src/lib/placement/render/index.ts                  the reference game's board drawn by the pixi host instead of the immediate one
