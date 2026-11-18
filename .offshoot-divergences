@@ -1,0 +1,93 @@
+# The stem's files this node carries MODIFIED, each with the reason it differs.
+#
+# WHAT THIS IS FOR. `.offshoot-omissions` lists what this repo does not carry
+# from its stem (jolly-roger `integration`); this lists what it carries and changes.
+# Everything else is the stem's byte for byte or this repo's own, so a diff
+# against the stem reads as: the additions, the omissions (listed there) and
+# these. A modified file is a conflict on every cascade that touches it, so each
+# one here is a cost paid on purpose, and the reason says what it buys. A
+# cascade reviewer meeting one of these files knows the node's side is a
+# decision; meeting any other modified file, it is drift.
+#
+# AND IT IS CHECKED, by `scripts/check-divergences.mjs` (the tree's one copy,
+# from template-svelte), run by `web/test/offshoot-divergences.test.ts` and by
+# `scripts/apply-omissions.sh` during a merge: it fails on a modified file with
+# no entry, on an entry whose file no longer differs, and on an entry with no
+# reason. A file at the stem's OLD version is drift, not a divergence:
+# `scripts/check-stem-drift.mjs` catches that.
+#
+# FORMAT. One file per line: its path, then its reason. `#` starts a comment.
+# A line `[<branch>]` starts a section.
+#
+# THIS REPO'S LIST IS ITS OWN. Its stem repo keeps a list too, and a cascade
+# that changes it conflicts here: keep this side, always (the stem's entries
+# describe the stem, not this repo), as `.offshoot-omissions` says of omissions.
+#
+# SECTIONS, AND HOW THIS FILE CASCADES INSIDE THIS REPO. This section, with no
+# marker, is `main`'s: what template-commit-reveal `main` modifies from
+# jolly-roger `integration`. Each `with/*` branch inherits it by merge and adds
+# its own entries below a `[<its branch>]` marker: what IT modifies from its own
+# stem branches. Only the last section is checked at a node; the sections above
+# are its stems', checked there. A game (reveal-or-die, stratagems, ...) never
+# keeps these entries: its list is its own, written against its stem branch.
+
+# The repo's identity, documents and workspace
+AGENTS.md                                              the commit-reveal framework's rules for agents (the seams, the cycle, a game's contracts are its own) below jolly-roger's
+package.json                                           the root's contracts dependency names this repo's contracts package, and the LAN package's pnpmDepsHash
+pnpm-lock.yaml                                         the game's dependencies: webevm for the offline world, the simulation sandbox, the contracts package's name
+.offshoot-omissions                                    this repo's own omissions from jolly-roger integration (the greetings demo and what the game replaces)
+scripts/apply-omissions.sh                             the variant that also runs check-dangling-imports.mjs before the merge is committed, as its header says (keep both halves on a cascade)
+
+# The contracts: the commit-reveal game and its lobby
+contracts/.env                                         the dev faucet gives 1 ETH, enough for the signer's stipend
+contracts/.gitignore                                   the game's generated outputs
+contracts/hardhat.config.ts                            the dev node mines every second for the client's clock, and the game's compiler settings
+contracts/package.json                                 `dist` is a build input, so prepare builds it, and abitype 1.3
+contracts/rocketh/config.ts                            the game's deployments: the lobby factory and its implementations, the Simulation route, the LAN chain's gas price
+contracts/test/js/utils/index.ts                       the game's test harness: chunked commit and reveal, the gas budget, the cycle
+contracts/tsconfig.json                                compiles js/ beside the two generated indexes (the deploy's helpers)
+
+# The web package's configuration
+web/package.json                                       webevm for the offline world and the simulation sandbox; pixi is off main (with/pixi-js)
+web/.gitignore                                         the sprite pipeline's output, generated in with/pixi-js and ignored here
+web/svelte.config.js                                   `$app-specific` points at the reference game (src/lib/placement/game.ts)
+web/playwright.config.ts                               two workers feeding the node, and the workers note's contention story corrected
+web/src/web-config.json                                the template calls itself Commit Reveal
+
+# The framework composed around the game
+web/src/lib/index.ts                                   the table (?game=) kept on every link, so the whole app stays at it
+web/src/lib/context/AcrossPages.svelte                 the game's diagnostics started for the session, through $app-specific, with ?debug
+web/src/lib/context/core.ts                            the table's context, the local revealer, the delegation pair from the connection
+web/src/lib/context/index.ts                           a table resolved before its page is composed, the local revealer, the offline table's context
+web/src/lib/context/types.ts                           the lobby's and the submission's types in the context
+web/src/lib/core/connection/remote.ts                  a world's signer broadcasts to the world's node, not the app's (the nodeURL fix, a K1 item: its home is jolly-roger)
+web/src/lib/core/connection/types.ts                   the world connection's nodeURL, the same fix
+web/src/lib/account/connectors.ts                      the connector takes any state seam, so the game's board (a poller or an indexer) sits in its list
+web/src/lib/onchain/state.ts                           the game's onchain state: the poller on the cycle's length, uncached block numbers, the reveal-log range
+web/src/lib/offline.ts                                 the offline world of this game: its seats, a greedy world seat, the offline table's boot (K2: shared with the games)
+web/src/lib/view/index.ts                              the game's view of the onchain state through the seams, in place of the greetings
+web/src/lib/ui/chrome.ts                               `round` is a descendant's word, `cycle` the template's (CONTEXT.md)
+web/src/lib/ui/delegation/registration.ts              cycle, not epoch
+web/src/lib/ui/navbar/navbar.svelte                    the navbar's Play link in place of the Demo
+web/src/routes/+layout.svelte                          the context opened behind TableGate when the page is at a table
+web/src/routes/+page.svelte                            the home page is the game menu, titled from web-config, the same file in every game
+
+# The e2e, on the game instead of the greetings
+web/e2e/fixtures/stalling-wallet.ts                    this app's stalled send is addToReserve, asked of the contracts page by testid
+web/e2e/fixtures/test.ts                               the game's fixtures: the table, the offline world, the arrival's continue, the exported connect helpers
+web/e2e/impersonate-addresses.json                     the accounts the game's suites claim (the table's nine and ten, the faucet's eight)
+web/e2e/routes.ts                                      the smoke routes walk /play/, not the /demo/ this template deletes
+web/e2e/tests/contracts.e2e.ts                         the contracts page driven on the game's contract, by testid, with well-formed transactions
+web/e2e/tests/escape-hatch.e2e.ts                      the same, on the game's contract, and stopping waiting moves nothing
+web/e2e/tests/faucet.e2e.ts                            the faucet's account is eight, which the burner can sign with
+web/e2e/tests/home.e2e.ts                              the home page's game menu
+web/e2e/tests/hydration.e2e.ts                         the round's page instead of the demo's
+web/e2e/tests/pending-operation.e2e.ts                 the inspector on the game's submission and cycle
+web/e2e/tests/sending-indicator.e2e.ts                 the indicator's budget fitting this app, and its contention note
+
+# Unit tests of the above
+web/test/e2e-account-claims.test.ts                    the nonce guard reads every claim of a file and is guarded against a literal
+web/test/lib/context/world-connection.test.ts          the delegation pair is the connection's
+web/test/lib/embedded/deployments.test.ts              the expected contract is the Game, not GreetingsRegistry
+web/test/lib/embedded/world.test.ts                    this game's offline world and its table world, created, staked, restored
+web/test/lib/view/operation.test.ts                    cycle, not epoch
