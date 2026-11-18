@@ -120,3 +120,16 @@ pnpm-lock.yaml                                         pixi.js and the asset pip
 web/package.json                                       pixi.js and the asset pipeline
 web/vite.plugins.ts                                    the sprite pipeline's plugin, in the one slot whose job is to differ
 web/src/lib/placement/render/index.ts                  the reference game's board drawn by the pixi host instead of the immediate one
+
+[with/indexer]
+# AND BELOW THIS LINE, WHAT `with/indexer` MODIFIES FROM `main`: the game's
+# state folded by an etherfold processor, in a worker in the tab, beside the
+# direct read (README.indexer.md).
+
+package.json                                           the LAN package's pnpmDepsHash for this branch's lockfile
+pnpm-lock.yaml                                         etherfold's packages and libSQL
+contracts/package.json                                 etherfold's packages and the ./utils/* export, for indexInProcess in Node
+contracts/tsconfig.json                                compiles utils/ (indexInProcess) beside js/ and the two generated indexes
+web/package.json                                       etherfold's browser packages
+web/src/lib/offline.ts                                 the offline world's indexer worker, so its board folds as online
+web/src/lib/placement/context.ts                       the reference game reads its board from its processor, held to the contract's storage
