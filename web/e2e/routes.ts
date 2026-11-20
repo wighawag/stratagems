@@ -1,4 +1,21 @@
 /**
+ * THE APP'S MAIN PAGE, as the suites that visit it name it: its route, the
+ * heading that page renders, the label of the home page's link to it, and its
+ * contract (as /contracts lists it). Here it is the greetings demo. The app
+ * names the same page in `MAIN_PAGE` of its `$app-specific` module
+ * (`src/lib/context/app.ts` here); a descendant changes both.
+ */
+export const MAIN_PAGE = {
+	// Here the main page is the game, at `/play/` (`MAIN_PAGE` of the game's
+	// `$app-specific` module), and the home page's link to it is "Online". It
+	// renders a canvas and no heading, so there is no `heading`: this
+	// template's own `home.e2e.ts` looks for the canvas instead.
+	route: '/play/',
+	homeLink: /^online$/i,
+	contract: 'Game',
+} as const;
+
+/**
  * The routes a smoke test walks, in ONE place so a descendant overrides a list
  * rather than editing a suite.
  *
@@ -16,16 +33,14 @@
  * practice means one route per kind of page the app has. Not every route. A
  * smoke pass that walks thirty pages is a slow way to learn the same fact.
  *
- * WHAT A DESCENDANT DOES: replaces the entries it does not have. An app with no
- * `/demo/` swaps in its own main route. Keep `/` first: it is the only entry
- * every descendant is guaranteed to share.
+ * WHAT A DESCENDANT DOES: replaces the entries it does not have. Its main page
+ * is `MAIN_PAGE.route`, so an app with no `/demo/` changes `MAIN_PAGE` above
+ * and leaves this list alone. Keep `/` first: it is the only entry every
+ * descendant is guaranteed to share.
  */
 export const SMOKE_ROUTES = [
 	'/',
-	// This template deletes jolly-roger's `/demo/` (see .offshoot-omissions) and
-	// ships a game instead, so the game's page stands in for it. Left as
-	// `/demo/`, the smoke pass walked a 404 and passed.
-	'/play/',
+	MAIN_PAGE.route,
 	'/transactions/',
 	'/explorer/',
 ] as const;
