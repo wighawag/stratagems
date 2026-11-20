@@ -53,3 +53,16 @@ export function delegationRegistry(
 export function operationScope(deployments: TypedDeployments): `0x${string}` {
 	return deployments.contracts.Game.address;
 }
+
+/**
+ * The game's page, as the inherited chrome links to it: the navbar's link
+ * (`name`) and the home page's link to the online game (`homeLink`), both to
+ * `route`. jolly-roger's seam (`MAIN_PAGE` of its `context/app.ts`), so a
+ * game that moves or renames its page does it here and edits no shared file.
+ * The e2e suites name the same page in `MAIN_PAGE` of `web/e2e/routes.ts`.
+ */
+export const MAIN_PAGE = {
+	name: 'Play',
+	route: '/play/',
+	homeLink: 'Online',
+} as const;
