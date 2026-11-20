@@ -471,8 +471,8 @@ function buildChainConfig(params: {
 	 * provider.
 	 *
 	 * NOT the app's `PUBLIC_NODE_URL` any more, and the difference is the whole
-	 * point: both values it feeds - where the local signer BROADCASTS, and which
-	 * node the ledger compares a nonce against - are questions about the chain
+	 * point: both values it feeds (where the local signer BROADCASTS, and which
+	 * node the ledger compares a nonce against) are questions about the chain
 	 * the connection is on. See `EstablishedConnection.nodeURL`.
 	 */
 	nodeURL: string | undefined;
@@ -1418,11 +1418,11 @@ export function createCoreContext<App extends AppContext>(params: {
 		//
 		// ONE CASE IS LEFT OPEN RATHER THAN GUESSED AT: under HOSTED sign-in
 		// (`walletOnly: false`) `resolveSignerRpc` treats a missing url as fatal,
-		// because a hosted account may have no wallet to broadcast through - and a
-		// world has no url while always having a wallet of its own, so the two
-		// rules disagree. That combination exists on no branch here (this repo has
-		// no wallet host, and the branch the embedded chain came from has no
-		// signer), so it is named rather than solved blind.
+		// because a hosted account may have no wallet to broadcast through, while
+		// a world has no url and always has a wallet of its own, so the two rules
+		// disagree. That combination exists on no branch here (this branch
+		// has no wallet host, `with/hosted-account` has no embedded chain), so it
+		// is named rather than solved blind.
 		nodeURL: connectionNodeURL,
 		// The APP's url, deliberately: it is the configured `PUBLIC_NODE_URL`
 		// that cannot be resolved before there is a page. See

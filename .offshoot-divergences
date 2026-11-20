@@ -60,15 +60,12 @@ web/src/lib/context/AcrossPages.svelte                 the game's diagnostics st
 web/src/lib/context/core.ts                            the table's context, the local revealer, the delegation pair from the connection
 web/src/lib/context/index.ts                           a table resolved before its page is composed, the local revealer, the offline table's context
 web/src/lib/context/types.ts                           the lobby's and the submission's types in the context
-web/src/lib/core/connection/remote.ts                  a world's signer broadcasts to the world's node, not the app's (the nodeURL fix, a K1 item: its home is jolly-roger)
-web/src/lib/core/connection/types.ts                   the world connection's nodeURL, the same fix
 web/src/lib/account/connectors.ts                      the connector takes any state seam, so the game's board (a poller or an indexer) sits in its list
 web/src/lib/onchain/state.ts                           the game's onchain state: the poller on the cycle's length, uncached block numbers, the reveal-log range
 web/src/lib/offline.ts                                 the offline world of this game: its seats, a greedy world seat, the offline table's boot (K2: shared with the games)
 web/src/lib/view/index.ts                              the game's view of the onchain state through the seams, in place of the greetings
 web/src/lib/ui/chrome.ts                               `round` is a descendant's word, `cycle` the template's (CONTEXT.md)
 web/src/lib/ui/delegation/registration.ts              cycle, not epoch
-web/src/lib/ui/navbar/navbar.svelte                    the navbar's Play link in place of the Demo
 web/src/routes/+layout.svelte                          the context opened behind TableGate when the page is at a table
 web/src/routes/+page.svelte                            the home page is the game menu, titled from web-config, the same file in every game
 
@@ -76,20 +73,19 @@ web/src/routes/+page.svelte                            the home page is the game
 web/e2e/fixtures/stalling-wallet.ts                    this app's stalled send is addToReserve, asked of the contracts page by testid
 web/e2e/fixtures/test.ts                               the game's fixtures: the table, the offline world, the arrival's continue, the exported connect helpers
 web/e2e/impersonate-addresses.json                     the accounts the game's suites claim (the table's nine and ten, the faucet's eight)
-web/e2e/routes.ts                                      the smoke routes walk /play/, not the /demo/ this template deletes
+web/e2e/routes.ts                                      `MAIN_PAGE` names the game's page, /play/, its "Online" link and its contract, and no heading (the page is a canvas)
 web/e2e/tests/contracts.e2e.ts                         the contracts page driven on the game's contract, by testid, with well-formed transactions
 web/e2e/tests/escape-hatch.e2e.ts                      the same, on the game's contract, and stopping waiting moves nothing
 web/e2e/tests/faucet.e2e.ts                            the faucet's account is eight, which the burner can sign with
 web/e2e/tests/home.e2e.ts                              the home page's game menu
-web/e2e/tests/hydration.e2e.ts                         the round's page instead of the demo's
 web/e2e/tests/pending-operation.e2e.ts                 the inspector on the game's submission and cycle
 web/e2e/tests/sending-indicator.e2e.ts                 the indicator's budget fitting this app, and its contention note
 
 # Unit tests of the above
 web/test/e2e-account-claims.test.ts                    the nonce guard reads every claim of a file and is guarded against a literal
 web/test/lib/context/world-connection.test.ts          the delegation pair is the connection's
-web/test/lib/embedded/deployments.test.ts              the expected contract is the Game, not GreetingsRegistry
 web/test/lib/embedded/world.test.ts                    this game's offline world and its table world, created, staked, restored
+web/test/lib/app-world.ts                              the world test constants: the Game only (this repo's world test is its own, so no scripts and no rocketh config)
 web/test/lib/view/operation.test.ts                    cycle, not epoch
 
 [with/pixi-js]
