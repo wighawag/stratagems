@@ -14,5 +14,8 @@
  * this file as it is while its contract is the `Game`.
  */
 
-/** The deployment name of the contract the app's context reads. */
-export const APP_CONTRACT = 'Game' as const;
+/**
+ * The deployment name of the contract the app's context reads: stratagems'
+ * game is the `Stratagems` contract, not the template's `Game`.
+ */
+export const APP_CONTRACT = 'Stratagems' as const;

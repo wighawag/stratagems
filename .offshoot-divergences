@@ -61,4 +61,5 @@ web/src/lib/offline.ts                    the offline world's contracts, deploy 
 web/src/lib/offline-players.ts            the offline world's played seats: a game's by design, at the stem's path
 web/test/lib/embedded/world.test.ts       the test of stratagems' offline.ts
 web/test/lib/offline-players.test.ts      the test of stratagems' offline-players.ts
+web/test/lib/app-world.ts                 the world test constants name stratagems' contract, Stratagems, so the template's deployments test runs here
 web/e2e/fixtures/contracts-page.ts        WRITE_CONTRACT is the game's contract, Stratagems

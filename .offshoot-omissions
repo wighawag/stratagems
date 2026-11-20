@@ -131,13 +131,6 @@ web/test/lib/placement
 web/test/lib/game/render/canvas2d.svelte.test.ts
 web/test/lib/context/resume-on-gas.test.ts
 web/test/lib/context/setup-gate.test.ts
-# The embedded-chain deployment test indexes `contracts.Game`, which stratagems
-# calls `Stratagems`, so it cannot type-check here (reveal-or-die's is
-# byte-identical only because its game is called `Game`). The template's own
-# README already names the fix, a fixture name read off
-# `expectedContractNames()`, drafted as a template task by step O
-# (work/plans/join-template-commit-reveal/template-task-a-name-free-deployments-test.md); until it lands, omitted.
-web/test/lib/embedded/deployments.test.ts
 # The reference game's e2e suites and its fixture. Since step 6b (2026-10-26)
 # stratagems runs the template's harness and its framework suites, with its own
 # cycle suite (e2e/tests/stratagems.e2e.ts, e2e/fixtures/stratagems.ts) in place

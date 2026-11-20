@@ -7,6 +7,8 @@ blockedBy: []
 
 # `test/lib/embedded/deployments.test.ts` indexes `contracts.Game`, so a game whose contract is not called `Game` cannot type-check it
 
+**RESOLVED UPSTREAM (2026-11-20), so this draft is not sent.** jolly-roger `with/embedded-chain` gave the test a name-free seam (the template tree plan's K1-6, on jolly-roger `work`: `docs/plans/template-tree-features.md`): `deployments.test.ts` reads `APP_CONTRACT` from `web/test/lib/app-world.ts` (K1-14's names), which template-commit-reveal sets to `Game` and stratagems to `Stratagems`. stratagems dropped the omission in step K1b and runs the file's cases. The rest of this draft is the record of the problem.
+
 DRAFTED IN STRATAGEMS, NOT YET ON template-commit-reveal's `work` BRANCH: P10 of step O in stratagems' port plan (`join-template-commit-reveal` branch, `work/plans/join-template-commit-reveal.md`), decided with the maintainer on 2026-10-26. It goes to `work/tasks/backlog/a-name-free-deployments-test.md` there once the maintainer approves it; nothing has been pushed.
 
 ## Start here, from a cold context
