@@ -129,6 +129,13 @@ web/src/lib/context/app.ts
 web/e2e/tests/demo.e2e.ts
 web/e2e/tests/delegation.e2e.ts
 
+# The offline demo's suite (jolly-roger K2a): it sends a greeting from
+# `/offline-demo/`, which this repo deletes above. What it pins is this game's
+# too, and pinned here by the game's own offline suites: the world connecting
+# and signing in at boot, and authorising this browser's key itself
+# (`offline.e2e.ts`, `offline-hotseat.e2e.ts`, `offline-table.e2e.ts`).
+web/e2e/tests/offline-demo.e2e.ts
+
 # The demo route's unit tests, which went with the route.
 web/test/routes/demo
 
