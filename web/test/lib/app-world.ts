@@ -32,6 +32,22 @@ export const APP_SCRIPTS = [
 ];
 
 /**
+ * WHO THE WORLD DEPLOYS AS, named account to private key, for the stem's
+ * `offline-world.test.ts`: stratagems' deploy names the tokens' beneficiary
+ * (who holds the test gems and stakes for every seat) and the time owner
+ * besides the deployer, as `OFFLINE_DEPLOYMENT` of `$lib/offline` does
+ * (hardhat's first two development keys, the time owner the deployer).
+ */
+export const APP_ACCOUNTS = {
+	deployer:
+		'0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
+	tokensBeneficiary:
+		'0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d',
+	timeOwner:
+		'0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
+} as const;
+
+/**
  * The deployment name of the contract the app's context reads: stratagems'
  * game is the `Stratagems` contract, not the template's `Game`.
  */
