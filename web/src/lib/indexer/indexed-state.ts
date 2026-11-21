@@ -26,16 +26,14 @@
  * timed policy, the game's own folded `CycleAdvanced` (`cycleOf`) under Manual,
  * and both under the hybrid policy.
  *
+ * THE PLUMBING IS `createIndexed`'S (`./indexed.ts`, jolly-roger's): the port
+ * to the worker, the follower, the worker's progress, the refusal and failure
+ * statuses, the subscriber lifecycle and the `gate`. What is this file's is the
+ * game's half: the stamp, and the mapping onto the framework's state seam.
+ *
  * Written first in stratagems (its `board/indexed-board.ts`).
  */
-import {
-	connectToIndexerHost,
-	createProgressReadable,
-	dedicatedWorkerHost,
-	type HostProgress,
-	type IndexerPort,
-} from '@etherfold/browser';
-import {workerExecutor} from '@etherfold/graphql/worker';
+import type {HostProgress} from '@etherfold/browser';
 import {readable, writable, type Readable} from 'svelte/store';
 import type {EIP1193Provider} from 'viem';
 import {logs} from 'named-logs';
@@ -50,14 +48,16 @@ import {
 	stampNeedsTimestamp,
 	type CycleAnchor,
 } from './cycle-stamp';
+import type {StateFollowerSpec, StateRead} from './follower';
 import {
-	createStateFollower,
-	type Execute,
-	type StateFollower,
-	type StateFollowerSpec,
-	type StateRead,
-} from './follower';
+	createIndexed,
+	type IndexedError,
+	type IndexedValue,
+	type IndexerHost,
+} from './indexed';
 import type {IndexerWorker} from './worker-choice';
+
+export type {IndexerHost} from './indexed';
 
 const logger = logs('indexer:state');
 
@@ -65,9 +65,6 @@ const logger = logs('indexer:state');
 export type BlockTimestamps = {
 	getBlock(args: {blockNumber: bigint}): Promise<{timestamp: bigint}>;
 };
-
-/** An etherfold host a port can join: a worker (`dedicatedWorkerHost`) or, in a test, `indexer.mainThreadHost()`. */
-export type IndexerHost = Parameters<typeof connectToIndexerHost>[0];
 
 export type IndexedStateOptions<Part extends string, Data, State> = {
 	/** The chain the worker folds: the framework's (`connection.provider`). */
@@ -99,6 +96,8 @@ export type IndexedStateOptions<Part extends string, Data, State> = {
 	follower: StateFollowerSpec<Part, Data>;
 	/** Who plays, for a part that depends on it (`accountPart`). */
 	player?: Readable<string | undefined>;
+	/** Run only while this is truthy (the app's `chainFetchGate`); always when left out. */
+	gate?: Readable<boolean>;
 	/** The last re-anchoring `CycleAdvanced`, as folded by the game (read under Manual and hybrid). */
 	cycleOf: (data: Data) => CycleAnchor | undefined;
 	/** What the seam publishes, from a read and its stamp. */
@@ -118,14 +117,28 @@ export function createIndexedState<Part extends string, Data, State>(
 			`an indexed state needs the game's worker (startWorker) or a host`,
 		);
 	}
+	const indexed = createIndexed({
+		provider: options.provider,
+		worker: options.worker,
+		startWorker: options.startWorker,
+		host: options.host,
+		source: options.source,
+		finality: options.finality,
+		publication: options.publication,
+		follower: options.follower,
+		account: options.player,
+		gate: options.gate,
+	});
 	const value = writable<OnchainStateValue<State>>({step: 'Unloaded'});
 	const status = writable<OnchainStateStatus>({loading: true});
 	const progressStore = writable<HostProgress | undefined>(undefined);
 
-	let follower: StateFollower<Data> | undefined;
 	let lastRead: StateRead<Data> | undefined;
 	let lastProgress: HostProgress | undefined;
+	let lastError: IndexedError | undefined;
 	let stampedBlock = -1;
+	// bumped when the last subscriber leaves: a stamp still in flight then is dropped
+	let run = 0;
 	const timestamps = new Map<number, Promise<number>>();
 
 	function timestampOf(block: number): Promise<number> {
@@ -148,6 +161,7 @@ export function createIndexedState<Part extends string, Data, State>(
 	async function publish() {
 		const read = lastRead;
 		if (!read) return;
+		const publishing = run;
 		const atTip = lastProgress?.phase === 'at-tip';
 		const block = Math.max(
 			read.block ?? 0,
@@ -158,8 +172,10 @@ export function createIndexedState<Part extends string, Data, State>(
 			const timestamp = stampNeedsTimestamp(options.cycle)
 				? await timestampOf(block)
 				: undefined;
-			// a later publish may have overtaken this one while the block was read
-			if (read !== lastRead || block < stampedBlock) return;
+			// stopped meanwhile, or a later publish overtook this one while the block was read
+			if (publishing !== run || read !== lastRead || block < stampedBlock) {
+				return;
+			}
 			stampedBlock = block;
 			const cycleNumber = stampedCycleNumber(
 				options.cycle,
@@ -172,6 +188,7 @@ export function createIndexedState<Part extends string, Data, State>(
 			});
 			status.set({loading: !atTip, lastSuccessfulFetch: Date.now()});
 		} catch (error) {
+			if (publishing !== run) return;
 			logger.error(`could not read block ${block}`, error);
 			status.update((s) => ({
 				...s,
@@ -180,100 +197,46 @@ export function createIndexedState<Part extends string, Data, State>(
 		}
 	}
 
-	function onConnect(outcome: {accepted: boolean; error?: unknown}) {
-		if (!outcome.accepted) {
-			logger.error(`the indexer worker refused this tab`, outcome.error);
-			status.set({
-				loading: false,
-				error: {message: 'the indexer refused this tab', cause: outcome.error},
-			});
+	/** What `createIndexed` publishes, onto the seam's value, status and progress. */
+	function follow(next: IndexedValue<Data>) {
+		const progressMoved = next.progress !== lastProgress;
+		const readMoved = next.read !== lastRead;
+		lastRead = next.read;
+		if (progressMoved) {
+			lastProgress = next.progress;
+			progressStore.set(next.progress);
 		}
-	}
-
-	function connect(): IndexerPort {
-		// A test's host is already initialised with its provider and source, and
-		// lives on this thread: nothing to hand it, and nothing to watch.
-		if (options.host) {
-			return connectToIndexerHost(options.host(), {watch: false, onConnect});
-		}
-		const startWorker = options.startWorker!;
-		const publication =
-			options.worker.kind === 'live' ? options.publication?.() : undefined;
-		return connectToIndexerHost(
-			dedicatedWorkerHost(() => startWorker(options.worker)),
-			{
-				provider: options.provider as never,
-				settings: {
-					source: options.source as never,
-					config: {stream: {finality: options.finality}},
-					// a world has no publication (nobody snapshots a chain in a tab)
-					...(publication ? {publication} : {}),
-				},
-				onConnect,
-			},
-		);
-	}
-
-	function start(): () => void {
-		const indexer = connect();
-		const following = createStateFollower(
-			options.follower,
-			workerExecutor(indexer) as Execute,
-			{
-				onError: (error) => {
-					logger.error(`state query failed`, error);
-					status.update((s) => ({
-						...s,
-						error: {message: error.message, cause: error},
-					}));
-				},
-			},
-		);
-		follower = following;
-		following.onUpdate((read) => {
-			lastRead = read;
-			void publish();
-		});
-		// subscribe last: a listener may be called before the code after it runs
-		const stopProgress = createProgressReadable(indexer).subscribe(
-			(progress) => {
-				lastProgress = progress;
-				progressStore.set(progress);
-				if (progress?.failure) {
-					logger.error(`indexer stopped`, progress.failure);
-					status.set({
-						loading: false,
-						error: {message: 'the indexer stopped', cause: progress.failure},
-					});
-					return;
+		const error = next.error;
+		if (error !== lastError) {
+			lastError = error;
+			if (error) {
+				const seamError = {message: error.message, cause: error.cause};
+				if (error.kind === 'query') {
+					status.update((s) => ({...s, error: seamError}));
+				} else {
+					// a refusal or a stop: the state is not current, and will not be
+					status.set({loading: false, error: seamError});
 				}
-				void publish();
-			},
-		);
-		indexer.onStateMoved((moved) => void following.moved(moved as never));
-		const stopPlayer = options.player?.subscribe(
-			(player) => void following.setAccount(player?.toLowerCase() ?? ''),
-		);
-		void following.refreshAll();
-		return () => {
-			stopPlayer?.();
-			stopProgress();
-			follower = undefined;
-			void indexer.stopIndexing().catch(() => undefined);
-			indexer.close();
-		};
+			}
+		}
+		// a new read or progress is published (which clears a failed query's
+		// error, as a read landing does), unless the indexer refused or stopped
+		if ((readMoved || progressMoved) && !(error && error.kind !== 'query')) {
+			void publish();
+		}
 	}
 
-	// Started by its first subscriber, in the browser only, and stopped by its last.
+	// Started by its first subscriber (in the browser only, while the gate is
+	// open: `createIndexed`'s rules), and stopped by its last.
 	const lifecycle = readable<OnchainStateValue<State>>(
 		{step: 'Unloaded'},
 		(set) => {
-			if (typeof window === 'undefined' && !options.host) return;
-			const stop = start();
 			const stopValue = value.subscribe(set);
+			const stopIndexed = indexed.subscribe(follow);
 			return () => {
+				run++;
+				stopIndexed();
 				stopValue();
-				stop();
 			};
 		},
 	);
@@ -283,7 +246,7 @@ export function createIndexedState<Part extends string, Data, State>(
 		status: {subscribe: status.subscribe},
 		progress: {subscribe: progressStore.subscribe},
 		async update() {
-			await follower?.refreshAll();
+			await indexed.refresh();
 		},
 	};
 }
