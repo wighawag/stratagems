@@ -22,8 +22,18 @@ import {worldChain} from './chain';
 /** A person at this device: their seat, and their account's index in the world's wallet. */
 export type HumanHere = {seat: number; account: number};
 
-function gameOf(records: DeploymentsStore) {
-	const {address, abi} = records.get().contracts.Game;
+/**
+ * The game's contract in `records`, by its deployment name: `Game` unless the
+ * game names its own (stratagems' is `Stratagems`). At a table the records are
+ * the table's, so this is the table.
+ */
+function gameOf(records: DeploymentsStore, contract = 'Game') {
+	const {address, abi} = (
+		records.get().contracts as Record<
+			string,
+			{address: `0x${string}`; abi: unknown}
+		>
+	)[contract];
 	return {address, abi};
 }
 
@@ -43,13 +53,15 @@ export function revealerForTheHumans(params: {
 	humans: readonly HumanHere[];
 	/** After the revealer sent something: a reveal may complete the cycle. */
 	onActed: () => void;
+	/** The game's contract's deployment name in `records`; `Game` when omitted. */
+	contract?: string;
 }): LocalRevealer | undefined {
 	if (params.humans.length < 2) return undefined;
 	return createLocalRevealer({
 		provider: params.world.provider as never,
 		chain: worldChain(params.world),
 		privateKey: localRevealerKey().privateKey,
-		contract: gameOf(params.records) as never,
+		contract: gameOf(params.records, params.contract) as never,
 		onActed: params.onActed,
 	});
 }
@@ -97,12 +109,19 @@ async function authoriseWhenReady(context: Context): Promise<void> {
  * ({@link handOverBetweenThem}); nobody when one person is here.
  *
  * `identityOf` is the game's: who an account plays as at this game.
+ *
+ * `afterAuthorising` is the game's own step for the person signed in, once
+ * their key is authorised (each in turn in hotseat, once it is; after the
+ * attempt when one person is here, as the authorisation is): a game
+ * whose browser key pays for more offline than online funds it there
+ * (stratagems, reveal-or-die). Not fatal either.
  */
 export async function seatTheHumans(params: {
 	context: Context;
 	wallet: EmbeddedWallet | undefined;
 	humans: readonly HumanHere[];
 	identityOf: (address: `0x${string}`) => bigint | Promise<bigint>;
+	afterAuthorising?: () => Promise<void>;
 	onStep?: (what: string) => void;
 }): Promise<HotseatHuman[]> {
 	const {context, wallet, humans, onStep} = params;
@@ -131,6 +150,7 @@ export async function seatTheHumans(params: {
 					address,
 				});
 				await authoriseWhenReady(context);
+				await params.afterAuthorising?.();
 			} catch (err) {
 				console.error(
 					`the offline world could not authorise Player ${human.account + 1}'s key`,
@@ -157,6 +177,16 @@ export async function seatTheHumans(params: {
 			err,
 		);
 	}
+	if (params.afterAuthorising) {
+		try {
+			await params.afterAuthorising();
+		} catch (err) {
+			console.error(
+				"the offline world's own step after the authorisation failed",
+				err,
+			);
+		}
+	}
 	return seated;
 }
 
@@ -173,6 +203,8 @@ export function handOverBetweenThem(params: {
 	context: Context;
 	world: Pick<EmbeddedWorld, 'provider' | 'deployments'>;
 	records: DeploymentsStore;
+	/** The game's contract's deployment name in `records`; `Game` when omitted. */
+	contract?: string;
 }): Hotseat | undefined {
 	const {seated, wallet, revealer, context} = params;
 	if (seated.length < 2 || !wallet || !revealer) return undefined;
@@ -187,7 +219,7 @@ export function handOverBetweenThem(params: {
 		read: createHotseatChainReader({
 			provider: params.world.provider as never,
 			chain: worldChain(params.world),
-			contract: gameOf(params.records) as never,
+			contract: gameOf(params.records, params.contract) as never,
 			players: seated.map((human) => human.player),
 		}),
 		revealer,
