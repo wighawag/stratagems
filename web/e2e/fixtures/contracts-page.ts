@@ -1,60 +1,85 @@
 import {expect, type Page} from '@playwright/test';
+import {MAIN_PAGE} from '../routes';
 
 /**
- * The contracts page, as a place two kinds of suite have to drive.
+ * The contracts page, as a place several suites have to drive.
+ *
+ * WHICH CONTRACT, WHICH WRITE AND WITH WHAT are `MAIN_PAGE` of `../routes.ts`,
+ * the seam a node sets: everything here is about the PAGE, which every app on
+ * this template ships unchanged, so a node whose contract is not the greetings
+ * demo's edits neither this file nor the suites that read it. Two descendants
+ * used to carry a copy each (template-commit-reveal's `selectContract`,
+ * template-zk-game's `sendHarmlessWrite`), each modifying the four files that
+ * read it; this is the one both shapes fit.
  *
  * SEPARATE FROM `stalling-wallet.ts`, and the separation is load-bearing rather
  * than tidiness. `test/e2e-account-claims.test.ts` reads "imports
  * fixtures/stalling-wallet" as "drives the stalling wallet, and therefore claims
- * one of its accounts", which is exactly the right heuristic: that pool exists
- * so two suites cannot race for one address's nonce. While these locators lived
- * in that file, any suite that wanted a form locator had to import it and was
- * counted as claiming stalling account 0 alongside the suite that really drives
- * it. The guard then fires, correctly, on a claim nobody made.
- *
- * So what is shared here is the PAGE: which contract, which write, which form,
- * which button. Who is asked to sign it is the caller's business.
- *
- * MOVED UP FROM reveal-or-die (2026-09-11), where it was written after this
- * page's sort-order assumption broke four inherited tests there. Decision 2's
- * test - *would another game on this foundation have to write this?* - was
- * answered "yes" by an existing second copy, and this is the move rather than a
- * re-implementation: the descendant's copy is deleted in the same change.
+ * one of its accounts", which is the right heuristic: that pool exists so two
+ * suites cannot race for one address's nonce. A suite that only wants a form
+ * locator imports it from here and claims nothing. Who is asked to sign the
+ * write is the caller's business.
  */
-
-/**
- * The write this fixture drives, named once.
- *
- * `addToReserve`, this app's own. The suites import it rather than restating it,
- * because a suite that asserts on a form has to be looking at the form that was
- * actually filled.
- *
- * THIS IS THE ONE LINE A DESCENDANT CHANGES, and it is the only game-specific
- * thing in this file - the `mode.ts`/`TARGET_STEP` shape applied to a fixture.
- * Everything else here is about the PAGE, which every app on this template
- * ships unchanged.
- */
-export const WRITE_FUNCTION = 'addToReserve nonpayable';
 
 /** The contract the writes live on, which is NOT always the one the page opens on. */
-export const WRITE_CONTRACT = 'Game';
+export const WRITE_CONTRACT = MAIN_PAGE.contract;
+
+/** The write the suites send (see `MainPageWrite` in `../routes.ts`). */
+export const WRITE_FUNCTION = MAIN_PAGE.write.function;
+
+/** A view function of the same contract, for the Read tab's suites. */
+export const READ_FUNCTION = MAIN_PAGE.read;
+
+/** What a write is labelled when its caller does not care. */
+export const DEFAULT_LABEL = 'a request nobody answers';
+
+/** The values the write's form is filled with for `label`, one per input. */
+export function writeArgs(label: string = DEFAULT_LABEL): readonly string[] {
+	return MAIN_PAGE.write.args(label);
+}
 
 /** What the trigger says before `$deployments` has loaded. */
 const PLACEHOLDER = 'Select a contract';
 
 /**
+ * Reach /contracts the way a user does once the app is open: a CLIENT-SIDE
+ * navigation, not `page.goto`. A full load restarts the app, and account data
+ * comes back asynchronously, so a send made straight after it is broadcast but
+ * cannot be recorded as an operation ("accountData not ready"): the pending
+ * badge never appears and the inspector has nothing to show. A page that is not
+ * in the app yet gets the full load, which is then the first load anyway.
+ */
+export async function goToContractsPage(page: Page): Promise<void> {
+	if (!page.url().startsWith('http')) {
+		await page.goto('/contracts/');
+		return;
+	}
+	if (/\/contracts\/?$/.test(new URL(page.url()).pathname)) return;
+	// An anchor click is what SvelteKit's router intercepts; retried because a
+	// click during hydration can be swallowed.
+	await expect(async () => {
+		await page.evaluate(() => {
+			const a = document.createElement('a');
+			a.href = new URL('/contracts/', location.origin).href;
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+		});
+		await page.waitForURL(/\/contracts\/?$/, {timeout: 3_000});
+	}).toPass({timeout: 15_000});
+}
+
+/**
  * Put the contracts page on a named contract.
  *
  * THE PAGE OPENS ON WHICHEVER CONTRACT SORTS FIRST, because it shows
- * `Object.keys($deployments.contracts)[0]`. That is `Game` on this template
- * today and it is not a property anything guarantees: a branch that added a sale
- * called `AvatarSale` moved the page off the Game and failed four tests in
- * `contracts.e2e.ts` that never name a contract at all. None of the failures
- * named the cause either - the page was showing a different contract's functions
- * perfectly correctly.
- *
- * So a suite that means "the Game" asks for it. Calling this when the page is
- * already there costs one comparison and no round trip.
+ * `Object.keys($deployments.contracts)[0]`. That is not a property anything
+ * guarantees: in template-commit-reveal a branch that added a sale called
+ * `AvatarSale` moved the page off the game and failed four tests that never
+ * named a contract at all, and in template-zk-game the first contract is a
+ * verifier with no writes. So a suite that means the main page's contract asks
+ * for it. Calling this when the page is already there costs one comparison and
+ * no round trip.
  */
 export async function selectContract(
 	page: Page,
@@ -63,41 +88,40 @@ export async function selectContract(
 	// BY `data-slot`, NOT BY ROLE. bits-ui renders the trigger as a plain
 	// `button` whose accessible name is the selected contract, so
 	// `getByRole('combobox')` matches nothing here.
-	const trigger = page.locator('[data-slot="select-trigger"]');
+	const trigger = page.locator('[data-slot="select-trigger"]').first();
 	await expect(trigger).toBeVisible({timeout: 30_000});
 	// WAIT FOR THE CONTRACTS TO LOAD before reading which one is showing. Until
-	// `$deployments` arrives the trigger says "Select a contract" and the dropdown
-	// has NO items - so an early click opens an empty list and waits out its whole
-	// timeout on an item that was never going to be there. That is what this looked
-	// like when it was first moved up here: four tests failing at the click, on a
-	// page that was about to be perfectly fine.
+	// `$deployments` arrives the trigger says "Select a contract" and the
+	// dropdown has NO items, so an early click opens an empty list and waits out
+	// its whole timeout on an item that was never going to be there.
 	await expect(trigger).not.toHaveText(PLACEHOLDER, {timeout: 30_000});
 	const selected = () => trigger.textContent().then((t) => (t ?? '').trim());
-	// Already there: the page opens on one of them, and re-picking it is a no-op
-	// that still costs a dropdown round trip.
 	if ((await selected()) === name) return;
 
-	await trigger.click();
 	// EXACTLY, because the list is `Object.keys(deployments.contracts)` and a
-	// routed proxy publishes a dozen of them: `Game`, but also `Game_Proxy`,
-	// `Game_Implementation` and one entry per route. A substring match on "Game"
+	// routed proxy publishes a dozen of them (`Game`, `Game_Proxy`,
+	// `Game_Implementation`, one entry per route): a substring match on the name
 	// is ambiguous between all of them.
 	const option = page
 		.locator('[data-slot="select-item"]')
 		.filter({hasText: new RegExp(`^\\s*${name}\\s*$`)})
 		.first();
+	// A click during hydration can be swallowed (the handler is not attached
+	// yet), leaving the menu shut: retry the opening.
+	await expect(async () => {
+		if (!(await option.isVisible())) await trigger.click();
+		await expect(option).toBeVisible({timeout: 2_000});
+	}).toPass({timeout: 30_000});
 	// LET THE OPEN LIST COME TO REST BEFORE CLICKING IN IT, or the click can be
 	// dropped. The list opens with an animation, so a click started at once finds
-	// the option "not stable", and Playwright's THIRD attempt scrolls it to the
+	// the option "not stable", and Playwright's third attempt scrolls it to the
 	// top of the list before pressing. That scroll is programmatic: its `scroll`
 	// event, and bits-ui's answer to it (the scroll-up button mounts and pushes
 	// every item 24px down), come in the next frame. When that frame falls
 	// between the press and the release, the release lands on the scroll button,
-	// and bits-ui, which selects on the release of an ITEM, drops the click: the
-	// list stays open on the old contract. Found in stratagems (2026-10-30): a
-	// press, a frame, a release reproduce it every time. So the list is left to
-	// finish opening, the option is brought into view here, and the list is left
-	// to settle again, after which the click needs neither a retry nor a scroll.
+	// and bits-ui, which selects on the release of an ITEM, drops the click (found
+	// in stratagems, 2026-10-30). So the list is left to finish opening, the
+	// option is brought into view, and the list is left to settle again.
 	await option.evaluate(async (el) => {
 		const list = el.closest('[data-slot="select-content"]') ?? el;
 		const still = () =>
@@ -126,6 +150,26 @@ export async function selectContract(
 	await expect.poll(selected, {timeout: 30_000}).toBe(name);
 }
 
+/** /contracts, on `name` (the main page's contract unless told otherwise). */
+export async function openContract(
+	page: Page,
+	name: string = WRITE_CONTRACT,
+): Promise<void> {
+	await goToContractsPage(page);
+	await selectContract(page, name);
+}
+
+/**
+ * The card of the write `functionName` on the Write tab, by the heading the
+ * page gives it (`<name> nonpayable`).
+ */
+export function functionCard(page: Page, functionName: string) {
+	return page
+		.locator('[class*="card"], [class*="function"]')
+		.filter({has: page.getByText(`${functionName} nonpayable`)})
+		.first();
+}
+
 /**
  * The write form the suites drive, and its submit control.
  *
@@ -138,11 +182,44 @@ export async function selectContract(
  * those, since "executing" does not contain "execute", and a test then reads as
  * though the button had vanished at exactly the moment it was busy.
  */
-export const writeForm = (page: Page) =>
-	page
-		.locator('[class*="card"], [class*="function"]')
-		.filter({has: page.getByText(WRITE_FUNCTION)})
-		.first();
+export const writeForm = (page: Page) => functionCard(page, WRITE_FUNCTION);
 
 export const executeButton = (page: Page) =>
 	writeForm(page).locator('button', {hasText: /execut/i});
+
+/** The write form's `index`th input, in the order the page lists them. */
+export const writeInput = (page: Page, index = 0) =>
+	writeForm(page).locator(`[id$="input-${index}"]`).first();
+
+/** /contracts on the main page's contract, its Write tab open on the write. */
+export async function openWrite(page: Page): Promise<void> {
+	await openContract(page);
+	const writeTab = page.getByRole('tab', {name: 'Write'});
+	await expect(writeTab).toBeVisible({timeout: 30_000});
+	await writeTab.click();
+	await expect(writeForm(page)).toBeVisible({timeout: 30_000});
+}
+
+/** Fill the write's form from `label` (see `MainPageWrite.args`). */
+export async function fillWrite(
+	page: Page,
+	label: string = DEFAULT_LABEL,
+): Promise<void> {
+	const values = writeArgs(label);
+	for (const [index, value] of values.entries()) {
+		await writeInput(page, index).fill(value);
+	}
+}
+
+/**
+ * Open the write, fill it from `label` and press Execute. What follows (a
+ * connect flow, a wallet, a confirmation) is the caller's.
+ */
+export async function sendWrite(
+	page: Page,
+	label: string = DEFAULT_LABEL,
+): Promise<void> {
+	await openWrite(page);
+	await fillWrite(page, label);
+	await executeButton(page).click();
+}
