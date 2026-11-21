@@ -169,9 +169,7 @@ function indexedState(options: {
 		cycleOf: (data) =>
 			data.cycle === undefined ? undefined : {cycleNumber: data.cycle},
 		present: (data, cycleNumber) => ({cells: data.cells, cycleNumber}),
-		// `gate` is new with the rebuild on `createIndexed`: passed through a
-		// cast so this file type-checks on the store it replaces as well
-		...({gate: options.gate} as object),
+		gate: options.gate,
 	});
 	return {state, hosts: () => hosts};
 }
@@ -341,7 +339,7 @@ describe("a game's indexed state", () => {
 		expect(fakes.ports[0]).toEqual({stopped: 1, closed: 1});
 	});
 
-	it('publishes nothing once its last subscriber has left: neither a read nor a stamp still in flight', async () => {
+	it('publishes no read still in flight once its last subscriber has left', async () => {
 		const game = heldGame();
 		const {state} = indexedState({spec: game.spec});
 		const statuses: OnchainStateStatus[] = [];
@@ -356,8 +354,9 @@ describe("a game's indexed state", () => {
 		expect(statuses).toHaveLength(before);
 		expect(get(state.progress)).toBeUndefined();
 		stopStatus();
+	});
 
-		// a timed stamp waits for its block's timestamp: the store stops meanwhile
+	it("publishes no stamp still waiting for its block's timestamp once its last subscriber has left", async () => {
 		const timedGame = heldGame();
 		let release: (() => void) | undefined;
 		const timed = indexedState({
