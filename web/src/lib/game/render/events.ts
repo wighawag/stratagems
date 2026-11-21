@@ -18,6 +18,13 @@ export type CanvasEvents = {
 	 * board) is the game's decision and happens in the game's own click handler.
 	 */
 	clicked: (position: {x: number; y: number}) => void;
+	/**
+	 * Where a hovering mouse points, in game units and unsnapped like
+	 * `clicked`; `undefined` when it leaves the surface or a button goes down.
+	 * Only a mouse (or a pen) hovers: a finger has no position between taps,
+	 * so a game must never make anything depend on this alone.
+	 */
+	hovered: (position: {x: number; y: number} | undefined) => void;
 };
 
 export type CanvasEventEmitter = EventEmitter<CanvasEvents>;
