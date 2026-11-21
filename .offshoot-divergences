@@ -85,7 +85,7 @@ web/e2e/tests/sending-indicator.e2e.ts                 the indicator's budget fi
 web/test/e2e-account-claims.test.ts                    the nonce guard reads every claim of a file and is guarded against a literal
 web/test/lib/context/world-connection.test.ts          the delegation pair is the connection's
 web/test/lib/embedded/world.test.ts                    this game's offline world and its table world, created, staked, restored
-web/test/lib/app-world.ts                              the world test constants: the Game only (this repo's world test is its own, so no scripts and no rocketh config)
+web/test/lib/app-world.ts                              the world test constants: this game's contracts package, its deploy scripts and the Game (read by the stem's offline-world.test.ts)
 web/test/lib/view/operation.test.ts                    cycle, not epoch
 
 [with/pixi-js]

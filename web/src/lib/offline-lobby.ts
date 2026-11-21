@@ -257,7 +257,7 @@ export async function takeTheWorldOver(): Promise<void> {
  *
  * Said out loud rather than done invisibly, and this is the whole reason the
  * sentence exists. Offline, registering this browser's key is a question with
- * one answer, so the world answers it (`$lib/game/acquire/authorise`). Online it
+ * one answer, so the world answers it (`$lib/ui/delegation/authorise-here`). Online it
  * is a real transaction the player signs and pays for, and it is the step that
  * makes every later move promptless. A player who met it for the first time on a
  * real chain, having never been told it exists, would meet it as an unexplained
