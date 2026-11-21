@@ -4,6 +4,7 @@
 // testable without a browser; IndexedDB is `fake-indexeddb`.
 import 'fake-indexeddb/auto';
 import {describe, it, expect, afterEach} from 'vitest';
+import {writable} from 'svelte/store';
 import {
 	createPublicClient,
 	createWalletClient,
@@ -339,5 +340,60 @@ describe("the reference game's indexer", () => {
 		indexed.close();
 		expect(value.cells).toEqual(data.cells);
 		expect(value.cells.size).toBeGreaterThan(0);
+	});
+
+	it("starts only once its gate opens (the app's chainFetchGate), as the poller does", async () => {
+		world = await buildWorld();
+		const records = world.deployments.get();
+		const {publicClient} = readerOf(world);
+
+		const store = await createBrowserStateStore(placementProcessor.entities, {
+			databaseName: `placement-indexer-gate-test-${Date.now()}`,
+		});
+		const indexer = createIndexerState({
+			createState: async (_context, {signal}) =>
+				openForWriting(store, {signal}),
+			createProcessor: (state) =>
+				fromEntityProcessor(placementProcessor)(state),
+		});
+		await indexer.init({
+			provider: world.provider as never,
+			source: indexingSource(records as never) as never,
+			config: {stream: {finality: STREAM_FINALITY}},
+		});
+		await indexer.indexToLatest();
+
+		// Closed while the chain cannot be read yet: the board must not start
+		// against it, or its first reads fail and look like a broken RPC.
+		const gate = writable(false);
+		let hosts = 0;
+		const board = createIndexedBoard({
+			provider: world.provider as never,
+			publicClient,
+			deployments: records as never,
+			cycle: resolvePlacementConfig(records).cycle,
+			gate,
+			host: () => {
+				hosts++;
+				return indexer.mainThreadHost({query: graphqlQueryHandler()});
+			},
+		});
+		type Value = Parameters<Parameters<typeof board.subscribe>[0]>[0];
+		let value = {step: 'Unloaded'} as Value;
+		const stop = board.subscribe((next) => (value = next));
+		await new Promise((resolve) => setTimeout(resolve, 100));
+		expect(hosts).toBe(0);
+		expect(value.step).toBe('Unloaded');
+
+		gate.set(true);
+		await board.update();
+		for (let i = 0; i < 100 && value.step !== 'Loaded'; i++) {
+			await new Promise((resolve) => setTimeout(resolve, 10));
+		}
+		stop();
+		await indexer.dispose?.();
+
+		expect(hosts).toBe(1);
+		expect(value.step).toBe('Loaded');
 	});
 });

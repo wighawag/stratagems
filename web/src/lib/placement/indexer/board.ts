@@ -50,6 +50,12 @@ export function createIndexedBoard(params: {
 	/** A test's host, in place of the game's worker. */
 	host?: () => IndexerHost;
 	player?: Readable<string | undefined>;
+	/**
+	 * Start only while this is truthy: the app's `chainFetchGate`, which the
+	 * skeleton's poller waits on too, so the board does not read a chain that
+	 * cannot be read yet. Always started when left out.
+	 */
+	gate?: Readable<boolean>;
 }): IndexedStateStore<BoardState & {cycleNumber: number}> {
 	return createIndexedState({
 		provider: params.provider,
@@ -71,6 +77,7 @@ export function createIndexedBoard(params: {
 		finality: STREAM_FINALITY,
 		follower: boardFollower,
 		player: params.player,
+		gate: params.gate,
 		cycleOf: (data) => data.advancedCycle,
 		present: (data, cycleNumber) => ({cells: data.cells, cycleNumber}),
 	});

@@ -427,6 +427,8 @@ export function createGameContext(core: CoreServices): GameContext {
 				publicClient: core.publicClient,
 				deployments,
 				cycle: config.cycle,
+				// Waits for the chain to be readable, as the poller it replaces does.
+				gate: core.chainFetchGate,
 			}),
 		// The forfeit comes out of the reserve, so the number on screen changes.
 		// The committed turn is what lets a missed reveal be settled WITH its
