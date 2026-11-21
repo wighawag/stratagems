@@ -41,7 +41,7 @@ import {
 // Its own account, a claim test/e2e-account-claims.test.ts checks. The guest
 // connects in a browser context of its own, whose burner generates a mnemonic
 // of its own, so its accounts are nobody else's.
-test.use({walletAccountIndex: 2});
+test.use({walletAccountIndex: 3});
 
 const FAUCET_URL = (globalThis as any).process.env.E2E_FAUCET_URL as
 	string | undefined;
