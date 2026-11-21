@@ -11,10 +11,10 @@ An offline world of a commit-reveal game is three layers, and this is the middle
 
 ## The steps
 
-- `createOfflineWallet()`: the wallet the world announces at provisioning (one account per person here) and the gas every seat plays with. `current()` is what the world switches accounts on; `stop()` unannounces it.
+- `createOfflineWallet({announce?})`: the wallet the world announces at provisioning (one account per person here) and the gas every seat plays with, announced by the mechanism unless the game names its own announcer (infinite-gambit's demo preset, a fixed mnemonic). `current()` is what the world switches accounts on; `stop()` unannounces it.
 - `stakeEverySeat({table, you, humans, stake})`: the walk of the table, calling the game's `stake` with each seat's address, index and occupant. The index is there for a game whose identity depends on the seat.
 - `openTheWorldsTable({world, wallet, lobby, table, at, stake, chainIdKey, storageKey})`: the table set, staked and started (`$lib/game/lobby/offline-table`), and the records and connection composed on it; a record the chain does not hold lets go of the world and answers `incoherent`, so the game builds again. `theWorldsGame(world)` is the same answer for a world that is not a table.
-- `revealerForTheHumans`, `seatTheHumans`, `handOverBetweenThem`: the hotseat's local revealer (before the context), the people here connected, signed in and authorised (after it), and the handover between them.
+- `revealerForTheHumans`, `seatTheHumans`, `handOverBetweenThem`: the hotseat's local revealer (before the context), the people here connected, signed in and authorised (after it), and the handover between them. The revealer and the handover read the game's contract by its deployment name (`contract`, `Game` when omitted); `seatTheHumans`' `afterAuthorising` is a game's own step for each person once their key is authorised (stratagems and reveal-or-die fund it).
 - `resolvePlayedSeats({table, identityOf})`: the world's seats as its loop takes them, the game spelling each identity, told the seat's index too.
 - `readyToPlay({context, players, revealer, hotseat, decider, also})`: what a `Ready` world carries as its `context`, starting everything with the board and stopping it in reverse.
 
