@@ -112,6 +112,11 @@ export function createIndexedBoard(params: {
 	publish?: boolean;
 	/** A path of the app as served (`$lib/kit/paths`' `url`). */
 	appPath: (path: string) => string;
+	/**
+	 * Start only while this is truthy: the app's `chainFetchGate`, which the
+	 * skeleton's poller waits on too. Always started when left out.
+	 */
+	gate?: Readable<boolean>;
 }): IndexedStateStore<BoardState> {
 	return createIndexedState({
 		provider: params.provider,
@@ -145,6 +150,7 @@ export function createIndexedBoard(params: {
 					},
 		follower: boardFollower,
 		player: params.player,
+		gate: params.gate,
 		// The stamp's anchor (`$lib/indexer`'s `CycleAnchor`): the cycle the last
 		// re-anchoring push opened and when, which a table
 		// (`TimedWithEarlyAdvance`) counts whole cycles from and an offline

@@ -337,6 +337,8 @@ export function createGameContext(core: CoreServices): GameContext {
 					: env.PUBLIC_SNAPSHOT_URI || undefined,
 				publish: core.table === undefined,
 				appPath: url,
+				// Waits for the chain to be readable, as the poller it replaces does.
+				gate: core.chainFetchGate,
 			})),
 		// Shown its chunks, a missed reveal costs one gem per committed move and
 		// the rest of the bond comes back; without them, the whole bond.
