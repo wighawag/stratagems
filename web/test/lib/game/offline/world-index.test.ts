@@ -37,7 +37,11 @@ describe('forgetPreviousWorldIndex', () => {
 	});
 
 	it('keeps the index of the world starting again, and of a browser that indexed none', () => {
-		for (const initial of [{[INDEXED_CHAIN_ID_STORAGE_KEY]: '222'}, {}]) {
+		const initials: Record<string, string>[] = [
+			{[INDEXED_CHAIN_ID_STORAGE_KEY]: '222'},
+			{},
+		];
+		for (const initial of initials) {
 			const storage = memoryStorage(initial);
 			const deleted: number[] = [];
 			forgetPreviousWorldIndex({
