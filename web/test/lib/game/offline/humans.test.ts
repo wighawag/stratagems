@@ -17,7 +17,27 @@ vi.mock('$lib/ui/delegation/authorise-here', () => ({
 	},
 }));
 
-const {seatTheHumans} = await import('$lib/game/offline');
+// What the hotseat's revealer and its handover's reader are built on: the
+// game's contract, read off the records by its deployment name.
+const revealers: {contract: unknown}[] = [];
+vi.mock('$lib/game/core/local-revealer', () => ({
+	createLocalRevealer: (params: {contract: unknown}) => {
+		revealers.push(params);
+		return {scheduler: {}, start: () => () => {}, holds: () => false};
+	},
+}));
+const readers: {contract: unknown}[] = [];
+vi.mock('$lib/game/lobby/hotseat', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/game/lobby/hotseat')>()),
+	createHotseatChainReader: (params: {contract: unknown}) => {
+		readers.push(params);
+		return async () => ({});
+	},
+	createHotseat: () => ({start: () => () => {}}),
+}));
+
+const {seatTheHumans, revealerForTheHumans, handOverBetweenThem} =
+	await import('$lib/game/offline');
 
 function connection(params: {
 	target: 'SignedIn' | 'WalletConnected';
@@ -41,6 +61,8 @@ function connection(params: {
 
 beforeEach(() => {
 	authorised.length = 0;
+	revealers.length = 0;
+	readers.length = 0;
 	outcome = Promise.resolve({step: 'Authorised'});
 });
 
@@ -80,5 +102,115 @@ describe('seatTheHumans, one person here', () => {
 		expect(authorised).toHaveLength(1);
 		expect(errors).toHaveBeenCalledTimes(2);
 		errors.mockRestore();
+	});
+});
+
+describe('seatTheHumans, the game’s own step once a key is authorised', () => {
+	it('runs it after the authorisation, while the person is signed in', async () => {
+		const {calls, connection: c} = connection({target: 'SignedIn'});
+		await seatTheHumans({
+			context: {connection: c} as never,
+			wallet: undefined,
+			humans: [{seat: 0, account: 0}],
+			identityOf: async () => 1n,
+			afterAuthorising: async () => {
+				calls.push(`afterAuthorising, ${authorised.length} authorised`);
+			},
+		});
+		expect(calls).toEqual([
+			'ensureConnected WalletConnected',
+			'requestSignature',
+			'afterAuthorising, 1 authorised',
+		]);
+	});
+
+	it('is not fatal when it fails', async () => {
+		const {connection: c} = connection({target: 'SignedIn'});
+		const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+		await expect(
+			seatTheHumans({
+				context: {connection: c} as never,
+				wallet: undefined,
+				humans: [{seat: 0, account: 0}],
+				identityOf: async () => 1n,
+				afterAuthorising: async () => {
+					throw new Error('no gas');
+				},
+			}),
+		).resolves.toEqual([]);
+		expect(errors).toHaveBeenCalledTimes(1);
+		errors.mockRestore();
+	});
+});
+
+describe('the hotseat’s revealer and handover, on the game’s contract', () => {
+	const GAME = {address: '0x00000000000000000000000000000000000000C1', abi: []};
+	const OTHER = {
+		address: '0x00000000000000000000000000000000000000C2',
+		abi: [],
+	};
+	const records = {
+		get: () => ({
+			chain: {
+				id: 1,
+				name: 'Offline',
+				nativeCurrency: {name: 'Ether', symbol: 'ETH', decimals: 18},
+			},
+			contracts: {Game: GAME, Stratagems: OTHER},
+		}),
+	};
+	const world = {provider: {}, deployments: records};
+	const humans = [
+		{seat: 0, account: 0},
+		{seat: 1, account: 1},
+	];
+	const seated = [
+		{address: GAME.address as `0x${string}`, player: 1n, label: 'Player 1'},
+		{address: OTHER.address as `0x${string}`, player: 2n, label: 'Player 2'},
+	];
+	const context = {
+		connection: {},
+		game: {submission: {}},
+		accountData: {},
+	};
+
+	it('reads the `Game` when no contract is named', () => {
+		const revealer = revealerForTheHumans({
+			world: world as never,
+			records: records as never,
+			humans,
+			onActed: () => {},
+		});
+		handOverBetweenThem({
+			seated,
+			wallet: {select: () => {}} as never,
+			revealer,
+			context: context as never,
+			world: world as never,
+			records: records as never,
+		});
+		expect(revealers.map((r) => r.contract)).toEqual([GAME]);
+		expect(readers.map((r) => r.contract)).toEqual([GAME]);
+	});
+
+	it('reads the contract a game names, for a game whose contract is not the `Game`', () => {
+		const revealer = revealerForTheHumans({
+			world: world as never,
+			records: records as never,
+			humans,
+			onActed: () => {},
+			contract: 'Stratagems',
+		});
+		handOverBetweenThem({
+			seated,
+			wallet: {select: () => {}} as never,
+			revealer,
+			context: context as never,
+			world: world as never,
+			records: records as never,
+			contract: 'Stratagems',
+		});
+		expect(revealers.map((r) => r.contract)).toEqual([OTHER]);
+		expect(readers.map((r) => r.contract)).toEqual([OTHER]);
 	});
 });
