@@ -1,5 +1,6 @@
 import {readFileSync} from 'node:fs';
 import {test, expect, describe} from '../fixtures/test';
+import {MAIN_PAGE} from '../routes';
 
 /**
  * THE APP'S NAME COMES FROM THE APP, not from a literal here.
@@ -45,9 +46,12 @@ describe('Home Page', () => {
 	test('should offer the game online and offline', async ({page}) => {
 		await page.goto('/');
 
-		const online = page.getByRole('link', {name: /^online$/i});
+		const online = page.getByRole('link', {name: MAIN_PAGE.homeLink});
 		await expect(online).toBeVisible();
-		await expect(online).toHaveAttribute('href', /\/play\/?(\?.*)?$/);
+		await expect(online).toHaveAttribute(
+			'href',
+			new RegExp(`${MAIN_PAGE.route.replace(/\/$/, '')}\\/?(\\?.*)?$`),
+		);
 
 		const offline = page.getByRole('link', {name: /^offline$/i});
 		await expect(offline).toBeVisible();
@@ -59,14 +63,14 @@ describe('Home Page - Navigation', () => {
 	test('should navigate to the game and back', async ({page}) => {
 		await page.goto('/');
 
-		const playLink = page.getByRole('link', {name: /^online$/i});
+		const playLink = page.getByRole('link', {name: MAIN_PAGE.homeLink});
 		await expect(playLink).toBeVisible({timeout: 10000});
 
 		// Go to the game. A click during SvelteKit hydration can be swallowed (the
 		// router installs its handler mid-flight), so retry until the URL changes.
 		await expect(async () => {
 			await playLink.click();
-			await page.waitForURL(/play/, {timeout: 3000});
+			await page.waitForURL(new RegExp(MAIN_PAGE.route), {timeout: 3000});
 		}).toPass({timeout: 15000});
 
 		// The canvas is the game: it only mounts in the browser, so its presence

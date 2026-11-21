@@ -38,7 +38,7 @@ describe('A move that runs out of gas', () => {
 	// Its own burner account. The game keys one open commitment per player per
 	// cycle, and this test deliberately fails a commit, so sharing an account
 	// with another suite would have them fighting over the same commitment slot.
-	test.use({walletAccountIndex: 2});
+	test.use({walletAccountIndex: 3});
 
 	test('is named, offers the remedy, and resumes when the gas lands', async ({
 		connectedPage,

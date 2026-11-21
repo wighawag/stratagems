@@ -1,5 +1,6 @@
 <script lang="ts">
 	import {route} from '$lib';
+	import {MAIN_PAGE} from '$app-specific';
 	import {url} from '$lib/kit/paths';
 	import Button from '$lib/shadcn/ui/button/button.svelte';
 	import DefaultHead from '../lib/metadata/DefaultHead.svelte';
@@ -33,10 +34,13 @@
 	</h1>
 
 	<nav class="flex w-full max-w-sm flex-col gap-4" aria-label="Game menu">
+		<!-- THE GAME'S OWN PAGE, as the game names it (`MAIN_PAGE` of its
+		     `$app-specific` module): a game that moves or renames it edits no
+		     shared file. -->
 		<Button
-			href={route('/play/')}
+			href={route(MAIN_PAGE.route)}
 			size="lg"
-			class="h-14 w-full text-xl font-semibold">Online</Button
+			class="h-14 w-full text-xl font-semibold">{MAIN_PAGE.homeLink}</Button
 		>
 		<!-- TABLES, when the game has them: games for a fixed set of players,
 		     created by anyone (`$lib/game/lobby/table`). A game with none exports
