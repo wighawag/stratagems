@@ -575,6 +575,16 @@ export type CommitRevealGameParts<T extends GameTypes> = {
 		position: {x: number; y: number},
 		parts: {planning: T['planning']},
 	) => void;
+	/**
+	 * Where a hovering mouse points, like `click`; `undefined` when it points
+	 * nowhere, and also whenever the game is not ready (a hover must not
+	 * promise a click that would be ignored). Optional: a game with nothing to
+	 * highlight leaves it out.
+	 */
+	hover?: (
+		position: {x: number; y: number} | undefined,
+		parts: {planning: T['planning']},
+	) => void;
 	/** See `canTakeTurnNow`. */
 	onlyInPlayPhase?: boolean;
 	/** The game's own IO, started with the skeleton's. Returns its teardown. */
@@ -923,6 +933,17 @@ export function createCommitRevealGame<T extends GameTypes>(
 			parts.click(position, {planning});
 		};
 		eventEmitter.on('clicked', onClicked);
+		const onHovered = (position: {x: number; y: number} | undefined) => {
+			parts.hover?.(get(readyToPlay) ? position : undefined, {planning});
+		};
+		eventEmitter.on('hovered', onHovered);
+		// and a hover lit while ready goes out when the game stops being ready,
+		// not on the next mouse move
+		const unsubscribeReadyHover = parts.hover
+			? readyToPlay.subscribe(($ready) => {
+					if (!$ready) parts.hover?.(undefined, {planning});
+				})
+			: undefined;
 
 		// Whether a commitment is outstanding is a fact about the IDENTITY, not
 		// about this browser: re-read whenever it changes, which is also how a
@@ -970,6 +991,8 @@ export function createCommitRevealGame<T extends GameTypes>(
 			stopCycleAdvance();
 			stopTable?.();
 			eventEmitter.off('clicked', onClicked);
+			eventEmitter.off('hovered', onHovered);
+			unsubscribeReadyHover?.();
 			unsubscribeIdentity();
 			unsubscribeSubmission();
 			unsubscribeCycle();
