@@ -53,7 +53,7 @@ import {
 	type WorldNodeProvider,
 } from '$lib/game/offline';
 import {resolvePlacementConfig} from '$lib/placement/config';
-import {deleteWorldIndex} from '$lib/indexer';
+import {forgetPreviousWorldIndex} from '$lib/game/offline/world-index';
 import {INDEXER_PREFIX} from '$lib/placement/indexer/prefix';
 
 /**
@@ -141,12 +141,6 @@ const ADMIN_ADDRESS = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8' as const;
  * The key lives here rather than there because this file is what writes it.
  */
 export const CHAIN_ID_STORAGE_KEY = 'offline-world:chain-id';
-/**
- * Which world's index this browser holds, so that the index of a world the
- * lobby forgot is deleted when the next one starts. Its own key, because the
- * lobby, byte-identical across games, knows nothing of an index.
- */
-const INDEXED_CHAIN_ID_STORAGE_KEY = 'offline-world:indexed-chain-id';
 
 /**
  * Where the address of the world's TABLE is kept, when the world is a table
@@ -300,22 +294,6 @@ export function startOfflineTable(
 }
 
 /**
- * Delete the index of the world this browser indexed before, when it is not
- * the one starting now: the lobby forgot it, or its restore was incoherent and
- * a new id was minted. Best-effort and not awaited (a database a stopping
- * worker still holds blocks its deletion until it lets go).
- */
-function forgetPreviousWorldIndex(chainId: number): void {
-	const previous = Number(localStorage.getItem(INDEXED_CHAIN_ID_STORAGE_KEY));
-	if (previous && previous !== chainId) {
-		void deleteWorldIndex(INDEXER_PREFIX, previous).catch((err) =>
-			console.warn('could not delete a forgotten world\u2019s index', err),
-		);
-	}
-	localStorage.setItem(INDEXED_CHAIN_ID_STORAGE_KEY, String(chainId));
-}
-
-/**
  * THIS GAME'S WORLD, composed of the steps every commit-reveal game's world
  * takes (`$lib/game/offline`) around what is this game's: its deployment, its
  * stake, who an address plays as and how its world seats decide.
@@ -356,7 +334,12 @@ async function buildOfflineWorld(
 			}),
 		onStep: booting,
 	});
-	forgetPreviousWorldIndex(world.deployments.get().chain.id);
+	// THE INDEX OF A WORLD THE LOBBY FORGOT, deleted now that another starts
+	// (`$lib/game/offline/world-index`).
+	forgetPreviousWorldIndex({
+		prefix: INDEXER_PREFIX,
+		chainId: world.deployments.get().chain.id,
+	});
 	const humans = humansAtThisDevice(table);
 
 	let where = theWorldsGame(world);
