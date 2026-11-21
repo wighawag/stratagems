@@ -24,8 +24,12 @@ export {
 	type AcquisitionStore,
 } from './acquire';
 export {findPendingAcquisition, type PendingAcquisition} from './pending';
+// The registration step with no dialog in front of it, for an offline world.
+// jolly-roger's since K2a (`$lib/ui/delegation/authorise-here`, moved up from
+// this rail's `authorise.ts`), re-exported here so a game keeps importing the
+// rail.
 export {
 	authoriseTheBrowsersKey,
 	type AuthorisationDeps,
 	type AuthorisationOutcome,
-} from './authorise';
+} from '$lib/ui/delegation/authorise-here';
