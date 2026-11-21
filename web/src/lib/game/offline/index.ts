@@ -21,6 +21,7 @@ export {worldChain, worldReader} from './chain';
 export {
 	createOfflineWallet,
 	giveGas,
+	type AnnounceWallet,
 	type OfflineWallet,
 	type WorldNodeProvider,
 } from './wallet';

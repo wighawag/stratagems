@@ -47,6 +47,13 @@ export type OfflineWallet = {
 	stop(): void;
 };
 
+/** How a world's wallet is announced: the mechanism's, or a game's own around it. */
+export type AnnounceWallet = (params: {
+	provider: never;
+	chainId: number;
+	accounts: number;
+}) => Promise<EmbeddedWallet>;
+
 /**
  * THE WORLD'S OWN WALLET, and the gas every seat of its table plays with.
  *
@@ -66,13 +73,22 @@ export type OfflineWallet = {
  * GAS FOR EVERY SEAT THE WORLD PLAYS, on the same terms and for the same
  * reason: a player who cannot pay for a commit freezes the cycle for the human
  * rather than for itself.
+ *
+ * `announce` is the mechanism's (`announceEmbeddedWallet`) unless the game
+ * names its own: a world that must give the same accounts every time (a demo
+ * preset of infinite-gambit's, by a fixed mnemonic) announces its own way, and
+ * every seat is still given its gas here.
  */
-export function createOfflineWallet(): OfflineWallet {
+export function createOfflineWallet(
+	options: {announce?: AnnounceWallet} = {},
+): OfflineWallet {
+	const announceWallet: AnnounceWallet =
+		options.announce ?? ((params) => announceEmbeddedWallet(params));
 	let wallet: EmbeddedWallet | undefined;
 	return {
 		async announce(params) {
 			const humans = humansAtThisDevice(params.table);
-			const announced = await announceEmbeddedWallet({
+			const announced = await announceWallet({
 				provider: params.provider as never,
 				chainId: params.chainId,
 				// One account per person at this device (hotseat), in seat order.
