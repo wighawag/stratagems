@@ -41,6 +41,8 @@ function mount(options: {left?: number; top?: number} = {}) {
 	const eventEmitter = createCanvasEventEmitter();
 	const clicks: {x: number; y: number}[] = [];
 	eventEmitter.on('clicked', (position) => clicks.push(position));
+	const hovers: ({x: number; y: number} | undefined)[] = [];
+	eventEmitter.on('hovered', (position) => hovers.push(position));
 
 	const input = connectSurfaceInput({element, cameraControl, eventEmitter});
 	// The ResizeObserver is asynchronous, so seed the size for the first frame.
@@ -50,22 +52,22 @@ function mount(options: {left?: number; top?: number} = {}) {
 		input.dispose();
 		element.remove();
 	});
-	return {element, camera, cameraControl, clicks};
+	return {element, camera, cameraControl, clicks, hovers};
 }
 
 function pointer(
 	element: Element,
 	type: string,
-	init: {x: number; y: number; id?: number},
+	init: {x: number; y: number; id?: number; buttons?: number; kind?: string},
 ) {
 	const rect = element.getBoundingClientRect();
 	element.dispatchEvent(
 		new PointerEvent(type, {
 			pointerId: init.id ?? 1,
-			pointerType: 'mouse',
+			pointerType: init.kind ?? 'mouse',
 			isPrimary: true,
 			button: 0,
-			buttons: type === 'pointerup' ? 0 : 1,
+			buttons: init.buttons ?? (type === 'pointerup' ? 0 : 1),
 			clientX: rect.left + init.x,
 			clientY: rect.top + init.y,
 			bubbles: true,
@@ -133,5 +135,33 @@ describe('connectSurfaceInput', () => {
 		pointer(element, 'pointerdown', {x: 400, y: 300});
 		pointer(element, 'pointerup', {x: 400, y: 300});
 		expect(clicks).toEqual([]);
+	});
+
+	it('reports where an idle mouse hovers, and when it leaves', () => {
+		const {element, hovers} = mount();
+		pointer(element, 'pointermove', {x: 410, y: 300, buttons: 0});
+		expect(hovers).toHaveLength(1);
+		expect(hovers[0]!.x).toBeCloseTo(0.4, 9);
+		pointer(element, 'pointerleave', {x: 900, y: 300, buttons: 0});
+		expect(hovers).toEqual([hovers[0], undefined]);
+	});
+
+	it('does not hover while a button is down, nor for a finger', () => {
+		const {element, hovers} = mount();
+		pointer(element, 'pointermove', {x: 410, y: 300, buttons: 1});
+		pointer(element, 'pointermove', {
+			x: 410,
+			y: 300,
+			buttons: 0,
+			kind: 'touch',
+		});
+		expect(hovers).toEqual([]);
+	});
+
+	it('says again what the mouse points at when the board moves under it', () => {
+		const {element, cameraControl, hovers} = mount();
+		pointer(element, 'pointermove', {x: 400, y: 300, buttons: 0});
+		cameraControl.move(2, 0);
+		expect(hovers.at(-1)!.x).toBeCloseTo(2, 9);
 	});
 });

@@ -206,6 +206,7 @@ function compose(
 		>[1]['scheduler'];
 		lifecycle?: AccountDataLifecycle;
 		storage?: SubmissionStorage<number>;
+		hover?: (position: {x: number; y: number} | undefined) => void;
 	} = {},
 ) {
 	const lifecycle = writable<AccountDataLifecycle>(
@@ -296,6 +297,12 @@ function compose(
 		merge: ({onchain}) => ({cells: onchain.cells}),
 		renderer: () => ({}) as never,
 		click: (position, {planning}) => planning.toggle(position.x),
+		...(overrides.hover
+			? {
+					hover: (position: {x: number; y: number} | undefined) =>
+						overrides.hover?.(position),
+				}
+			: {}),
 		start: startGame,
 	});
 	return {crg, identity, check, toggle, startGame, stopGame, lifecycle};
@@ -332,6 +339,39 @@ describe('the skeleton, wired', () => {
 		notReady.crg.render.eventEmitter.emit('clicked', {x: 7, y: 1});
 		expect(notReady.toggle).not.toHaveBeenCalled();
 		stopNotReady();
+	});
+
+	it('hands a hover to the game while it is ready, and nowhere otherwise', () => {
+		const hovers: ({x: number; y: number} | undefined)[] = [];
+		const {crg, lifecycle} = compose({
+			lifecycle: {status: 'loading', account: ACCOUNT},
+			hover: (position) => hovers.push(position),
+		});
+		const stop = crg.start();
+		const emit = (position: {x: number; y: number} | undefined) =>
+			crg.render.eventEmitter.emit('hovered', position);
+
+		// Not ready: a hover must not promise a click that would be ignored.
+		emit({x: 3, y: 4});
+		expect(hovers.at(-1)).toBeUndefined();
+
+		lifecycle.set({status: 'ready', account: ACCOUNT});
+		emit({x: 3, y: 4});
+		expect(hovers.at(-1)).toEqual({x: 3, y: 4});
+		emit(undefined);
+		expect(hovers.at(-1)).toBeUndefined();
+
+		// Lit while ready, and out the moment the game stops being ready, with no
+		// mouse move in between.
+		emit({x: 5, y: 6});
+		lifecycle.set({status: 'loading', account: ACCOUNT});
+		expect(hovers.at(-1)).toBeUndefined();
+
+		stop();
+		const seen = hovers.length;
+		emit({x: 1, y: 1});
+		lifecycle.set({status: 'ready', account: ACCOUNT});
+		expect(hovers).toHaveLength(seen);
 	});
 
 	it("hands the game's reveal mode to the submission, and today's when it chose none", () => {
