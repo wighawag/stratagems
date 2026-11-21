@@ -62,7 +62,7 @@ web/src/lib/context/index.ts                           a table resolved before i
 web/src/lib/context/types.ts                           the lobby's and the submission's types in the context
 web/src/lib/account/connectors.ts                      the connector takes any state seam, so the game's board (a poller or an indexer) sits in its list
 web/src/lib/onchain/state.ts                           the game's onchain state: the poller on the cycle's length, uncached block numbers, the reveal-log range
-web/src/lib/offline.ts                                 the offline world of this game: its seats, a greedy world seat, the offline table's boot (K2: shared with the games)
+web/src/lib/offline.ts                                 the reference game's offline world, composed on $lib/game/offline's steps and the stem's opener: its seats, a greedy world seat, its deploy and stake
 web/src/lib/view/index.ts                              the game's view of the onchain state through the seams, in place of the greetings
 web/src/lib/ui/chrome.ts                               `round` is a descendant's word, `cycle` the template's (CONTEXT.md)
 web/src/lib/ui/delegation/registration.ts              cycle, not epoch
