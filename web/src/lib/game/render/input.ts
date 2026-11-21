@@ -50,10 +50,43 @@ export function connectSurfaceInput(params: {
 		params.gestures,
 	);
 
+	// HOVER, beside the gestures rather than in them: it moves nothing and is
+	// not a gesture, only where an idle mouse points. A pressed button is a
+	// drag in the making, so it is not hovering; neither is a touch.
+	// The rect is cached for the reason `attachGestures` caches its own (a
+	// forced layout per mouse move otherwise), and dropped whenever the pointer
+	// leaves or the surface is resized.
+	/** Where the mouse hovers, in surface pixels; none when it does not. */
+	let hoverAt: {x: number; y: number} | undefined;
+	let hoverRect: DOMRect | undefined;
+	function onHoverMove(event: PointerEvent) {
+		if (event.pointerType === 'touch' || event.buttons !== 0) {
+			onHoverLeave();
+			return;
+		}
+		const rect = (hoverRect ??= element.getBoundingClientRect());
+		hoverAt = {x: event.clientX - rect.left, y: event.clientY - rect.top};
+		eventEmitter.emit('hovered', cameraControl.toWorld(hoverAt));
+	}
+	function onHoverLeave() {
+		hoverRect = undefined;
+		if (!hoverAt) return;
+		hoverAt = undefined;
+		eventEmitter.emit('hovered', undefined);
+	}
+	// The board moves under a still mouse too (a wheel zoom, a key pan, the
+	// camera following an army): say again what it points at now.
+	const stopHoverFollow = cameraControl.transform.subscribe(() => {
+		if (hoverAt) eventEmitter.emit('hovered', cameraControl.toWorld(hoverAt));
+	});
+	element.addEventListener('pointermove', onHoverMove);
+	element.addEventListener('pointerleave', onHoverLeave);
+
 	// `clientWidth`/`clientHeight` are CSS pixels and exclude borders, which is
 	// exactly the space the surface draws into. Device pixel ratio is applied by
 	// the host to its own backing store, never here.
 	function reportSize() {
+		hoverRect = undefined;
 		cameraControl.resize(element.clientWidth, element.clientHeight);
 	}
 	const observer = new ResizeObserver(reportSize);
@@ -64,6 +97,9 @@ export function connectSurfaceInput(params: {
 		dispose() {
 			observer.disconnect();
 			detachGestures();
+			element.removeEventListener('pointermove', onHoverMove);
+			element.removeEventListener('pointerleave', onHoverLeave);
+			stopHoverFollow();
 		},
 	};
 }

@@ -62,7 +62,7 @@ web/src/lib/context/index.ts                           a table resolved before i
 web/src/lib/context/types.ts                           the lobby's and the submission's types in the context
 web/src/lib/account/connectors.ts                      the connector takes any state seam, so the game's board (a poller or an indexer) sits in its list
 web/src/lib/onchain/state.ts                           the game's onchain state: the poller on the cycle's length, uncached block numbers, the reveal-log range
-web/src/lib/offline.ts                                 the offline world of this game: its seats, a greedy world seat, the offline table's boot (K2: shared with the games)
+web/src/lib/offline.ts                                 the reference game's offline world, composed on $lib/game/offline's steps and the stem's opener: its seats, a greedy world seat, its deploy and stake
 web/src/lib/view/index.ts                              the game's view of the onchain state through the seams, in place of the greetings
 web/src/lib/ui/chrome.ts                               `round` is a descendant's word, `cycle` the template's (CONTEXT.md)
 web/src/lib/ui/delegation/registration.ts              cycle, not epoch
@@ -70,15 +70,11 @@ web/src/routes/+layout.svelte                          the context opened behind
 web/src/routes/+page.svelte                            the home page is the game menu, titled from web-config, the same file in every game
 
 # The e2e, on the game instead of the greetings
-web/e2e/fixtures/stalling-wallet.ts                    this app's stalled send is addToReserve, asked of the contracts page by testid
 web/e2e/fixtures/test.ts                               the game's fixtures: the table, the offline world, the arrival's continue, the exported connect helpers
 web/e2e/impersonate-addresses.json                     the accounts the game's suites claim (the table's nine and ten, the faucet's eight)
-web/e2e/routes.ts                                      `MAIN_PAGE` names the game's page, /play/, its "Online" link and its contract, and no heading (the page is a canvas)
-web/e2e/tests/contracts.e2e.ts                         the contracts page driven on the game's contract, by testid, with well-formed transactions
-web/e2e/tests/escape-hatch.e2e.ts                      the same, on the game's contract, and stopping waiting moves nothing
+web/e2e/routes.ts                                      `MAIN_PAGE` names the game: /play/, its "Online" link, no heading (the page is a canvas), the Game, getCycleNumber and addToReserve with the label as its player
 web/e2e/tests/faucet.e2e.ts                            the faucet's account is eight, which the burner can sign with
 web/e2e/tests/home.e2e.ts                              the home page's game menu
-web/e2e/tests/pending-operation.e2e.ts                 the inspector on the game's submission and cycle
 web/e2e/tests/sending-indicator.e2e.ts                 the indicator's budget fitting this app, and its contention note
 
 # Unit tests of the above

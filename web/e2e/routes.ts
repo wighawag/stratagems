@@ -1,9 +1,44 @@
 /**
+ * What the contracts page's suites send, as the main page's contract takes it.
+ *
+ * `fixtures/contracts-page.ts` drives the page with this and nothing else, so a
+ * node whose contract is not this one sets these values and edits neither the
+ * fixture nor the suites that read it (`contracts.e2e.ts`, `escape-hatch.e2e.ts`,
+ * `pending-operation.e2e.ts`, `fixtures/stalling-wallet.ts`).
+ */
+export type MainPageWrite = {
+	/**
+	 * A write any fresh account may send, and that succeeds: the suites need a
+	 * transaction, not this one, so it should change nothing that matters.
+	 */
+	readonly function: string;
+	/**
+	 * The form's values, one per input in the order the page lists them, made
+	 * from a LABEL the suite picks so that each test sends something it can find
+	 * again (a suite asserts its input survived). Valid for the input's type: a
+	 * write taking an address or a number turns the label into one.
+	 */
+	readonly args: (label: string) => readonly string[];
+	/** Whether the main page shows the label once the write is mined. */
+	readonly shownOnMainPage: boolean;
+};
+
+/** A label as a `uint256` player: its 32-bit FNV-1a hash, in decimal. */
+function labelAsPlayer(label: string): string {
+	let hash = 0x811c9dc5;
+	for (const byte of new TextEncoder().encode(label)) {
+		hash = Math.imul(hash ^ byte, 0x01000193) >>> 0;
+	}
+	return String(hash);
+}
+
+/**
  * THE APP'S MAIN PAGE, as the suites that visit it name it: its route, the
- * heading that page renders, the label of the home page's link to it, and its
- * contract (as /contracts lists it). Here it is the greetings demo. The app
- * names the same page in `MAIN_PAGE` of its `$app-specific` module
- * (`src/lib/context/app.ts` here); a descendant changes both.
+ * heading that page renders, the label of the home page's link to it, its
+ * contract (as /contracts lists it), one of that contract's view functions and
+ * the write the contracts page's suites send. The values are a node's own: here
+ * the greetings demo and its GreetingsRegistry. The app names the same page in
+ * `MAIN_PAGE` of its `$app-specific` module; a node changes both.
  */
 export const MAIN_PAGE = {
 	// Here the main page is the game, at `/play/` (`MAIN_PAGE` of the game's
@@ -13,6 +48,17 @@ export const MAIN_PAGE = {
 	route: '/play/',
 	homeLink: /^online$/i,
 	contract: 'Game',
+	read: 'getCycleNumber',
+	// `addToReserve(uint256 player, uint256 amount)`: an amount of zero moves
+	// nothing, so any account may send it and it succeeds. The player is a
+	// NUMBER (the identity is a `uint256` in every game, so that one whose
+	// identity is a token changes no signature), so the label becomes one: its
+	// hash, distinct per label, which is what a suite reads back from the form.
+	write: {
+		function: 'addToReserve',
+		args: (label: string) => [labelAsPlayer(label), '0'],
+		shownOnMainPage: false,
+	} satisfies MainPageWrite,
 } as const;
 
 /**
