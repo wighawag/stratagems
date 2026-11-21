@@ -45,7 +45,7 @@ The one exception is `AcquireModal.svelte`, which is shared because payer choice
 
 ## When the dialog is the gate rather than the consent
 
-`authorise.ts` is the same registration step with nothing in front of it, for a caller where choosing a payer is a question with exactly one possible answer: an offline world, whose payer and payee are the same generated wallet on a chain in the tab. It sends through the same two functions the button does (`registrationRequest`, then `submitRegistration`), so nothing about the contract path differs, and it returns an outcome rather than throwing, because the remedy already exists - the setup gate comes back with the button on it.
+`authoriseTheBrowsersKey` (re-exported from jolly-roger's `$lib/ui/delegation/authorise-here`, where it moved from this rail's `authorise.ts`) is the same registration step with nothing in front of it, for a caller where choosing a payer is a question with exactly one possible answer: an offline world, whose payer and payee are the same generated wallet on a chain in the tab. It sends through the same two functions the button does (`registrationRequest`, then `submitRegistration`), so nothing about the contract path differs, and it returns an outcome rather than throwing, because the remedy already exists - the setup gate comes back with the button on it.
 
 It does NOT skip the telling. A step taken for a player has to be one they were told about, or they meet it for the first time on a real chain with no idea what it is, so the caller owns that sentence. The offline world's is in `$lib/offline-lobby`.
 

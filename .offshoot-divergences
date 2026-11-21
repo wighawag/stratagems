@@ -57,9 +57,9 @@ web/.prettierignore                       also ignores the indexed states, the p
 web/svelte.config.js                      the $app-specific alias names stratagems' game.ts, not the reference game's
 web/vite.plugins.ts                       Sentry error reports when a token is set, the worker and build settings, and the processor bundle served in dev, in the file whose job is to differ
 web/src/routes/play/+page.svelte          the online game's page: stratagems' board and HUD
-web/src/lib/offline.ts                    the offline world's contracts, deploy and stake: a game's by design, at the stem's path
+web/src/lib/offline.ts                    the offline world on the template's steps ($lib/game/offline): stratagems' contracts and stake, its board at a table, its funded keys, its index forgotten, its tables settled
 web/src/lib/offline-players.ts            the offline world's played seats: a game's by design, at the stem's path
 web/test/lib/embedded/world.test.ts       the test of stratagems' offline.ts
 web/test/lib/offline-players.test.ts      the test of stratagems' offline-players.ts
-web/test/lib/app-world.ts                 the world test constants name stratagems' contract, Stratagems, so the template's deployments test runs here
+web/test/lib/app-world.ts                 the world test constants name stratagems' contracts package, its deploy scripts and its contract, Stratagems, so the template's deployments and offline-world tests run here
 web/e2e/fixtures/contracts-page.ts        WRITE_CONTRACT is the game's contract, Stratagems
