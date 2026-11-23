@@ -592,6 +592,27 @@ describe('a table ends, and has a winner', function () {
 		expect(await t.reserveOf(a)).to.equal(after[0]);
 	});
 
+	it("reads its cells as tokens on the final board after the end, not on the world's clock", async function () {
+		const t = await loadFixture(threePlayersThreeCycles);
+		await t.playCycle({0: [[0, 0, BLUE]], 2: [[2, 2, 3]]});
+		await t.playCycle({2: [[-2, -2, 3]]});
+		// the last cycle surrounds the blue cell, which then dies over the cycles
+		// that follow on the world's clock, and is dead at once on the table's
+		await t.playCycle({
+			1: [
+				[-1, 0, RED],
+				[1, 0, RED],
+				[0, -1, RED],
+				[0, 1, RED],
+			],
+		});
+		expect(await t.Table.read.hasEnded()).to.equal(true);
+		const surrounded = xyToBigIntID(0, 0);
+		const atTheEnd = await t.Table.read.tokenURI([surrounded]);
+		await networkHelpers.time.increase(600);
+		expect(await t.Table.read.tokenURI([surrounded])).to.equal(atTheEnd);
+	});
+
 	it('settles to the same scores whether it was poked after its end or not', async function () {
 		const scoresOf = async (pokeAfterEnd: boolean) => {
 			const t = await loadFixture(threePlayersThreeCycles);
