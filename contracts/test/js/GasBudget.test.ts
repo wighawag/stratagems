@@ -41,7 +41,7 @@ import {parseEther, zeroAddress} from 'viem';
  * so far above that nobody has re-measured in a long time.
  */
 
-const {provider, networkHelpers} = await network.connect();
+const {provider, networkHelpers} = await network.create();
 const {deployAll} = setupFixtures(provider);
 
 function cellAt(x: number, y: number): bigint {

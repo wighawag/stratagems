@@ -17,7 +17,7 @@ import {
 } from './utils/index.js';
 import {zeroAddress} from 'viem';
 
-const {provider, networkHelpers} = await network.connect();
+const {provider, networkHelpers} = await network.create();
 const {deployAll} = setupFixtures(provider);
 
 /** What the games deployed in this suite will accept in one reveal. */
