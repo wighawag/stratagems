@@ -30,7 +30,7 @@ import {
  * `CommitRevealBase.test.ts` and `CyclePolicy.test.ts` pin unchanged.
  */
 
-const {provider, networkHelpers} = await network.connect();
+const {provider, networkHelpers} = await network.create();
 
 const NO_FURTHER_ACTIONS =
 	'0x000000000000000000000000000000000000000000000000' as const;

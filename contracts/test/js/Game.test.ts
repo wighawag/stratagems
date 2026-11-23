@@ -19,7 +19,7 @@ import {parseEther, zeroAddress} from 'viem';
 import {generatePrivateKey, privateKeyToAccount} from 'viem/accounts';
 import {delegationMessage} from '@etherplay/delegation';
 
-const {provider, networkHelpers} = await network.connect();
+const {provider, networkHelpers} = await network.create();
 const {deployAll} = setupFixtures(provider);
 
 /** Pack a cell coordinate the way PositionUtils does: y in the high 32 bits. */

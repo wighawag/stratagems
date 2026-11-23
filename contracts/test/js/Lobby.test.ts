@@ -26,7 +26,7 @@ import {
  * persistent world beside it keeps open entry.
  */
 
-const {provider, networkHelpers} = await network.connect();
+const {provider, networkHelpers} = await network.create();
 const {deployAll} = setupFixtures(provider);
 
 const SECRET =
