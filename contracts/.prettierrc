@@ -15,6 +15,19 @@
 				"singleQuote": false,
 				"bracketSpacing": false
 			}
+		},
+		{
+			"files": [
+				"src/commit-reveal/**",
+				"src/utils/**",
+				"rocketh/**",
+				"test/js/**",
+				"utils/indexer.ts",
+				"utils/in-process-chain.ts"
+			],
+			"options": {
+				"printWidth": 80
+			}
 		}
 	]
 }

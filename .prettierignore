@@ -26,5 +26,6 @@ package.json
 # not format-checked there either (its root format:check only recurses into packages)
 /README.embedded-chain.md
 /README.integration.md
+/README.pixi-js.md
 /scripts/*
 !/scripts/stratagems-generated.mjs

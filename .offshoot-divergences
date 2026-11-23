@@ -45,7 +45,7 @@ contracts/scripts/tsconfig.json           the operations scripts compile against
 contracts/.env                            ldenv reads the root .env too (ENV_ROOT_FOLDER), and the lan environment's defaults
 contracts/.gitignore                      also ignores .keys, scripts/data/contracts.ts and .data/, written by the operations scripts
 contracts/.prettierignore                 also ignores the docs' templates (*.hbs) and the package build
-contracts/.prettierrc                     stratagems' contracts and tests are formatted at 120 columns
+contracts/.prettierrc                     stratagems' contracts and tests are formatted at 120 columns, the stem's files it carries (the commit-reveal base, rocketh/, test/js) at the stem's 80
 contracts/zellij.kdl                      the contracts' own panes: the tests and node:local
 
 # The web app
