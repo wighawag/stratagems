@@ -2,6 +2,7 @@ import {expect} from 'earl';
 import {describe, it} from 'node:test'; // using node:test as hardhat v3 do not support vitest
 import {network} from 'hardhat';
 import {parseEther, parseEventLogs, zeroAddress, type Abi} from 'viem';
+import type {Deployment} from 'rocketh/types';
 import {artifacts} from '../../rocketh/environment.js';
 import {
 	commitmentHashFor,
@@ -25,7 +26,7 @@ import {
  * persistent world beside it keeps open entry.
  */
 
-const {provider, networkHelpers} = await network.connect();
+const {provider, networkHelpers} = await network.create();
 const {deployAll} = setupFixtures(provider);
 
 const SECRET =
@@ -97,8 +98,8 @@ async function deployManualLobby(fixtures: {
 		args: [Implementation.address],
 	});
 	return {
-		Implementation: Implementation as {address: `0x${string}`; abi: Abi},
-		Factory: Factory as {address: `0x${string}`; abi: Abi},
+		Implementation: Implementation as Deployment<Abi>,
+		Factory: Factory as Deployment<Abi>,
 	};
 }
 
