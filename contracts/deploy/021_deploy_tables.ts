@@ -92,10 +92,14 @@ export default deployScript(
 			admin: `0x${string}`;
 		};
 
-		const noRewards = await deploy('NoRewards', {
-			account: deployer,
-			artifact: artifacts.NoRewards,
-		}, {deterministic});
+		const noRewards = await deploy(
+			'NoRewards',
+			{
+				account: deployer,
+				artifact: artifacts.NoRewards,
+			},
+			{deterministic},
+		);
 
 		const config = {
 			tokens: testTokens.address,
@@ -152,11 +156,15 @@ export default deployScript(
 		// what a table's moves will do, answered by the reveal's own code over
 		// storage of its own, with the table's rules (020 says why it is a
 		// contract and never a route)
-		await deploy('StratagemsTableSimulation', {
-			account: deployer,
-			artifact: artifacts.StratagemsSimulation,
-			args: [config],
-		}, {deterministic});
+		await deploy(
+			'StratagemsTableSimulation',
+			{
+				account: deployer,
+				artifact: artifacts.StratagemsSimulation,
+				args: [config],
+			},
+			{deterministic},
+		);
 
 		await deploy(
 			'StratagemsTableFactory',

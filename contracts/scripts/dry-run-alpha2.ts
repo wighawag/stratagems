@@ -46,7 +46,14 @@ const publicClient = createPublicClient({chain, transport: custom(provider)});
 const deployments = env.deployments as Record<string, {address: `0x${string}`; abi: any; linkedData?: any}>;
 const names = Object.keys(deployments).sort();
 console.log(`deployed under alpha2 on a fork of Base: ${names.join(', ')}`);
-for (const required of ['TestTokens', 'TestTokensDistributor', 'Gems', 'GemsGenerator', 'Stratagems', 'StratagemsSimulation']) {
+for (const required of [
+	'TestTokens',
+	'TestTokensDistributor',
+	'Gems',
+	'GemsGenerator',
+	'Stratagems',
+	'StratagemsSimulation',
+]) {
 	if (!deployments[required]) throw new Error(`alpha2 did not deploy ${required}`);
 }
 const S = deployments.Stratagems;
@@ -71,7 +78,11 @@ async function send(label: string, account: typeof player, request: any): Promis
 }
 
 // 1. test gems: one press
-await send('topup', player, {address: deployments.TestTokensDistributor.address, abi: deployments.TestTokensDistributor.abi, functionName: 'topup'});
+await send('topup', player, {
+	address: deployments.TestTokensDistributor.address,
+	abi: deployments.TestTokensDistributor.abi,
+	functionName: 'topup',
+});
 const gems = (await publicClient.readContract({
 	address: deployments.TestTokens.address,
 	abi: deployments.TestTokens.abi,
@@ -103,7 +114,10 @@ await send('registerDelegate', player, {
 // 3. the first commit from the browser key, paying a fresh scheduler account
 const cycle = (await publicClient.readContract({address: S.address, abi: S.abi, functionName: 'getCycle'})) as any;
 if (!cycle.commiting) {
-	await provider.request({method: 'evm_increaseTime', params: [Number(cycle.phaseEnd) - Math.floor(Date.now() / 1000) + 1]});
+	await provider.request({
+		method: 'evm_increaseTime',
+		params: [Number(cycle.phaseEnd) - Math.floor(Date.now() / 1000) + 1],
+	});
 	await provider.request({method: 'evm_mine', params: []});
 }
 const SECRET = '0x00000000000000000000000000000000000000000000000000000000000000a1';
@@ -115,7 +129,13 @@ const hash = keccak256(
 	encodeAbiParameters(
 		[
 			{type: 'bytes32'},
-			{type: 'tuple[]', components: [{name: 'position', type: 'uint64'}, {name: 'color', type: 'uint8'}]},
+			{
+				type: 'tuple[]',
+				components: [
+					{name: 'position', type: 'uint64'},
+					{name: 'color', type: 'uint8'},
+				],
+			},
 			{type: 'bytes24'},
 		],
 		[SECRET, moves, '0x000000000000000000000000000000000000000000000000'],
@@ -131,13 +151,21 @@ const commitUsed = await send('first commit, paying a fresh scheduler account', 
 });
 
 // 4. the commit phase runs out, then the reveal (from anyone: here the browser key)
-const afterCommit = (await publicClient.readContract({address: S.address, abi: S.abi, functionName: 'getCycle'})) as any;
+const afterCommit = (await publicClient.readContract({
+	address: S.address,
+	abi: S.abi,
+	functionName: 'getCycle',
+})) as any;
 const now = Number((await publicClient.getBlock()).timestamp);
 await provider.request({method: 'evm_increaseTime', params: [Number(afterCommit.phaseEnd) - now + 1]});
 await provider.request({method: 'evm_mine', params: []});
 // what the client's preview asks first: the turn, simulated by the reveal's own
 // code over the cells as stored (none yet on these rows of a fresh board)
-const [revealCycle] = (await publicClient.readContract({address: S.address, abi: S.abi, functionName: 'getCycleNumber'})) as [bigint, boolean];
+const [revealCycle] = (await publicClient.readContract({
+	address: S.address,
+	abi: S.abi,
+	functionName: 'getCycleNumber',
+})) as [bigint, boolean];
 const Simulation = deployments.StratagemsSimulation;
 const {result: outcome} = (await publicClient.simulateContract({
 	address: Simulation.address,
@@ -153,7 +181,13 @@ const revealUsed = await send(`reveal of ${moves.length} placements`, browserKey
 	address: S.address,
 	abi: S.abi,
 	functionName: 'reveal',
-	args: [BigInt(player.address), moves, SECRET, '0x000000000000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000'],
+	args: [
+		BigInt(player.address),
+		moves,
+		SECRET,
+		'0x000000000000000000000000000000000000000000000000',
+		'0x0000000000000000000000000000000000000000',
+	],
 	gas: CLIENT_GAS.revealGas,
 });
 
@@ -167,7 +201,8 @@ const placed = (await publicClient.readContract({
 for (const [i, cell] of placed.entries()) {
 	const simulated = outcome.cells.find((c: any) => c.position === moves[i].position);
 	for (const key of ['color', 'life', 'delta', 'enemyMap', 'stake', 'lastCycleUpdate'] as const) {
-		if (cell[key] !== simulated.cell[key]) throw new Error(`cell ${i}: ${key} ${cell[key]}, simulated ${simulated.cell[key]}`);
+		if (cell[key] !== simulated.cell[key])
+			throw new Error(`cell ${i}: ${key} ${cell[key]}, simulated ${simulated.cell[key]}`);
 	}
 	if (cell.owner.toLowerCase() !== simulated.owner.toLowerCase()) throw new Error(`cell ${i}: owner`);
 }

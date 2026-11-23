@@ -6,11 +6,7 @@ import "../interface/UsingStratagemsTypes.sol";
 abstract contract UsingStratagemsUtils is UsingStratagemsTypes {
     /// @notice The one encoding of a chunk: `bytes24(keccak256(abi.encode(secret, moves, furtherActions)))`.
     /// @dev alpha1 had two (its last chunk dropped `furtherMoves`); the base has one.
-    function _digest(
-        Move[] memory moves,
-        bytes32 secret,
-        bytes24 furtherActions
-    ) internal pure returns (bytes24) {
+    function _digest(Move[] memory moves, bytes32 secret, bytes24 furtherActions) internal pure returns (bytes24) {
         return bytes24(keccak256(abi.encode(secret, moves, furtherActions)));
     }
 

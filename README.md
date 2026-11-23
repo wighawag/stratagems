@@ -150,7 +150,7 @@ Our founder, [Ronan Sandford](https://ronan.eth.limo) is also an active develope
 
 ## 👾 Play
 
-Just navigate to the url mentioned in the console. If you have no other thing running, it should be [http://localhost:5173/]()
+Just navigate to the url mentioned in the console. If you have no other thing running, it should be [http://localhost:5173/](<>)
 
 ## Deploying to a network
 

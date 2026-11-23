@@ -166,11 +166,15 @@ export default deployScript(
 		// is a contract of its own and never a route). The same config, because its
 		// immutables are the rules' parameters; nothing is ever sent to it, the
 		// client runs its deployed code in a sandbox (`web/src/lib/game/simulation`).
-		await env.deploy('StratagemsSimulation', {
-			account: deployer,
-			artifact: artifacts.StratagemsSimulation,
-			args: [{...config, startTime: BigInt(config.startTime)}],
-		}, {deterministic});
+		await env.deploy(
+			'StratagemsSimulation',
+			{
+				account: deployer,
+				artifact: artifacts.StratagemsSimulation,
+				args: [{...config, startTime: BigInt(config.startTime)}],
+			},
+			{deterministic},
+		);
 
 		// GUARDED rather than read and compared here: the same skip on a redeploy,
 		// and a LAN box replays each call only when its effect is missing

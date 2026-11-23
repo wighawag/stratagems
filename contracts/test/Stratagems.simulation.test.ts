@@ -180,7 +180,12 @@ async function expectIndexedAsStored(env: Env) {
 let checked = {reveals: 0, pokes: 0, payouts: 0, points: 0, cells: 0, indexed: 0};
 
 /** Simulate `send` over the stored cells it can read, send it, and hold the answer to what it did. */
-async function expectSimulated(env: Env, centres: bigint[], simulate: (board: any[]) => Promise<any>, send: () => Promise<void>) {
+async function expectSimulated(
+	env: Env,
+	centres: bigint[],
+	simulate: (board: any[]) => Promise<any>,
+	send: () => Promise<void>,
+) {
 	const touched = touchedBy(centres);
 	const board = await storedCells(env, touched);
 
@@ -248,8 +253,7 @@ async function playCycle(env: Env, r: ReturnType<typeof rng>, plans: {[player: n
 			const outcome = await expectSimulated(
 				env,
 				moves.map((m) => m.position),
-				async (board) =>
-					(await env.StratagemsSimulation.simulate.resolveMoves([board, player, cycle, moves])).result,
+				async (board) => (await env.StratagemsSimulation.simulate.resolveMoves([board, player, cycle, moves])).result,
 				async () => {
 					await S.write.reveal([BigInt(player), moves, secret, zeroBytes24, zeroAddress], {
 						account: env.stratagemsAdmin,

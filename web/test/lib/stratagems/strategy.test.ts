@@ -459,9 +459,7 @@ describe('at a table (step OT2, OT2-4c)', () => {
 			expect(cells.length).toBeGreaterThan(0);
 			for (const p of cells) {
 				const {x, y} = bigIntIDToXY(p);
-				expect(x >= -3 && x <= 2 && y >= -3 && y <= 2, `${x},${y}`).toBe(
-					true,
-				);
+				expect(x >= -3 && x <= 2 && y >= -3 && y <= 2, `${x},${y}`).toBe(true);
 				expect(board.get(p.toString())?.cell.color ?? 0).toBe(0);
 			}
 		}

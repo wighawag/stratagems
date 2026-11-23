@@ -375,12 +375,10 @@ abstract contract UsingStratagemsSetters is UsingStratagemsState, UsingStratagem
         uint8 newStake,
         int8 newEffectiveDelta
     ) internal {
-        uint256 oldHolding = oldOwner != address(0) && oldLife > 0 && oldEffectiveDelta > 0
-            ? NUM_TOKENS_PER_GEMS * oldStake
-            : 0;
-        uint256 newHolding = newOwner != address(0) && newLife > 0 && newEffectiveDelta > 0
-            ? NUM_TOKENS_PER_GEMS * newStake
-            : 0;
+        uint256 oldHolding =
+            oldOwner != address(0) && oldLife > 0 && oldEffectiveDelta > 0 ? NUM_TOKENS_PER_GEMS * oldStake : 0;
+        uint256 newHolding =
+            newOwner != address(0) && newLife > 0 && newEffectiveDelta > 0 ? NUM_TOKENS_PER_GEMS * newStake : 0;
         if (oldOwner == newOwner) {
             if (newHolding > oldHolding) {
                 _addPoints(newOwner, newHolding - oldHolding);

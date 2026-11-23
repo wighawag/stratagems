@@ -8,12 +8,12 @@ import path from 'node:path';
 const web = path.resolve(process.argv[2]);
 const src = path.join(web, 'src');
 const aliases = {
-	'$lib': 'src/lib',
+	$lib: 'src/lib',
 	'$app-specific': 'src/lib/stratagems/game.ts',
-	'$ui': 'src/lib/shadcn/ui',
+	$ui: 'src/lib/shadcn/ui',
 	'web-config': 'src/web-config.json',
-	'$data': 'src/data',
-	'$utils': 'src/utils',
+	$data: 'src/data',
+	$utils: 'src/utils',
 };
 function walk(d, out = []) {
 	for (const e of fs.readdirSync(d, {withFileTypes: true})) {
@@ -45,7 +45,8 @@ function resolve(spec, from) {
 	}
 	return null;
 }
-const re = /(?:import|export)[^'"`;]*?from\s*['"]([^'"]+)['"]|import\s*\(\s*['"]([^'"]+)['"]\s*\)|import\s+['"]([^'"]+)['"]|new URL\(\s*['"]([^'"]+)['"]/g;
+const re =
+	/(?:import|export)[^'"`;]*?from\s*['"]([^'"]+)['"]|import\s*\(\s*['"]([^'"]+)['"]\s*\)|import\s+['"]([^'"]+)['"]|new URL\(\s*['"]([^'"]+)['"]/g;
 const edges = new Map();
 const external = new Map();
 for (const f of all) {

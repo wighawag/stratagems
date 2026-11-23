@@ -245,7 +245,11 @@ describe('A stratagems table in the offline world', () => {
 		expect(onChain.scores).toHaveLength(3);
 		expect(onChain.winners.length).toBeGreaterThan(0);
 		const expected = onChain.scores
-			.map(([player, score]) => [player, score, onChain.winners.includes(player)])
+			.map(([player, score]) => [
+				player,
+				score,
+				onChain.winners.includes(player),
+			])
 			.sort();
 		await expect
 			.poll(

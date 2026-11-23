@@ -59,7 +59,9 @@ async function withATableOfThree() {
 	const env = await deployStratagemsWithTestConfig();
 	const {publicClient} = await getConnection();
 	const {deployments} = env;
-	const Factory = await fetchContract(deployments['StratagemsTableFactory'] as Deployment<typeof abis.CommitRevealGameFactory>);
+	const Factory = await fetchContract(
+		deployments['StratagemsTableFactory'] as Deployment<typeof abis.CommitRevealGameFactory>,
+	);
 	const implementation = deployments['StratagemsTableImplementation'];
 	const noRewards = deployments['NoRewards'].address;
 
@@ -131,15 +133,13 @@ describe('a table', function () {
 		expect(BigInt(roster.openedAtBlock)).to.equal(createdIn);
 		expect(createdIn > implementationDeployedIn).to.equal(true);
 		// the world keeps open entry: it has no lobby route at all
-		expect((await env.TestTokens.read.globalApprovals([Table.address]))).to.equal(false);
+		expect(await env.TestTokens.read.globalApprovals([Table.address])).to.equal(false);
 	});
 
 	it('is played from its creation to the creator forfeiting a vanished member, and earns nothing', async function () {
 		const {env, Table, creator, alice, bob, carol, creationGas, takeSeat, lastApproval} =
 			await loadFixture(withATableOfThree);
-		const generatorBefore = await Promise.all(
-			[creator, alice, bob].map((p) => env.GemsGenerator.read.balanceOf([p])),
-		);
+		const generatorBefore = await Promise.all([creator, alice, bob].map((p) => env.GemsGenerator.read.balanceOf([p])));
 		const generatorSupplyBefore = await env.GemsGenerator.read.totalSupply();
 
 		// seats are taken by staking, paid by allowance; a fourth is refused
@@ -198,12 +198,18 @@ describe('a table', function () {
 		await expect(Table.write.advanceCycle({account: carol})).rejects.toThrow(/StillWaitingToCommit/);
 		await networkHelpers.time.increaseTo(two.phaseEnd);
 		expect((await Table.read.getCycle()).commiting).to.equal(false);
-		await Table.write.reveal([BigInt(creator), second[0].moves, second[0].secret, second[0].furtherActions, zeroAddress], {
-			account: creator,
-		});
-		await Table.write.reveal([BigInt(alice), second[1].moves, second[1].secret, second[1].furtherActions, zeroAddress], {
-			account: alice,
-		});
+		await Table.write.reveal(
+			[BigInt(creator), second[0].moves, second[0].secret, second[0].furtherActions, zeroAddress],
+			{
+				account: creator,
+			},
+		);
+		await Table.write.reveal(
+			[BigInt(alice), second[1].moves, second[1].secret, second[1].furtherActions, zeroAddress],
+			{
+				account: alice,
+			},
+		);
 		await networkHelpers.time.increaseTo(two.phaseEnd + 15n);
 		const three = await Table.read.getCycle();
 		expect(three.cycleNumber).to.equal(two.cycleNumber + 1n);
@@ -232,9 +238,7 @@ describe('a table', function () {
 		expect(await env.GemsGenerator.read.totalSupply()).to.equal(generatorSupplyBefore);
 		expect(await env.GemsGenerator.read.games([Table.address])).to.equal(0n);
 
-		console.log(
-			`table gas: creation ${creationGas}, its approval ${approvalGas}, first stake ${firstStakeGas}`,
-		);
+		console.log(`table gas: creation ${creationGas}, its approval ${approvalGas}, first stake ${firstStakeGas}`);
 	});
 });
 
@@ -260,7 +264,9 @@ async function aStartedTable(params: {seats: number; cycles: number; stakeGems: 
 	const env = await deployStratagemsWithTestConfig();
 	const {publicClient} = await getConnection();
 	const {deployments} = env;
-	const Factory = await fetchContract(deployments['StratagemsTableFactory'] as Deployment<typeof abis.CommitRevealGameFactory>);
+	const Factory = await fetchContract(
+		deployments['StratagemsTableFactory'] as Deployment<typeof abis.CommitRevealGameFactory>,
+	);
 	const implementation = deployments['StratagemsTableImplementation'];
 	const Simulation = (await fetchContract(deployments['StratagemsTableSimulation'] as any)) as any;
 	const players = env.otherAccounts.slice(0, params.seats) as `0x${string}`[];
@@ -321,7 +327,8 @@ async function aStartedTable(params: {seats: number; cycles: number; stakeGems: 
 			fromBlock: 0n,
 		});
 		const MASK64 = (1n << 64n) - 1n;
-		const field = (word: bigint, shift: number, bits: number) => Number((word >> BigInt(shift)) & ((1n << BigInt(bits)) - 1n));
+		const field = (word: bigint, shift: number, bits: number) =>
+			Number((word >> BigInt(shift)) & ((1n << BigInt(bits)) - 1n));
 		const cells = new Map<bigint, any>();
 		const owners = new Map<bigint, `0x${string}`>();
 		for (const log of logs as any[]) {
@@ -381,7 +388,9 @@ const twoPlayersManyCycles = () => aStartedTable({seats: 2, cycles: 12, stakeGem
 describe('a table ends, and has a winner', function () {
 	it('takes exactly its stake for a seat, once, and keeps it until the table is settled', async function () {
 		const env = await deployStratagemsWithTestConfig();
-		const Factory = await fetchContract(env.deployments['StratagemsTableFactory'] as Deployment<typeof abis.CommitRevealGameFactory>);
+		const Factory = await fetchContract(
+			env.deployments['StratagemsTableFactory'] as Deployment<typeof abis.CommitRevealGameFactory>,
+		);
 		const [creator, alice] = env.otherAccounts as `0x${string}`[];
 		const {publicClient} = await getConnection();
 		const receipt = await publicClient.waitForTransactionReceipt({
@@ -398,10 +407,16 @@ describe('a table ends, and has a winner', function () {
 			await env.TestTokens.write.approve([Table.address, stake * 3n], {account: p});
 		}
 		expect(await Table.read.getTableOptions()).toEqual([stake, 5, 0]);
-		await expect(Table.write.addToReserve([BigInt(alice), stake - 1n], {account: alice})).rejects.toThrow(/TableStakeIsFixed/);
-		await expect(Table.write.addToReserve([BigInt(alice), stake + 1n], {account: alice})).rejects.toThrow(/TableStakeIsFixed/);
+		await expect(Table.write.addToReserve([BigInt(alice), stake - 1n], {account: alice})).rejects.toThrow(
+			/TableStakeIsFixed/,
+		);
+		await expect(Table.write.addToReserve([BigInt(alice), stake + 1n], {account: alice})).rejects.toThrow(
+			/TableStakeIsFixed/,
+		);
 		await Table.write.addToReserve([BigInt(alice), stake], {account: alice});
-		await expect(Table.write.addToReserve([BigInt(alice), stake], {account: alice})).rejects.toThrow(/TableStakeIsFixed/);
+		await expect(Table.write.addToReserve([BigInt(alice), stake], {account: alice})).rejects.toThrow(
+			/TableStakeIsFixed/,
+		);
 		// before the start a seat is left whole, or not at all
 		await expect(Table.write.withdrawFromReserve([GEM], {account: alice})).rejects.toThrow(/TableStakeIsFixed/);
 		await Table.write.withdrawFromReserve([maxUint256], {account: alice});
@@ -422,7 +437,9 @@ describe('a table ends, and has a winner', function () {
 		const [badCreated] = parseEventLogs({abi: Factory.abi, logs: bad.logs, eventName: 'GameCreated'});
 		const BadTable = (await fetchContract({address: badCreated.args.game, abi: Table.abi})) as any;
 		await env.TestTokens.write.approve([BadTable.address, stake], {account: alice});
-		await expect(BadTable.write.addToReserve([BigInt(alice), stake], {account: alice})).rejects.toThrow(/InvalidTableOptions/);
+		await expect(BadTable.write.addToReserve([BigInt(alice), stake], {account: alice})).rejects.toThrow(
+			/InvalidTableOptions/,
+		);
 	});
 
 	it('sizes its board to the gems: a square of ceil(sqrt(seats x stake x (1 + gap))) cells a side', async function () {
@@ -468,7 +485,15 @@ describe('a table ends, and has a winner', function () {
 
 		// a cell killed by its neighbours pays its killers' reserves, not their wallets
 		const aliceWallet = await t.env.TestTokens.read.balanceOf([alice]);
-		await t.playCycle({0: [[0, 0, BLUE]], 1: [[-1, 0, RED], [1, 0, RED], [0, -1, RED], [0, 1, RED]]});
+		await t.playCycle({
+			0: [[0, 0, BLUE]],
+			1: [
+				[-1, 0, RED],
+				[1, 0, RED],
+				[0, -1, RED],
+				[0, 1, RED],
+			],
+		});
 		const beforeDeath = await t.reserveOf(alice);
 		await t.playCycle();
 		await t.playCycle();
@@ -484,7 +509,18 @@ describe('a table ends, and has a winner', function () {
 		const t = await loadFixture(threePlayersThreeCycles);
 		const [a, b, c] = t.players;
 		await expect(t.Table.write.settle([[]], {account: t.outsider})).rejects.toThrow(/TableNotEnded/);
-		await t.playCycle({0: [[0, 0, BLUE], [2, 2, BLUE]], 1: [[-1, 0, RED], [1, 0, RED], [0, -1, RED]], 2: [[-2, -2, 3]]});
+		await t.playCycle({
+			0: [
+				[0, 0, BLUE],
+				[2, 2, BLUE],
+			],
+			1: [
+				[-1, 0, RED],
+				[1, 0, RED],
+				[0, -1, RED],
+			],
+			2: [[-2, -2, 3]],
+		});
 		await t.playCycle({1: [[0, 1, RED]], 2: [[-2, -1, 3]]});
 		// the last cycle: c commits and never reveals
 		await t.playCycle({0: [[2, 1, BLUE]], 1: [[1, 1, RED]], 2: [[-1, -2, 3]]}, {skipReveal: 2});
@@ -507,7 +543,9 @@ describe('a table ends, and has a winner', function () {
 		);
 		await t.Table.write.forfeitMissedReveal([BigInt(c)], {account: c});
 		const burnt = before[2] - (await t.reserveOf(c));
-		const settleReceipt = await (await getConnection()).publicClient.waitForTransactionReceipt({
+		const settleReceipt = await (
+			await getConnection()
+		).publicClient.waitForTransactionReceipt({
 			hash: await t.Table.write.settle([coloured.slice(half)], {account: t.outsider}),
 		});
 		expect(await t.Table.read.isSettled()).to.equal(true);
@@ -547,7 +585,15 @@ describe('a table ends, and has a winner', function () {
 	it('settles to the same scores whether it was poked after its end or not', async function () {
 		const scoresOf = async (pokeAfterEnd: boolean) => {
 			const t = await loadFixture(threePlayersThreeCycles);
-			await t.playCycle({0: [[0, 0, BLUE]], 1: [[-1, 0, RED], [1, 0, RED], [0, -1, RED]], 2: [[2, 2, 3]]});
+			await t.playCycle({
+				0: [[0, 0, BLUE]],
+				1: [
+					[-1, 0, RED],
+					[1, 0, RED],
+					[0, -1, RED],
+				],
+				2: [[2, 2, 3]],
+			});
 			await t.playCycle({1: [[0, 1, RED]]});
 			await t.playCycle({0: [[2, 1, BLUE]]});
 			const {coloured} = await t.projection();
@@ -580,10 +626,7 @@ describe('a table ends, and has a winner', function () {
 		]) {
 			const t = await aStartedTable({seats: 2, cycles: 2, stakeGems: 10, gapPercent: 50});
 			const [, members] = await t.Table.read.getRoster();
-			const moves = [
-				[{position: xyToBigIntID(0, 0), color: BLUE}],
-				[{position: xyToBigIntID(0, 0), color: RED}],
-			];
+			const moves = [[{position: xyToBigIntID(0, 0), color: BLUE}], [{position: xyToBigIntID(0, 0), color: RED}]];
 			const commitments = moves.map((m) => prepareCommitment(m, randomSecret()));
 			for (const i of [0, 1]) {
 				await t.Table.write.makeCommitment([BigInt(t.players[i]), commitments[i].hash, GEM, zeroAddress], {
@@ -626,7 +669,9 @@ describe('a table ends, and has a winner', function () {
 		const receipt = await publicClient.waitForTransactionReceipt({
 			hash: await t.Table.write.settle([coloured], {account: t.outsider}),
 		});
-		console.log(`settle gas: ${receipt.gasUsed} for ${coloured.length} cells, ${receipt.gasUsed / BigInt(coloured.length)} a cell`);
+		console.log(
+			`settle gas: ${receipt.gasUsed} for ${coloured.length} cells, ${receipt.gasUsed / BigInt(coloured.length)} a cell`,
+		);
 	});
 
 	it("measures what a table's rules add to a chunk of 32 placements, against the world's", async function () {
@@ -634,7 +679,8 @@ describe('a table ends, and has a winner', function () {
 		const [min] = (await t.Table.read.getBoard()) as [number, number, bigint];
 		const moves: {position: bigint; color: number}[] = [];
 		for (let y = min; moves.length < 32; y += 2) {
-			for (let x = min; x <= min + 10 && moves.length < 32; x += 2) moves.push({position: xyToBigIntID(x, y), color: BLUE});
+			for (let x = min; x <= min + 10 && moves.length < 32; x += 2)
+				moves.push({position: xyToBigIntID(x, y), color: BLUE});
 		}
 		const {publicClient} = await getConnection();
 		async function chunkGas(Game: any, player: `0x${string}`, others: `0x${string}`[]) {
@@ -644,14 +690,17 @@ describe('a table ends, and has a winner', function () {
 				const empty = prepareCommitment([], randomSecret());
 				await Game.write.makeCommitment([BigInt(other), empty.hash, 0n, zeroAddress], {account: other});
 			}
-			return {c, reveal: async () =>
-				(
-					await publicClient.waitForTransactionReceipt({
-						hash: await Game.write.reveal([BigInt(player), c.moves, c.secret, c.furtherActions, zeroAddress], {
-							account: player,
-						}),
-					})
-				).gasUsed};
+			return {
+				c,
+				reveal: async () =>
+					(
+						await publicClient.waitForTransactionReceipt({
+							hash: await Game.write.reveal([BigInt(player), c.moves, c.secret, c.furtherActions, zeroAddress], {
+								account: player,
+							}),
+						})
+					).gasUsed,
+			};
 		}
 		const atTable = await chunkGas(t.Table, t.players[0], [t.players[1]]);
 		await t.Table.write.advanceCycle({account: t.outsider});

@@ -7,11 +7,15 @@ export default deployScript(
 		const {deploy, namedAccounts} = env;
 		const {deterministic} = getConfig(env);
 		const {deployer, tokensBeneficiary} = namedAccounts;
-		await deploy('Gems', {
-			account: deployer,
-			artifact: artifacts.Gems,
-			args: [deployer, tokensBeneficiary, parseEther('1000')], // 18 decimal like ether
-		}, {deterministic});
+		await deploy(
+			'Gems',
+			{
+				account: deployer,
+				artifact: artifacts.Gems,
+				args: [deployer, tokensBeneficiary, parseEther('1000')], // 18 decimal like ether
+			},
+			{deterministic},
+		);
 	},
 	{tags: ['Gems', 'Gems_deploy']},
 );

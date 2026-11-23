@@ -79,7 +79,7 @@ The best way for now to create a game on top of Stratagems evolving world map is
 
 ## 👾 Play
 
-Just navigate to the url mentioned in the console. If you have no other thing running, it should be [http://localhost:5173/]()
+Just navigate to the url mentioned in the console. If you have no other thing running, it should be [http://localhost:5173/](<>)
 
 You ll see an empty sea. There you cna get yoruself some token with the ("get tokens") button and start putting land.
 

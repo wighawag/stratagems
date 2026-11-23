@@ -438,12 +438,14 @@ describe('a table in stratagems\u2019 offline world', () => {
 		return {opened, started};
 	}
 
-	function tableOn(at: Awaited<ReturnType<typeof tableWorld>>, address: `0x${string}`) {
+	function tableOn(
+		at: Awaited<ReturnType<typeof tableWorld>>,
+		address: `0x${string}`,
+	) {
 		return {
 			address,
-			abi: (
-				at.records.contracts as unknown as Record<string, {abi: unknown}>
-			).StratagemsTableImplementation.abi,
+			abi: (at.records.contracts as unknown as Record<string, {abi: unknown}>)
+				.StratagemsTableImplementation.abi,
 		};
 	}
 
@@ -542,9 +544,8 @@ describe('a table in stratagems\u2019 offline world', () => {
 		expect(await at.payerSends()).toBe(paid);
 		const games = (await at.reader.readContract({
 			address: at.factory,
-			abi: (
-				at.records.contracts as unknown as Record<string, {abi: unknown}>
-			).StratagemsTableFactory.abi as never,
+			abi: (at.records.contracts as unknown as Record<string, {abi: unknown}>)
+				.StratagemsTableFactory.abi as never,
 			functionName: 'numGames' as never,
 		})) as bigint;
 		expect(games).toBe(1n);

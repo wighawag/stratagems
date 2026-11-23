@@ -54,9 +54,8 @@ abstract contract UsingStratagemsTableScore is UsingStratagemsTable, UsingStrata
         address ownerAtStart
     ) internal virtual override returns (uint256 tokensPlaced) {
         Color colorBefore = currentState.color;
-        bool collision = move.color == Color.Evil &&
-            currentState.cycleWhenTokenIsAdded == cycle &&
-            currentState.life != 0;
+        bool collision =
+            move.color == Color.Evil && currentState.cycleWhenTokenIsAdded == cycle && currentState.life != 0;
         address ownerBefore = _ownerOf(move.position);
 
         tokensPlaced = super._completeMove(

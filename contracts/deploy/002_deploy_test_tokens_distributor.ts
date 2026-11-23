@@ -18,14 +18,18 @@ export default deployScript(
 		// guests at a table get their gems (step L2, PL2-8). Not on a chain whose
 		// tokens are worth something: alpha1's had claim links.
 		if (name == 'localhost' || name == 'offline' || name == 'alpha2' || name == 'lan') {
-			const TestTokensDistributor = await deploy('TestTokensDistributor', {
-				account: deployer,
-				artifact: artifacts.TestTokensInfiniteDistributor,
-				// ONE STAKE A CALL: the game's `actionsPerReveal` (32, `020_deploy_game.ts`)
-				// gems, what the HUD stakes, so a new player presses once and not three
-				// times (15 a call until step D).
-				args: [TestTokens.address, parseEther('32')],
-			}, {deterministic});
+			const TestTokensDistributor = await deploy(
+				'TestTokensDistributor',
+				{
+					account: deployer,
+					artifact: artifacts.TestTokensInfiniteDistributor,
+					// ONE STAKE A CALL: the game's `actionsPerReveal` (32, `020_deploy_game.ts`)
+					// gems, what the HUD stakes, so a new player presses once and not three
+					// times (15 a call until step D).
+					args: [TestTokens.address, parseEther('32')],
+				},
+				{deterministic},
+			);
 
 			// GUARDED, so a redeploy skips it once done, and so a LAN box replays it
 			// only when its effect is missing (`rocketh/guard-recording.ts`).

@@ -290,11 +290,7 @@ export function dimmingFocusOf(
 }
 
 /** Whether a cell is lit while `owner`'s gems are focused. */
-export function isLit(
-	cell: CellView,
-	owner: string,
-	viewer?: string,
-): boolean {
+export function isLit(cell: CellView, owner: string, viewer?: string): boolean {
 	const focus = owner.toLowerCase();
 	if (focus === EVIL_OWNER) return cell.color === Color.Evil && !isGhost(cell);
 	return focusOwnerOf(cell, viewer)?.toLowerCase() === focus;

@@ -49,15 +49,7 @@ const CELL_FIELDS =
 	'position lastCycleUpdate cycleWhenTokenIsAdded color life delta enemyMap distribution stake producingCycles';
 
 /** A part of the state: one question, its root fields, and the entities whose moves invalidate it. */
-export type Part =
-	| 'cells'
-	| 'owners'
-	| 'commitments'
-	| 'placements'
-	| 'shared'
-	| 'fixed'
-	| 'global'
-	| 'advancedCycle';
+export type Part = 'cells' | 'owners' | 'commitments' | 'placements' | 'shared' | 'fixed' | 'global' | 'advancedCycle';
 
 export const PARTS: readonly Part[] = [
 	'cells',
@@ -279,9 +271,7 @@ function writeParts(data: Data, parts: ReadonlySet<Part>, answer: Record<string,
 	}
 	if (parts.has('advancedCycle')) {
 		const row = answer.advancedCycle[0];
-		data.advancedCycle = row
-			? {cycleNumber: Number(row.cycleNumber), anchoredAt: Number(row.anchoredAt)}
-			: undefined;
+		data.advancedCycle = row ? {cycleNumber: Number(row.cycleNumber), anchoredAt: Number(row.anchoredAt)} : undefined;
 	}
 }
 
@@ -324,7 +314,7 @@ export async function readParts(
 	return {
 		data,
 		block: at ?? result.extensions?.block ?? undefined,
-		blockHash: at === undefined ? result.extensions?.blockHash ?? undefined : undefined,
+		blockHash: at === undefined ? (result.extensions?.blockHash ?? undefined) : undefined,
 		generation: result.extensions?.generation,
 	};
 }
