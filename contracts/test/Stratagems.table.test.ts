@@ -109,6 +109,16 @@ function turn(x: number, y: number, color: number) {
 }
 
 describe('a table', function () {
+	it('answers for its cells as an ERC721, through the default router', async function () {
+		const {Table} = await loadFixture(withATableOfThree);
+		// the route solidity-proxy 0.5.2's Router10X60 could not hold with the
+		// others (56 selectors, past the 48 it routed); @rocketh/router 0.21's
+		// default Router holds them all
+		expect(await Table.read.supportsInterface(['0x80ac58cd'])).to.equal(true);
+		expect(await Table.read.name()).to.equal('Islands');
+		expect(await Table.read.symbol()).to.equal('ISLAND');
+	});
+
 	it('is an address of its own, created by the factory with the table config and no rewards', async function () {
 		const {env, Factory, Table, noRewards, creator, createdIn, implementationDeployedIn} =
 			await loadFixture(withATableOfThree);
