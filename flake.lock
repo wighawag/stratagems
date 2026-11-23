@@ -7,11 +7,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794377046,
-        "narHash": "sha256-bOpxYVKhtHcCYxcbJnO9XxvcomhNfUUMFKP7KwEWssM=",
+        "lastModified": 1794854459,
+        "narHash": "sha256-J5SEDt9oT5CMkpb/eOgByL6FuR8uIJOP23ZJvcKViOE=",
         "owner": "wighawag",
         "repo": "ethereum-lan-node",
-        "rev": "e9032dac7489482007b0baaa1a7393f30500b357",
+        "rev": "109189756a66a49982430e7bfb791232829da29a",
         "type": "github"
       },
       "original": {

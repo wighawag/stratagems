@@ -5,7 +5,7 @@
 	"private": true,
 	"type": "module",
 	"lan": {
-		"pnpmDepsHash": "sha256-mBeZfj3Nt+6KQ4LngPZZaqwEgzC59UjVT5d4vDDq9us=",
+		"pnpmDepsHash": "sha256-IQJUAbeiiW8OAMZCjvq4tEkUL5zWnGmulxB95QkJBWo=",
 		"solc": {
 			"version": "0.8.24+commit.e11b9ed9",
 			"hash": "sha256-EbBUtVJz7FX2qz9EXrDrLIOiP+1D0QB500rD6r5u2LE="

@@ -31,7 +31,6 @@ web/src/app.html                          Plausible analytics on stratagems' own
 package.json                              the root of a workspace with common/ and the indexer: their scripts, the "lan" and "e2e" fields
 pnpm-workspace.yaml                       common/ and indexer/ as workspace packages, and the fuzd services' named-logs overrides
 pnpm-lock.yaml                            the lockfile of this workspace's dependencies
-flake.lock                                the ethereum-lan-node revision stratagems' LAN package is built with (newer than the stem's, step L3)
 .gitignore                                also ignores .dev.vars, a legacy secrets file, so one left in a checkout is never committed
 dev/zellij.kdl                            the local stack's panes, with the indexer's and common/'s builds
 dev/zellij-attach.kdl                     the panes against an existing deployment, with the indexer
