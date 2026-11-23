@@ -30,7 +30,7 @@ import {
  * `CommitRevealBase.test.ts` and `CyclePolicy.test.ts` pin unchanged.
  */
 
-const {provider, networkHelpers} = await network.connect();
+const {provider, networkHelpers} = await network.create();
 
 const NO_FURTHER_ACTIONS =
 	'0x000000000000000000000000000000000000000000000000' as const;
@@ -541,9 +541,9 @@ describe('a closed roster on the commit-reveal base', function () {
 			functionName: 'openRoster',
 			args: [creator, 3, CYCLES, NO_OPTIONS],
 		});
-		const [roster] = (await env.read(Stub, {
+		const [roster] = await env.read(Stub, {
 			functionName: 'getRoster',
-		})) as [{openedAtBlock: number}, bigint[]];
+		});
 		expect(BigInt(roster.openedAtBlock)).toEqual(BigInt(receipt.blockNumber));
 		// It is the roster's, not the deployment's.
 		expect(

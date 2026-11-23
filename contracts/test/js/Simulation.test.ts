@@ -29,7 +29,7 @@ import {zeroAddress} from 'viem';
  * assertions that name a number are made only where a placement costs one.
  */
 
-const {provider, networkHelpers} = await network.connect();
+const {provider, networkHelpers} = await network.create();
 const {deployAll} = setupFixtures(provider);
 
 function cellAt(x: number, y: number): bigint {

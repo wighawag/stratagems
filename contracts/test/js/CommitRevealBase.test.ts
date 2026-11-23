@@ -25,7 +25,7 @@ import {
  * whole bond, and nobody but the player ever receives anything.
  */
 
-const {provider, networkHelpers} = await network.connect();
+const {provider, networkHelpers} = await network.create();
 
 const NO_FURTHER_ACTIONS =
 	'0x000000000000000000000000000000000000000000000000' as const;
