@@ -120,17 +120,13 @@ export default deployScript(
 			[
 				// the world's routes with the table's rules compiled in (step L4: a
 				// fixed stake, payouts credited to reserves, a board sized to the
-				// gems, the final board after the end), and its own route: the
-				// settlement, the scores and the winners. NOT THE ERC721 ROUTE: no
-				// client reads a table's cells as tokens, and with it the router
-				// would route 56 selectors, past the 48 that solidity-proxy 0.5.2's
-				// Router10X60 routes correctly (it packs selectors 49 to 60 into
-				// its eighth word, `tmp_sigs_07`, so they and others are lost; the
-				// plan's step L4 log has the finding)
+				// gems, the final board after the end), the cells as tokens, and its
+				// own route: the settlement, the scores and the winners
 				{name: 'Getters', artifact: artifacts.StratagemsTableGetters, args: [config]},
 				{name: 'Commit', artifact: artifacts.StratagemsTableCommit, args: [config]},
 				{name: 'Reveal', artifact: artifacts.StratagemsTableReveal, args: [config]},
 				{name: 'Poke', artifact: artifacts.StratagemsTablePoke, args: [config]},
+				{name: 'ERC721', artifact: artifacts.StratagemsTableERC721 as any, args: [config]},
 				{name: 'Table', artifact: artifacts.StratagemsTable, args: [config]},
 				{name: 'Delegation', artifact: artifacts.StratagemsDelegation as any, args: []},
 				// the base's own lobby route, the same for every game: it takes only

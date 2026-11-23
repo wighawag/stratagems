@@ -5,6 +5,7 @@ import "../routes/StratagemsGetters.sol";
 import "../routes/StratagemsCommit.sol";
 import "../routes/StratagemsReveal.sol";
 import "../routes/StratagemsPoke.sol";
+import "../routes/StratagemsERC721.sol";
 import "./UsingStratagemsTable.sol";
 import "./UsingStratagemsTableScore.sol";
 
@@ -237,5 +238,20 @@ contract StratagemsTablePoke is StratagemsPoke, UsingStratagemsTableScore {
         TokenTransferCollection memory transferCollection
     ) internal override(UsingStratagemsUtils, UsingStratagemsTableScore) {
         UsingStratagemsTableScore._multiTransfer(token, transferCollection);
+    }
+}
+
+/// @dev A table's cells as tokens, read as the world's are; its reads see the
+/// final board after the end ({UsingStratagemsTable-_currentCycle}).
+contract StratagemsTableERC721 is StratagemsERC721, UsingStratagemsTable {
+    constructor(Config memory config) StratagemsERC721(config) {}
+
+    function _currentCycle()
+        internal
+        view
+        override(UsingStratagemsState, UsingStratagemsTable)
+        returns (uint24 cycle, bool commiting)
+    {
+        return UsingStratagemsTable._currentCycle();
     }
 }
