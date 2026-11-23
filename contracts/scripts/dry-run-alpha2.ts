@@ -22,7 +22,7 @@ import {CLIENT_GAS} from '../deploy/.config/gas.js';
 
 const BASE_RPC = process.env.ETH_NODE_URI_8453 || 'https://mainnet.base.org';
 
-const connection = await network.connect({
+const connection = await network.create({
 	network: 'default',
 	chainType: 'op',
 	override: {

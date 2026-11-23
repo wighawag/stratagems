@@ -24,10 +24,10 @@ export type Connection = {
 
 /**
  * ONE connection to the network hardhat runs this process against (Hardhat 3:
- * `network.connect()`), shared by everything in the process: the deploys, the
+ * `network.create()`), shared by everything in the process: the deploys, the
  * fixtures (`loadFixture` snapshots THIS connection's chain) and the viem clients.
  */
-const hardhatConnection = await network.connect();
+const hardhatConnection = await network.create();
 export const networkName = hardhatConnection.networkName;
 export const hardhatProvider = hardhatConnection.provider;
 export const loadFixture = hardhatConnection.networkHelpers.loadFixture;
