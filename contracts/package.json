@@ -46,9 +46,9 @@
     "hardhat": "^3.18.0",
     "hardhat-deploy": "^2.4.0",
     "hardhat-external-artifacts": "^0.0.6",
-    "ldenv": "^0.3.10",
-    "prettier": "^3.3.1",
-    "prettier-plugin-solidity": "^1.3.1",
+    "ldenv": "^0.6.0",
+    "prettier": "^3.9.6",
+    "prettier-plugin-solidity": "^2.4.1",
     "prompts": "^2.4.2",
     "remote-sql-libsql": "^0.0.7",
     "rocketh": "^0.26.4",
@@ -58,9 +58,9 @@
     "stratagems-common": "workspace:*",
     "stratagems-indexer": "workspace:*",
     "tsx": "^4.15.1",
-    "typescript": "^5.4.5",
+    "typescript": "~6.0.3",
     "viem": "^2.57.1",
-    "vitest": "^1.6.0"
+    "vitest": "^4.1.11"
   },
   "scripts": {
     "prepare": "pnpm compile && tsc",
@@ -86,6 +86,7 @@
     "stop": "zellij kill-session $npm_package_name",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
+    "typescript": "tsc && tsc -p test/js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "typecheck:scripts": "tsc -p scripts/tsconfig.json",
     "_typecheck:scripts": "scripts/data/*.ts import scripts/data/contracts.ts, which `pnpm export-script-data <mode>` writes: run that first"
