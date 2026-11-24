@@ -240,7 +240,11 @@ export function stakeNeeded(reserve: {
  * its players the key was for posting greetings. If you fork THIS template,
  * change this line.
  */
-export const SIGNER_GRANT: SignerGrant = {action: 'play your moves'};
+export const SIGNER_GRANT: SignerGrant = {
+	action: 'play your moves',
+	// A game: the template's default headline ("act for you") is generic.
+	headline: 'Let this browser play for you',
+};
 
 /** This game's types, as the commit-reveal skeleton is told them. */
 type PlacementGame = {
