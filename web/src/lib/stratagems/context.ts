@@ -125,7 +125,11 @@ export type SetupNeeded = FrameworkSetupNeeded<{step: 'stake'}>;
  * WHAT THIS APP'S BROWSER KEY IS FOR, in this app's words: the verb phrase the
  * template's consent sentences are built around (`ui/delegation/grant.ts`).
  */
-export const SIGNER_GRANT: SignerGrant = {action: 'play your moves'};
+export const SIGNER_GRANT: SignerGrant = {
+	action: 'play your moves',
+	// A game: the template's default headline ("act for you") is generic.
+	headline: 'Let this browser play for you',
+};
 
 /** Stratagems' types, as the commit-reveal skeleton is told them. */
 export type StratagemsGame = {
