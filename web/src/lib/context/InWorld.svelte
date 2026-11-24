@@ -11,11 +11,12 @@
 	 * per-context - would open nothing at all and the click would simply appear
 	 * to hang.
 	 *
-	 * That is not hypothetical and it is what this file exists for. The setup
-	 * gate's "Authorise and carry on" starts the top-up flow, which reaches its
-	 * `choosing` step and waits for the player to pick a payer. With no modal in
-	 * this subtree there is nothing on screen: the flow sits there, the board
-	 * stays gated, and the only evidence is a console line.
+	 * That is not hypothetical and it is what this file exists for. On
+	 * `/offline-demo/` a failed send's toast offered "Details", which called the
+	 * WORLD's `errorDetails.show()`, and nothing rendered it: the button did
+	 * nothing (QA F5, 2026-11-24). A funds check in the world would likewise wait
+	 * on an insufficient-funds modal nobody draws. A branch that adds an app-wide
+	 * overlay to `AcrossPages` adds it here too.
 	 *
 	 * WHAT IS DELIBERATELY NOT HERE IS THE CONNECTION FLOW, and the reason is the
 	 * opposite one. A flow exists to relay a WALLET's questions - which wallet,
