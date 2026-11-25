@@ -119,12 +119,15 @@
      this world, or while this tab is handing it to one, the world's branch must
      not render: unmounting it is what stops its context and its seats before the
      world is let go of. The rule is `$lib/embedded/claim`'s and the lobby takes
-     the claim (`$lib/offline-lobby`); this renders the answer. -->
+     the claim (`$lib/offline-lobby`); this renders the answer, in this game's
+     word: a player knows it as a world, where the component's default, "test
+     chain", is a demo's (jolly-roger QA F8). -->
 {#if $offlineWorldClaim.step === 'Refused' || $offlineWorldClaim.step === 'Waiting' || $offlineWorldClaim.step === 'LettingGo'}
 	<WorldInAnotherTab
 		claim={offlineWorldClaim}
 		onTakeOver={() => void takeTheWorldOver()}
 		home={route('/')}
+		name="world"
 	/>
 {:else if $offlineWorld.step === 'Ready'}
 	<!-- A NESTED PROVIDER, which is the whole mechanism in one element.
