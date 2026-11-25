@@ -71,7 +71,7 @@ web/src/routes/+page.svelte                            the home page is the game
 
 # The e2e, on the game instead of the greetings
 web/e2e/fixtures/test.ts                               the game's fixtures: the table, the offline world, the arrival's continue, the exported connect helpers
-web/e2e/impersonate-addresses.json                     the accounts the game's suites claim (the table's nine and ten, the faucet's eight)
+web/e2e/accounts.json                                  a pool of 10, the accounts the game's suites claim (the table's nine and ten, the faucet's eight)
 web/e2e/routes.ts                                      `MAIN_PAGE` names the game: /play/, its "Online" link, no heading (the page is a canvas), the Game, getCycleNumber and addToReserve with the label as its player
 web/e2e/tests/faucet.e2e.ts                            the faucet's account is eight, which the burner can sign with
 web/e2e/tests/home.e2e.ts                              the home page's game menu
